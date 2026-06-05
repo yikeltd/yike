@@ -9,13 +9,18 @@ export async function logOtpEvent(
     status: string;
     attempts?: number;
     expiresAt?: string;
+    providerError?: string;
   }
 ): Promise<void> {
+  const status = params.providerError
+    ? `${params.status}:${params.providerError.slice(0, 120)}`
+    : params.status;
+
   await admin.from("otp_logs").insert({
     phone: params.phone,
     channel: params.channel,
     provider: "sendchamp",
-    status: params.status,
+    status,
     attempts: params.attempts ?? 0,
     expires_at: params.expiresAt ?? null,
   });

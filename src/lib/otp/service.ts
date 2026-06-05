@@ -83,6 +83,7 @@ export async function sendPhoneOtp(
         channel: preferredChannel ?? "whatsapp",
         status: "failed",
         expiresAt,
+        providerError: delivered.error,
       });
       return {
         ok: false,

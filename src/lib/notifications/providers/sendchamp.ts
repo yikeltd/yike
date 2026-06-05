@@ -54,6 +54,7 @@ async function sendchampPost<T>(
         (data.message as string) ||
         (data.error as string) ||
         `Sendchamp request failed (${res.status})`;
+      console.error("[sendchamp]", path, res.status, message);
       return { ok: false, error: message };
     }
 
