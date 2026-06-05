@@ -69,8 +69,8 @@ function VerifyEmailContent() {
     setResending(false);
     setMessage(
       res.ok
-        ? "Verification email sent — check your inbox"
-        : (data.error ?? "Could not resend email")
+        ? (data.message ?? "Check your email to verify your account.")
+        : (data.error ?? "We could not send the email right now.")
     );
   }
 

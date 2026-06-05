@@ -40,6 +40,7 @@ export function SignupForm({
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [codeSentFlash, setCodeSentFlash] = useState(false);
+  const [codeSentMessage, setCodeSentMessage] = useState("");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,6 +63,7 @@ export function SignupForm({
 
   function openChannelModal() {
     setCodeSentFlash(false);
+    setCodeSentMessage("");
     setChannelModalOpen(true);
   }
 
@@ -76,9 +78,16 @@ export function SignupForm({
     const data = await res.json();
     setSendingOtp(false);
     if (!res.ok) {
-      setError(data.error ?? "Could not send code");
+      setError(data.error ?? "We could not send the code right now.");
+      setChannelModalOpen(false);
       return;
     }
+    setCodeSentMessage(
+      data.message ??
+        (data.channel === "whatsapp"
+          ? "Verification code sent to WhatsApp."
+          : "Verification code sent by SMS.")
+    );
     setCodeSentFlash(true);
     setOtpSent(true);
     setPhoneVerified(false);
@@ -101,7 +110,7 @@ export function SignupForm({
     const data = await res.json();
     setVerifyingOtp(false);
     if (!res.ok) {
-      setError(data.error ?? "Invalid code");
+      setError(data.error ?? "Incorrect code");
       return;
     }
     setPhoneVerified(true);
@@ -353,6 +362,7 @@ export function SignupForm({
         open={channelModalOpen}
         sending={sendingOtp}
         codeSent={codeSentFlash}
+        codeSentMessage={codeSentMessage}
         onClose={() => {
           if (!sendingOtp && !codeSentFlash) setChannelModalOpen(false);
         }}
@@ -366,12 +376,14 @@ function PhoneChannelModal({
   open,
   sending,
   codeSent,
+  codeSentMessage,
   onClose,
   onSelect,
 }: {
   open: boolean;
   sending: boolean;
   codeSent: boolean;
+  codeSentMessage: string;
   onClose: () => void;
   onSelect: (channel: OtpChannel) => void;
 }) {
@@ -406,7 +418,7 @@ function PhoneChannelModal({
             id="phone-channel-title"
             className="py-2 text-center text-base font-semibold text-foreground"
           >
-            Code sent
+            {codeSentMessage || "Verification code sent."}
           </p>
         ) : (
           <>
@@ -420,19 +432,19 @@ function PhoneChannelModal({
               <Button
                 type="button"
                 fullWidth
-                onClick={() => onSelect("sms")}
+                onClick={() => onSelect("whatsapp")}
                 disabled={sending}
               >
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : "SMS"}
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : "WhatsApp"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 fullWidth
-                onClick={() => onSelect("whatsapp")}
+                onClick={() => onSelect("sms")}
                 disabled={sending}
               >
-                WhatsApp
+                SMS
               </Button>
             </div>
           </>

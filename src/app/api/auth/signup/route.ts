@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { sendEmailVerification } from "@/lib/email";
+import { EMAIL_USER_MESSAGES } from "@/lib/notifications/messages";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
@@ -118,11 +120,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: profileError.message }, { status: 500 });
   }
 
-  await admin.auth.resend({ type: "signup", email });
+  const emailResult = await sendEmailVerification(admin, {
+    email,
+    fullName,
+    userId,
+  });
+
+  if (!emailResult.ok) {
+    return NextResponse.json(
+      { error: emailResult.error },
+      { status: 502 }
+    );
+  }
 
   return NextResponse.json({
     ok: true,
     userId,
-    message: "Account created. Check your email to verify your account.",
+    message: EMAIL_USER_MESSAGES.verificationSent,
   });
 }

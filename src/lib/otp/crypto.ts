@@ -1,14 +1,17 @@
 import { createHash, randomInt } from "crypto";
+import { OTP_LENGTH } from "./constants";
 
 export function generateOtp(): string {
-  return String(randomInt(100000, 999999));
+  const min = 10 ** (OTP_LENGTH - 1);
+  const max = 10 ** OTP_LENGTH - 1;
+  return String(randomInt(min, max));
 }
 
 export function hashOtp(otp: string): string {
   return createHash("sha256").update(otp).digest("hex");
 }
 
-export function verifyOtp(otp: string, hash: string): boolean {
+export function verifyOtpHash(otp: string, hash: string): boolean {
   return hashOtp(otp) === hash;
 }
 

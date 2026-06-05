@@ -22,9 +22,10 @@ node scripts/optimize-brand-assets.mjs   # regenerate favicons from logo.png
 
 ## Deploy
 
-- **Vercel team:** `yike-ng` · **project:** `yike` · **domain:** `yike.ng`
-- Push to `main` → GitHub Actions deploys to production automatically
-- Env vars: see `.env.example`
+- **GitHub:** `yikeltd/yike` · **Vercel team:** `yikeprojects` · **project:** `yike`
+- Push to `main` → Vercel production deploy automatically (Git integration — no manual step)
+- Preview deploys on other branches / PRs
+- Env vars: see `.env.example` (set in Vercel → Settings → Environment Variables)
 
 ## Supabase
 

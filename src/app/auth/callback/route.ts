@@ -1,3 +1,5 @@
+import { sendWelcomeEmail } from "@/lib/email";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -11,10 +13,27 @@ export async function GET(request: Request) {
     if (supabase) {
       const { data } = await supabase.auth.exchangeCodeForSession(code);
       if (data.user?.email_confirmed_at) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email_verified, full_name")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
         await supabase
           .from("profiles")
           .update({ email_verified: true })
           .eq("id", data.user.id);
+
+        if (!profile?.email_verified && data.user.email) {
+          const admin = createAdminClient();
+          if (admin) {
+            await sendWelcomeEmail(admin, {
+              email: data.user.email,
+              fullName: profile?.full_name ?? data.user.user_metadata?.full_name ?? "",
+              userId: data.user.id,
+            });
+          }
+        }
       }
     }
   }
