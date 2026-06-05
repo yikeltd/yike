@@ -13,10 +13,12 @@ Read `.cursor/rules/yike-product-direction.mdc` before any change. Direction is 
 ## Commands
 
 ```bash
-npm run dev
-npm run build
+npm run dev    # always run while building — preview at http://localhost:3000
+npm run build  # production check before deploy
 node scripts/optimize-brand-assets.mjs   # regenerate favicons from logo.png
 ```
+
+**Local preview:** Start `npm run dev` at the beginning of UI work and open the affected routes locally before publishing to Vercel.
 
 ## Supabase
 

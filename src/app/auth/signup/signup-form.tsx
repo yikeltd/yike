@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,10 @@ import {
   canRequestPhoneOtp,
   normalizeNigerianPhone,
 } from "@/lib/phone";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type OtpChannel = "sms" | "whatsapp";
 
 export function SignupForm({
   agentNote,
@@ -29,7 +31,6 @@ export function SignupForm({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
 
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
@@ -37,6 +38,8 @@ export function SignupForm({
   const [otp, setOtp] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [channelModalOpen, setChannelModalOpen] = useState(false);
+  const [codeSentFlash, setCodeSentFlash] = useState(false);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,13 +47,31 @@ export function SignupForm({
   const normalizedPhone = useMemo(() => normalizeNigerianPhone(phone), [phone]);
   const showVerifyPhone = canRequestPhoneOtp(normalizedPhone);
 
-  async function sendOtp() {
+  useEffect(() => {
+    if (!channelModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !sendingOtp && !codeSentFlash) setChannelModalOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [channelModalOpen, sendingOtp, codeSentFlash]);
+
+  function openChannelModal() {
+    setCodeSentFlash(false);
+    setChannelModalOpen(true);
+  }
+
+  async function sendOtp(channel: OtpChannel) {
     setSendingOtp(true);
     setError("");
     const res = await fetch("/api/auth/phone/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalizedPhone }),
+      body: JSON.stringify({ phone: normalizedPhone, channel }),
     });
     const data = await res.json();
     setSendingOtp(false);
@@ -58,9 +79,15 @@ export function SignupForm({
       setError(data.error ?? "Could not send code");
       return;
     }
+    setCodeSentFlash(true);
     setOtpSent(true);
     setPhoneVerified(false);
     setPhoneVerificationToken("");
+    setOtp("");
+    window.setTimeout(() => {
+      setCodeSentFlash(false);
+      setChannelModalOpen(false);
+    }, 1200);
   }
 
   async function verifyOtp() {
@@ -89,10 +116,6 @@ export function SignupForm({
     }
     if (password !== confirmPassword) {
       setError("Passwords do not match");
-      return;
-    }
-    if (pin !== confirmPin) {
-      setError("PINs do not match");
       return;
     }
     if (!/^\d{6}$/.test(pin)) {
@@ -147,7 +170,6 @@ export function SignupForm({
   return (
     <AuthShell
       title="Create your Yike account"
-      subtitle="Post properties, save homes, and contact trusted agents."
       footer={
         <p className="text-sm text-muted">
           Already have an account?{" "}
@@ -203,81 +225,69 @@ export function SignupForm({
         </Field>
 
         <Field label="Nigerian phone number">
-          <Input
-            type="tel"
-            inputMode="numeric"
-            placeholder="08012345678"
-            value={phone}
-            onChange={(e) => {
-              setPhone(normalizeNigerianPhone(e.target.value));
-              setPhoneVerified(false);
-              setOtpSent(false);
-              setOtp("");
-            }}
-            required
-            maxLength={11}
-            className="h-12 rounded-xl"
-            autoComplete="tel"
-          />
-          {phoneVerified ? (
-            <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-4 w-4" />
-              Phone verified
-            </p>
-          ) : showVerifyPhone ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={sendOtp}
-              disabled={sendingOtp}
-            >
-              {sendingOtp ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Sending…
-                </>
-              ) : (
-                "Verify phone"
-              )}
-            </Button>
-          ) : phone.length > 0 ? (
-            <p className="mt-1.5 text-xs text-muted">
-              Use 11 digits starting with 070, 080, 081, 090, or 091
-            </p>
-          ) : null}
-        </Field>
-
-        {otpSent && !phoneVerified && (
-          <Field label="Verification code">
-            <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <Input
+              type="tel"
+              inputMode="numeric"
+              placeholder="08012345678"
+              value={phone}
+              onChange={(e) => {
+                setPhone(normalizeNigerianPhone(e.target.value));
+                setPhoneVerified(false);
+                setOtpSent(false);
+                setOtp("");
+              }}
+              required
+              maxLength={11}
+              className="h-12 min-w-0 flex-1 rounded-xl"
+              autoComplete="tel"
+            />
+            {phoneVerified ? (
+              <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-5 w-5" />
+                Verified
+              </span>
+            ) : showVerifyPhone ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-12 shrink-0 px-4"
+                onClick={openChannelModal}
+                disabled={sendingOtp}
+              >
+                Verify phone
+              </Button>
+            ) : null}
+          </div>
+          {otpSent && !phoneVerified && (
+            <div className="mt-2 flex items-center gap-2">
               <Input
                 inputMode="numeric"
-                placeholder="6-digit code"
+                placeholder="Code"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 maxLength={6}
-                className="h-12 flex-1 rounded-xl tracking-widest"
+                className="h-12 min-w-0 flex-1 rounded-xl tracking-widest"
               />
-              <Button
-                type="button"
-                onClick={verifyOtp}
-                disabled={otp.length !== 6 || verifyingOtp}
-                className="shrink-0"
-              >
-                {verifyingOtp ? "…" : "Confirm"}
-              </Button>
+              {otp.length === 6 && (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-12 shrink-0 px-4"
+                  onClick={verifyOtp}
+                  disabled={verifyingOtp}
+                >
+                  {verifyingOtp ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Verify"
+                  )}
+                </Button>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={sendOtp}
-              className="mt-2 text-xs font-semibold text-gold-dark dark:text-gold"
-            >
-              Resend code
-            </button>
-          </Field>
-        )}
+          )}
+        </Field>
 
         <Field label="Password">
           <Input
@@ -308,29 +318,13 @@ export function SignupForm({
           />
         </Field>
 
-        <Field label="6-digit PIN" hint="For quick unlock on trusted devices">
+        <Field label="Choose PIN">
           <Input
             type="password"
             inputMode="numeric"
             placeholder="••••••"
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            maxLength={6}
-            required
-            className="h-12 rounded-xl tracking-[0.3em]"
-            autoComplete="off"
-          />
-        </Field>
-
-        <Field label="Confirm PIN">
-          <Input
-            type="password"
-            inputMode="numeric"
-            placeholder="••••••"
-            value={confirmPin}
-            onChange={(e) =>
-              setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 6))
-            }
             maxLength={6}
             required
             className="h-12 rounded-xl tracking-[0.3em]"
@@ -353,7 +347,97 @@ export function SignupForm({
           {loading ? "Creating account…" : "Create account"}
         </Button>
       </form>
+
+      <PhoneChannelModal
+        open={channelModalOpen}
+        sending={sendingOtp}
+        codeSent={codeSentFlash}
+        onClose={() => {
+          if (!sendingOtp && !codeSentFlash) setChannelModalOpen(false);
+        }}
+        onSelect={sendOtp}
+      />
     </AuthShell>
+  );
+}
+
+function PhoneChannelModal({
+  open,
+  sending,
+  codeSent,
+  onClose,
+  onSelect,
+}: {
+  open: boolean;
+  sending: boolean;
+  codeSent: boolean;
+  onClose: () => void;
+  onSelect: (channel: OtpChannel) => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50"
+        aria-label="Close"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="phone-channel-title"
+        className="relative w-full max-w-xs rounded-2xl border border-border bg-card p-5 shadow-xl"
+      >
+        {!codeSent && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-3 top-3 rounded-lg p-1 text-muted hover:text-foreground"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+        {codeSent ? (
+          <p
+            id="phone-channel-title"
+            className="py-2 text-center text-base font-semibold text-foreground"
+          >
+            Code sent
+          </p>
+        ) : (
+          <>
+            <p
+              id="phone-channel-title"
+              className="mb-4 text-center text-base font-semibold text-foreground"
+            >
+              Receive code via
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                fullWidth
+                onClick={() => onSelect("sms")}
+                disabled={sending}
+              >
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : "SMS"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                fullWidth
+                onClick={() => onSelect("whatsapp")}
+                disabled={sending}
+              >
+                WhatsApp
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

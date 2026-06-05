@@ -15,7 +15,7 @@ export function AuthShell({
   footer,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
@@ -35,9 +35,11 @@ export function AuthShell({
           <h1 className="mt-8 text-[1.65rem] font-bold leading-tight tracking-tight text-white sm:text-3xl">
             {title}
           </h1>
-          <p className="mt-2.5 text-base leading-relaxed text-white/85">
-            {subtitle}
-          </p>
+          {subtitle ? (
+            <p className="mt-2.5 text-base leading-relaxed text-white/85">
+              {subtitle}
+            </p>
+          ) : null}
 
           <ul className="mt-6 flex flex-col gap-2.5">
             {TRUST_POINTS.map(({ icon: Icon, text }) => (

@@ -13,12 +13,10 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const phone = normalizeNigerianPhone(String(body.phone ?? ""));
+  const channel = body.channel === "whatsapp" ? "whatsapp" : "sms";
 
   if (!canRequestPhoneOtp(phone)) {
-    return NextResponse.json(
-      { error: "Enter a valid 11-digit Nigerian number (070, 080, 081, 090, 091)" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid phone number" }, { status: 400 });
   }
 
   const otp = generateOtp();
@@ -36,12 +34,12 @@ export async function POST(request: Request) {
 
   // TODO: integrate WhatsApp/SMS provider — for now log in development
   if (process.env.NODE_ENV === "development") {
-    console.info(`[Yike OTP] ${phone}: ${otp}`);
+    console.info(`[Yike OTP] ${phone} via ${channel}: ${otp}`);
   }
 
   return NextResponse.json({
     ok: true,
-    message: "Verification code sent via WhatsApp/SMS",
+    channel,
     ...(process.env.NODE_ENV === "development" ? { devOtp: otp } : {}),
   });
 }
