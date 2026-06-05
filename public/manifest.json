@@ -41,5 +41,34 @@
       "purpose": "any"
     }
   ],
-  "screenshots": []
+  "screenshots": [
+    {
+      "src": "/store/01-home-search.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Search homes by city and budget"
+    },
+    {
+      "src": "/store/02-swipe-browse.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Swipe to save or skip listings"
+    },
+    {
+      "src": "/store/03-listing-detail.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Listing detail with WhatsApp contact"
+    },
+    {
+      "src": "/store/04-trust-safety.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Trust-first with reporting and verification"
+    }
+  ]
 }

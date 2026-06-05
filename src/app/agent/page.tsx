@@ -5,6 +5,7 @@ import { isVerifiedAgent, canListProperties } from "@/lib/utils";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { PlusCircle, List, ShieldCheck } from "lucide-react";
 import { AgentSignOut } from "./sign-out-button";
+import { DeleteAccountLink } from "@/components/account/delete-account-link";
 
 export default async function ProfilePage() {
   const user = await requireAuth("/auth/login?next=/agent");
@@ -114,6 +115,10 @@ export default async function ProfilePage() {
       </nav>
 
       <AgentSignOut />
+
+      <div className="border-t border-border pt-4">
+        <DeleteAccountLink />
+      </div>
     </div>
   );
 }

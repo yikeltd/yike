@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "optimize:brand": "node scripts/optimize-brand-assets.mjs",
+    "store:assets": "node scripts/generate-store-assets.mjs",
+    "heroes:generate": "node scripts/generate-hero-images.mjs",
+    "admin:ensure": "node scripts/ensure-admin-user.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

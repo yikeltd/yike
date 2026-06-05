@@ -23,8 +23,9 @@ import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { addRecentSearch } from "@/lib/search-recent";
 import { parseLocationQuery } from "@/lib/location-search";
 import { brand } from "@/lib/design/tokens";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { MapPin, SlidersHorizontal } from "lucide-react";
+import { MobileHeaderBanner } from "@/components/banners/mobile-header-banner";
+import type { SiteBanner } from "@/types/database";
 import { cn } from "@/lib/utils";
 
 type Initial = {
@@ -59,7 +60,13 @@ function resolveChip(key: string): SearchDealChip {
   );
 }
 
-export function HomeSearchHero({ initial }: { initial?: Initial }) {
+export function HomeSearchHero({
+  initial,
+  mobileBanner,
+}: {
+  initial?: Initial;
+  mobileBanner?: SiteBanner | null;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [dealKey, setDealKey] = useState(
@@ -225,7 +232,7 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
         aria-hidden
       />
 
-      <div className="relative mb-4 flex items-center justify-between lg:hidden">
+      <div className="relative mb-3 flex items-center lg:hidden">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src={brand.logoSm}
@@ -237,8 +244,8 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
           />
           <span className="text-sm font-bold text-white">{brand.name}</span>
         </Link>
-        <ThemeToggle inverted />
       </div>
+      {mobileBanner && <MobileHeaderBanner banner={mobileBanner} />}
 
       {/* Browse real listings — compact inline search */}
       <form

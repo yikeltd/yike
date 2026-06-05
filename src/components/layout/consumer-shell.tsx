@@ -6,15 +6,22 @@ import { cn } from "@/lib/utils";
 import { HeaderDesktop } from "./header-desktop";
 import { HeaderMobile } from "./header-mobile";
 import { BottomNavMobile } from "./bottom-nav-mobile";
+import type { SiteBanner } from "@/types/database";
 
-export function ConsumerShell({ children }: { children: React.ReactNode }) {
+export function ConsumerShell({
+  children,
+  mobileBanner,
+}: {
+  children: React.ReactNode;
+  mobileBanner?: SiteBanner | null;
+}) {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isDetail = pathname.startsWith("/properties/");
   const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
   const hideChrome =
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/admin") ||
+    pathname.startsWith("/lex") ||
     isBrowse;
 
   if (hideChrome) {
@@ -24,7 +31,7 @@ export function ConsumerShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <HeaderDesktop />
-      <HeaderMobile />
+      <HeaderMobile mobileBanner={mobileBanner} />
       <main
         className={cn(
           "mx-auto w-full flex-1",

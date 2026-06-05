@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SOCIAL_LINKS, SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
+import { SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
+import { FollowYike } from "@/components/social/follow-yike";
 import { PageHero } from "@/components/pages/page-hero";
 import { TrustPillars } from "@/components/pages/trust-pillars";
 import { CtaBanner } from "@/components/pages/cta-banner";
@@ -38,6 +39,7 @@ export default function AboutPage() {
         subtitle={SITE_TAGLINE}
         image={PAGE_IMAGERY.about}
         badge="Our story"
+        imageOpacity={0.28}
         secondaryCta={{ label: "Browse homes", href: "/explore" }}
       />
 
@@ -105,20 +107,7 @@ export default function AboutPage() {
           </p>
         </section>
 
-        <div className="mt-8 flex flex-wrap gap-4 text-sm font-semibold">
-          <a href={SOCIAL_LINKS.facebook} className="text-gold-dark">
-            Facebook
-          </a>
-          <a href={SOCIAL_LINKS.x} className="text-gold-dark">
-            X
-          </a>
-          <a href={SOCIAL_LINKS.youtube} className="text-gold-dark">
-            YouTube
-          </a>
-          <a href={SOCIAL_LINKS.tiktok} className="text-gold-dark">
-            TikTok
-          </a>
-        </div>
+        <FollowYike className="mt-8" variant="icons" />
       </section>
 
       <CtaBanner

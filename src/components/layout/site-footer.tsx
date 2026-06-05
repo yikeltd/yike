@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SITE_NAME, SITE_URL, SOCIAL_LINKS } from "@/lib/constants";
+import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { brand } from "@/lib/design/tokens";
+import { FollowYike } from "@/components/social/follow-yike";
 const explore = [
   { href: "/explore", label: "Explore" },
   { href: "/rent", label: "Rent" },
@@ -19,11 +20,13 @@ const company = [
   { href: "/contact", label: "Contact" },
   { href: "/verify-agent", label: "Verify as agent" },
   { href: "/safety", label: "Safety tips" },
+  { href: "/moderation", label: "Moderation policy" },
 ];
 
 const legal = [
   { href: "/terms", label: "Terms of service" },
   { href: "/privacy", label: "Privacy policy" },
+  { href: "/account/delete", label: "Delete account" },
   { href: "/disclaimer", label: "Disclaimer" },
   { href: "/cookies", label: "Cookie policy" },
 ];
@@ -114,40 +117,7 @@ export function SiteFooter() {
               {SITE_URL.replace("https://", "")}
             </a>
           </p>
-          <div className="flex flex-wrap gap-4 text-xs font-semibold">
-            <a
-              href={SOCIAL_LINKS.facebook}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted hover:text-gold-dark"
-            >
-              Facebook
-            </a>
-            <a
-              href={SOCIAL_LINKS.x}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted hover:text-gold-dark"
-            >
-              X
-            </a>
-            <a
-              href={SOCIAL_LINKS.youtube}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted hover:text-gold-dark"
-            >
-              YouTube
-            </a>
-            <a
-              href={SOCIAL_LINKS.tiktok}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted hover:text-gold-dark"
-            >
-              TikTok
-            </a>
-          </div>
+          <FollowYike title="" variant="footer" />
         </div>
 
         <p className="mt-6 text-[11px] leading-relaxed text-muted">

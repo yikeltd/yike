@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FaqSection } from "@/components/pages/faq-section";
 import { PageHero } from "@/components/pages/page-hero";
 import { ContactForm, ContactSidebar } from "@/components/forms/contact-form";
+import { FollowYike } from "@/components/social/follow-yike";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { CONTACT_FAQS } from "@/constants/pageContent";
 import { SITE_NAME } from "@/lib/constants";
@@ -20,6 +21,7 @@ export default function ContactPage() {
         image={PAGE_IMAGERY.contact}
         badge="Contact"
         variant="warm"
+        imageOpacity={0.28}
       />
 
       <div className="mx-auto grid max-w-6xl gap-10 px-3 py-12 lg:grid-cols-[1fr_340px] lg:px-8">
@@ -53,6 +55,10 @@ export default function ContactPage() {
             </Link>
           ))}
         </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-3 py-10 lg:px-8">
+        <FollowYike variant="icons" />
       </section>
 
       <FaqSection title="Contact FAQs" faqs={CONTACT_FAQS} />

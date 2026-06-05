@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 function shouldHideFooter(pathname: string) {
   return (
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/admin") ||
+    pathname.startsWith("/lex") ||
     pathname === "/browse" ||
     pathname.startsWith("/browse/")
   );

@@ -35,7 +35,7 @@ export function FloatingBottomNav() {
   const focusSearch = searchParams.get("focus") === "search";
   const { guardAction } = useAuth();
 
-  if (pathname.startsWith("/auth") || pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/auth") || pathname.startsWith("/lex")) return null;
 
   return (
     <nav

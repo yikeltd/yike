@@ -78,6 +78,24 @@ export default function TermsPage() {
           <li>Scrape, reverse-engineer, or overload our systems without permission.</li>
           <li>Circumvent moderation, bans, or reporting systems.</li>
         </ul>
+        <p>
+          See our{" "}
+          <a href="/moderation" className="font-semibold text-gold-dark underline">
+            Moderation &amp; Reporting Policy
+          </a>{" "}
+          for how reports are handled.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="5b. Account deletion">
+        <p>
+          You may delete your account at any time from{" "}
+          <a href="/account/delete" className="font-semibold text-gold-dark underline">
+            yike.ng/account/delete
+          </a>
+          . Deletion is permanent and removes your profile and listings from the
+          marketplace, subject to legal retention described in our Privacy Policy.
+        </p>
       </LegalSection>
 
       <LegalSection title="6. Intellectual property">

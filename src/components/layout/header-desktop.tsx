@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { ListPropertyNavLink } from "@/components/auth/list-property-button";
 
 const links = [
@@ -49,7 +48,6 @@ export function HeaderDesktop({ className }: { className?: string }) {
           ))}
         </nav>
         <div className="flex items-center gap-3">
-          <ThemeToggle />
           <ListPropertyNavLink
             href="/post-property"
             className="rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy shadow-glow-gold transition-transform hover:scale-[1.02] active:scale-[0.98]"

@@ -40,7 +40,7 @@ export default async function AdminListingsPage({
         {tabs.map((s) => (
           <Link
             key={s}
-            href={`/admin/listings?status=${s}`}
+            href={`/lex/auth/listings?status=${s}`}
             className={cn(
               "pressable shrink-0 rounded-full px-4 py-2 text-sm font-bold capitalize",
               status === s

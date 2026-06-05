@@ -36,7 +36,7 @@ export function BottomNavMobile() {
 
   if (
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/admin") ||
+    pathname.startsWith("/lex") ||
     pathname === "/browse" ||
     pathname.startsWith("/browse/")
   ) {

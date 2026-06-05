@@ -64,6 +64,7 @@ export default function SafetyPage() {
         image={PAGE_IMAGERY.safety}
         badge="Safety"
         variant="dark"
+        imageOpacity={0.26}
         cta={{ label: "Browse verified listings", href: "/search?verified=1" }}
       />
 

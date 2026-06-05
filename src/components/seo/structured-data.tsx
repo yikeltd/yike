@@ -9,10 +9,11 @@ export function StructuredData() {
     logo: `${SITE_URL}/images/logo.webp`,
     description: SITE_TAGLINE,
     sameAs: [
-      SOCIAL_LINKS.facebook,
+      SOCIAL_LINKS.tiktok,
       SOCIAL_LINKS.x,
       SOCIAL_LINKS.youtube,
-      SOCIAL_LINKS.tiktok,
+      SOCIAL_LINKS.instagram,
+      SOCIAL_LINKS.facebook,
     ],
   };
 

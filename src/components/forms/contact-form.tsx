@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MessageCircle, Mail, MapPin } from "lucide-react";
-import { SOCIAL_LINKS, SITE_NAME } from "@/lib/constants";
+import { FollowYike } from "@/components/social/follow-yike";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import {
@@ -125,19 +125,8 @@ export function ContactSidebar() {
           </p>
         </div>
       </div>
-      <div className="rounded-2xl bg-surface p-4 text-sm text-muted">
-        <p className="font-bold text-navy">Follow {SITE_NAME}</p>
-        <div className="mt-2 flex flex-wrap gap-3">
-          <a href={SOCIAL_LINKS.facebook} className="font-semibold text-gold-dark">
-            Facebook
-          </a>
-          <a href={SOCIAL_LINKS.x} className="font-semibold text-gold-dark">
-            X
-          </a>
-          <a href={SOCIAL_LINKS.tiktok} className="font-semibold text-gold-dark">
-            TikTok
-          </a>
-        </div>
+      <div className="rounded-2xl bg-surface p-4">
+        <FollowYike variant="icons" />
       </div>
     </div>
   );

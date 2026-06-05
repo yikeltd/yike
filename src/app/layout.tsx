@@ -15,7 +15,7 @@ import { GuestFavoriteSync } from "@/components/retention/guest-favorite-sync";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
 
-const themeInitScript = `(function(){try{var t=localStorage.getItem('yike-theme');if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.add('light');}catch(e){}})();`;
+const themeInitScript = `(function(){try{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');localStorage.setItem('yike-theme','light');}catch(e){}})();`;
 
 const inter = Inter({
   variable: "--font-inter",
@@ -113,6 +113,17 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link
+          rel="apple-touch-startup-image"
+          href="/splash/splash-1284x2778.png"
+          media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)"
+        />
+        <link
+          rel="apple-touch-startup-image"
+          href="/splash/splash-1170x2532.png"
+          media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
+        />
+        <link rel="apple-touch-startup-image" href="/splash/splash-1080x1920.png" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">

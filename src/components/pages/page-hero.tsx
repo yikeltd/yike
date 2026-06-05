@@ -11,15 +11,17 @@ type PageHeroProps = {
   variant?: "default" | "dark" | "warm" | "travel" | "premium" | "land";
   badge?: string;
   className?: string;
+  /** 0–1 — keep low so headline stays readable */
+  imageOpacity?: number;
 };
 
 const VARIANTS = {
-  default: "from-navy/95 via-navy/80 to-navy/40",
-  dark: "from-navy-dark/95 via-navy/85 to-transparent",
-  warm: "from-amber-950/90 via-navy/70 to-transparent",
-  travel: "from-violet-950/85 via-navy/60 to-transparent",
-  premium: "from-slate-950/90 via-navy/75 to-transparent",
-  land: "from-emerald-950/85 via-navy/65 to-transparent",
+  default: "from-navy/97 via-navy/88 to-navy/55",
+  dark: "from-navy-dark/97 via-navy/90 to-navy/50",
+  warm: "from-navy/96 via-navy/85 to-navy/50",
+  travel: "from-navy/96 via-navy/82 to-navy/48",
+  premium: "from-navy/97 via-navy/86 to-navy/52",
+  land: "from-navy/96 via-navy/84 to-navy/50",
 };
 
 export function PageHero({
@@ -31,39 +33,49 @@ export function PageHero({
   variant = "default",
   badge,
   className,
+  imageOpacity = 0.32,
 }: PageHeroProps) {
+  const isLocal = image.startsWith("/");
+
   return (
     <section
       className={cn(
-        "full-bleed relative min-h-[280px] overflow-hidden lg:min-h-[360px]",
+        "full-bleed relative min-h-[280px] overflow-hidden lg:min-h-[340px]",
         className
       )}
     >
+      <div className="absolute inset-0 bg-navy" aria-hidden />
       <Image
         src={image}
         alt=""
         fill
         priority
         className="object-cover"
+        style={{ opacity: imageOpacity }}
         sizes="100vw"
-        unoptimized
+        unoptimized={!isLocal}
       />
       <div
         className={cn(
           "absolute inset-0 bg-gradient-to-r",
           VARIANTS[variant]
         )}
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-t from-navy/40 via-transparent to-transparent"
+        aria-hidden
       />
       <div className="relative mx-auto flex max-w-7xl flex-col justify-end px-6 py-12 lg:px-8 lg:py-16">
         {badge && (
-          <span className="mb-3 inline-flex w-fit rounded-full bg-gold/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold-light backdrop-blur-sm">
+          <span className="mb-3 inline-flex w-fit rounded-full bg-gold/25 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold-light shadow-sm">
             {badge}
           </span>
         )}
-        <h1 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white lg:text-5xl">
+        <h1 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white drop-shadow-sm lg:text-5xl">
           {title}
         </h1>
-        <p className="mt-3 max-w-xl text-base text-white/85 lg:text-lg">
+        <p className="mt-3 max-w-xl text-base leading-relaxed text-white/90 drop-shadow-sm lg:text-lg">
           {subtitle}
         </p>
         {(cta || secondaryCta) && (

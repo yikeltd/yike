@@ -4,6 +4,7 @@ import { HomeHotPicksSections } from "@/components/home/home-hotspot-row";
 import { HomeFilteredFeed } from "@/components/home/home-sections";
 import { SocialProofBar } from "@/components/home/social-proof-bar";
 import { getMarketplaceStats } from "@/lib/marketplace-stats";
+import { getActiveMobileHeaderBanner } from "@/lib/site-banners";
 import { parseSearchParams } from "@/lib/properties";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 
@@ -20,8 +21,12 @@ export default async function HomePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const stats = await getMarketplaceStats();
-  const filters = parseSearchParams(await searchParams);
+  const params = await searchParams;
+  const [stats, mobileBanner] = await Promise.all([
+    getMarketplaceStats(),
+    getActiveMobileHeaderBanner(),
+  ]);
+  const filters = parseSearchParams(params);
   const initial = {
     listingType: filters.listing_type,
     hub: filters.hub,
@@ -39,7 +44,7 @@ export default async function HomePage({
         <div className="mesh-hero absolute inset-0" aria-hidden />
         <div className="relative mx-auto max-w-7xl lg:px-6 xl:px-8">
           <Suspense fallback={null}>
-            <HomeSearchHero initial={initial} />
+            <HomeSearchHero initial={initial} mobileBanner={mobileBanner} />
           </Suspense>
         </div>
       </section>

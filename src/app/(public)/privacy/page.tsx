@@ -113,6 +113,13 @@ export default function PrivacyPage() {
           To exercise rights, email hello@yike.ng with proof of identity. We
           respond within statutory timelines.
         </p>
+        <p>
+          <strong>Delete your account:</strong> use our{" "}
+          <a href="/account/delete" className="font-semibold text-gold-dark underline">
+            account deletion page
+          </a>{" "}
+          while signed in, or from Profile → Delete account in the app.
+        </p>
       </LegalSection>
 
       <LegalSection title="9. Children">

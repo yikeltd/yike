@@ -51,7 +51,7 @@ export const SHORTLET_FAQS = [
   },
   {
     q: "Can I list my apartment as a shortlet?",
-    a: "Yes — create a free agent account, choose Shortlet as listing type, add quality photos and a nightly rate. Listings are reviewed before going live.",
+    a: "Yes — create a free account, verify to list, choose Shortlet as listing type, add quality photos and a nightly rate. Listings are reviewed before going live.",
   },
 ];
 
@@ -77,24 +77,93 @@ export const LAND_FAQS = [
 export const VERIFY_FAQS = [
   {
     q: "Why get verified on Yike?",
-    a: "Verified agents appear higher in search, earn renter trust faster, and stand out on listing cards. Serious renters filter for Verified listings.",
+    a: "Verified listers may appear more prominently and build renter trust faster. Verification is not a guarantee of lead volume — accurate listings and fast replies still matter.",
   },
   {
     q: "What documents do I need?",
-    a: "Valid government ID and a clear selfie for identity match. Business registration helps agencies. NIN verification will be added when API integration is live.",
+    a: "Valid government ID and a clear selfie for identity match. NIN verification is part of our lister verification flow where applicable.",
   },
   {
     q: "How long does review take?",
-    a: "Usually 1–2 business days. You'll see Pending status in your agent dashboard until approved or rejected with a reason.",
+    a: "Usually 1–3 business days. You'll see Pending status in your profile until approved or rejected with a reason.",
   },
   {
     q: "Does verification guarantee more leads?",
-    a: "It improves visibility and trust — but accurate photos, fair pricing and fast WhatsApp replies still win clients.",
+    a: "No. It supports trust and visibility — but fair pricing, clear photos and responsive WhatsApp replies drive results.",
   },
 ];
 
 export const CONTACT_FAQS = [
-  { q: "How fast do you respond?", a: "We aim to reply within 1–2 business days on email and same-day on WhatsApp for urgent reports." },
-  { q: "How do I report a scam?", a: "Use Report on the listing page or email hello@yike.ng with screenshots and the listing URL." },
-  { q: "Partnership enquiries?", a: "Email hello@yike.ng with your agency name, cities covered and expected listing volume." },
+  {
+    q: "How fast do you respond to messages?",
+    a: "We aim to reply within 1–3 business days by email. Urgent scam reports with a listing URL are prioritised when possible — we do not guarantee same-day resolution.",
+  },
+  {
+    q: "How do I report a scam or fake listing?",
+    a: "Tap Report on the listing page, or email hello@yike.ng with the listing link and screenshots. We review reports but cannot recover money lost off-platform.",
+  },
+  {
+    q: "Does Yike collect rent or hold deposits?",
+    a: "No. Yike is a listing and discovery platform only. Payments are arranged directly between you and the agent or landlord. We do not provide escrow or payment protection.",
+  },
+  {
+    q: "Can Yike guarantee a property is available?",
+    a: "No. Availability can change before we are notified. Always confirm on WhatsApp and visit in person before paying.",
+  },
+  {
+    q: "I paid someone I found on Yike and was scammed. Can you refund me?",
+    a: "We cannot refund payments made outside Yike. Report the listing immediately, gather evidence, and contact your bank and relevant authorities (e.g. Police, EFCC) where appropriate.",
+  },
+  {
+    q: "How do I list my property on Yike?",
+    a: "Create an account, complete lister verification, then post your property with clear photos and accurate pricing. Listings are reviewed before going live.",
+  },
+  {
+    q: "Is listing free?",
+    a: "Standard listing is free during our launch phase unless otherwise stated on the site. Featured placement may be paid or editorial — terms can change with notice.",
+  },
+  {
+    q: "How do I become a verified agent?",
+    a: "Sign up, then complete verification from your profile. Approval is manual and may be declined if documents are unclear or policy is not met.",
+  },
+  {
+    q: "Can I edit or remove my listing?",
+    a: "Yes — manage listings from your profile when signed in. Mark as rented or contact support if you cannot access your account.",
+  },
+  {
+    q: "Partnership or media enquiries?",
+    a: "Email hello@yike.ng with your organisation, cities covered, and what you propose. We cannot guarantee partnerships or response times for unsolicited pitches.",
+  },
+  {
+    q: "How do I delete my account?",
+    a: "Visit yike.ng/account/delete while signed in, or Profile → Delete account. Deletion is permanent subject to legal retention noted in our Privacy Policy.",
+  },
+  {
+    q: "How do I access my data or correct my profile?",
+    a: "Update your profile when signed in, or email hello@yike.ng for access or correction requests under NDPA. We respond within applicable statutory timelines.",
+  },
+  {
+    q: "Do you offer legal or valuation advice?",
+    a: "No. Yike does not provide legal, valuation, mortgage, or investment advice. Consult qualified professionals before major financial decisions.",
+  },
+  {
+    q: "Which cities does Yike cover?",
+    a: "We list properties across Nigeria, with growing inventory in tier-2 cities and major metros. Availability varies — search by city on the homepage.",
+  },
+  {
+    q: "Why was my listing rejected?",
+    a: "Common reasons: blurry photos, missing price, suspected duplicate, policy violation, or incomplete information. Check your email or re-submit with corrections.",
+  },
+  {
+    q: "How do I contact an agent on a listing?",
+    a: "Use the WhatsApp or call button on the listing. Yike does not mediate chats or store your WhatsApp messages.",
+  },
+  {
+    q: "Is my phone number public?",
+    a: "Only what you choose to share on listings or your public profile. Renters contact agents via listing contact buttons — read our Privacy Policy for details.",
+  },
+  {
+    q: "Advertising on Yike?",
+    a: "Email hello@yike.ng for sponsored placement enquiries. Acceptance is at our discretion; rates and formats may vary.",
+  },
 ];

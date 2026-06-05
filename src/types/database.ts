@@ -138,3 +138,18 @@ export interface AdPlacement {
   created_at: string;
   updated_at: string;
 }
+
+export interface SiteBanner {
+  id: string;
+  title: string | null;
+  message: string;
+  image_url: string | null;
+  link_url: string | null;
+  is_active: boolean;
+  priority: number;
+  placement: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  created_at: string;
+  updated_at: string;
+}

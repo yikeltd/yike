@@ -4,10 +4,11 @@ export const SITE_TAGLINE =
   "The fastest and safest way to find real houses in Nigeria.";
 
 export const SOCIAL_LINKS = {
-  facebook: "https://facebook.com/realyike",
+  facebook: "https://www.facebook.com/realyike/",
+  instagram: "https://www.instagram.com/real_yike/",
   x: "https://x.com/real_yike",
-  youtube: "https://youtube.com/@real_yike",
-  tiktok: "https://tiktok.com/@real_yike",
+  youtube: "https://www.youtube.com/@real_yike",
+  tiktok: "https://www.tiktok.com/@real_yike",
 } as const;
 
 export { LISTING_TYPES } from "@/constants/listingTypes";

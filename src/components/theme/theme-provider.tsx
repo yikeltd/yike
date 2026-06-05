@@ -25,31 +25,28 @@ function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("light", theme === "light");
 }
 
-function readInitialTheme(): Theme {
-  if (typeof window === "undefined") return "light";
-  const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-  if (stored === "light" || stored === "dark") return stored;
-  return "light";
-}
+/** Yike ships with one default theme — clean light, navy/gold branded. */
+const DEFAULT_THEME: Theme = "light";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const [theme] = useState<Theme>(DEFAULT_THEME);
 
   useEffect(() => {
-    const initial = readInitialTheme();
-    setThemeState(initial);
-    applyTheme(initial);
+    applyTheme(DEFAULT_THEME);
+    try {
+      localStorage.setItem(STORAGE_KEY, DEFAULT_THEME);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
-  const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-    localStorage.setItem(STORAGE_KEY, next);
-    applyTheme(next);
+  const setTheme = useCallback((_next: Theme) => {
+    applyTheme(DEFAULT_THEME);
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [setTheme, theme]);
+    applyTheme(DEFAULT_THEME);
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>

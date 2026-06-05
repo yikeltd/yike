@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { ADMIN_LOGIN_PATH } from "@/lib/admin-paths";
 import type { Profile, UserRole } from "@/types/database";
 import { canListProperties } from "@/lib/utils";
 import { redirect } from "next/navigation";
@@ -74,7 +75,12 @@ export async function requireFullSession(redirectTo = "/auth/verify-email") {
 }
 
 export async function requireAdmin() {
-  return requireRole(["admin", "super_admin"], "/");
+  const user = await requireAuth(ADMIN_LOGIN_PATH);
+  const profile = await getProfile(user.id);
+  if (!profile || profile.is_banned || !isAdmin(profile.role)) {
+    redirect(ADMIN_LOGIN_PATH);
+  }
+  return { user, profile };
 }
 
 export function isAdmin(role: UserRole) {
