@@ -1,6 +1,15 @@
-const SHELL_CACHE = "yike-shell-v2";
+const SHELL_CACHE = "yike-shell-v3";
 const IMAGE_CACHE = "yike-images-v2";
-const SHELL = ["/", "/offline", "/browse", "/images/logo-sm.webp", "/manifest.json"];
+const SHELL = [
+  "/",
+  "/offline",
+  "/browse",
+  "/images/logo-sm.webp",
+  "/manifest.json",
+  "/favicon.ico",
+  "/apple-touch-icon.png",
+  "/icons/android-chrome-192.png",
+];
 const IMAGE_HOSTS = ["images.unsplash.com"];
 
 self.addEventListener("install", (event) => {
