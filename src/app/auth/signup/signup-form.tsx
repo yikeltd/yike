@@ -170,6 +170,7 @@ export function SignupForm({
   return (
     <AuthShell
       title="Create your Yike account"
+      compact
       footer={
         <p className="text-sm text-muted">
           Already have an account?{" "}
@@ -181,14 +182,14 @@ export function SignupForm({
     >
       {agentNote && (
         <p className="mb-4 rounded-xl border border-gold/25 bg-gold/10 px-3 py-2.5 text-sm text-foreground">
-          Create your account first. You&apos;ll verify as an agent before listing properties.
+          Agent verification after signup.
         </p>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Full name">
           <Input
-            placeholder="Ada Okonkwo"
+            placeholder="Obinna Adebayo Aliyu"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
@@ -199,7 +200,7 @@ export function SignupForm({
 
         <Field label="Username">
           <Input
-            placeholder="ada_okonkwo"
+            placeholder="obinna_adebayo_aliyu"
             value={username}
             onChange={(e) =>
               setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
@@ -215,7 +216,7 @@ export function SignupForm({
         <Field label="Email">
           <Input
             type="email"
-            placeholder="you@email.com"
+            placeholder="email@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -224,7 +225,7 @@ export function SignupForm({
           />
         </Field>
 
-        <Field label="Nigerian phone number">
+        <Field label="Phone number">
           <div className="flex items-center gap-2">
             <Input
               type="tel"
@@ -292,7 +293,7 @@ export function SignupForm({
         <Field label="Password">
           <Input
             type="password"
-            placeholder="Min. 6 characters"
+            placeholder="••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={6}
@@ -305,7 +306,7 @@ export function SignupForm({
         <Field label="Confirm password">
           <Input
             type="password"
-            placeholder="Repeat password"
+            placeholder="••••••"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={6}
@@ -441,22 +442,13 @@ function PhoneChannelModal({
   );
 }
 
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted">
         {label}
       </label>
       {children}
-      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
     </div>
   );
 }

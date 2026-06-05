@@ -11,11 +11,13 @@ const TRUST_POINTS = [
 export function AuthShell({
   title,
   subtitle,
+  compact,
   children,
   footer,
 }: {
   title: string;
   subtitle?: string;
+  compact?: boolean;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
@@ -41,19 +43,21 @@ export function AuthShell({
             </p>
           ) : null}
 
-          <ul className="mt-6 flex flex-col gap-2.5">
-            {TRUST_POINTS.map(({ icon: Icon, text }) => (
-              <li
-                key={text}
-                className="flex items-center gap-2.5 text-sm text-white/75"
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10">
-                  <Icon className="h-3.5 w-3.5 text-gold" aria-hidden />
-                </span>
-                {text}
-              </li>
-            ))}
-          </ul>
+          {!compact && (
+            <ul className="mt-6 flex flex-col gap-2.5">
+              {TRUST_POINTS.map(({ icon: Icon, text }) => (
+                <li
+                  key={text}
+                  className="flex items-center gap-2.5 text-sm text-white/75"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                    <Icon className="h-3.5 w-3.5 text-gold" aria-hidden />
+                  </span>
+                  {text}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
@@ -62,10 +66,12 @@ export function AuthShell({
           {children}
         </div>
 
-        <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted">
-          <BadgeCheck className="h-3.5 w-3.5 text-gold" />
-          <span>Trusted across Lagos, Abuja, PH, Aba, Enugu &amp; more</span>
-        </div>
+        {!compact && (
+          <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted">
+            <BadgeCheck className="h-3.5 w-3.5 text-gold" />
+            <span>Trusted across Lagos, Abuja, PH, Aba, Enugu &amp; more</span>
+          </div>
+        )}
 
         {footer && <div className="mt-4 text-center">{footer}</div>}
 
