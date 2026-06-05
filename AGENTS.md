@@ -20,6 +20,12 @@ node scripts/optimize-brand-assets.mjs   # regenerate favicons from logo.png
 
 **Local preview:** Start `npm run dev` at the beginning of UI work and open the affected routes locally before publishing to Vercel.
 
+## Deploy
+
+- **Vercel team:** `yike-ng` · **project:** `yike` · **domain:** `yike.ng`
+- Push to `main` → GitHub Actions deploys to production automatically
+- Env vars: see `.env.example`
+
 ## Supabase
 
 Migration: `supabase/migrations/20250604000000_initial_schema.sql`  

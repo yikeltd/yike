@@ -2,6 +2,8 @@
   "name": "yike",
   "version": "0.1.0",
   "private": true,
+  "description": "Yike.ng — Nigerian housing marketplace",
+  "homepage": "https://yike.ng",
   "scripts": {
     "optimize:brand": "node scripts/optimize-brand-assets.mjs",
     "store:assets": "node scripts/generate-store-assets.mjs",

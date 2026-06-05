@@ -74,20 +74,36 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Deploy to Vercel
 
-1. Push to GitHub.
-2. Import project on [vercel.com](https://vercel.com).
-3. Add env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-4. Point domain **yike.ng** in Vercel DNS.
+**Project:** [yike](https://vercel.com/yike-ng/yike) · **Production:** [yike.ng](https://yike.ng)
+
+Pushes to `main` auto-deploy via GitHub Actions (`.github/workflows/deploy.yml`).
+
+### Environment variables (Vercel → yike → Settings → Environment Variables)
+
+| Key | Scope |
+|-----|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Production, Preview, Development |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production, Preview, Development |
+| `SUPABASE_SERVICE_ROLE_KEY` | Production, Preview, Development (secret) |
+
+See `.env.example` for values from [Supabase API settings](https://supabase.com/dashboard/project/gyxemepnrkwxocgzfbeo/settings/api).
+
+### Local deploy (optional)
+
+```bash
+vercel link    # team: yike-ng, project: yike
+vercel deploy --prod
+```
 
 ## Routes
 
 | Public | Agent | Admin |
 |--------|-------|-------|
-| `/` | `/agent` | `/admin` |
-| `/search` | `/agent/listings` | `/admin/listings` |
-| `/properties/[id]` | `/agent/listings/new` | `/admin/agents` |
-| `/agents/[id]` | `/agent/verification` | `/admin/reports` |
-| `/saved` | | `/admin/featured` |
+| `/` | `/agent` | `/lex/auth` |
+| `/search` | `/agent/listings` | `/lex/auth/listings` |
+| `/properties/[id]` | `/agent/listings/new` | `/lex/auth/agents` |
+| `/agents/[id]` | `/agent/verification` | `/lex/auth/reports` |
+| `/saved` | | `/lex/auth/featured` |
 | `/post-property` | | |
 | `/verify-agent` | | |
 

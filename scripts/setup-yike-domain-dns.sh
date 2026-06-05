@@ -7,7 +7,7 @@ ZONE_ID="${CLOUDFLARE_ZONE_ID:-048b32f6ff899723ef8ed403546ec1fa}"
 TOKEN="${CLOUDFLARE_API_TOKEN:-}"
 RECORD_NAME="_vercel"
 
-# From Vercel project yike → Domains (rentovix-3270s-projects)
+# From Vercel project yike → Domains (team: yike-ng)
 TXT_VALUES=(
   "vc-domain-verify=yike.ng,21f94a63eb783cf99390"
   "vc-domain-verify=www.yike.ng,ea0dd4779678492e7fd2"
