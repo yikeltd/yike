@@ -1,4 +1,3 @@
-import { SiteHeader } from "@/components/layout/site-header";
 import { SignupForm } from "./signup-form";
 
 export default async function SignupPage({
@@ -10,14 +9,14 @@ export default async function SignupPage({
   const isAgent = params.role === "agent";
 
   return (
-    <>
-      <SiteHeader compact />
-      <main className="mx-auto max-w-lg px-4 py-8">
-        <h1 className="text-2xl font-bold">
-          {isAgent ? "Agent sign up" : "Create account"}
-        </h1>
-        <SignupForm isAgent={isAgent} />
-      </main>
-    </>
+    <SignupForm
+      isAgent={isAgent}
+      title={isAgent ? "List properties on Yike" : "Create your account"}
+      subtitle={
+        isAgent
+          ? "Join as an agent or landlord — post listings, get WhatsApp leads, build trust."
+          : "Save homes, browse smarter, and contact verified agents on WhatsApp."
+      }
+    />
   );
 }

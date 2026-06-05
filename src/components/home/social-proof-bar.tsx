@@ -32,13 +32,13 @@ export function SocialProofBar({ stats }: { stats: MarketplaceStats | null }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="mx-3 flex flex-wrap gap-2 lg:mx-0">
+    <div className="flex flex-wrap gap-2">
       {items.map(({ icon: Icon, text }) => (
         <span
           key={text}
-          className="inline-flex items-center gap-1.5 rounded-full bg-gold/10 px-3 py-1.5 text-xs font-semibold text-navy dark:text-gold"
+          className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-surface px-3 py-1.5 text-xs font-semibold text-foreground dark:border-gold/30 dark:bg-elevated dark:text-[#f4f7fb]"
         >
-          <Icon className="h-3.5 w-3.5 text-gold-dark" />
+          <Icon className="h-3.5 w-3.5 text-gold-dark dark:text-gold" />
           {text}
         </span>
       ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, MapPin, MessageCircle, ChevronUp } from "lucide-react";
+import { Heart, MapPin, MessageCircle, ChevronRight } from "lucide-react";
 import type { Property } from "@/types/database";
 import { formatPrice, listingTypeLabel } from "@/lib/utils";
 import { ListingImage } from "@/components/property/listing-image";
@@ -20,10 +20,12 @@ export function BrowseSlide({
   property,
   priority,
   showSwipeHint,
+  horizontal,
 }: {
   property: Property;
   priority?: boolean;
   showSwipeHint?: boolean;
+  horizontal?: boolean;
 }) {
   const image = property.media_urls[0] ?? "/placeholder-property.svg";
   const agent = property.agent;
@@ -60,9 +62,18 @@ export function BrowseSlide({
       </div>
 
       {showSwipeHint && (
-        <div className="absolute left-0 right-0 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-1 text-white/70 animate-pulse-soft pointer-events-none">
-          <ChevronUp className="h-6 w-6 rotate-180" />
-          <span className="text-xs font-semibold">Swipe for next home</span>
+        <div className="absolute left-0 right-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center gap-2 text-white/80 animate-pulse-soft pointer-events-none">
+          {horizontal ? (
+            <>
+              <span className="text-xs font-semibold">Swipe left or right</span>
+              <ChevronRight className="h-5 w-5" />
+            </>
+          ) : (
+            <>
+              <ChevronRight className="h-6 w-6 rotate-[-90deg]" />
+              <span className="text-xs font-semibold">Swipe for next home</span>
+            </>
+          )}
         </div>
       )}
 

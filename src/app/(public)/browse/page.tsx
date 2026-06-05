@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { VerticalBrowse } from "@/components/browse/vertical-browse";
+import { HorizontalBrowse } from "@/components/browse/horizontal-browse";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { PageHero } from "@/components/pages/page-hero";
 import { CtaBanner } from "@/components/pages/cta-banner";
@@ -21,7 +21,7 @@ export default async function BrowsePage() {
   return (
     <>
       <div className="lg:hidden">
-        <VerticalBrowse properties={items} />
+        <HorizontalBrowse properties={items} />
       </div>
       <div className="hidden lg:block">
         <PageHero
@@ -52,7 +52,7 @@ export default async function BrowsePage() {
         </div>
         <CtaBanner
           title="Addictive browsing starts on mobile"
-          body="Save listings, WhatsApp agents instantly, and scroll through hundreds of homes."
+          body="Swipe left or right through homes matched to your recent searches — loops back when you reach the end."
           primary={{ label: "Explore all homes", href: "/explore" }}
         />
       </div>

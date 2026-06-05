@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { PropertyGrid } from "@/components/property/property-grid";
-import { getFeaturedProperties, getPublicProperties, getVerifiedListings } from "@/lib/properties";
+import { EmptyStateRich } from "@/components/property/empty-state-rich";
+import {
+  getFeaturedProperties,
+  getPublicProperties,
+  getVerifiedListings,
+  type PropertySearchParams,
+} from "@/lib/properties";
 import { getMostViewedListings } from "@/lib/trending";
 import { getActiveAd } from "@/lib/ads";
 import { withDemoFallback } from "@/lib/mock-listings";
+import { hasActiveFilters } from "@/lib/search-filters";
 import { POPULAR_AREAS } from "@/lib/constants";
 
 function SectionHeader({
@@ -99,28 +106,33 @@ export async function HomeRecentSection() {
   );
 }
 
-export async function HomeMobileFeed() {
-  const [featured, latest] = await Promise.all([
-    getFeaturedProperties(4),
-    getPublicProperties({}, 8),
-  ]);
-  const merged = [...featured, ...latest];
-  const seen = new Set<string>();
-  const items = merged.filter((p) => {
-    if (seen.has(p.id)) return false;
-    seen.add(p.id);
-    return true;
-  });
-  const [{ items: feed, isDemo }, midAd] = await Promise.all([
-    Promise.resolve(withDemoFallback(items)),
-    getActiveAd("home_feed_mid"),
-  ]);
+export async function HomeFilteredFeed({
+  filters,
+}: {
+  filters: PropertySearchParams;
+}) {
+  const active = hasActiveFilters(filters);
+  const properties = await getPublicProperties(active ? filters : {}, 24);
+  const { items, isDemo } = withDemoFallback(properties);
+  const midAd = await getActiveAd("home_feed_mid");
+
+  if (items.length === 0) {
+    return (
+      <section className="mt-4 px-3 lg:px-0">
+        <EmptyStateRich
+          message="No homes match these filters. Try a nearby area or wider budget."
+          city={filters.city}
+          area={filters.area}
+        />
+      </section>
+    );
+  }
+
   return (
-    <section className="mt-4 lg:hidden">
+    <section className="mt-4 lg:mt-6">
       <PropertyGrid
-        properties={feed.slice(0, 10)}
+        properties={items.slice(0, active ? 24 : 10)}
         isDemo={isDemo}
-        showCount
         midFeedAd={midAd}
         feedAdInsertAfter={4}
         adPlacementKey="home_feed_mid"
