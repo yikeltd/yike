@@ -2,9 +2,54 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { brand } from "@/lib/design/tokens";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { parseLocationQuery } from "@/lib/location-search";
+import { Search } from "lucide-react";
+
+function HeaderHomeSearch() {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  function submit() {
+    const trimmed = query.trim();
+    const params = new URLSearchParams();
+
+    if (trimmed) {
+      const parsed = parseLocationQuery(trimmed);
+      if (parsed.state) params.set("state", parsed.state);
+      if (parsed.city) params.set("city", parsed.city);
+      if (parsed.area) params.set("area", parsed.area);
+      if (parsed.bedrooms) params.set("beds", String(parsed.bedrooms));
+      if (!parsed.city && !parsed.area && !parsed.state) params.set("q", trimmed);
+    }
+
+    const qs = params.toString();
+    router.push(qs ? `/search?${qs}` : "/search");
+  }
+
+  return (
+    <form
+      className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+    >
+      <Search className="h-4 w-4 shrink-0 text-gold-light" aria-hidden />
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Browse real listings"
+        aria-label="Browse real listings"
+        className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/50 outline-none"
+      />
+    </form>
+  );
+}
 
 export function HeaderMobile() {
   const pathname = usePathname();
@@ -30,9 +75,7 @@ export function HeaderMobile() {
           />
         </Link>
         {isHome ? (
-          <p className="flex-1 truncate text-center text-xs font-semibold text-gold-light">
-            Browse real listings
-          </p>
+          <HeaderHomeSearch />
         ) : (
           <Link
             href="/search"

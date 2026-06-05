@@ -116,7 +116,7 @@ export function PropertyRequestForm() {
               name="listing_type"
               className="mt-1 w-full rounded-xl border border-surface bg-elevated px-3 py-2.5 text-sm"
             >
-              {SEARCH_DEAL_TYPES.filter((t) => t.value).map((t) => (
+              {SEARCH_DEAL_TYPES.filter((t) => t.value && !t.hub).map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
                 </option>

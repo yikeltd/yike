@@ -7,7 +7,7 @@ import {
   getAreasForSearchCity,
   POPULAR_CITIES,
 } from "@/lib/constants";
-import { SEARCH_DEAL_TYPES } from "@/constants/listingTypes";
+import { SEARCH_DEAL_TYPES, findDealChip } from "@/constants/listingTypes";
 import {
   addRecentSearch,
   getRecentSearches,
@@ -59,7 +59,12 @@ export function SearchExperience({
     const searchCity = override?.city ?? city;
     const searchArea = override?.area ?? area;
     const params = new URLSearchParams();
-    if (listingType) params.set("type", listingType);
+    const chip = findDealChip(
+      listingType,
+      listingType === "land" ? "land_sale" : null
+    );
+    if (chip?.hub) params.set("hub", chip.hub);
+    else if (listingType) params.set("type", listingType);
     if (searchCity) params.set("city", searchCity);
     if (searchArea) params.set("area", searchArea);
     const range = BUDGET_RANGES[Number(budget)];
@@ -94,7 +99,12 @@ export function SearchExperience({
     if (parsed.city) setCity(parsed.city);
     if (parsed.area) setArea(parsed.area);
     const params = new URLSearchParams();
-    if (listingType) params.set("type", listingType);
+    const chip = findDealChip(
+      listingType,
+      listingType === "land" ? "land_sale" : null
+    );
+    if (chip?.hub) params.set("hub", chip.hub);
+    else if (listingType) params.set("type", listingType);
     if (parsed.state) params.set("state", parsed.state);
     if (parsed.city) params.set("city", parsed.city);
     if (parsed.area) params.set("area", parsed.area);
@@ -119,7 +129,8 @@ export function SearchExperience({
   }
 
   const dealLabel =
-    SEARCH_DEAL_TYPES.find((t) => t.value === listingType)?.label ?? "All";
+    findDealChip(listingType, listingType === "land" ? "land_sale" : null)
+      ?.label ?? "All";
   const locationLabel =
     [city, area].filter(Boolean).join(" · ") || "All Nigeria";
 
@@ -161,21 +172,24 @@ export function SearchExperience({
       ) : (
         <div className="rounded-2xl bg-elevated p-4 shadow-float ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
           <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
-            {SEARCH_DEAL_TYPES.map((t) => (
+            {SEARCH_DEAL_TYPES.map((t) => {
+              const chipValue = t.hub ? "land" : t.value;
+              return (
               <button
                 key={t.label}
                 type="button"
-                onClick={() => setListingType(t.value)}
+                onClick={() => setListingType(chipValue)}
                 className={cn(
                   "pressable shrink-0 rounded-full px-4 py-2.5 text-sm font-bold transition-all duration-200",
-                  listingType === t.value
+                  listingType === chipValue
                     ? "bg-gold text-navy shadow-glow-gold"
                     : "bg-surface text-muted"
                 )}
               >
                 {t.label}
               </button>
-            ))}
+            );
+            })}
           </div>
 
           <div className="mt-4 space-y-3">

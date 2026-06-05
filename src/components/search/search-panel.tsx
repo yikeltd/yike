@@ -8,7 +8,7 @@ import {
   getAllCities,
   POPULAR_CITIES,
 } from "@/lib/constants";
-import { SEARCH_DEAL_TYPES } from "@/constants/listingTypes";
+import { SEARCH_DEAL_TYPES, findDealChip } from "@/constants/listingTypes";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,12 @@ export function SearchPanel({
 
   function search() {
     const params = new URLSearchParams();
-    if (listingType) params.set("type", listingType);
+    const chip = findDealChip(
+      listingType,
+      listingType === "land" ? "land_sale" : null
+    );
+    if (chip?.hub) params.set("hub", chip.hub);
+    else if (listingType) params.set("type", listingType);
     if (city) params.set("city", city);
     if (area) params.set("area", area);
     const range = BUDGET_RANGES[Number(budget)];
@@ -67,21 +72,24 @@ export function SearchPanel({
           isHero && "lg:mb-6"
         )}
       >
-        {SEARCH_DEAL_TYPES.map((t) => (
+        {SEARCH_DEAL_TYPES.map((t) => {
+          const chipValue = t.hub ? "land" : t.value;
+          return (
           <button
             key={t.label}
             type="button"
-            onClick={() => setListingType(t.value)}
+            onClick={() => setListingType(chipValue)}
             className={cn(
               "pressable shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition-all lg:py-3",
-              listingType === t.value
+              listingType === chipValue
                 ? "bg-gold text-navy shadow-glow-gold"
                 : "bg-surface text-muted hover:text-foreground"
             )}
           >
             {t.label}
           </button>
-        ))}
+        );
+        })}
       </div>
       <div
         className={cn(

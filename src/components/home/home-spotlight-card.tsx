@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { HomeHotspot } from "@/lib/home-hotspots";
+import type { HotPickDisplay } from "@/lib/home-hot-picks";
 import { formatPrice, listingTypeLabel } from "@/lib/utils";
 import { listingImageAlt } from "@/lib/image-seo";
 import { ListingImage } from "@/components/property/listing-image";
@@ -7,13 +7,13 @@ import { Flame, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function HomeSpotlightCard({
-  hotspot,
+  pick,
   priority,
 }: {
-  hotspot: HomeHotspot;
+  pick: HotPickDisplay;
   priority?: boolean;
 }) {
-  const { property, headline, badge } = hotspot;
+  const { property, headline, badge } = pick;
   const image = property.media_urls[0] ?? "/placeholder-property.svg";
   const price = formatPrice(
     Number(property.price),

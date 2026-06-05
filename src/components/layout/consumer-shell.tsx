@@ -8,6 +8,7 @@ import { BottomNavMobile } from "./bottom-nav-mobile";
 
 export function ConsumerShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isHome = pathname === "/";
   const isDetail = pathname.startsWith("/properties/");
   const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
   const hideChrome =
@@ -21,12 +22,12 @@ export function ConsumerShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <HeaderDesktop />
+      {!isHome && <HeaderDesktop />}
       <HeaderMobile />
       <main
         className={cn(
           "mx-auto w-full flex-1",
-          "lg:max-w-7xl lg:px-6 xl:px-8",
+          !isHome && "lg:max-w-7xl lg:px-6 xl:px-8",
           isDetail
             ? "safe-bottom-detail lg:safe-bottom-detail lg:pb-12"
             : "safe-bottom lg:pb-16",

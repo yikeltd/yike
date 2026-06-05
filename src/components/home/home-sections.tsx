@@ -130,6 +130,12 @@ export async function HomeFilteredFeed({
 
   return (
     <section className="mt-4 lg:mt-6">
+      {!active && (
+        <SectionHeader
+          title="Homes for you"
+          subtitle="Verified listings · WhatsApp contact"
+        />
+      )}
       <PropertyGrid
         properties={items.slice(0, active ? 24 : 10)}
         isDemo={isDemo}

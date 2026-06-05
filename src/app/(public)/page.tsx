@@ -5,7 +5,6 @@ import { DiscoverHubs } from "@/components/home/discover-hubs";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { HomeSearchHero } from "@/components/home/home-search-hero";
 import { HomeHotspotRow } from "@/components/home/home-hotspot-row";
-import { HomeIntro } from "@/components/home/home-intro";
 import {
   HomeFeaturedSection,
   HomeVerifiedSection,
@@ -38,6 +37,7 @@ export default async function HomePage({
   const filters = parseSearchParams(await searchParams);
   const initial = {
     listingType: filters.listing_type,
+    hub: filters.hub,
     city: filters.city,
     area: filters.area,
     min: filters.min_price ? String(filters.min_price) : undefined,
@@ -46,36 +46,17 @@ export default async function HomePage({
 
   return (
     <div className="home-canvas pb-2 lg:pb-0">
-      <section className="full-bleed relative hidden overflow-hidden lg:block">
-        <div className="mesh-hero absolute inset-0" aria-hidden />
-        <div className="relative mx-auto max-w-7xl px-6 py-16 xl:px-8 xl:py-20">
-          <div className="max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-gold-light">
-              Nigeria&apos;s visual housing marketplace
-            </p>
-            <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-white xl:text-5xl">
-              Find real homes without agent drama.
-            </h1>
-            <p className="mt-4 text-lg text-white/75">
-              Browse verified rentals, shortlets and sales — contact agents on
-              WhatsApp.
-            </p>
-          </div>
-          <div className="mt-10">
-            <Suspense fallback={null}>
-              <HomeSearchHero variant="desktop" initial={initial} />
-            </Suspense>
-          </div>
+      <section className="full-bleed relative overflow-hidden border-b border-gold/15 bg-gradient-to-br from-navy via-navy-mid to-navy-dark">
+        <div className="mesh-hero absolute inset-0 opacity-50" aria-hidden />
+        <div className="relative mx-auto max-w-7xl">
+          <Suspense fallback={null}>
+            <HomeSearchHero initial={initial} />
+          </Suspense>
+          <Suspense fallback={<SectionFallback />}>
+            <HomeHotspotRow onHero />
+          </Suspense>
         </div>
       </section>
-
-      <section className="lg:hidden">
-        <Suspense fallback={null}>
-          <HomeSearchHero variant="mobile" initial={initial} />
-        </Suspense>
-      </section>
-
-      <HomeIntro />
 
       <div className="mt-3 px-3 lg:mt-4 lg:px-0">
         <SocialProofBar stats={stats} />
@@ -83,10 +64,6 @@ export default async function HomePage({
 
       <Suspense fallback={<SectionFallback />}>
         <HomeFilteredFeed filters={filters} />
-      </Suspense>
-
-      <Suspense fallback={<SectionFallback />}>
-        <HomeHotspotRow />
       </Suspense>
 
       <BrowseRail />

@@ -1,3 +1,4 @@
+import type { DiscoverHub } from "@/types/database";
 import type { PropertyCategoryGroup } from "@/constants/propertyCategories";
 import { getCategoriesByGroup } from "@/constants/propertyCategories";
 
@@ -52,15 +53,34 @@ export const LISTING_TYPES = Object.values(LISTING_TYPE_CONFIG).map(
   ({ value, label }) => ({ value, label })
 );
 
-/** Consumer search chips — All shows every deal type including lease */
-export const SEARCH_DEAL_TYPES = [
+/** Consumer search chips on home and search surfaces */
+export type SearchDealChip = {
+  value: string;
+  label: string;
+  hub?: DiscoverHub;
+};
+
+export const SEARCH_DEAL_TYPES: SearchDealChip[] = [
   { value: "", label: "All" },
   { value: "rent", label: "Rent" },
   { value: "sale", label: "Buy" },
   { value: "shortlet", label: "Shortlet" },
-] as const;
+  { value: "lease", label: "Lease" },
+  { value: "land", label: "Land", hub: "land_sale" },
+];
 
 export type SearchDealType = (typeof SEARCH_DEAL_TYPES)[number]["value"];
+
+export function listingTypeChipsOnly() {
+  return SEARCH_DEAL_TYPES.filter((t) => !t.hub);
+}
+
+export function findDealChip(value: string, hub?: string | null) {
+  if (hub === "land_sale") {
+    return SEARCH_DEAL_TYPES.find((t) => t.hub === "land_sale");
+  }
+  return SEARCH_DEAL_TYPES.find((t) => t.value === value && !t.hub);
+}
 
 const LAND_TYPES = new Set([
   "land",
