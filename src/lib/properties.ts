@@ -11,6 +11,7 @@ import {
   MOCK_LISTINGS,
 } from "@/lib/mock-listings";
 import { mergeQueryIntoParams } from "@/lib/location-search";
+import { propertyTypeLabel } from "@/lib/utils";
 
 import type { DiscoverHub } from "@/types/database";
 import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
@@ -166,6 +167,12 @@ export async function getPropertyById(id: string): Promise<Property | null> {
   return getMockPropertyById(id);
 }
 
+export type RelatedSection = {
+  title: string;
+  subtitle?: string;
+  properties: Property[];
+};
+
 export async function getRelatedProperties(
   property: Property,
   limit = 6
@@ -216,6 +223,121 @@ export async function getRelatedProperties(
 
   if (out.length > 0) return out;
   return getRelatedMockListings(property, limit);
+}
+
+async function fetchRelatedPool(
+  property: Property,
+  limit: number
+): Promise<Property[]> {
+  if (isDemoProperty(property.id) || !isSupabaseConfigured()) {
+    return getRelatedMockListings(property, limit * 3);
+  }
+  const supabase = await createClient();
+  if (!supabase) return getRelatedMockListings(property, limit * 3);
+
+  const { data } = await supabase
+    .from("properties")
+    .select(PUBLIC_SELECT)
+    .eq("status", "approved")
+    .eq("city", property.city)
+    .neq("id", property.id)
+    .gt("expires_at", new Date().toISOString())
+    .limit(limit * 4);
+
+  const rows = (data ?? []) as Property[];
+  if (rows.length > 0) return rows;
+  return getRelatedMockListings(property, limit * 3);
+}
+
+function priceBand(price: number, pct = 0.35) {
+  return {
+    min: Math.max(0, price * (1 - pct)),
+    max: price * (1 + pct),
+  };
+}
+
+/** Smart recommendation rails for listing detail — increases session depth. */
+export async function getRelatedSections(
+  property: Property
+): Promise<RelatedSection[]> {
+  const pool = await fetchRelatedPool(property, 18);
+  const price = Number(property.price);
+  const band = priceBand(price);
+  const seen = new Set<string>([property.id]);
+  const take = (rows: Property[], n: number) => {
+    const out: Property[] = [];
+    for (const p of rows) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      out.push(p);
+      if (out.length >= n) break;
+    }
+    return out;
+  };
+
+  const sameArea = take(
+    pool.filter((p) => p.area === property.area),
+    4
+  );
+  const sameType = take(
+    pool.filter((p) => p.property_type === property.property_type),
+    4
+  );
+  const samePrice = take(
+    pool.filter((p) => {
+      const pPrice = Number(p.price);
+      return pPrice >= band.min && pPrice <= band.max;
+    }),
+    4
+  );
+  const sameListingType = take(
+    pool.filter((p) => p.listing_type === property.listing_type),
+    4
+  );
+
+  const sections: RelatedSection[] = [];
+
+  if (sameArea.length > 0) {
+    sections.push({
+      title: "More in this neighborhood",
+      subtitle: `${property.area}, ${property.city}`,
+      properties: sameArea,
+    });
+  }
+  if (sameType.length > 0) {
+    sections.push({
+      title: `Similar ${propertyTypeLabel(property.property_type).toLowerCase()}s`,
+      subtitle: property.city,
+      properties: sameType,
+    });
+  }
+  if (samePrice.length > 0 && price > 0) {
+    sections.push({
+      title: "Similar price range",
+      subtitle: "Around what you're viewing",
+      properties: samePrice,
+    });
+  }
+  if (sameListingType.length > 0) {
+    sections.push({
+      title: `More ${property.listing_type} listings`,
+      subtitle: property.city,
+      properties: sameListingType,
+    });
+  }
+
+  if (sections.length === 0) {
+    const fallback = await getRelatedProperties(property, 6);
+    if (fallback.length > 0) {
+      sections.push({
+        title: "More homes nearby",
+        subtitle: `${property.area}, ${property.city}`,
+        properties: fallback,
+      });
+    }
+  }
+
+  return sections;
 }
 
 export async function incrementPropertyViews(id: string) {

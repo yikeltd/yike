@@ -72,14 +72,23 @@ export function calculateMoveInBreakdown(
     };
   }
 
-  if (property.listing_type !== "rent") return null;
+  if (property.listing_type !== "rent" && property.listing_type !== "lease") {
+    return null;
+  }
 
+  const isLease = property.listing_type === "lease";
   const extras = { ...DEFAULT_EXTRAS, ...getListingExtras(property) };
   const rent = price;
   const agencyFee = Math.round(rent * (extras.agency_fee_percent / 100));
   const cautionDeposit = Math.round(rent * (extras.caution_months / 12));
+  const rentLabel =
+    property.payment_period === "monthly"
+      ? "Monthly lease"
+      : isLease
+        ? "Annual lease"
+        : "Annual rent";
   const items: RentLineItem[] = [
-    { label: "Annual rent", amount: rent },
+    { label: rentLabel, amount: rent },
     {
       label: `Agency fee (${extras.agency_fee_percent}%)`,
       amount: agencyFee,
@@ -123,6 +132,9 @@ export function formatMoveInHint(property: Property): string | null {
   if (!breakdown) return null;
   if (property.listing_type === "shortlet") {
     return `From ${breakdown.headline}`;
+  }
+  if (property.listing_type === "lease") {
+    return `~${breakdown.headline} upfront`;
   }
   return `~${breakdown.headline} move-in`;
 }

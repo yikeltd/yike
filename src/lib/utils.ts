@@ -48,6 +48,7 @@ export function propertyTypeLabel(value: string | null): string {
 export function listingTypeLabel(value: string): string {
   const labels: Record<string, string> = {
     rent: "For Rent",
+    lease: "For Lease",
     sale: "For Sale",
     shortlet: "Shortlet",
   };

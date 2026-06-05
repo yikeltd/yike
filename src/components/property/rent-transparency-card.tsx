@@ -14,7 +14,8 @@ export function RentTransparencyCard({ property }: { property: Property }) {
   const breakdown = calculateMoveInBreakdown(property);
   if (!breakdown) return null;
 
-  const isRent = property.listing_type === "rent";
+  const isRentOrLease =
+    property.listing_type === "rent" || property.listing_type === "lease";
 
   return (
     <section className="rounded-2xl bg-white p-4 shadow-float ring-1 ring-gold/15 lg:p-6">
@@ -24,10 +25,10 @@ export function RentTransparencyCard({ property }: { property: Property }) {
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-bold text-navy lg:text-base">
-            {isRent ? "Total move-in estimate" : "What you'll pay"}
+            {isRentOrLease ? "Total move-in estimate" : "What you'll pay"}
           </h2>
           <p className="mt-0.5 text-xs text-muted">
-            {isRent
+            {isRentOrLease
               ? "Typical first payment — confirm with agent before transfer"
               : "Nightly rate plus one-time fees where listed"}
           </p>

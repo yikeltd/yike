@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/badge";
+import {
+  HumanVerifyField,
+  readHumanVerifyFromForm,
+} from "@/components/forms/human-verify-field";
 import type { AgentVerification } from "@/types/database";
 
 export default function AgentVerificationPage() {
@@ -14,6 +18,7 @@ export default function AgentVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [verifyOk, setVerifyOk] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -43,6 +48,12 @@ export default function AgentVerificationPage() {
     setSubmitting(true);
     setMessage("");
     const form = new FormData(e.currentTarget);
+    const check = readHumanVerifyFromForm(form);
+    if (!check.ok) {
+      setMessage(check.error ?? "Please solve the math check.");
+      setSubmitting(false);
+      return;
+    }
     const supabase = createClient();
     const {
       data: { user },
@@ -119,10 +130,11 @@ export default function AgentVerificationPage() {
           required
         />
         <Input name="selfie_url" placeholder="Selfie image URL" required />
+        <HumanVerifyField onValidChange={setVerifyOk} />
         {message && (
           <p className="text-sm text-primary">{message}</p>
         )}
-        <Button type="submit" fullWidth disabled={submitting}>
+        <Button type="submit" fullWidth disabled={submitting || !verifyOk}>
           {submitting ? "Submitting…" : "Submit for review"}
         </Button>
       </form>

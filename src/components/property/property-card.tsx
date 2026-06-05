@@ -10,7 +10,7 @@ import {
   listingTypeLabel,
   cn,
 } from "@/lib/utils";
-import { VerifiedBadge, FeaturedBadge } from "@/components/ui/badge";
+import { VerifiedBadge, FeaturedBadge, TrendingBadge, NewListingBadge } from "@/components/ui/badge";
 import {
   propertyWhatsAppMessage,
   whatsAppDeepLink,
@@ -18,9 +18,17 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
+import {
+  isGuestFavorite,
+  toggleGuestFavorite,
+} from "@/lib/guest-favorites";
+import { trackContactClick } from "@/lib/contact-tracking";
+import { trackEvent } from "@/lib/analytics";
+import { recordEngagementSave } from "@/lib/engagement";
+import { listingImageAlt } from "@/lib/image-seo";
 import { useEffect, useState } from "react";
 import { ListingImage } from "./listing-image";
-import { ListingFreshness } from "./listing-freshness";
+import { ListingFreshness, getListingFreshness } from "./listing-freshness";
 import { AmenityChips } from "./amenity-chips";
 import { formatMoveInHint } from "@/lib/rent-breakdown";
 
@@ -58,10 +66,17 @@ export function PropertyCard({
   const amenities = property.extras?.amenities ?? [];
 
   useEffect(() => {
-    if (!isSupabaseConfigured() || isDemo) return;
+    if (isDemo) return;
+    if (!isSupabaseConfigured()) {
+      setSaved(isGuestFavorite(property.id));
+      return;
+    }
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
+      if (!user) {
+        setSaved(isGuestFavorite(property.id));
+        return;
+      }
       supabase
         .from("favorites")
         .select("id")
@@ -76,18 +91,34 @@ export function PropertyCard({
     e.preventDefault();
     e.stopPropagation();
     if (isDemo) return;
+
     if (!isSupabaseConfigured()) {
-      window.location.href = "/auth/login?next=/saved";
+      const nowSaved = toggleGuestFavorite(property.id);
+      setSaved(nowSaved);
+      recordEngagementSave();
+      trackEvent(nowSaved ? "save_listing" : "unsave_listing", {
+        listing_id: property.id,
+        city: property.city,
+        source: "guest",
+      });
       return;
     }
+
     setSaving(true);
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
+      const nowSaved = toggleGuestFavorite(property.id);
+      setSaved(nowSaved);
+      recordEngagementSave();
+      trackEvent(nowSaved ? "save_listing" : "unsave_listing", {
+        listing_id: property.id,
+        city: property.city,
+        source: "guest",
+      });
       setSaving(false);
-      window.location.href = "/auth/login?next=/saved";
       return;
     }
     if (saved) {
@@ -97,23 +128,58 @@ export function PropertyCard({
         .eq("user_id", user.id)
         .eq("property_id", property.id);
       setSaved(false);
+      trackEvent("unsave_listing", {
+        listing_id: property.id,
+        city: property.city,
+        source: "account",
+      });
     } else {
       await supabase.from("favorites").insert({
         user_id: user.id,
         property_id: property.id,
       });
       setSaved(true);
+      recordEngagementSave();
+      trackEvent("save_listing", {
+        listing_id: property.id,
+        city: property.city,
+        source: "account",
+      });
     }
     setSaving(false);
   }
 
-  async function trackClick() {
-    if (!isSupabaseConfigured() || isDemo) return;
-    const supabase = createClient();
-    await supabase.rpc("increment_contact_clicks", {
-      property_id: property.id,
+  function onWhatsAppClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    void trackContactClick({
+      propertyId: property.id,
+      channel: "whatsapp",
+      city: property.city,
+      listingType: property.listing_type,
+      propertyType: property.property_type,
+      placement: "card",
+      agentId: agent?.id,
     });
   }
+
+  function onCallClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    void trackContactClick({
+      propertyId: property.id,
+      channel: "call",
+      city: property.city,
+      listingType: property.listing_type,
+      propertyType: property.property_type,
+      placement: "card",
+      agentId: agent?.id,
+    });
+  }
+
+  const freshness = getListingFreshness(
+    property.updated_at,
+    property.created_at,
+    property.views_count
+  );
 
   const badges = (
     <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 lg:left-4 lg:top-4">
@@ -122,6 +188,8 @@ export function PropertyCard({
       </span>
       {verified && <VerifiedBadge size="sm" />}
       {property.is_featured && <FeaturedBadge />}
+      {freshness.tone === "trending" && <TrendingBadge />}
+      {freshness.tone === "new" && !property.is_featured && <NewListingBadge />}
     </div>
   );
 
@@ -163,6 +231,8 @@ export function PropertyCard({
       </div>
     );
 
+  const imageAlt = listingImageAlt(property);
+
   const contactRow = wa && (
     <div className="flex gap-2.5">
       <a
@@ -177,22 +247,16 @@ export function PropertyCard({
         )}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={(e) => {
-          e.stopPropagation();
-          trackClick();
-        }}
+        onClick={onWhatsAppClick}
         className="pressable flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-gold text-sm font-bold text-navy shadow-glow-gold lg:min-h-[44px]"
       >
         <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
-        WhatsApp
+        Chat on WhatsApp
       </a>
       {tel && (
         <a
           href={`tel:${formatPhoneForTel(tel)}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            trackClick();
-          }}
+          onClick={onCallClick}
           className="pressable flex h-12 min-w-[48px] items-center justify-center rounded-xl bg-surface text-navy lg:h-11 lg:min-w-[44px]"
         >
           <Phone className="h-4 w-4" />
@@ -208,7 +272,7 @@ export function PropertyCard({
           <div className="relative aspect-[5/4] overflow-hidden bg-surface">
             <ListingImage
               src={image}
-              alt={property.title}
+              alt={imageAlt}
               priority={priorityImage}
               sizes="(max-width: 1280px) 33vw, 420px"
               width={900}
@@ -237,6 +301,8 @@ export function PropertyCard({
             </p>
             <ListingFreshness
               updatedAt={property.updated_at}
+              createdAt={property.created_at}
+              viewsCount={property.views_count}
               className="mt-2.5 block"
             />
             {amenities.length > 0 && (
@@ -280,7 +346,7 @@ export function PropertyCard({
         <div className="relative aspect-[5/6] overflow-hidden bg-surface sm:aspect-[4/5]">
           <ListingImage
             src={image}
-            alt={property.title}
+            alt={imageAlt}
             priority={priorityImage}
             sizes="100vw"
             width={1080}
@@ -313,6 +379,8 @@ export function PropertyCard({
               {specs}
               <ListingFreshness
                 updatedAt={property.updated_at}
+                createdAt={property.created_at}
+                viewsCount={property.views_count}
                 dark
                 className="shrink-0"
               />

@@ -64,6 +64,46 @@ export function TrustPill({ className }: { className?: string }) {
   );
 }
 
+export function NewListingBadge({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300",
+        className
+      )}
+    >
+      New listing
+    </span>
+  );
+}
+
+export function TrendingBadge({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700 dark:text-orange-300",
+        className
+      )}
+    >
+      <Sparkles className="h-3 w-3" />
+      Trending
+    </span>
+  );
+}
+
+export function PopularAreaBadge({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full bg-navy/10 px-2 py-0.5 text-[10px] font-bold text-navy dark:text-gold",
+        className
+      )}
+    >
+      Popular area
+    </span>
+  );
+}
+
 export function StatusBadge({
   status,
   className,

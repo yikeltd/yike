@@ -6,6 +6,8 @@ import type {
   Property,
 } from "@/types/database";
 import { getAreaProfiles } from "@/constants/areaProfiles";
+import { isLandPropertyType } from "@/constants/listingTypes";
+import { generateSupplementalSeeds } from "@/lib/mock-listings-generate";
 
 const IMG = (id: string) =>
   `https://images.unsplash.com/${id}?w=1200&q=82&auto=format&fit=crop&crop=entropy`;
@@ -152,6 +154,10 @@ const SEEDS: Seed[] = [
   { id: "demo-53", state: "Abia", city: "Aba", area: "Eziukwu", title: "Boys quarters — Eziukwu", description: "Standalone BQ with own meter. Compound shared.", listing_type: "rent", property_type: "room", bedrooms: 1, bathrooms: 1, price: 200000, payment_period: "yearly", photo: 1, agent: 0 },
   { id: "demo-54", state: "FCT", city: "Abuja", area: "Jahi", title: "4-bed terrace — Jahi", description: "New Jahi district. Modern finish, estate security.", listing_type: "rent", property_type: "duplex", bedrooms: 4, bathrooms: 4, price: 5500000, payment_period: "yearly", featured: true, photo: 6, agent: 6 },
   { id: "demo-55", state: "Imo", city: "Owerri", area: "World Bank", title: "Mini flat — World Bank Owerri", description: "Clean mini flat, tiled, fenced. Close to banks.", listing_type: "rent", property_type: "mini_flat", bedrooms: 1, bathrooms: 1, price: 380000, payment_period: "yearly", verified: true, photo: 4, agent: 3 },
+  { id: "demo-56", state: "Lagos", city: "Lagos", area: "Ajah", title: "600sqm residential land — Ajah", description: "Dry land in gated estate. Survey plan & deed of assignment. Road access tarred.", listing_type: "sale", property_type: "land_residential", bedrooms: 0, bathrooms: 0, price: 45000000, payment_period: "total", featured: true, verified: true, photo: 17, agent: 5 },
+  { id: "demo-57", state: "FCT", city: "Abuja", area: "Lugbe", title: "1 acre farm land lease — Lugbe", description: "5-year renewable lease. Perimeter fence, borehole on plot.", listing_type: "lease", property_type: "land_farm", bedrooms: 0, bathrooms: 0, price: 1200000, payment_period: "yearly", photo: 17, agent: 6 },
+  { id: "demo-58", state: "Rivers", city: "Port Harcourt", area: "Eliozu", title: "Commercial land for lease — Eliozu", description: "Corner plot on main road. Ideal for petrol station or plaza.", listing_type: "lease", property_type: "land_commercial", bedrooms: 0, bathrooms: 0, price: 3500000, payment_period: "yearly", photo: 17, agent: 7 },
+  { id: "demo-59", state: "Ogun", city: "Abeokuta", area: "Olomore", title: "300sqm land for sale — Olomore", description: "Registered land with C of O processing. Quiet neighbourhood.", listing_type: "sale", property_type: "land", bedrooms: 0, bathrooms: 0, price: 8500000, payment_period: "total", photo: 17, agent: 11 },
 ];
 
 function buildListingExtras(s: Seed): ListingExtras {
@@ -199,6 +205,17 @@ function buildListingExtras(s: Seed): ListingExtras {
 
   if (s.listing_type === "sale") {
     return { amenities: uniqueAmenities };
+  }
+
+  if (s.listing_type === "lease") {
+    const agencyFee = s.price >= 3_000_000 ? 5 : 10;
+    return {
+      amenities: uniqueAmenities,
+      agency_fee_percent: agencyFee,
+      caution_months: 12,
+      agreement_fee: s.price >= 1_000_000 ? 150_000 : 75_000,
+      legal_fee: isLandPropertyType(s.property_type) ? 200_000 : 0,
+    };
   }
 
   const agencyFee = s.price >= 3_000_000 ? 5 : 10;
@@ -257,6 +274,24 @@ function seedToProperty(s: Seed, views: number, index: number): Property {
   };
 }
 
+const TARGET_LISTING_COUNT = 250;
+
+function allSeeds(): Seed[] {
+  const keys = new Set(
+    SEEDS.map(
+      (s) =>
+        `${s.city}|${s.area}|${s.property_type}|${s.bedrooms}|${s.listing_type}`
+    )
+  );
+  const supplemental = generateSupplementalSeeds(
+    keys,
+    SEEDS.length + 1,
+    TARGET_LISTING_COUNT
+  );
+  return [...SEEDS, ...supplemental];
+}
+
 export function buildMockListings(): Property[] {
-  return SEEDS.map((s, i) => seedToProperty(s, 45 + i * 7, i));
+  const seeds = allSeeds();
+  return seeds.map((s, i) => seedToProperty(s, 45 + i * 7, i));
 }

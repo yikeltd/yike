@@ -5,7 +5,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { ListingImage } from "./listing-image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { VerifiedBadge, FeaturedBadge } from "@/components/ui/badge";
-import { ShareButton } from "./share-button";
+import { ShareButton } from "./listing-share-menu";
+import type { Property } from "@/types/database";
+import { listingImageAlt } from "@/lib/image-seo";
 import { optimizeListingImageUrl } from "@/lib/image-url";
 import { cn } from "@/lib/utils";
 
@@ -15,12 +17,25 @@ export function PropertyGallery({
   featured,
   verified,
   shareUrl,
+  imageSeo,
+  listingId,
+  city,
+  listingType,
+  propertyType,
 }: {
   images: string[];
   title: string;
   featured?: boolean;
   verified?: boolean;
   shareUrl?: string;
+  imageSeo?: Pick<
+    Property,
+    "title" | "bedrooms" | "property_type" | "area" | "city" | "listing_type"
+  >;
+  listingId?: string;
+  city?: string;
+  listingType?: string;
+  propertyType?: string | null;
 }) {
   const [index, setIndex] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -80,9 +95,18 @@ export function PropertyGallery({
         title={title}
         text={`Check out this home on Yike: ${title}`}
         url={shareUrl}
+        listingId={listingId}
+        city={city ?? imageSeo?.city}
+        listingType={listingType ?? imageSeo?.listing_type}
+        propertyType={propertyType ?? imageSeo?.property_type}
       />
     </div>
   );
+
+  function altFor(index: number) {
+    if (imageSeo) return listingImageAlt(imageSeo, index);
+    return index === 0 ? title : `${title} photo ${index + 1}`;
+  }
 
   const counter = images.length > 1 && (
     <span className="absolute right-3 top-14 z-10 rounded-full bg-navy/80 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-sm lg:top-16">
@@ -108,7 +132,7 @@ export function PropertyGallery({
           >
             <ListingImage
               src={url}
-              alt={`${title} ${i + 1}`}
+              alt={altFor(i)}
               priority={i === 0}
               sizes="100vw"
               width={1200}
@@ -167,7 +191,7 @@ export function PropertyGallery({
           >
             <ListingImage
               src={url}
-              alt={`${title} ${i + 1}`}
+              alt={altFor(i)}
               priority={i === 0}
               sizes="(max-width: 1280px) 50vw, 640px"
               width={i === 0 ? 1200 : 640}
@@ -219,7 +243,7 @@ export function PropertyGallery({
             <div className="relative h-full w-full max-h-[88vh] animate-image-reveal">
               <Image
                 src={optimizeListingImageUrl(images[index], 1600)}
-                alt={title}
+                alt={altFor(index)}
                 fill
                 className="object-contain"
                 unoptimized

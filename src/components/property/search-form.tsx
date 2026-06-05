@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 export function SearchForm({ compact }: { compact?: boolean }) {
   const router = useRouter();
@@ -30,6 +31,12 @@ export function SearchForm({ compact }: { compact?: boolean }) {
     const range = BUDGET_RANGES[Number(budget)];
     if (range?.min) params.set("min", String(range.min));
     if (range?.max) params.set("max", String(range.max));
+    trackEvent("search", {
+      city: city || undefined,
+      area: area || undefined,
+      listing_type: listingType,
+      budget: range?.label,
+    });
     router.push(`/search?${params.toString()}`);
   }
 

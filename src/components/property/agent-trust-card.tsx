@@ -12,6 +12,8 @@ export function AgentTrustCard({
   title,
   area,
   city,
+  listingType,
+  propertyType,
   sticky,
   verified: verifiedProp,
 }: {
@@ -20,6 +22,8 @@ export function AgentTrustCard({
   title?: string;
   area?: string;
   city?: string;
+  listingType?: string;
+  propertyType?: string | null;
   sticky?: boolean;
   verified?: boolean;
 }) {
@@ -78,16 +82,20 @@ export function AgentTrustCard({
         <MessageCircle className="h-3.5 w-3.5 text-gold" />
         Contact via WhatsApp — typical response same day
       </p>
-      {propertyId && title && area && city && (
+      {propertyId && title && area && city && listingType && (
         <div className="mt-5 border-t border-surface pt-5">
           <ContactButtons
             propertyId={propertyId}
             title={title}
             area={area}
             city={city}
+            listingType={listingType}
+            propertyType={propertyType}
+            agentId={agent.id}
             phone={agent.phone}
             whatsapp={agent.whatsapp}
             layout="detail"
+            placement="agent_card"
           />
         </div>
       )}

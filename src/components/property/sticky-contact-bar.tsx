@@ -7,6 +7,9 @@ export function StickyContactBar({
   title,
   area,
   city,
+  listingType,
+  propertyType,
+  agentId,
   phone,
   whatsapp,
 }: {
@@ -14,6 +17,9 @@ export function StickyContactBar({
   title: string;
   area: string;
   city: string;
+  listingType: string;
+  propertyType?: string | null;
+  agentId?: string | null;
   phone?: string | null;
   whatsapp?: string | null;
 }) {
@@ -27,9 +33,13 @@ export function StickyContactBar({
           title={title}
           area={area}
           city={city}
+          listingType={listingType}
+          propertyType={propertyType}
+          agentId={agentId}
           phone={phone}
           whatsapp={whatsapp}
           layout="detail"
+          placement="sticky"
         />
       </div>
     </div>

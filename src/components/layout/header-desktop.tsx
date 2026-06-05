@@ -2,12 +2,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 const links = [
-  { href: "/", label: "Home" },
-  { href: "/search?type=rent", label: "Rent" },
-  { href: "/search?type=sale", label: "Buy" },
-  { href: "/search?type=shortlet", label: "Shortlet" },
+  { href: "/explore", label: "Explore" },
+  { href: "/rent", label: "Rent" },
+  { href: "/buy", label: "Buy" },
+  { href: "/shortlet", label: "Shortlet" },
+  { href: "/land", label: "Land" },
+  { href: "/browse", label: "Swipe" },
   { href: "/post-property", label: "List Property" },
   { href: "/safety", label: "Safety" },
 ];
@@ -16,7 +19,7 @@ export function HeaderDesktop({ className }: { className?: string }) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 hidden border-b border-surface bg-white/95 backdrop-blur-md lg:block",
+        "sticky top-0 z-50 hidden border-b border-surface bg-elevated/95 backdrop-blur-md lg:block",
         className
       )}
     >
@@ -30,7 +33,7 @@ export function HeaderDesktop({ className }: { className?: string }) {
             className="rounded-lg"
             priority
           />
-          <span className="text-xl font-bold tracking-tight text-navy">
+          <span className="text-xl font-bold tracking-tight text-foreground">
             {brand.name}
           </span>
         </Link>
@@ -39,18 +42,21 @@ export function HeaderDesktop({ className }: { className?: string }) {
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm font-medium text-muted transition-colors hover:text-navy"
+              className="text-sm font-medium text-muted transition-colors hover:text-foreground"
             >
               {l.label}
             </Link>
           ))}
         </nav>
-        <Link
-          href="/post-property"
-          className="rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy shadow-glow-gold transition-transform hover:scale-[1.02] active:scale-[0.98]"
-        >
-          List Property
-        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <Link
+            href="/post-property"
+            className="rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy shadow-glow-gold transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            List Property
+          </Link>
+        </div>
       </div>
     </header>
   );

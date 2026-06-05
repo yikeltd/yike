@@ -16,6 +16,38 @@ type LocationIndexEntry = LocationMatch & {
 
 let locationIndex: LocationIndexEntry[] | null = null;
 
+/** Common Nigerian search shortcuts — expanded before matching */
+const QUERY_ALIASES: Record<string, string> = {
+  ph: "port harcourt",
+  portharcourt: "port harcourt",
+  "port-harcourt": "port harcourt",
+  vi: "victoria island",
+  "v.i": "victoria island",
+  lekki1: "lekki phase 1",
+  lekki2: "lekki phase 2",
+  unilag: "yaba akoka",
+  unn: "new haven enugu",
+  unizik: "ifite awka",
+  uniben: "ugbowo benin",
+  unilorin: "tanke ilorin",
+  unport: "choba port harcourt",
+  futo: "nekede owerri",
+  abj: "abuja",
+  lag: "lagos",
+};
+
+export function normalizeLocationQuery(raw: string): string {
+  const q = raw.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!q) return q;
+  if (QUERY_ALIASES[q]) return QUERY_ALIASES[q]!;
+  for (const [alias, expanded] of Object.entries(QUERY_ALIASES)) {
+    if (q === alias || q.startsWith(`${alias} `)) {
+      return q.replace(alias, expanded);
+    }
+  }
+  return q;
+}
+
 function buildLocationIndex(): LocationIndexEntry[] {
   const entries: LocationIndexEntry[] = [];
 
@@ -67,7 +99,25 @@ function buildLocationIndex(): LocationIndexEntry[] {
     area: "Abuja",
     label: "Abuja, FCT",
     type: "city",
-    terms: ["abuja", "fct", "abuja fct"],
+    terms: ["abuja", "fct", "abuja fct", "abj"],
+  });
+
+  entries.push({
+    state: "Rivers",
+    city: "Port Harcourt",
+    area: "Port Harcourt",
+    label: "Port Harcourt, Rivers",
+    type: "city",
+    terms: ["port harcourt", "ph", "portharcourt"],
+  });
+
+  entries.push({
+    state: "Lagos",
+    city: "Lagos",
+    area: "Victoria Island",
+    label: "Victoria Island, Lagos",
+    type: "area",
+    terms: ["victoria island", "vi", "v.i"],
   });
 
   const lagosDistricts = nigeriaLocations.Lagos?.cities ?? {};
@@ -109,7 +159,7 @@ function getIndex() {
 }
 
 export function searchLocations(query: string, limit = 8): LocationMatch[] {
-  const q = query.trim().toLowerCase();
+  const q = normalizeLocationQuery(query);
   if (!q) return [];
 
   const index = getIndex();
@@ -149,7 +199,7 @@ const IN_RE = /\bin\s+(.+)$/i;
 export function parseLocationQuery(
   raw: string
 ): Partial<PropertySearchParams> & { resolvedLabel?: string } {
-  const trimmed = raw.trim();
+  const trimmed = normalizeLocationQuery(raw);
   if (!trimmed) return {};
 
   let bedrooms: number | undefined;

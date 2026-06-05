@@ -5,16 +5,28 @@ import { REPORT_REASONS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import {
+  HumanVerifyField,
+  readHumanVerifyFromForm,
+} from "@/components/forms/human-verify-field";
 
 export function ReportListingForm({ propertyId }: { propertyId: string }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+  const [verifyOk, setVerifyOk] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
+    setError("");
     const form = new FormData(e.currentTarget);
+    const check = readHumanVerifyFromForm(form);
+    if (!check.ok) {
+      setError(check.error ?? "Please solve the math check.");
+      return;
+    }
+    setLoading(true);
     const supabase = createClient();
     await supabase.from("listing_reports").insert({
       property_id: propertyId,
@@ -63,8 +75,10 @@ export function ReportListingForm({ propertyId }: { propertyId: string }) {
         ))}
       </Select>
       <Textarea name="message" placeholder="More details (optional)" rows={3} />
+      <HumanVerifyField onValidChange={setVerifyOk} />
+      {error && <p className="text-sm text-danger">{error}</p>}
       <div className="flex gap-2">
-        <Button type="submit" disabled={loading} size="sm">
+        <Button type="submit" disabled={loading || !verifyOk} size="sm">
           {loading ? "Sending…" : "Submit report"}
         </Button>
         <Button

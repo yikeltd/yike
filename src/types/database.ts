@@ -4,7 +4,7 @@ export type VerificationStatus =
   | "pending"
   | "verified"
   | "rejected";
-export type ListingType = "rent" | "sale" | "shortlet";
+export type ListingType = "rent" | "lease" | "sale" | "shortlet";
 export type PropertyStatus =
   | "pending"
   | "approved"
@@ -26,7 +26,14 @@ export interface ListingExtras {
   caution_deposit?: number;
 }
 
-export type DiscoverHub = "student" | "affordable" | "shortlet";
+export type DiscoverHub =
+  | "student"
+  | "affordable"
+  | "shortlet"
+  | "land_sale"
+  | "land_lease"
+  | "buy"
+  | "lease";
 
 export interface Profile {
   id: string;
@@ -100,4 +107,20 @@ export interface AgentVerification {
   selfie_url: string | null;
   id_document_url: string | null;
   created_at: string;
+}
+
+export interface AdPlacement {
+  id: string;
+  placement_key: string;
+  label: string;
+  title: string | null;
+  image_url: string | null;
+  link_url: string | null;
+  alt_text: string;
+  is_active: boolean;
+  property_id: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  created_at: string;
+  updated_at: string;
 }

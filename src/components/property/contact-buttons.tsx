@@ -7,16 +7,23 @@ import {
   whatsAppDeepLink,
 } from "@/lib/whatsapp";
 import { formatPhoneForTel } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import {
+  trackContactClick,
+  type ContactPlacement,
+} from "@/lib/contact-tracking";
 
 interface ContactButtonsProps {
   propertyId: string;
   title: string;
   area: string;
   city: string;
+  listingType: string;
+  propertyType?: string | null;
+  agentId?: string | null;
   phone?: string | null;
   whatsapp?: string | null;
   layout?: "card" | "detail";
+  placement?: ContactPlacement;
 }
 
 export function ContactButtons({
@@ -24,17 +31,38 @@ export function ContactButtons({
   title,
   area,
   city,
+  listingType,
+  propertyType,
+  agentId,
   phone,
   whatsapp,
   layout = "detail",
+  placement = "detail",
 }: ContactButtonsProps) {
   const wa = whatsapp || phone;
   const tel = phone || whatsapp;
 
-  async function trackClick() {
-    const supabase = createClient();
-    await supabase.rpc("increment_contact_clicks", {
-      property_id: propertyId,
+  function onWhatsAppClick() {
+    void trackContactClick({
+      propertyId,
+      channel: "whatsapp",
+      city,
+      listingType,
+      propertyType,
+      placement,
+      agentId,
+    });
+  }
+
+  function onCallClick() {
+    void trackContactClick({
+      propertyId,
+      channel: "call",
+      city,
+      listingType,
+      propertyType,
+      placement,
+      agentId,
     });
   }
 
@@ -56,19 +84,19 @@ export function ContactButtons({
           )}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={trackClick}
+          onClick={onWhatsAppClick}
           className="pressable flex flex-1 items-center justify-center gap-2 rounded-xl bg-gold py-3.5 text-sm font-bold text-navy shadow-glow-gold"
         >
           <MessageCircle className="h-5 w-5" strokeWidth={2.5} />
-          WhatsApp
+          Chat on WhatsApp
         </a>
       )}
       {tel && (
         <a
           href={`tel:${formatPhoneForTel(tel)}`}
-          onClick={trackClick}
+          onClick={onCallClick}
           className="pressable flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-surface text-navy"
-          aria-label="Call"
+          aria-label="Call agent"
         >
           <Phone className="h-5 w-5" />
         </a>

@@ -10,17 +10,22 @@ import {
 } from "@/lib/utils";
 import { AgentTrustCard } from "@/components/property/agent-trust-card";
 import { ReportListingForm } from "@/components/property/report-form";
+import { ReportRentedButton } from "@/components/property/report-rented-button";
 import { ListingGallery } from "@/components/property/listing-gallery";
 import { StickyContactBar } from "@/components/property/sticky-contact-bar";
 import { PropertyVideo } from "@/components/property/property-video";
 import { SafetyNotice } from "@/components/property/safety-notice";
 import { RelatedListings } from "@/components/property/related-listings";
+import { AdSlot } from "@/components/ads/ad-slot";
 import { RentTransparencyCard } from "@/components/property/rent-transparency-card";
 import { AmenityChips } from "@/components/property/amenity-chips";
 import { ListingStructuredData } from "@/components/seo/listing-structured-data";
 import { VerifiedBadge } from "@/components/ui/badge";
+import { ListingFreshness } from "@/components/property/listing-freshness";
+import { ConversionStrip } from "@/components/conversion/conversion-strip";
 import { BedDouble, Bath, MapPin, Navigation } from "lucide-react";
 import { PropertyViewTracker } from "./view-tracker";
+import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { optimizeListingImageUrl } from "@/lib/image-url";
 
@@ -40,8 +45,7 @@ export async function generateMetadata({
   );
   const title = `${property.title} · ${price}`;
   const description =
-    property.description?.slice(0, 155) ??
-    `${property.title} in ${property.area}, ${property.city}. ${price}. Browse on ${SITE_NAME}.`;
+    `${propertyTypeLabel(property.property_type)} in ${property.area}, ${property.city}. ${price}. Contact agent on WhatsApp — ${SITE_NAME}.`;
   const image = property.media_urls[0]?.startsWith("http")
     ? optimizeListingImageUrl(property.media_urls[0], 1200)
     : `${SITE_URL}/placeholder-property.svg`;
@@ -100,16 +104,28 @@ export default async function PropertyDetailPage({
   return (
     <div className="safe-bottom-detail lg:pb-0">
       <ListingStructuredData property={property} />
-      <PropertyViewTracker propertyId={property.id} />
+      <PropertyViewTracker propertyId={property.id} property={property} />
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10 lg:pt-8">
         <div>
+          <div className="px-4 lg:px-0">
+            <PropertyBreadcrumbs
+              city={property.city}
+              area={property.area}
+              title={property.title}
+            />
+          </div>
           <ListingGallery
             images={images}
             title={property.title}
             featured={property.is_featured}
             verified={!!verified}
             shareUrl={`${SITE_URL}/properties/${property.id}`}
+            imageSeo={property}
+            listingId={property.id}
+            city={property.city}
+            listingType={property.listing_type}
+            propertyType={property.property_type}
           />
 
           {property.video_url && (
@@ -135,6 +151,12 @@ export default async function PropertyDetailPage({
                   <VerifiedBadge />
                 </div>
               )}
+              <ListingFreshness
+                updatedAt={property.updated_at}
+                createdAt={property.created_at}
+                viewsCount={property.views_count}
+                className="mt-2 block"
+              />
               <h1 className="mt-3 text-lg font-semibold leading-snug text-foreground lg:text-2xl">
                 {property.title}
               </h1>
@@ -190,7 +212,16 @@ export default async function PropertyDetailPage({
             {agent && (
               <section className="lg:hidden">
                 <h2 className="mb-2 text-sm font-bold text-navy">Your agent</h2>
-                <AgentTrustCard agent={agent} verified={!!verified} />
+                <AgentTrustCard
+                  agent={agent}
+                  propertyId={property.id}
+                  title={property.title}
+                  area={property.area}
+                  city={property.city}
+                  listingType={property.listing_type}
+                  propertyType={property.property_type}
+                  verified={!!verified}
+                />
               </section>
             )}
 
@@ -198,6 +229,7 @@ export default async function PropertyDetailPage({
               <SafetyNotice compact />
             </section>
 
+            <ReportRentedButton propertyId={property.id} />
             <ReportListingForm propertyId={property.id} />
 
             <Link
@@ -206,6 +238,8 @@ export default async function PropertyDetailPage({
             >
               ← Browse more homes
             </Link>
+
+            <AdSlot placement="property_detail" className="!px-0" />
 
             <RelatedListings property={property} />
           </div>
@@ -219,6 +253,8 @@ export default async function PropertyDetailPage({
               title={property.title}
               area={property.area}
               city={property.city}
+              listingType={property.listing_type}
+              propertyType={property.property_type}
               verified={!!verified}
               sticky
             />
@@ -234,6 +270,9 @@ export default async function PropertyDetailPage({
             title={property.title}
             area={property.area}
             city={property.city}
+            listingType={property.listing_type}
+            propertyType={property.property_type}
+            agentId={agent.id}
             phone={agent.phone}
             whatsapp={agent.whatsapp}
           />

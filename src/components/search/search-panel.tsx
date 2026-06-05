@@ -6,9 +6,9 @@ import {
   BUDGET_RANGES,
   getAreasForSearchCity,
   getAllCities,
-  LISTING_TYPES,
   POPULAR_CITIES,
 } from "@/lib/constants";
+import { SEARCH_DEAL_TYPES } from "@/constants/listingTypes";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,12 +17,14 @@ type Variant = "hero" | "compact" | "inline";
 export function SearchPanel({
   variant = "hero",
   className,
+  defaultListingType = "",
 }: {
   variant?: Variant;
   className?: string;
+  defaultListingType?: string;
 }) {
   const router = useRouter();
-  const [listingType, setListingType] = useState("rent");
+  const [listingType, setListingType] = useState(defaultListingType);
   const [city, setCity] = useState("");
   const [area, setArea] = useState("");
   const [budget, setBudget] = useState("0");
@@ -31,7 +33,7 @@ export function SearchPanel({
 
   function search() {
     const params = new URLSearchParams();
-    params.set("type", listingType);
+    if (listingType) params.set("type", listingType);
     if (city) params.set("city", city);
     if (area) params.set("area", area);
     const range = BUDGET_RANGES[Number(budget)];
@@ -46,7 +48,7 @@ export function SearchPanel({
   return (
     <div
       className={cn(
-        "rounded-2xl bg-white shadow-float-lg",
+        "rounded-2xl bg-elevated shadow-float-lg ring-1 ring-black/[0.04] dark:ring-white/[0.06]",
         isHero && "p-6 lg:p-8",
         isCompact && "p-4",
         variant === "inline" && "p-4 lg:p-5",
@@ -54,27 +56,27 @@ export function SearchPanel({
       )}
     >
       {!isCompact && (
-        <p className="mb-4 text-sm font-semibold text-navy lg:text-base">
+        <p className="mb-4 text-sm font-semibold text-foreground lg:text-base">
           Looking for
         </p>
       )}
       <div
         className={cn(
-          "flex gap-2",
+          "hide-scrollbar flex gap-2 overflow-x-auto",
           isCompact ? "mb-3" : "mb-5",
           isHero && "lg:mb-6"
         )}
       >
-        {LISTING_TYPES.map((t) => (
+        {SEARCH_DEAL_TYPES.map((t) => (
           <button
-            key={t.value}
+            key={t.label}
             type="button"
             onClick={() => setListingType(t.value)}
             className={cn(
-              "pressable flex-1 rounded-xl py-2.5 text-sm font-bold transition-all lg:py-3",
+              "pressable shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition-all lg:py-3",
               listingType === t.value
                 ? "bg-gold text-navy shadow-glow-gold"
-                : "bg-surface text-muted hover:text-navy"
+                : "bg-surface text-muted hover:text-foreground"
             )}
           >
             {t.label}
@@ -95,7 +97,7 @@ export function SearchPanel({
             setCity(e.target.value);
             setArea("");
           }}
-          className="h-12 rounded-xl bg-surface px-4 text-sm font-medium text-navy outline-none focus:ring-2 focus:ring-gold/40 lg:h-14"
+          className="h-12 rounded-xl bg-surface px-4 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-gold/40 lg:h-14"
         >
           <option value="">All cities</option>
           {cityOptions.map((c) => (
@@ -108,7 +110,7 @@ export function SearchPanel({
           <select
             value={area}
             onChange={(e) => setArea(e.target.value)}
-            className="h-12 rounded-xl bg-surface px-4 text-sm outline-none focus:ring-2 focus:ring-gold/40 lg:h-14"
+            className="h-12 rounded-xl bg-surface px-4 text-sm text-foreground outline-none focus:ring-2 focus:ring-gold/40 lg:h-14"
           >
             <option value="">All areas</option>
             {areas.map((a) => (
@@ -122,13 +124,13 @@ export function SearchPanel({
             value={area}
             onChange={(e) => setArea(e.target.value)}
             placeholder="Area"
-            className="h-12 rounded-xl bg-surface px-4 text-sm outline-none focus:ring-2 focus:ring-gold/40 lg:h-14"
+            className="h-12 rounded-xl bg-surface px-4 text-sm text-foreground outline-none placeholder:text-muted focus:ring-2 focus:ring-gold/40 lg:h-14"
           />
         )}
         <select
           value={budget}
           onChange={(e) => setBudget(e.target.value)}
-          className="h-12 rounded-xl bg-surface px-4 text-sm outline-none focus:ring-2 focus:ring-gold/40 lg:h-14"
+          className="h-12 rounded-xl bg-surface px-4 text-sm text-foreground outline-none focus:ring-2 focus:ring-gold/40 lg:h-14"
         >
           {BUDGET_RANGES.map((b, i) => (
             <option key={b.label} value={i}>

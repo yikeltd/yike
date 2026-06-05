@@ -2,27 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Heart, PlusCircle, User } from "lucide-react";
+import { Home, Layers, Search, Heart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/browse", label: "Swipe", icon: Layers },
   { href: "/search", label: "Search", icon: Search },
   { href: "/saved", label: "Saved", icon: Heart },
-  { href: "/post-property", label: "List", icon: PlusCircle },
   { href: "/agent", label: "Profile", icon: User },
 ];
 
 export function BottomNavMobile() {
   const pathname = usePathname();
-  if (pathname.startsWith("/auth") || pathname.startsWith("/admin")) return null;
+  if (
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/admin") ||
+    pathname === "/browse" ||
+    pathname.startsWith("/browse/")
+  ) {
+    return null;
+  }
 
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden"
       aria-label="Main"
     >
-      <div className="flex w-full max-w-lg items-center justify-around rounded-2xl border border-surface bg-white/95 py-1 shadow-float-lg backdrop-blur-lg">
+      <div className="flex w-full max-w-lg items-center justify-around rounded-2xl border border-surface bg-elevated/95 py-1 shadow-float-lg backdrop-blur-lg">
         {items.map(({ href, label, icon: Icon }) => {
           const active =
             href === "/"
@@ -34,7 +41,7 @@ export function BottomNavMobile() {
               href={href}
               className={cn(
                 "pressable flex min-w-[52px] flex-col items-center gap-0.5 py-1.5 text-[9px] font-bold uppercase tracking-wide",
-                active ? "text-navy" : "text-muted"
+                active ? "text-foreground" : "text-muted"
               )}
             >
               <span

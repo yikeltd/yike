@@ -1,5 +1,12 @@
 import type { DiscoverHub } from "@/types/database";
-import { GraduationCap, Palmtree, Wallet } from "lucide-react";
+import {
+  GraduationCap,
+  Palmtree,
+  Wallet,
+  MapPin,
+  KeyRound,
+  Home,
+} from "lucide-react";
 
 const HUB_COPY: Record<
   DiscoverHub,
@@ -19,6 +26,26 @@ const HUB_COPY: Record<
     title: "Shortlets",
     desc: "Furnished nightly stays across Nigeria",
     icon: Palmtree,
+  },
+  land_sale: {
+    title: "Land for sale",
+    desc: "Residential, commercial and farm plots nationwide",
+    icon: MapPin,
+  },
+  land_lease: {
+    title: "Land for lease",
+    desc: "Long-term land lease — confirm title and survey",
+    icon: KeyRound,
+  },
+  buy: {
+    title: "Homes for sale",
+    desc: "Houses, flats and commercial property to buy",
+    icon: Home,
+  },
+  lease: {
+    title: "Property lease",
+    desc: "Commercial spaces and long-term property lease",
+    icon: KeyRound,
   },
 };
 

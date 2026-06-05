@@ -9,11 +9,14 @@ import { BottomNavMobile } from "./bottom-nav-mobile";
 export function ConsumerShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isDetail = pathname.startsWith("/properties/");
+  const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
   const hideChrome =
-    pathname.startsWith("/auth") || pathname.startsWith("/admin");
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/admin") ||
+    isBrowse;
 
   if (hideChrome) {
-    return <>{children}</>;
+    return <main className="flex-1">{children}</main>;
   }
 
   return (

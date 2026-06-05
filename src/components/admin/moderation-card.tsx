@@ -5,6 +5,10 @@ import Link from "next/link";
 import { ListingActions } from "./listing-actions";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatPrice, isVerifiedAgent } from "@/lib/utils";
+import {
+  analyzeListingQuality,
+  qualityFlagLabel,
+} from "@/lib/listing-quality";
 import type { Property, Profile } from "@/types/database";
 
 export function ModerationCard({
@@ -14,6 +18,7 @@ export function ModerationCard({
 }) {
   const thumb = property.media_urls[0];
   const agent = property.agent;
+  const flags = analyzeListingQuality(property);
 
   return (
     <li className="overflow-hidden rounded-2xl bg-elevated shadow-float">
@@ -60,6 +65,18 @@ export function ModerationCard({
           <p className="mt-0.5 text-xs text-muted">
             {agent?.full_name ?? "Unknown agent"}
           </p>
+          {flags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {flags.map((flag) => (
+                <span
+                  key={flag}
+                  className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900"
+                >
+                  {qualityFlagLabel(flag)}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <div className="border-t border-surface px-3 py-3">

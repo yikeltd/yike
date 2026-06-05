@@ -3,6 +3,7 @@ import { PropertyFeed } from "@/components/property/property-feed";
 import { getPublicProperties } from "@/lib/properties";
 import { SearchPanel } from "@/components/search/search-panel";
 import { AreaGuidePanel } from "@/components/search/area-guide-panel";
+import { AdSlot } from "@/components/ads/ad-slot";
 import { countListingsForArea, countListingsForCity } from "@/lib/listing-counts";
 import { isDemoProperty } from "@/lib/mock-listings";
 
@@ -76,6 +77,8 @@ export async function LocationListingsPage({
       {area && (
         <AreaGuidePanel city={city} area={area} state={state} />
       )}
+
+      <AdSlot placement="location_top" className="mb-6" />
 
       <PropertyFeed properties={properties} isDemo={isDemo} showCount />
     </div>

@@ -11,12 +11,21 @@ import {
   MIN_LISTING_IMAGES,
   NIGERIAN_STATES,
   PAYMENT_PERIODS,
-  PROPERTY_TYPES,
 } from "@/lib/constants";
+import {
+  defaultPaymentPeriodForListingType,
+  propertyTypesForListingType,
+  type ListingTypeValue,
+} from "@/constants/listingTypes";
+import { PROPERTY_CATEGORY_GROUPS } from "@/constants/propertyCategories";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { FormSection } from "@/components/ui/form-section";
 import { SubmitOverlay } from "@/components/ui/submit-overlay";
+import {
+  HumanVerifyField,
+  readHumanVerifyFromForm,
+} from "@/components/forms/human-verify-field";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { NIGERIAN_AMENITIES } from "@/constants/amenities";
@@ -40,8 +49,13 @@ export function ListingForm({ agentId, initial }: ListingFormProps) {
   const [amenities, setAmenities] = useState<string[]>(
     initial?.extras?.amenities ?? []
   );
+  const [listingType, setListingType] = useState<ListingTypeValue>(
+    (initial?.listing_type as ListingTypeValue) ?? "rent"
+  );
+  const [verifyOk, setVerifyOk] = useState(false);
   const cityOptions = getCitiesForState(state);
   const areas = city ? getAreasForSearchCity(city) : [];
+  const propertyTypeOptions = propertyTypesForListingType(listingType);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -52,6 +66,11 @@ export function ListingForm({ agentId, initial }: ListingFormProps) {
     }
 
     const form = new FormData(e.currentTarget);
+    const verify = readHumanVerifyFromForm(form);
+    if (!verify.ok) {
+      setError(verify.error ?? "Please solve the math check.");
+      return;
+    }
     const price = Number(form.get("price"));
     const mediaRaw = (form.get("media_urls") as string) || "";
     const fromText = mediaRaw
@@ -69,34 +88,41 @@ export function ListingForm({ agentId, initial }: ListingFormProps) {
       return;
     }
 
-    const listingType = form.get("listing_type") as string;
+    const dealType = listingType;
     const extras: ListingExtras = {
       amenities: amenities.length > 0 ? amenities : undefined,
     };
 
-    if (listingType === "rent") {
+    if (dealType === "rent" || dealType === "lease") {
       const agency = Number(form.get("agency_fee_percent"));
       const caution = Number(form.get("caution_months"));
       const agreement = Number(form.get("agreement_fee"));
       const service = Number(form.get("service_charge"));
+      const legal = Number(form.get("legal_fee"));
       if (agency > 0) extras.agency_fee_percent = agency;
       if (caution > 0) extras.caution_months = caution;
       if (agreement > 0) extras.agreement_fee = agreement;
       if (service > 0) extras.service_charge = service;
+      if (legal > 0) extras.legal_fee = legal;
     }
 
-    if (listingType === "shortlet") {
+    if (dealType === "shortlet") {
       const cleaning = Number(form.get("cleaning_fee"));
       const caution = Number(form.get("caution_deposit"));
       if (cleaning > 0) extras.cleaning_fee = cleaning;
       if (caution > 0) extras.caution_deposit = caution;
     }
 
+    if (dealType === "sale") {
+      const legal = Number(form.get("legal_fee"));
+      if (legal > 0) extras.legal_fee = legal;
+    }
+
     const payload = {
       agent_id: agentId,
       title: form.get("title") as string,
       description: (form.get("description") as string) || null,
-      listing_type: listingType,
+      listing_type: dealType,
       property_type: form.get("property_type") as string,
       bedrooms: Number(form.get("bedrooms") || 0),
       bathrooms: Number(form.get("bathrooms") || 0),
@@ -169,26 +195,25 @@ export function ListingForm({ agentId, initial }: ListingFormProps) {
         message={initial ? "Updating…" : "Submitting for review…"}
       />
       <form onSubmit={handleSubmit} className="space-y-4 pb-8">
-        <FormSection step={1} title="Basics" hint="Rent, buy, or shortlet">
+        <FormSection step={1} title="Basics" hint="Rent, lease, buy, or shortlet">
           <Input
             name="title"
-            placeholder="e.g. 2-bed flat in Ogbor Hill"
+            placeholder="e.g. 2-bed flat in Ogbor Hill or 500sqm land in Lekki"
             defaultValue={initial?.title}
             required
           />
-          <div className="flex gap-2">
+          <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
             {LISTING_TYPES.map((t) => (
-              <label key={t.value} className="flex-1">
+              <label key={t.value} className="shrink-0">
                 <input
                   type="radio"
                   name="listing_type"
                   value={t.value}
-                  defaultChecked={
-                    (initial?.listing_type ?? "rent") === t.value
-                  }
+                  checked={listingType === t.value}
+                  onChange={() => setListingType(t.value as ListingTypeValue)}
                   className="peer sr-only"
                 />
-                <span className="pressable flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl bg-surface text-sm font-semibold peer-checked:bg-gold peer-checked:text-navy peer-checked:shadow-glow-gold">
+                <span className="pressable flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl px-4 text-sm font-semibold peer-checked:bg-gold peer-checked:text-navy peer-checked:shadow-glow-gold bg-surface">
                   {t.label}
                 </span>
               </label>
@@ -196,13 +221,21 @@ export function ListingForm({ agentId, initial }: ListingFormProps) {
           </div>
           <Select
             name="property_type"
-            defaultValue={initial?.property_type ?? "flat"}
+            defaultValue={initial?.property_type ?? propertyTypeOptions[0]?.value ?? "flat"}
             required
           >
-            {PROPERTY_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
+            {PROPERTY_CATEGORY_GROUPS.filter((g) =>
+              propertyTypeOptions.some((p) => p.group === g.id)
+            ).map((group) => (
+              <optgroup key={group.id} label={group.label}>
+                {propertyTypeOptions
+                  .filter((p) => p.group === group.id)
+                  .map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+              </optgroup>
             ))}
           </Select>
         </FormSection>
@@ -219,7 +252,11 @@ export function ListingForm({ agentId, initial }: ListingFormProps) {
           />
           <Select
             name="payment_period"
-            defaultValue={initial?.payment_period ?? "yearly"}
+            defaultValue={
+              initial?.payment_period ??
+              defaultPaymentPeriodForListingType(listingType)
+            }
+            key={listingType}
           >
             {PAYMENT_PERIODS.map((p) => (
               <option key={p.value} value={p.value}>
@@ -362,54 +399,88 @@ export function ListingForm({ agentId, initial }: ListingFormProps) {
         </FormSection>
 
         <FormSection
-          title="Rent transparency"
-          hint="Helps renters trust your listing"
+          title={
+            listingType === "lease"
+              ? "Lease transparency"
+              : listingType === "rent"
+                ? "Rent transparency"
+                : "Fees (optional)"
+          }
+          hint={
+            listingType === "sale"
+              ? "Optional — legal and documentation fees"
+              : "Helps renters trust your listing"
+          }
         >
           <div className="grid grid-cols-2 gap-2">
-            <Input
-              name="agency_fee_percent"
-              type="number"
-              min={0}
-              max={20}
-              placeholder="Agency fee %"
-              defaultValue={initial?.extras?.agency_fee_percent ?? 10}
-            />
-            <Input
-              name="caution_months"
-              type="number"
-              min={0}
-              max={24}
-              placeholder="Caution (months)"
-              defaultValue={initial?.extras?.caution_months ?? 12}
-            />
-            <Input
-              name="agreement_fee"
-              type="number"
-              min={0}
-              placeholder="Agreement fee ₦"
-              defaultValue={initial?.extras?.agreement_fee ?? 50000}
-            />
-            <Input
-              name="service_charge"
-              type="number"
-              min={0}
-              placeholder="Service charge ₦"
-              defaultValue={initial?.extras?.service_charge ?? 0}
-            />
-            <Input
-              name="cleaning_fee"
-              type="number"
-              min={0}
-              placeholder="Cleaning fee (shortlet)"
-              defaultValue={initial?.extras?.cleaning_fee ?? 0}
-            />
-            <Input
-              name="caution_deposit"
-              type="number"
-              min={0}
-              placeholder="Caution deposit (shortlet)"
-              defaultValue={initial?.extras?.caution_deposit ?? 0}
-            />
+            {(listingType === "rent" || listingType === "lease") && (
+              <>
+                <Input
+                  name="agency_fee_percent"
+                  type="number"
+                  min={0}
+                  max={20}
+                  placeholder="Agency fee %"
+                  defaultValue={initial?.extras?.agency_fee_percent ?? 10}
+                />
+                <Input
+                  name="caution_months"
+                  type="number"
+                  min={0}
+                  max={24}
+                  placeholder="Caution (months)"
+                  defaultValue={initial?.extras?.caution_months ?? 12}
+                />
+                <Input
+                  name="agreement_fee"
+                  type="number"
+                  min={0}
+                  placeholder="Agreement fee ₦"
+                  defaultValue={initial?.extras?.agreement_fee ?? 50000}
+                />
+                <Input
+                  name="service_charge"
+                  type="number"
+                  min={0}
+                  placeholder="Service charge ₦"
+                  defaultValue={initial?.extras?.service_charge ?? 0}
+                />
+                <Input
+                  name="legal_fee"
+                  type="number"
+                  min={0}
+                  placeholder="Legal / survey fee ₦"
+                  defaultValue={initial?.extras?.legal_fee ?? 0}
+                />
+              </>
+            )}
+            {listingType === "shortlet" && (
+              <>
+                <Input
+                  name="cleaning_fee"
+                  type="number"
+                  min={0}
+                  placeholder="Cleaning fee (shortlet)"
+                  defaultValue={initial?.extras?.cleaning_fee ?? 0}
+                />
+                <Input
+                  name="caution_deposit"
+                  type="number"
+                  min={0}
+                  placeholder="Caution deposit (shortlet)"
+                  defaultValue={initial?.extras?.caution_deposit ?? 0}
+                />
+              </>
+            )}
+            {listingType === "sale" && (
+              <Input
+                name="legal_fee"
+                type="number"
+                min={0}
+                placeholder="Legal / documentation fee ₦"
+                defaultValue={initial?.extras?.legal_fee ?? 0}
+              />
+            )}
           </div>
         </FormSection>
 
@@ -433,7 +504,9 @@ export function ListingForm({ agentId, initial }: ListingFormProps) {
           </p>
         )}
 
-        <Button type="submit" fullWidth size="lg" disabled={loading}>
+        <HumanVerifyField onValidChange={setVerifyOk} />
+
+        <Button type="submit" fullWidth size="lg" disabled={loading || !verifyOk}>
           {initial ? "Save changes" : "Submit for review"}
         </Button>
         <p className="text-center text-xs text-muted">

@@ -5,6 +5,15 @@ import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
 import { brand, colors } from "@/lib/design/tokens";
 import { StructuredData } from "@/components/seo/structured-data";
 import { PwaRegister } from "@/components/pwa/register";
+import { PwaInstallPrompt } from "@/components/pwa/install-prompt";
+import { Analytics } from "@vercel/analytics/react";
+import { Suspense } from "react";
+import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+import { ScrollRetention } from "@/components/retention/scroll-retention";
+import { GuestFavoriteSync } from "@/components/retention/guest-favorite-sync";
+
+const themeInitScript = `(function(){try{var t=localStorage.getItem('yike-theme');if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.add('light');}catch(e){}})();`;
 
 const inter = Inter({
   variable: "--font-inter",
@@ -81,14 +90,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full`}>
+    <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground antialiased">
-        <StructuredData />
-        {children}
-        <PwaRegister />
+      <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
+        <ThemeProvider>
+          <StructuredData />
+          {children}
+          <Suspense fallback={null}>
+            <AnalyticsProvider />
+          </Suspense>
+          <ScrollRetention />
+          <GuestFavoriteSync />
+          <Analytics />
+          <PwaRegister />
+          <PwaInstallPrompt />
+        </ThemeProvider>
       </body>
     </html>
   );

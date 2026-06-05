@@ -1,4 +1,4 @@
-import type { Property } from "@/types/database";
+import type { Profile, Property } from "@/types/database";
 import type { PropertySearchParams } from "@/lib/properties";
 import { mergeQueryIntoParams } from "@/lib/location-search";
 import { buildMockListings } from "@/lib/mock-listings-seed";
@@ -121,6 +121,23 @@ export function getRelatedMockListings(
     if (out.length >= limit) break;
   }
   return out;
+}
+
+export function getMockAgentById(id: string): Profile | null {
+  for (const p of MOCK_LISTINGS) {
+    if (p.agent_id === id && p.agent) return p.agent;
+    if (p.agent?.id === id) return p.agent;
+  }
+  return null;
+}
+
+export function getMockListingsByAgent(
+  agentId: string,
+  limit = 48
+): Property[] {
+  return MOCK_LISTINGS.filter(
+    (p) => p.agent_id === agentId || p.agent?.id === agentId
+  ).slice(0, limit);
 }
 
 export function withDemoFallback(properties: Property[]): {

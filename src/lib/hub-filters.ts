@@ -1,6 +1,7 @@
 import { getAreaProfiles } from "@/constants/areaProfiles";
 import { PROPERTY_CATEGORIES } from "@/constants/propertyCategories";
 import type { DiscoverHub, Property } from "@/types/database";
+import { isLandPropertyType } from "@/constants/listingTypes";
 import { isVerifiedAgent } from "@/lib/utils";
 
 const STUDENT_TYPES = new Set(
@@ -16,6 +17,28 @@ export function isTrustVerified(property: Property): boolean {
 
 export function matchesHub(property: Property, hub: DiscoverHub): boolean {
   if (hub === "shortlet") return property.listing_type === "shortlet";
+
+  if (hub === "land_sale") {
+    return property.listing_type === "sale" && isLandPropertyType(property.property_type);
+  }
+
+  if (hub === "land_lease") {
+    return property.listing_type === "lease" && isLandPropertyType(property.property_type);
+  }
+
+  if (hub === "buy") {
+    return (
+      property.listing_type === "sale" &&
+      !isLandPropertyType(property.property_type)
+    );
+  }
+
+  if (hub === "lease") {
+    return (
+      property.listing_type === "lease" &&
+      !isLandPropertyType(property.property_type)
+    );
+  }
 
   if (hub === "student") {
     if (STUDENT_TYPES.has(property.property_type ?? "")) return true;

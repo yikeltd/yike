@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { PROPERTY_TYPES } from "@/constants/propertyCategories";
+import { SEARCH_DEAL_TYPES } from "@/constants/listingTypes";
 import { FILTER_AMENITIES, getAmenityShortLabel } from "@/constants/amenities";
 import { BEDROOM_OPTIONS, BATHROOM_OPTIONS } from "@/lib/search-filters";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,18 @@ export function SearchFiltersBar({ className }: { className?: string }) {
         className
       )}
     >
+      <select
+        value={sp.get("type") ?? ""}
+        onChange={(e) => set("type", e.target.value)}
+        className="h-9 shrink-0 rounded-full bg-white px-3 text-xs font-semibold text-navy shadow-float outline-none"
+      >
+        <option value="">Deal type</option>
+        {SEARCH_DEAL_TYPES.map((t) => (
+          <option key={t.label} value={t.value}>
+            {t.label}
+          </option>
+        ))}
+      </select>
       <select
         value={sp.get("property_type") ?? ""}
         onChange={(e) => set("property_type", e.target.value)}

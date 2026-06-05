@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { getFeaturedProperties, getPublicProperties, getVerifiedListings } from "@/lib/properties";
+import { getMostViewedListings } from "@/lib/trending";
+import { getActiveAd } from "@/lib/ads";
 import { withDemoFallback } from "@/lib/mock-listings";
 import { POPULAR_AREAS } from "@/lib/constants";
 
@@ -17,8 +19,8 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-4 flex items-end justify-between px-3 lg:px-0">
-      <div>
-        <h2 className="text-lg font-bold text-navy lg:text-2xl">{title}</h2>
+      <div className="border-l-[3px] border-gold pl-3">
+        <h2 className="text-lg font-bold text-foreground lg:text-2xl">{title}</h2>
         {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
       </div>
       {href && (
@@ -65,12 +67,28 @@ export async function HomeVerifiedSection() {
   );
 }
 
+export async function HomeTrendingSection() {
+  const trending = await getMostViewedListings(6);
+  const { items, isDemo } = withDemoFallback(trending);
+  if (items.length === 0) return null;
+  return (
+    <section className="mt-8 lg:mt-12">
+      <SectionHeader
+        title="Trending now"
+        subtitle="Homes getting the most views"
+        href="/search"
+      />
+      <PropertyGrid properties={items.slice(0, 6)} isDemo={isDemo} />
+    </section>
+  );
+}
+
 export async function HomeRecentSection() {
   const recent = await getPublicProperties({}, 8);
   const { items, isDemo } = withDemoFallback(recent);
   if (items.length === 0) return null;
   return (
-    <section className="mt-8 hidden lg:mt-12 lg:block">
+    <section className="mt-8 lg:mt-12">
       <SectionHeader
         title="Recently added"
         subtitle="Fresh on Yike"
@@ -93,10 +111,20 @@ export async function HomeMobileFeed() {
     seen.add(p.id);
     return true;
   });
-  const { items: feed, isDemo } = withDemoFallback(items);
+  const [{ items: feed, isDemo }, midAd] = await Promise.all([
+    Promise.resolve(withDemoFallback(items)),
+    getActiveAd("home_feed_mid"),
+  ]);
   return (
     <section className="mt-4 lg:hidden">
-      <PropertyGrid properties={feed.slice(0, 10)} isDemo={isDemo} showCount />
+      <PropertyGrid
+        properties={feed.slice(0, 10)}
+        isDemo={isDemo}
+        showCount
+        midFeedAd={midAd}
+        feedAdInsertAfter={4}
+        adPlacementKey="home_feed_mid"
+      />
     </section>
   );
 }
@@ -113,7 +141,7 @@ export function PopularAreasSection() {
           <Link
             key={t.href}
             href={t.seoPath}
-            className="pressable shrink-0 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-float transition-colors hover:bg-gold/10 lg:rounded-xl lg:px-5 lg:py-3"
+            className="pressable shrink-0 rounded-full bg-elevated px-4 py-2.5 text-sm font-semibold text-foreground shadow-float ring-1 ring-black/[0.04] transition-colors hover:bg-gold/10 dark:ring-white/[0.06] lg:rounded-xl lg:px-5 lg:py-3"
           >
             {t.label}
           </Link>

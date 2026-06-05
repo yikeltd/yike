@@ -34,7 +34,7 @@ export async function PopularCities() {
             <Link
               key={city.slug}
               href={city.seoPath}
-              className="pressable card-lift group relative w-[min(72vw,220px)] shrink-0 overflow-hidden rounded-2xl bg-white shadow-float lg:w-auto"
+              className="pressable card-lift group relative w-[min(72vw,220px)] shrink-0 overflow-hidden rounded-2xl bg-elevated shadow-float ring-1 ring-black/[0.04] dark:ring-white/[0.06] lg:w-auto"
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-surface">
                 <Image

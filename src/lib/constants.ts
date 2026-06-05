@@ -10,11 +10,7 @@ export const SOCIAL_LINKS = {
   tiktok: "https://tiktok.com/@real_yike",
 } as const;
 
-export const LISTING_TYPES = [
-  { value: "rent", label: "Rent" },
-  { value: "sale", label: "Buy" },
-  { value: "shortlet", label: "Shortlet" },
-] as const;
+export { LISTING_TYPES } from "@/constants/listingTypes";
 
 export {
   PROPERTY_TYPES,
