@@ -1,0 +1,256 @@
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import type { Property } from "@/types/database";
+import {
+  filterMockListings,
+  getMockPropertyById,
+  getMockFeatured,
+  getMockVerified,
+  getRelatedMockListings,
+  isDemoProperty,
+  MOCK_LISTINGS,
+} from "@/lib/mock-listings";
+import { mergeQueryIntoParams } from "@/lib/location-search";
+
+import type { DiscoverHub } from "@/types/database";
+import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
+
+export type PropertySearchParams = {
+  listing_type?: string;
+  state?: string;
+  city?: string;
+  area?: string;
+  min_price?: number;
+  max_price?: number;
+  bedrooms?: number;
+  property_type?: string;
+  q?: string;
+  featured?: boolean;
+  verified_only?: boolean;
+  bathrooms?: number;
+  hub?: DiscoverHub;
+  amenity?: string;
+};
+
+const PUBLIC_SELECT = `
+  *,
+  agent:profiles!properties_agent_id_fkey (
+    id, full_name, phone, whatsapp, avatar_url,
+    verification_status, agent_type, role
+  )
+`;
+
+export async function getPublicProperties(
+  params: PropertySearchParams = {},
+  limit = 24
+): Promise<Property[]> {
+  const merged = params.q ? mergeQueryIntoParams(params, params.q) : params;
+
+  if (!isSupabaseConfigured()) {
+    return filterMockListings(merged, limit);
+  }
+  const supabase = await createClient();
+  if (!supabase) return filterMockListings(merged, limit);
+
+  let query = supabase
+    .from("properties")
+    .select(PUBLIC_SELECT)
+    .eq("status", "approved")
+    .gt("expires_at", new Date().toISOString())
+    .order("is_featured", { ascending: false })
+    .order("is_verified_listing", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (params.featured) query = query.eq("is_featured", true);
+  if (merged.listing_type) query = query.eq("listing_type", merged.listing_type);
+  if (merged.state) query = query.ilike("state", `%${merged.state}%`);
+  if (merged.city) query = query.ilike("city", `%${merged.city}%`);
+  if (merged.area) query = query.ilike("area", `%${merged.area}%`);
+  if (merged.bedrooms) query = query.gte("bedrooms", merged.bedrooms);
+  if (merged.bathrooms) query = query.gte("bathrooms", merged.bathrooms);
+  if (merged.verified_only) query = query.eq("is_verified_listing", true);
+  if (merged.property_type)
+    query = query.eq("property_type", merged.property_type);
+  if (merged.min_price) query = query.gte("price", merged.min_price);
+  if (merged.max_price) query = query.lte("price", merged.max_price);
+  if (merged.q) {
+    query = query.or(
+      `title.ilike.%${merged.q}%,area.ilike.%${merged.q}%,city.ilike.%${merged.q}%,description.ilike.%${merged.q}%`
+    );
+  }
+
+  const { data } = await query;
+  let rows = (data ?? []) as Property[];
+  if (merged.verified_only) {
+    rows = rows.filter((p) => isTrustVerified(p));
+  }
+  if (merged.hub) {
+    rows = rows.filter((p) => matchesHub(p, merged.hub!));
+  }
+  if (merged.amenity) {
+    rows = rows.filter((p) => hasAmenity(p, merged.amenity!));
+  }
+  if (rows.length > 0) return rows.slice(0, limit);
+  return filterMockListings(merged, limit);
+}
+
+export async function getApprovedPropertyIds(limit = 200): Promise<string[]> {
+  if (!isSupabaseConfigured()) {
+    return MOCK_LISTINGS.map((p) => p.id).slice(0, limit);
+  }
+  const supabase = await createClient();
+  if (!supabase) {
+    return MOCK_LISTINGS.map((p) => p.id).slice(0, limit);
+  }
+  const { data } = await supabase
+    .from("properties")
+    .select("id")
+    .eq("status", "approved")
+    .gt("expires_at", new Date().toISOString())
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  const ids = (data ?? []).map((r) => r.id as string);
+  if (ids.length > 0) return ids;
+  return MOCK_LISTINGS.map((p) => p.id).slice(0, limit);
+}
+
+export async function getFeaturedProperties(limit = 8): Promise<Property[]> {
+  if (!isSupabaseConfigured()) return getMockFeatured(limit);
+  const rows = await getPublicProperties({ featured: true }, limit);
+  return rows.length > 0 ? rows : getMockFeatured(limit);
+}
+
+export async function getVerifiedListings(limit = 8): Promise<Property[]> {
+  if (!isSupabaseConfigured()) return getMockVerified(limit);
+  const supabase = await createClient();
+  if (!supabase) return getMockVerified(limit);
+  const { data } = await supabase
+    .from("properties")
+    .select(PUBLIC_SELECT)
+    .eq("status", "approved")
+    .eq("is_verified_listing", true)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  const rows = ((data ?? []) as Property[]).filter((p) => isTrustVerified(p));
+  if (rows.length > 0) return rows.slice(0, limit);
+  return getMockVerified(limit);
+}
+
+export async function getHubListings(
+  hub: DiscoverHub,
+  limit = 8
+): Promise<Property[]> {
+  const { getMockByHub } = await import("@/lib/mock-listings");
+  if (!isSupabaseConfigured()) return getMockByHub(hub, limit);
+  const rows = await getPublicProperties({ hub }, limit);
+  return rows.length > 0 ? rows : getMockByHub(hub, limit);
+}
+
+export async function getPropertyById(id: string): Promise<Property | null> {
+  if (isDemoProperty(id)) return getMockPropertyById(id);
+
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient();
+    if (supabase) {
+      const { data } = await supabase
+        .from("properties")
+        .select(PUBLIC_SELECT)
+        .eq("id", id)
+        .single();
+      if (data) return data as Property;
+    }
+  }
+
+  return getMockPropertyById(id);
+}
+
+export async function getRelatedProperties(
+  property: Property,
+  limit = 6
+): Promise<Property[]> {
+  if (isDemoProperty(property.id)) {
+    return getRelatedMockListings(property, limit);
+  }
+
+  if (!isSupabaseConfigured()) {
+    return getRelatedMockListings(property, limit);
+  }
+
+  const supabase = await createClient();
+  if (!supabase) return getRelatedMockListings(property, limit);
+
+  const { data: areaData } = await supabase
+    .from("properties")
+    .select(PUBLIC_SELECT)
+    .eq("status", "approved")
+    .eq("city", property.city)
+    .eq("area", property.area)
+    .neq("id", property.id)
+    .gt("expires_at", new Date().toISOString())
+    .limit(limit);
+
+  const areaMatches = (areaData ?? []) as Property[];
+  if (areaMatches.length >= limit) return areaMatches;
+
+  const { data: cityData } = await supabase
+    .from("properties")
+    .select(PUBLIC_SELECT)
+    .eq("status", "approved")
+    .eq("city", property.city)
+    .neq("id", property.id)
+    .gt("expires_at", new Date().toISOString())
+    .limit(limit);
+
+  const cityMatches = (cityData ?? []) as Property[];
+  const seen = new Set<string>([property.id]);
+  const out: Property[] = [];
+  for (const p of [...areaMatches, ...cityMatches]) {
+    if (!seen.has(p.id)) {
+      seen.add(p.id);
+      out.push(p);
+    }
+    if (out.length >= limit) break;
+  }
+
+  if (out.length > 0) return out;
+  return getRelatedMockListings(property, limit);
+}
+
+export async function incrementPropertyViews(id: string) {
+  if (isDemoProperty(id) || !isSupabaseConfigured()) return;
+  const supabase = await createClient();
+  if (!supabase) return;
+  await supabase.rpc("increment_property_views", { property_id: id });
+}
+
+export function parseSearchParams(
+  searchParams: Record<string, string | string[] | undefined>
+): PropertySearchParams {
+  const get = (key: string) => {
+    const v = searchParams[key];
+    return typeof v === "string" ? v : undefined;
+  };
+  return {
+    listing_type: get("type"),
+    state: get("state"),
+    city: get("city"),
+    area: get("area"),
+    min_price: get("min") ? Number(get("min")) : undefined,
+    max_price: get("max") ? Number(get("max")) : undefined,
+    bedrooms: get("beds") ? Number(get("beds")) : undefined,
+    bathrooms: get("baths") ? Number(get("baths")) : undefined,
+    property_type: get("property_type"),
+    q: get("q"),
+    featured: get("featured") === "1",
+    verified_only: get("verified") === "1",
+    hub: get("hub") as DiscoverHub | undefined,
+    amenity: get("amenity"),
+  };
+}
+
+/** Total demo listings count — for empty-state messaging */
+export function getDemoListingCount() {
+  return MOCK_LISTINGS.length;
+}

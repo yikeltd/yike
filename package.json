@@ -3,15 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "optimize:brand": "node scripts/optimize-brand-assets.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:sql": "tsx scripts/seed-supabase.ts --sql",
+    "seed": "tsx scripts/seed-supabase.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.107.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.17.0",
     "next": "16.2.7",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "sharp": "^0.34.5",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -20,6 +30,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "png-to-ico": "^3.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

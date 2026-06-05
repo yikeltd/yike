@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect fill="#f1f5f9" width="800" height="600"/>
+  <path fill="#cbd5e1" d="M200 420h400v-80H200v80zm80-200l160 120 160-120H280z"/>
+  <text x="400" y="480" text-anchor="middle" fill="#94a3b8" font-family="system-ui" font-size="24">Yike</text>
+</svg>

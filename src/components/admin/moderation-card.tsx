@@ -1,0 +1,75 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { ListingActions } from "./listing-actions";
+import { StatusBadge } from "@/components/ui/badge";
+import { formatPrice, isVerifiedAgent } from "@/lib/utils";
+import type { Property, Profile } from "@/types/database";
+
+export function ModerationCard({
+  property,
+}: {
+  property: Property & { agent: Profile | null };
+}) {
+  const thumb = property.media_urls[0];
+  const agent = property.agent;
+
+  return (
+    <li className="overflow-hidden rounded-2xl bg-elevated shadow-float">
+      <div className="flex gap-3 p-3">
+        <Link
+          href={`/properties/${property.id}`}
+          className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-surface"
+        >
+          {thumb ? (
+            <Image
+              src={thumb}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="96px"
+              unoptimized={thumb.startsWith("http")}
+            />
+          ) : (
+            <span className="flex h-full items-center justify-center text-xs text-muted">
+              No img
+            </span>
+          )}
+        </Link>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <Link
+              href={`/properties/${property.id}`}
+              className="line-clamp-2 font-bold text-foreground"
+            >
+              {property.title}
+            </Link>
+            <StatusBadge status={property.status} />
+          </div>
+          <p className="mt-1 text-lg font-bold text-navy">
+            {formatPrice(
+              Number(property.price),
+              property.payment_period,
+              property.listing_type
+            )}
+          </p>
+          <p className="text-sm text-muted">
+            {property.area}, {property.city}
+          </p>
+          <p className="mt-0.5 text-xs text-muted">
+            {agent?.full_name ?? "Unknown agent"}
+          </p>
+        </div>
+      </div>
+      <div className="border-t border-surface px-3 py-3">
+        <ListingActions
+          propertyId={property.id}
+          agentVerified={
+            agent ? isVerifiedAgent(agent.verification_status) : false
+          }
+        />
+      </div>
+    </li>
+  );
+}
