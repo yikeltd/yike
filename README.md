@@ -74,9 +74,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Deploy to Vercel
 
-**Project:** [yike](https://vercel.com/yike-ng/yike) · **Production:** [yike.ng](https://yike.ng)
+**GitHub:** [yikeltd/yike](https://github.com/yikeltd/yike) · **Vercel:** [yikeprojects/yike](https://vercel.com/yikeprojects/yike) · **Production:** [yike.ng](https://yike.ng)
 
-Pushes to `main` auto-deploy via GitHub Actions (`.github/workflows/deploy.yml`).
+Push to `main` → Vercel production deploys automatically (Git integration). Other branches and PRs get preview URLs.
 
 ### Environment variables (Vercel → yike → Settings → Environment Variables)
 
@@ -85,8 +85,10 @@ Pushes to `main` auto-deploy via GitHub Actions (`.github/workflows/deploy.yml`)
 | `NEXT_PUBLIC_SUPABASE_URL` | Production, Preview, Development |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production, Preview, Development |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production, Preview, Development (secret) |
+| `SENDCHAMP_API_KEY` | Production, Preview (secret) |
+| `RESEND_API_KEY` | Production, Preview (secret) |
 
-See `.env.example` for values from [Supabase API settings](https://supabase.com/dashboard/project/gyxemepnrkwxocgzfbeo/settings/api).
+See `.env.example` for all keys. Supabase: [API settings](https://supabase.com/dashboard/project/gyxemepnrkwxocgzfbeo/settings/api).
 
 ### Local deploy (optional)
 
