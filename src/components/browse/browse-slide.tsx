@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { Heart, MapPin, MessageCircle, ChevronRight } from "lucide-react";
+import { useAuth } from "@/components/auth/auth-provider";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { recordEngagementSave } from "@/lib/engagement";
 import type { Property } from "@/types/database";
 import { formatPrice, listingTypeLabel } from "@/lib/utils";
 import { ListingImage } from "@/components/property/listing-image";
@@ -27,9 +31,21 @@ export function BrowseSlide({
   showSwipeHint?: boolean;
   horizontal?: boolean;
 }) {
+  const { guardAction } = useAuth();
   const image = property.media_urls[0] ?? "/placeholder-property.svg";
   const agent = property.agent;
   const wa = agent?.whatsapp || agent?.phone;
+  const waUrl =
+    wa &&
+    whatsAppDeepLink(
+      wa,
+      propertyWhatsAppMessage(
+        property.title,
+        property.area,
+        property.city,
+        property.id
+      )
+    );
   const verified = isTrustVerified(property);
   const price = formatPrice(
     Number(property.price),
@@ -62,11 +78,10 @@ export function BrowseSlide({
       </div>
 
       {showSwipeHint && (
-        <div className="absolute left-0 right-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center gap-2 text-white/80 animate-pulse-soft pointer-events-none">
+        <div className="absolute left-0 right-0 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center justify-center gap-1 text-white/80 animate-pulse-soft pointer-events-none">
           {horizontal ? (
             <>
-              <span className="text-xs font-semibold">Swipe left or right</span>
-              <ChevronRight className="h-5 w-5" />
+              <span className="text-xs font-semibold">Swipe left to skip · right to save</span>
             </>
           ) : (
             <>
@@ -99,41 +114,67 @@ export function BrowseSlide({
 
         {wa && (
           <div className="flex gap-2.5">
-            <a
-              href={whatsAppDeepLink(
-                wa,
-                propertyWhatsAppMessage(
-                  property.title,
-                  property.area,
-                  property.city,
-                  property.id
-                )
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
               className="pressable flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-gold text-sm font-bold text-navy shadow-glow-gold"
               onClick={(e) => {
                 e.stopPropagation();
-                void trackContactClick({
-                  propertyId: property.id,
-                  channel: "whatsapp",
-                  city: property.city,
-                  listingType: property.listing_type,
-                  propertyType: property.property_type,
-                  placement: "browse",
-                  agentId: agent?.id,
-                });
+                if (!waUrl) return;
+                guardAction(
+                  {
+                    type: "whatsapp",
+                    listingId: property.id,
+                    redirectPath: `/properties/${property.id}`,
+                    contactUrl: waUrl,
+                  },
+                  () => {
+                    void trackContactClick({
+                      propertyId: property.id,
+                      channel: "whatsapp",
+                      city: property.city,
+                      listingType: property.listing_type,
+                      propertyType: property.property_type,
+                      placement: "browse",
+                      agentId: agent?.id,
+                    });
+                    window.open(waUrl, "_blank", "noopener,noreferrer");
+                  }
+                );
               }}
             >
               <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
               Chat on WhatsApp
-            </a>
-            <Link
-              href={`/properties/${property.id}`}
+            </button>
+            <button
+              type="button"
               className="pressable flex h-12 min-w-[48px] items-center justify-center rounded-xl bg-white/15 text-white backdrop-blur-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                guardAction(
+                  {
+                    type: "save",
+                    listingId: property.id,
+                    redirectPath: `/properties/${property.id}`,
+                  },
+                  async () => {
+                    if (!isSupabaseConfigured()) return;
+                    const supabase = createClient();
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser();
+                    if (!user) return;
+                    await supabase.from("favorites").upsert(
+                      { user_id: user.id, property_id: property.id },
+                      { onConflict: "user_id,property_id", ignoreDuplicates: true }
+                    );
+                    recordEngagementSave();
+                  }
+                );
+              }}
+              aria-label="Save listing"
             >
               <Heart className="h-4 w-4" />
-            </Link>
+            </button>
           </div>
         )}
       </div>

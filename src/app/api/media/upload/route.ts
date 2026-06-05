@@ -26,16 +26,19 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, is_banned")
+    .select("role, is_banned, verification_status")
     .eq("id", user.id)
     .single();
 
-  if (
-    !profile ||
-    profile.is_banned ||
-    !["agent", "admin", "super_admin"].includes(profile.role)
-  ) {
-    return NextResponse.json({ error: "Agents only" }, { status: 403 });
+  const canUpload =
+    profile &&
+    !profile.is_banned &&
+    (profile.verification_status === "approved" ||
+      profile.verification_status === "verified" ||
+      ["admin", "super_admin"].includes(profile.role));
+
+  if (!canUpload) {
+    return NextResponse.json({ error: "Verified listers only" }, { status: 403 });
   }
 
   const form = await request.formData();

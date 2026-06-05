@@ -53,33 +53,56 @@ export const LISTING_TYPES = Object.values(LISTING_TYPE_CONFIG).map(
   ({ value, label }) => ({ value, label })
 );
 
-/** Consumer search chips on home and search surfaces */
+/** Home hero category chips — each filters the feed to relevant listings only */
 export type SearchDealChip = {
   value: string;
   label: string;
   hub?: DiscoverHub;
+  propertyType?: string;
 };
 
-export const SEARCH_DEAL_TYPES: SearchDealChip[] = [
+export const HOME_DEAL_TYPES: SearchDealChip[] = [
   { value: "", label: "All" },
   { value: "rent", label: "Rent" },
   { value: "sale", label: "Buy" },
   { value: "shortlet", label: "Shortlet" },
-  { value: "lease", label: "Lease" },
   { value: "land", label: "Land", hub: "land_sale" },
+  { value: "shops", label: "Shops", propertyType: "shop" },
 ];
+
+export const SEARCH_DEAL_TYPES: SearchDealChip[] = [...HOME_DEAL_TYPES];
 
 export type SearchDealType = (typeof SEARCH_DEAL_TYPES)[number]["value"];
 
 export function listingTypeChipsOnly() {
-  return SEARCH_DEAL_TYPES.filter((t) => !t.hub);
+  return SEARCH_DEAL_TYPES.filter((t) => !t.hub && !t.propertyType);
 }
 
-export function findDealChip(value: string, hub?: string | null) {
+export function findDealChip(
+  value: string,
+  hub?: string | null,
+  propertyType?: string | null
+) {
   if (hub === "land_sale") {
     return SEARCH_DEAL_TYPES.find((t) => t.hub === "land_sale");
   }
-  return SEARCH_DEAL_TYPES.find((t) => t.value === value && !t.hub);
+  if (propertyType === "shop") {
+    return SEARCH_DEAL_TYPES.find((t) => t.propertyType === "shop");
+  }
+  return SEARCH_DEAL_TYPES.find(
+    (t) => t.value === value && !t.hub && !t.propertyType
+  );
+}
+
+export function chipToFilterParams(chip: SearchDealChip): {
+  type?: string;
+  hub?: string;
+  property_type?: string;
+} {
+  if (chip.hub) return { hub: chip.hub };
+  if (chip.propertyType) return { property_type: chip.propertyType };
+  if (chip.value) return { type: chip.value };
+  return {};
 }
 
 const LAND_TYPES = new Set([

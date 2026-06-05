@@ -12,6 +12,8 @@ import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ScrollRetention } from "@/components/retention/scroll-retention";
 import { GuestFavoriteSync } from "@/components/retention/guest-favorite-sync";
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
 
 const themeInitScript = `(function(){try{var t=localStorage.getItem('yike-theme');if(t==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.add('light');}catch(e){}})();`;
 
@@ -115,13 +117,16 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
         <ThemeProvider>
-          <StructuredData />
-          {children}
-          <Suspense fallback={null}>
-            <AnalyticsProvider />
-          </Suspense>
-          <ScrollRetention />
-          <GuestFavoriteSync />
+          <AuthProvider>
+            <StructuredData />
+            {children}
+            <Suspense fallback={null}>
+              <AnalyticsProvider />
+            </Suspense>
+            <ScrollRetention />
+            <GuestFavoriteSync />
+            <PendingIntentHandler />
+          </AuthProvider>
           <Analytics />
           <PwaRegister />
           <PwaInstallPrompt />

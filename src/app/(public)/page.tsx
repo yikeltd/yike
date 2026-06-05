@@ -1,20 +1,7 @@
 import { Suspense } from "react";
-import { SafetyNotice } from "@/components/property/safety-notice";
-import { PopularCities } from "@/components/home/popular-cities";
-import { DiscoverHubs } from "@/components/home/discover-hubs";
-import { AdSlot } from "@/components/ads/ad-slot";
 import { HomeSearchHero } from "@/components/home/home-search-hero";
-import { HomeHotspotRow } from "@/components/home/home-hotspot-row";
-import {
-  HomeFeaturedSection,
-  HomeVerifiedSection,
-  HomeRecentSection,
-  HomeTrendingSection,
-  HomeFilteredFeed,
-  PopularAreasSection,
-} from "@/components/home/home-sections";
-import { HomeBlogPreviews } from "@/components/home/home-blog-previews";
-import { BrowseRail } from "@/components/retention/browse-rail";
+import { HomeHotPicksSections } from "@/components/home/home-hotspot-row";
+import { HomeFilteredFeed } from "@/components/home/home-sections";
 import { SocialProofBar } from "@/components/home/social-proof-bar";
 import { getMarketplaceStats } from "@/lib/marketplace-stats";
 import { parseSearchParams } from "@/lib/properties";
@@ -38,6 +25,8 @@ export default async function HomePage({
   const initial = {
     listingType: filters.listing_type,
     hub: filters.hub,
+    propertyType: filters.property_type,
+    state: filters.state,
     city: filters.city,
     area: filters.area,
     min: filters.min_price ? String(filters.min_price) : undefined,
@@ -47,18 +36,23 @@ export default async function HomePage({
   return (
     <div className="home-canvas pb-2 lg:pb-0">
       <section className="full-bleed relative overflow-hidden border-b border-gold/15 bg-gradient-to-br from-navy via-navy-mid to-navy-dark">
-        <div className="mesh-hero absolute inset-0 opacity-50" aria-hidden />
-        <div className="relative mx-auto max-w-7xl">
+        <div className="mesh-hero absolute inset-0 opacity-45" aria-hidden />
+        <div className="relative mx-auto max-w-7xl lg:px-6 xl:px-8">
           <Suspense fallback={null}>
             <HomeSearchHero initial={initial} />
-          </Suspense>
-          <Suspense fallback={<SectionFallback />}>
-            <HomeHotspotRow onHero />
           </Suspense>
         </div>
       </section>
 
-      <div className="mt-3 px-3 lg:mt-4 lg:px-0">
+      <div className="mx-auto max-w-7xl px-3 pt-5 lg:px-6 xl:px-8">
+        <div className="mb-4 border-l-[3px] border-gold pl-3">
+          <h2 className="text-lg font-bold text-foreground lg:text-xl">
+            Homes for you
+          </h2>
+          <p className="mt-0.5 text-sm text-muted">
+            Verified listings · WhatsApp contact
+          </p>
+        </div>
         <SocialProofBar stats={stats} />
       </div>
 
@@ -66,45 +60,9 @@ export default async function HomePage({
         <HomeFilteredFeed filters={filters} />
       </Suspense>
 
-      <BrowseRail />
-
-      <div className="section-band mt-6 lg:mt-10">
-        <Suspense fallback={<SectionFallback />}>
-          <HomeFeaturedSection />
-        </Suspense>
-      </div>
-
-      <Suspense fallback={null}>
-        <PopularCities />
-      </Suspense>
-
-      <div className="section-band">
-        <Suspense fallback={<SectionFallback />}>
-          <HomeVerifiedSection />
-        </Suspense>
-      </div>
-
-      <PopularAreasSection />
-
-      <section className="mx-3 mb-4 mt-6 lg:mx-0 lg:mb-8 lg:mt-12">
-        <SafetyNotice />
-      </section>
-
       <Suspense fallback={<SectionFallback />}>
-        <HomeTrendingSection />
+        <HomeHotPicksSections />
       </Suspense>
-
-      <div className="section-band">
-        <Suspense fallback={<SectionFallback />}>
-          <HomeRecentSection />
-        </Suspense>
-      </div>
-
-      <HomeBlogPreviews />
-
-      <DiscoverHubs />
-
-      <AdSlot placement="home_discover" className="mt-6 lg:mt-8" />
     </div>
   );
 }

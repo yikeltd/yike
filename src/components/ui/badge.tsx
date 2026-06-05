@@ -112,8 +112,10 @@ export function StatusBadge({
   className?: string;
 }) {
   const styles: Record<string, string> = {
+    not_started: "bg-surface text-muted",
     pending: "bg-gold/20 text-gold-dark",
     approved: "bg-gold/30 text-navy font-bold",
+    verified: "bg-gold/30 text-navy font-bold",
     rejected: "bg-red-500/15 text-red-600",
     rented: "bg-surface text-muted",
     hidden: "bg-surface text-muted",

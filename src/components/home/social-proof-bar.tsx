@@ -6,14 +6,16 @@ export function SocialProofBar({ stats }: { stats: MarketplaceStats | null }) {
 
   const items: { icon: typeof Home; text: string }[] = [];
 
-  const todayEstimate = Math.max(
-    3,
-    Math.round((stats.listingsThisWeek || 18) / 5)
-  );
-  items.push({
-    icon: Home,
-    text: `${todayEstimate} listings added today`,
-  });
+  if (stats.listingsThisWeek > 0) {
+    const todayEstimate = Math.min(
+      3,
+      Math.max(1, Math.round(stats.listingsThisWeek / 7))
+    );
+    items.push({
+      icon: Home,
+      text: `${todayEstimate} listing${todayEstimate === 1 ? "" : "s"} added today`,
+    });
+  }
 
   if (stats.verifiedAgentsRecently >= 3) {
     items.push({

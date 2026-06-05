@@ -22,7 +22,7 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -31,6 +31,16 @@ export default function LoginPage() {
       setError(authError.message);
       return;
     }
+    if (!data.user?.email_confirmed_at) {
+      router.push(
+        `/auth/verify-email?next=${encodeURIComponent(next)}`
+      );
+      return;
+    }
+    await supabase
+      .from("profiles")
+      .update({ email_verified: true })
+      .eq("id", data.user.id);
     router.push(next);
     router.refresh();
   }
@@ -38,11 +48,14 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Welcome back"
-      subtitle="Sign in to save homes, pick up where you left off, or manage your listings."
+      subtitle="Sign in to save homes, contact agents, and manage your listings."
       footer={
         <p className="text-sm text-muted">
           Don&apos;t have an account?{" "}
-          <Link href="/auth/signup" className="font-semibold text-gold-dark">
+          <Link
+            href={`/auth/signup${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`}
+            className="font-semibold text-gold-dark dark:text-gold"
+          >
             Create one free
           </Link>
         </p>
@@ -60,6 +73,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             className="h-12 rounded-xl"
+            autoComplete="email"
           />
         </div>
         <div>
@@ -73,10 +87,11 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             className="h-12 rounded-xl"
+            autoComplete="current-password"
           />
         </div>
         {error && (
-          <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger">
+          <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger dark:bg-red-500/15 dark:text-red-300">
             {error}
           </p>
         )}

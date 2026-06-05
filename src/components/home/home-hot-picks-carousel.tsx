@@ -7,10 +7,12 @@ import { HomeSpotlightCard } from "./home-spotlight-card";
 
 export function HomeHotPicksCarousel({
   picks,
-  onHero,
+  title,
+  subtitle,
 }: {
   picks: HotPickDisplay[];
-  onHero?: boolean;
+  title: string;
+  subtitle?: string;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
@@ -22,30 +24,18 @@ export function HomeHotPicksCarousel({
     const tick = () => {
       const track = trackRef.current;
       if (!track) return;
-
       const cards = track.querySelectorAll<HTMLElement>("[data-hot-pick]");
       if (cards.length === 0) return;
-
       indexRef.current = (indexRef.current + 1) % cards.length;
       const target = cards[indexRef.current];
-
       track.scrollTo({
         left: target.offsetLeft - track.offsetLeft,
         behavior: "smooth",
       });
-
-      if (indexRef.current === 0) {
-        window.setTimeout(() => {
-          track.scrollTo({ left: 0, behavior: "auto" });
-        }, 500);
-      }
     };
 
-    const start = window.setTimeout(() => {
-      tick();
-    }, 1200);
-
-    const id = window.setInterval(tick, 4000);
+    const start = window.setTimeout(tick, 1500);
+    const id = window.setInterval(tick, 4500);
     return () => {
       window.clearTimeout(start);
       window.clearInterval(id);
@@ -57,45 +47,27 @@ export function HomeHotPicksCarousel({
   const loopPicks = picks.length > 1 ? [...picks, ...picks] : picks;
 
   return (
-    <section className="mt-3 px-3 lg:mt-6 lg:px-0">
-      <div className="mb-2 flex items-end justify-between">
-        <div>
-          <p
-            className={cn(
-              "text-[10px] font-bold uppercase tracking-[0.2em]",
-              onHero ? "text-gold-light" : "text-gold-dark"
-            )}
-          >
-            Hot picks
-          </p>
-          <h2
-            className={cn(
-              "text-base font-bold lg:text-lg",
-              onHero ? "text-white" : "text-foreground"
-            )}
-          >
-            Curated for you
-          </h2>
-        </div>
+    <section className="mt-8 px-3 lg:mt-10 lg:px-6 xl:px-8">
+      <div className="mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark">
+          {title}
+        </p>
+        {subtitle && (
+          <p className="mt-0.5 text-sm text-muted">{subtitle}</p>
+        )}
       </div>
 
       <div
         ref={trackRef}
-        className="hide-scrollbar -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-3 pb-1"
+        className="hide-scrollbar -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-3 pb-1 lg:mx-0 lg:px-0"
         dir="ltr"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
         onTouchStart={() => setPaused(true)}
-        onTouchEnd={() => {
-          window.setTimeout(() => setPaused(false), 2500);
-        }}
+        onTouchEnd={() => window.setTimeout(() => setPaused(false), 2000)}
       >
         {loopPicks.map((pick, i) => (
-          <div
-            key={`${pick.id}-${i}`}
-            data-hot-pick
-            className="snap-start"
-          >
+          <div key={`${pick.id}-${i}`} data-hot-pick className="snap-start">
             <HomeSpotlightCard pick={pick} priority={i === 0} />
           </div>
         ))}

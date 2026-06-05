@@ -91,6 +91,12 @@ export {
   getAreasForSearchCity,
 } from "@/constants/nigeriaLocations";
 
+export {
+  STATE_CAPITALS,
+  getAllCitiesComplete,
+  getAllCitiesForState,
+} from "@/constants/nigeriaAllCities";
+
 export { TRENDING_SEARCH_LINKS, POPULAR_AREAS } from "@/constants/popularAreas";
 export { TRENDING_CITIES } from "@/constants/trendingCities";
 export { SAFETY_MESSAGES, getDailySafetyMessage } from "@/constants/safetyMessages";

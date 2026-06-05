@@ -1,8 +1,8 @@
-import { requireAgent } from "@/lib/auth";
+import { requireVerifiedLister } from "@/lib/auth";
 import { ListingForm } from "@/components/agent/listing-form";
 
 export default async function NewListingPage() {
-  const { user } = await requireAgent();
+  const { user } = await requireVerifiedLister();
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">

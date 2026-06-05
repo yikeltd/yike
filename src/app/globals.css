@@ -42,10 +42,10 @@
   color-scheme: dark;
   --background: #010b18;
   --foreground: #f4f7fb;
-  --muted: #b8c9de;
+  --muted: #c5d4e8;
   --surface: #0c1a32;
-  --elevated: #122746;
-  --navy: #4a7fd4;
+  --elevated: #132a4a;
+  --navy: #6b9ae8;
   --navy-mid: #1a3560;
   --navy-light: #2a4a7a;
   --gold: #e8bc4a;
@@ -54,6 +54,19 @@
   --shadow-float: 0 12px 40px rgb(0 0 0 / 50%), 0 0 0 1px rgb(232 188 74 / 8%);
   --shadow-float-lg: 0 24px 64px rgb(0 0 0 / 58%), 0 0 0 1px rgb(232 188 74 / 10%);
   --shadow-glow-gold: 0 0 40px rgb(232 188 74 / 18%);
+}
+
+.dark .text-navy {
+  color: var(--foreground);
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark p,
+.dark label,
+.dark span {
+  color: inherit;
 }
 
 .dark .gradient-scrim {

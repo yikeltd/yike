@@ -58,7 +58,13 @@ export function listingTypeLabel(value: string): string {
 export function isVerifiedAgent(
   verificationStatus: string | null | undefined
 ): boolean {
-  return verificationStatus === "verified";
+  return verificationStatus === "approved" || verificationStatus === "verified";
+}
+
+export function canListProperties(
+  verificationStatus: string | null | undefined
+): boolean {
+  return isVerifiedAgent(verificationStatus);
 }
 
 export function canShowPublicly(property: {

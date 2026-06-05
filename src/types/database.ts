@@ -1,9 +1,13 @@
 export type UserRole = "user" | "agent" | "admin" | "super_admin";
 export type VerificationStatus =
-  | "unverified"
+  | "not_started"
   | "pending"
-  | "verified"
-  | "rejected";
+  | "approved"
+  | "rejected"
+  /** @deprecated migrated to not_started */
+  | "unverified"
+  /** @deprecated migrated to approved */
+  | "verified";
 export type ListingType = "rent" | "lease" | "sale" | "shortlet";
 export type PropertyStatus =
   | "pending"
@@ -38,7 +42,11 @@ export type DiscoverHub =
 export interface Profile {
   id: string;
   full_name: string | null;
+  username: string | null;
+  email: string | null;
   phone: string | null;
+  phone_verified: boolean;
+  email_verified: boolean;
   whatsapp: string | null;
   avatar_url: string | null;
   role: UserRole;
@@ -102,10 +110,16 @@ export interface Favorite {
 export interface AgentVerification {
   id: string;
   agent_id: string;
+  user_id?: string;
   status: "pending" | "approved" | "rejected";
   rejection_reason: string | null;
+  nin_encrypted?: string | null;
+  nin_number_encrypted?: string | null;
   selfie_url: string | null;
-  id_document_url: string | null;
+  id_document_url?: string | null;
+  submitted_at?: string | null;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
   created_at: string;
 }
 

@@ -22,7 +22,7 @@ export function ConsumerShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {!isHome && <HeaderDesktop />}
+      <HeaderDesktop />
       <HeaderMobile />
       <main
         className={cn(

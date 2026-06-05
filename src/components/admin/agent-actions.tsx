@@ -17,7 +17,7 @@ export function AgentActions({
   async function verify() {
     await supabase
       .from("profiles")
-      .update({ verification_status: "verified" })
+      .update({ verification_status: "approved" })
       .eq("id", agentId);
     if (verificationId) {
       await supabase

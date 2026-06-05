@@ -11,6 +11,7 @@ import {
   trackContactClick,
   type ContactPlacement,
 } from "@/lib/contact-tracking";
+import { useAuth } from "@/components/auth/auth-provider";
 
 interface ContactButtonsProps {
   propertyId: string;
@@ -39,31 +40,66 @@ export function ContactButtons({
   layout = "detail",
   placement = "detail",
 }: ContactButtonsProps) {
+  const { guardAction } = useAuth();
   const wa = whatsapp || phone;
   const tel = phone || whatsapp;
 
-  function onWhatsAppClick() {
-    void trackContactClick({
-      propertyId,
-      channel: "whatsapp",
-      city,
-      listingType,
-      propertyType,
-      placement,
-      agentId,
-    });
+  const waUrl =
+    wa &&
+    whatsAppDeepLink(
+      wa,
+      propertyWhatsAppMessage(title, area, city, propertyId)
+    );
+  const telUrl = tel ? `tel:${formatPhoneForTel(tel)}` : null;
+
+  function onWhatsAppClick(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!waUrl) return;
+    guardAction(
+      {
+        type: "whatsapp",
+        listingId: propertyId,
+        redirectPath: `/properties/${propertyId}`,
+        contactUrl: waUrl,
+      },
+      () => {
+        void trackContactClick({
+          propertyId,
+          channel: "whatsapp",
+          city,
+          listingType,
+          propertyType,
+          placement,
+          agentId,
+        });
+        window.open(waUrl, "_blank", "noopener,noreferrer");
+      }
+    );
   }
 
-  function onCallClick() {
-    void trackContactClick({
-      propertyId,
-      channel: "call",
-      city,
-      listingType,
-      propertyType,
-      placement,
-      agentId,
-    });
+  function onCallClick(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!telUrl) return;
+    guardAction(
+      {
+        type: "call",
+        listingId: propertyId,
+        redirectPath: `/properties/${propertyId}`,
+        contactUrl: telUrl,
+      },
+      () => {
+        void trackContactClick({
+          propertyId,
+          channel: "call",
+          city,
+          listingType,
+          propertyType,
+          placement,
+          agentId,
+        });
+        window.location.href = telUrl;
+      }
+    );
   }
 
   if (!wa && !tel) return null;
@@ -74,32 +110,26 @@ export function ContactButtons({
         "flex gap-2",
         layout === "detail" && "grid grid-cols-[1fr_auto]"
       )}
-      onClick={(e) => e.preventDefault()}
     >
       {wa && (
-        <a
-          href={whatsAppDeepLink(
-            wa,
-            propertyWhatsAppMessage(title, area, city, propertyId)
-          )}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
           onClick={onWhatsAppClick}
           className="pressable flex flex-1 items-center justify-center gap-2 rounded-xl bg-gold py-3.5 text-sm font-bold text-navy shadow-glow-gold"
         >
           <MessageCircle className="h-5 w-5" strokeWidth={2.5} />
           Chat on WhatsApp
-        </a>
+        </button>
       )}
       {tel && (
-        <a
-          href={`tel:${formatPhoneForTel(tel)}`}
+        <button
+          type="button"
           onClick={onCallClick}
           className="pressable flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-surface text-navy"
           aria-label="Call agent"
         >
           <Phone className="h-5 w-5" />
-        </a>
+        </button>
       )}
     </div>
   );

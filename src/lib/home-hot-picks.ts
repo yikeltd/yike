@@ -25,10 +25,11 @@ type HotPickRow = {
   property: Property | null;
 };
 
-export async function getHomeHotPicks(limit = 12): Promise<HotPickDisplay[]> {
+export async function getAdminHotPicks(limit = 12): Promise<HotPickDisplay[]> {
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     if (supabase) {
+      const now = new Date().toISOString();
       const { data } = await supabase
         .from("home_hot_picks")
         .select(
@@ -42,6 +43,7 @@ export async function getHomeHotPicks(limit = 12): Promise<HotPickDisplay[]> {
           )`
         )
         .eq("is_active", true)
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
         .order("sort_order", { ascending: true })
         .limit(limit);
 
@@ -55,7 +57,7 @@ export async function getHomeHotPicks(limit = 12): Promise<HotPickDisplay[]> {
             id: row.id,
             property,
             headline: row.title?.trim() || property.title,
-            badge: row.badge?.trim() || "Hot pick",
+            badge: row.badge?.trim() || "Yike pick",
           } satisfies HotPickDisplay;
         })
         .filter((p): p is HotPickDisplay => p !== null);
@@ -64,6 +66,28 @@ export async function getHomeHotPicks(limit = 12): Promise<HotPickDisplay[]> {
     }
   }
 
+  const featured = await getFeaturedProperties(limit);
+  return featured.slice(0, limit).map((property) => ({
+    id: property.id,
+    property,
+    headline: property.title,
+    badge: "Featured",
+  }));
+}
+
+export async function getHottestListings(limit = 10): Promise<HotPickDisplay[]> {
+  const trending = await getMostViewedListings(limit);
+  return trending.map((property) => ({
+    id: `hot-${property.id}`,
+    property,
+    headline: property.title,
+    badge: "Hot",
+  }));
+}
+
+export async function getHomeHotPicks(limit = 12): Promise<HotPickDisplay[]> {
+  const admin = await getAdminHotPicks(limit);
+  if (admin.length > 0) return admin;
   return getLegacyHotPickFallback(limit);
 }
 

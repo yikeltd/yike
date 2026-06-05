@@ -18,10 +18,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
-import {
-  isGuestFavorite,
-  toggleGuestFavorite,
-} from "@/lib/guest-favorites";
+import { useAuth } from "@/components/auth/auth-provider";
 import { trackContactClick } from "@/lib/contact-tracking";
 import { trackEvent } from "@/lib/analytics";
 import { recordEngagementSave } from "@/lib/engagement";
@@ -45,6 +42,7 @@ export function PropertyCard({
   priorityImage?: boolean;
   inline?: boolean;
 }) {
+  const { guardAction, user } = useAuth();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const image = property.media_urls[0] ?? "/placeholder-property.svg";
@@ -66,61 +64,21 @@ export function PropertyCard({
   const amenities = property.extras?.amenities ?? [];
 
   useEffect(() => {
-    if (isDemo) return;
-    if (!isSupabaseConfigured()) {
-      setSaved(isGuestFavorite(property.id));
-      return;
-    }
+    if (isDemo || !user?.id || !isSupabaseConfigured()) return;
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        setSaved(isGuestFavorite(property.id));
-        return;
-      }
-      supabase
-        .from("favorites")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("property_id", property.id)
-        .maybeSingle()
-        .then(({ data }) => setSaved(!!data));
-    });
-  }, [property.id, isDemo]);
+    supabase
+      .from("favorites")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("property_id", property.id)
+      .maybeSingle()
+      .then(({ data }) => setSaved(!!data));
+  }, [property.id, isDemo, user?.id]);
 
-  async function toggleSave(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isDemo) return;
-
-    if (!isSupabaseConfigured()) {
-      const nowSaved = toggleGuestFavorite(property.id);
-      setSaved(nowSaved);
-      recordEngagementSave();
-      trackEvent(nowSaved ? "save_listing" : "unsave_listing", {
-        listing_id: property.id,
-        city: property.city,
-        source: "guest",
-      });
-      return;
-    }
-
+  async function performSave() {
+    if (!user?.id || !isSupabaseConfigured()) return;
     setSaving(true);
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      const nowSaved = toggleGuestFavorite(property.id);
-      setSaved(nowSaved);
-      recordEngagementSave();
-      trackEvent(nowSaved ? "save_listing" : "unsave_listing", {
-        listing_id: property.id,
-        city: property.city,
-        source: "guest",
-      });
-      setSaving(false);
-      return;
-    }
     if (saved) {
       await supabase
         .from("favorites")
@@ -149,30 +107,83 @@ export function PropertyCard({
     setSaving(false);
   }
 
-  function onWhatsAppClick(e: React.MouseEvent) {
+  function toggleSave(e: React.MouseEvent) {
+    e.preventDefault();
     e.stopPropagation();
-    void trackContactClick({
-      propertyId: property.id,
-      channel: "whatsapp",
-      city: property.city,
-      listingType: property.listing_type,
-      propertyType: property.property_type,
-      placement: "card",
-      agentId: agent?.id,
-    });
+    if (isDemo) return;
+    guardAction(
+      {
+        type: "save",
+        listingId: property.id,
+        redirectPath: `/properties/${property.id}`,
+      },
+      () => void performSave()
+    );
+  }
+
+  const waUrl =
+    wa &&
+    whatsAppDeepLink(
+      wa,
+      propertyWhatsAppMessage(
+        property.title,
+        property.area,
+        property.city,
+        property.id
+      )
+    );
+  const telUrl = tel ? `tel:${formatPhoneForTel(tel)}` : null;
+
+  function onWhatsAppClick(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!waUrl) return;
+    guardAction(
+      {
+        type: "whatsapp",
+        listingId: property.id,
+        redirectPath: `/properties/${property.id}`,
+        contactUrl: waUrl,
+      },
+      () => {
+        void trackContactClick({
+          propertyId: property.id,
+          channel: "whatsapp",
+          city: property.city,
+          listingType: property.listing_type,
+          propertyType: property.property_type,
+          placement: "card",
+          agentId: agent?.id,
+        });
+        window.open(waUrl, "_blank", "noopener,noreferrer");
+      }
+    );
   }
 
   function onCallClick(e: React.MouseEvent) {
+    e.preventDefault();
     e.stopPropagation();
-    void trackContactClick({
-      propertyId: property.id,
-      channel: "call",
-      city: property.city,
-      listingType: property.listing_type,
-      propertyType: property.property_type,
-      placement: "card",
-      agentId: agent?.id,
-    });
+    if (!telUrl) return;
+    guardAction(
+      {
+        type: "call",
+        listingId: property.id,
+        redirectPath: `/properties/${property.id}`,
+        contactUrl: telUrl,
+      },
+      () => {
+        void trackContactClick({
+          propertyId: property.id,
+          channel: "call",
+          city: property.city,
+          listingType: property.listing_type,
+          propertyType: property.property_type,
+          placement: "card",
+          agentId: agent?.id,
+        });
+        window.location.href = telUrl;
+      }
+    );
   }
 
   const freshness = getListingFreshness(
@@ -235,32 +246,22 @@ export function PropertyCard({
 
   const contactRow = wa && (
     <div className="flex gap-2.5">
-      <a
-        href={whatsAppDeepLink(
-          wa,
-          propertyWhatsAppMessage(
-            property.title,
-            property.area,
-            property.city,
-            property.id
-          )
-        )}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        type="button"
         onClick={onWhatsAppClick}
         className="pressable flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-gold text-sm font-bold text-navy shadow-glow-gold lg:min-h-[44px]"
       >
         <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
         Chat on WhatsApp
-      </a>
+      </button>
       {tel && (
-        <a
-          href={`tel:${formatPhoneForTel(tel)}`}
+        <button
+          type="button"
           onClick={onCallClick}
           className="pressable flex h-12 min-w-[48px] items-center justify-center rounded-xl bg-surface text-navy lg:h-11 lg:min-w-[44px]"
         >
           <Phone className="h-4 w-4" />
-        </a>
+        </button>
       )}
     </div>
   );

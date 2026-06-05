@@ -3,20 +3,21 @@ import { SignupForm } from "./signup-form";
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string }>;
+  searchParams: Promise<{ role?: string; next?: string }>;
 }) {
   const params = await searchParams;
-  const isAgent = params.role === "agent";
+  const isAgentIntent = params.role === "agent";
+  const nextPath = params.next;
+
+  // Unified signup — no separate agent form
+  if (isAgentIntent && !nextPath) {
+    // Show same page with agent note (no redirect needed)
+  }
 
   return (
     <SignupForm
-      isAgent={isAgent}
-      title={isAgent ? "List properties on Yike" : "Create your account"}
-      subtitle={
-        isAgent
-          ? "Join as an agent or landlord — post listings, get WhatsApp leads, build trust."
-          : "Save homes, browse smarter, and contact verified agents on WhatsApp."
-      }
+      agentNote={isAgentIntent}
+      nextPath={nextPath}
     />
   );
 }
