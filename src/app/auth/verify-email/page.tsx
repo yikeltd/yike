@@ -1,14 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Mail, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
 
-export default function VerifyEmailPage() {
+function VerifyEmailFallback() {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-gold" />
+    </div>
+  );
+}
+
+function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/";
@@ -113,5 +121,13 @@ export default function VerifyEmailPage() {
         </Button>
       </div>
     </AuthShell>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<VerifyEmailFallback />}>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

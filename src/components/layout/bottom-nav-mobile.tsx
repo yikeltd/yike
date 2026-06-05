@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Home, Layers, Search, Heart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -9,13 +9,29 @@ import { useAuth } from "@/components/auth/auth-provider";
 const items = [
   { href: "/", label: "Home", icon: Home, auth: false },
   { href: "/browse", label: "Swipe", icon: Layers, auth: false },
-  { href: "/search", label: "Search", icon: Search, auth: false },
+  { href: "/?focus=search", label: "Search", icon: Search, auth: false },
   { href: "/saved", label: "Saved", icon: Heart, auth: true, intent: "saved" as const },
   { href: "/agent", label: "Profile", icon: User, auth: true, intent: "profile" as const },
 ];
 
+function isNavActive(
+  href: string,
+  pathname: string,
+  focusSearch: boolean
+): boolean {
+  if (href === "/?focus=search") {
+    return pathname === "/" && focusSearch;
+  }
+  if (href === "/") {
+    return pathname === "/" && !focusSearch;
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function BottomNavMobile() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const focusSearch = searchParams.get("focus") === "search";
   const { guardAction } = useAuth();
 
   if (
@@ -34,10 +50,7 @@ export function BottomNavMobile() {
     >
       <div className="flex w-full max-w-lg items-center justify-around rounded-2xl border border-surface bg-elevated/95 py-1 shadow-float-lg backdrop-blur-lg">
         {items.map(({ href, label, icon: Icon, auth, intent }) => {
-          const active =
-            href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(href);
+          const active = isNavActive(href, pathname, focusSearch);
 
           if (auth && intent) {
             return (

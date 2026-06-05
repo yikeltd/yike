@@ -4,8 +4,9 @@ import {
   nigeriaLocations,
   NIGERIAN_STATES,
 } from "@/constants/nigeriaLocations";
+import { getLgasForState } from "@/constants/nigeriaLgas";
 
-/** State capitals — ensures every state has at least one searchable city */
+/** State capitals — every state has at least one searchable city */
 export const STATE_CAPITALS: Record<string, string> = {
   Abia: "Umuahia",
   Adamawa: "Yola",
@@ -46,7 +47,7 @@ export const STATE_CAPITALS: Record<string, string> = {
   Zamfara: "Gusau",
 };
 
-/** Every city in a state (capital + all mapped cities + areas as searchable localities) */
+/** Every city, town, and searchable locality in a state */
 export function getAllCitiesForState(state: string): string[] {
   const cities = new Set<string>();
   const capital = STATE_CAPITALS[state];
@@ -62,10 +63,14 @@ export function getAllCitiesForState(state: string): string[] {
     for (const area of areas) cities.add(area);
   }
 
+  for (const lga of getLgasForState(state)) {
+    cities.add(lga);
+  }
+
   return [...cities].sort((a, b) => a.localeCompare(b));
 }
 
-/** Complete nationwide city list — no state left without coverage */
+/** Complete nationwide city/locality list */
 export function getAllCitiesComplete(): string[] {
   const cities = new Set<string>(getAllCities());
 
@@ -76,4 +81,8 @@ export function getAllCitiesComplete(): string[] {
   }
 
   return [...cities].sort((a, b) => a.localeCompare(b));
+}
+
+export function getAllStates(): string[] {
+  return [...NIGERIAN_STATES].sort((a, b) => a.localeCompare(b));
 }

@@ -7,6 +7,8 @@ import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { AuthIntent } from "@/lib/auth-intent";
+import { peekAuthIntent, clearAuthIntent } from "@/lib/auth-intent";
+import { executeAuthIntent } from "@/lib/execute-auth-intent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -74,7 +76,13 @@ export function AuthModal({
       router.push("/auth/verify-email");
       return;
     }
-    router.refresh();
+    const pending = peekAuthIntent();
+    if (pending) {
+      clearAuthIntent();
+      await executeAuthIntent(pending, router);
+    } else {
+      router.refresh();
+    }
   }
 
   const subtitle = intent?.type
@@ -94,7 +102,7 @@ export function AuthModal({
         onClick={onClose}
         aria-label="Close"
       />
-      <div className="relative w-full max-w-md animate-in slide-in-from-bottom-4 rounded-t-3xl border border-white/10 bg-elevated p-6 shadow-float-lg sm:rounded-3xl sm:m-4">
+      <div className="relative w-full max-w-md rounded-t-3xl border border-white/10 bg-elevated p-6 shadow-float-lg ring-1 ring-gold/15 sm:m-4 sm:rounded-3xl">
         <button
           type="button"
           onClick={onClose}

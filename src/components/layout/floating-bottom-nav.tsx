@@ -1,20 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Home, Search, Heart, PlusCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/auth/auth-provider";
+import { ListPropertyNavLink } from "@/components/auth/list-property-button";
 
 const items = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/search", label: "Search", icon: Search },
-  { href: "/saved", label: "Saved", icon: Heart },
-  { href: "/post-property", label: "List", icon: PlusCircle },
-  { href: "/agent", label: "Profile", icon: User },
+  { href: "/", label: "Home", icon: Home, auth: false },
+  { href: "/?focus=search", label: "Search", icon: Search, auth: false },
+  { href: "/saved", label: "Saved", icon: Heart, auth: true, intent: "saved" as const },
+  { href: "/post-property", label: "List", icon: PlusCircle, auth: true, intent: "list_property" as const },
+  { href: "/agent", label: "Profile", icon: User, auth: true, intent: "profile" as const },
 ];
+
+function isNavActive(
+  href: string,
+  pathname: string,
+  focusSearch: boolean
+): boolean {
+  if (href === "/?focus=search") {
+    return pathname === "/" && focusSearch;
+  }
+  if (href === "/") {
+    return pathname === "/" && !focusSearch;
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function FloatingBottomNav() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const focusSearch = searchParams.get("focus") === "search";
+  const { guardAction } = useAuth();
+
   if (pathname.startsWith("/auth") || pathname.startsWith("/admin")) return null;
 
   return (
@@ -23,11 +43,63 @@ export function FloatingBottomNav() {
       aria-label="Main"
     >
       <div className="pointer-events-auto glass shadow-float-lg flex w-full max-w-md items-center justify-around rounded-full px-1 py-1.5">
-        {items.map(({ href, label, icon: Icon }) => {
-          const active =
-            href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(href);
+        {items.map(({ href, label, icon: Icon, auth, intent }) => {
+          const active = isNavActive(href, pathname, focusSearch);
+
+          if (auth && intent === "list_property") {
+            return (
+              <ListPropertyNavLink
+                key={href}
+                href={href}
+                className={cn(
+                  "pressable flex min-w-[52px] flex-col items-center gap-0.5 rounded-full px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200",
+                  active ? "text-navy" : "text-muted"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                    active && "bg-gold text-navy shadow-glow-gold scale-105"
+                  )}
+                >
+                  <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.5 : 2} />
+                </span>
+                <span className={cn(active && "text-navy")}>{label}</span>
+              </ListPropertyNavLink>
+            );
+          }
+
+          if (auth && intent) {
+            return (
+              <button
+                key={href}
+                type="button"
+                onClick={() =>
+                  guardAction(
+                    { type: intent, redirectPath: href },
+                    () => {
+                      window.location.href = href;
+                    }
+                  )
+                }
+                className={cn(
+                  "pressable flex min-w-[52px] flex-col items-center gap-0.5 rounded-full px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200",
+                  active ? "text-navy" : "text-muted"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                    active && "bg-gold text-navy shadow-glow-gold scale-105"
+                  )}
+                >
+                  <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.5 : 2} />
+                </span>
+                <span className={cn(active && "text-navy")}>{label}</span>
+              </button>
+            );
+          }
+
           return (
             <Link
               key={href}
@@ -40,8 +112,7 @@ export function FloatingBottomNav() {
               <span
                 className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
-                  active &&
-                    "bg-gold text-navy shadow-glow-gold scale-105"
+                  active && "bg-gold text-navy shadow-glow-gold scale-105"
                 )}
               >
                 <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.5 : 2} />

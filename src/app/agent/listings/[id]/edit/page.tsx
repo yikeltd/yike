@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireAgent } from "@/lib/auth";
+import { requireVerifiedLister } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { ListingForm } from "@/components/agent/listing-form";
 import type { Property } from "@/types/database";
@@ -9,7 +9,7 @@ export default async function EditListingPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { user } = await requireAgent();
+  const { user } = await requireVerifiedLister();
   const { id } = await params;
   const supabase = await requireServerClient();
   const { data } = await supabase

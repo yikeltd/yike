@@ -9,7 +9,7 @@ import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 
 function SectionFallback() {
   return (
-    <div className="px-3 py-4 lg:px-0">
+    <div className="px-3 py-6 lg:px-0">
       <PropertyGridSkeleton count={3} />
     </div>
   );
@@ -34,9 +34,9 @@ export default async function HomePage({
   };
 
   return (
-    <div className="home-canvas pb-2 lg:pb-0">
-      <section className="full-bleed relative overflow-hidden border-b border-gold/15 bg-gradient-to-br from-navy via-navy-mid to-navy-dark">
-        <div className="mesh-hero absolute inset-0 opacity-45" aria-hidden />
+    <div className="home-canvas min-h-[100dvh] pb-4 lg:pb-8">
+      <section className="full-bleed relative overflow-hidden border-b border-gold/10">
+        <div className="mesh-hero absolute inset-0" aria-hidden />
         <div className="relative mx-auto max-w-7xl lg:px-6 xl:px-8">
           <Suspense fallback={null}>
             <HomeSearchHero initial={initial} />
@@ -44,24 +44,29 @@ export default async function HomePage({
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-3 pt-5 lg:px-6 xl:px-8">
-        <div className="mb-4 border-l-[3px] border-gold pl-3">
-          <h2 className="text-lg font-bold text-foreground lg:text-xl">
-            Homes for you
-          </h2>
-          <p className="mt-0.5 text-sm text-muted">
-            Verified listings · WhatsApp contact
-          </p>
+      <Suspense fallback={<SectionFallback />}>
+        <HomeHotPicksSections />
+      </Suspense>
+
+      <section className="mx-auto max-w-7xl px-3 pt-6 lg:px-6 xl:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark dark:text-gold">
+              For you
+            </p>
+            <h2 className="text-xl font-bold text-foreground lg:text-2xl">
+              Homes for you
+            </h2>
+            <p className="mt-0.5 text-sm text-muted">
+              Verified listings · WhatsApp contact
+            </p>
+          </div>
+          <SocialProofBar stats={stats} />
         </div>
-        <SocialProofBar stats={stats} />
-      </div>
+      </section>
 
       <Suspense fallback={<SectionFallback />}>
         <HomeFilteredFeed filters={filters} />
-      </Suspense>
-
-      <Suspense fallback={<SectionFallback />}>
-        <HomeHotPicksSections />
       </Suspense>
     </div>
   );

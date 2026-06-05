@@ -8,12 +8,14 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import { getSession, getProfile } from "@/lib/auth";
+import { canListProperties } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { PageHero } from "@/components/pages/page-hero";
 import { TrustPillars } from "@/components/pages/trust-pillars";
 import { CtaBanner } from "@/components/pages/cta-banner";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { SITE_NAME } from "@/lib/constants";
+import { ListPropertyNavLink } from "@/components/auth/list-property-button";
 
 export const metadata = {
   title: `List Property Free | ${SITE_NAME}`,
@@ -29,8 +31,8 @@ const BENEFITS = [
   },
   {
     icon: BadgeCheck,
-    title: "Verified agents rank higher",
-    body: "Complete verification for more visibility on cards and search results.",
+    title: "Verified listers rank higher",
+    body: "Complete identity verification for more visibility on cards and search results.",
   },
   {
     icon: Clock,
@@ -54,11 +56,11 @@ export default async function PostPropertyPage() {
 
   if (user) {
     const profile = await getProfile(user.id);
-    if (
-      profile &&
-      ["agent", "admin", "super_admin"].includes(profile.role)
-    ) {
+    if (profile && canListProperties(profile.verification_status)) {
       redirect("/agent/listings/new");
+    }
+    if (profile) {
+      redirect("/agent/verification");
     }
   }
 
@@ -66,10 +68,10 @@ export default async function PostPropertyPage() {
     <div className="pb-12">
       <PageHero
         title="List your property on Yike"
-        subtitle="Free for agents, agencies and landlords. Every listing is reviewed — real prices only, no call for price."
+        subtitle="Create your account, verify your identity, then list for free. Real prices only — no call for price."
         image={PAGE_IMAGERY.list}
         badge="For agents & landlords"
-        cta={{ label: "Sign up free", href: "/auth/signup?role=agent" }}
+        cta={{ label: "Create account", href: "/auth/signup" }}
         secondaryCta={{ label: "Log in", href: "/auth/login" }}
       />
 
@@ -89,14 +91,14 @@ export default async function PostPropertyPage() {
         </div>
 
         <div className="mt-10 rounded-2xl bg-navy p-6 text-white lg:p-8">
-          <h2 className="text-lg font-bold">Listing requirements</h2>
+          <h2 className="text-lg font-bold">How it works</h2>
           <ul className="mt-4 space-y-3 text-sm text-white/90">
             {[
+              "Create one Yike account — renters and listers use the same signup",
+              "Verify your phone and email",
+              "When ready to list, submit NIN + selfie for agent verification",
               "WhatsApp contact required on every listing",
-              "Minimum 3 clear photos — no watermarked stock images",
-              'Real numeric prices — "call for price" is not allowed',
-              "Accurate location (city, area, landmark hint)",
-              "Listings expire after 14 days — renew anytime free",
+              "Minimum 3 clear photos — real numeric prices only",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
@@ -109,16 +111,16 @@ export default async function PostPropertyPage() {
         <TrustPillars title="Trust messaging for your clients" />
 
         <div className="mt-10 text-center">
-          <Link
-            href="/auth/signup?role=agent"
+          <ListPropertyNavLink
+            href="/post-property"
             className="pressable inline-flex h-14 min-w-[280px] items-center justify-center rounded-xl bg-gold text-base font-bold text-navy shadow-glow-gold"
           >
-            Create agent account — free
-          </Link>
+            List property on Yike
+          </ListPropertyNavLink>
           <p className="mt-4 text-sm text-muted">
             Already registered?{" "}
             <Link href="/auth/login" className="font-semibold text-gold-dark">
-              Log in to upload
+              Log in
             </Link>
           </p>
         </div>
@@ -126,8 +128,8 @@ export default async function PostPropertyPage() {
 
       <CtaBanner
         title="Want the Verified badge?"
-        body="Verified agents get higher ranking and more renter trust."
-        primary={{ label: "Verify as agent", href: "/verify-agent" }}
+        body="Verified listers get higher ranking and more renter trust."
+        primary={{ label: "Learn about verification", href: "/verify-agent" }}
         secondary={{ label: "Safety tips", href: "/safety" }}
         variant="gold"
       />

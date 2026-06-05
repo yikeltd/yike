@@ -7,7 +7,7 @@ import {
   FileCheck,
   Camera,
 } from "lucide-react";
-import { getSession, getProfile } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { PageHero } from "@/components/pages/page-hero";
 import { FaqSection } from "@/components/pages/faq-section";
 import { CtaBanner } from "@/components/pages/cta-banner";
@@ -22,8 +22,8 @@ export const metadata = {
 };
 
 const TIMELINE = [
-  { step: "1", title: "Create agent account", body: "Sign up free with phone and WhatsApp." },
-  { step: "2", title: "Submit documents", body: "Government ID + clear selfie for identity match." },
+  { step: "1", title: "Create your Yike account", body: "One signup for renters and listers — verify phone and email." },
+  { step: "2", title: "Submit NIN + selfie", body: "Identity check when you want to list property." },
   { step: "3", title: "Manual review", body: "Our team reviews within 1–2 business days." },
   { step: "4", title: "Verified badge live", body: "Badge appears on profile and listing cards." },
 ];
@@ -36,22 +36,20 @@ const BENEFITS = [
 
 export default async function VerifyAgentPage() {
   const user = await getSession();
-  const profile = user ? await getProfile(user.id) : null;
-  const isAgent =
-    profile && ["agent", "admin", "super_admin"].includes(profile.role);
+  const isLoggedIn = !!user;
 
   return (
     <div className="pb-12">
       <PageHero
         title="Get verified on Yike"
-        subtitle="Prestigious agent verification — more visibility, more trust, safer marketplace for everyone."
+        subtitle="Verify your identity to list property — more visibility, more trust, safer marketplace for everyone."
         image={PAGE_IMAGERY.verify}
-        badge="Verified agent"
+        badge="Verified lister"
         variant="premium"
         cta={
-          isAgent
+          isLoggedIn
             ? { label: "Start verification", href: "/agent/verification" }
-            : { label: "Create agent account", href: "/auth/signup?role=agent" }
+            : { label: "Create account", href: "/auth/signup" }
         }
         secondaryCta={{ label: "List property", href: "/post-property" }}
       />
@@ -109,7 +107,7 @@ export default async function VerifyAgentPage() {
             <Clock className="h-5 w-5" />
             Ready to apply?
           </h2>
-          {isAgent ? (
+          {isLoggedIn ? (
             <Link
               href="/agent/verification"
               className="mt-4 inline-flex h-12 items-center rounded-xl bg-gold px-6 text-sm font-bold text-navy"
@@ -118,10 +116,10 @@ export default async function VerifyAgentPage() {
             </Link>
           ) : (
             <Link
-              href="/auth/signup?role=agent"
+              href="/auth/signup"
               className="mt-4 inline-flex h-12 items-center rounded-xl bg-gold px-6 text-sm font-bold text-navy"
             >
-              Sign up as agent first
+              Create account first
             </Link>
           )}
         </section>
@@ -133,8 +131,8 @@ export default async function VerifyAgentPage() {
         title="Safer marketplace for all"
         body="Verified agents help renters avoid fake listings — join the trusted network on Yike."
         primary={{
-          label: isAgent ? "Verify now" : "Create agent account",
-          href: isAgent ? "/agent/verification" : "/auth/signup?role=agent",
+          label: isLoggedIn ? "Verify now" : "Create account",
+          href: isLoggedIn ? "/agent/verification" : "/auth/signup",
         }}
       />
     </div>

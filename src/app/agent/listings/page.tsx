@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAgent } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
@@ -7,7 +7,7 @@ import type { Property } from "@/types/database";
 import Image from "next/image";
 
 export default async function AgentListingsPage() {
-  const { user } = await requireAgent();
+  const user = await requireAuth("/auth/login?next=/agent/listings");
   const supabase = await requireServerClient();
   const { data } = await supabase
     .from("properties")

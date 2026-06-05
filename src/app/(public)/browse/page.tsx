@@ -31,7 +31,7 @@ export default async function BrowsePage() {
           badge="Swipe"
           variant="dark"
           cta={{ label: "Open on mobile", href: "/browse" }}
-          secondaryCta={{ label: "Search instead", href: "/search" }}
+          secondaryCta={{ label: "Search instead", href: "/?focus=search" }}
         />
         <div className="mx-auto max-w-7xl px-6 py-12">
           <div className="rounded-2xl bg-gold/10 p-6">
@@ -42,7 +42,7 @@ export default async function BrowsePage() {
             </p>
           </div>
           <div className="mt-10">
-            <PropertyGrid properties={items} isDemo={isDemo} showCount />
+            <PropertyGrid properties={items} isDemo={isDemo} />
           </div>
           <p className="mt-8 text-center">
             <Link href="/explore" className="text-sm font-bold text-gold-dark">

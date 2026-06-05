@@ -92,7 +92,9 @@ export default function AgentVerificationPage() {
 
     const { error } = await supabase.from("agent_verifications").insert({
       agent_id: user.id,
+      user_id: user.id,
       nin_number_encrypted: nin,
+      nin_encrypted: nin,
       selfie_url: form.get("selfie_url") as string,
       status: "pending",
       submitted_at: new Date().toISOString(),

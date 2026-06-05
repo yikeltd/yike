@@ -95,6 +95,7 @@ export {
   STATE_CAPITALS,
   getAllCitiesComplete,
   getAllCitiesForState,
+  getAllStates,
 } from "@/constants/nigeriaAllCities";
 
 export { TRENDING_SEARCH_LINKS, POPULAR_AREAS } from "@/constants/popularAreas";

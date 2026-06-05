@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Home, MapPin, Search, PenLine } from "lucide-react";
+import { ListPropertyCta } from "@/components/auth/list-property-cta";
 import { POPULAR_AREAS } from "@/constants/popularAreas";
 import { TRENDING_SEARCH_LINKS } from "@/constants/popularAreas";
 
@@ -89,12 +90,9 @@ export function EmptyStateRich({
           <Search className="h-4 w-4" />
           Browse all listings
         </Link>
-        <Link
-          href="/post-property"
-          className="pressable inline-flex items-center justify-center rounded-xl border border-surface px-5 py-3 text-sm font-bold text-navy"
-        >
+        <ListPropertyCta className="pressable inline-flex items-center justify-center rounded-xl border border-surface px-5 py-3 text-sm font-bold text-navy">
           List property free
-        </Link>
+        </ListPropertyCta>
       </div>
     </div>
   );

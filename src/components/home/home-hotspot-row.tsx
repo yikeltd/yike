@@ -23,7 +23,7 @@ export async function HomeHotPicksSections() {
         <HomeHotPicksCarousel
           picks={adminPicks}
           title="Featured by Yike"
-          subtitle="Hand-picked by our team"
+          subtitle="Admin picks — hand-selected listings"
         />
       )}
     </>

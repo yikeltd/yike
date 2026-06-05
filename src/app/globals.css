@@ -40,33 +40,42 @@
 
 .dark {
   color-scheme: dark;
-  --background: #010b18;
-  --foreground: #f4f7fb;
-  --muted: #c5d4e8;
-  --surface: #0c1a32;
-  --elevated: #132a4a;
-  --navy: #6b9ae8;
-  --navy-mid: #1a3560;
+  --background: #020f1f;
+  --foreground: #f0f4fa;
+  --muted: #a8bdd4;
+  --surface: #0a1a30;
+  --elevated: #112640;
+  --navy: #4a8fd4;
+  --navy-dark: #010b18;
+  --navy-mid: #152d52;
   --navy-light: #2a4a7a;
   --gold: #e8bc4a;
-  --gold-dark: #d4a017;
+  --gold-dark: #e4b547;
   --gold-light: #f5d878;
-  --shadow-float: 0 12px 40px rgb(0 0 0 / 50%), 0 0 0 1px rgb(232 188 74 / 8%);
-  --shadow-float-lg: 0 24px 64px rgb(0 0 0 / 58%), 0 0 0 1px rgb(232 188 74 / 10%);
-  --shadow-glow-gold: 0 0 40px rgb(232 188 74 / 18%);
+  --primary: #f0f4fa;
+  --shadow-float: 0 12px 40px rgb(0 0 0 / 45%), 0 0 0 1px rgb(232 188 74 / 10%);
+  --shadow-float-lg: 0 24px 64px rgb(0 0 0 / 55%), 0 0 0 1px rgb(232 188 74 / 12%);
+  --shadow-glow-gold: 0 0 32px rgb(232 188 74 / 22%);
 }
 
 .dark .text-navy {
   color: var(--foreground);
 }
 
-.dark h1,
-.dark h2,
-.dark h3,
-.dark p,
-.dark label,
-.dark span {
-  color: inherit;
+.dark input,
+.dark select,
+.dark textarea {
+  color: var(--foreground);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 85%, transparent);
+}
+
+.dark option {
+  background: var(--elevated);
+  color: var(--foreground);
 }
 
 .dark .gradient-scrim {
@@ -345,4 +354,63 @@ body {
     radial-gradient(ellipse 100% 60% at 50% -10%, rgb(232 188 74 / 8%), transparent 50%),
     radial-gradient(ellipse 80% 50% at 100% 20%, rgb(74 127 212 / 12%), transparent 45%),
     var(--background);
+}
+
+.section-editorial {
+  position: relative;
+}
+
+.section-editorial::before {
+  content: "";
+  position: absolute;
+  inset: -1rem -0.5rem auto;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--gold) 35%, transparent) 20%,
+    color-mix(in srgb, var(--gold) 35%, transparent) 80%,
+    transparent
+  );
+  opacity: 0.6;
+}
+
+@keyframes hot-picks-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.hot-picks-marquee {
+  animation: hot-picks-marquee 48s linear infinite;
+}
+
+.hot-picks-marquee:hover,
+.hot-picks-marquee:focus-within {
+  animation-play-state: paused;
+}
+
+@keyframes swipe-out-left {
+  to {
+    transform: translateX(-120%) rotate(-8deg);
+    opacity: 0;
+  }
+}
+
+@keyframes swipe-out-right {
+  to {
+    transform: translateX(120%) rotate(8deg);
+    opacity: 0;
+  }
+}
+
+.swipe-exit-left {
+  animation: swipe-out-left 0.32s var(--ease-out) forwards;
+}
+
+.swipe-exit-right {
+  animation: swipe-out-right 0.32s var(--ease-out) forwards;
 }

@@ -27,10 +27,10 @@ export function HeaderMobile() {
           />
         </Link>
         <Link
-          href="/search"
+          href="/"
           className="pressable flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-surface px-3 text-sm font-semibold text-foreground"
         >
-          Search homes
+          Find homes
         </Link>
         <ThemeToggle />
       </div>

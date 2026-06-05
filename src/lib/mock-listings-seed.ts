@@ -49,19 +49,38 @@ function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString();
 }
 
+function mockAgent(
+  partial: Pick<Profile, "id" | "full_name" | "phone" | "agent_type" | "trust_score"> &
+    Partial<Profile>
+): Profile {
+  return {
+    username: null,
+    email: null,
+    phone_verified: true,
+    email_verified: true,
+    whatsapp: partial.phone,
+    avatar_url: null,
+    role: "agent",
+    verification_status: "approved",
+    is_banned: false,
+    created_at: "2025-01-01",
+    ...partial,
+  };
+}
+
 const AGENTS: Profile[] = [
-  { id: "ag-1", full_name: "Chioma Okonkwo", phone: "08031234567", whatsapp: "08031234567", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "independent", trust_score: 98, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-2", full_name: "Emeka Nwosu", phone: "08098765432", whatsapp: "08098765432", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "agency", trust_score: 96, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-3", full_name: "Ada Enugu Properties", phone: "08123456789", whatsapp: "08123456789", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "agency", trust_score: 99, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-4", full_name: "Owerri Stays", phone: "07087654321", whatsapp: "07087654321", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "landlord", trust_score: 94, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-5", full_name: "Blessing Ude", phone: "08055667788", whatsapp: "08055667788", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "independent", trust_score: 92, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-6", full_name: "Lekki Homes NG", phone: "08112233445", whatsapp: "08112233445", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "agency", trust_score: 97, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-7", full_name: "Abuja Prime Realty", phone: "09087654321", whatsapp: "09087654321", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "agency", trust_score: 100, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-8", full_name: "PH City Agents", phone: "08033445566", whatsapp: "08033445566", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "independent", trust_score: 91, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-9", full_name: "Yaba Student Lets", phone: "07011223344", whatsapp: "07011223344", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "landlord", trust_score: 88, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-10", full_name: "Kano Property Hub", phone: "08099887766", whatsapp: "08099887766", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "agency", trust_score: 93, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-11", full_name: "Uyo Homes", phone: "08166778899", whatsapp: "08166778899", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "independent", trust_score: 90, is_banned: false, created_at: "2025-01-01" },
-  { id: "ag-12", full_name: "Ibadan Living", phone: "08077665544", whatsapp: "08077665544", avatar_url: null, role: "agent", verification_status: "verified", agent_type: "agency", trust_score: 95, is_banned: false, created_at: "2025-01-01" },
+  mockAgent({ id: "ag-1", full_name: "Chioma Okonkwo", phone: "08031234567", agent_type: "independent", trust_score: 98 }),
+  mockAgent({ id: "ag-2", full_name: "Emeka Nwosu", phone: "08098765432", agent_type: "agency", trust_score: 96 }),
+  mockAgent({ id: "ag-3", full_name: "Ada Enugu Properties", phone: "08123456789", agent_type: "agency", trust_score: 99 }),
+  mockAgent({ id: "ag-4", full_name: "Owerri Stays", phone: "07087654321", agent_type: "landlord", trust_score: 94 }),
+  mockAgent({ id: "ag-5", full_name: "Blessing Ude", phone: "08055667788", agent_type: "independent", trust_score: 92 }),
+  mockAgent({ id: "ag-6", full_name: "Lekki Homes NG", phone: "08112233445", agent_type: "agency", trust_score: 97 }),
+  mockAgent({ id: "ag-7", full_name: "Abuja Prime Realty", phone: "09087654321", agent_type: "agency", trust_score: 100 }),
+  mockAgent({ id: "ag-8", full_name: "PH City Agents", phone: "08033445566", agent_type: "independent", trust_score: 91 }),
+  mockAgent({ id: "ag-9", full_name: "Yaba Student Lets", phone: "07011223344", agent_type: "landlord", trust_score: 88 }),
+  mockAgent({ id: "ag-10", full_name: "Kano Property Hub", phone: "08099887766", agent_type: "agency", trust_score: 93 }),
+  mockAgent({ id: "ag-11", full_name: "Uyo Homes", phone: "08166778899", agent_type: "independent", trust_score: 90 }),
+  mockAgent({ id: "ag-12", full_name: "Ibadan Living", phone: "08077665544", agent_type: "agency", trust_score: 95 }),
 ];
 
 type Seed = {

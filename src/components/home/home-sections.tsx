@@ -129,9 +129,9 @@ export async function HomeFilteredFeed({
   }
 
   return (
-    <section className="mt-2 lg:mt-4">
+    <section className="section-editorial mx-auto mt-4 max-w-7xl px-3 lg:mt-6 lg:px-6 xl:px-8">
       <PropertyGrid
-        properties={items.slice(0, active ? 24 : 10)}
+        properties={items.slice(0, active ? 24 : 12)}
         isDemo={isDemo}
         midFeedAd={midAd}
         feedAdInsertAfter={4}

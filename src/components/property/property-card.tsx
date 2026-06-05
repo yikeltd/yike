@@ -268,7 +268,7 @@ export function PropertyCard({
 
   if (layout === "desktop") {
     return (
-      <article className="group card-lift overflow-hidden rounded-2xl bg-white shadow-float ring-1 ring-black/[0.04]">
+      <article className="group card-lift overflow-hidden rounded-2xl bg-elevated shadow-float ring-1 ring-black/[0.04] dark:ring-white/[0.08]">
         <Link href={href} prefetch={!isDemo} className="block">
           <div className="relative aspect-[5/4] overflow-hidden bg-surface">
             <ListingImage
@@ -285,7 +285,7 @@ export function PropertyCard({
         </Link>
         <div className="space-y-3.5 p-5 lg:p-6">
           <Link href={href} prefetch={!isDemo} className="block">
-            <p className="text-2xl font-bold tabular-nums tracking-tight text-navy lg:text-[1.65rem]">
+            <p className="text-2xl font-bold tabular-nums tracking-tight text-foreground lg:text-[1.65rem]">
               {price}
             </p>
             {moveInHint && (
@@ -339,7 +339,7 @@ export function PropertyCard({
   return (
     <article
       className={cn(
-        "card-lift overflow-hidden rounded-[1.25rem] bg-white shadow-float ring-1 ring-black/[0.04]",
+        "card-lift overflow-hidden rounded-[1.25rem] bg-elevated shadow-float ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
         inline ? "" : "mx-2.5 lg:mx-0"
       )}
     >

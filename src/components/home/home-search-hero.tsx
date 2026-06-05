@@ -7,8 +7,8 @@ import Image from "next/image";
 import {
   BUDGET_RANGES,
   getAreasForSearchCity,
-  getAllCitiesComplete,
   getAllCitiesForState,
+  getAllCitiesComplete,
   getStateForCity,
   getStates,
 } from "@/lib/constants";
@@ -24,7 +24,7 @@ import { addRecentSearch } from "@/lib/search-recent";
 import { parseLocationQuery } from "@/lib/location-search";
 import { brand } from "@/lib/design/tokens";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { SlidersHorizontal } from "lucide-react";
+import { MapPin, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Initial = {
@@ -37,12 +37,6 @@ type Initial = {
   min?: string;
   max?: string;
 };
-
-function hasExpandedFilters(initial?: Initial) {
-  return Boolean(
-    initial?.city || initial?.area || initial?.min || initial?.max
-  );
-}
 
 function chipKeyFromParams(params: {
   type?: string;
@@ -81,13 +75,19 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
   const [propertyType, setPropertyType] = useState(initial?.propertyType ?? "");
   const [budget, setBudget] = useState("0");
   const [browseQuery, setBrowseQuery] = useState("");
-  const [expanded, setExpanded] = useState(hasExpandedFilters(initial));
+  const [expanded, setExpanded] = useState(Boolean(initial?.city));
 
   const cityOptions = useMemo(
     () => (state ? getAllCitiesForState(state) : getAllCitiesComplete()),
     [state]
   );
   const areas = city ? getAreasForSearchCity(city) : [];
+
+  useEffect(() => {
+    if (searchParams.get("focus") === "search") {
+      document.getElementById("home-search")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const type = searchParams.get("type") ?? "";
@@ -142,10 +142,9 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
     if (range?.min) params.set("min", String(range.min));
     if (range?.max) params.set("max", String(range.max));
 
-    const chipLabel = chip.label;
     const label =
       [searchCity, searchArea.trim()].filter(Boolean).join(" · ") ||
-      chipLabel ||
+      chip.label ||
       "All Nigeria";
 
     trackEvent("search", {
@@ -175,6 +174,7 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
     setState(value);
     setCity("");
     setArea("");
+    setExpanded(false);
   }
 
   function onCityChange(value: string) {
@@ -193,7 +193,10 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
   function onBrowseSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = browseQuery.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      applyFilters();
+      return;
+    }
     const parsed = parseLocationQuery(trimmed);
     const nextCity = parsed.city ?? city;
     const nextArea = parsed.area ?? area;
@@ -210,16 +213,19 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
   }
 
   const fieldClass =
-    "h-12 w-full rounded-xl border border-white/10 bg-elevated/95 px-4 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-gold/50 dark:border-white/15 dark:bg-[#122746] dark:text-[#f4f7fb]";
+    "h-11 w-full rounded-xl border border-white/12 bg-elevated/90 px-3.5 text-sm font-medium text-foreground outline-none transition-shadow focus:ring-2 focus:ring-gold/45 dark:border-white/15 dark:bg-[#0f2240] dark:text-[#f4f7fb]";
 
   return (
-    <div className="relative overflow-hidden px-3 pb-5 pt-[max(0.5rem,env(safe-area-inset-top))] lg:px-0 lg:pt-4">
+    <div
+      id="home-search"
+      className="relative overflow-hidden px-3 pb-6 pt-[max(0.5rem,env(safe-area-inset-top))] lg:px-0 lg:pb-8 lg:pt-5"
+    >
       <div
         className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gold/15 blur-3xl"
         aria-hidden
       />
 
-      <div className="relative mb-3 flex items-center justify-between lg:hidden">
+      <div className="relative mb-4 flex items-center justify-between lg:hidden">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src={brand.logoSm}
@@ -234,25 +240,90 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
         <ThemeToggle inverted />
       </div>
 
+      {/* Browse real listings — compact inline search */}
       <form
         onSubmit={onBrowseSubmit}
-        className="relative mb-3 flex min-h-[44px] items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-3"
+        className="relative mb-3 rounded-2xl border border-white/10 bg-white/[0.07] p-3 backdrop-blur-sm"
       >
-        <SlidersHorizontal className="h-4 w-4 shrink-0 text-gold-light" />
-        <input
-          type="search"
-          value={browseQuery}
-          onChange={(e) => setBrowseQuery(e.target.value)}
-          placeholder="Browse real listings"
-          aria-label="Browse real listings"
-          className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/50 outline-none"
-        />
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-gold-light">
+          Browse real listings
+        </p>
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 shrink-0 text-gold" />
+          <input
+            type="search"
+            value={browseQuery}
+            onChange={(e) => setBrowseQuery(e.target.value)}
+            placeholder="City, area or neighbourhood"
+            aria-label="Browse real listings"
+            className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/45 outline-none"
+          />
+          <button
+            type="submit"
+            className="pressable shrink-0 rounded-lg bg-gold/90 px-3 py-1.5 text-xs font-bold text-navy"
+          >
+            Go
+          </button>
+        </div>
+        <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <select
+            value={state}
+            onChange={(e) => onStateChange(e.target.value)}
+            aria-label="State"
+            className="h-9 rounded-lg border border-white/10 bg-navy/40 px-2 text-xs font-medium text-white outline-none"
+          >
+            <option value="">All states</option>
+            {getStates().map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <select
+            value={city}
+            onChange={(e) => onCityChange(e.target.value)}
+            aria-label="City"
+            className="h-9 rounded-lg border border-white/10 bg-navy/40 px-2 text-xs font-medium text-white outline-none"
+          >
+            <option value="">All cities</option>
+            {cityOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <select
+            value={propertyType}
+            onChange={(e) => setPropertyType(e.target.value)}
+            aria-label="Property type"
+            className="h-9 rounded-lg border border-white/10 bg-navy/40 px-2 text-xs font-medium text-white outline-none"
+          >
+            <option value="">Any type</option>
+            {PROPERTY_TYPES.slice(0, 10).map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+            aria-label="Budget"
+            className="h-9 rounded-lg border border-white/10 bg-navy/40 px-2 text-xs font-medium text-white outline-none"
+          >
+            {BUDGET_RANGES.map((b, i) => (
+              <option key={b.label} value={i}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </form>
 
+      {/* Category chips */}
       <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
         {HOME_DEAL_TYPES.map((t) => {
-          const key =
-            t.hub ? "land" : t.propertyType ? "shops" : t.value;
+          const key = t.hub ? "land" : t.propertyType ? "shops" : t.value;
           const active = dealKey === key;
           return (
             <button
@@ -266,7 +337,7 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
                 "pressable shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all",
                 active
                   ? "bg-gold text-navy shadow-glow-gold"
-                  : "bg-white/10 text-white ring-1 ring-white/15"
+                  : "bg-white/10 text-white ring-1 ring-white/15 hover:bg-white/15"
               )}
             >
               {t.label}
@@ -275,6 +346,7 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
         })}
       </div>
 
+      {/* Primary filters — city first, expand on selection */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -282,35 +354,12 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
         }}
         className="relative mt-3 space-y-2"
       >
-        <select
-          value={city}
-          onChange={(e) => onCityChange(e.target.value)}
-          aria-label="All cities"
-          className={fieldClass}
-        >
-          <option value="">All cities</option>
-          {cityOptions.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-
-        <div
-          className={cn(
-            "grid gap-2 overflow-hidden transition-all duration-300 ease-out sm:grid-cols-2 lg:grid-cols-4 lg:gap-3",
-            expanded
-              ? "max-h-56 opacity-100"
-              : "pointer-events-none max-h-0 opacity-0"
-          )}
-          aria-hidden={!expanded}
-        >
+        <div className="grid gap-2 sm:grid-cols-2">
           <select
             value={state}
             onChange={(e) => onStateChange(e.target.value)}
-            aria-label="State"
+            aria-label="All states"
             className={fieldClass}
-            tabIndex={expanded ? 0 : -1}
           >
             <option value="">All states</option>
             {getStates().map((s) => (
@@ -319,7 +368,30 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
               </option>
             ))}
           </select>
+          <select
+            value={city}
+            onChange={(e) => onCityChange(e.target.value)}
+            aria-label="All cities"
+            className={fieldClass}
+          >
+            <option value="">All cities</option>
+            {cityOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
 
+        <div
+          className={cn(
+            "grid gap-2 overflow-hidden transition-all duration-300 ease-out sm:grid-cols-2 lg:grid-cols-3",
+            expanded
+              ? "max-h-40 opacity-100"
+              : "pointer-events-none max-h-0 opacity-0"
+          )}
+          aria-hidden={!expanded}
+        >
           {areas.length > 0 ? (
             <select
               value={area}
@@ -360,26 +432,12 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
             ))}
           </select>
 
-          <select
-            value={propertyType}
-            onChange={(e) => setPropertyType(e.target.value)}
-            aria-label="Property type"
-            className={fieldClass}
-            tabIndex={expanded ? 0 : -1}
-          >
-            <option value="">Property type</option>
-            {PROPERTY_TYPES.slice(0, 12).map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-
           <button
             type="submit"
             tabIndex={expanded ? 0 : -1}
-            className="pressable flex h-12 items-center justify-center gap-2 rounded-xl bg-gold text-sm font-bold text-navy shadow-glow-gold sm:col-span-2 lg:col-span-4"
+            className="pressable flex h-11 items-center justify-center gap-2 rounded-xl bg-gold text-sm font-bold text-navy shadow-glow-gold sm:col-span-2 lg:col-span-1"
           >
+            <SlidersHorizontal className="h-4 w-4" />
             Apply filters
           </button>
         </div>
