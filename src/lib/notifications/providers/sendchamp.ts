@@ -8,8 +8,16 @@ type SendchampConfig = {
   whatsappSender: string;
 };
 
+function getSendchampApiKey(): string {
+  return (
+    process.env.SENDCHAMP_API_KEY?.trim() ||
+    process.env.SENDCHAMP_PUBLIC_KEY?.trim() ||
+    ""
+  );
+}
+
 function getConfig(): SendchampConfig | null {
-  const apiKey = process.env.SENDCHAMP_API_KEY?.trim();
+  const apiKey = getSendchampApiKey();
   if (!apiKey) return null;
   return {
     apiKey,
@@ -64,7 +72,7 @@ export function toSendchampPhone(localPhone: string): string {
 }
 
 export function isSendchampConfigured(): boolean {
-  return Boolean(process.env.SENDCHAMP_API_KEY?.trim());
+  return Boolean(getSendchampApiKey());
 }
 
 export async function sendOtpWhatsApp(

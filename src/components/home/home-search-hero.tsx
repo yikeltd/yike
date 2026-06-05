@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   BUDGET_RANGES,
-  getAreasForSearchCity,
   getAllCitiesForState,
   getAllCitiesComplete,
   getStateForCity,
@@ -23,9 +22,7 @@ import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { addRecentSearch } from "@/lib/search-recent";
 import { parseLocationQuery } from "@/lib/location-search";
 import { brand } from "@/lib/design/tokens";
-import { MapPin, SlidersHorizontal } from "lucide-react";
-import { MobileHeaderBanner } from "@/components/banners/mobile-header-banner";
-import type { SiteBanner } from "@/types/database";
+import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Initial = {
@@ -60,13 +57,7 @@ function resolveChip(key: string): SearchDealChip {
   );
 }
 
-export function HomeSearchHero({
-  initial,
-  mobileBanner,
-}: {
-  initial?: Initial;
-  mobileBanner?: SiteBanner | null;
-}) {
+export function HomeSearchHero({ initial }: { initial?: Initial }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [dealKey, setDealKey] = useState(
@@ -82,14 +73,11 @@ export function HomeSearchHero({
   const [propertyType, setPropertyType] = useState(initial?.propertyType ?? "");
   const [budget, setBudget] = useState("0");
   const [browseQuery, setBrowseQuery] = useState("");
-  const [expanded, setExpanded] = useState(Boolean(initial?.city));
 
   const cityOptions = useMemo(
     () => (state ? getAllCitiesForState(state) : getAllCitiesComplete()),
     [state]
   );
-  const areas = city ? getAreasForSearchCity(city) : [];
-
   useEffect(() => {
     if (searchParams.get("focus") === "search") {
       document.getElementById("home-search")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -112,7 +100,6 @@ export function HomeSearchHero({
     setArea(a);
     setPropertyType(pt === "shop" ? "" : pt);
     setBrowseQuery([c, a].filter(Boolean).join(", "));
-    setExpanded(Boolean(c || a || min || max));
     const idx = BUDGET_RANGES.findIndex(
       (b) =>
         (min ? String(b.min) === min : !b.min) &&
@@ -181,7 +168,6 @@ export function HomeSearchHero({
     setState(value);
     setCity("");
     setArea("");
-    setExpanded(false);
   }
 
   function onCityChange(value: string) {
@@ -191,9 +177,6 @@ export function HomeSearchHero({
     if (value) {
       const inferred = getStateForCity(value);
       if (inferred) setState(inferred);
-      setExpanded(true);
-    } else {
-      setExpanded(false);
     }
   }
 
@@ -211,16 +194,12 @@ export function HomeSearchHero({
     if (parsed.city) setCity(parsed.city);
     if (parsed.area) setArea(parsed.area);
     if (parsed.state) setState(parsed.state);
-    if (nextCity) setExpanded(true);
     applyFilters({
       city: nextCity,
       area: nextArea,
       state: nextState,
     });
   }
-
-  const fieldClass =
-    "h-11 w-full rounded-xl border border-white/12 bg-elevated/90 px-3.5 text-sm font-medium text-foreground outline-none transition-shadow focus:ring-2 focus:ring-gold/45 dark:border-white/15 dark:bg-[#0f2240] dark:text-[#f4f7fb]";
 
   return (
     <div
@@ -232,20 +211,51 @@ export function HomeSearchHero({
         aria-hidden
       />
 
-      <div className="relative mb-3 flex items-center lg:hidden">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="relative mb-3 flex items-center gap-2.5 lg:hidden">
+        <Link href="/" className="shrink-0" aria-label="Yike home">
           <Image
             src={brand.logoSm}
-            alt="Yike"
+            alt=""
             width={32}
             height={32}
             className="rounded-lg"
             priority
           />
-          <span className="text-sm font-bold text-white">{brand.name}</span>
         </Link>
+        <p className="min-w-0 flex-1 text-[11px] leading-tight text-white sm:text-xs">
+          <span className="font-bold text-gold-light">Find homes faster</span>
+          <span className="text-white/75">
+            {" "}
+            — Search Aba, Enugu, Owerri &amp; more — verified listings on WhatsApp.
+          </span>
+        </p>
       </div>
-      {mobileBanner && <MobileHeaderBanner banner={mobileBanner} />}
+
+      {/* Category chips — above location filters */}
+      <div className="hide-scrollbar mb-3 flex gap-2 overflow-x-auto pb-1">
+        {HOME_DEAL_TYPES.map((t) => {
+          const key = t.hub ? "land" : t.propertyType ? "shops" : t.value;
+          const active = dealKey === key;
+          return (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() => {
+                setDealKey(key);
+                applyFilters({ typeKey: key });
+              }}
+              className={cn(
+                "pressable shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all",
+                active
+                  ? "bg-gold text-navy shadow-glow-gold"
+                  : "bg-white/10 text-white ring-1 ring-white/15 hover:bg-white/15"
+              )}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Browse real listings — compact inline search */}
       <form
@@ -324,129 +334,6 @@ export function HomeSearchHero({
               </option>
             ))}
           </select>
-        </div>
-      </form>
-
-      {/* Category chips */}
-      <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
-        {HOME_DEAL_TYPES.map((t) => {
-          const key = t.hub ? "land" : t.propertyType ? "shops" : t.value;
-          const active = dealKey === key;
-          return (
-            <button
-              key={t.label}
-              type="button"
-              onClick={() => {
-                setDealKey(key);
-                applyFilters({ typeKey: key });
-              }}
-              className={cn(
-                "pressable shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all",
-                active
-                  ? "bg-gold text-navy shadow-glow-gold"
-                  : "bg-white/10 text-white ring-1 ring-white/15 hover:bg-white/15"
-              )}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Primary filters — city first, expand on selection */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          applyFilters();
-        }}
-        className="relative mt-3 space-y-2"
-      >
-        <div className="grid gap-2 sm:grid-cols-2">
-          <select
-            value={state}
-            onChange={(e) => onStateChange(e.target.value)}
-            aria-label="All states"
-            className={fieldClass}
-          >
-            <option value="">All states</option>
-            {getStates().map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <select
-            value={city}
-            onChange={(e) => onCityChange(e.target.value)}
-            aria-label="All cities"
-            className={fieldClass}
-          >
-            <option value="">All cities</option>
-            {cityOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div
-          className={cn(
-            "grid gap-2 overflow-hidden transition-all duration-300 ease-out sm:grid-cols-2 lg:grid-cols-3",
-            expanded
-              ? "max-h-40 opacity-100"
-              : "pointer-events-none max-h-0 opacity-0"
-          )}
-          aria-hidden={!expanded}
-        >
-          {areas.length > 0 ? (
-            <select
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
-              aria-label="Area or neighbourhood"
-              className={fieldClass}
-              tabIndex={expanded ? 0 : -1}
-            >
-              <option value="">Area or neighbourhood</option>
-              {areas.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
-              placeholder="Area or neighbourhood"
-              aria-label="Area or neighbourhood"
-              className={fieldClass}
-              tabIndex={expanded ? 0 : -1}
-            />
-          )}
-
-          <select
-            value={budget}
-            onChange={(e) => setBudget(e.target.value)}
-            aria-label="Any budget"
-            className={fieldClass}
-            tabIndex={expanded ? 0 : -1}
-          >
-            {BUDGET_RANGES.map((b, i) => (
-              <option key={b.label} value={i}>
-                {b.label}
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="submit"
-            tabIndex={expanded ? 0 : -1}
-            className="pressable flex h-11 items-center justify-center gap-2 rounded-xl bg-gold text-sm font-bold text-navy shadow-glow-gold sm:col-span-2 lg:col-span-1"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Apply filters
-          </button>
         </div>
       </form>
     </div>
