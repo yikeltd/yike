@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { HeaderDesktop } from "./header-desktop";
@@ -36,7 +37,9 @@ export function ConsumerShell({ children }: { children: React.ReactNode }) {
       >
         {children}
       </main>
-      <BottomNavMobile />
+      <Suspense fallback={null}>
+        <BottomNavMobile />
+      </Suspense>
     </>
   );
 }
