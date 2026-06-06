@@ -61,6 +61,13 @@ export type SearchDealChip = {
   propertyType?: string;
 };
 
+export const HOTEL_PROPERTY_TYPES = ["hotel_apt", "guest_house"] as const;
+
+export function isHotelPropertyType(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return (HOTEL_PROPERTY_TYPES as readonly string[]).includes(value);
+}
+
 export const HOME_DEAL_TYPES: SearchDealChip[] = [
   { value: "", label: "All" },
   { value: "rent", label: "Rent" },
@@ -68,6 +75,7 @@ export const HOME_DEAL_TYPES: SearchDealChip[] = [
   { value: "shortlet", label: "Shortlet" },
   { value: "land", label: "Land", hub: "land_sale" },
   { value: "shops", label: "Shops", propertyType: "shop" },
+  { value: "hotel", label: "Hotels", propertyType: "hotel" },
 ];
 
 export const SEARCH_DEAL_TYPES: SearchDealChip[] = [...HOME_DEAL_TYPES];
@@ -89,6 +97,9 @@ export function findDealChip(
   if (propertyType === "shop") {
     return SEARCH_DEAL_TYPES.find((t) => t.propertyType === "shop");
   }
+  if (propertyType === "hotel" || isHotelPropertyType(propertyType)) {
+    return SEARCH_DEAL_TYPES.find((t) => t.propertyType === "hotel");
+  }
   return SEARCH_DEAL_TYPES.find(
     (t) => t.value === value && !t.hub && !t.propertyType
   );
@@ -100,6 +111,7 @@ export function chipToFilterParams(chip: SearchDealChip): {
   property_type?: string;
 } {
   if (chip.hub) return { hub: chip.hub };
+  if (chip.propertyType === "hotel") return { property_type: "hotel" };
   if (chip.propertyType) return { property_type: chip.propertyType };
   if (chip.value) return { type: chip.value };
   return {};

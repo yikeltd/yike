@@ -1,16 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  BUDGET_RANGES,
-  getAllCitiesForState,
-  getAllCitiesComplete,
-  getStateForCity,
-  getStates,
-} from "@/lib/constants";
+import { useEffect, useState } from "react";
+import { BUDGET_RANGES, getStateForCity } from "@/lib/constants";
 import { PROPERTY_TYPES } from "@/constants/propertyCategories";
 import {
   HOME_DEAL_TYPES,
@@ -21,7 +13,6 @@ import { trackEvent } from "@/lib/analytics";
 import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { addRecentSearch } from "@/lib/search-recent";
 import { parseLocationQuery } from "@/lib/location-search";
-import { brand } from "@/lib/design/tokens";
 import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +34,7 @@ function chipKeyFromParams(params: {
 }) {
   if (params.hub === "land_sale") return "land";
   if (params.propertyType === "shop") return "shops";
+  if (params.propertyType === "hotel") return "hotel";
   return params.type ?? "";
 }
 
@@ -52,7 +44,8 @@ function resolveChip(key: string): SearchDealChip {
       (t) =>
         t.value === key ||
         (key === "land" && t.hub === "land_sale") ||
-        (key === "shops" && t.propertyType === "shop")
+        (key === "shops" && t.propertyType === "shop") ||
+        (key === "hotel" && t.propertyType === "hotel")
     ) ?? HOME_DEAL_TYPES[0]
   );
 }
@@ -74,10 +67,6 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
   const [budget, setBudget] = useState("0");
   const [browseQuery, setBrowseQuery] = useState("");
 
-  const cityOptions = useMemo(
-    () => (state ? getAllCitiesForState(state) : getAllCitiesComplete()),
-    [state]
-  );
   useEffect(() => {
     if (searchParams.get("focus") === "search") {
       document.getElementById("home-search")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -164,22 +153,6 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
     router.replace(qs ? `/?${qs}` : "/", { scroll: false });
   }
 
-  function onStateChange(value: string) {
-    setState(value);
-    setCity("");
-    setArea("");
-  }
-
-  function onCityChange(value: string) {
-    setCity(value);
-    setArea("");
-    setBrowseQuery(value);
-    if (value) {
-      const inferred = getStateForCity(value);
-      if (inferred) setState(inferred);
-    }
-  }
-
   function onBrowseSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = browseQuery.trim();
@@ -211,30 +184,18 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
         aria-hidden
       />
 
-      <div className="relative mb-3 flex items-center gap-2.5 lg:hidden">
-        <Link href="/" className="shrink-0" aria-label="Yike home">
-          <Image
-            src={brand.logoSm}
-            alt=""
-            width={32}
-            height={32}
-            className="rounded-lg"
-            priority
-          />
-        </Link>
-        <p className="min-w-0 flex-1 text-[11px] leading-tight text-white sm:text-xs">
-          <span className="font-bold text-gold-light">Find homes faster</span>
-          <span className="text-white/75">
-            {" "}
-            — Search Aba, Enugu, Owerri &amp; more — verified listings on WhatsApp.
-          </span>
-        </p>
-      </div>
-
-      {/* Category chips — above location filters */}
+      {/* Category chips */}
       <div className="hide-scrollbar mb-3 flex gap-2 overflow-x-auto pb-1">
         {HOME_DEAL_TYPES.map((t) => {
-          const key = t.hub ? "land" : t.propertyType ? "shops" : t.value;
+          const key = t.hub
+            ? "land"
+            : t.propertyType === "shop"
+              ? "shops"
+              : t.propertyType === "hotel"
+                ? "hotel"
+                : t.propertyType
+                  ? t.propertyType
+                  : t.value;
           const active = dealKey === key;
           return (
             <button
@@ -282,33 +243,7 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
             Go
           </button>
         </div>
-        <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <select
-            value={state}
-            onChange={(e) => onStateChange(e.target.value)}
-            aria-label="State"
-            className="h-9 rounded-lg border border-white/10 bg-navy/40 px-2 text-xs font-medium text-white outline-none"
-          >
-            <option value="">All states</option>
-            {getStates().map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <select
-            value={city}
-            onChange={(e) => onCityChange(e.target.value)}
-            aria-label="City"
-            className="h-9 rounded-lg border border-white/10 bg-navy/40 px-2 text-xs font-medium text-white outline-none"
-          >
-            <option value="">All cities</option>
-            {cityOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
           <select
             value={propertyType}
             onChange={(e) => setPropertyType(e.target.value)}
@@ -316,7 +251,7 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
             className="h-9 rounded-lg border border-white/10 bg-navy/40 px-2 text-xs font-medium text-white outline-none"
           >
             <option value="">Any type</option>
-            {PROPERTY_TYPES.slice(0, 10).map((t) => (
+            {PROPERTY_TYPES.slice(0, 12).map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
               </option>

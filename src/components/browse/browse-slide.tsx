@@ -80,9 +80,7 @@ export function BrowseSlide({
       {showSwipeHint && (
         <div className="absolute left-0 right-0 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center justify-center gap-1 text-white/80 animate-pulse-soft pointer-events-none">
           {horizontal ? (
-            <>
-              <span className="text-xs font-semibold">Swipe left to skip · right to save</span>
-            </>
+            <span className="text-xs font-semibold">Swipe for next home</span>
           ) : (
             <>
               <ChevronRight className="h-6 w-6 rotate-[-90deg]" />

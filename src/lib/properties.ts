@@ -16,6 +16,7 @@ import { sortPropertiesByMarketRank } from "@/lib/agent-tiers";
 
 import type { DiscoverHub } from "@/types/database";
 import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
+import { isHotelPropertyType } from "@/constants/listingTypes";
 
 export type PropertySearchParams = {
   listing_type?: string;
@@ -93,6 +94,9 @@ export async function getPublicProperties(
   }
   if (merged.amenity) {
     rows = rows.filter((p) => hasAmenity(p, merged.amenity!));
+  }
+  if (merged.property_type === "hotel") {
+    rows = rows.filter((p) => isHotelPropertyType(p.property_type));
   }
   if (rows.length > 0) {
     return sortPropertiesByMarketRank(rows).slice(0, limit);

@@ -28,6 +28,8 @@ const PROPERTY_PHRASES: { pattern: RegExp; value: string }[] = [
   { pattern: /\boffice(s)?\s*(space)?\b/i, value: "office" },
   { pattern: /\bwarehouse(s)?\b/i, value: "warehouse" },
   { pattern: /\bhostel(s)?\b/i, value: "hostel" },
+  { pattern: /\bhotel(s)?\b/i, value: "hotel" },
+  { pattern: /\bguest\s*house(s)?\b/i, value: "guest_house" },
   { pattern: /\bapartment(s)?\b/i, value: "flat" },
   { pattern: /\bflat(s)?\b/i, value: "flat" },
   { pattern: /\bland\b/i, value: "land" },

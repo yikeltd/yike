@@ -216,6 +216,11 @@ export function filterPropertiesForBrowse(
   if (!hasStrongPrefs) return properties;
 
   const filtered = properties.filter((p) => matchesBrowsePrefs(p, prefs));
+
+  if (prefs.cities.length > 0) {
+    return filtered.length > 0 ? filtered : properties;
+  }
+
   return filtered.length >= 3 ? filtered : properties;
 }
 

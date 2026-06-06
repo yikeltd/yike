@@ -4,24 +4,18 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { Property } from "@/types/database";
+import { buildBalancedBrowseFeed } from "@/lib/browse-feed";
 import {
   getBrowsePreferences,
-  rankPropertiesForBrowse,
   syncBrowseFromRecentSearches,
   trackViewedListing,
-  trackSavedListing,
 } from "@/lib/browse-preferences";
 import { BrowseSlide } from "./browse-slide";
-import { useAuth } from "@/components/auth/auth-provider";
-import { createClient } from "@/lib/supabase/client";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { recordEngagementSave } from "@/lib/engagement";
 import { cn } from "@/lib/utils";
 
 type SwipeDir = "left" | "right" | null;
 
 export function HorizontalBrowse({ properties }: { properties: Property[] }) {
-  const { guardAction } = useAuth();
   const [feed, setFeed] = useState(properties);
   const [index, setIndex] = useState(0);
   const [exitDir, setExitDir] = useState<SwipeDir>(null);
@@ -31,8 +25,8 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
   useEffect(() => {
     syncBrowseFromRecentSearches();
     const prefs = getBrowsePreferences();
-    const ranked = rankPropertiesForBrowse(properties, prefs);
-    setFeed(ranked.length > 0 ? ranked : properties);
+    const balanced = buildBalancedBrowseFeed(properties, prefs, 80);
+    setFeed(balanced.length > 0 ? balanced : properties);
     setIndex(0);
   }, [properties]);
 
@@ -58,35 +52,6 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
     trackViewedListing(current.id);
     advance("left");
   }, [current, advance]);
-
-  const save = useCallback(() => {
-    if (!current) return;
-    guardAction(
-      {
-        type: "save",
-        listingId: current.id,
-        redirectPath: "/browse",
-      },
-      async () => {
-        if (isSupabaseConfigured()) {
-          const supabase = createClient();
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (user) {
-            await supabase.from("favorites").upsert(
-              { user_id: user.id, property_id: current.id },
-              { onConflict: "user_id,property_id", ignoreDuplicates: true }
-            );
-            recordEngagementSave();
-          }
-        }
-        trackViewedListing(current.id);
-        trackSavedListing(current.id);
-        advance("right");
-      }
-    );
-  }, [current, guardAction, advance]);
 
   useEffect(() => {
     if (current) trackViewedListing(current.id);
@@ -143,8 +108,7 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
           onTouchEnd={(e) => {
             const diff = touchStart.current - e.changedTouches[0].clientX;
             if (Math.abs(diff) < 50) return;
-            if (diff > 0) skip();
-            else save();
+            skip();
           }}
         >
           <BrowseSlide
