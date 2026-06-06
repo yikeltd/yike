@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
 import {
   isSendchampConfigured,
+  probeSendchampConnection,
   resolveWhatsAppSender,
 } from "@/lib/notifications/providers/sendchamp";
 
@@ -23,6 +24,9 @@ export async function GET(request: Request) {
   }
 
   const admin = createAdminClient();
+  const sendchampProbe = isSendchampConfigured()
+    ? await probeSendchampConnection()
+    : null;
 
   return NextResponse.json({
     ok: true,
@@ -44,6 +48,11 @@ export async function GET(request: Request) {
         : process.env.SENDCHAMP_PUBLIC_KEY?.trim()
           ? "SENDCHAMP_PUBLIC_KEY"
           : null,
+      probe: sendchampProbe
+        ? sendchampProbe.ok
+          ? { ok: true, message: sendchampProbe.data?.message }
+          : { ok: false, error: sendchampProbe.error }
+        : null,
     },
     resend: {
       configured: isResendConfigured(),

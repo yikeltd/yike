@@ -100,6 +100,23 @@ export function isSendchampConfigured(): boolean {
   return Boolean(getSendchampApiKey());
 }
 
+/** Lightweight auth check — does not send OTP. */
+export async function probeSendchampConnection(): Promise<
+  ProviderResult<{ message: string }>
+> {
+  const result = await sendchampPost<Record<string, unknown>>(
+    "/whatsapp/validate",
+    { phone_number: DEFAULT_WHATSAPP_SENDER }
+  );
+
+  if (!result.ok) return result;
+
+  const message =
+    (typeof result.data?.message === "string" && result.data.message) ||
+    "Sendchamp API reachable";
+  return { ok: true, data: { message } };
+}
+
 type VerificationCreateBody = {
   channel: "whatsapp" | "sms";
   sender: string;
@@ -114,15 +131,28 @@ type VerificationCreateBody = {
 async function sendVerificationOtp(
   body: VerificationCreateBody
 ): Promise<ProviderResult<{ reference?: string }>> {
-  const result = await sendchampPost<Record<string, unknown>>(
-    "/verification/create",
-    body
-  );
+  const senders =
+    body.channel === "whatsapp"
+      ? [...new Set([body.sender, DEFAULT_WHATSAPP_SENDER])]
+      : [...new Set([body.sender, DEFAULT_SMS_SENDER])];
 
-  if (!result.ok) return result;
+  let lastError = "Sendchamp verification failed";
 
-  const reference = pickSendchampReference(result.data ?? {});
-  return { ok: true, data: { reference } };
+  for (const sender of senders) {
+    const result = await sendchampPost<Record<string, unknown>>(
+      "/verification/create",
+      { ...body, sender }
+    );
+
+    if (result.ok) {
+      const reference = pickSendchampReference(result.data ?? {});
+      return { ok: true, data: { reference } };
+    }
+
+    lastError = result.error;
+  }
+
+  return { ok: false, error: lastError };
 }
 
 export async function sendWhatsAppText(
@@ -132,20 +162,24 @@ export async function sendWhatsAppText(
   const config = getConfig();
   if (!config) return { ok: false, error: "Sendchamp not configured" };
 
-  const result = await sendchampPost<Record<string, unknown>>(
-    "/whatsapp/message/send",
-    {
-      message,
-      type: "text",
-      sender: config.whatsappSender,
-      recipient: toSendchampPhone(phone),
+  const recipient = toSendchampPhone(phone);
+  let lastError = "Sendchamp WhatsApp failed";
+
+  for (const sender of [...new Set([config.whatsappSender, DEFAULT_WHATSAPP_SENDER])]) {
+    const result = await sendchampPost<Record<string, unknown>>(
+      "/whatsapp/message/send",
+      { message, type: "text", sender, recipient }
+    );
+
+    if (result.ok) {
+      const reference = pickSendchampReference(result.data ?? {});
+      return { ok: true, data: { reference } };
     }
-  );
 
-  if (!result.ok) return result;
+    lastError = result.error;
+  }
 
-  const reference = pickSendchampReference(result.data ?? {});
-  return { ok: true, data: { reference } };
+  return { ok: false, error: lastError };
 }
 
 export async function sendOtpWhatsApp(
@@ -186,16 +220,27 @@ export async function sendOtpSms(
   const mobile = toSendchampPhone(phone);
   const message = `Your Yike code is ${code}. Expires in 10 minutes.`;
 
-  const smsResult = await sendchampPost<Record<string, unknown>>("/sms/send", {
-    to: [mobile],
-    message,
-    sender_name: config.smsSender,
-    route: "non_dnd",
-  });
+  let smsResult: ProviderResult<SendchampEnvelope<Record<string, unknown>>> = {
+    ok: false,
+    error: "Sendchamp SMS failed",
+  };
 
-  if (smsResult.ok) {
-    const reference = pickSendchampReference(smsResult.data ?? {});
-    return { ok: true, data: { reference } };
+  for (const sender_name of [...new Set([config.smsSender, DEFAULT_SMS_SENDER])]) {
+    for (const route of ["non_dnd", "dnd"] as const) {
+      const attempt = await sendchampPost<Record<string, unknown>>("/sms/send", {
+        to: [mobile],
+        message,
+        sender_name,
+        route,
+      });
+
+      if (attempt.ok) {
+        const reference = pickSendchampReference(attempt.data ?? {});
+        return { ok: true, data: { reference } };
+      }
+
+      smsResult = attempt;
+    }
   }
 
   const verifyFallback = await sendVerificationOtp({
