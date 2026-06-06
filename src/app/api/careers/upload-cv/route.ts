@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createPublicClient } from "@/lib/supabase/public";
+import { createAdminClient, createVerifiedAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -12,8 +11,8 @@ const ALLOWED = new Set([
 ]);
 
 export async function POST(request: Request) {
-  const supabase = createPublicClient();
-  if (!supabase) {
+  const admin = (await createVerifiedAdminClient()) ?? createAdminClient();
+  if (!admin) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
   }
 
@@ -35,7 +34,7 @@ export async function POST(request: Request) {
   const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const { error } = await supabase.storage.from("career-cvs").upload(path, buffer, {
+  const { error } = await admin.storage.from("career-cvs").upload(path, buffer, {
     contentType: file.type,
     upsert: false,
   });
@@ -45,18 +44,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 
-  const admin = createAdminClient();
-  let url: string | null = null;
-  if (admin) {
-    const { data: signed } = await admin.storage
-      .from("career-cvs")
-      .createSignedUrl(path, 60 * 60 * 24 * 365);
-    url = signed?.signedUrl ?? null;
-  }
+  const { data: signed } = await admin.storage
+    .from("career-cvs")
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
 
   return NextResponse.json({
     ok: true,
     path,
-    url,
+    url: signed?.signedUrl ?? null,
   });
 }

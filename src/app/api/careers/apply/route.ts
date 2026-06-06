@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, createVerifiedAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
 import { scoreApplication, type ApplicationPayload } from "@/lib/careers/scoring";
 import type { JobRow } from "@/lib/careers/constants";
@@ -8,43 +8,47 @@ import { sendCareerApplicationEmails } from "@/lib/email/service";
 export const runtime = "nodejs";
 
 async function loadPublishedJob(
-  supabase: NonNullable<ReturnType<typeof createPublicClient>>,
   jobId: string,
   jobSlug: string
 ): Promise<{ job: JobRow | null; error: string | null }> {
-  if (jobId) {
-    const { data, error } = await supabase
-      .from("jobs")
-      .select("*")
-      .eq("id", jobId)
-      .eq("status", "published")
-      .maybeSingle();
+  const readers = [
+    await createVerifiedAdminClient(),
+    createAdminClient(),
+    createPublicClient(),
+  ].filter(Boolean);
 
-    if (error) return { job: null, error: error.message };
-    if (data) return { job: data as JobRow, error: null };
-  }
+  for (const supabase of readers) {
+    if (!supabase) continue;
 
-  if (jobSlug) {
-    const { data, error } = await supabase
-      .from("jobs")
-      .select("*")
-      .eq("slug", jobSlug)
-      .eq("status", "published")
-      .maybeSingle();
+    if (jobId) {
+      const { data, error } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("id", jobId)
+        .eq("status", "published")
+        .maybeSingle();
 
-    if (error) return { job: null, error: error.message };
-    return { job: (data as JobRow | null) ?? null, error: null };
+      if (error) continue;
+      if (data) return { job: data as JobRow, error: null };
+    }
+
+    if (jobSlug) {
+      const { data, error } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("slug", jobSlug)
+        .eq("status", "published")
+        .maybeSingle();
+
+      if (error) continue;
+      if (data) return { job: data as JobRow, error: null };
+    }
   }
 
   return { job: null, error: null };
 }
 
 export async function POST(request: Request) {
-  const supabase = createPublicClient();
-  if (!supabase) {
-    return NextResponse.json({ error: "Unavailable" }, { status: 503 });
-  }
-
   let body: Record<string, unknown> = {};
   try {
     body = await request.json();
@@ -69,7 +73,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  const { job, error: jobError } = await loadPublishedJob(supabase, jobId, jobSlug);
+  const { job, error: jobError } = await loadPublishedJob(jobId, jobSlug);
 
   if (jobError) {
     console.error("[careers/apply] job lookup failed:", jobError);
@@ -78,6 +82,11 @@ export async function POST(request: Request) {
 
   if (!job) {
     return NextResponse.json({ error: "Role not found or closed" }, { status: 404 });
+  }
+
+  const admin = (await createVerifiedAdminClient()) ?? createAdminClient();
+  if (!admin) {
+    return NextResponse.json({ error: "Unavailable" }, { status: 503 });
   }
 
   const payload: ApplicationPayload = {
@@ -105,7 +114,7 @@ export async function POST(request: Request) {
 
   const { score, breakdown, status } = scoreApplication(payload, job);
 
-  const { data: application, error } = await supabase
+  const { data: application, error } = await admin
     .from("job_applications")
     .insert({
       job_id: job.id,
@@ -123,17 +132,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not save application" }, { status: 500 });
   }
 
-  const admin = createAdminClient();
-  if (admin) {
-    void sendCareerApplicationEmails(admin, {
-      applicationId: application.id,
-      applicantEmail: email,
-      applicantName: fullName,
-      jobTitle: job.title,
-      score,
-      status,
-    });
-  }
+  void sendCareerApplicationEmails(admin, {
+    applicationId: application.id,
+    applicantEmail: email,
+    applicantName: fullName,
+    jobTitle: job.title,
+    score,
+    status,
+  });
 
   return NextResponse.json({ ok: true, applicationId: application.id, score });
 }
