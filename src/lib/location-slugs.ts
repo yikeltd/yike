@@ -119,5 +119,5 @@ export function getSeoAreaPaths(): { citySlug: string; areaSlug: string }[] {
     const [citySlug, areaSlug] = key.split("/");
     if (citySlug && areaSlug) paths.push({ citySlug, areaSlug });
   }
-  return paths.slice(0, 150);
+  return paths.slice(0, 400);
 }

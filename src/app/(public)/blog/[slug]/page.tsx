@@ -13,7 +13,8 @@ import { InternalLinkGrid } from "@/components/seo/programmatic/internal-link-gr
 import { BlogCard } from "@/components/seo/programmatic/blog-card";
 import { ConversionStrip } from "@/components/conversion/conversion-strip";
 import { SafetyNotice } from "@/components/property/safety-notice";
-import { SITE_NAME } from "@/lib/constants";
+import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import { ArticleStructuredData } from "@/components/seo/article-structured-data";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -37,6 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url,
       type: "article",
       siteName: SITE_NAME,
+      images: [{ url: `${SITE_URL}/images/logo.webp`, width: 512, height: 512 }],
     },
   };
 }
@@ -49,24 +51,9 @@ export default async function BlogPostPage({ params }: Props) {
   const related = getRelatedBlogPosts(post, 3);
   const url = blogCanonical(slug);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: post.title,
-    description: post.excerpt,
-    url,
-    datePublished: post.createdAt,
-    dateModified: post.updatedAt,
-    author: { "@type": "Organization", name: "Yike Editorial Team" },
-    publisher: { "@type": "Organization", name: SITE_NAME },
-  };
-
   return (
     <article className="pb-12">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <ArticleStructuredData post={post} url={url} />
 
       <Link href="/blog" className="text-sm font-bold text-gold-dark hover:underline">
         ← All guides

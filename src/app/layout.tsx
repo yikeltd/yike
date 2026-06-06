@@ -32,13 +32,18 @@ export const metadata: Metadata = {
   },
   description: SITE_TAGLINE,
   keywords: [
-    "houses for rent Nigeria",
-    "property Nigeria",
-    "Aba rent",
-    "Enugu apartments",
-    "Owerri housing",
-    "verified agents",
     "Yike",
+    "Nigerian property marketplace",
+    "houses for rent Nigeria",
+    "apartments Nigeria",
+    "shortlets Lagos",
+    "self contain Owerri",
+    "house in Aba",
+    "apartment in Enugu",
+    "verified listings",
+    "verified agents",
+    "buy house Nigeria",
+    "rent apartment Nigeria",
   ],
   applicationName: SITE_NAME,
   authors: [{ name: brand.name, url: SITE_URL }],
@@ -90,6 +95,15 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   alternates: { canonical: SITE_URL },
   robots: { index: true, follow: true },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    yandex: process.env.YANDEX_SITE_VERIFICATION,
+    other: {
+      ...(process.env.BING_SITE_VERIFICATION
+        ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION }
+        : {}),
+    },
+  },
 };
 
 export const viewport: Viewport = {

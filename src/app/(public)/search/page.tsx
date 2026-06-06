@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+import { SITE_NAME, SITE_URL } from "@/lib/constants";
+
+export const metadata: Metadata = {
+  title: `Search Homes in Nigeria`,
+  description: `Search apartments, houses, shortlets and land across Nigeria. Filter by city, area, budget and property type on ${SITE_NAME}.`,
+  alternates: { canonical: `${SITE_URL}/search` },
+  openGraph: {
+    title: `Search Nigerian Property | ${SITE_NAME}`,
+    description: "Find verified rentals and homes — mobile-first, WhatsApp contact.",
+    url: `${SITE_URL}/search`,
+  },
+};
+
 import { PropertyFeed } from "@/components/property/property-feed";
 import {
   getPublicProperties,

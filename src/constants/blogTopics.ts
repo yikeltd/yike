@@ -232,6 +232,81 @@ function viralPosts(): BlogPost[] {
       updatedAt: base,
     },
     {
+      slug: "cheapest-places-to-rent-in-aba",
+      title: "Cheapest Places to Rent in Aba (2026 Guide)",
+      excerpt: "Budget-friendly neighborhoods for self contains and mini flats in Aba.",
+      category: "rent-price-guide",
+      city: "Aba",
+      sections: [
+        {
+          heading: "Where rent tends to be lower",
+          body: "Areas farther from major markets often have cheaper self contains — but check road access and security. Compare Ogbor Hill, World Bank, Osisioma and Ariaria-adjacent streets on Yike before committing.",
+        },
+      ],
+      faqs: [
+        {
+          q: "Can I find self contain under ₦300k in Aba?",
+          a: "Yes in some areas, but inspect for water, power and road access before paying.",
+        },
+      ],
+      relatedLinks: [{ label: "Aba listings", href: "/houses/aba" }],
+      createdAt: base,
+      updatedAt: base,
+    },
+    {
+      slug: "best-areas-to-live-in-enugu",
+      title: "Best Areas to Live in Enugu",
+      excerpt: "Family-friendly and student-friendly neighborhoods compared.",
+      category: "city-rental-guide",
+      city: "Enugu",
+      sections: [
+        {
+          heading: "Top areas to start your search",
+          body: "Independence Layout, GRA, Trans Ekulu and New Haven attract professionals and families. Students often look near UNN and IMT — compare commute and rent on Yike neighborhood pages.",
+        },
+      ],
+      faqs: [],
+      relatedLinks: [{ label: "Enugu houses", href: "/houses/enugu" }],
+      createdAt: base,
+      updatedAt: base,
+    },
+    {
+      slug: "cost-of-renting-in-lekki",
+      title: "Cost of Renting in Lekki: What to Budget",
+      excerpt: "Realistic yearly and monthly rent ranges for Lekki apartments.",
+      category: "rent-price-guide",
+      city: "Lagos",
+      sections: [
+        {
+          heading: "Lekki rent is not one price",
+          body: "Chevron, Ikate, Agungi and Abraham Adesanya differ sharply. Service charge, diesel and agency fees add up — always confirm totals before transfer.",
+        },
+      ],
+      faqs: [],
+      relatedLinks: [{ label: "Lagos listings", href: "/houses/lagos" }],
+      createdAt: base,
+      updatedAt: base,
+    },
+    {
+      slug: "apartment-hunting-tips-in-nigeria",
+      title: "Apartment Hunting Tips in Nigeria",
+      excerpt: "A practical checklist for first-time and experienced renters.",
+      category: "moving-inspection",
+      sections: [
+        {
+          heading: "Search smarter",
+          body: "Save listings on Yike, shortlist three areas, then book physical inspections the same week. Never pay from photos alone — especially on WhatsApp.",
+        },
+      ],
+      faqs: [],
+      relatedLinks: [
+        { label: "Browse Nigeria", href: "/search" },
+        { label: "Safety tips", href: "/safety" },
+      ],
+      createdAt: base,
+      updatedAt: base,
+    },
+    {
       slug: "shop-space-in-ariaria-what-business-owners-should-know",
       title: "Shop Space in Ariaria: What Business Owners Should Know",
       excerpt: "Renting commercial space near Aba's biggest market.",

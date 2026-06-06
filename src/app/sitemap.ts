@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
-import { getApprovedPropertyIds } from "@/lib/properties";
-import { getSeoAreaPaths, getSeoCityPaths } from "@/lib/location-slugs";
+import { getSitemapPropertyIds } from "@/lib/seo/sitemap-data";
+import { getSeoCityPaths } from "@/lib/location-slugs";
 import {
   getHousesCityParams,
   getHousesNeighborhoodParams,
@@ -9,7 +9,18 @@ import {
 } from "@/lib/seo/paths";
 import { getAllBlogSlugs } from "@/constants/blogTopics";
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+const PROPERTY_CHUNK_SIZE = 500;
+const MAX_PROPERTY_URLS = 5000;
+
+export async function generateSitemaps() {
+  const ids = await getSitemapPropertyIds(MAX_PROPERTY_URLS);
+  const propertyChunks = Math.max(1, Math.ceil(ids.length / PROPERTY_CHUNK_SIZE));
+  const maps: { id: number }[] = [{ id: 0 }];
+  for (let i = 1; i <= propertyChunks; i++) maps.push({ id: i });
+  return maps;
+}
+
+function mainSitemapEntries(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
     "/explore",
@@ -28,16 +39,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/terms",
     "/privacy",
     "/moderation",
-    "/account/delete",
     "/disclaimer",
     "/cookies",
-    "/saved",
     "/blog",
   ];
 
   const entries: MetadataRoute.Sitemap = staticRoutes.map((path) => ({
     url: `${SITE_URL}${path}`,
-    lastModified: new Date(),
     changeFrequency: path === "" || path === "/search" ? "daily" : "weekly",
     priority: path === "" ? 1 : path === "/blog" ? 0.75 : 0.7,
   }));
@@ -45,66 +53,64 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const { city } of getHousesCityParams()) {
     entries.push({
       url: `${SITE_URL}/houses/${city}`,
-      lastModified: new Date(),
       changeFrequency: "daily",
-      priority: 0.88,
+      priority: 0.9,
     });
   }
 
   for (const { city, neighborhood } of getHousesNeighborhoodParams()) {
     entries.push({
       url: `${SITE_URL}/houses/${city}/${neighborhood}`,
-      lastModified: new Date(),
       changeFrequency: "weekly",
-      priority: 0.82,
+      priority: 0.85,
     });
   }
 
   for (const { city, neighborhood, propertyType } of getHousesPropertyTypeParams()) {
     entries.push({
       url: `${SITE_URL}/houses/${city}/${neighborhood}/${propertyType}`,
-      lastModified: new Date(),
       changeFrequency: "weekly",
-      priority: 0.78,
+      priority: 0.8,
     });
   }
 
   for (const slug of getAllBlogSlugs()) {
     entries.push({
       url: `${SITE_URL}/blog/${slug}`,
-      lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.72,
     });
   }
 
-  for (const { citySlug } of getSeoCityPaths()) {
+  // Legacy city index pages — lower priority; canonical points to /houses/*
+  for (const { citySlug } of getSeoCityPaths().slice(0, 55)) {
     entries.push({
       url: `${SITE_URL}/${citySlug}`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    });
-  }
-
-  for (const { citySlug, areaSlug } of getSeoAreaPaths()) {
-    entries.push({
-      url: `${SITE_URL}/${citySlug}/${areaSlug}`,
-      lastModified: new Date(),
       changeFrequency: "weekly",
-      priority: 0.7,
-    });
-  }
-
-  const propertyIds = await getApprovedPropertyIds(120);
-  for (const id of propertyIds) {
-    entries.push({
-      url: `${SITE_URL}/properties/${id}`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
+      priority: 0.55,
     });
   }
 
   return entries;
+}
+
+export default async function sitemap({
+  id,
+}: {
+  id: number;
+}): Promise<MetadataRoute.Sitemap> {
+  if (id === 0) return mainSitemapEntries();
+
+  const ids = await getSitemapPropertyIds(MAX_PROPERTY_URLS);
+  const chunkIndex = id - 1;
+  const slice = ids.slice(
+    chunkIndex * PROPERTY_CHUNK_SIZE,
+    (chunkIndex + 1) * PROPERTY_CHUNK_SIZE
+  );
+
+  return slice.map((propertyId) => ({
+    url: `${SITE_URL}/properties/${propertyId}`,
+    changeFrequency: "daily",
+    priority: 0.82,
+  }));
 }

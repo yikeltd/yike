@@ -74,3 +74,16 @@ export function generateBreadcrumbs(
 export function blogCanonical(slug: string) {
   return `${SITE_URL}/blog/${slug}`;
 }
+
+/** Canonical for legacy /{city} routes → rich /houses/{city} pages */
+export function legacyCityCanonical(citySlug: string) {
+  return housesCanonical(citySlug);
+}
+
+export function legacyAreaCanonical(citySlug: string, areaSlug: string) {
+  return housesCanonical(citySlug, areaSlug);
+}
+
+export function propertyCanonical(id: string) {
+  return `${SITE_URL}/properties/${id}`;
+}

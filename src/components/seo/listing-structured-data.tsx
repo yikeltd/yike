@@ -1,12 +1,20 @@
 import type { Property } from "@/types/database";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
-import { formatPrice } from "@/lib/utils";
+import { ORG_ID } from "@/lib/seo/schema-ids";
+import { formatPrice, isVerifiedAgent } from "@/lib/utils";
+import { optimizeListingImageUrl } from "@/lib/image-url";
+
+function absoluteImage(url: string): string {
+  if (url.startsWith("http")) return optimizeListingImageUrl(url, 1200);
+  return `${SITE_URL}${url.startsWith("/") ? url : `/${url}`}`;
+}
 
 export function ListingStructuredData({ property }: { property: Property }) {
-  const image =
-    property.media_urls[0]?.startsWith("http")
-      ? property.media_urls[0]
-      : `${SITE_URL}${property.media_urls[0] ?? "/placeholder-property.svg"}`;
+  const pageUrl = `${SITE_URL}/properties/${property.id}`;
+  const images = property.media_urls
+    .filter(Boolean)
+    .slice(0, 8)
+    .map(absoluteImage);
 
   const price = formatPrice(
     Number(property.price),
@@ -14,18 +22,22 @@ export function ListingStructuredData({ property }: { property: Property }) {
     property.listing_type
   );
 
-  const schema = {
+  const agent = property.agent;
+  const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
+    "@id": `${pageUrl}#listing`,
     name: property.title,
     description: property.description ?? property.title,
-    url: `${SITE_URL}/properties/${property.id}`,
-    image: property.media_urls.filter((u) => u.startsWith("http")).slice(0, 5),
+    url: pageUrl,
     datePosted: property.created_at,
+    identifier: property.id,
+    image: images.length > 0 ? images : [`${SITE_URL}/placeholder-property.svg`],
     address: {
       "@type": "PostalAddress",
+      streetAddress: property.address_hint ?? property.area,
       addressLocality: property.area,
-      addressRegion: property.city,
+      addressRegion: `${property.city}, ${property.state}`,
       addressCountry: "NG",
     },
     offers: {
@@ -34,15 +46,23 @@ export function ListingStructuredData({ property }: { property: Property }) {
       priceCurrency: "NGN",
       availability: "https://schema.org/InStock",
       description: price,
+      url: pageUrl,
     },
-    numberOfRooms: property.bedrooms > 0 ? property.bedrooms : undefined,
-    ...(image && { primaryImageOfPage: image }),
-    publisher: {
-      "@type": "Organization",
-      name: SITE_NAME,
-      url: SITE_URL,
-    },
+    publisher: { "@id": ORG_ID },
   };
+
+  if (property.bedrooms > 0) schema.numberOfRooms = property.bedrooms;
+  if (property.bathrooms > 0) schema.numberOfBathroomsTotal = property.bathrooms;
+
+  if (agent) {
+    schema.seller = {
+      "@type": "RealEstateAgent",
+      name: agent.full_name ?? "Yike Agent",
+      url: `${SITE_URL}/agents/${agent.id}`,
+      telephone: agent.phone ?? agent.whatsapp ?? undefined,
+      ...(isVerifiedAgent(agent) ? { jobTitle: "Verified Agent" } : {}),
+    };
+  }
 
   return (
     <script

@@ -28,6 +28,7 @@ import { PropertyViewTracker } from "./view-tracker";
 import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { optimizeListingImageUrl } from "@/lib/image-url";
+import { propertyCanonical } from "@/lib/seo/utils";
 
 export async function generateMetadata({
   params,
@@ -50,12 +51,15 @@ export async function generateMetadata({
     ? optimizeListingImageUrl(property.media_urls[0], 1200)
     : `${SITE_URL}/placeholder-property.svg`;
 
+  const canonical = propertyCanonical(id);
   return {
     title,
     description,
+    alternates: { canonical },
     openGraph: {
       title,
       description,
+      url: canonical,
       images: [{ url: image, width: 1200, height: 630 }],
       type: "website",
     },

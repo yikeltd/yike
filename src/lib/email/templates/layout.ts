@@ -13,11 +13,17 @@ const LOGO_URL = `${SITE_URL}${brand.logo}`;
 const APPLE_ICON = `${SITE_URL}/icons/apple-touch-icon.png`;
 const ANDROID_ICON = `${SITE_URL}/icons/android-chrome-192.png`;
 
-type SocialKey = keyof typeof SOCIAL_LINKS;
+type EmailSocialKey = Exclude<keyof typeof SOCIAL_LINKS, "linkedin">;
 
-const SOCIAL_ORDER: SocialKey[] = ["tiktok", "x", "youtube", "instagram", "facebook"];
+const SOCIAL_ORDER: EmailSocialKey[] = [
+  "tiktok",
+  "x",
+  "youtube",
+  "instagram",
+  "facebook",
+];
 
-const SOCIAL_LABELS: Record<SocialKey, string> = {
+const SOCIAL_LABELS: Record<EmailSocialKey, string> = {
   tiktok: "TikTok",
   x: "X",
   youtube: "YouTube",
