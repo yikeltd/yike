@@ -193,21 +193,18 @@ export function smartSearchToUrlParams(parsed: SmartSearchResult): URLSearchPara
   return params;
 }
 
+/** Search commits always land on /search when filters or query exist. */
 export function navigateSearchTarget(pathname: string): "/" | "/search" {
-  if (pathname === "/" || pathname.startsWith("/search")) {
-    return pathname === "/" ? "/" : "/search";
-  }
-  return "/search";
+  return pathname.startsWith("/search") ? "/search" : "/search";
 }
 
 export function buildSearchHref(
-  pathname: string,
+  _pathname: string,
   parsed: SmartSearchResult
 ): string {
-  const base = navigateSearchTarget(pathname);
   const params = smartSearchToUrlParams(parsed);
   const qs = params.toString();
-  return qs ? `${base}?${qs}` : base;
+  return qs ? `/search?${qs}` : "/search";
 }
 
 export function budgetIndexFromPrices(min?: number, max?: number): number {

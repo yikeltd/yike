@@ -4,6 +4,7 @@ import {
   SITE_URL,
   SOCIAL_LINKS,
   COMPANY_DESCRIPTION,
+  YIKE_SUPPORT_WHATSAPP,
 } from "@/lib/constants";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
 
@@ -47,6 +48,12 @@ export function StructuredData() {
           SOCIAL_LINKS.facebook,
           SOCIAL_LINKS.youtube,
         ].filter(Boolean),
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer support",
+          telephone: `+${YIKE_SUPPORT_WHATSAPP}`,
+          availableLanguage: ["English"],
+        },
       },
       {
         "@type": "WebSite",

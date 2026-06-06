@@ -10,7 +10,7 @@ import { ListPropertyNavLink } from "@/components/auth/list-property-button";
 const items = [
   { href: "/", label: "Home", icon: Home, auth: false },
   { href: "/?focus=search", label: "Search", icon: Search, auth: false },
-  { href: "/saved", label: "Saved", icon: Heart, auth: true, intent: "saved" as const },
+  { href: "/saved", label: "Saved", icon: Heart, auth: false },
   { href: "/post-property", label: "List", icon: PlusCircle, auth: true, intent: "list_property" as const },
   { href: "/agent", label: "Profile", icon: User, auth: true, intent: "profile" as const },
 ];

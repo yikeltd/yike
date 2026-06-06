@@ -14,12 +14,14 @@ import {
   chipToFilterParams,
   type SearchDealChip,
 } from "@/constants/listingTypes";
-import { parseLocationQuery } from "@/lib/location-search";
-import { MapPin } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const selectClass =
-  "h-10 w-full rounded-xl border border-surface bg-white px-3 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-gold/35 dark:bg-elevated lg:text-sm";
+  "h-10 w-full rounded-xl border border-navy/10 bg-white px-3 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-gold/35 dark:border-white/10 dark:bg-elevated lg:text-sm";
+
+const fieldLabelClass =
+  "text-[11px] font-bold uppercase tracking-wide text-navy/55 dark:text-muted";
 
 function resolveChip(key: string): SearchDealChip {
   return (
@@ -65,14 +67,17 @@ export function BrowseListingsBlock({
   const [dealKey, setDealKey] = useState(initial?.dealKey ?? "");
   const [state, setState] = useState(initial?.state ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
-  const [area, setArea] = useState(initial?.area ?? "");
+  const [area] = useState(initial?.area ?? "");
   const [propertyType, setPropertyType] = useState(initial?.propertyType ?? "");
   const [budget, setBudget] = useState(initial?.budgetIndex ?? "0");
-  const [locationQuery, setLocationQuery] = useState(initial?.locationQuery ?? "");
 
   const cityOptions = useMemo(
     () => (state ? getAllCitiesForState(state) : getAllCitiesComplete()),
     [state]
+  );
+
+  const hasFilterSelection = Boolean(
+    state || city || area || propertyType || budget !== "0"
   );
 
   function buildParams(overrides?: {
@@ -118,29 +123,19 @@ export function BrowseListingsBlock({
     onSearch(buildParams(overrides));
   }
 
-  function onLocationSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = locationQuery.trim();
-    if (!trimmed) {
-      submit();
-      return;
-    }
-    const parsed = parseLocationQuery(trimmed);
-    const nextCity = parsed.city ?? city;
-    const nextArea = parsed.area ?? area;
-    const nextState = parsed.state ?? state;
-    if (parsed.city) setCity(parsed.city);
-    if (parsed.area) setArea(parsed.area);
-    if (parsed.state) setState(parsed.state);
-    setLocationQuery([nextCity, nextArea].filter(Boolean).join(", "));
-    submit({ city: nextCity, area: nextArea, state: nextState });
-  }
-
   return (
-    <div className="rounded-2xl border border-surface bg-white p-3.5 shadow-sm ring-1 ring-navy/[0.04] dark:bg-elevated dark:ring-white/[0.05]">
-      <p className="mb-3 text-sm font-bold text-navy dark:text-foreground">
-        Browse real listings
-      </p>
+    <div className="rounded-2xl border border-navy/10 bg-white/95 p-3.5 shadow-sm ring-1 ring-navy/[0.06] dark:border-white/10 dark:bg-elevated dark:ring-white/[0.05]">
+      <div className="mb-3 flex items-start gap-2">
+        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden />
+        <div>
+          <p className="text-sm font-bold text-navy dark:text-foreground">
+            Browse real listings
+          </p>
+          <p className="text-xs text-muted">
+            Use the search bar above, then refine with filters
+          </p>
+        </div>
+      </div>
 
       <div className="hide-scrollbar -mx-0.5 mb-3 flex gap-2 overflow-x-auto pb-0.5">
         {HOME_DEAL_TYPES.map((t) => {
@@ -158,7 +153,7 @@ export function BrowseListingsBlock({
                 "pressable shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all duration-200",
                 active
                   ? "bg-gold text-navy shadow-glow-gold"
-                  : "bg-surface text-muted ring-1 ring-black/[0.04] hover:text-foreground dark:ring-white/[0.06]"
+                  : "bg-navy/[0.04] text-muted ring-1 ring-navy/10 hover:text-foreground dark:bg-white/5 dark:ring-white/[0.08]"
               )}
             >
               {t.label}
@@ -167,103 +162,99 @@ export function BrowseListingsBlock({
         })}
       </div>
 
-      <form onSubmit={onLocationSubmit} className="mb-3">
-        <div className="flex items-center gap-2 rounded-xl border border-surface bg-surface/60 px-3 py-2.5">
-          <MapPin className="h-4 w-4 shrink-0 text-gold" aria-hidden />
-          <input
-            type="search"
-            value={locationQuery}
-            onChange={(e) => setLocationQuery(e.target.value)}
-            placeholder="City, area or neighbourhood"
-            aria-label="City, area or neighbourhood"
-            className="min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted outline-none"
-          />
-          <button
-            type="submit"
-            className="pressable shrink-0 rounded-lg bg-gold px-3.5 py-1.5 text-xs font-bold text-navy"
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="space-y-1">
+          <span className={fieldLabelClass}>State</span>
+          <select
+            value={state}
+            onChange={(e) => {
+              const value = e.target.value;
+              setState(value);
+              setCity("");
+            }}
+            aria-label="State"
+            className={selectClass}
           >
-            Go
+            <option value="">Any state</option>
+            {getStates().map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <span className={fieldLabelClass}>City</span>
+          <select
+            value={city}
+            onChange={(e) => {
+              const value = e.target.value;
+              setCity(value);
+              const inferred = value ? getStateForCity(value) : "";
+              if (inferred) setState(inferred);
+            }}
+            aria-label="City"
+            className={selectClass}
+          >
+            <option value="">Any city</option>
+            {cityOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <span className={fieldLabelClass}>Property Type</span>
+          <select
+            value={propertyType}
+            onChange={(e) => setPropertyType(e.target.value)}
+            aria-label="Property type"
+            className={selectClass}
+          >
+            <option value="">Any Property Type</option>
+            {PROPERTY_TYPES.slice(0, 14).map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <span className={fieldLabelClass}>Your Budget</span>
+          <select
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+            aria-label="Your budget"
+            className={selectClass}
+          >
+            {BUDGET_RANGES.map((b, i) => (
+              <option key={b.label} value={i}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "grid transition-all duration-300 ease-out",
+          hasFilterSelection
+            ? "mt-3 grid-rows-[1fr] opacity-100"
+            : "mt-0 grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="overflow-hidden">
+          <button
+            type="button"
+            onClick={() => submit()}
+            className="pressable flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-2.5 text-sm font-bold text-navy shadow-glow-gold"
+          >
+            <Search className="h-4 w-4" strokeWidth={2.5} />
+            Search homes
           </button>
         </div>
-      </form>
-
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <select
-          value={state}
-          onChange={(e) => {
-            const value = e.target.value;
-            setState(value);
-            setCity("");
-            setArea("");
-            submit({ state: value, city: "", area: "" });
-          }}
-          aria-label="State"
-          className={selectClass}
-        >
-          <option value="">State</option>
-          {getStates().map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <select
-          value={city}
-          onChange={(e) => {
-            const value = e.target.value;
-            setCity(value);
-            setArea("");
-            const inferred = value ? getStateForCity(value) : "";
-            if (inferred) setState(inferred);
-            submit({
-              city: value,
-              area: "",
-              state: inferred || state,
-            });
-          }}
-          aria-label="City"
-          className={selectClass}
-        >
-          <option value="">City</option>
-          {cityOptions.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <select
-          value={propertyType}
-          onChange={(e) => {
-            const value = e.target.value;
-            setPropertyType(value);
-            submit({ propertyType: value });
-          }}
-          aria-label="Property type"
-          className={selectClass}
-        >
-          <option value="">Any type</option>
-          {PROPERTY_TYPES.slice(0, 14).map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={budget}
-          onChange={(e) => {
-            const value = e.target.value;
-            setBudget(value);
-            submit({ budgetIndex: value });
-          }}
-          aria-label="Budget"
-          className={selectClass}
-        >
-          {BUDGET_RANGES.map((b, i) => (
-            <option key={b.label} value={i}>
-              {i === 0 ? "Any budget" : b.label}
-            </option>
-          ))}
-        </select>
       </div>
     </div>
   );

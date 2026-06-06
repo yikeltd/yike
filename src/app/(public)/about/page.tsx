@@ -1,98 +1,148 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
-import { FollowYike } from "@/components/social/follow-yike";
+import { SITE_NAME } from "@/lib/constants";
+import { getAboutMarketPulse } from "@/lib/about-market-pulse";
+import { getMarketplaceStats } from "@/lib/marketplace-stats";
+import { POPULAR_AREAS } from "@/constants/popularAreas";
+import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { PageHero } from "@/components/pages/page-hero";
+import { AboutMissionSection } from "@/components/pages/about-mission";
+import { AboutMarketStats } from "@/components/pages/about-market-stats";
+import { PropertyRail } from "@/components/pages/property-rail";
+import { NeighborhoodChips } from "@/components/pages/neighborhood-chips";
+import { PopularCities } from "@/components/home/popular-cities";
+import { SocialProofBar } from "@/components/home/social-proof-bar";
 import { TrustPillars } from "@/components/pages/trust-pillars";
 import { CtaBanner } from "@/components/pages/cta-banner";
-import { PAGE_IMAGERY } from "@/constants/pageImagery";
+import { FollowYike } from "@/components/social/follow-yike";
+import { PropertyGridSkeleton } from "@/components/ui/skeleton";
+import { BadgeCheck, MessageCircle, RefreshCw, ShieldCheck } from "lucide-react";
 
 export const metadata = {
   title: `About ${SITE_NAME}`,
-  description: `${SITE_TAGLINE} Learn why we built Nigeria's visual, trust-first housing marketplace.`,
+  description:
+    "Making property discovery in Nigeria more trustworthy, visual and stress-free. Browse verified listings and contact agents on WhatsApp.",
 };
 
-const MISSION_BLOCKS = [
+const ABOUT_FEATURED_AREAS = POPULAR_AREAS.filter((area) =>
+  ["Ogbor Hill", "Ariaria", "New Haven", "GRA", "Lekki", "Wuse"].some((name) =>
+    area.area.includes(name)
+  )
+);
+
+const ABOUT_TRUST = [
   {
-    title: "Nigerian housing is broken",
-    body: "Fake listings, agent drama and WhatsApp scams waste time and money. Renters deserve to see real homes before they pay anyone.",
+    icon: BadgeCheck,
+    title: "Verified agents",
+    body: "Identity-checked agents rank higher. Look for the Verified badge before you pay anyone.",
   },
   {
-    title: "Visual-first browsing",
-    body: "Photos before paragraphs. Scroll like social media, contact like messaging — built for how Nigerians actually search for homes.",
+    icon: RefreshCw,
+    title: "Fresh listing focus",
+    body: "We prioritise recent, clear photos and moderate suspicious posts so feeds stay useful.",
   },
   {
-    title: "City-first, nationwide",
-    body: "From Aba to Lagos to Uyo — underserved cities get the same premium experience as mega cities.",
+    icon: MessageCircle,
+    title: "Direct WhatsApp",
+    body: "Contact the listing agent in one tap. No middleman fees through Yike — inspect first.",
   },
   {
-    title: "Trust without overpromising",
-    body: "We verify agent identity where possible. We do not claim ownership verification or guaranteed scam-free listings.",
+    icon: ShieldCheck,
+    title: "Safety-first discovery",
+    body: "Report fake listings, read our safety tips, and always visit the property before payment.",
   },
 ];
 
-export default function AboutPage() {
+function RailFallback() {
+  return (
+    <div className="px-3 py-4 lg:px-0">
+      <PropertyGridSkeleton count={3} />
+    </div>
+  );
+}
+
+export default async function AboutPage() {
+  const [pulse, stats] = await Promise.all([
+    getAboutMarketPulse(),
+    getMarketplaceStats(),
+  ]);
+
   return (
     <div className="pb-12">
       <PageHero
-        title={`Why ${SITE_NAME} exists`}
-        subtitle={SITE_TAGLINE}
+        title="About Yike"
+        subtitle="Making property discovery in Nigeria more trustworthy, visual and stress-free."
         image={PAGE_IMAGERY.about}
-        badge="Our story"
+        badge="Marketplace"
         imageOpacity={0.28}
-        secondaryCta={{ label: "Browse homes", href: "/explore" }}
+        cta={{ label: "Browse homes", href: "/search" }}
+        secondaryCta={{ label: "Swipe feed", href: "/browse" }}
       />
 
-      <section className="mx-auto max-w-4xl px-3 py-12 lg:px-8">
-        <p className="text-base leading-relaxed text-muted lg:text-lg">
-          {SITE_NAME} is a mobile-first Nigerian housing marketplace built for
-          speed, trust, and simplicity. We help renters and buyers discover
-          real listings, contact agents on WhatsApp instantly, and avoid the
-          chaos of scattered Facebook posts and unverified agents.
-        </p>
-
-        <div className="mt-10 grid gap-4 sm:grid-cols-2">
-          {MISSION_BLOCKS.map((b) => (
-            <div
-              key={b.title}
-              className="rounded-2xl bg-white p-5 shadow-float ring-1 ring-black/[0.04]"
-            >
-              <h2 className="font-bold text-navy">{b.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{b.body}</p>
-            </div>
-          ))}
+      <div className="mx-auto max-w-7xl px-3 lg:px-8">
+        <AboutMissionSection />
+        <AboutMarketStats pulse={pulse} />
+        <div className="mt-6">
+          <SocialProofBar stats={stats} />
         </div>
+      </div>
 
-        <section className="mt-12">
-          <h2 className="text-xl font-bold text-navy">The team</h2>
-          <p className="mt-2 text-sm text-muted">
-            Remote-first builders across Nigeria — product, engineering and
-            community working to make housing discovery honest and fast.
-          </p>
-          <div className="mt-6 grid grid-cols-3 gap-4 sm:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="aspect-square overflow-hidden rounded-2xl bg-surface"
-              >
-                <Image
-                  src={`https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&q=70&auto=format&fit=crop&sat=-100&hue=${i * 40}`}
-                  alt=""
-                  width={200}
-                  height={200}
-                  className="h-full w-full object-cover opacity-80"
-                  unoptimized
-                />
-              </div>
-            ))}
-          </div>
-        </section>
+      <Suspense fallback={null}>
+        <PopularCities />
+      </Suspense>
 
-        <TrustPillars title="Our trust pillars" />
+      <NeighborhoodChips
+        title="Featured areas"
+        subtitle="High-intent neighborhoods across Nigeria"
+        areas={ABOUT_FEATURED_AREAS}
+        limit={6}
+      />
 
-        <section className="mt-10 rounded-2xl bg-gold/10 p-6">
+      <Suspense fallback={<RailFallback />}>
+        <PropertyRail
+          title="Featured properties"
+          subtitle="Hand-picked across Nigeria"
+          seeAllHref="/search?featured=1"
+          params={{ featured: true }}
+          limit={10}
+        />
+      </Suspense>
+
+      <Suspense fallback={<RailFallback />}>
+        <PropertyRail
+          title="Trending rentals"
+          subtitle="Popular homes renters are viewing"
+          seeAllHref="/search?type=rent"
+          params={{ listing_type: "rent" }}
+          limit={10}
+        />
+      </Suspense>
+
+      <Suspense fallback={<RailFallback />}>
+        <PropertyRail
+          title="Recently added"
+          subtitle="Fresh listings on the marketplace"
+          seeAllHref="/search"
+          limit={10}
+        />
+      </Suspense>
+
+      <Suspense fallback={<RailFallback />}>
+        <PropertyRail
+          title="Verified agents"
+          subtitle="Listings from identity-checked agents"
+          seeAllHref="/search?verified=1"
+          params={{ verified_only: true }}
+          limit={10}
+        />
+      </Suspense>
+
+      <div className="mx-auto max-w-7xl px-3 lg:px-8">
+        <TrustPillars title="Built for trust" items={ABOUT_TRUST} />
+
+        <section className="mt-10 rounded-2xl bg-gold/10 p-5 lg:p-6">
           <h2 className="font-bold text-navy">Safety commitment</h2>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-sm leading-relaxed text-muted">
             We moderate listings, verify agents, and publish scam prevention
             guides — but you must always inspect properties in person before
             payment. Read our{" "}
@@ -108,13 +158,13 @@ export default function AboutPage() {
         </section>
 
         <FollowYike className="mt-8" variant="icons" />
-      </section>
+      </div>
 
       <CtaBanner
-        title="Ready to find a home?"
-        body="Browse verified listings across Nigeria — or list your property free."
-        primary={{ label: "Explore homes", href: "/explore" }}
-        secondary={{ label: "List property", href: "/post-property" }}
+        title="Keep browsing"
+        body="Rentals, land and verified agents across Nigeria — pick up where you left off."
+        primary={{ label: "Search homes", href: "/search" }}
+        secondary={{ label: "Explore cities", href: "/explore" }}
       />
     </div>
   );

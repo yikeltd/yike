@@ -3,10 +3,15 @@ import { parseSmartSearchQuery } from "@/lib/smart-search";
 import { propertyMarketRank } from "@/lib/agent-tiers";
 import { syncSearchPrefCookies } from "@/lib/search-pref-cookies";
 import { notifyActivityChanged } from "@/lib/activity-events";
+import {
+  swipeQualityBoost,
+  swipeQualityPenalty,
+} from "@/lib/swipe/quality";
 
 const KEY = "yike_browse_prefs";
 const VIEWED_KEY = "yike_viewed_listings";
 const SAVED_KEY = "yike_saved_ids";
+const HIDDEN_KEY = "yike_swipe_hidden";
 
 export type BrowsePreferences = {
   cities: string[];
@@ -182,7 +187,7 @@ function scoreProperty(p: Property, prefs: BrowsePreferences): number {
   const areaMatch = prefs.areas.findIndex(
     (a) => a.toLowerCase() === p.area.toLowerCase()
   );
-  if (areaMatch >= 0) score += 35 - areaMatch * 5;
+  if (areaMatch >= 0) score += 45 - areaMatch * 6;
 
   const typeMatch = prefs.listingTypes.findIndex((t) => t === p.listing_type);
   if (typeMatch >= 0) score += 25 - typeMatch * 4;
@@ -199,6 +204,27 @@ function scoreProperty(p: Property, prefs: BrowsePreferences): number {
     if (prefs.minPrice && prefs.maxPrice) {
       if (price >= prefs.minPrice && price <= prefs.maxPrice) score += 12;
     }
+  }
+
+  const saved = getSavedListingIds();
+  if (saved.includes(p.id)) score += 18;
+
+  score += swipeQualityBoost(p);
+  score -= swipeQualityPenalty(p);
+
+  const hidden = getSwipeHiddenPrefs();
+  if (hidden.listingIds.includes(p.id)) score -= 200;
+  if (
+    hidden.areas.some((a) => a.toLowerCase() === p.area.toLowerCase())
+  ) {
+    score -= 35;
+  }
+  if (p.property_type && hidden.propertyTypes.includes(p.property_type)) {
+    score -= 28;
+  }
+  if (hidden.maxPrices.length > 0) {
+    const cap = Math.min(...hidden.maxPrices);
+    if (Number(p.price) > cap) score -= 25;
   }
 
   return score;
@@ -292,4 +318,75 @@ export function trackSavedListing(id: string, meta?: Omit<ListingInteraction, "i
     /* ignore */
   }
   if (meta?.city) trackListingInteraction({ ...meta, id });
+}
+
+export type SwipeHiddenPrefs = {
+  listingIds: string[];
+  cities: string[];
+  areas: string[];
+  propertyTypes: string[];
+  maxPrices: number[];
+};
+
+function emptyHidden(): SwipeHiddenPrefs {
+  return { listingIds: [], cities: [], areas: [], propertyTypes: [], maxPrices: [] };
+}
+
+export function getSwipeHiddenPrefs(): SwipeHiddenPrefs {
+  if (typeof window === "undefined") return emptyHidden();
+  try {
+    return { ...emptyHidden(), ...JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "{}") };
+  } catch {
+    return emptyHidden();
+  }
+}
+
+/** Quiet “hide similar” — reason tunes feed without noisy UI. */
+export type NotInterestedReason =
+  | "too_expensive"
+  | "wrong_location"
+  | "not_interested";
+
+export function trackNotInterestedListing(
+  id: string,
+  meta: ListingInteraction & { price?: number },
+  reason: NotInterestedReason = "not_interested"
+) {
+  const prev = getSwipeHiddenPrefs();
+  const listingIds = [id, ...prev.listingIds.filter((x) => x !== id)].slice(0, 40);
+
+  let areas = prev.areas;
+  let propertyTypes = prev.propertyTypes;
+  let maxPrices = prev.maxPrices;
+
+  if (reason === "wrong_location" && meta.area) {
+    areas = [meta.area, ...areas.filter((a) => a !== meta.area)].slice(0, 8);
+  }
+  if (reason === "too_expensive" && meta.price) {
+    maxPrices = [meta.price, ...maxPrices].slice(0, 5);
+    saveBrowsePreferences({
+      maxPrice: Math.floor(meta.price * 0.9),
+    });
+  }
+  if (reason === "not_interested" && meta.propertyType) {
+    propertyTypes = [
+      meta.propertyType,
+      ...propertyTypes.filter((t) => t !== meta.propertyType),
+    ].slice(0, 5);
+  }
+
+  try {
+    localStorage.setItem(
+      HIDDEN_KEY,
+      JSON.stringify({
+        ...prev,
+        listingIds,
+        areas,
+        propertyTypes,
+        maxPrices,
+      } satisfies SwipeHiddenPrefs)
+    );
+  } catch {
+    /* ignore */
+  }
 }

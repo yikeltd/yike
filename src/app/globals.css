@@ -414,3 +414,32 @@ body {
 .swipe-exit-right {
   animation: swipe-out-right 0.32s var(--ease-out) forwards;
 }
+
+@keyframes ken-burns {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.07) translate3d(-1.2%, -0.8%, 0);
+  }
+}
+
+.motion-ken-burns {
+  animation: ken-burns 8s var(--ease-out) forwards;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-ken-burns {
+    animation: none;
+  }
+}
+
+.motion-crossfade {
+  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.swipe-card-active {
+  box-shadow: 0 24px 64px rgb(0 0 0 / 35%);
+  transform: translateZ(0);
+}

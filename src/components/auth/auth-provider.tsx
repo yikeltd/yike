@@ -14,6 +14,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Profile } from "@/types/database";
 import {
   type AuthIntent,
+  AUTH_PUBLIC_INTENTS,
   saveAuthIntent,
 } from "@/lib/auth-intent";
 import { AuthModal } from "./auth-modal";
@@ -95,6 +96,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const guardAction = useCallback(
     (intent: AuthIntent, onAuthorized: () => void) => {
       if (loading) return;
+      if (AUTH_PUBLIC_INTENTS.has(intent.type)) {
+        onAuthorized();
+        return;
+      }
       if (user && emailVerified) {
         onAuthorized();
         return;

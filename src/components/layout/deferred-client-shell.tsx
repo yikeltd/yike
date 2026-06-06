@@ -1,12 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const PwaInstallPrompt = dynamic(
-  () => import("@/components/pwa/install-prompt").then((m) => m.PwaInstallPrompt),
-  { ssr: false }
-);
-
+/** PWA install UI disabled — browser install still works via manifest + SW. */
 export function DeferredClientShell() {
-  return <PwaInstallPrompt />;
+  return null;
 }

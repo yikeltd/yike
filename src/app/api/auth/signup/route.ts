@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sendEmailVerification } from "@/lib/email";
 import { EMAIL_USER_MESSAGES } from "@/lib/notifications/messages";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createOtpDbClient, otpFindVerified } from "@/lib/otp/rpc";
 import { normalizeNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
 import { passwordPolicyError } from "@/lib/password-policy";
@@ -58,15 +59,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "PIN must be exactly 6 digits" }, { status: 400 });
   }
 
-  const { data: otpRow } = await admin
-    .from("phone_otp_requests")
-    .select("id, verified, verification_token")
-    .eq("phone", phone)
-    .eq("verified", true)
-    .eq("verification_token", phoneVerificationToken)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const otpDb = createOtpDbClient();
+  const otpRow = otpDb
+    ? await otpFindVerified(otpDb, phone, phoneVerificationToken)
+    : null;
 
   if (!otpRow) {
     return NextResponse.json({ error: "Verify your phone number first" }, { status: 400 });

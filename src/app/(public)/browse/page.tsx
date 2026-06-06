@@ -27,7 +27,7 @@ export default async function BrowsePage() {
       <div className="hidden lg:block">
         <PageHero
           title="Swipe homes"
-          subtitle="Full-screen homes, one-tap WhatsApp, zero clutter. Best on mobile — install Yike as an app for the smoothest swipe."
+          subtitle="Full-screen photos, one-tap WhatsApp contact, and zero clutter — built for mobile-first browsing."
           image={PAGE_IMAGERY.swipe}
           badge="Swipe"
           variant="dark"
@@ -37,10 +37,12 @@ export default async function BrowsePage() {
         <div className="mx-auto max-w-7xl px-6 py-12">
           <ExploreHubLinks active="/browse" className="mb-8" />
           <div className="rounded-2xl bg-gold/10 p-6">
-            <p className="font-bold text-navy">Tip for desktop users</p>
-            <p className="mt-2 text-sm text-muted">
-              Install Yike as a PWA on your phone for the best swipe experience —
-              or browse the grid below.
+            <p className="font-bold text-navy">
+              Verified homes. Faster discovery. Direct WhatsApp access.
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              Browse rentals, land, shops and homes across Nigeria with a
+              smoother, more trusted experience.
             </p>
           </div>
           <div className="mt-10">
@@ -57,8 +59,8 @@ export default async function BrowsePage() {
           </p>
         </div>
         <CtaBanner
-          title="Addictive browsing starts on mobile"
-          body="Swipe left or right through homes matched to your recent searches — loops back when you reach the end."
+          title="Browse homes across Nigeria"
+          body="Rentals, land and verified agents — contact on WhatsApp when you find a match."
           primary={{ label: "Explore all homes", href: "/explore" }}
         />
       </div>

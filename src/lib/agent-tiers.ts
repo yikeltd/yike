@@ -1,5 +1,7 @@
 import type { Profile, Property } from "@/types/database";
 import { computeListingQualityScore } from "@/lib/listing-quality";
+import type { PropertySearchParams } from "@/lib/property-search";
+import { propertySearchRelevance } from "@/lib/search-relevance";
 
 export const UNVERIFIED_AGENT_LISTING_LIMIT = 5;
 
@@ -71,6 +73,12 @@ export function isFeaturedActive(property: Property): boolean {
   return new Date(property.featured_until) > new Date();
 }
 
+export function isBoostedActive(property: Property): boolean {
+  if (!property.is_boosted) return false;
+  if (!property.boosted_until) return true;
+  return new Date(property.boosted_until) > new Date();
+}
+
 /** Search / feed ranking: verified agents first, then quality signals. */
 export function propertyMarketRank(property: Property): number {
   const agent = property.agent;
@@ -80,6 +88,7 @@ export function propertyMarketRank(property: Property): number {
   score += (agent?.ranking_score ?? 0) * 10;
 
   if (isFeaturedActive(property)) score += 5_000;
+  if (isBoostedActive(property)) score += 3_000;
   score += (property.boost_score ?? 0) * 50;
 
   if (property.sponsored_status === "sponsored") score += 2_000;
@@ -98,13 +107,21 @@ export function propertyMarketRank(property: Property): number {
 }
 
 export function sortPropertiesByMarketRank(
-  properties: Property[]
+  properties: Property[],
+  searchParams?: PropertySearchParams
 ): Property[] {
-  return [...properties].sort(
-    (a, b) =>
+  return [...properties].sort((a, b) => {
+    if (searchParams && (searchParams.city || searchParams.area || searchParams.q)) {
+      const rel =
+        propertySearchRelevance(b, searchParams) -
+        propertySearchRelevance(a, searchParams);
+      if (rel !== 0) return rel;
+    }
+    return (
       propertyMarketRank(b) - propertyMarketRank(a) ||
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+    );
+  });
 }
 
 export function agentTierLabel(profile: AgentProfileSlice): string {

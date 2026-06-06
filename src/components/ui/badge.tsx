@@ -77,7 +77,13 @@ export function NewListingBadge({ className }: { className?: string }) {
   );
 }
 
-export function TrendingBadge({ className }: { className?: string }) {
+export function TrendingBadge({
+  className,
+  label = "Trending",
+}: {
+  className?: string;
+  label?: string;
+}) {
   return (
     <span
       className={cn(
@@ -86,7 +92,7 @@ export function TrendingBadge({ className }: { className?: string }) {
       )}
     >
       <Sparkles className="h-3 w-3" />
-      Trending
+      {label}
     </span>
   );
 }

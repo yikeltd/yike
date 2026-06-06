@@ -40,7 +40,6 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
       area,
       propertyType: pt === "shop" ? "" : pt,
       budgetIndex: budgetIndex === "-1" ? "0" : budgetIndex,
-      locationQuery: [city, area].filter(Boolean).join(", "),
     };
   }, [searchParams, initial]);
 
@@ -55,11 +54,17 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
   return (
     <div
       id="home-search"
-      className="border-b border-surface bg-background px-3 py-3 lg:px-6 xl:px-8"
+      className="border-b border-navy/10 bg-gradient-to-b from-navy/[0.07] via-navy/[0.03] to-background px-3 py-4 lg:px-6 xl:px-8"
     >
-      <div className="mx-auto max-w-7xl space-y-3">
+      <div className="mx-auto max-w-7xl">
         <BrowseListingsBlock
-          key={browseInitial.dealKey + browseInitial.city + browseInitial.area}
+          key={
+            browseInitial.dealKey +
+            browseInitial.city +
+            browseInitial.area +
+            browseInitial.propertyType +
+            browseInitial.budgetIndex
+          }
           initial={browseInitial}
           onSearch={({ params, label }) => {
             trackEvent("search", {
@@ -78,10 +83,10 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
               maxPrice: params.get("max") ? Number(params.get("max")) : undefined,
             });
 
-            addRecentSearch({ label, href: `/?${params.toString()}` });
-
             const qs = params.toString();
-            router.replace(qs ? `/?${qs}` : "/", { scroll: false });
+            const href = qs ? `/search?${qs}` : "/search";
+            addRecentSearch({ label, href });
+            router.push(href);
           }}
         />
       </div>

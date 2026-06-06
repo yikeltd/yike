@@ -36,6 +36,12 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     supabaseAdminConfigured,
+    yikeOtpServerTokenConfigured: Boolean(process.env.YIKE_OTP_SERVER_TOKEN?.trim()),
+    yikeOtpRpcConfigured: Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() &&
+        process.env.YIKE_OTP_SERVER_TOKEN?.trim()
+    ),
     sendchampPublicKeyConfigured: sendchamp.publicKeyConfigured ?? false,
     sendchampBaseUrlConfigured:
       sendchamp.baseUrlConfigured ?? Boolean(process.env.SENDCHAMP_LIVE_BASE_URL?.trim()),

@@ -7,6 +7,7 @@ const links = [
   { href: adminPath("listings"), label: "Listings" },
   { href: adminPath("agents"), label: "Agents" },
   { href: adminPath("reports"), label: "Reports" },
+  { href: adminPath("leads"), label: "Leads" },
   { href: adminPath("featured"), label: "Featured" },
   { href: adminPath("hot-picks"), label: "Hot picks" },
   { href: adminPath("ads"), label: "Ads" },

@@ -1,3 +1,5 @@
+import { notifyPwaEligibilityCheck } from "@/lib/pwa/engagement";
+
 const VISITS_KEY = "yike_visit_count";
 const LAST_VISIT_KEY = "yike_last_visit";
 const SAVES_KEY = "yike_engagement_saves";
@@ -8,6 +10,7 @@ export function recordVisit() {
     const count = Number(localStorage.getItem(VISITS_KEY) ?? "0") + 1;
     localStorage.setItem(VISITS_KEY, String(count));
     localStorage.setItem(LAST_VISIT_KEY, String(Date.now()));
+    notifyPwaEligibilityCheck();
   } catch {
     /* ignore */
   }
@@ -23,6 +26,7 @@ export function recordEngagementSave() {
   try {
     const count = Number(localStorage.getItem(SAVES_KEY) ?? "0") + 1;
     localStorage.setItem(SAVES_KEY, String(count));
+    notifyPwaEligibilityCheck();
   } catch {
     /* ignore */
   }

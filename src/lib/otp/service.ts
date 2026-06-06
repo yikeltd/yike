@@ -8,22 +8,21 @@ import type { OtpChannel } from "@/lib/notifications/types";
 import {
   OTP_EXPIRY_MS,
   OTP_MAX_ATTEMPTS,
-  OTP_PROVIDER,
   OTP_RESEND_COOLDOWN_MS,
 } from "./constants";
 import { generateOtp, generateVerificationToken, hashOtp, verifyOtpHash } from "./crypto";
-import { logOtpEvent, sanitizeOtpError } from "./logs";
-
-type OtpRow = {
-  id: string;
-  otp_hash: string;
-  expires_at: string;
-  verified: boolean;
-  attempts: number;
-  last_sent_at: string | null;
-  channel: OtpChannel | null;
-  status: string | null;
-};
+import { sanitizeOtpError } from "./logs";
+import {
+  createOtpDbClient,
+  otpIncrementAttempts,
+  otpInsertPending,
+  otpLatestRow,
+  otpLogEvent,
+  otpMarkExpired,
+  otpMarkFailed,
+  otpMarkSent,
+  otpVerifySuccess,
+} from "./rpc";
 
 export type SendOtpResult =
   | { ok: true; channel: OtpChannel; message: string; devOtp?: string }
@@ -38,38 +37,32 @@ export type VerifyOtpResult =
   | { ok: true; phoneVerificationToken: string; phone: string }
   | { ok: false; error: string; status: number };
 
-async function latestOtpRow(
-  admin: SupabaseClient,
-  phone: string
-): Promise<OtpRow | null> {
-  const { data } = await admin
-    .from("phone_otp_requests")
-    .select(
-      "id, otp_hash, expires_at, verified, attempts, last_sent_at, channel, status"
-    )
-    .eq("phone", phone)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data as OtpRow | null;
+function otpDb(): SupabaseClient | null {
+  return createOtpDbClient();
 }
 
 export async function sendPhoneOtp(
-  admin: SupabaseClient,
+  _admin: SupabaseClient | null,
   phone: string,
   preferredChannel?: OtpChannel
 ): Promise<SendOtpResult> {
+  const db = otpDb();
+  if (!db) {
+    console.error("[otp] OTP database client unavailable");
+    return {
+      ok: false,
+      error: OTP_USER_MESSAGES.sendFailed,
+      status: 503,
+    };
+  }
+
   const channel: OtpChannel = preferredChannel ?? "whatsapp";
 
-  const recent = await latestOtpRow(admin, phone);
+  const recent = await otpLatestRow(db, phone);
   if (recent?.last_sent_at) {
     const elapsed = Date.now() - new Date(recent.last_sent_at).getTime();
     if (elapsed < OTP_RESEND_COOLDOWN_MS) {
-      await logOtpEvent(admin, {
-        phone,
-        channel,
-        status: "cooldown",
-      });
+      await otpLogEvent(db, { phone, channel, status: "cooldown" });
       return {
         ok: false,
         error: OTP_USER_MESSAGES.cooldown,
@@ -84,15 +77,12 @@ export async function sendPhoneOtp(
       console.info(`[Yike OTP dev] ${phone} (${channel}): ${code}`);
       const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
       const now = new Date().toISOString();
-      await admin.from("phone_otp_requests").insert({
+      await otpInsertPending(db, {
         phone,
-        otp_hash: hashOtp(code),
-        expires_at: expiresAt,
-        attempts: 0,
+        otpHash: hashOtp(code),
+        expiresAt,
         channel,
-        provider: OTP_PROVIDER,
-        status: "sent",
-        last_sent_at: now,
+        lastSentAt: now,
       });
       return {
         ok: true,
@@ -103,7 +93,7 @@ export async function sendPhoneOtp(
     }
 
     console.error("[otp] Sendchamp not configured");
-    await logOtpEvent(admin, {
+    await otpLogEvent(db, {
       phone,
       channel,
       status: "failed",
@@ -120,34 +110,15 @@ export async function sendPhoneOtp(
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
   const now = new Date().toISOString();
 
-  const { data: inserted, error: insertError } = await admin
-    .from("phone_otp_requests")
-    .insert({
-      phone,
-      otp_hash: hashOtp(code),
-      expires_at: expiresAt,
-      attempts: 0,
-      channel,
-      provider: OTP_PROVIDER,
-      status: "pending",
-      last_sent_at: now,
-    })
-    .select("id")
-    .single();
+  const inserted = await otpInsertPending(db, {
+    phone,
+    otpHash: hashOtp(code),
+    expiresAt,
+    channel,
+    lastSentAt: now,
+  });
 
-  if (insertError || !inserted) {
-    console.error("[otp] insert failed", phone, insertError?.message);
-    try {
-      await logOtpEvent(admin, {
-        phone,
-        channel,
-        status: "failed",
-        expiresAt,
-        providerError: insertError?.message ?? "database_insert_failed",
-      });
-    } catch (logErr) {
-      console.error("[otp] log insert failed", logErr);
-    }
+  if (!inserted) {
     return {
       ok: false,
       error: OTP_USER_MESSAGES.sendFailed,
@@ -160,14 +131,8 @@ export async function sendPhoneOtp(
   if (!delivered.ok) {
     const sanitized = sanitizeOtpError(delivered.error);
     console.error("[otp] send failed", phone, preferredChannel, delivered.error);
-    await admin
-      .from("phone_otp_requests")
-      .update({
-        status: "failed",
-        error_message: sanitized,
-      })
-      .eq("id", inserted.id);
-    await logOtpEvent(admin, {
+    await otpMarkFailed(db, inserted.id, sanitized);
+    await otpLogEvent(db, {
       phone,
       channel,
       status: "failed",
@@ -194,21 +159,8 @@ export async function sendPhoneOtp(
   const sentChannel = delivered.data!.channel;
   const providerReference = delivered.data!.reference;
 
-  const { error: updateError } = await admin
-    .from("phone_otp_requests")
-    .update({
-      channel: sentChannel,
-      status: "sent",
-      provider_reference: providerReference ?? null,
-      error_message: null,
-    })
-    .eq("id", inserted.id);
-
-  if (updateError) {
-    console.error("[otp] status update failed", phone, updateError.message);
-  }
-
-  await logOtpEvent(admin, {
+  await otpMarkSent(db, inserted.id, sentChannel, providerReference);
+  await otpLogEvent(db, {
     phone,
     channel: sentChannel,
     status: "sent",
@@ -224,11 +176,16 @@ export async function sendPhoneOtp(
 }
 
 export async function verifyPhoneOtp(
-  admin: SupabaseClient,
+  _admin: SupabaseClient | null,
   phone: string,
   code: string
 ): Promise<VerifyOtpResult> {
-  const row = await latestOtpRow(admin, phone);
+  const db = otpDb();
+  if (!db) {
+    return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 503 };
+  }
+
+  const row = await otpLatestRow(db, phone);
 
   if (!row) {
     return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 400 };
@@ -239,11 +196,8 @@ export async function verifyPhoneOtp(
   }
 
   if (new Date(row.expires_at) < new Date()) {
-    await admin
-      .from("phone_otp_requests")
-      .update({ status: "expired" })
-      .eq("id", row.id);
-    await logOtpEvent(admin, {
+    await otpMarkExpired(db, row.id);
+    await otpLogEvent(db, {
       phone,
       channel: row.channel ?? "sms",
       status: "expired",
@@ -258,9 +212,8 @@ export async function verifyPhoneOtp(
   }
 
   if (!verifyOtpHash(code, row.otp_hash)) {
-    const attempts = row.attempts + 1;
-    await admin.from("phone_otp_requests").update({ attempts }).eq("id", row.id);
-    await logOtpEvent(admin, {
+    const attempts = (await otpIncrementAttempts(db, row.id)) ?? row.attempts + 1;
+    await otpLogEvent(db, {
       phone,
       channel: row.channel ?? "sms",
       status: "failed",
@@ -271,23 +224,12 @@ export async function verifyPhoneOtp(
   }
 
   const token = generateVerificationToken();
-  const verifiedAt = new Date().toISOString();
-  const { error } = await admin
-    .from("phone_otp_requests")
-    .update({
-      verified: true,
-      verification_token: token,
-      status: "verified",
-      verified_at: verifiedAt,
-    })
-    .eq("id", row.id);
-
-  if (error) {
-    console.error("[otp] verify update failed", phone, error.message);
+  const ok = await otpVerifySuccess(db, row.id, token);
+  if (!ok) {
     return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 500 };
   }
 
-  await logOtpEvent(admin, {
+  await otpLogEvent(db, {
     phone,
     channel: row.channel ?? "sms",
     status: "verified",

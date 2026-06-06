@@ -19,6 +19,10 @@ import type { SeoPageLevel } from "@/constants/seoTemplates";
 import { getCityPersonality } from "@/constants/cityPersonalities";
 import { TRENDING_CITIES } from "@/constants/trendingCities";
 import { toSlug } from "@/lib/location-slugs";
+import { popularLocalSearches } from "@/lib/seo/popular-searches";
+import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
+import { PopularLocalSearches } from "./popular-local-searches";
+import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
 
 export function SeoLandingPage({
   level,
@@ -83,8 +87,17 @@ export function SeoLandingPage({
       href: `/houses/${c.slug}`,
     }));
 
+  const popular = popularLocalSearches(
+    city,
+    citySlug,
+    neighborhood,
+    neighborhoodSlug
+  );
+  const helpUrl = buildSeoHelpWhatsAppUrl(city, neighborhood);
+  const helpLabel = seoHelpLabel(city, neighborhood);
+
   return (
-    <div className="pb-12 lg:pb-16">
+    <div className="pb-28 lg:pb-16">
       <SeoStructuredData
         pageUrl={pageUrl}
         pageName={h1}
@@ -137,6 +150,8 @@ export function SeoLandingPage({
 
       <RentPriceGuide city={city} neighborhood={neighborhood} />
 
+      <PopularLocalSearches title="Popular searches" links={popular} />
+
       {level === "city" && (
         <RelatedAreas city={city} citySlug={citySlug} limit={12} />
       )}
@@ -181,6 +196,10 @@ export function SeoLandingPage({
         <SafetyNotice compact />
         <ConversionStrip />
       </div>
+
+      {helpUrl ? (
+        <StickySeoHelpBar label={helpLabel} whatsAppUrl={helpUrl} />
+      ) : null}
     </div>
   );
 }

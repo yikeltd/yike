@@ -6,6 +6,9 @@ export type AuthIntentType =
   | "saved"
   | "list_property";
 
+/** No sign-in required — required for Play Store / SEO browsing. */
+export const AUTH_PUBLIC_INTENTS = new Set<AuthIntentType>(["whatsapp", "call"]);
+
 export interface AuthIntent {
   type: AuthIntentType;
   listingId?: string;

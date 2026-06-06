@@ -103,6 +103,13 @@ export default async function ProfilePage() {
               <List className="h-5 w-5 text-muted" />
               <span className="font-medium">My listings</span>
             </Link>
+            <Link
+              href="/agent/leads"
+              className="card-shadow flex items-center gap-3 rounded-xl border border-border px-4 py-3"
+            >
+              <ShieldCheck className="h-5 w-5 text-muted" />
+              <span className="font-medium">My leads</span>
+            </Link>
           </>
         ) : (
           <Link

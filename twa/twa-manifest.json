@@ -1,0 +1,60 @@
+{
+  "packageId": "com.yike.app",
+  "host": "yike.ng",
+  "name": "Yike",
+  "launcherName": "Yike",
+  "display": "standalone",
+  "themeColor": "#031B4E",
+  "themeColorDark": "#031B4E",
+  "navigationColor": "#031B4E",
+  "navigationColorDark": "#031B4E",
+  "navigationDividerColor": "#031B4E",
+  "navigationDividerColorDark": "#031B4E",
+  "backgroundColor": "#031B4E",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://yike.ng/icons/android-chrome-512.png",
+  "maskableIconUrl": "https://yike.ng/icons/android-chrome-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "yike"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Swipe homes",
+      "shortName": "Swipe",
+      "url": "https://yike.ng/browse",
+      "chosenIconUrl": "https://yike.ng/icons/android-chrome-192.png"
+    },
+    {
+      "name": "Search",
+      "shortName": "Search",
+      "url": "https://yike.ng/search",
+      "chosenIconUrl": "https://yike.ng/icons/android-chrome-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://yike.ng/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://yike.ng/",
+  "minSdkVersion": 21,
+  "orientation": "portrait-primary",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1.0.0"
+}

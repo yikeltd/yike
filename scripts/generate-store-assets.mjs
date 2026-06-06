@@ -115,6 +115,27 @@ async function main() {
     console.log(`  splash/${name}`);
   }
 
+  const featureW = 1024;
+  const featureH = 500;
+  let feature = sharp(
+    Buffer.from(`<svg width="${featureW}" height="${featureH}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${NAVY}"/>
+      <stop offset="100%" stop-color="#021433"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#fg)"/>
+  <circle cx="820" cy="120" r="180" fill="${GOLD}" fill-opacity="0.12"/>
+  <text x="80" y="200" font-family="system-ui,sans-serif" font-size="56" font-weight="800" fill="white">Yike</text>
+  <text x="80" y="270" font-family="system-ui,sans-serif" font-size="28" fill="rgba(255,255,255,0.8)">Find real homes in Nigeria</text>
+  <text x="80" y="340" font-family="system-ui,sans-serif" font-size="22" fill="${GOLD}">Swipe · Search · WhatsApp agents</text>
+</svg>`)
+  );
+  feature = await compositeLogo(feature, 120, featureW - 200, 190);
+  await feature.png().toFile(join(OUT, "feature-graphic-1024x500.png"));
+  console.log("  store/feature-graphic-1024x500.png");
+
   console.log("\nDone. Upload public/store/*.png to Google Play screenshots.");
 }
 

@@ -16,6 +16,8 @@ import { getActiveAd } from "@/lib/ads";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
+import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
+import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
 export const metadata: Metadata = {
   title: `Search Homes in Nigeria`,
   description: `Search apartments, houses, hotels and land across Nigeria. Filter by city, area, budget and property type on ${SITE_NAME}.`,
@@ -69,8 +71,13 @@ export default async function SearchPage({
   }
   const currentHref = qs.toString() ? `/search?${qs.toString()}` : undefined;
 
+  const helpCity = params.city ?? preloadParams.city;
+  const helpArea = params.area ?? preloadParams.area;
+  const helpUrl = helpCity ? buildSeoHelpWhatsAppUrl(helpCity, helpArea) : null;
+  const helpLabel = helpCity ? seoHelpLabel(helpCity, helpArea) : "";
+
   return (
-    <div className="search-hub-canvas min-h-[100dvh] bg-background pb-4 lg:pb-12">
+    <div className="search-hub-canvas min-h-[100dvh] bg-background pb-24 lg:pb-12">
       {!hasQuery ? (
         <>
           <PrefSync />
@@ -125,6 +132,10 @@ export default async function SearchPage({
           </SearchResultsChrome>
         </Suspense>
       )}
+
+      {helpUrl ? (
+        <StickySeoHelpBar label={helpLabel} whatsAppUrl={helpUrl} />
+      ) : null}
     </div>
   );
 }

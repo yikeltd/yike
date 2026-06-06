@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import { SITE_NAME, SITE_URL, COMPANY_LEGAL_NAME, COMPANY_RC, COMPANY_EMAIL } from "@/lib/constants";
 import {
   LegalCallout,
   LegalDocument,
@@ -12,17 +12,20 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalDocument title="Privacy Policy" lastUpdated="5 June 2026">
+    <LegalDocument title="Privacy Policy" lastUpdated="6 June 2026">
       <LegalCallout>
-        This policy explains how {SITE_NAME} (&quot;we&quot;) handles personal
-        data when you use {SITE_URL}. We aim to comply with the Nigeria Data
-        Protection Act 2023 (NDPA) and applicable regulations.
+        {COMPANY_LEGAL_NAME} ({COMPANY_RC}) operates {SITE_NAME} at {SITE_URL}.
+        This policy explains how we handle personal data under the Nigeria Data
+        Protection Act 2023 (NDPA).
       </LegalCallout>
 
       <LegalSection title="1. Data controller">
         <p>
-          {SITE_NAME} is the data controller for personal data processed through
-          the platform. Contact: hello@yike.ng (see our Contact page).
+          {COMPANY_LEGAL_NAME} ({COMPANY_RC}) is the data controller. Contact:{" "}
+          <a href={`mailto:${COMPANY_EMAIL}`} className="font-semibold text-gold-dark">
+            {COMPANY_EMAIL}
+          </a>
+          .
         </p>
       </LegalSection>
 
@@ -37,8 +40,19 @@ export default function PrivacyPage() {
             videos, location hints, pricing.
           </li>
           <li>
-            <strong>Usage data:</strong> pages viewed, searches, device type,
-            approximate location from IP, cookies (see Cookie Policy).
+            <strong>Lead &amp; contact data:</strong> when you tap WhatsApp or
+            call on a listing, we log the interaction (listing, agent, reference
+            ID, page source, approximate device info) to improve lead quality
+            and agent analytics. Your phone number is not required to browse.
+          </li>
+          <li>
+            <strong>Approximate location:</strong> city/area preferences from
+            searches and views; coarse location may be inferred from IP for
+            relevance — we do not track precise GPS in the current app.
+          </li>
+          <li>
+            <strong>Usage data:</strong> pages viewed, searches, saves, swipe
+            activity, device type, cookies (see Cookie Policy).
           </li>
           <li>
             <strong>Communications:</strong> reports, support messages, moderation notes.
@@ -141,6 +155,15 @@ export default function PrivacyPage() {
         <p>
           We will post changes on this page. Significant updates may be
           communicated in-app or by email where appropriate.
+        </p>
+      </LegalSection>
+      <LegalSection title="12. Google Play &amp; app stores">
+        <p>
+          If you install Yike from Google Play, the Android app is a Trusted Web
+          Activity wrapper around {SITE_URL} — the same privacy practices apply.
+          Data collected matches the categories above and is used to connect
+          renters with local agents, personalize listings, and improve trust and
+          safety.
         </p>
       </LegalSection>
     </LegalDocument>

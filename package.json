@@ -7,6 +7,7 @@
   "scripts": {
     "optimize:brand": "node scripts/optimize-brand-assets.mjs",
     "store:assets": "node scripts/generate-store-assets.mjs",
+    "twa:init": "cd twa && npx @bubblewrap/cli init --manifest=https://yike.ng/manifest.json",
     "heroes:generate": "node scripts/generate-hero-images.mjs",
     "admin:ensure": "node scripts/ensure-admin-user.mjs",
     "dev": "next dev",

@@ -5,21 +5,19 @@ import { Heart, MessageCircle, MapPin, BedDouble, Bath, Phone } from "lucide-rea
 import type { Property } from "@/types/database";
 import {
   formatPrice,
-  formatPhoneForTel,
   isVerifiedAgent,
   listingTypeLabel,
   cn,
 } from "@/lib/utils";
 import { VerifiedBadge, FeaturedBadge, TrendingBadge, NewListingBadge } from "@/components/ui/badge";
-import {
-  propertyWhatsAppMessage,
-  whatsAppDeepLink,
-} from "@/lib/whatsapp";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { useAuth } from "@/components/auth/auth-provider";
-import { trackContactClick } from "@/lib/contact-tracking";
+import { trackLeadAndRedirect } from "@/lib/leads/client";
+import {
+  CallSafetyModal,
+} from "./contact-safety-modal";
 import { trackEvent } from "@/lib/analytics";
 import { recordEngagementSave } from "@/lib/engagement";
 import { trackSavedListing } from "@/lib/browse-preferences";
@@ -29,6 +27,10 @@ import { ListingImage } from "./listing-image";
 import { ListingFreshness, getListingFreshness } from "./listing-freshness";
 import { AmenityChips } from "./amenity-chips";
 import { formatMoveInHint } from "@/lib/rent-breakdown";
+import {
+  isGuestFavorite,
+  toggleGuestFavorite,
+} from "@/lib/guest-favorites";
 
 export type PropertyCardLayout = "mobile" | "desktop";
 
@@ -46,6 +48,10 @@ export function PropertyCard({
   const { guardAction, user } = useAuth();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [callModalOpen, setCallModalOpen] = useState(false);
+  const [contactLoading, setContactLoading] = useState<"whatsapp" | "call" | null>(
+    null
+  );
   const image = property.media_urls[0] ?? "/placeholder-property.svg";
   const agent = property.agent;
   const verified =
@@ -64,7 +70,12 @@ export function PropertyCard({
   const amenities = property.extras?.amenities ?? [];
 
   useEffect(() => {
-    if (isDemo || !user?.id || !isSupabaseConfigured()) return;
+    if (isDemo) return;
+    if (!user?.id) {
+      setSaved(isGuestFavorite(property.id));
+      return;
+    }
+    if (!isSupabaseConfigured()) return;
     const supabase = createClient();
     supabase
       .from("favorites")
@@ -117,6 +128,33 @@ export function PropertyCard({
     e.preventDefault();
     e.stopPropagation();
     if (isDemo) return;
+
+    if (!user?.id) {
+      const nowSaved = toggleGuestFavorite(property.id);
+      setSaved(nowSaved);
+      if (nowSaved) {
+        recordEngagementSave();
+        trackSavedListing(property.id, {
+          city: property.city,
+          area: property.area,
+          listingType: property.listing_type,
+          propertyType: property.property_type,
+        });
+        trackEvent("save_listing", {
+          listing_id: property.id,
+          city: property.city,
+          source: "guest",
+        });
+      } else {
+        trackEvent("unsave_listing", {
+          listing_id: property.id,
+          city: property.city,
+          source: "guest",
+        });
+      }
+      return;
+    }
+
     guardAction(
       {
         type: "save",
@@ -127,82 +165,76 @@ export function PropertyCard({
     );
   }
 
-  const waUrl =
-    wa &&
-    whatsAppDeepLink(
-      wa,
-      propertyWhatsAppMessage(
-        property.title,
-        property.area,
-        property.city,
-        property.id,
-        {
-          bedrooms: property.bedrooms,
-          propertyType: property.property_type,
-          listingType: property.listing_type,
-        }
-      )
-    );
-  const telUrl = tel ? `tel:${formatPhoneForTel(tel)}` : null;
+  const sourcePage =
+    typeof window !== "undefined"
+      ? window.location.pathname
+      : `/properties/${property.id}`;
+
+  async function runLead(leadType: "whatsapp" | "call") {
+    if (!agent?.id) return;
+    setContactLoading(leadType);
+    const result = await trackLeadAndRedirect({
+      listingId: property.id,
+      agentId: agent.id,
+      leadType,
+      sourcePage,
+      placement: "card",
+      agentName: agent.full_name ?? "Agent",
+      title: property.title,
+      area: property.area,
+      city: property.city,
+      price: Number(property.price),
+      paymentPeriod: property.payment_period,
+      listingType: property.listing_type,
+      bedrooms: property.bedrooms,
+      propertyType: property.property_type,
+      whatsapp: agent.whatsapp,
+      phone: agent.phone,
+    });
+    setContactLoading(null);
+    if (result.ok && result.redirectUrl) {
+      if (leadType === "whatsapp") {
+        window.open(result.redirectUrl, "_blank", "noopener,noreferrer");
+      } else {
+        window.location.href = result.redirectUrl;
+      }
+    }
+  }
 
   function onWhatsAppClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!waUrl) return;
+    if (!wa) return;
     guardAction(
       {
         type: "whatsapp",
         listingId: property.id,
         redirectPath: `/properties/${property.id}`,
-        contactUrl: waUrl,
       },
-      () => {
-        void trackContactClick({
-          propertyId: property.id,
-          channel: "whatsapp",
-          city: property.city,
-          area: property.area,
-          listingType: property.listing_type,
-          propertyType: property.property_type,
-          placement: "card",
-          agentId: agent?.id,
-        });
-        window.open(waUrl, "_blank", "noopener,noreferrer");
-      }
+      () => void runLead("whatsapp")
     );
   }
 
   function onCallClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!telUrl) return;
+    if (!tel) return;
     guardAction(
       {
         type: "call",
         listingId: property.id,
         redirectPath: `/properties/${property.id}`,
-        contactUrl: telUrl,
       },
-      () => {
-        void trackContactClick({
-          propertyId: property.id,
-          channel: "call",
-          city: property.city,
-          area: property.area,
-          listingType: property.listing_type,
-          propertyType: property.property_type,
-          placement: "card",
-          agentId: agent?.id,
-        });
-        window.location.href = telUrl;
-      }
+      () => setCallModalOpen(true)
     );
   }
 
   const freshness = getListingFreshness(
     property.updated_at,
     property.created_at,
-    property.views_count
+    property.views_count,
+    verified,
+    property.contact_clicks
   );
 
   const badges = (
@@ -213,6 +245,7 @@ export function PropertyCard({
       {verified && <VerifiedBadge size="sm" />}
       {property.is_featured && <FeaturedBadge />}
       {freshness.tone === "trending" && <TrendingBadge />}
+      {freshness.tone === "hot" && <TrendingBadge label="Hot this week" />}
       {freshness.tone === "new" && !property.is_featured && <NewListingBadge />}
     </div>
   );
@@ -258,25 +291,37 @@ export function PropertyCard({
   const imageAlt = listingImageAlt(property);
 
   const contactRow = wa && (
-    <div className="flex gap-2.5">
-      <button
-        type="button"
-        onClick={onWhatsAppClick}
-        className="pressable flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-gold text-sm font-bold text-navy shadow-glow-gold lg:min-h-[44px]"
-      >
-        <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
-        Chat on WhatsApp
-      </button>
-      {tel && (
+    <>
+      <div className="flex gap-2.5">
         <button
           type="button"
-          onClick={onCallClick}
-          className="pressable flex h-12 min-w-[48px] items-center justify-center rounded-xl bg-surface text-navy lg:h-11 lg:min-w-[44px]"
+          onClick={onWhatsAppClick}
+          disabled={contactLoading === "whatsapp"}
+          className="pressable flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-gold text-sm font-bold text-navy shadow-glow-gold disabled:opacity-70 lg:min-h-[44px]"
         >
-          <Phone className="h-4 w-4" />
+          <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
+          {contactLoading === "whatsapp" ? "Opening…" : "Chat on WhatsApp"}
         </button>
-      )}
-    </div>
+        {tel && (
+          <button
+            type="button"
+            onClick={onCallClick}
+            disabled={contactLoading === "call"}
+            className="pressable flex h-12 min-w-[48px] items-center justify-center rounded-xl bg-surface text-navy disabled:opacity-70 lg:h-11 lg:min-w-[44px]"
+          >
+            <Phone className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      <CallSafetyModal
+        open={callModalOpen}
+        onClose={() => setCallModalOpen(false)}
+        onConfirm={() => {
+          setCallModalOpen(false);
+          void runLead("call");
+        }}
+      />
+    </>
   );
 
   if (layout === "desktop") {
@@ -317,6 +362,8 @@ export function PropertyCard({
               updatedAt={property.updated_at}
               createdAt={property.created_at}
               viewsCount={property.views_count}
+              verified={verified}
+              contactClicks={property.contact_clicks}
               className="mt-2.5 block"
             />
             {amenities.length > 0 && (
@@ -395,6 +442,8 @@ export function PropertyCard({
                 updatedAt={property.updated_at}
                 createdAt={property.created_at}
                 viewsCount={property.views_count}
+                verified={verified}
+                contactClicks={property.contact_clicks}
                 dark
                 className="shrink-0"
               />

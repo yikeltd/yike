@@ -1,7 +1,19 @@
 export const SITE_NAME = "Yike";
 export const SITE_URL = "https://yike.ng";
 export const SITE_TAGLINE =
-  "The fastest and safest way to find real houses in Nigeria.";
+  "Find real homes in Nigeria — swipe verified listings and chat agents on WhatsApp.";
+
+export const COMPANY_LEGAL_NAME = "YIKE LTD";
+export const COMPANY_DISPLAY_NAME = "Yike Ltd.";
+export const COMPANY_RC = "RC-9552998";
+export const COMPANY_EMAIL = "hello@yike.ng";
+
+/** Official Yike support WhatsApp (international format, no +). */
+export const YIKE_SUPPORT_WHATSAPP = "2348035143299";
+
+export const HOME_HERO_HEADLINE = "No more fake listings.";
+export const HOME_HERO_SUBLINE =
+  "Swipe homes in Aba and chat verified agents on WhatsApp.";
 
 export const COMPANY_DESCRIPTION =
   "Yike is a Nigerian real estate marketplace helping users discover verified apartments, houses, shortlets, land, and commercial properties through a mobile-first browsing experience.";
@@ -34,7 +46,7 @@ export const PAYMENT_PERIODS = [
 ] as const;
 
 export const BUDGET_RANGES = [
-  { label: "Any budget", min: 0, max: null },
+  { label: "Any Budget", min: 0, max: null },
   { label: "Under ₦200k/yr", min: 0, max: 200000 },
   { label: "₦200k – ₦500k", min: 200000, max: 500000 },
   { label: "₦500k – ₦1M", min: 500000, max: 1000000 },

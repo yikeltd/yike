@@ -14,7 +14,7 @@ const INPUT = join(ROOT, "public/images/logo.png");
 const OUT_DIR = join(ROOT, "public");
 const ICONS_DIR = join(OUT_DIR, "icons");
 
-const NAVY = { r: 3, g: 27, b: 78 };
+const NAVY = { r: 3, g: 27, b: 78, alpha: 255 };
 
 function colorDistance(r, g, b, target) {
   return Math.sqrt(
@@ -46,25 +46,40 @@ async function withTransparentBackground(inputBuffer) {
   }).png();
 }
 
+/** Navy-backed icon for favicon / PWA — high contrast on light & dark tabs */
+async function writeNavyIcon(transparent, path, size) {
+  const logo = await transparent
+    .clone()
+    .resize(Math.round(size * 0.78), Math.round(size * 0.78), {
+      fit: "contain",
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png()
+    .toBuffer();
+
+  await sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: NAVY,
+    },
+  })
+    .composite([{ input: logo, gravity: "centre" }])
+    .png({ compressionLevel: 9, palette: true })
+    .toFile(path);
+}
+
 async function writeWebp(pipeline, path, width, quality) {
   await pipeline
     .clone()
     .resize(width, width, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .webp({ quality, effort: 6, smartSubsample: true })
     .toFile(path);
-  const meta = await sharp(path).metadata();
   const { size } = await import("fs/promises").then((fs) =>
     fs.stat(path).then((s) => ({ size: s.size }))
   );
   console.log(`  ${path} — ${width}px, ${(size / 1024).toFixed(1)}KB`);
-}
-
-async function writePng(pipeline, path, size) {
-  await pipeline
-    .clone()
-    .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png({ compressionLevel: 9, palette: true })
-    .toFile(path);
 }
 
 async function main() {
@@ -74,7 +89,6 @@ async function main() {
   const inputBuffer = await sharp(INPUT).toBuffer();
   const transparent = await withTransparentBackground(inputBuffer);
 
-  // Compressed master PNG (replace bloated 1.7MB source)
   await sharp(inputBuffer)
     .resize(512, 512, { fit: "inside", withoutEnlargement: true })
     .png({ compressionLevel: 9, palette: true })
@@ -93,24 +107,25 @@ async function main() {
   ];
 
   for (const { name, size } of sizes) {
-    await writePng(transparent, join(ICONS_DIR, name), size);
+    await writeNavyIcon(transparent, join(ICONS_DIR, name), size);
+    console.log(`  icons/${name} — ${size}px navy`);
   }
 
-  // favicon.ico (16 + 32 + 48)
   const icoBuffers = await Promise.all(
-    [16, 32, 48].map((s) =>
-      transparent
-        .clone()
-        .resize(s, s, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-        .png()
-        .toBuffer()
-    )
+    [16, 32, 48].map(async (s) => {
+      const tmp = join(ICONS_DIR, `_ico-${s}.png`);
+      await writeNavyIcon(transparent, tmp, s);
+      return sharp(tmp).png().toBuffer();
+    })
   );
   const ico = await pngToIco(icoBuffers);
   await writeFile(join(OUT_DIR, "favicon.ico"), ico);
-  await writeFile(join(OUT_DIR, "apple-touch-icon.png"), await sharp(join(ICONS_DIR, "apple-touch-icon.png")).toBuffer());
+  await writeFile(
+    join(OUT_DIR, "apple-touch-icon.png"),
+    await sharp(join(ICONS_DIR, "apple-touch-icon.png")).toBuffer()
+  );
 
-  console.log("\nDone. Assets written to public/ and public/icons/");
+  console.log("\nDone. Navy-backed favicon/PWA icons written to public/ and public/icons/");
 }
 
 main().catch((err) => {

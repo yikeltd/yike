@@ -15,7 +15,18 @@ export type AnalyticsEvent =
   | "search"
   | "share_listing"
   | "pwa_install_prompt"
-  | "pwa_install_accept";
+  | "pwa_install_accept"
+  | "pwa_install_dismiss"
+  | "seo_whatsapp_help"
+  | "swipe_skip"
+  | "swipe_photo_advance"
+  | "swipe_listing_open"
+  | "swipe_not_interested"
+  | "swipe_frame_complete"
+  | "swipe_dwell"
+  | "swipe_save"
+  | "swipe_whatsapp"
+  | "swipe_exit";
 
 export type AnalyticsProps = Record<
   string,

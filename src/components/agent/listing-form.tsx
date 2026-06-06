@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageUploader } from "./image-uploader";
-import { MediaPreviewGrid } from "./media-preview-grid";
+import { MediaTagEditor } from "./media-tag-editor";
 import {
   getAreasForSearchCity,
   getCitiesForState,
@@ -31,6 +31,14 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { NIGERIAN_AMENITIES } from "@/constants/amenities";
 import type { ListingExtras, Property } from "@/types/database";
 import {
+  createMediaItemFromUpload,
+  dedupeMediaItems,
+  mediaItemsToUrls,
+  normalizePropertyMedia,
+  sortMediaItemsForStory,
+  type PropertyMediaItem,
+} from "@/lib/media/items";
+import {
   BLOCKING_QUALITY_FLAGS,
   moderateListingDraft,
   qualityFlagLabel,
@@ -55,8 +63,8 @@ export function ListingForm({
   const [error, setError] = useState("");
   const [state, setState] = useState(initial?.state ?? "Abia");
   const [city, setCity] = useState(initial?.city ?? "");
-  const [mediaUrls, setMediaUrls] = useState<string[]>(
-    initial?.media_urls ?? []
+  const [mediaItems, setMediaItems] = useState<PropertyMediaItem[]>(() =>
+    initial ? normalizePropertyMedia(initial) : []
   );
   const [amenities, setAmenities] = useState<string[]>(
     initial?.extras?.amenities ?? []
@@ -89,7 +97,19 @@ export function ListingForm({
       .split("\n")
       .map((u) => u.trim())
       .filter(Boolean);
-    const media_urls = [...new Set([...mediaUrls, ...fromText])];
+    const mergedItems = dedupeMediaItems([
+      ...mediaItems,
+      ...fromText.map((url, i) =>
+        createMediaItemFromUpload({
+          url,
+          medium: url,
+          thumbnail: url,
+          index: mediaItems.length + i,
+        })
+      ),
+    ]);
+    const media_items = sortMediaItemsForStory(mergedItems);
+    const media_urls = mediaItemsToUrls(media_items);
 
     if (!price || price <= 0) {
       setError("Enter a real numeric price. Call for price is not allowed.");
@@ -168,6 +188,7 @@ export function ListingForm({
       address_hint: (form.get("address_hint") as string) || null,
       landmark: (form.get("landmark") as string) || null,
       media_urls,
+      media_items,
       video_url: (form.get("video_url") as string) || null,
       extras,
       status: initial?.status === "approved" ? "approved" : "pending",
@@ -395,18 +416,23 @@ export function ListingForm({
           />
         </FormSection>
 
-        <FormSection step={4} title="Photos" hint="Min 3 · auto-compressed">
+        <FormSection step={4} title="Photos" hint="Min 3 · auto-compressed · label rooms">
           <ImageUploader
             onUploaded={(u) =>
-              setMediaUrls((prev) => [...prev, u.medium || u.url])
+              setMediaItems((prev) =>
+                dedupeMediaItems([
+                  ...prev,
+                  createMediaItemFromUpload({
+                    url: u.url,
+                    medium: u.medium || u.url,
+                    thumbnail: u.thumbnail,
+                    index: prev.length,
+                  }),
+                ])
+              )
             }
           />
-          <MediaPreviewGrid
-            urls={mediaUrls}
-            onRemove={(url) =>
-              setMediaUrls((prev) => prev.filter((u) => u !== url))
-            }
-          />
+          <MediaTagEditor items={mediaItems} onChange={setMediaItems} />
           <details className="text-xs text-muted">
             <summary className="cursor-pointer font-semibold text-foreground">
               Paste image URLs instead

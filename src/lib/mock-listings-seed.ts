@@ -66,6 +66,8 @@ function mockAgent(
     listing_limit: null,
     ranking_score: 100,
     is_banned: false,
+    plan: "free",
+    plan_expires_at: null,
     created_at: "2025-01-01",
     ...partial,
   };
@@ -286,6 +288,8 @@ function seedToProperty(s: Seed, views: number, index: number): Property {
     status: "approved",
     is_featured: s.featured ?? false,
     featured_until: s.featured ? expires : null,
+    is_boosted: s.featured ?? false,
+    boosted_until: s.featured ? expires : null,
     boost_score: s.featured ? 50 : 0,
     sponsored_status: s.featured ? "boosted" : "none",
     is_verified_listing: s.verified ?? false,

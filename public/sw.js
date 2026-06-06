@@ -1,16 +1,21 @@
-const SHELL_CACHE = "yike-shell-v3";
-const IMAGE_CACHE = "yike-images-v2";
+const SHELL_CACHE = "yike-shell-v4";
+const IMAGE_CACHE = "yike-images-v3";
+const LISTING_CACHE = "yike-listings-v1";
+
 const SHELL = [
   "/",
   "/offline",
   "/browse",
+  "/saved",
+  "/search",
   "/images/logo-sm.webp",
   "/manifest.json",
   "/favicon.ico",
   "/apple-touch-icon.png",
   "/icons/android-chrome-192.png",
 ];
-const IMAGE_HOSTS = ["images.unsplash.com"];
+
+const IMAGE_HOSTS = ["images.unsplash.com", "supabase.co"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -28,7 +33,10 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((k) => k !== SHELL_CACHE && k !== IMAGE_CACHE)
+            .filter(
+              (k) =>
+                k !== SHELL_CACHE && k !== IMAGE_CACHE && k !== LISTING_CACHE
+            )
             .map((k) => caches.delete(k))
         )
       )
@@ -39,6 +47,22 @@ self.addEventListener("activate", (event) => {
 function isListingImage(url) {
   return IMAGE_HOSTS.some((host) => url.hostname.includes(host));
 }
+
+self.addEventListener("message", (event) => {
+  const data = event.data;
+  if (!data || data.type !== "CACHE_URL" || !data.url) return;
+
+  event.waitUntil(
+    caches.open(LISTING_CACHE).then(async (cache) => {
+      try {
+        const res = await fetch(data.url);
+        if (res.ok) await cache.put(data.url, res);
+      } catch {
+        /* offline — ignore */
+      }
+    })
+  );
+});
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
@@ -61,6 +85,34 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (url.origin !== self.location.origin) return;
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            const cacheName = url.pathname.startsWith("/properties/")
+              ? LISTING_CACHE
+              : SHELL_CACHE;
+            caches.open(cacheName).then((c) => c.put(event.request, clone));
+          }
+          return res;
+        })
+        .catch(async () => {
+          const listing = await caches.match(event.request, {
+            cacheName: LISTING_CACHE,
+          });
+          if (listing) return listing;
+          const shell = await caches.match(event.request, {
+            cacheName: SHELL_CACHE,
+          });
+          if (shell) return shell;
+          return caches.match("/offline");
+        })
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

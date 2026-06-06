@@ -39,6 +39,22 @@ export interface ListingExtras {
   caution_deposit?: number;
 }
 
+/** Structured listing photo — stored in properties.media_items JSONB. */
+export interface PropertyMediaItem {
+  id: string;
+  image_url: string;
+  webp_url?: string | null;
+  thumbnail_url?: string | null;
+  alt_text?: string | null;
+  room_label?: string | null;
+  sort_order: number;
+  width?: number | null;
+  height?: number | null;
+  blur_data_url?: string | null;
+  is_cover?: boolean;
+  created_at?: string;
+}
+
 export type DiscoverHub =
   | "student"
   | "affordable"
@@ -66,6 +82,8 @@ export interface Profile {
   ranking_score: number;
   verified_badge: boolean;
   is_banned: boolean;
+  plan: "free" | "pro" | "agency";
+  plan_expires_at: string | null;
   created_at: string;
 }
 
@@ -87,10 +105,13 @@ export interface Property {
   address_hint: string | null;
   landmark: string | null;
   media_urls: string[];
+  media_items?: PropertyMediaItem[] | null;
   video_url: string | null;
   status: PropertyStatus;
   is_featured: boolean;
   featured_until: string | null;
+  is_boosted: boolean;
+  boosted_until: string | null;
   boost_score: number;
   sponsored_status: SponsoredStatus;
   is_verified_listing: boolean;

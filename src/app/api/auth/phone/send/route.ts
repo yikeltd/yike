@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import type { OtpChannel } from "@/lib/notifications/types";
 import { sendPhoneOtp } from "@/lib/otp";
+import { createOtpDbClient } from "@/lib/otp/rpc";
 import { canRequestPhoneOtp, normalizeNigerianPhone } from "@/lib/phone";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const admin = createAdminClient();
-  if (!admin) {
+  const db = createOtpDbClient();
+  if (!db) {
     return NextResponse.json({ error: OTP_USER_MESSAGES.unavailable }, { status: 503 });
   }
 
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: OTP_USER_MESSAGES.invalidPhone }, { status: 400 });
   }
 
-  const result = await sendPhoneOtp(admin, phone, preferred);
+  const result = await sendPhoneOtp(db, phone, preferred);
 
   if (!result.ok) {
     return NextResponse.json(

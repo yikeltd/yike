@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getPropertyById } from "@/lib/properties";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAgentRecentLeadsCount } from "@/lib/leads/queries";
 import {
   formatPrice,
   listingTypeLabel,
@@ -95,6 +97,9 @@ export default async function PropertyDetailPage({
   }
 
   const agent = property.agent;
+  const admin = createAdminClient();
+  const recentLeads =
+    agent && admin ? await getAgentRecentLeadsCount(admin, agent.id) : 0;
   const verified =
     property.is_verified_listing ||
     (agent ? isVerifiedAgent(agent) : false);
@@ -166,6 +171,7 @@ export default async function PropertyDetailPage({
                 createdAt={property.created_at}
                 viewsCount={property.views_count}
                 verified={!!verified}
+                contactClicks={property.contact_clicks}
                 className="mt-2 block"
               />
               <h1 className="mt-3 text-lg font-semibold leading-snug text-foreground lg:text-2xl">
@@ -232,8 +238,12 @@ export default async function PropertyDetailPage({
                   listingType={property.listing_type}
                   propertyType={property.property_type}
                   bedrooms={property.bedrooms}
+                  price={Number(property.price)}
+                  paymentPeriod={property.payment_period}
                   verified={!!verified}
                   contactClicks={property.contact_clicks}
+                  recentLeads={recentLeads}
+                  hideContact
                 />
               </section>
             )}
@@ -269,8 +279,11 @@ export default async function PropertyDetailPage({
               listingType={property.listing_type}
               propertyType={property.property_type}
               bedrooms={property.bedrooms}
+              price={Number(property.price)}
+              paymentPeriod={property.payment_period}
               verified={!!verified}
               contactClicks={property.contact_clicks}
+              recentLeads={recentLeads}
               sticky
             />
             <SafetyNotice />
@@ -289,6 +302,9 @@ export default async function PropertyDetailPage({
             propertyType={property.property_type}
             bedrooms={property.bedrooms}
             agentId={agent.id}
+            agentName={agent.full_name ?? "Agent"}
+            price={Number(property.price)}
+            paymentPeriod={property.payment_period}
             phone={agent.phone}
             whatsapp={agent.whatsapp}
           />

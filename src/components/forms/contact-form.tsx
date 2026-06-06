@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { MessageCircle, Mail, MapPin } from "lucide-react";
 import { FollowYike } from "@/components/social/follow-yike";
+import { YIKE_SUPPORT_WHATSAPP } from "@/lib/constants";
+import { whatsAppDeepLink } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import {
@@ -99,7 +101,7 @@ export function ContactSidebar() {
   return (
     <div className="space-y-4">
       <a
-        href="https://wa.me/2348000000000"
+        href={whatsAppDeepLink(YIKE_SUPPORT_WHATSAPP, "Hi Yike, I need support.")}
         target="_blank"
         rel="noopener noreferrer"
         className="pressable flex items-center gap-3 rounded-2xl bg-[#25D366]/10 p-4 text-sm font-semibold text-navy"

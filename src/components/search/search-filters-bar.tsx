@@ -54,7 +54,7 @@ export function SearchFiltersBar({ className }: { className?: string }) {
         onChange={(e) => set("property_type", e.target.value)}
         className="h-9 shrink-0 rounded-full border border-surface bg-elevated px-3 text-xs font-semibold text-foreground shadow-sm outline-none"
       >
-        <option value="">Property type</option>
+        <option value="">Any Property Type</option>
         {PROPERTY_TYPES.map((t) => (
           <option key={t.value} value={t.value}>
             {t.label}

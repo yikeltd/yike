@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import { SITE_NAME, SITE_URL, COMPANY_LEGAL_NAME, COMPANY_RC } from "@/lib/constants";
 import {
   LegalCallout,
   LegalDocument,
@@ -12,17 +12,17 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalDocument title="Terms of Service" lastUpdated="5 June 2026">
+    <LegalDocument title="Terms of Service" lastUpdated="6 June 2026">
       <LegalCallout>
-        By accessing {SITE_NAME} at {SITE_URL}, you agree to these Terms. If you
-        do not agree, do not use the platform.
+        By using {SITE_NAME} at {SITE_URL}, you agree to these Terms.{" "}
+        {COMPANY_LEGAL_NAME} ({COMPANY_RC}) operates the platform.
       </LegalCallout>
 
       <LegalSection title="1. Who we are">
         <p>
-          {SITE_NAME} (&quot;Yike&quot;, &quot;we&quot;, &quot;us&quot;) operates
-          an online marketplace that helps users discover residential and
-          commercial property listings in Nigeria. We are a technology platform,
+          {COMPANY_LEGAL_NAME} ({COMPANY_RC}) operates {SITE_NAME} (&quot;Yike&quot;,
+          &quot;we&quot;, &quot;us&quot;) — an online marketplace helping users
+          discover property listings in Nigeria. We are a technology platform,
           not an estate agent, property developer, lawyer, or financial
           institution.
         </p>

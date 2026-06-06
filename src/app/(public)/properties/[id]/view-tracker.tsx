@@ -6,6 +6,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { addRecentlyViewed } from "@/lib/recently-viewed";
 import { trackViewedListing } from "@/lib/browse-preferences";
+import { cachePageForOffline } from "@/lib/pwa/cache";
+import { notifyPwaEligibilityCheck } from "@/lib/pwa/engagement";
 import { formatPrice } from "@/lib/utils";
 import type { Property } from "@/types/database";
 
@@ -46,6 +48,8 @@ export function PropertyViewTracker({
         listingType: property.listing_type,
         propertyType: property.property_type,
       });
+      cachePageForOffline(`/properties/${propertyId}`);
+      notifyPwaEligibilityCheck();
     }
 
     if (isDemoProperty(propertyId) || !isSupabaseConfigured()) return;

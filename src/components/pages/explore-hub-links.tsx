@@ -5,7 +5,6 @@ const HUBS = [
   { href: "/explore", label: "Explore" },
   { href: "/rent", label: "Rent" },
   { href: "/buy", label: "Buy" },
-  { href: "/hotel", label: "Hotels" },
   { href: "/shortlet", label: "Shortlet" },
   { href: "/land", label: "Land" },
   { href: "/browse", label: "Swipe" },

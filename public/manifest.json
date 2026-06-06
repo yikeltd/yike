@@ -1,5 +1,5 @@
 {
-  "name": "Yike — Find Real Houses in Nigeria",
+  "name": "Yike",
   "short_name": "Yike",
   "description": "The fastest and safest way to find real houses in Nigeria.",
   "start_url": "/",
@@ -9,6 +9,26 @@
   "theme_color": "#031B4E",
   "orientation": "portrait-primary",
   "categories": ["business", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Swipe homes",
+      "short_name": "Swipe",
+      "url": "/browse",
+      "icons": [{ "src": "/icons/android-chrome-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Search",
+      "short_name": "Search",
+      "url": "/search",
+      "icons": [{ "src": "/icons/android-chrome-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Saved",
+      "short_name": "Saved",
+      "url": "/saved",
+      "icons": [{ "src": "/icons/android-chrome-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-48.png",

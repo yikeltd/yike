@@ -71,7 +71,7 @@ export function HeaderMobileSearch() {
 
     setOpen(false);
     setQuery("");
-    router.replace(href, { scroll: false });
+    router.push(href);
   }
 
   function onSelect(s: SearchSuggestion) {
@@ -88,13 +88,13 @@ export function HeaderMobileSearch() {
       saveBrowsePreferences({ city: s.match.city, area: s.match.area });
       setOpen(false);
       setQuery("");
-      router.replace(href, { scroll: false });
+      router.push(href);
       return;
     }
     if (s.kind === "recent" || s.kind === "trending") {
       setOpen(false);
       setQuery("");
-      router.replace(s.href, { scroll: false });
+      router.push(s.href);
       return;
     }
     commitSearch(s.query);
@@ -104,10 +104,10 @@ export function HeaderMobileSearch() {
     <div ref={wrapRef} className="relative min-w-0 flex-1">
       <div
         className={cn(
-          "flex items-center gap-2 rounded-full border bg-surface/90 transition-all duration-200",
+          "flex items-center gap-2 rounded-full border bg-navy/[0.04] transition-all duration-200 dark:bg-surface/90",
           open
             ? "border-gold/50 shadow-glow-gold ring-2 ring-gold/20"
-            : "border-surface shadow-sm"
+            : "border-navy/10 shadow-sm dark:border-surface"
         )}
       >
         <Search className="ml-3 h-4 w-4 shrink-0 text-muted" aria-hidden />

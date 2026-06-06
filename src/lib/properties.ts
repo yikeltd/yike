@@ -17,23 +17,9 @@ import { sortPropertiesByMarketRank } from "@/lib/agent-tiers";
 import type { DiscoverHub } from "@/types/database";
 import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
 import { isHotelPropertyType } from "@/constants/listingTypes";
+import type { PropertySearchParams } from "@/lib/property-search";
 
-export type PropertySearchParams = {
-  listing_type?: string;
-  state?: string;
-  city?: string;
-  area?: string;
-  min_price?: number;
-  max_price?: number;
-  bedrooms?: number;
-  property_type?: string;
-  q?: string;
-  featured?: boolean;
-  verified_only?: boolean;
-  bathrooms?: number;
-  hub?: DiscoverHub;
-  amenity?: string;
-};
+export type { PropertySearchParams } from "@/lib/property-search";
 
 const PUBLIC_SELECT = `
   *,
@@ -99,7 +85,7 @@ export async function getPublicProperties(
     rows = rows.filter((p) => isHotelPropertyType(p.property_type));
   }
   if (rows.length > 0) {
-    return sortPropertiesByMarketRank(rows).slice(0, limit);
+    return sortPropertiesByMarketRank(rows, merged).slice(0, limit);
   }
   return filterMockListings(merged, limit);
 }

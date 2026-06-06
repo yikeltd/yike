@@ -1,13 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import { COMPANY_DISPLAY_NAME, COMPANY_RC, SITE_NAME } from "@/lib/constants";
 import { brand } from "@/lib/design/tokens";
 import { FollowYike } from "@/components/social/follow-yike";
 const explore = [
   { href: "/explore", label: "Explore" },
   { href: "/rent", label: "Rent" },
   { href: "/buy", label: "Buy" },
-  { href: "/hotel", label: "Hotels" },
   { href: "/shortlet", label: "Shortlet" },
   { href: "/land", label: "Land for sale" },
   { href: "/browse", label: "Swipe homes" },
@@ -21,6 +20,7 @@ const company = [
   { href: "/contact", label: "Contact" },
   { href: "/careers", label: "Careers" },
   { href: "/verify-agent", label: "Verify as agent" },
+  { href: "/why-verified", label: "Why verified" },
   { href: "/safety", label: "Safety tips" },
   { href: "/moderation", label: "Moderation policy" },
 ];
@@ -114,15 +114,15 @@ export function SiteFooter() {
 
         <div className="mt-10 flex flex-col gap-4 border-t border-surface pt-8 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted">
-            © {year} {SITE_NAME}. All rights reserved. ·{" "}
-            <a href={SITE_URL} className="hover:text-foreground">
-              {SITE_URL.replace("https://", "")}
-            </a>
+            © {year} {COMPANY_DISPLAY_NAME} All rights reserved.
           </p>
           <FollowYike title="" variant="footer" />
         </div>
 
-        <p className="mt-6 text-[11px] leading-relaxed text-muted">
+        <p className="mt-4 text-[11px] leading-relaxed text-muted">
+          {COMPANY_DISPLAY_NAME} · {COMPANY_RC}
+        </p>
+        <p className="mt-2 text-[11px] leading-relaxed text-muted">
           {SITE_NAME} is an online listing platform only. We do not own
           properties, collect rent, hold deposits, or guarantee listings.
           Always verify properties in person before payment. Read our{" "}

@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import type { Property } from "@/types/database";
 import { calculateMoveInBreakdown } from "@/lib/rent-breakdown";
-import { Info } from "lucide-react";
+import { MoveInEstimateModal } from "./move-in-estimate-modal";
+import { Info, ChevronRight } from "lucide-react";
 
 function formatAmount(amount: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -12,57 +16,61 @@ function formatAmount(amount: number) {
 
 export function RentTransparencyCard({ property }: { property: Property }) {
   const breakdown = calculateMoveInBreakdown(property);
+  const [modalOpen, setModalOpen] = useState(false);
+
   if (!breakdown) return null;
 
   const isRentOrLease =
     property.listing_type === "rent" || property.listing_type === "lease";
 
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-float ring-1 ring-gold/15 lg:p-6">
-      <div className="flex items-start gap-2">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold/15">
-          <Info className="h-4 w-4 text-gold-dark" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-bold text-navy lg:text-base">
-            {isRentOrLease ? "Total move-in estimate" : "What you'll pay"}
-          </h2>
-          <p className="mt-0.5 text-xs text-muted">
-            {isRentOrLease
-              ? "Typical first payment — confirm with agent before transfer"
-              : "Nightly rate plus one-time fees where listed"}
+    <>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="pressable w-full rounded-2xl bg-white p-4 text-left shadow-float ring-1 ring-gold/15 lg:p-6"
+      >
+        <div className="flex items-start gap-2">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold/15">
+            <Info className="h-4 w-4 text-gold-dark" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-bold text-navy lg:text-base">
+              {isRentOrLease ? "Total move-in estimate" : "What you'll pay"}
+            </h2>
+            <p className="mt-0.5 text-xs text-muted">
+              Tap to edit breakdown and share
+            </p>
+          </div>
+          <p className="shrink-0 text-lg font-bold tabular-nums text-navy lg:text-xl">
+            {breakdown.headline}
           </p>
+          <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted" aria-hidden />
         </div>
-        <p className="shrink-0 text-lg font-bold tabular-nums text-navy lg:text-xl">
-          {breakdown.headline}
-        </p>
-      </div>
-      <ul className="mt-4 space-y-2 border-t border-surface pt-4">
-        {breakdown.items.map((item) => (
-          <li
-            key={item.label}
-            className="flex items-baseline justify-between gap-3 text-sm"
-          >
-            <span className="text-muted">
-              {item.label}
-              {item.note && (
-                <span className="ml-1 text-xs text-muted/80">({item.note})</span>
-              )}
-            </span>
-            <span className="font-semibold tabular-nums text-foreground">
-              {formatAmount(item.amount)}
-            </span>
-          </li>
-        ))}
-        <li className="flex items-baseline justify-between gap-3 border-t border-surface pt-2 text-sm font-bold text-navy">
-          <span>Estimated total</span>
-          <span className="tabular-nums">{breakdown.headline}</span>
-        </li>
-      </ul>
-      <p className="mt-3 text-xs leading-relaxed text-muted">
-        Yike shows estimates to help you compare homes. Agency fees, caution, and
-        agreement terms vary — always confirm on WhatsApp before paying anyone.
-      </p>
-    </section>
+        <ul className="mt-4 space-y-2 border-t border-surface pt-4">
+          {breakdown.items.slice(0, 4).map((item) => (
+            <li
+              key={item.label}
+              className="flex items-baseline justify-between gap-3 text-sm"
+            >
+              <span className="text-muted">{item.label}</span>
+              <span className="font-semibold tabular-nums text-foreground">
+                {formatAmount(item.amount)}
+              </span>
+            </li>
+          ))}
+          {breakdown.items.length > 4 && (
+            <li className="text-xs font-medium text-gold-dark">
+              +{breakdown.items.length - 4} more — tap to view all
+            </li>
+          )}
+        </ul>
+      </button>
+      <MoveInEstimateModal
+        property={property}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
+    </>
   );
 }

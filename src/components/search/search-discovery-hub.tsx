@@ -55,8 +55,8 @@ export function SearchDiscoveryHub() {
   const hasHistory = saved.length > 0 || recent.length > 0;
 
   return (
-    <div className="search-discovery mx-auto max-w-2xl space-y-3 px-3 pb-4 pt-3 lg:px-0 lg:pt-5">
-      <header className="space-y-2 px-0.5">
+    <div className="search-discovery mx-auto max-w-2xl space-y-3 px-3 pb-4 pt-3 lg:max-w-3xl lg:px-0 lg:pt-5">
+      <header className="space-y-2 rounded-2xl border border-navy/10 bg-gradient-to-b from-navy/[0.06] to-transparent p-4">
         <h1 className="text-xl font-extrabold tracking-tight text-navy dark:text-foreground lg:text-2xl">
           Search smarter
         </h1>

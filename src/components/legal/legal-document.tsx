@@ -11,22 +11,24 @@ export function LegalDocument({
   children: React.ReactNode;
 }) {
   return (
-    <article className="mx-auto max-w-3xl space-y-8 pb-12 pt-4 lg:pt-8">
-      <header className="space-y-2 border-b border-surface pb-6">
-        <p className="text-xs font-bold uppercase tracking-wider text-gold-dark">
-          Legal
-        </p>
-        <h1 className="text-2xl font-bold text-foreground lg:text-3xl">{title}</h1>
-        <p className="text-sm text-muted">Last updated: {lastUpdated}</p>
-        <p className="text-sm text-muted">
-          Questions?{" "}
-          <Link href="/contact" className="font-semibold text-gold-dark hover:underline">
-            Contact us
-          </Link>
-        </p>
-      </header>
-      <div className="legal-prose space-y-6 text-sm leading-relaxed text-foreground/90">
-        {children}
+    <article className="mx-auto max-w-2xl px-3 pb-12 pt-4 lg:max-w-3xl lg:px-0 lg:pt-8">
+      <div className="rounded-2xl border border-navy/10 bg-elevated p-5 shadow-sm ring-1 ring-navy/[0.04] lg:p-8">
+        <header className="space-y-2 border-b border-surface pb-6">
+          <p className="text-xs font-bold uppercase tracking-wider text-gold-dark">
+            Legal
+          </p>
+          <h1 className="text-2xl font-bold text-foreground lg:text-3xl">{title}</h1>
+          <p className="text-sm text-muted">Last updated: {lastUpdated}</p>
+          <p className="text-sm text-muted">
+            Questions?{" "}
+            <Link href="/contact" className="font-semibold text-gold-dark hover:underline">
+              Contact us
+            </Link>
+          </p>
+        </header>
+        <div className="legal-prose mt-6 space-y-6 text-sm leading-relaxed text-foreground/90">
+          {children}
+        </div>
       </div>
     </article>
   );

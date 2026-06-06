@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { PropertyFeed } from "@/components/property/property-feed";
-import { SavedGuestPrompt } from "@/components/auth/saved-guest-prompt";
+import { SavedGuestView } from "@/components/auth/saved-guest-view";
 import type { Property } from "@/types/database";
 
 export default async function SavedPage() {
@@ -11,9 +11,9 @@ export default async function SavedPage() {
 
   if (!user) {
     return (
-      <div className="space-y-4 px-3 pt-2">
+      <div className="space-y-4 px-3 pt-2 pb-8">
         <h1 className="text-xl font-bold text-foreground">Saved homes</h1>
-        <SavedGuestPrompt />
+        <SavedGuestView />
       </div>
     );
   }
