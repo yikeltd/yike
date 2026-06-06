@@ -10,6 +10,7 @@ import { BUY_FAQS } from "@/constants/pageContent";
 import { TRENDING_CITIES } from "@/constants/trendingCities";
 import { SITE_NAME } from "@/lib/constants";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
+import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 
 export const metadata = {
   title: `Buy Property in Nigeria | ${SITE_NAME}`,
@@ -39,6 +40,10 @@ export default function BuyPage() {
         cta={{ label: "Browse for sale", href: "/search?hub=buy" }}
         secondaryCta={{ label: "Buying guide", href: "/blog" }}
       />
+
+      <div className="mx-auto max-w-7xl px-3 pt-8 lg:px-8">
+        <ExploreHubLinks active="/buy" />
+      </div>
 
       <Suspense fallback={<RailFallback />}>
         <PropertyRail

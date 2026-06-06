@@ -9,13 +9,13 @@ import { getSavedSearches } from "@/lib/saved-searches";
 import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { addRecentSearch } from "@/lib/search-recent";
 import { BrowseListingsBlock } from "./browse-listings-block";
+import { SmartCityHint } from "@/components/personalization/smart-city-hint";
 import { SearchCollapsible } from "./search-collapsible";
 import { SearchFiltersBar } from "./search-filters-bar";
 import {
   Bookmark,
   Clock,
   Layers,
-  Map,
   ShieldCheck,
   Star,
   TrendingUp,
@@ -56,13 +56,14 @@ export function SearchDiscoveryHub() {
 
   return (
     <div className="search-discovery mx-auto max-w-2xl space-y-3 px-3 pb-4 pt-3 lg:px-0 lg:pt-5">
-      <header className="px-0.5">
+      <header className="space-y-2 px-0.5">
         <h1 className="text-xl font-extrabold tracking-tight text-navy dark:text-foreground lg:text-2xl">
           Search smarter
         </h1>
-        <p className="mt-1 text-sm leading-relaxed text-navy/65 dark:text-muted">
+        <p className="text-sm leading-relaxed text-navy/65 dark:text-muted">
           Find homes faster with intelligent location and property filters.
         </p>
+        <SmartCityHint />
       </header>
 
       <BrowseListingsBlock onSearch={({ params, label }) => pushSearch(params, label)} />
@@ -176,18 +177,6 @@ export function SearchDiscoveryHub() {
       <SearchCollapsible title="Advanced filters">
         <SearchFiltersBar className="!px-0" />
       </SearchCollapsible>
-
-      <div className="rounded-xl border border-dashed border-surface bg-surface/40 px-3.5 py-3 text-center">
-        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-navy/5">
-          <Map className="h-4 w-4 text-navy/50" />
-        </div>
-        <p className="mt-2 text-xs font-bold text-navy/80 dark:text-foreground">
-          Map view coming soon
-        </p>
-        <p className="mt-0.5 text-[11px] text-muted">
-          Interactive city map exploration arriving soon.
-        </p>
-      </div>
     </div>
   );
 }

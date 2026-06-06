@@ -1,0 +1,40 @@
+/** Top-level app routes — keep in sync with `src/app/(public)` and sibling route groups. */
+export const PUBLIC_STATIC_SEGMENTS = new Set([
+  "about",
+  "account",
+  "agents",
+  "blog",
+  "browse",
+  "buy",
+  "careers",
+  "contact",
+  "cookies",
+  "disclaimer",
+  "explore",
+  "land",
+  "moderation",
+  "odogwu_stankings",
+  "post-property",
+  "privacy",
+  "properties",
+  "rent",
+  "request-property",
+  "safety",
+  "saved",
+  "search",
+  "shortlet",
+  "terms",
+  "verify-agent",
+  "houses",
+  "offline",
+  "auth",
+  "agent",
+  "lex",
+  "dev",
+  "api",
+]);
+
+/** First path segment that must never be treated as a legacy city slug. */
+export const RESERVED_PATH_PREFIXES = new Set([
+  ...PUBLIC_STATIC_SEGMENTS,
+]);

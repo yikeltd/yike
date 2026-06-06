@@ -1,3 +1,5 @@
+import { notifyActivityChanged } from "@/lib/activity-events";
+
 const KEY = "yike_saved_searches";
 const MAX = 8;
 
@@ -20,6 +22,7 @@ export function saveSearch(entry: { label: string; href: string }) {
   const prev = getSavedSearches().filter((s) => s.href !== entry.href);
   const saved: SavedSearch = { ...entry, savedAt: Date.now() };
   localStorage.setItem(KEY, JSON.stringify([saved, ...prev].slice(0, MAX)));
+  notifyActivityChanged();
 }
 
 export function removeSavedSearch(href: string) {

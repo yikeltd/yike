@@ -3,11 +3,13 @@ import type { OtpChannel } from "./types";
 export const OTP_USER_MESSAGES = {
   sentWhatsApp: "Verification code sent to WhatsApp.",
   sentSms: "Verification code sent by SMS.",
-  sendFailed: "We could not send the code right now.",
+  sendFailed:
+    "We could not send the code right now. Please try SMS or try again shortly.",
+  whatsappFailed: "WhatsApp code failed. Try SMS instead.",
   invalidPhone: "Invalid phone number",
   cooldown: "Please wait a moment before requesting another code.",
   expired: "Code expired — request a new one.",
-  incorrect: "Incorrect code",
+  incorrect: "We could not verify the code. Please check and try again.",
   maxAttempts: "Too many attempts — request a new code.",
   noCode: "No code sent for this number",
   alreadyUsed: "Code already used",

@@ -67,9 +67,9 @@ const code = "123456";
 
 console.log("\nSending WhatsApp verification to", mobile);
 const wa = await post("/verification/create", {
-  channel: "whatsapp",
+  channel: "WHATSAPP",
   sender: waSender,
-  token_type: "numeric",
+  token_type: "NUMERIC",
   token_length: 6,
   expiration_time: 10,
   customer_mobile_number: mobile,

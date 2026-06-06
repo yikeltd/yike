@@ -9,6 +9,7 @@ import { TRENDING_CITIES } from "@/constants/trendingCities";
 import { SITE_NAME } from "@/lib/constants";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 
 export const metadata = {
   title: `Shortlets in Nigeria | ${SITE_NAME}`,
@@ -34,10 +35,11 @@ export default function ShortletPage() {
         badge="Shortlet"
         variant="travel"
         cta={{ label: "Browse shortlets", href: "/search?type=shortlet" }}
-        secondaryCta={{ label: "List your shortlet", href: "/post-property" }}
+        secondaryCta={{ label: "Hotels & guest houses", href: "/hotel" }}
       />
 
       <section className="mx-auto max-w-7xl px-3 pt-8 lg:px-8">
+        <ExploreHubLinks active="/shortlet" className="mb-6" />
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl bg-violet-950/5 p-5 ring-1 ring-violet-500/10">
             <p className="text-xs font-bold uppercase tracking-widest text-violet-800">

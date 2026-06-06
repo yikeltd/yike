@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getPropertyById } from "@/lib/properties";
 import {
   formatPrice,
@@ -26,6 +25,7 @@ import { ConversionStrip } from "@/components/conversion/conversion-strip";
 import { BedDouble, Bath, MapPin, Navigation } from "lucide-react";
 import { PropertyViewTracker } from "./view-tracker";
 import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
+import { ListingUnavailable } from "@/components/property/listing-unavailable";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { optimizeListingImageUrl } from "@/lib/image-url";
 import { propertyCanonical } from "@/lib/seo/utils";
@@ -80,12 +80,18 @@ export default async function PropertyDetailPage({
   const { id } = await params;
   const property = await getPropertyById(id);
 
-  if (
-    !property ||
-    property.status !== "approved" ||
-    new Date(property.expires_at) <= new Date()
-  ) {
-    notFound();
+  if (!property) {
+    return <ListingUnavailable property={null} reason="missing" />;
+  }
+
+  const isExpired = new Date(property.expires_at) <= new Date();
+  if (property.status !== "approved" || isExpired) {
+    return (
+      <ListingUnavailable
+        property={property}
+        reason={isExpired ? "expired" : "unpublished"}
+      />
+    );
   }
 
   const agent = property.agent;
@@ -159,6 +165,7 @@ export default async function PropertyDetailPage({
                 updatedAt={property.updated_at}
                 createdAt={property.created_at}
                 viewsCount={property.views_count}
+                verified={!!verified}
                 className="mt-2 block"
               />
               <h1 className="mt-3 text-lg font-semibold leading-snug text-foreground lg:text-2xl">
@@ -224,7 +231,9 @@ export default async function PropertyDetailPage({
                   city={property.city}
                   listingType={property.listing_type}
                   propertyType={property.property_type}
+                  bedrooms={property.bedrooms}
                   verified={!!verified}
+                  contactClicks={property.contact_clicks}
                 />
               </section>
             )}
@@ -259,7 +268,9 @@ export default async function PropertyDetailPage({
               city={property.city}
               listingType={property.listing_type}
               propertyType={property.property_type}
+              bedrooms={property.bedrooms}
               verified={!!verified}
+              contactClicks={property.contact_clicks}
               sticky
             />
             <SafetyNotice />
@@ -276,6 +287,7 @@ export default async function PropertyDetailPage({
             city={property.city}
             listingType={property.listing_type}
             propertyType={property.property_type}
+            bedrooms={property.bedrooms}
             agentId={agent.id}
             phone={agent.phone}
             whatsapp={agent.whatsapp}

@@ -9,8 +9,7 @@ RECORD_NAME="_vercel"
 
 # From Vercel project yike → Domains (team: yike-ng)
 TXT_VALUES=(
-  "vc-domain-verify=yike.ng,21f94a63eb783cf99390"
-  "vc-domain-verify=www.yike.ng,ea0dd4779678492e7fd2"
+  "vc-domain-verify=yike.ng,3ec6ddc003c4c2a2af09"
 )
 
 if [[ -z "$TOKEN" ]]; then

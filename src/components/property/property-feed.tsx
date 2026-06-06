@@ -14,6 +14,8 @@ export function PropertyFeed({
   adPlacementKey = "search_feed_mid",
   emptyCity,
   emptyArea,
+  emptyListingType,
+  emptyPropertyType,
 }: {
   properties: Property[];
   emptyMessage?: string;
@@ -24,6 +26,8 @@ export function PropertyFeed({
   adPlacementKey?: AdPlacementKey;
   emptyCity?: string;
   emptyArea?: string;
+  emptyListingType?: string;
+  emptyPropertyType?: string;
 }) {
   if (properties.length === 0) {
     return (
@@ -31,6 +35,8 @@ export function PropertyFeed({
         message={emptyMessage}
         city={emptyCity}
         area={emptyArea}
+        listingType={emptyListingType}
+        propertyType={emptyPropertyType}
       />
     );
   }
@@ -43,6 +49,10 @@ export function PropertyFeed({
       midFeedAd={midFeedAd}
       feedAdInsertAfter={feedAdInsertAfter}
       adPlacementKey={adPlacementKey}
+      emptyCity={emptyCity}
+      emptyArea={emptyArea}
+      emptyListingType={emptyListingType}
+      emptyPropertyType={emptyPropertyType}
     />
   );
 }

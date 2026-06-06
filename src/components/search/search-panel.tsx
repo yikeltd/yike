@@ -8,7 +8,11 @@ import {
   getAllCities,
   POPULAR_CITIES,
 } from "@/lib/constants";
-import { SEARCH_DEAL_TYPES, findDealChip } from "@/constants/listingTypes";
+import {
+  SEARCH_DEAL_TYPES,
+  chipToFilterParams,
+  findDealChip,
+} from "@/constants/listingTypes";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,12 +37,20 @@ export function SearchPanel({
 
   function search() {
     const params = new URLSearchParams();
-    const chip = findDealChip(
-      listingType,
-      listingType === "land" ? "land_sale" : null
-    );
-    if (chip?.hub) params.set("hub", chip.hub);
-    else if (listingType) params.set("type", listingType);
+    const hub = listingType === "land" ? "land_sale" : null;
+    const propertyType =
+      listingType === "hotel"
+        ? "hotel"
+        : listingType === "shops"
+          ? "shop"
+          : null;
+    const chip = findDealChip(listingType, hub, propertyType);
+    if (chip) {
+      const filters = chipToFilterParams(chip);
+      if (filters.hub) params.set("hub", filters.hub);
+      if (filters.type) params.set("type", filters.type);
+      if (filters.property_type) params.set("property_type", filters.property_type);
+    }
     if (city) params.set("city", city);
     if (area) params.set("area", area);
     const range = BUDGET_RANGES[Number(budget)];
@@ -73,7 +85,13 @@ export function SearchPanel({
         )}
       >
         {SEARCH_DEAL_TYPES.map((t) => {
-          const chipValue = t.hub ? "land" : t.value;
+          const chipValue = t.hub
+            ? "land"
+            : t.propertyType === "hotel"
+              ? "hotel"
+              : t.propertyType === "shop"
+                ? "shops"
+                : t.value;
           return (
           <button
             key={t.label}

@@ -4,6 +4,8 @@ import { EMAIL_USER_MESSAGES } from "@/lib/notifications/messages";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
+import { passwordPolicyError } from "@/lib/password-policy";
+import { validateMathChallenge } from "@/lib/signup-math-challenge";
 
 export const runtime = "nodejs";
 
@@ -24,9 +26,16 @@ export async function POST(request: Request) {
   const confirmPassword = String(body.confirmPassword ?? "");
   const pin = String(body.pin ?? "");
   const phoneVerificationToken = String(body.phoneVerificationToken ?? "");
+  const mathA = Number(body.mathA);
+  const mathB = Number(body.mathB);
+  const mathAnswer = Number(body.mathAnswer);
 
   if (!fullName || !username || !email || !phone || !password || !pin) {
     return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+  }
+
+  if (!validateMathChallenge(mathA, mathB, mathAnswer)) {
+    return NextResponse.json({ error: "Incorrect security check — try again" }, { status: 400 });
   }
 
   if (!USERNAME_RE.test(username)) {
@@ -36,8 +45,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (password.length < 6) {
-    return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+  const passwordError = passwordPolicyError(password);
+  if (passwordError) {
+    return NextResponse.json({ error: passwordError }, { status: 400 });
   }
 
   if (password !== confirmPassword) {

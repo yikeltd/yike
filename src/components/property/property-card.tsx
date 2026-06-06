@@ -22,6 +22,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { trackContactClick } from "@/lib/contact-tracking";
 import { trackEvent } from "@/lib/analytics";
 import { recordEngagementSave } from "@/lib/engagement";
+import { trackSavedListing } from "@/lib/browse-preferences";
 import { listingImageAlt } from "@/lib/image-seo";
 import { useEffect, useState } from "react";
 import { ListingImage } from "./listing-image";
@@ -97,6 +98,12 @@ export function PropertyCard({
       });
       setSaved(true);
       recordEngagementSave();
+      trackSavedListing(property.id, {
+        city: property.city,
+        area: property.area,
+        listingType: property.listing_type,
+        propertyType: property.property_type,
+      });
       trackEvent("save_listing", {
         listing_id: property.id,
         city: property.city,
@@ -128,7 +135,12 @@ export function PropertyCard({
         property.title,
         property.area,
         property.city,
-        property.id
+        property.id,
+        {
+          bedrooms: property.bedrooms,
+          propertyType: property.property_type,
+          listingType: property.listing_type,
+        }
       )
     );
   const telUrl = tel ? `tel:${formatPhoneForTel(tel)}` : null;
@@ -149,6 +161,7 @@ export function PropertyCard({
           propertyId: property.id,
           channel: "whatsapp",
           city: property.city,
+          area: property.area,
           listingType: property.listing_type,
           propertyType: property.property_type,
           placement: "card",
@@ -175,6 +188,7 @@ export function PropertyCard({
           propertyId: property.id,
           channel: "call",
           city: property.city,
+          area: property.area,
           listingType: property.listing_type,
           propertyType: property.property_type,
           placement: "card",

@@ -110,10 +110,11 @@ export { AREA_PROFILES, getAreaProfiles, getAreasByProfile } from "@/constants/a
 
 export const REPORT_REASONS = [
   "Fake listing",
-  "Already rented",
   "Wrong price",
-  "Scam / asks for fee before viewing",
+  "Already rented",
+  "Spam",
   "Duplicate listing",
+  "Scam / asks for fee before viewing",
   "Other",
 ] as const;
 

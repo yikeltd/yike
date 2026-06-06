@@ -36,6 +36,25 @@ export const BUY_FAQS = [
   },
 ];
 
+export const HOTEL_FAQS = [
+  {
+    q: "What counts as a hotel listing on Yike?",
+    a: "Hotel apartments, guest houses and serviced stays — usually nightly or weekly rates. Contact the host on WhatsApp to confirm availability and check-in.",
+  },
+  {
+    q: "How is this different from shortlets?",
+    a: "Hotels on Yike focus on guest houses and hotel-style apartments. Shortlets cover broader nightly furnished stays. Both book via WhatsApp — Yike does not process payments.",
+  },
+  {
+    q: "Best cities for hotel stays?",
+    a: "Lagos, Abuja, Port Harcourt, Enugu, Owerri and Uyo have strong options for business travel and events. Filter by city and compare photos before you pay.",
+  },
+  {
+    q: "Can I list my guest house?",
+    a: "Yes. Create a free account, add clear photos, set a real nightly rate and WhatsApp contact. Choose Shortlet or Hotel apartment as the property type.",
+  },
+];
+
 export const SHORTLET_FAQS = [
   {
     q: "How do shortlet prices work on Yike?",

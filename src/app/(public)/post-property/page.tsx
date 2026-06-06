@@ -16,6 +16,7 @@ import { CtaBanner } from "@/components/pages/cta-banner";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { SITE_NAME } from "@/lib/constants";
 import { ListPropertyNavLink } from "@/components/auth/list-property-button";
+import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 
 export const metadata = {
   title: `List Property Free | ${SITE_NAME}`,
@@ -76,6 +77,7 @@ export default async function PostPropertyPage() {
       />
 
       <section className="mx-auto max-w-4xl px-3 py-10 lg:px-8">
+        <ExploreHubLinks active="/post-property" className="mb-8" />
         <h2 className="text-xl font-bold text-navy lg:text-2xl">Why list with Yike</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {BENEFITS.map(({ icon: Icon, title, body }) => (

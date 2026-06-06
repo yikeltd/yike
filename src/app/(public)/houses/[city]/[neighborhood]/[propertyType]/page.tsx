@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { SeoLandingPage } from "@/components/seo/programmatic/seo-landing-page";
 import {
   buildPropertyTypeFaqs,
@@ -62,7 +62,7 @@ export default async function HousesPropertyTypePage({ params }: Props) {
     await params;
   const resolved = resolveAreaSlug(citySlug, neighborhoodSlug);
   const type = resolveSeoPropertyType(typeSlug);
-  if (!resolved || !type) notFound();
+  if (!resolved || !type) redirect("/explore");
 
   const searchParams: Parameters<typeof getPublicProperties>[0] = {
     city: resolved.city,

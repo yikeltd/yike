@@ -1,0 +1,10 @@
+{
+  "appStore": {
+    "width": 120,
+    "height": 40
+  },
+  "googlePlay": {
+    "width": 134,
+    "height": 40
+  }
+}

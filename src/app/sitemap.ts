@@ -1,7 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
 import { getSitemapPropertyIds } from "@/lib/seo/sitemap-data";
-import { getSeoCityPaths } from "@/lib/location-slugs";
 import {
   getHousesCityParams,
   getHousesNeighborhoodParams,
@@ -26,6 +25,7 @@ function mainSitemapEntries(): MetadataRoute.Sitemap {
     "/explore",
     "/rent",
     "/buy",
+    "/hotel",
     "/shortlet",
     "/land",
     "/search",
@@ -34,6 +34,7 @@ function mainSitemapEntries(): MetadataRoute.Sitemap {
     "/request-property",
     "/verify-agent",
     "/about",
+    "/careers",
     "/odogwu_stankings",
     "/safety",
     "/contact",
@@ -80,15 +81,6 @@ function mainSitemapEntries(): MetadataRoute.Sitemap {
       url: `${SITE_URL}/blog/${slug}`,
       changeFrequency: "monthly",
       priority: 0.72,
-    });
-  }
-
-  // Legacy city index pages — lower priority; canonical points to /houses/*
-  for (const { citySlug } of getSeoCityPaths().slice(0, 55)) {
-    entries.push({
-      url: `${SITE_URL}/${citySlug}`,
-      changeFrequency: "weekly",
-      priority: 0.55,
     });
   }
 

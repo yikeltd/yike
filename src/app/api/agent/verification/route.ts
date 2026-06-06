@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendAgentVerificationSubmittedEmail } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encryptSensitive } from "@/lib/encryption";
@@ -157,6 +158,16 @@ export async function POST(request: Request) {
 
   if (error) {
     return NextResponse.json({ error: "Could not submit application" }, { status: 500 });
+  }
+
+  const notifyEmail = email || user.email;
+  if (notifyEmail) {
+    await sendAgentVerificationSubmittedEmail(admin, {
+      email: notifyEmail,
+      fullName,
+      userId: user.id,
+      city,
+    });
   }
 
   return NextResponse.json({

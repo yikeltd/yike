@@ -1,4 +1,5 @@
 import { TRENDING_SEARCH_LINKS } from "@/constants/popularAreas";
+import { notifyActivityChanged } from "@/lib/activity-events";
 
 const KEY = "yike_recent_searches";
 const MAX = 6;
@@ -20,6 +21,7 @@ export function getRecentSearches(): RecentSearch[] {
 export function addRecentSearch(entry: RecentSearch) {
   const prev = getRecentSearches().filter((s) => s.href !== entry.href);
   localStorage.setItem(KEY, JSON.stringify([entry, ...prev].slice(0, MAX)));
+  notifyActivityChanged();
 }
 
 export const TRENDING_AREAS: RecentSearch[] = TRENDING_SEARCH_LINKS;

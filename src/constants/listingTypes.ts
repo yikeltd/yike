@@ -99,6 +99,12 @@ export function findDealChip(
   if (propertyType === "hotel" || isHotelPropertyType(propertyType)) {
     return SEARCH_DEAL_TYPES.find((t) => t.propertyType === "hotel");
   }
+  if (value === "hotel") {
+    return SEARCH_DEAL_TYPES.find((t) => t.propertyType === "hotel");
+  }
+  if (value === "shops") {
+    return SEARCH_DEAL_TYPES.find((t) => t.propertyType === "shop");
+  }
   return SEARCH_DEAL_TYPES.find(
     (t) => t.value === value && !t.hub && !t.propertyType
   );

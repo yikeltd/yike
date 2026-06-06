@@ -1,3 +1,5 @@
+import { notifyActivityChanged } from "@/lib/activity-events";
+
 const KEY = "yike_recently_viewed";
 const MAX = 12;
 
@@ -24,6 +26,7 @@ export function addRecentlyViewed(item: Omit<RecentlyViewedItem, "viewedAt">) {
   const prev = getRecentlyViewed().filter((v) => v.id !== item.id);
   const entry: RecentlyViewedItem = { ...item, viewedAt: Date.now() };
   localStorage.setItem(KEY, JSON.stringify([entry, ...prev].slice(0, MAX)));
+  notifyActivityChanged();
 }
 
 export function clearRecentlyViewed() {

@@ -94,6 +94,14 @@ export function mapWebhookLogStatus(status: string): string {
   return `webhook_${normalized || "unknown"}`;
 }
 
+function mapRequestStatus(webhookStatus: string): string | null {
+  const normalized = mapWebhookLogStatus(webhookStatus);
+  if (normalized === "delivered") return "delivered";
+  if (normalized === "failed") return "failed";
+  if (normalized === "sent") return "sent";
+  return null;
+}
+
 export async function handleSendchampWebhook(
   admin: SupabaseClient,
   payload: SendchampWebhookPayload
@@ -110,20 +118,45 @@ export async function handleSendchampWebhook(
     });
   }
 
-  if (payload.reference && phone) {
-    const { data: row } = await admin
+  if (!phone) return;
+
+  const requestStatus = mapRequestStatus(payload.status);
+
+  if (payload.reference) {
+    const { data: byRef } = await admin
       .from("phone_otp_requests")
-      .select("id, provider_reference")
-      .eq("phone", phone)
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .select("id, status")
+      .eq("provider_reference", payload.reference)
       .maybeSingle();
 
-    if (row && !row.provider_reference) {
+    if (byRef && requestStatus && byRef.status !== "verified") {
       await admin
         .from("phone_otp_requests")
-        .update({ provider_reference: payload.reference })
-        .eq("id", row.id);
+        .update({ status: requestStatus })
+        .eq("id", byRef.id);
+      return;
     }
+  }
+
+  const { data: row } = await admin
+    .from("phone_otp_requests")
+    .select("id, provider_reference, status")
+    .eq("phone", phone)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!row) return;
+
+  const updates: Record<string, string> = {};
+  if (!row.provider_reference && payload.reference) {
+    updates.provider_reference = payload.reference;
+  }
+  if (requestStatus && row.status !== "verified") {
+    updates.status = requestStatus;
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await admin.from("phone_otp_requests").update(updates).eq("id", row.id);
   }
 }

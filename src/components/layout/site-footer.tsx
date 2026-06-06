@@ -7,6 +7,7 @@ const explore = [
   { href: "/explore", label: "Explore" },
   { href: "/rent", label: "Rent" },
   { href: "/buy", label: "Buy" },
+  { href: "/hotel", label: "Hotels" },
   { href: "/shortlet", label: "Shortlet" },
   { href: "/land", label: "Land for sale" },
   { href: "/browse", label: "Swipe homes" },
@@ -18,6 +19,7 @@ const explore = [
 const company = [
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
+  { href: "/careers", label: "Careers" },
   { href: "/verify-agent", label: "Verify as agent" },
   { href: "/safety", label: "Safety tips" },
   { href: "/moderation", label: "Moderation policy" },

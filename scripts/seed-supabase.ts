@@ -56,7 +56,7 @@ function generateSql(listings: Property[]): string {
   const seedUsers = [
     {
       id: ADMIN_UUID,
-      email: "admin@yike.ng",
+      email: "yikeltd@gmail.com",
       meta: { full_name: "Yike Admin", phone: "08000000000", role: "admin" },
     },
     ...[...agents.values()].map((a) => ({
@@ -99,6 +99,25 @@ INSERT INTO auth.identities (
 `);
   }
 
+  lines.push(`
+-- GoTrue requires empty strings, not NULL, on token/email_change columns
+UPDATE auth.users SET
+  email_change = COALESCE(email_change, ''),
+  recovery_token = COALESCE(recovery_token, ''),
+  email_change_token_new = COALESCE(email_change_token_new, ''),
+  reauthentication_token = COALESCE(reauthentication_token, ''),
+  confirmation_token = COALESCE(confirmation_token, ''),
+  email_change_token_current = COALESCE(email_change_token_current, ''),
+  phone_change_token = COALESCE(phone_change_token, '')
+WHERE email_change IS NULL
+   OR recovery_token IS NULL
+   OR email_change_token_new IS NULL
+   OR reauthentication_token IS NULL
+   OR confirmation_token IS NULL
+   OR email_change_token_current IS NULL
+   OR phone_change_token IS NULL;
+`);
+
   for (const agent of agents.values()) {
     const id = AGENT_UUIDS[agent.id];
     if (!id) continue;
@@ -118,6 +137,7 @@ WHERE id = '${id}'::uuid;
   lines.push(`
 UPDATE profiles SET
   full_name = 'Yike Admin',
+  email = 'yikeltd@gmail.com',
   phone = '08000000000',
   role = 'admin',
   verification_status = 'verified',

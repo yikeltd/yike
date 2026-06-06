@@ -11,37 +11,101 @@ import sharp from "sharp";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const socialDir = path.join(root, "public/email/social");
+const badgesDir = path.join(root, "public/email/badges");
 const previewDir = path.join(root, "public/email/previews");
 
-const NAVY = "#031B4E";
-const GOLD = "#E4B547";
-
+/** Brand marks from Simple Icons (MIT) — white glyph on official brand color. */
 const SOCIAL = [
-  { key: "tiktok", letter: "T" },
-  { key: "x", letter: "X" },
-  { key: "youtube", letter: "Y" },
-  { key: "instagram", letter: "I" },
-  { key: "facebook", letter: "F" },
+  { key: "tiktok", brandColor: "#000000", slug: "tiktok" },
+  { key: "x", brandColor: "#000000", slug: "x" },
+  { key: "youtube", brandColor: "#FF0000", slug: "youtube" },
+  { key: "instagram", brandColor: "#E4405F", slug: "instagram" },
+  { key: "facebook", brandColor: "#1877F2", slug: "facebook" },
 ];
 
 async function ensureDirs() {
   await fs.mkdir(socialDir, { recursive: true });
+  await fs.mkdir(badgesDir, { recursive: true });
   await fs.mkdir(previewDir, { recursive: true });
 }
 
-async function generateSocialIcon({ key, letter }) {
+/** Lock badge artwork height — width follows source aspect after trim. */
+const BADGE_HEIGHT = 40;
+
+/**
+ * Trim source padding, scale to full badge height (no letterboxing).
+ * `contain` inside a fixed 120×40 box shrinks Google Play to ~36px tall.
+ */
+async function normalizeStoreBadge(input, { density } = {}) {
+  const pipeline = density ? sharp(input, { density }) : sharp(input);
+  const trimmed = await pipeline.trim({ threshold: 12 }).toBuffer();
+
+  return sharp(trimmed)
+    .resize({ height: BADGE_HEIGHT })
+    .png()
+    .toBuffer();
+}
+
+/** Official App Store + Google Play badge PNGs for email footers. */
+async function generateStoreBadges() {
+  const appSvg = await fetch(
+    "https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83"
+  ).then((r) => r.arrayBuffer());
+  const playPng = await fetch(
+    "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+  ).then((r) => r.arrayBuffer());
+
+  const appOut = path.join(badgesDir, "app-store.png");
+  const playOut = path.join(badgesDir, "google-play.png");
+
+  const appBuf = await normalizeStoreBadge(Buffer.from(appSvg), { density: 300 });
+  const playBuf = await normalizeStoreBadge(Buffer.from(playPng));
+
+  await sharp(appBuf).toFile(appOut);
+  await sharp(playBuf).toFile(playOut);
+
+  const appMeta = await sharp(appBuf).metadata();
+  const playMeta = await sharp(playBuf).metadata();
+  const manifest = {
+    appStore: { width: appMeta.width, height: appMeta.height },
+    googlePlay: { width: playMeta.width, height: playMeta.height },
+  };
+  const manifestPath = path.join(root, "src/lib/email/badge-dimensions.json");
+  await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  console.log("wrote", path.relative(root, appOut), `${appMeta.width}x${appMeta.height}`);
+  console.log("wrote", path.relative(root, playOut), `${playMeta.width}x${playMeta.height}`);
+  console.log("wrote", path.relative(root, manifestPath));
+}
+
+async function generateSocialIcon({ key, brandColor, slug }) {
   const size = 56;
-  const svg = `
-    <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="${GOLD}" />
-      <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle"
-        font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
-        font-size="24" font-weight="800" fill="${NAVY}">${letter}</text>
-    </svg>
-  `;
+  const iconSize = 30;
+  const pad = Math.round((size - iconSize) / 2);
+
+  const iconSvg = await fetch(
+    `https://cdn.simpleicons.org/${slug}/ffffff`
+  ).then((r) => {
+    if (!r.ok) throw new Error(`Failed to fetch ${slug} icon: ${r.status}`);
+    return r.text();
+  });
+
+  const iconBuffer = await sharp(Buffer.from(iconSvg), { density: 300 })
+    .resize(iconSize, iconSize, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+
+  const circle = Buffer.from(
+    `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="${brandColor}" />
+    </svg>`
+  );
 
   const out = path.join(socialDir, `${key}.png`);
-  await sharp(Buffer.from(svg)).png().toFile(out);
+  await sharp(circle)
+    .composite([{ input: iconBuffer, top: pad, left: pad }])
+    .png()
+    .toFile(out);
   console.log("wrote", path.relative(root, out));
 }
 
@@ -91,6 +155,7 @@ async function main() {
   for (const item of SOCIAL) {
     await generateSocialIcon(item);
   }
+  await generateStoreBadges();
   await writePreviewIndex();
   console.log("\nDone. Run: npx tsx scripts/render-email-previews.ts");
 }

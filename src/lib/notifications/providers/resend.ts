@@ -60,8 +60,28 @@ export function emailSubjectForType(type: EmailType): string {
       return "Verify your Yike account";
     case "welcome":
       return "Welcome to Yike";
+    case "password_reset":
+      return "Reset your Yike password";
+    case "account_deleted":
+      return "Your Yike account was deleted";
+    case "agent_verification_submitted":
+      return "We received your agent application";
+    case "agent_verification_approved":
+      return "You're a verified Yike agent";
+    case "agent_verification_rejected":
+      return "Update on your agent application";
+    case "listing_submitted":
+      return "Your listing is under review";
+    case "listing_approved":
+      return "Your listing is live on Yike";
+    case "listing_rejected":
+      return "Your listing needs changes";
+    case "report_received":
+      return "We received your report";
     case "admin_alert":
       return "Yike admin alert";
+    case "career_application_received":
+      return "Application received — Yike Careers";
     default:
       return "Yike notification";
   }

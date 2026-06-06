@@ -9,6 +9,7 @@ export function StickyContactBar({
   city,
   listingType,
   propertyType,
+  bedrooms,
   agentId,
   phone,
   whatsapp,
@@ -19,6 +20,7 @@ export function StickyContactBar({
   city: string;
   listingType: string;
   propertyType?: string | null;
+  bedrooms?: number;
   agentId?: string | null;
   phone?: string | null;
   whatsapp?: string | null;
@@ -35,6 +37,7 @@ export function StickyContactBar({
           city={city}
           listingType={listingType}
           propertyType={propertyType}
+          bedrooms={bedrooms}
           agentId={agentId}
           phone={phone}
           whatsapp={whatsapp}

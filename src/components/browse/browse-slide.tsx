@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { recordEngagementSave } from "@/lib/engagement";
+import { trackSavedListing } from "@/lib/browse-preferences";
 import type { Property } from "@/types/database";
 import { formatPrice, listingTypeLabel } from "@/lib/utils";
 import { ListingImage } from "@/components/property/listing-image";
@@ -43,7 +44,12 @@ export function BrowseSlide({
         property.title,
         property.area,
         property.city,
-        property.id
+        property.id,
+        {
+          bedrooms: property.bedrooms,
+          propertyType: property.property_type,
+          listingType: property.listing_type,
+        }
       )
     );
   const verified = isTrustVerified(property);
@@ -110,39 +116,7 @@ export function BrowseSlide({
           )}
         </div>
 
-        {wa && horizontal ? (
-          <button
-            type="button"
-            className="pressable flex h-11 w-11 items-center justify-center self-end rounded-full bg-gold/95 text-navy shadow-glow-gold"
-            aria-label="WhatsApp agent"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!waUrl) return;
-              guardAction(
-                {
-                  type: "whatsapp",
-                  listingId: property.id,
-                  redirectPath: `/properties/${property.id}`,
-                  contactUrl: waUrl,
-                },
-                () => {
-                  void trackContactClick({
-                    propertyId: property.id,
-                    channel: "whatsapp",
-                    city: property.city,
-                    listingType: property.listing_type,
-                    propertyType: property.property_type,
-                    placement: "browse",
-                    agentId: agent?.id,
-                  });
-                  window.open(waUrl, "_blank", "noopener,noreferrer");
-                }
-              );
-            }}
-          >
-            <MessageCircle className="h-5 w-5" strokeWidth={2.5} />
-          </button>
-        ) : wa ? (
+        {wa ? (
           <div className="flex gap-2.5">
             <button
               type="button"
@@ -158,15 +132,16 @@ export function BrowseSlide({
                     contactUrl: waUrl,
                   },
                   () => {
-                    void trackContactClick({
-                      propertyId: property.id,
-                      channel: "whatsapp",
-                      city: property.city,
-                      listingType: property.listing_type,
-                      propertyType: property.property_type,
-                      placement: "browse",
-                      agentId: agent?.id,
-                    });
+                  void trackContactClick({
+                    propertyId: property.id,
+                    channel: "whatsapp",
+                    city: property.city,
+                    area: property.area,
+                    listingType: property.listing_type,
+                    propertyType: property.property_type,
+                    placement: "browse",
+                    agentId: agent?.id,
+                  });
                     window.open(waUrl, "_blank", "noopener,noreferrer");
                   }
                 );
@@ -198,6 +173,12 @@ export function BrowseSlide({
                       { onConflict: "user_id,property_id", ignoreDuplicates: true }
                     );
                     recordEngagementSave();
+                    trackSavedListing(property.id, {
+                      city: property.city,
+                      area: property.area,
+                      listingType: property.listing_type,
+                      propertyType: property.property_type,
+                    });
                   }
                 );
               }}

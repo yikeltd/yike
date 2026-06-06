@@ -6,6 +6,9 @@ import { SocialProofBar } from "@/components/home/social-proof-bar";
 import { getMarketplaceStats } from "@/lib/marketplace-stats";
 import { parseSearchParams } from "@/lib/properties";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
+import { PrefSync } from "@/components/personalization/pref-sync";
+import { SmartCityHint } from "@/components/personalization/smart-city-hint";
+import { BrowseRail } from "@/components/retention/browse-rail";
 
 function SectionFallback() {
   return (
@@ -36,20 +39,21 @@ export default async function HomePage({
 
   return (
     <div className="home-canvas min-h-[100dvh] pb-4 lg:pb-8">
-      <section className="full-bleed relative overflow-hidden border-b border-gold/10">
-        <div className="mesh-hero absolute inset-0" aria-hidden />
-        <div className="relative mx-auto max-w-7xl lg:px-6 xl:px-8">
-          <Suspense fallback={null}>
-            <HomeSearchHero initial={initial} />
-          </Suspense>
-        </div>
-      </section>
+      <PrefSync />
+      <Suspense fallback={null}>
+        <HomeSearchHero initial={initial} />
+      </Suspense>
 
       <Suspense fallback={<SectionFallback />}>
         <HomeHotPicksSections />
       </Suspense>
 
+      <div className="mt-4">
+        <BrowseRail />
+      </div>
+
       <section className="mx-auto max-w-7xl px-3 pt-6 lg:px-6 xl:px-8">
+        <SmartCityHint className="mb-3" />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark dark:text-gold">

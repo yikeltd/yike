@@ -40,7 +40,7 @@ export function SearchFiltersBar({ className }: { className?: string }) {
       <select
         value={sp.get("type") ?? ""}
         onChange={(e) => set("type", e.target.value)}
-        className="h-9 shrink-0 rounded-full bg-white px-3 text-xs font-semibold text-navy shadow-float outline-none"
+        className="h-9 shrink-0 rounded-full border border-surface bg-elevated px-3 text-xs font-semibold text-foreground shadow-sm outline-none"
       >
         <option value="">Deal type</option>
         {listingTypeChipsOnly().map((t) => (
@@ -52,7 +52,7 @@ export function SearchFiltersBar({ className }: { className?: string }) {
       <select
         value={sp.get("property_type") ?? ""}
         onChange={(e) => set("property_type", e.target.value)}
-        className="h-9 shrink-0 rounded-full bg-white px-3 text-xs font-semibold text-navy shadow-float outline-none"
+        className="h-9 shrink-0 rounded-full border border-surface bg-elevated px-3 text-xs font-semibold text-foreground shadow-sm outline-none"
       >
         <option value="">Property type</option>
         {PROPERTY_TYPES.map((t) => (
@@ -64,7 +64,7 @@ export function SearchFiltersBar({ className }: { className?: string }) {
       <select
         value={sp.get("beds") ?? ""}
         onChange={(e) => set("beds", e.target.value)}
-        className="h-9 shrink-0 rounded-full bg-white px-3 text-xs font-semibold text-navy shadow-float outline-none"
+        className="h-9 shrink-0 rounded-full border border-surface bg-elevated px-3 text-xs font-semibold text-foreground shadow-sm outline-none"
       >
         {BEDROOM_OPTIONS.map((o) => (
           <option key={o.label} value={o.value}>
@@ -75,7 +75,7 @@ export function SearchFiltersBar({ className }: { className?: string }) {
       <select
         value={sp.get("baths") ?? ""}
         onChange={(e) => set("baths", e.target.value)}
-        className="h-9 shrink-0 rounded-full bg-white px-3 text-xs font-semibold text-navy shadow-float outline-none"
+        className="h-9 shrink-0 rounded-full border border-surface bg-elevated px-3 text-xs font-semibold text-foreground shadow-sm outline-none"
       >
         {BATHROOM_OPTIONS.map((o) => (
           <option key={o.label} value={o.value}>
@@ -88,7 +88,7 @@ export function SearchFiltersBar({ className }: { className?: string }) {
         onClick={() => toggle("verified")}
         className={cn(
           "pressable flex h-9 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-bold shadow-float",
-          verified ? "bg-gold text-navy" : "bg-white text-muted"
+          verified ? "bg-gold text-navy" : "border border-surface bg-elevated text-muted"
         )}
       >
         <ShieldCheck className="h-3.5 w-3.5" />
@@ -99,7 +99,7 @@ export function SearchFiltersBar({ className }: { className?: string }) {
         onClick={() => toggle("featured")}
         className={cn(
           "pressable flex h-9 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-bold shadow-float",
-          featured ? "bg-gold text-navy" : "bg-white text-muted"
+          featured ? "bg-gold text-navy" : "border border-surface bg-elevated text-muted"
         )}
       >
         <Star className="h-3.5 w-3.5" />
@@ -112,7 +112,7 @@ export function SearchFiltersBar({ className }: { className?: string }) {
           onClick={() => set("amenity", activeAmenity === id ? "" : id)}
           className={cn(
             "pressable h-9 shrink-0 rounded-full px-3 text-xs font-bold shadow-float",
-            activeAmenity === id ? "bg-navy text-white" : "bg-white text-muted"
+            activeAmenity === id ? "bg-navy text-white" : "border border-surface bg-elevated text-muted"
           )}
         >
           {getAmenityShortLabel(id)}

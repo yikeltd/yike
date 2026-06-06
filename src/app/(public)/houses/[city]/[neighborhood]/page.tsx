@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { SeoLandingPage } from "@/components/seo/programmatic/seo-landing-page";
 import {
   buildNeighborhoodFaqs,
@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function HousesNeighborhoodPage({ params }: Props) {
   const { city: citySlug, neighborhood: neighborhoodSlug } = await params;
   const resolved = resolveAreaSlug(citySlug, neighborhoodSlug);
-  if (!resolved) notFound();
+  if (!resolved) redirect("/explore");
 
   const listings = await getPublicProperties(
     { city: resolved.city, area: resolved.area },

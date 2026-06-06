@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
-import {
-  isSendchampConfigured,
-  probeSendchampConnection,
-  resolveWhatsAppSender,
-} from "@/lib/notifications/providers/sendchamp";
+import { getSendchampConfigSummary } from "@/lib/notifications/providers/sendchamp";
 
 export const runtime = "nodejs";
 
@@ -14,7 +10,9 @@ function authorized(request: Request): boolean {
   if (!secret) return false;
   const auth = request.headers.get("authorization");
   if (auth === `Bearer ${secret}`) return true;
-  return request.headers.get("x-cron-secret") === secret;
+  const header =
+    request.headers.get("x-cron-secret") ?? request.headers.get("x-vercel-cron-secret");
+  return header === secret;
 }
 
 /** Ops-only: verify notification env wiring on the running deployment. */
@@ -24,40 +22,30 @@ export async function GET(request: Request) {
   }
 
   const admin = createAdminClient();
-  const sendchampProbe = isSendchampConfigured()
-    ? await probeSendchampConnection()
-    : null;
+  let supabaseAdminConfigured = false;
+  if (admin) {
+    const { error } = await admin.from("phone_otp_requests").select("id").limit(1);
+    supabaseAdminConfigured = !error;
+    if (error) {
+      console.error("[health/notifications] supabase admin query failed", error.message);
+    }
+  }
+
+  const sendchamp = getSendchampConfigSummary();
 
   return NextResponse.json({
     ok: true,
-    supabase: {
-      url: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()),
-      anonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()),
-      serviceRole: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
-      adminClient: Boolean(admin),
-    },
-    sendchamp: {
-      configured: isSendchampConfigured(),
-      smsSender: process.env.SENDCHAMP_SMS_SENDER?.trim() || "Sendchamp",
-      whatsappSenderEnv: process.env.SENDCHAMP_WHATSAPP_SENDER?.trim() || null,
-      whatsappSenderResolved: resolveWhatsAppSender(
-        process.env.SENDCHAMP_WHATSAPP_SENDER?.trim()
-      ),
-      keySources: [
-        process.env.SENDCHAMP_API_KEY?.trim() ? "SENDCHAMP_API_KEY" : null,
-        process.env.SENDCHAMP_SECRET_KEY?.trim() ? "SENDCHAMP_SECRET_KEY" : null,
-        process.env.SENDCHAMP_PUBLIC_KEY?.trim() ? "SENDCHAMP_PUBLIC_KEY" : null,
-      ].filter(Boolean),
-      probe: sendchampProbe
-        ? sendchampProbe.ok
-          ? { ok: true, message: sendchampProbe.data?.message }
-          : { ok: false, error: sendchampProbe.error }
-        : null,
-    },
-    resend: {
-      configured: isResendConfigured(),
-      from: process.env.RESEND_FROM_EMAIL?.trim() || null,
-    },
-    appUrl: process.env.NEXT_PUBLIC_APP_URL?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim() || null,
+    supabaseAdminConfigured,
+    sendchampPublicKeyConfigured: sendchamp.publicKeyConfigured ?? false,
+    sendchampBaseUrlConfigured:
+      sendchamp.baseUrlConfigured ?? Boolean(process.env.SENDCHAMP_LIVE_BASE_URL?.trim()),
+    sendchampConfigured: sendchamp.configured,
+    smsSenderConfigured: sendchamp.configured
+      ? sendchamp.smsSenderConfigured
+      : Boolean(process.env.SENDCHAMP_SMS_SENDER?.trim()),
+    whatsappSenderConfigured: sendchamp.configured
+      ? sendchamp.whatsappSenderConfigured
+      : Boolean(process.env.SENDCHAMP_WHATSAPP_SENDER?.trim()),
+    resendConfigured: isResendConfigured(),
   });
 }

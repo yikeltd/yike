@@ -10,6 +10,7 @@ import { NeighborhoodChips } from "@/components/pages/neighborhood-chips";
 import { BudgetShowcase } from "@/components/pages/budget-showcase";
 import { TrustPillars } from "@/components/pages/trust-pillars";
 import { CtaBanner } from "@/components/pages/cta-banner";
+import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { getMarketplaceStats } from "@/lib/marketplace-stats";
 import { SITE_NAME } from "@/lib/constants";
@@ -36,7 +37,7 @@ export default async function ExplorePage() {
     <div className="pb-12">
       <PageHero
         title="Explore Nigeria, one home at a time"
-        subtitle="Trending cities, verified agents, affordable flats and premium shortlets — scroll visually, contact on WhatsApp."
+        subtitle="Trending cities, verified agents, rentals, hotels and land — scroll visually, contact on WhatsApp."
         image={PAGE_IMAGERY.explore}
         badge="Explore"
         variant="dark"
@@ -45,6 +46,7 @@ export default async function ExplorePage() {
       />
 
       <div className="mx-auto max-w-7xl px-3 pt-6 lg:px-8">
+        <ExploreHubLinks active="/explore" className="mb-6" />
         <SocialProofBar stats={stats} />
         <div className="mt-6 hidden lg:block">
           <SearchPanel variant="hero" />
@@ -101,8 +103,18 @@ export default async function ExplorePage() {
 
       <Suspense fallback={<RailFallback />}>
         <PropertyRail
+          title="Hotels & guest houses"
+          subtitle="Business travel and serviced stays"
+          seeAllHref="/hotel"
+          params={{ property_type: "hotel" }}
+          limit={8}
+        />
+      </Suspense>
+
+      <Suspense fallback={<RailFallback />}>
+        <PropertyRail
           title="Shortlets"
-          subtitle="Nightly stays for travel & business"
+          subtitle="Nightly furnished stays"
           seeAllHref="/shortlet"
           params={{ listing_type: "shortlet" }}
           limit={8}

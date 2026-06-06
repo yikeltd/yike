@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendAccountDeletedEmail } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -36,6 +37,20 @@ export async function POST(request: Request) {
       { error: "Account deletion is not configured. Contact hello@yike.ng." },
       { status: 503 }
     );
+  }
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const notifyEmail = user.email ?? profile?.email;
+  if (notifyEmail) {
+    await sendAccountDeletedEmail(admin, {
+      email: notifyEmail,
+      fullName: profile?.full_name ?? user.user_metadata?.full_name ?? "",
+    });
   }
 
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);

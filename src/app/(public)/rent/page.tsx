@@ -12,6 +12,7 @@ import { RENT_FAQS } from "@/constants/pageContent";
 import { TRENDING_CITIES } from "@/constants/trendingCities";
 import { SITE_NAME } from "@/lib/constants";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
+import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 
 export const metadata = {
   title: `Rent a Home in Nigeria | ${SITE_NAME}`,
@@ -41,6 +42,7 @@ export default function RentPage() {
       />
 
       <div className="mx-auto max-w-7xl px-3 pt-8 lg:px-8">
+        <ExploreHubLinks active="/rent" className="mb-6" />
         <SearchPanel variant="compact" defaultListingType="rent" />
       </div>
 

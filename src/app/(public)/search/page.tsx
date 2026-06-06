@@ -5,14 +5,17 @@ import { PropertyFeed } from "@/components/property/property-feed";
 import {
   getPublicProperties,
   parseSearchParams,
+  type PropertySearchParams,
 } from "@/lib/properties";
 import { SearchDiscoveryHub } from "@/components/search/search-discovery-hub";
 import { SearchResultsChrome } from "@/components/search/search-results-chrome";
-import { isDemoProperty } from "@/lib/mock-listings";
+import { withDemoFallback } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
 import { hubLabel } from "@/constants/listingTypes";
 import { getActiveAd } from "@/lib/ads";
 import { AdSlot } from "@/components/ads/ad-slot";
+import { getServerSearchPreferences } from "@/lib/search-preferences";
+import { PrefSync } from "@/components/personalization/pref-sync";
 export const metadata: Metadata = {
   title: `Search Homes in Nigeria`,
   description: `Search apartments, houses, hotels and land across Nigeria. Filter by city, area, budget and property type on ${SITE_NAME}.`,
@@ -35,14 +38,19 @@ export default async function SearchPage({
 }) {
   const params = parseSearchParams(await searchParams);
   const hasQuery = hasActiveFilters(params);
-  const properties = await getPublicProperties(
-    hasQuery ? params : {},
-    48
-  );
-  const isDemo =
-    properties.length > 0 && properties.every((p) => isDemoProperty(p.id));
+  const prefs = hasQuery ? {} : await getServerSearchPreferences();
+  const preloadParams: PropertySearchParams = hasQuery ? params : prefs;
+  const properties = await getPublicProperties(preloadParams, 48);
+  const { items: feedItems, isDemo } = withDemoFallback(properties);
 
   const feedAd = await getActiveAd("search_feed_mid");
+  const preloadLabel = [
+    preloadParams.city,
+    preloadParams.area,
+    preloadParams.listing_type,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const label = [
     params.hub ? hubLabel(params.hub) : null,
@@ -65,10 +73,30 @@ export default async function SearchPage({
     <div className="search-hub-canvas min-h-[100dvh] bg-background pb-4 lg:pb-12">
       {!hasQuery ? (
         <>
+          <PrefSync />
           <SearchDiscoveryHub />
-          <p className="mx-auto mt-4 max-w-md px-6 text-center text-xs text-muted">
-            Results appear here after you pick a location or filter.
-          </p>
+          <section className="mx-auto mt-4 max-w-2xl px-3 lg:max-w-7xl lg:px-6 xl:px-8">
+            <div className="mb-3 flex items-end justify-between px-0.5">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark">
+                  Live now
+                </p>
+                <h2 className="text-lg font-bold text-foreground">
+                  {preloadLabel ? `Homes in ${preloadLabel}` : "Homes for you"}
+                </h2>
+              </div>
+            </div>
+            <PropertyFeed
+              properties={feedItems}
+              isDemo={isDemo}
+              midFeedAd={feedAd}
+              feedAdInsertAfter={5}
+              adPlacementKey="search_feed_mid"
+              emptyMessage="No homes in this view yet — try another city or list your property."
+              emptyCity={preloadParams.city}
+              emptyArea={preloadParams.area}
+            />
+          </section>
         </>
       ) : (
         <Suspense fallback={<ResultsFallback />}>
@@ -84,7 +112,7 @@ export default async function SearchPage({
 
             <section className="mt-3 lg:mt-4">
               <PropertyFeed
-                properties={properties}
+                properties={feedItems}
                 isDemo={isDemo}
                 midFeedAd={feedAd}
                 feedAdInsertAfter={5}

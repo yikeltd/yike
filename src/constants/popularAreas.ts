@@ -18,7 +18,7 @@ function areaLink(city: string, area: string, state: string): PopularArea {
     area,
     state,
     href: `/search?city=${encodeURIComponent(city)}&area=${encodeURIComponent(area)}`,
-    seoPath: `/${citySlug}/${areaSlug}`,
+    seoPath: `/houses/${citySlug}/${areaSlug}`,
   };
 }
 

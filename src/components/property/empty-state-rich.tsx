@@ -1,19 +1,24 @@
 import Link from "next/link";
-import { Home, MapPin, Search, PenLine } from "lucide-react";
+import { Home, MapPin, Search, PenLine, Building2 } from "lucide-react";
 import { ListPropertyCta } from "@/components/auth/list-property-cta";
 import { POPULAR_AREAS } from "@/constants/popularAreas";
 import { TRENDING_SEARCH_LINKS } from "@/constants/popularAreas";
+import { SEARCH_DEAL_TYPES } from "@/constants/listingTypes";
 
 export function EmptyStateRich({
   title = "No homes yet",
   message,
   city,
   area,
+  listingType,
+  propertyType,
 }: {
   title?: string;
   message?: string;
   city?: string;
   area?: string;
+  listingType?: string;
+  propertyType?: string;
 }) {
   const nearby = POPULAR_AREAS.filter((a) => {
     if (area && a.area.toLowerCase() === area.toLowerCase()) return false;
@@ -22,6 +27,17 @@ export function EmptyStateRich({
   }).slice(0, 6);
 
   const related = TRENDING_SEARCH_LINKS.slice(0, 4);
+
+  const typeSuggestions = SEARCH_DEAL_TYPES.filter(
+    (chip) => chip.value && chip.value !== listingType
+  ).slice(0, 4);
+
+  const propertySuggestions = [
+    { label: "Apartments", href: `/search?${city ? `city=${encodeURIComponent(city)}&` : ""}propertyType=apartment` },
+    { label: "Self contain", href: `/search?${city ? `city=${encodeURIComponent(city)}&` : ""}propertyType=self-contain` },
+    { label: "Duplex", href: `/search?${city ? `city=${encodeURIComponent(city)}&` : ""}propertyType=duplex` },
+    { label: "Land", href: `/search?${city ? `city=${encodeURIComponent(city)}&` : ""}listingType=sale&propertyType=land` },
+  ].filter((s) => !propertyType || !s.href.includes(propertyType));
 
   return (
     <div className="mx-3 rounded-2xl bg-elevated px-6 py-10 text-center shadow-float lg:mx-0">
@@ -58,9 +74,54 @@ export function EmptyStateRich({
         </div>
       )}
 
+      {typeSuggestions.length > 0 && (
+        <div className="mt-6 text-left">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted">
+            Similar property types
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {typeSuggestions.map((chip) => (
+              <Link
+                key={chip.value}
+                href={`/search?${[
+                  city ? `city=${encodeURIComponent(city)}` : "",
+                  area ? `area=${encodeURIComponent(area)}` : "",
+                  `listingType=${chip.value}`,
+                ]
+                  .filter(Boolean)
+                  .join("&")}`}
+                className="pressable inline-flex items-center gap-1 rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-navy hover:bg-gold/10"
+              >
+                <Building2 className="h-3 w-3 text-gold" />
+                {chip.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {propertySuggestions.length > 0 && (
+        <div className="mt-6 text-left">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted">
+            Try another type
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {propertySuggestions.slice(0, 4).map((s) => (
+              <Link
+                key={s.href}
+                href={s.href}
+                className="pressable rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-navy hover:bg-gold/10"
+              >
+                {s.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 text-left">
         <p className="text-xs font-bold uppercase tracking-wide text-muted">
-          Try these searches
+          Trending searches
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           {related.map((r) => (

@@ -1,6 +1,8 @@
 import type { Property } from "@/types/database";
 import { parseSmartSearchQuery } from "@/lib/smart-search";
 import { propertyMarketRank } from "@/lib/agent-tiers";
+import { syncSearchPrefCookies } from "@/lib/search-pref-cookies";
+import { notifyActivityChanged } from "@/lib/activity-events";
 
 const KEY = "yike_browse_prefs";
 const VIEWED_KEY = "yike_viewed_listings";
@@ -75,9 +77,35 @@ export function saveBrowsePreferences(partial: {
       updatedAt: Date.now(),
     })
   );
+
+  syncSearchPrefCookies({
+    city: partial.city ?? cities[0],
+    area: partial.area ?? areas[0],
+    listingType: partial.listingType ?? listingTypes[0],
+  });
+  notifyActivityChanged();
 }
 
-export function trackViewedListing(id: string) {
+export type ListingInteraction = {
+  id?: string;
+  city: string;
+  area?: string;
+  listingType?: string;
+  propertyType?: string | null;
+};
+
+/** Learn city, area, and types from views, saves, swipes, and contact clicks. */
+export function trackListingInteraction(p: ListingInteraction) {
+  if (!p.city?.trim()) return;
+  saveBrowsePreferences({
+    city: p.city,
+    area: p.area,
+    listingType: p.listingType,
+    propertyType: p.propertyType || undefined,
+  });
+}
+
+export function trackViewedListing(id: string, meta?: Omit<ListingInteraction, "id">) {
   try {
     const raw = JSON.parse(localStorage.getItem(VIEWED_KEY) ?? "[]") as string[];
     const next = [id, ...raw.filter((x) => x !== id)].slice(0, 40);
@@ -85,6 +113,7 @@ export function trackViewedListing(id: string) {
   } catch {
     /* ignore */
   }
+  if (meta?.city) trackListingInteraction({ ...meta, id });
 }
 
 export function getViewedListingIds(): string[] {
@@ -254,7 +283,7 @@ export function rankPropertiesForBrowse(
 }
 
 /** Record a saved listing id for guest personalization. */
-export function trackSavedListing(id: string) {
+export function trackSavedListing(id: string, meta?: Omit<ListingInteraction, "id">) {
   try {
     const raw = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]") as string[];
     const next = [id, ...raw.filter((x) => x !== id)].slice(0, 30);
@@ -262,4 +291,5 @@ export function trackSavedListing(id: string) {
   } catch {
     /* ignore */
   }
+  if (meta?.city) trackListingInteraction({ ...meta, id });
 }

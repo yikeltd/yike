@@ -49,21 +49,52 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
 
   const skip = useCallback(() => {
     if (!current) return;
-    trackViewedListing(current.id);
+    trackViewedListing(current.id, {
+      city: current.city,
+      area: current.area,
+      listingType: current.listing_type,
+      propertyType: current.property_type,
+    });
     advance("left");
   }, [current, advance]);
 
   useEffect(() => {
-    if (current) trackViewedListing(current.id);
-  }, [current?.id]);
+    if (!current) return;
+    trackViewedListing(current.id, {
+      city: current.city,
+      area: current.area,
+      listingType: current.listing_type,
+      propertyType: current.property_type,
+    });
+  }, [current]);
 
   if (count === 0) {
     return (
       <div className="flex h-[100dvh] flex-col items-center justify-center gap-4 bg-navy-dark px-6 text-center">
         <p className="text-lg font-bold text-white">No homes match yet</p>
         <p className="text-sm text-white/70">
-          Filter on the home page — swipe learns your city, area, and budget.
+          Try a nearby area or another property type — we&apos;ll learn your picks as you browse.
         </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Link
+            href="/search?city=Aba&area=Ogbor%20Hill"
+            className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white"
+          >
+            Ogbor Hill
+          </Link>
+          <Link
+            href="/search?city=Enugu"
+            className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white"
+          >
+            Enugu
+          </Link>
+          <Link
+            href="/search?listingType=rent"
+            className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white"
+          >
+            Rentals
+          </Link>
+        </div>
         <Link
           href="/"
           className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-navy"

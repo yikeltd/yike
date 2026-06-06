@@ -30,6 +30,11 @@ import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { NIGERIAN_AMENITIES } from "@/constants/amenities";
 import type { ListingExtras, Property } from "@/types/database";
+import {
+  BLOCKING_QUALITY_FLAGS,
+  moderateListingDraft,
+  qualityFlagLabel,
+} from "@/lib/listing-quality";
 
 type ListingFormProps = {
   agentId: string;
@@ -92,6 +97,27 @@ export function ListingForm({
     }
     if (media_urls.length < MIN_LISTING_IMAGES) {
       setError(`Add at least ${MIN_LISTING_IMAGES} photos.`);
+      return;
+    }
+
+    const title = form.get("title") as string;
+    const description = (form.get("description") as string) || "";
+    const draftCity = form.get("city") as string;
+    const qualityFlags = moderateListingDraft({
+      title,
+      description,
+      price,
+      city: draftCity,
+      listing_type: listingType,
+      media_urls,
+    });
+    const blocking = qualityFlags.filter((f) =>
+      BLOCKING_QUALITY_FLAGS.includes(f)
+    );
+    if (blocking.length > 0) {
+      setError(
+        `Please fix before submitting: ${blocking.map(qualityFlagLabel).join(", ")}.`
+      );
       return;
     }
 
@@ -176,13 +202,22 @@ export function ListingForm({
         return;
       }
 
-      const { error: insertError } = await supabase
+      const { data: created, error: insertError } = await supabase
         .from("properties")
-        .insert(payload);
+        .insert(payload)
+        .select("id")
+        .single();
       setLoading(false);
       if (insertError) {
         setError(insertError.message);
         return;
+      }
+      if (created?.id) {
+        void fetch("/api/notifications/email/listing-submitted", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ propertyId: created.id }),
+        });
       }
       setSuccess(true);
       setTimeout(() => {

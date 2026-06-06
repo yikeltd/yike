@@ -6,6 +6,7 @@ export const PAGE_IMAGERY = {
   rent: IMG("photo-1522708323590-d24dbb6b0267"),
   buy: IMG("photo-1600607687939-ce8a6c25118c"),
   shortlet: IMG("photo-1502672260266-1c1ef2d93688"),
+  hotel: IMG("photo-1566073771259-6a8506099945"),
   land: IMG("photo-1564013799919-ab600027ffc6"),
   swipe: IMG("photo-1600566753190-17f0baa5a365"),
   list: IMG("photo-1600047509807-ba8f8d28b018"),

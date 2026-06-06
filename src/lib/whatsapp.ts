@@ -1,4 +1,4 @@
-import { normalizeWhatsApp } from "./utils";
+import { normalizeWhatsApp, propertyTypeLabel } from "./utils";
 
 export function whatsAppDeepLink(
   phone: string,
@@ -14,7 +14,23 @@ export function propertyWhatsAppMessage(
   title: string,
   area: string,
   city: string,
-  propertyId: string
+  propertyId: string,
+  options?: {
+    bedrooms?: number;
+    propertyType?: string | null;
+    listingType?: string;
+  }
 ): string {
-  return `Hi, I saw your listing "${title}" in ${area}, ${city} on Yike.ng. Is it still available? (Ref: ${propertyId.slice(0, 8)})`;
+  const location = area ? `${area}, ${city}` : city;
+  const beds =
+    options?.bedrooms && options.bedrooms > 0
+      ? `${options.bedrooms} bedroom `
+      : "";
+  const type = options?.propertyType
+    ? `${propertyTypeLabel(options.propertyType).toLowerCase()} `
+    : title
+      ? `${title.toLowerCase()} `
+      : "property ";
+
+  return `Hi, I saw your listing on Yike for the ${beds}${type.trim()} in ${location}. Is it still available?`;
 }

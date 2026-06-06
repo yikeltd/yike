@@ -1,4 +1,5 @@
 import type { Profile, Property } from "@/types/database";
+import { computeListingQualityScore } from "@/lib/listing-quality";
 
 export const UNVERIFIED_AGENT_LISTING_LIMIT = 5;
 
@@ -89,6 +90,9 @@ export function propertyMarketRank(property: Property): number {
   const ageDays =
     (Date.now() - new Date(property.created_at).getTime()) / 86_400_000;
   score += Math.max(0, 120 - ageDays);
+
+  score += computeListingQualityScore(property) * 15;
+  score += Math.min(property.contact_clicks ?? 0, 30) * 3;
 
   return score;
 }

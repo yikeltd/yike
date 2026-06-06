@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { HorizontalBrowse } from "@/components/browse/horizontal-browse";
-import { PropertyGrid } from "@/components/property/property-grid";
+import { PropertyFeed } from "@/components/property/property-feed";
 import { PageHero } from "@/components/pages/page-hero";
 import { CtaBanner } from "@/components/pages/cta-banner";
 import { getPublicProperties } from "@/lib/properties";
 import { withDemoFallback } from "@/lib/mock-listings";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { SITE_NAME } from "@/lib/constants";
+import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 
 export const metadata = {
   title: `Swipe Homes | ${SITE_NAME}`,
@@ -26,7 +27,7 @@ export default async function BrowsePage() {
       <div className="hidden lg:block">
         <PageHero
           title="Swipe homes"
-          subtitle="Built for your phone — full-screen imagery, minimal text, WhatsApp in one tap. Open on mobile for the immersive feed."
+          subtitle="Full-screen homes, one-tap WhatsApp, zero clutter. Best on mobile — install Yike as an app for the smoothest swipe."
           image={PAGE_IMAGERY.swipe}
           badge="Swipe"
           variant="dark"
@@ -34,6 +35,7 @@ export default async function BrowsePage() {
           secondaryCta={{ label: "Search instead", href: "/?focus=search" }}
         />
         <div className="mx-auto max-w-7xl px-6 py-12">
+          <ExploreHubLinks active="/browse" className="mb-8" />
           <div className="rounded-2xl bg-gold/10 p-6">
             <p className="font-bold text-navy">Tip for desktop users</p>
             <p className="mt-2 text-sm text-muted">
@@ -42,7 +44,11 @@ export default async function BrowsePage() {
             </p>
           </div>
           <div className="mt-10">
-            <PropertyGrid properties={items} isDemo={isDemo} />
+            <PropertyFeed
+              properties={items}
+              isDemo={isDemo}
+              emptyMessage="No swipe picks in this view yet — try another city or list your property."
+            />
           </div>
           <p className="mt-8 text-center">
             <Link href="/explore" className="text-sm font-bold text-gold-dark">

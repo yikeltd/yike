@@ -4,7 +4,6 @@ import { useState } from "react";
 import { REPORT_REASONS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 import {
   HumanVerifyField,
   readHumanVerifyFromForm,
@@ -27,15 +26,28 @@ export function ReportListingForm({ propertyId }: { propertyId: string }) {
       return;
     }
     setLoading(true);
-    const supabase = createClient();
-    await supabase.from("listing_reports").insert({
-      property_id: propertyId,
-      reporter_name: form.get("name") as string,
-      reporter_phone: form.get("phone") as string,
-      reason: form.get("reason") as string,
-      message: (form.get("message") as string) || null,
+    const res = await fetch("/api/reports/listing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        propertyId,
+        reporterName: (form.get("name") as string) || undefined,
+        reporterPhone: (form.get("phone") as string) || undefined,
+        reporterEmail: (form.get("email") as string) || undefined,
+        reason: form.get("reason") as string,
+        message: (form.get("message") as string) || undefined,
+      }),
     });
     setLoading(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(
+        typeof data.error === "string"
+          ? data.error
+          : "Could not submit report. Try again."
+      );
+      return;
+    }
     setDone(true);
   }
 
@@ -64,6 +76,7 @@ export function ReportListingForm({ propertyId }: { propertyId: string }) {
       <p className="font-medium text-sm">Report listing</p>
       <Input name="name" placeholder="Your name (optional)" />
       <Input name="phone" placeholder="Your phone (optional)" />
+      <Input name="email" type="email" placeholder="Your email (optional)" />
       <Select name="reason" required defaultValue="">
         <option value="" disabled>
           Select reason

@@ -9,6 +9,7 @@ import { ShareButton } from "./listing-share-menu";
 import type { Property } from "@/types/database";
 import { listingImageAlt } from "@/lib/image-seo";
 import { optimizeListingImageUrl } from "@/lib/image-url";
+import { prefetchListingImages } from "@/lib/image-prefetch";
 import { cn } from "@/lib/utils";
 
 export function PropertyGallery({
@@ -60,6 +61,17 @@ export function PropertyGallery({
       document.body.style.overflow = "";
     };
   }, [fullscreen]);
+
+  useEffect(() => {
+    prefetchListingImages(
+      images.slice(index + 1, index + 4),
+      1200
+    );
+  }, [index, images]);
+
+  useEffect(() => {
+    prefetchListingImages(images.slice(1, 4), 1200);
+  }, [images]);
 
   function scrollTo(i: number) {
     const el = scrollRef.current;

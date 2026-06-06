@@ -31,6 +31,13 @@ export function ListingActions({
       .from("properties")
       .update({ status, ...extra })
       .eq("id", propertyId);
+    if (status === "approved" || status === "rejected") {
+      void fetch("/api/notifications/email/listing-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId, status }),
+      });
+    }
     setBusy(null);
     router.refresh();
   }

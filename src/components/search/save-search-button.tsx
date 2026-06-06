@@ -13,10 +13,12 @@ export function SaveSearchButton({
   label,
   href,
   className,
+  compact,
 }: {
   label: string;
   href: string;
   className?: string;
+  compact?: boolean;
 }) {
   const [saved, setSaved] = useState(false);
 
@@ -51,7 +53,7 @@ export function SaveSearchButton({
       ) : (
         <Bookmark className="h-3.5 w-3.5" />
       )}
-      {saved ? "Saved" : "Save search"}
+      {!compact && (saved ? "Saved" : "Save")}
     </button>
   );
 }

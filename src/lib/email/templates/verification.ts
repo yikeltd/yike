@@ -10,6 +10,7 @@ export function buildVerificationEmailHtml(params: {
   return buildEmailLayout({
     preheader: "Verify your email to finish setting up your Yike account.",
     headline: "Verify your email",
+    headlineAlign: "center",
     bodyHtml: `
       <p style="margin:0 0 16px;">Hi ${name},</p>
       <p style="margin:0 0 16px;">

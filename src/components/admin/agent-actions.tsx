@@ -36,6 +36,11 @@ export function AgentActions({
         .update({ status: "approved", reviewed_at: new Date().toISOString() })
         .eq("id", verificationId);
     }
+    void fetch("/api/notifications/email/agent-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agentId, status: "approved" }),
+    });
     setBusy(null);
     router.refresh();
   }
@@ -56,6 +61,15 @@ export function AgentActions({
         })
         .eq("id", verificationId);
     }
+    void fetch("/api/notifications/email/agent-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agentId,
+        status: "rejected",
+        reason: "Did not meet verification requirements",
+      }),
+    });
     setBusy(null);
     router.refresh();
   }

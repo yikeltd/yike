@@ -6,11 +6,13 @@ import { brand, colors } from "@/lib/design/tokens";
 import { StructuredData } from "@/components/seo/structured-data";
 import { PwaRegister } from "@/components/pwa/register";
 import { Analytics } from "@vercel/analytics/react";
+import { DeferredClientShell } from "@/components/layout/deferred-client-shell";
 import { Suspense } from "react";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ScrollRetention } from "@/components/retention/scroll-retention";
 import { GuestFavoriteSync } from "@/components/retention/guest-favorite-sync";
+import { UserActivitySync } from "@/components/retention/user-activity-sync";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
 
@@ -125,6 +127,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
       <head>
+        <meta
+          name="msvalidate.01"
+          content={
+            process.env.BING_SITE_VERIFICATION ??
+            "02902039559EB4CCB652E858CBFF27B8"
+          }
+        />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link
           rel="apple-touch-startup-image"
@@ -149,10 +158,14 @@ export default function RootLayout({
             </Suspense>
             <ScrollRetention />
             <GuestFavoriteSync />
+            <UserActivitySync />
             <PendingIntentHandler />
           </AuthProvider>
           <Analytics />
           <PwaRegister />
+          <Suspense fallback={null}>
+            <DeferredClientShell />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>

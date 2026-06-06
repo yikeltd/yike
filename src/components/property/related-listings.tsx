@@ -3,6 +3,7 @@ import { getRelatedSections } from "@/lib/properties";
 import type { Property } from "@/types/database";
 import { PropertyCard } from "./property-card";
 import { isDemoProperty } from "@/lib/mock-listings";
+import { NearbyPrefetch } from "./nearby-prefetch";
 
 function PropertyRail({ properties }: { properties: Property[] }) {
   return (
@@ -30,8 +31,11 @@ export async function RelatedListings({ property }: { property: Property }) {
 
   const searchHref = `/search?city=${encodeURIComponent(property.city)}&area=${encodeURIComponent(property.area)}`;
 
+  const allProps = sections.flatMap((s) => s.properties);
+
   return (
     <div className="mt-8 space-y-10 border-t border-surface pt-8 lg:mt-12">
+      <NearbyPrefetch properties={allProps} />
       {sections.map((section) => (
         <section key={section.title}>
           <div className="mb-4 flex items-end justify-between px-4 lg:px-0">

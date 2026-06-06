@@ -1,5 +1,6 @@
 import { SITE_NAME, SITE_TAGLINE, SITE_URL, SOCIAL_LINKS } from "@/lib/constants";
 import { brand } from "@/lib/design/tokens";
+import badgeDims from "@/lib/email/badge-dimensions.json";
 
 const NAVY = "#031B4E";
 const NAVY_DARK = "#021428";
@@ -10,8 +11,8 @@ const SURFACE = "#f4f6f9";
 const WHITE = "#ffffff";
 
 const LOGO_URL = `${SITE_URL}${brand.logo}`;
-const APPLE_ICON = `${SITE_URL}/icons/apple-touch-icon.png`;
-const ANDROID_ICON = `${SITE_URL}/icons/android-chrome-192.png`;
+const APP_STORE_BADGE = `${SITE_URL}/email/badges/app-store.png`;
+const GOOGLE_PLAY_BADGE = `${SITE_URL}/email/badges/google-play.png`;
 
 type EmailSocialKey = Exclude<keyof typeof SOCIAL_LINKS, "linkedin">;
 
@@ -42,6 +43,8 @@ export type EmailLayoutParams = {
   cta?: { label: string; href: string };
   /** Optional secondary plain link below CTA. */
   fallbackLink?: { label: string; href: string };
+  /** Center the headline (verification + welcome emails). */
+  headlineAlign?: "left" | "center";
 };
 
 function socialIconsRow(): string {
@@ -65,50 +68,31 @@ function socialIconsRow(): string {
   `;
 }
 
+function storeBadgeImg(
+  src: string,
+  alt: string,
+  { width, height }: { width: number; height: number }
+): string {
+  const style = `display:block;border:0;width:${width}px;height:${height}px;max-width:${width}px;max-height:${height}px;`;
+  return `<img src="${src}" width="${width}" height="${height}" alt="${alt}" style="${style}" />`;
+}
+
 function appDownloadRow(): string {
+  const app = badgeDims.appStore;
+  const play = badgeDims.googlePlay;
+  const rowH = Math.max(app.height, play.height);
+
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:16px auto 0;">
       <tr>
-        <td align="center" style="padding:0 8px;">
-          <a href="${SITE_URL}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:${WHITE};border-radius:12px;border:1px solid rgba(228,181,71,0.35);">
-              <tr>
-                <td style="padding:10px 14px;">
-                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                    <tr>
-                      <td style="padding-right:10px;vertical-align:middle;">
-                        <img src="${APPLE_ICON}" width="36" height="36" alt="" style="display:block;border-radius:8px;" />
-                      </td>
-                      <td style="vertical-align:middle;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;">
-                        <p style="margin:0;font-size:10px;color:${MUTED};line-height:1.2;">Save to home screen</p>
-                        <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:${NAVY};line-height:1.2;">Open on iPhone</p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
+        <td align="center" style="padding:0 8px;height:${rowH}px;vertical-align:middle;">
+          <a href="${SITE_URL}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;line-height:0;">
+            ${storeBadgeImg(APP_STORE_BADGE, "Download on the App Store", app)}
           </a>
         </td>
-        <td align="center" style="padding:0 8px;">
-          <a href="${SITE_URL}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:${WHITE};border-radius:12px;border:1px solid rgba(228,181,71,0.35);">
-              <tr>
-                <td style="padding:10px 14px;">
-                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                    <tr>
-                      <td style="padding-right:10px;vertical-align:middle;">
-                        <img src="${ANDROID_ICON}" width="36" height="36" alt="" style="display:block;border-radius:8px;" />
-                      </td>
-                      <td style="vertical-align:middle;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;">
-                        <p style="margin:0;font-size:10px;color:${MUTED};line-height:1.2;">Install the web app</p>
-                        <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:${NAVY};line-height:1.2;">Open on Android</p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
+        <td align="center" style="padding:0 8px;height:${rowH}px;vertical-align:middle;">
+          <a href="${SITE_URL}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;line-height:0;">
+            ${storeBadgeImg(GOOGLE_PLAY_BADGE, "Get it on Google Play", play)}
           </a>
         </td>
       </tr>
@@ -120,10 +104,11 @@ function appDownloadRow(): string {
 export function buildEmailLayout(params: EmailLayoutParams): string {
   const preheader = params.preheader ?? "";
   const year = new Date().getFullYear();
+  const headlineAlign = params.headlineAlign ?? "left";
 
   const ctaBlock = params.cta
     ? `
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${headlineAlign === "center" ? "center" : "left"}" style="margin:28px ${headlineAlign === "center" ? "auto" : "0"} 0;">
         <tr>
           <td align="center" style="border-radius:12px;background:${GOLD};">
             <a href="${params.cta.href}" target="_blank" rel="noopener noreferrer"
@@ -138,7 +123,7 @@ export function buildEmailLayout(params: EmailLayoutParams): string {
 
   const fallbackBlock = params.fallbackLink
     ? `
-      <p style="margin:20px 0 0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:12px;line-height:1.6;color:${MUTED};word-break:break-all;">
+      <p style="margin:20px 0 0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:12px;line-height:1.6;color:${MUTED};word-break:break-all;text-align:${headlineAlign};">
         ${params.fallbackLink.label}<br />
         <a href="${params.fallbackLink.href}" style="color:${GOLD_DARK};text-decoration:underline;">${params.fallbackLink.href}</a>
       </p>
@@ -187,10 +172,7 @@ export function buildEmailLayout(params: EmailLayoutParams): string {
               <a href="${SITE_URL}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;">
                 <img src="${LOGO_URL}" width="56" height="56" alt="${SITE_NAME}" style="display:block;margin:0 auto;border:0;border-radius:12px;" />
               </a>
-              <p style="margin:14px 0 0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:22px;font-weight:800;color:${WHITE};letter-spacing:-0.3px;line-height:1.2;">
-                ${SITE_NAME}
-              </p>
-              <p style="margin:6px 0 0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:13px;color:rgba(228,181,71,0.95);line-height:1.4;">
+              <p style="margin:14px 0 0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:13px;color:rgba(228,181,71,0.95);line-height:1.4;">
                 ${SITE_TAGLINE}
               </p>
               <table role="presentation" width="48" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:16px auto 0;">
@@ -202,7 +184,7 @@ export function buildEmailLayout(params: EmailLayoutParams): string {
           <!-- Body -->
           <tr>
             <td class="email-body-pad" style="padding:32px 36px 8px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;">
-              <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${NAVY};letter-spacing:-0.4px;line-height:1.25;">
+              <h1 style="margin:0 0 16px;font-size:24px;font-weight:800;color:${NAVY};letter-spacing:-0.4px;line-height:1.25;text-align:${headlineAlign};">
                 ${params.headline}
               </h1>
               <div style="font-size:16px;line-height:1.65;color:#334155;">
@@ -231,11 +213,7 @@ export function buildEmailLayout(params: EmailLayoutParams): string {
               </p>
               ${appDownloadRow()}
 
-              <p style="margin:24px 0 0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.55);max-width:440px;margin-left:auto;margin-right:auto;">
-                Never pay inspection fees before viewing a property. Meet at the listing, verify documents, and contact agents on WhatsApp.
-              </p>
-
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0;">
                 <tr><td style="border-top:1px solid rgba(255,255,255,0.12);font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
               </table>
 

@@ -9,6 +9,7 @@ import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { LAND_FAQS } from "@/constants/pageContent";
 import { SITE_NAME } from "@/lib/constants";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
+import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 
 export const metadata = {
   title: `Land for Sale in Nigeria | ${SITE_NAME}`,
@@ -45,6 +46,10 @@ export default function LandPage() {
         cta={{ label: "Browse land listings", href: "/search?hub=land_sale" }}
         secondaryCta={{ label: "Land buying FAQ", href: "#land-faq" }}
       />
+
+      <div className="mx-auto max-w-7xl px-3 pt-8 lg:px-8">
+        <ExploreHubLinks active="/land" />
+      </div>
 
       <Suspense fallback={<RailFallback />}>
         <PropertyRail

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { trackEvent } from "@/lib/analytics";
+import { trackListingInteraction } from "@/lib/browse-preferences";
 
 export type ContactChannel = "whatsapp" | "call";
 
@@ -19,6 +20,7 @@ export type ContactTrackInput = {
   propertyId: string;
   channel: ContactChannel;
   city: string;
+  area?: string;
   listingType: string;
   propertyType?: string | null;
   placement: ContactPlacement;
@@ -31,6 +33,7 @@ export async function trackContactClick(input: ContactTrackInput) {
     propertyId,
     channel,
     city,
+    area,
     listingType,
     propertyType,
     placement,
@@ -44,6 +47,14 @@ export async function trackContactClick(input: ContactTrackInput) {
     property_type: propertyType ?? "unknown",
     placement,
     agent_id: agentId ?? undefined,
+  });
+
+  trackListingInteraction({
+    id: propertyId,
+    city,
+    area,
+    listingType,
+    propertyType,
   });
 
   if (!isSupabaseConfigured() || isDemoProperty(propertyId)) return;

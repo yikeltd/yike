@@ -11,6 +11,7 @@ const links = [
   { href: adminPath("hot-picks"), label: "Hot picks" },
   { href: adminPath("ads"), label: "Ads" },
   { href: adminPath("banners"), label: "Banners" },
+  { href: adminPath("careers"), label: "Careers" },
 ];
 
 export default async function AdminConsoleLayout({

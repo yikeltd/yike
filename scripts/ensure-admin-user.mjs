@@ -21,9 +21,27 @@ const admin = createClient(url, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+const LEGACY_ADMIN_EMAIL = "admin@yike.ng";
+
 async function main() {
   const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
   let user = list?.users?.find((u) => u.email?.toLowerCase() === EMAIL);
+
+  if (!user) {
+    const legacy = list?.users?.find(
+      (u) => u.email?.toLowerCase() === LEGACY_ADMIN_EMAIL
+    );
+    if (legacy) {
+      const { data, error } = await admin.auth.admin.updateUserById(legacy.id, {
+        email: EMAIL,
+        password,
+        email_confirm: true,
+      });
+      if (error) throw error;
+      user = data.user;
+      console.log("Migrated legacy admin to:", EMAIL);
+    }
+  }
 
   if (!user) {
     const { data, error } = await admin.auth.admin.createUser({
@@ -37,11 +55,12 @@ async function main() {
     console.log("Created auth user:", user.id);
   } else {
     const { error } = await admin.auth.admin.updateUserById(user.id, {
+      email: EMAIL,
       password,
       email_confirm: true,
     });
     if (error) throw error;
-    console.log("Updated password for:", user.id);
+    console.log("Updated admin auth for:", user.id);
   }
 
   const { error: profileError } = await admin.from("profiles").upsert(

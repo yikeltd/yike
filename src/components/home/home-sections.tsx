@@ -12,6 +12,7 @@ import { getActiveAd } from "@/lib/ads";
 import { withDemoFallback } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
 import { POPULAR_AREAS } from "@/lib/constants";
+import { getServerSearchPreferences } from "@/lib/search-preferences";
 
 function SectionHeader({
   title,
@@ -112,7 +113,9 @@ export async function HomeFilteredFeed({
   filters: PropertySearchParams;
 }) {
   const active = hasActiveFilters(filters);
-  const properties = await getPublicProperties(active ? filters : {}, 24);
+  const inferred = active ? {} : await getServerSearchPreferences();
+  const query = active ? filters : { ...inferred };
+  const properties = await getPublicProperties(query, 24);
   const { items, isDemo } = withDemoFallback(properties);
   const midAd = await getActiveAd("home_feed_mid");
 
@@ -132,6 +135,8 @@ export async function HomeFilteredFeed({
     <section className="section-editorial mx-auto mt-4 max-w-7xl px-3 lg:mt-6 lg:px-6 xl:px-8">
       <PropertyGrid
         properties={items.slice(0, active ? 24 : 12)}
+        emptyCity={query.city}
+        emptyArea={query.area}
         isDemo={isDemo}
         midFeedAd={midAd}
         feedAdInsertAfter={4}

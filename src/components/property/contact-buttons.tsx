@@ -20,6 +20,7 @@ interface ContactButtonsProps {
   city: string;
   listingType: string;
   propertyType?: string | null;
+  bedrooms?: number;
   agentId?: string | null;
   phone?: string | null;
   whatsapp?: string | null;
@@ -34,6 +35,7 @@ export function ContactButtons({
   city,
   listingType,
   propertyType,
+  bedrooms,
   agentId,
   phone,
   whatsapp,
@@ -48,7 +50,11 @@ export function ContactButtons({
     wa &&
     whatsAppDeepLink(
       wa,
-      propertyWhatsAppMessage(title, area, city, propertyId)
+      propertyWhatsAppMessage(title, area, city, propertyId, {
+        bedrooms,
+        propertyType,
+        listingType,
+      })
     );
   const telUrl = tel ? `tel:${formatPhoneForTel(tel)}` : null;
 
@@ -67,6 +73,7 @@ export function ContactButtons({
           propertyId,
           channel: "whatsapp",
           city,
+          area,
           listingType,
           propertyType,
           placement,
@@ -92,6 +99,7 @@ export function ContactButtons({
           propertyId,
           channel: "call",
           city,
+          area,
           listingType,
           propertyType,
           placement,

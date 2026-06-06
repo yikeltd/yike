@@ -4,15 +4,21 @@ import type { AdPlacementKey } from "@/constants/adPlacements";
 import { PropertyCard } from "./property-card";
 import { FeedList } from "./feed-list";
 import { AdFeedInsert } from "@/components/ads/ad-feed-insert";
+import { EmptyStateRich } from "./empty-state-rich";
 
 export function PropertyGrid({
   properties,
-  emptyMessage = "No listings found yet.",
+  emptyMessage = "No homes match yet — try a nearby area or wider budget.",
   showCount,
   isDemo,
   midFeedAd,
   feedAdInsertAfter = 4,
   adPlacementKey = "home_feed_mid",
+  emptyCity,
+  emptyArea,
+  emptyListingType,
+  emptyPropertyType,
+  richEmpty = true,
 }: {
   properties: Property[];
   emptyMessage?: string;
@@ -21,8 +27,24 @@ export function PropertyGrid({
   midFeedAd?: AdPlacement | null;
   feedAdInsertAfter?: number;
   adPlacementKey?: AdPlacementKey;
+  emptyCity?: string;
+  emptyArea?: string;
+  emptyListingType?: string;
+  emptyPropertyType?: string;
+  richEmpty?: boolean;
 }) {
   if (properties.length === 0) {
+    if (richEmpty) {
+      return (
+        <EmptyStateRich
+          message={emptyMessage}
+          city={emptyCity}
+          area={emptyArea}
+          listingType={emptyListingType}
+          propertyType={emptyPropertyType}
+        />
+      );
+    }
     return (
       <div className="rounded-2xl bg-elevated px-8 py-16 text-center shadow-float">
         <p className="text-sm text-muted">{emptyMessage}</p>

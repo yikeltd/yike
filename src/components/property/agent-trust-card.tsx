@@ -4,6 +4,7 @@ import type { Profile } from "@/types/database";
 import { VerifiedBadge, TrustPill } from "@/components/ui/badge";
 import { ContactButtons } from "./contact-buttons";
 import { isVerifiedAgent, cn } from "@/lib/utils";
+import { getAgentActiveStatus, getAgentResponseLabel } from "@/lib/agent-response";
 import { MessageCircle, Shield } from "lucide-react";
 
 export function AgentTrustCard({
@@ -14,8 +15,10 @@ export function AgentTrustCard({
   city,
   listingType,
   propertyType,
+  bedrooms,
   sticky,
   verified: verifiedProp,
+  contactClicks,
 }: {
   agent: Profile;
   propertyId?: string;
@@ -24,11 +27,15 @@ export function AgentTrustCard({
   city?: string;
   listingType?: string;
   propertyType?: string | null;
+  bedrooms?: number;
   sticky?: boolean;
   verified?: boolean;
+  contactClicks?: number;
 }) {
   const verified =
     verifiedProp ?? isVerifiedAgent(agent);
+  const responseLabel = getAgentResponseLabel(agent, contactClicks);
+  const activeStatus = getAgentActiveStatus(contactClicks);
 
   return (
     <div
@@ -80,7 +87,10 @@ export function AgentTrustCard({
       </div>
       <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
         <MessageCircle className="h-3.5 w-3.5 text-gold" />
-        Contact via WhatsApp — typical response same day
+        {responseLabel}
+        {activeStatus === "active" && (
+          <span className="ml-1 inline-flex h-2 w-2 rounded-full bg-emerald-500" aria-label="Active" />
+        )}
       </p>
       {propertyId && title && area && city && listingType && (
         <div className="mt-5 border-t border-surface pt-5">
@@ -91,6 +101,7 @@ export function AgentTrustCard({
             city={city}
             listingType={listingType}
             propertyType={propertyType}
+            bedrooms={bedrooms}
             agentId={agent.id}
             phone={agent.phone}
             whatsapp={agent.whatsapp}

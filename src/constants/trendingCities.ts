@@ -23,7 +23,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1600585154340-be6161a56a0c"),
     tagline: "Rentals, shortlets & sales",
     href: "/search?city=Lagos",
-    seoPath: "/lagos",
+    seoPath: "/houses/lagos",
   },
   {
     name: "Abuja",
@@ -33,7 +33,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1600607687939-ce8a6c25118c"),
     tagline: "Homes in the capital",
     href: "/search?city=Abuja",
-    seoPath: "/abuja",
+    seoPath: "/houses/abuja",
   },
   {
     name: "Port Harcourt",
@@ -43,7 +43,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1600566753190-17f0baa5a365"),
     tagline: "GRA, Woji & more",
     href: "/search?city=Port%20Harcourt",
-    seoPath: "/port-harcourt",
+    seoPath: "/houses/port-harcourt",
   },
   {
     name: "Enugu",
@@ -53,7 +53,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1600596542815-ffad4c1539a9"),
     tagline: "Coal City homes",
     href: "/search?city=Enugu",
-    seoPath: "/enugu",
+    seoPath: "/houses/enugu",
   },
   {
     name: "Aba",
@@ -63,7 +63,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1560448204-e02f11c3d0e2"),
     tagline: "Affordable verified rentals",
     href: "/search?city=Aba",
-    seoPath: "/aba",
+    seoPath: "/houses/aba",
   },
   {
     name: "Owerri",
@@ -73,7 +73,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1502672260266-1c1ef2d93688"),
     tagline: "Shortlets & family homes",
     href: "/search?city=Owerri",
-    seoPath: "/owerri",
+    seoPath: "/houses/owerri",
   },
   {
     name: "Uyo",
@@ -83,7 +83,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1600047509807-ba8f8d28b018"),
     tagline: "Ewet Housing & beyond",
     href: "/search?city=Uyo",
-    seoPath: "/uyo",
+    seoPath: "/houses/uyo",
   },
   {
     name: "Benin City",
@@ -93,7 +93,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1600210492486-724fe9c0fb0f"),
     tagline: "Student & family areas",
     href: "/search?city=Benin%20City",
-    seoPath: "/benin-city",
+    seoPath: "/houses/benin-city",
   },
   {
     name: "Ibadan",
@@ -103,7 +103,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1600585154526-990dced4db0d"),
     tagline: "Bodija, UI & Akobo",
     href: "/search?city=Ibadan",
-    seoPath: "/ibadan",
+    seoPath: "/houses/ibadan",
   },
   {
     name: "Asaba",
@@ -113,7 +113,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     image: IMG("photo-1493809842364-78817add7ffb"),
     tagline: "Delta State capital",
     href: "/search?city=Asaba",
-    seoPath: "/asaba",
+    seoPath: "/houses/asaba",
   },
 ];
 

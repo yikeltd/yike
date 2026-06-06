@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { BUDGET_RANGES, getStateForCity } from "@/lib/constants";
 import { chipKeyFromParams, type Initial } from "@/lib/home-search-params";
-import { HeaderMobileSearch } from "@/components/search/header-mobile-search";
 import { BrowseListingsBlock } from "@/components/search/browse-listings-block";
 import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { addRecentSearch } from "@/lib/search-recent";
@@ -59,10 +58,6 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
       className="border-b border-surface bg-background px-3 py-3 lg:px-6 xl:px-8"
     >
       <div className="mx-auto max-w-7xl space-y-3">
-        <div className="lg:hidden">
-          <HeaderMobileSearch />
-        </div>
-
         <BrowseListingsBlock
           key={browseInitial.dealKey + browseInitial.city + browseInitial.area}
           initial={browseInitial}

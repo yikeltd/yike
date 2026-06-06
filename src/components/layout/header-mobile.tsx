@@ -9,27 +9,24 @@ import { MobileHeaderBanner } from "@/components/banners/mobile-header-banner";
 import { HeaderMobileSearch } from "@/components/search/header-mobile-search";
 import type { SiteBanner } from "@/types/database";
 
-/** Mobile chrome — logo + compact intelligent search. */
+/** Mobile chrome — logo + compact search on one row. */
 export function HeaderMobile({
   mobileBanner,
 }: {
   mobileBanner?: SiteBanner | null;
 }) {
   const pathname = usePathname();
-  const isHome = pathname === "/";
   const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
-  const isSearch = pathname === "/search" || pathname.startsWith("/search/");
-  const showHeaderSearch = !isHome && !isBrowse && !isSearch;
 
   return (
     <header className="sticky top-0 z-40 border-b border-surface bg-elevated/95 backdrop-blur-md lg:hidden">
       <div
         className={cn(
-          "flex items-center px-3 py-2",
-          isHome ? "justify-start" : "gap-2.5"
+          "flex min-h-12 items-center gap-2 px-3 py-2",
+          isBrowse && "border-b-0"
         )}
       >
-        <Link href="/" className="shrink-0">
+        <Link href="/" className="shrink-0" aria-label="Yike home">
           <Image
             src={brand.logoSm}
             alt="Yike"
@@ -39,7 +36,7 @@ export function HeaderMobile({
             priority
           />
         </Link>
-        {showHeaderSearch || isSearch ? <HeaderMobileSearch /> : null}
+        <HeaderMobileSearch />
       </div>
       {mobileBanner && <MobileHeaderBanner banner={mobileBanner} />}
     </header>

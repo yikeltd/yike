@@ -51,6 +51,7 @@ export function SignupForm({
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [codeSentFlash, setCodeSentFlash] = useState(false);
   const [codeSentMessage, setCodeSentMessage] = useState("");
+  const [whatsappFailedHint, setWhatsappFailedHint] = useState(false);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -78,6 +79,7 @@ export function SignupForm({
   function openChannelModal() {
     setCodeSentFlash(false);
     setCodeSentMessage("");
+    setWhatsappFailedHint(false);
     setChannelModalOpen(true);
   }
 
@@ -92,7 +94,14 @@ export function SignupForm({
     const data = await res.json();
     setSendingOtp(false);
     if (!res.ok) {
-      setError(data.error ?? "We could not send the code right now.");
+      const message =
+        data.error ?? "We could not send the code right now. Please try SMS or try again shortly.";
+      setError(message);
+      if (data.code === "whatsapp_failed") {
+        setWhatsappFailedHint(true);
+        setCodeSentFlash(false);
+        return;
+      }
       setChannelModalOpen(false);
       return;
     }
@@ -375,24 +384,25 @@ export function SignupForm({
           />
         </Field>
 
-        <Field label="Security check">
-          <p className="mb-2 text-xs text-muted">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <p className="text-sm text-muted sm:shrink-0">
             What is {mathChallenge.a} + {mathChallenge.b}?
           </p>
           <Input
             type="text"
             inputMode="numeric"
             placeholder="Your answer"
+            aria-label={`Answer: ${mathChallenge.a} plus ${mathChallenge.b}`}
             value={mathAnswer}
             onChange={(e) => setMathAnswer(e.target.value.replace(/\D/g, "").slice(0, 3))}
             required
             className={cn(
-              "h-12 rounded-xl",
+              "h-12 rounded-xl sm:max-w-[9.5rem]",
               mathAnswer && !mathOk && "ring-2 ring-red-400/50"
             )}
             autoComplete="off"
           />
-        </Field>
+        </div>
 
         {error && (
           <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger dark:bg-red-500/15 dark:text-red-300">
@@ -415,9 +425,11 @@ export function SignupForm({
         sending={sendingOtp}
         codeSent={codeSentFlash}
         codeSentMessage={codeSentMessage}
+        whatsappFailedHint={whatsappFailedHint}
         onClose={() => {
           if (sendingOtp) return;
           setCodeSentFlash(false);
+          setWhatsappFailedHint(false);
           setChannelModalOpen(false);
         }}
         onSelect={sendOtp}
@@ -439,6 +451,7 @@ function PhoneChannelModal({
   sending,
   codeSent,
   codeSentMessage,
+  whatsappFailedHint,
   onClose,
   onSelect,
 }: {
@@ -446,6 +459,7 @@ function PhoneChannelModal({
   sending: boolean;
   codeSent: boolean;
   codeSentMessage: string;
+  whatsappFailedHint?: boolean;
   onClose: () => void;
   onSelect: (channel: OtpChannel) => void;
 }) {
@@ -509,6 +523,11 @@ function PhoneChannelModal({
             <p className="mb-5 mt-2 text-center text-sm font-medium leading-relaxed text-navy/70">
               Choose how we send your 6-digit verification code
             </p>
+            {whatsappFailedHint && (
+              <p className="mb-3 rounded-xl bg-amber-500/10 px-3 py-2 text-center text-sm font-medium text-amber-800 dark:text-amber-200">
+                WhatsApp code failed. Try SMS instead.
+              </p>
+            )}
             <div className="flex flex-col gap-3">
               <button
                 type="button"
