@@ -3,8 +3,10 @@ export * from "./types";
 export {
   deliverOtp,
   isSendchampConfigured,
+  resolveWhatsAppSender,
   sendOtpSms,
   sendOtpWhatsApp,
+  sendWhatsAppText,
   toSendchampPhone,
 } from "./providers/sendchamp";
 export {

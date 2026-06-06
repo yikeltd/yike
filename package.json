@@ -17,7 +17,8 @@
     "seed": "tsx scripts/seed-supabase.ts",
     "domain:dns": "bash scripts/setup-yike-domain-dns.sh",
     "domain:verify": "bash scripts/verify-yike-domain.sh",
-    "email:assets": "node scripts/generate-email-assets.mjs && npx tsx scripts/render-email-previews.ts"
+    "email:assets": "node scripts/generate-email-assets.mjs && npx tsx scripts/render-email-previews.ts",
+    "notifications:test": "node scripts/test-sendchamp.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

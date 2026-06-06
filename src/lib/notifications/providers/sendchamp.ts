@@ -1,6 +1,15 @@
 import type { OtpChannel, ProviderResult } from "../types";
+import {
+  isSendchampSuccess,
+  pickSendchampReference,
+  sendchampErrorMessage,
+  type SendchampEnvelope,
+} from "./sendchamp-response";
 
 const BASE_URL = "https://api.sendchamp.com/api/v1";
+const DEFAULT_SMS_SENDER = "Sendchamp";
+/** Sendchamp shared WhatsApp sender when no number is registered — see API docs. */
+const DEFAULT_WHATSAPP_SENDER = "2348120678278";
 
 type SendchampConfig = {
   apiKey: string;
@@ -16,21 +25,39 @@ function getSendchampApiKey(): string {
   );
 }
 
+/** WhatsApp sender must be an international phone number (234…). */
+export function resolveWhatsAppSender(raw?: string): string {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) return DEFAULT_WHATSAPP_SENDER;
+
+  const digits = trimmed.replace(/\D/g, "");
+  if (digits.length >= 10) {
+    if (digits.startsWith("234") && digits.length === 13) return digits;
+    if (digits.length === 11 && digits.startsWith("0")) return `234${digits.slice(1)}`;
+    if (digits.length === 10) return `234${digits}`;
+    return digits;
+  }
+
+  return DEFAULT_WHATSAPP_SENDER;
+}
+
 function getConfig(): SendchampConfig | null {
   const apiKey = getSendchampApiKey();
   if (!apiKey) return null;
   return {
     apiKey,
-    smsSender: process.env.SENDCHAMP_SMS_SENDER?.trim() || "Yike",
-    whatsappSender:
-      process.env.SENDCHAMP_WHATSAPP_SENDER?.trim() || process.env.SENDCHAMP_SMS_SENDER?.trim() || "Yike",
+    smsSender: process.env.SENDCHAMP_SMS_SENDER?.trim() || DEFAULT_SMS_SENDER,
+    whatsappSender: resolveWhatsAppSender(
+      process.env.SENDCHAMP_WHATSAPP_SENDER?.trim() ||
+        process.env.SENDCHAMP_SMS_SENDER?.trim()
+    ),
   };
 }
 
-async function sendchampPost<T>(
+async function sendchampPost<T extends Record<string, unknown>>(
   path: string,
   body: Record<string, unknown>
-): Promise<ProviderResult<T>> {
+): Promise<ProviderResult<SendchampEnvelope<T>>> {
   const config = getConfig();
   if (!config) {
     return { ok: false, error: "Sendchamp not configured" };
@@ -49,16 +76,13 @@ async function sendchampPost<T>(
 
     const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
 
-    if (!res.ok) {
-      const message =
-        (data.message as string) ||
-        (data.error as string) ||
-        `Sendchamp request failed (${res.status})`;
-      console.error("[sendchamp]", path, res.status, message);
+    if (!isSendchampSuccess(data, res.ok)) {
+      const message = sendchampErrorMessage(data, res.status);
+      console.error("[sendchamp]", path, res.status, message, data);
       return { ok: false, error: message };
     }
 
-    return { ok: true, data: data as T };
+    return { ok: true, data: data as SendchampEnvelope<T> };
   } catch {
     return { ok: false, error: "Sendchamp network error" };
   }
@@ -76,6 +100,54 @@ export function isSendchampConfigured(): boolean {
   return Boolean(getSendchampApiKey());
 }
 
+type VerificationCreateBody = {
+  channel: "whatsapp" | "sms";
+  sender: string;
+  token_type: "numeric";
+  token_length: number;
+  expiration_time: number;
+  customer_mobile_number: string;
+  meta_data: Record<string, unknown>;
+  token: string;
+};
+
+async function sendVerificationOtp(
+  body: VerificationCreateBody
+): Promise<ProviderResult<{ reference?: string }>> {
+  const result = await sendchampPost<Record<string, unknown>>(
+    "/verification/create",
+    body
+  );
+
+  if (!result.ok) return result;
+
+  const reference = pickSendchampReference(result.data ?? {});
+  return { ok: true, data: { reference } };
+}
+
+export async function sendWhatsAppText(
+  phone: string,
+  message: string
+): Promise<ProviderResult<{ reference?: string }>> {
+  const config = getConfig();
+  if (!config) return { ok: false, error: "Sendchamp not configured" };
+
+  const result = await sendchampPost<Record<string, unknown>>(
+    "/whatsapp/message/send",
+    {
+      message,
+      type: "text",
+      sender: config.whatsappSender,
+      recipient: toSendchampPhone(phone),
+    }
+  );
+
+  if (!result.ok) return result;
+
+  const reference = pickSendchampReference(result.data ?? {});
+  return { ok: true, data: { reference } };
+}
+
 export async function sendOtpWhatsApp(
   phone: string,
   code: string
@@ -84,10 +156,8 @@ export async function sendOtpWhatsApp(
   if (!config) return { ok: false, error: "Sendchamp not configured" };
 
   const mobile = toSendchampPhone(phone);
-  const result = await sendchampPost<{
-    data?: { reference?: string; verification_reference?: string };
-  }>("/verification/send", {
-    channel: "WhatsApp",
+  const verification = await sendVerificationOtp({
+    channel: "whatsapp",
     sender: config.whatsappSender,
     token_type: "numeric",
     token_length: 6,
@@ -97,11 +167,13 @@ export async function sendOtpWhatsApp(
     token: code,
   });
 
-  if (!result.ok) return result;
+  if (verification.ok) return verification;
 
-  const ref =
-    result.data?.data?.verification_reference ?? result.data?.data?.reference;
-  return { ok: true, data: { reference: ref } };
+  const text = await sendWhatsAppText(
+    phone,
+    `Your Yike verification code is ${code}. Expires in 10 minutes.`
+  );
+  return text;
 }
 
 export async function sendOtpSms(
@@ -114,24 +186,20 @@ export async function sendOtpSms(
   const mobile = toSendchampPhone(phone);
   const message = `Your Yike code is ${code}. Expires in 10 minutes.`;
 
-  const smsResult = await sendchampPost<{ data?: { reference?: string } }>(
-    "/sms/send",
-    {
-      to: [mobile],
-      message,
-      sender_name: config.smsSender,
-      route: "non_dnd",
-    }
-  );
+  const smsResult = await sendchampPost<Record<string, unknown>>("/sms/send", {
+    to: [mobile],
+    message,
+    sender_name: config.smsSender,
+    route: "non_dnd",
+  });
 
   if (smsResult.ok) {
-    return { ok: true, data: { reference: smsResult.data?.data?.reference } };
+    const reference = pickSendchampReference(smsResult.data ?? {});
+    return { ok: true, data: { reference } };
   }
 
-  const verifyFallback = await sendchampPost<{
-    data?: { verification_reference?: string };
-  }>("/verification/send", {
-    channel: "SMS",
+  const verifyFallback = await sendVerificationOtp({
+    channel: "sms",
     sender: config.smsSender,
     token_type: "numeric",
     token_length: 6,
@@ -143,12 +211,7 @@ export async function sendOtpSms(
 
   if (!verifyFallback.ok) return smsResult;
 
-  return {
-    ok: true,
-    data: {
-      reference: verifyFallback.data?.data?.verification_reference,
-    },
-  };
+  return verifyFallback;
 }
 
 export async function deliverOtp(

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
-import { isSendchampConfigured } from "@/lib/notifications/providers/sendchamp";
+import {
+  isSendchampConfigured,
+  resolveWhatsAppSender,
+} from "@/lib/notifications/providers/sendchamp";
 
 export const runtime = "nodejs";
 
@@ -31,8 +34,11 @@ export async function GET(request: Request) {
     },
     sendchamp: {
       configured: isSendchampConfigured(),
-      smsSender: process.env.SENDCHAMP_SMS_SENDER?.trim() || null,
-      whatsappSender: process.env.SENDCHAMP_WHATSAPP_SENDER?.trim() || null,
+      smsSender: process.env.SENDCHAMP_SMS_SENDER?.trim() || "Sendchamp",
+      whatsappSenderEnv: process.env.SENDCHAMP_WHATSAPP_SENDER?.trim() || null,
+      whatsappSenderResolved: resolveWhatsAppSender(
+        process.env.SENDCHAMP_WHATSAPP_SENDER?.trim()
+      ),
       keySource: process.env.SENDCHAMP_API_KEY?.trim()
         ? "SENDCHAMP_API_KEY"
         : process.env.SENDCHAMP_PUBLIC_KEY?.trim()
