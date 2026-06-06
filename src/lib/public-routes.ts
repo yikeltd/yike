@@ -34,6 +34,7 @@ export const PUBLIC_STATIC_SEGMENTS = new Set([
   "lex",
   "dev",
   "api",
+  "well-known",
 ]);
 
 /** First path segment that must never be treated as a legacy city slug. */
