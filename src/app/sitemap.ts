@@ -34,6 +34,7 @@ function mainSitemapEntries(): MetadataRoute.Sitemap {
     "/request-property",
     "/verify-agent",
     "/about",
+    "/odogwu_stankings",
     "/safety",
     "/contact",
     "/terms",

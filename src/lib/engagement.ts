@@ -32,11 +32,3 @@ export function getEngagementSaveCount(): number {
   if (typeof window === "undefined") return 0;
   return Number(localStorage.getItem(SAVES_KEY) ?? "0");
 }
-
-/** Show PWA install after meaningful engagement, not first load. */
-export function shouldShowPwaPrompt(): boolean {
-  if (typeof window === "undefined") return false;
-  const visits = getVisitCount();
-  const saves = getEngagementSaveCount();
-  return visits >= 2 || saves >= 1;
-}

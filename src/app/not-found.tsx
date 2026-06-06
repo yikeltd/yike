@@ -5,7 +5,7 @@ export default function NotFound() {
     <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
       <h1 className="text-2xl font-bold">Not found</h1>
       <p className="mt-2 text-sm text-muted">
-        This listing may have expired or been removed.
+        This page may have moved or doesn&apos;t exist.
       </p>
       <Link
         href="/"
