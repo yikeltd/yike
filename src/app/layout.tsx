@@ -99,9 +99,9 @@ export const metadata: Metadata = {
     google: process.env.GOOGLE_SITE_VERIFICATION,
     yandex: process.env.YANDEX_SITE_VERIFICATION,
     other: {
-      ...(process.env.BING_SITE_VERIFICATION
-        ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION }
-        : {}),
+      "msvalidate.01":
+        process.env.BING_SITE_VERIFICATION ??
+        "02902039559EB4CCB652E858CBFF27B8",
     },
   },
 };
