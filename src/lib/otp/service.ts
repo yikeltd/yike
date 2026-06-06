@@ -78,6 +78,7 @@ export async function sendPhoneOtp(
   if (isSendchampConfigured()) {
     const delivered = await deliverOtp(phone, code, preferredChannel);
     if (!delivered.ok) {
+      console.error("[otp] send failed", phone, preferredChannel, delivered.error);
       await logOtpEvent(admin, {
         phone,
         channel: preferredChannel ?? "whatsapp",

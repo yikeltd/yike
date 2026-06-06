@@ -11,18 +11,25 @@ const DEFAULT_SMS_SENDER = "Sendchamp";
 /** Sendchamp shared WhatsApp sender when no number is registered — see API docs. */
 const DEFAULT_WHATSAPP_SENDER = "2348120678278";
 
+const VERIFICATION_PATHS = ["/verification/create", "/verification/send"] as const;
+const WHATSAPP_CHANNELS = ["whatsapp", "WhatsApp"] as const;
+const SMS_CHANNELS = ["sms", "SMS"] as const;
+const SMS_ROUTES = ["non_dnd", "dnd", "international"] as const;
+
 type SendchampConfig = {
-  apiKey: string;
+  apiKeys: string[];
   smsSender: string;
   whatsappSender: string;
 };
 
-function getSendchampApiKey(): string {
-  return (
-    process.env.SENDCHAMP_API_KEY?.trim() ||
-    process.env.SENDCHAMP_PUBLIC_KEY?.trim() ||
-    ""
-  );
+function getSendchampApiKeys(): string[] {
+  const keys = [
+    process.env.SENDCHAMP_API_KEY?.trim(),
+    process.env.SENDCHAMP_SECRET_KEY?.trim(),
+    process.env.SENDCHAMP_PUBLIC_KEY?.trim(),
+  ].filter((key): key is string => Boolean(key));
+
+  return [...new Set(keys)];
 }
 
 /** WhatsApp sender must be an international phone number (234…). */
@@ -42,16 +49,19 @@ export function resolveWhatsAppSender(raw?: string): string {
 }
 
 function getConfig(): SendchampConfig | null {
-  const apiKey = getSendchampApiKey();
-  if (!apiKey) return null;
+  const apiKeys = getSendchampApiKeys();
+  if (apiKeys.length === 0) return null;
   return {
-    apiKey,
+    apiKeys,
     smsSender: process.env.SENDCHAMP_SMS_SENDER?.trim() || DEFAULT_SMS_SENDER,
-    whatsappSender: resolveWhatsAppSender(
-      process.env.SENDCHAMP_WHATSAPP_SENDER?.trim() ||
-        process.env.SENDCHAMP_SMS_SENDER?.trim()
-    ),
+    whatsappSender: resolveWhatsAppSender(process.env.SENDCHAMP_WHATSAPP_SENDER?.trim()),
   };
+}
+
+function shouldRetryWithNextKey(status: number, message: string): boolean {
+  if (status === 401 || status === 403) return true;
+  const lower = message.toLowerCase();
+  return lower.includes("unauthorized") || lower.includes("invalid key");
 }
 
 async function sendchampPost<T extends Record<string, unknown>>(
@@ -63,29 +73,39 @@ async function sendchampPost<T extends Record<string, unknown>>(
     return { ok: false, error: "Sendchamp not configured" };
   }
 
-  try {
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+  let lastError = "Sendchamp request failed";
 
-    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  for (const apiKey of config.apiKeys) {
+    try {
+      const res = await fetch(`${BASE_URL}${path}`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
 
-    if (!isSendchampSuccess(data, res.ok)) {
+      const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+
+      if (isSendchampSuccess(data, res.ok)) {
+        return { ok: true, data: data as SendchampEnvelope<T> };
+      }
+
       const message = sendchampErrorMessage(data, res.status);
+      lastError = message;
       console.error("[sendchamp]", path, res.status, message, data);
-      return { ok: false, error: message };
-    }
 
-    return { ok: true, data: data as SendchampEnvelope<T> };
-  } catch {
-    return { ok: false, error: "Sendchamp network error" };
+      if (!shouldRetryWithNextKey(res.status, message)) {
+        return { ok: false, error: message };
+      }
+    } catch {
+      lastError = "Sendchamp network error";
+    }
   }
+
+  return { ok: false, error: lastError };
 }
 
 /** Nigerian 11-digit local → 234… international (no +). */
@@ -97,7 +117,7 @@ export function toSendchampPhone(localPhone: string): string {
 }
 
 export function isSendchampConfigured(): boolean {
-  return Boolean(getSendchampApiKey());
+  return getSendchampApiKeys().length > 0;
 }
 
 /** Lightweight auth check — does not send OTP. */
@@ -118,7 +138,7 @@ export async function probeSendchampConnection(): Promise<
 }
 
 type VerificationCreateBody = {
-  channel: "whatsapp" | "sms";
+  channel: string;
   sender: string;
   token_type: "numeric";
   token_length: number;
@@ -129,27 +149,33 @@ type VerificationCreateBody = {
 };
 
 async function sendVerificationOtp(
-  body: VerificationCreateBody
+  body: VerificationCreateBody,
+  channels: readonly string[]
 ): Promise<ProviderResult<{ reference?: string }>> {
   const senders =
-    body.channel === "whatsapp"
+    body.channel.toLowerCase().includes("whatsapp")
       ? [...new Set([body.sender, DEFAULT_WHATSAPP_SENDER])]
       : [...new Set([body.sender, DEFAULT_SMS_SENDER])];
 
   let lastError = "Sendchamp verification failed";
 
-  for (const sender of senders) {
-    const result = await sendchampPost<Record<string, unknown>>(
-      "/verification/create",
-      { ...body, sender }
-    );
+  for (const path of VERIFICATION_PATHS) {
+    for (const channel of channels) {
+      for (const sender of senders) {
+        const result = await sendchampPost<Record<string, unknown>>(path, {
+          ...body,
+          channel,
+          sender,
+        });
 
-    if (result.ok) {
-      const reference = pickSendchampReference(result.data ?? {});
-      return { ok: true, data: { reference } };
+        if (result.ok) {
+          const reference = pickSendchampReference(result.data ?? {});
+          return { ok: true, data: { reference } };
+        }
+
+        lastError = result.error;
+      }
     }
-
-    lastError = result.error;
   }
 
   return { ok: false, error: lastError };
@@ -190,24 +216,26 @@ export async function sendOtpWhatsApp(
   if (!config) return { ok: false, error: "Sendchamp not configured" };
 
   const mobile = toSendchampPhone(phone);
-  const verification = await sendVerificationOtp({
-    channel: "whatsapp",
-    sender: config.whatsappSender,
-    token_type: "numeric",
-    token_length: 6,
-    expiration_time: 10,
-    customer_mobile_number: mobile,
-    meta_data: { product: "yike" },
-    token: code,
-  });
+  const verification = await sendVerificationOtp(
+    {
+      channel: "whatsapp",
+      sender: config.whatsappSender,
+      token_type: "numeric",
+      token_length: 6,
+      expiration_time: 10,
+      customer_mobile_number: mobile,
+      meta_data: { product: "yike", purpose: "phone_verification" },
+      token: code,
+    },
+    WHATSAPP_CHANNELS
+  );
 
   if (verification.ok) return verification;
 
-  const text = await sendWhatsAppText(
+  return sendWhatsAppText(
     phone,
     `Your Yike verification code is ${code}. Expires in 10 minutes.`
   );
-  return text;
 }
 
 export async function sendOtpSms(
@@ -226,7 +254,7 @@ export async function sendOtpSms(
   };
 
   for (const sender_name of [...new Set([config.smsSender, DEFAULT_SMS_SENDER])]) {
-    for (const route of ["non_dnd", "dnd"] as const) {
+    for (const route of SMS_ROUTES) {
       const attempt = await sendchampPost<Record<string, unknown>>("/sms/send", {
         to: [mobile],
         message,
@@ -243,16 +271,19 @@ export async function sendOtpSms(
     }
   }
 
-  const verifyFallback = await sendVerificationOtp({
-    channel: "sms",
-    sender: config.smsSender,
-    token_type: "numeric",
-    token_length: 6,
-    expiration_time: 10,
-    customer_mobile_number: mobile,
-    meta_data: { product: "yike" },
-    token: code,
-  });
+  const verifyFallback = await sendVerificationOtp(
+    {
+      channel: "sms",
+      sender: config.smsSender,
+      token_type: "numeric",
+      token_length: 6,
+      expiration_time: 10,
+      customer_mobile_number: mobile,
+      meta_data: { product: "yike", purpose: "phone_verification" },
+      token: code,
+    },
+    SMS_CHANNELS
+  );
 
   if (!verifyFallback.ok) return smsResult;
 
@@ -279,7 +310,7 @@ export async function deliverOtp(
   }
 
   const sms = await sendOtpSms(phone, code);
-  if (!sms.ok) return { ok: false, error: OTP_DELIVERY_FAILED };
+  if (!sms.ok) return { ok: false, error: whatsapp.error || sms.error || OTP_DELIVERY_FAILED };
   return { ok: true, data: { channel: "sms", reference: sms.data?.reference } };
 }
 

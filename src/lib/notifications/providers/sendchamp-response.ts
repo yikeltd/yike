@@ -25,9 +25,18 @@ export function isSendchampSuccess(
   httpOk: boolean
 ): boolean {
   if (!httpOk) return false;
+
   const status = String(body.status ?? "").toLowerCase();
   if (status === "success") return true;
   if (["failed", "error", "failure"].includes(status)) return false;
+
+  const code = typeof body.code === "number" ? body.code : Number(body.code);
+  if (code === 200 || code === 201) return true;
+
+  if (body.errors != null && body.errors !== "" && !(Array.isArray(body.errors) && body.errors.length === 0)) {
+    return false;
+  }
+
   return httpOk;
 }
 

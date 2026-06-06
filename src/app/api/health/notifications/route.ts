@@ -43,11 +43,11 @@ export async function GET(request: Request) {
       whatsappSenderResolved: resolveWhatsAppSender(
         process.env.SENDCHAMP_WHATSAPP_SENDER?.trim()
       ),
-      keySource: process.env.SENDCHAMP_API_KEY?.trim()
-        ? "SENDCHAMP_API_KEY"
-        : process.env.SENDCHAMP_PUBLIC_KEY?.trim()
-          ? "SENDCHAMP_PUBLIC_KEY"
-          : null,
+      keySources: [
+        process.env.SENDCHAMP_API_KEY?.trim() ? "SENDCHAMP_API_KEY" : null,
+        process.env.SENDCHAMP_SECRET_KEY?.trim() ? "SENDCHAMP_SECRET_KEY" : null,
+        process.env.SENDCHAMP_PUBLIC_KEY?.trim() ? "SENDCHAMP_PUBLIC_KEY" : null,
+      ].filter(Boolean),
       probe: sendchampProbe
         ? sendchampProbe.ok
           ? { ok: true, message: sendchampProbe.data?.message }
