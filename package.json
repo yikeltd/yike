@@ -10,6 +10,7 @@
     "twa:init": "cd twa && npx @bubblewrap/cli init --manifest=https://yike.ng/manifest.json",
     "heroes:generate": "node scripts/generate-hero-images.mjs",
     "admin:ensure": "node scripts/ensure-admin-user.mjs",
+    "reviewer:ensure": "node scripts/ensure-reviewer-users.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

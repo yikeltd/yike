@@ -5,7 +5,7 @@ export const OTP_USER_MESSAGES = {
   sentSms: "Verification code sent by SMS.",
   sendFailed:
     "We could not send the code right now. Please try SMS or try again shortly.",
-  whatsappFailed: "WhatsApp code failed. Try SMS instead.",
+  whatsappFailed: "WhatsApp code could not be sent. Try SMS.",
   invalidPhone: "Invalid phone number",
   cooldown: "Please wait a moment before requesting another code.",
   expired: "Code expired — request a new one.",

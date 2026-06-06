@@ -35,6 +35,37 @@ function token(): string {
   return t;
 }
 
+export async function otpLastSentAt(
+  client: SupabaseClient,
+  phone: string
+): Promise<string | null> {
+  const { data, error } = await client.rpc("yike_otp_last_sent_at", {
+    p_token: token(),
+    p_phone: phone,
+  });
+  if (error) {
+    console.error("[otp-rpc] last sent failed", phone, error.message);
+    return null;
+  }
+  return typeof data === "string" ? data : null;
+}
+
+export async function otpLatestVerifiableRow(
+  client: SupabaseClient,
+  phone: string
+): Promise<OtpRow | null> {
+  const { data, error } = await client.rpc("yike_otp_latest_verifiable", {
+    p_token: token(),
+    p_phone: phone,
+  });
+  if (error) {
+    console.error("[otp-rpc] latest verifiable failed", phone, error.message);
+    return null;
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  return (row as OtpRow | undefined) ?? null;
+}
+
 export async function otpLatestRow(
   client: SupabaseClient,
   phone: string
@@ -58,7 +89,7 @@ export async function otpInsertPending(
     otpHash: string;
     expiresAt: string;
     channel: OtpChannel;
-    lastSentAt: string;
+    lastSentAt?: string | null;
   }
 ): Promise<{ id: string } | null> {
   const { data, error } = await client.rpc("yike_otp_insert_pending", {
@@ -68,7 +99,7 @@ export async function otpInsertPending(
     p_expires_at: params.expiresAt,
     p_channel: params.channel,
     p_provider: OTP_PROVIDER,
-    p_last_sent_at: params.lastSentAt,
+    p_last_sent_at: params.lastSentAt ?? null,
   });
   if (error) {
     console.error("[otp-rpc] insert failed", params.phone, error.message);

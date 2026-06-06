@@ -1,6 +1,6 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
-import Link from "next/link";
-import { adminPath, TECH_BASE_PATH } from "@/lib/admin-paths";
+import { createOtpDbClient } from "@/lib/otp/rpc";
+import { getSendchampConfigSummary } from "@/lib/notifications/providers/sendchamp";
 import {
   AdminPageHeader,
   MetricCard,
@@ -8,6 +8,8 @@ import {
 
 export default async function TechDashboardPage() {
   const supabase = await requireServerClient();
+  const sendchamp = getSendchampConfigSummary();
+  const otpDbConfigured = Boolean(createOtpDbClient());
   const since = new Date(Date.now() - 86400000).toISOString();
 
   const [emailSent, emailFailed, otpSent, otpFailed, recentOtpErrors, recentEmailErrors] =
@@ -34,7 +36,8 @@ export default async function TechDashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard label="Resend status" value={emailFailed.count === 0 ? "OK" : "Issues"} sub={`${emailSent.count ?? 0} sent · ${emailFailRate}% fail`} variant={emailFailed.count === 0 ? "success" : "warning"} />
-        <MetricCard label="Sendchamp status" value={otpFailed.count === 0 ? "OK" : "Issues"} sub={`${otpSent.count ?? 0} sent · ${otpFailRate}% fail`} variant={otpFailed.count === 0 ? "success" : "warning"} />
+        <MetricCard label="Sendchamp status" value={sendchamp.configured ? "Configured" : "Missing key"} sub={otpDbConfigured ? "OTP RPC OK" : "OTP token missing"} variant={sendchamp.configured && otpDbConfigured ? "success" : "danger"} href="/lex/tech/otp" />
+        <MetricCard label="Sendchamp delivery" value={otpFailed.count === 0 ? "OK" : "Issues"} sub={`${otpSent.count ?? 0} sent · ${otpFailRate}% fail`} variant={otpFailed.count === 0 ? "success" : "warning"} href="/lex/tech/otp" />
         <MetricCard label="Supabase" value="Connected" variant="success" />
         <MetricCard label="OTP failure rate" value={`${otpFailRate}%`} href="/lex/tech/otp" variant={otpFailRate > 5 ? "danger" : "default"} />
         <MetricCard label="Email failure rate" value={`${emailFailRate}%`} href="/lex/tech/email" variant={emailFailRate > 5 ? "danger" : "default"} />
@@ -42,7 +45,7 @@ export default async function TechDashboardPage() {
       </div>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <ErrorList title="Latest OTP errors" items={(recentOtpErrors.data ?? []).map((e) => ({ id: e.id, label: e.phone, time: e.created_at }))} />
+        <ErrorList title="Latest OTP errors" items={(recentOtpErrors.data ?? []).map((e) => ({ id: e.id, label: `${e.phone} — ${e.error_message ?? e.channel ?? "failed"}`, time: e.created_at }))} />
         <ErrorList title="Latest email errors" items={(recentEmailErrors.data ?? []).map((e) => ({ id: e.id, label: e.email, time: e.created_at }))} />
       </section>
     </div>

@@ -6,6 +6,7 @@ import { createOtpDbClient, otpFindVerified } from "@/lib/otp/rpc";
 import { normalizeNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
 import { passwordPolicyError } from "@/lib/password-policy";
+import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { validateMathChallenge } from "@/lib/signup-math-challenge";
 
 export const runtime = "nodejs";
@@ -60,12 +61,16 @@ export async function POST(request: Request) {
   }
 
   const otpDb = createOtpDbClient();
-  const otpRow = otpDb
-    ? await otpFindVerified(otpDb, phone, phoneVerificationToken)
-    : null;
+  const reviewerBypass = isReviewerAccountEmail(email);
 
-  if (!otpRow) {
-    return NextResponse.json({ error: "Verify your phone number first" }, { status: 400 });
+  if (!reviewerBypass) {
+    const otpRow = otpDb
+      ? await otpFindVerified(otpDb, phone, phoneVerificationToken)
+      : null;
+
+    if (!otpRow) {
+      return NextResponse.json({ error: "Verify your phone number first" }, { status: 400 });
+    }
   }
 
   const { data: existingUsername } = await admin

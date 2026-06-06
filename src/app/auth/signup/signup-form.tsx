@@ -17,6 +17,7 @@ import {
   PASSWORD_MIN_LENGTH,
 } from "@/lib/password-policy";
 import { createMathChallenge } from "@/lib/signup-math-challenge";
+import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { CheckCircle2, Loader2, MessageSquareText, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +58,11 @@ export function SignupForm({
   const [loading, setLoading] = useState(false);
 
   const normalizedPhone = useMemo(() => normalizeNigerianPhone(phone), [phone]);
-  const showVerifyPhone = canRequestPhoneOtp(normalizedPhone);
+  const reviewerBypass = useMemo(
+    () => isReviewerAccountEmail(email),
+    [email]
+  );
+  const showVerifyPhone = canRequestPhoneOtp(normalizedPhone) && !reviewerBypass;
   const passwordRules = useMemo(() => passwordChecks(password), [password]);
   const mathOk =
     mathAnswer.trim() !== "" &&
@@ -94,14 +99,14 @@ export function SignupForm({
     const data = await res.json();
     setSendingOtp(false);
     if (!res.ok) {
+      if (data.code === "whatsapp_failed") {
+        setWhatsappFailedHint(true);
+        setError("");
+        return;
+      }
       const message =
         data.error ?? "We could not send the code right now. Please try SMS or try again shortly.";
       setError(message);
-      if (data.code === "whatsapp_failed") {
-        setWhatsappFailedHint(true);
-        setCodeSentFlash(false);
-        return;
-      }
       setChannelModalOpen(false);
       return;
     }
@@ -142,7 +147,7 @@ export function SignupForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!phoneVerified || !phoneVerificationToken) {
+    if (!reviewerBypass && (!phoneVerified || !phoneVerificationToken)) {
       setError("Verify your phone number before creating an account");
       return;
     }
@@ -177,7 +182,7 @@ export function SignupForm({
         password,
         confirmPassword,
         pin,
-        phoneVerificationToken,
+        phoneVerificationToken: reviewerBypass ? "reviewer-bypass" : phoneVerificationToken,
         mathA: mathChallenge.a,
         mathB: mathChallenge.b,
         mathAnswer: Number(mathAnswer),
@@ -286,7 +291,11 @@ export function SignupForm({
               className="h-12 min-w-0 flex-1 rounded-xl"
               autoComplete="tel"
             />
-            {phoneVerified ? (
+            {reviewerBypass ? (
+              <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-gold-dark">
+                Review account — no OTP
+              </span>
+            ) : phoneVerified ? (
               <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="h-5 w-5" />
                 Verified
@@ -414,7 +423,7 @@ export function SignupForm({
           type="submit"
           fullWidth
           size="lg"
-          disabled={loading || !phoneVerified || !mathOk || !isStrongPassword(password)}
+          disabled={loading || (!reviewerBypass && !phoneVerified) || !mathOk || !isStrongPassword(password)}
         >
           {loading ? "Creating account…" : "Create account"}
         </Button>
@@ -525,7 +534,7 @@ function PhoneChannelModal({
             </p>
             {whatsappFailedHint && (
               <p className="mb-3 rounded-xl bg-amber-500/10 px-3 py-2 text-center text-sm font-medium text-amber-800 dark:text-amber-200">
-                WhatsApp code failed. Try SMS instead.
+                WhatsApp is unavailable. Try SMS — you can tap SMS right away.
               </p>
             )}
             <div className="flex flex-col gap-3">

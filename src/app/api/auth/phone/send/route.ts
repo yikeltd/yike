@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isProductionEnv } from "@/lib/env";
 import { OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import type { OtpChannel } from "@/lib/notifications/types";
 import { sendPhoneOtp } from "@/lib/otp";
@@ -38,6 +39,6 @@ export async function POST(request: Request) {
     ok: true,
     channel: result.channel,
     message: result.message,
-    ...(result.devOtp ? { devOtp: result.devOtp } : {}),
+    ...(result.devOtp && !isProductionEnv() ? { devOtp: result.devOtp } : {}),
   });
 }

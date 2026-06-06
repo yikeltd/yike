@@ -5,6 +5,7 @@ import {
 } from "@/lib/notifications/providers/sendchamp";
 import { otpSentMessage, OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import type { OtpChannel } from "@/lib/notifications/types";
+import { isProductionEnv } from "@/lib/env";
 import {
   OTP_EXPIRY_MS,
   OTP_MAX_ATTEMPTS,
@@ -16,7 +17,8 @@ import {
   createOtpDbClient,
   otpIncrementAttempts,
   otpInsertPending,
-  otpLatestRow,
+  otpLastSentAt,
+  otpLatestVerifiableRow,
   otpLogEvent,
   otpMarkExpired,
   otpMarkFailed,
@@ -41,6 +43,65 @@ function otpDb(): SupabaseClient | null {
   return createOtpDbClient();
 }
 
+async function checkCooldown(
+  db: SupabaseClient,
+  phone: string,
+  channel: OtpChannel
+): Promise<SendOtpResult | null> {
+  const lastSentAt = await otpLastSentAt(db, phone);
+  if (!lastSentAt) return null;
+
+  const elapsed = Date.now() - new Date(lastSentAt).getTime();
+  if (elapsed < OTP_RESEND_COOLDOWN_MS) {
+    await otpLogEvent(db, { phone, channel, status: "cooldown" });
+    return {
+      ok: false,
+      error: OTP_USER_MESSAGES.cooldown,
+      status: 429,
+    };
+  }
+  return null;
+}
+
+async function devFallbackSend(
+  db: SupabaseClient,
+  phone: string,
+  channel: OtpChannel,
+  reason: string
+): Promise<SendOtpResult> {
+  const code = generateOtp();
+  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
+
+  const inserted = await otpInsertPending(db, {
+    phone,
+    otpHash: hashOtp(code),
+    expiresAt,
+    channel,
+  });
+
+  if (!inserted) {
+    return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
+  }
+
+  await otpMarkSent(db, inserted.id, channel);
+  await otpLogEvent(db, {
+    phone,
+    channel,
+    status: "sent",
+    expiresAt,
+    providerError: `dev_fallback: ${reason}`,
+  });
+
+  console.info(`[Yike OTP dev fallback] ${phone} (${channel}): ${code} — ${reason}`);
+
+  return {
+    ok: true,
+    channel,
+    message: otpSentMessage(channel),
+    devOtp: code,
+  };
+}
+
 export async function sendPhoneOtp(
   _admin: SupabaseClient | null,
   phone: string,
@@ -58,38 +119,12 @@ export async function sendPhoneOtp(
 
   const channel: OtpChannel = preferredChannel ?? "whatsapp";
 
-  const recent = await otpLatestRow(db, phone);
-  if (recent?.last_sent_at) {
-    const elapsed = Date.now() - new Date(recent.last_sent_at).getTime();
-    if (elapsed < OTP_RESEND_COOLDOWN_MS) {
-      await otpLogEvent(db, { phone, channel, status: "cooldown" });
-      return {
-        ok: false,
-        error: OTP_USER_MESSAGES.cooldown,
-        status: 429,
-      };
-    }
-  }
+  const cooldown = await checkCooldown(db, phone, channel);
+  if (cooldown) return cooldown;
 
   if (!isSendchampConfigured()) {
-    if (process.env.NODE_ENV === "development") {
-      const code = generateOtp();
-      console.info(`[Yike OTP dev] ${phone} (${channel}): ${code}`);
-      const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
-      const now = new Date().toISOString();
-      await otpInsertPending(db, {
-        phone,
-        otpHash: hashOtp(code),
-        expiresAt,
-        channel,
-        lastSentAt: now,
-      });
-      return {
-        ok: true,
-        channel,
-        message: otpSentMessage(channel),
-        devOtp: code,
-      };
+    if (!isProductionEnv()) {
+      return devFallbackSend(db, phone, channel, "Sendchamp not configured");
     }
 
     console.error("[otp] Sendchamp not configured");
@@ -108,14 +143,12 @@ export async function sendPhoneOtp(
 
   const code = generateOtp();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
-  const now = new Date().toISOString();
 
   const inserted = await otpInsertPending(db, {
     phone,
     otpHash: hashOtp(code),
     expiresAt,
     channel,
-    lastSentAt: now,
   });
 
   if (!inserted) {
@@ -131,6 +164,27 @@ export async function sendPhoneOtp(
   if (!delivered.ok) {
     const sanitized = sanitizeOtpError(delivered.error);
     console.error("[otp] send failed", phone, preferredChannel, delivered.error);
+
+    if (!isProductionEnv()) {
+      await otpMarkSent(db, inserted.id, channel);
+      await otpLogEvent(db, {
+        phone,
+        channel,
+        status: "sent",
+        expiresAt,
+        providerError: `dev_fallback: ${delivered.error ?? "provider_failed"}`,
+      });
+      console.info(
+        `[Yike OTP dev fallback] ${phone} (${channel}): ${code} — ${delivered.error ?? "provider_failed"}`
+      );
+      return {
+        ok: true,
+        channel,
+        message: otpSentMessage(channel),
+        devOtp: code,
+      };
+    }
+
     await otpMarkFailed(db, inserted.id, sanitized);
     await otpLogEvent(db, {
       phone,
@@ -171,7 +225,6 @@ export async function sendPhoneOtp(
     ok: true,
     channel: sentChannel,
     message: otpSentMessage(sentChannel),
-    ...(process.env.NODE_ENV === "development" ? { devOtp: code } : {}),
   };
 }
 
@@ -185,7 +238,7 @@ export async function verifyPhoneOtp(
     return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 503 };
   }
 
-  const row = await otpLatestRow(db, phone);
+  const row = await otpLatestVerifiableRow(db, phone);
 
   if (!row) {
     return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 400 };
