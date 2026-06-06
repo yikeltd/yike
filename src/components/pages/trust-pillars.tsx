@@ -20,7 +20,7 @@ const DEFAULT: { icon: LucideIcon; title: string; body: string }[] = [
   {
     icon: ShieldCheck,
     title: "Report suspicious listings",
-    body: "See something off? Report it. We hide fake listings and ban repeat offenders.",
+    body: "See something off? Report it. We review flagged listings and remove misleading posts.",
   },
 ];
 

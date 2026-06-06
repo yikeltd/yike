@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Shield } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { buildHandoffSummary } from "@/lib/leads/message";
 import type { HandoffPayload } from "@/lib/leads/handoff";
 
@@ -34,26 +34,31 @@ export function LeadHandoffActions({ data }: { data: HandoffPayload }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="rounded-2xl border border-border bg-white p-5 shadow-float">
-        <p className="text-xs font-bold uppercase tracking-wide text-gold-dark">
-          Property found
-        </p>
-        <h1 className="mt-2 text-xl font-bold text-navy">{summary.title}</h1>
-        <p className="mt-1 text-sm text-muted">📍 {summary.location}</p>
-        <p className="mt-2 text-lg font-bold text-navy">{summary.priceLabel}</p>
-        <p className="mt-3 font-mono text-xs text-muted">
-          Reference: {summary.reference}
+        <p className="text-sm font-bold text-navy">🏠 Property Found</p>
+        <h1 className="mt-3 text-xl font-bold text-navy">{summary.title}</h1>
+        <p className="mt-2 text-sm text-muted">📍 {summary.location}</p>
+        <p className="mt-2 text-lg font-bold text-navy">💰 {summary.priceLabel}</p>
+        <p className="mt-4 text-sm text-muted">
+          Reference:
+          <br />
+          <span className="font-mono text-xs text-foreground">
+            {summary.reference}
+          </span>
         </p>
       </div>
 
-      <div className="flex gap-2 rounded-xl border border-amber-200/80 bg-amber-50 px-3 py-2.5 text-xs leading-snug text-amber-900">
-        <Shield className="mt-0.5 h-4 w-4 shrink-0" />
-        <p>
-          Never pay inspection or caution fees before seeing a property
-          physically.
+      <div className="rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900">
+        <p className="font-semibold">⚠️ Safety Tip</p>
+        <p className="mt-1">
+          Always inspect properties physically before making payment.
         </p>
       </div>
+
+      <p className="text-center text-xs text-muted">
+        👇 Continue to chat directly with the agent
+      </p>
 
       <button
         type="button"
@@ -65,7 +70,7 @@ export function LeadHandoffActions({ data }: { data: HandoffPayload }) {
         {loading ? "Opening WhatsApp…" : "Chat Agent"}
       </button>
 
-      <p className="text-center text-[11px] text-muted">Powered by Yike.ng</p>
+      <p className="text-center text-[11px] text-muted">Powered by Yike</p>
     </div>
   );
 }

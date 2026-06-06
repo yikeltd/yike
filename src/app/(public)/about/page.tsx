@@ -49,7 +49,7 @@ const ABOUT_TRUST = [
   {
     icon: ShieldCheck,
     title: "Safety-first discovery",
-    body: "Report fake listings, read our safety tips, and always visit the property before payment.",
+    body: "Report suspicious listings, read our safety tips, and always visit the property before payment.",
   },
 ];
 

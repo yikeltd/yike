@@ -72,7 +72,6 @@ export const HOME_DEAL_TYPES: SearchDealChip[] = [
   { value: "", label: "All" },
   { value: "rent", label: "Rent" },
   { value: "sale", label: "Buy" },
-  { value: "hotel", label: "Hotel", propertyType: "hotel" },
   { value: "land", label: "Land", hub: "land_sale" },
   { value: "shops", label: "Shops", propertyType: "shop" },
 ];

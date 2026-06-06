@@ -129,7 +129,7 @@ export default async function VerifyAgentPage() {
 
       <CtaBanner
         title="Safer marketplace for all"
-        body="Verified agents help renters avoid fake listings — join the trusted network on Yike."
+        body="Verified agents help renters find trusted listings — join the trusted network on Yike."
         primary={{
           label: isLoggedIn ? "Verify now" : "Create account",
           href: isLoggedIn ? "/agent/verification" : "/auth/signup",

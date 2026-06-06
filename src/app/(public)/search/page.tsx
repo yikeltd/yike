@@ -20,7 +20,7 @@ import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
 import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
 export const metadata: Metadata = {
   title: `Search Homes in Nigeria`,
-  description: `Search apartments, houses, hotels and land across Nigeria. Filter by city, area, budget and property type on ${SITE_NAME}.`,
+  description: `Search apartments, houses, land and shops across Nigeria. Filter by city, area, budget and property type on ${SITE_NAME}.`,
   alternates: { canonical: `${SITE_URL}/search` },
   openGraph: {
     title: `Search Nigerian Property | ${SITE_NAME}`,

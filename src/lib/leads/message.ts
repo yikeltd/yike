@@ -1,6 +1,5 @@
 import { formatPrice, propertyTypeLabel } from "@/lib/utils";
 import type { PaymentPeriod, ListingType } from "@/types/database";
-import { absoluteHandoffUrl } from "./gateway";
 
 function propertyDescriptor(input: {
   propertyTitle: string;
@@ -35,7 +34,6 @@ export function buildGatewayInquiryMessage(input: {
   const priceLabel = formatPrice(input.price, input.paymentPeriod, input.listingType);
   const location = input.area ? `${input.area}, ${input.city}` : input.city;
   const descriptor = propertyDescriptor(input);
-  const handoff = absoluteHandoffUrl(input.yikeReference);
 
   return `Hi Yike, I'm interested in this property:
 
@@ -44,9 +42,7 @@ ${location}
 ${priceLabel}
 
 Reference:
-${input.yikeReference}
-
-${handoff}`;
+${input.yikeReference}`;
 }
 
 /** Prefilled message when user taps Chat Agent. */

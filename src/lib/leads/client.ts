@@ -3,8 +3,12 @@
 import { getGuestId } from "@/lib/guest-id";
 import { trackContactClick, type ContactPlacement } from "@/lib/contact-tracking";
 import { recordPwaWhatsAppClick } from "@/lib/pwa/engagement";
+import { buildGatewayInquiryMessage } from "@/lib/leads/message";
+import { generateLeadReference } from "@/lib/leads/reference";
+import { handoffPath, yikeWhatsAppNumber } from "@/lib/leads/gateway";
 import { whatsAppDeepLink } from "@/lib/whatsapp";
 import { formatPhoneForTel } from "@/lib/utils";
+import type { PaymentPeriod, ListingType } from "@/types/database";
 import type { LeadType } from "./types";
 
 export type TrackLeadInput = {
@@ -26,9 +30,16 @@ export type TrackLeadInput = {
   phone?: string | null;
 };
 
+export type TrackLeadResult = {
+  ok: boolean;
+  redirectUrl?: string;
+  handoffUrl?: string;
+  error?: string;
+};
+
 export async function trackLeadAndRedirect(
   input: TrackLeadInput
-): Promise<{ ok: boolean; redirectUrl?: string; error?: string }> {
+): Promise<TrackLeadResult> {
   void trackContactClick({
     propertyId: input.listingId,
     channel: input.leadType,
@@ -54,7 +65,7 @@ export async function trackLeadAndRedirect(
     const fallback = buildFallbackRedirect(input);
     if (fallback) {
       if (input.leadType === "whatsapp") recordPwaWhatsAppClick();
-      return { ok: true, redirectUrl: fallback };
+      return fallback;
     }
     return { ok: false, error: data.error ?? "Lead tracking failed" };
   }
@@ -63,17 +74,34 @@ export async function trackLeadAndRedirect(
     recordPwaWhatsAppClick();
   }
 
-  return { ok: true, redirectUrl: data.redirectUrl as string };
+  return {
+    ok: true,
+    redirectUrl: data.redirectUrl as string,
+    handoffUrl: data.handoffUrl as string | undefined,
+  };
 }
 
-function buildFallbackRedirect(input: TrackLeadInput): string | undefined {
+function buildFallbackRedirect(input: TrackLeadInput): TrackLeadResult | undefined {
   if (input.leadType === "whatsapp") {
-    const wa = input.whatsapp || input.phone;
-    if (!wa) return undefined;
-    const msg = `Hi ${input.agentName}, I'm interested in ${input.title} in ${input.area}, ${input.city} on Yike.`;
-    return whatsAppDeepLink(wa, msg);
+    const ref = generateLeadReference(input.city, input.area);
+    const message = buildGatewayInquiryMessage({
+      price: input.price,
+      paymentPeriod: input.paymentPeriod as PaymentPeriod,
+      listingType: input.listingType as ListingType,
+      propertyTitle: input.title,
+      area: input.area,
+      city: input.city,
+      bedrooms: input.bedrooms,
+      propertyType: input.propertyType,
+      yikeReference: ref,
+    });
+    return {
+      ok: true,
+      redirectUrl: whatsAppDeepLink(yikeWhatsAppNumber(), message),
+      handoffUrl: handoffPath(ref),
+    };
   }
   const tel = input.phone || input.whatsapp;
   if (!tel) return undefined;
-  return `tel:${formatPhoneForTel(tel)}`;
+  return { ok: true, redirectUrl: `tel:${formatPhoneForTel(tel)}` };
 }

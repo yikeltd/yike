@@ -9,7 +9,6 @@ import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { SmartCityHint } from "@/components/personalization/smart-city-hint";
 import { BrowseRail } from "@/components/retention/browse-rail";
-import { HomeHeroPitch } from "@/components/home/home-hero-pitch";
 
 function SectionFallback() {
   return (
@@ -41,7 +40,6 @@ export default async function HomePage({
   return (
     <div className="home-canvas min-h-[100dvh] pb-4 lg:pb-8">
       <PrefSync />
-      <HomeHeroPitch />
       <Suspense fallback={null}>
         <HomeSearchHero initial={initial} />
       </Suspense>
@@ -65,7 +63,7 @@ export default async function HomePage({
               Homes for you
             </h2>
             <p className="mt-0.5 text-sm text-muted">
-              No fake listings · WhatsApp contact · Verified agents
+              Verified listings · WhatsApp contact · Trusted agents
             </p>
           </div>
           <SocialProofBar stats={stats} />

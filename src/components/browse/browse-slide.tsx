@@ -330,6 +330,11 @@ export function BrowseSlide({
                     setWaLoading(false);
                     if (result.ok && result.redirectUrl) {
                       window.open(result.redirectUrl, "_blank", "noopener,noreferrer");
+                      if (result.handoffUrl) {
+                        window.setTimeout(() => {
+                          window.location.href = result.handoffUrl!;
+                        }, 400);
+                      }
                     }
                   }
                 );

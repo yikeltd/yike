@@ -1,7 +1,7 @@
 const MISSION_BLOCKS = [
   {
-    title: "Fake listings waste your time",
-    body: "Blurry photos, wrong prices and duplicate posts are everywhere. Renters deserve to see real homes before paying anyone.",
+    title: "Misleading listings waste your time",
+    body: "Blurry photos, wrong prices and duplicate posts are everywhere. Renters deserve to see quality listings before paying anyone.",
   },
   {
     title: "Housing search is stressful",
@@ -27,7 +27,7 @@ export function AboutMissionSection() {
       </p>
       <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted lg:text-base">
         We started Yike because property discovery still feels outdated —
-        fragmented agents, outdated portals, and too many scams. Our goal is
+        fragmented agents, outdated portals, and unclear listings. Our goal is
         simple: make finding a home more trustworthy, visual, and stress-free.
       </p>
 

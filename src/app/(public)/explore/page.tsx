@@ -37,7 +37,7 @@ export default async function ExplorePage() {
     <div className="pb-12">
       <PageHero
         title="Explore Nigeria, one home at a time"
-        subtitle="Trending cities, verified agents, rentals, hotels and land — scroll visually, contact on WhatsApp."
+        subtitle="Trending cities, verified agents, rentals and land — scroll visually, contact on WhatsApp."
         image={PAGE_IMAGERY.explore}
         badge="Explore"
         variant="dark"
@@ -97,16 +97,6 @@ export default async function ExplorePage() {
           subtitle="Near campus · budget-friendly"
           seeAllHref="/search?hub=student"
           hub="student"
-          limit={8}
-        />
-      </Suspense>
-
-      <Suspense fallback={<RailFallback />}>
-        <PropertyRail
-          title="Hotels & guest houses"
-          subtitle="Business travel and serviced stays"
-          seeAllHref="/hotel"
-          params={{ property_type: "hotel" }}
           limit={8}
         />
       </Suspense>

@@ -87,6 +87,11 @@ export function ContactButtons({
       setShowHint(false);
       if (leadType === "whatsapp") {
         window.open(result.redirectUrl, "_blank", "noopener,noreferrer");
+        if (result.handoffUrl) {
+          window.setTimeout(() => {
+            window.location.href = result.handoffUrl!;
+          }, 400);
+        }
       } else {
         window.location.href = result.redirectUrl;
       }

@@ -58,7 +58,7 @@ export function buildPropertyTypeIntro(
     `Looking for a ${type.label.toLowerCase()} in ${neighborhood}, ${city}? Yike lists verified options you can compare by price, photos and agent contact — with WhatsApp as the primary channel.`,
     rent,
     checks,
-    `Yike helps reduce fake listing risk through agent identity checks and user reports — but you should still inspect in person and verify documents. We do not guarantee every listing or process payments on your behalf.`,
+    `Yike helps surface quality listings through agent identity checks and user reports — but you should still inspect in person and verify documents. We do not guarantee every listing or process payments on your behalf.`,
   ];
 }
 

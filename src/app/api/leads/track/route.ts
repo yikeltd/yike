@@ -96,12 +96,11 @@ export async function POST(request: Request) {
     };
 
     if (resolveLeadGatewayMode() === "gateway") {
-      const yikeWa = yikeWhatsAppNumber()!;
       const gatewayMessage = buildGatewayInquiryMessage(messageInput);
       return NextResponse.json({
         ok: true,
         yikeReference,
-        redirectUrl: whatsAppDeepLink(yikeWa, gatewayMessage),
+        redirectUrl: whatsAppDeepLink(yikeWhatsAppNumber(), gatewayMessage),
         handoffUrl: handoffPath(yikeReference),
         gateway: true,
       });

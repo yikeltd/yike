@@ -11,9 +11,10 @@ export const COMPANY_EMAIL = "hello@yike.ng";
 /** Official Yike support WhatsApp (international format, no +). */
 export const YIKE_SUPPORT_WHATSAPP = "2348035143299";
 
-export const HOME_HERO_HEADLINE = "No more fake listings.";
+/** @deprecated HomeHeroPitch removed — kept for reference only */
+export const HOME_HERO_HEADLINE = "Discover trusted homes across Nigeria.";
 export const HOME_HERO_SUBLINE =
-  "Swipe homes in Aba and chat verified agents on WhatsApp.";
+  "Swipe verified listings and connect with agents on WhatsApp.";
 
 export const COMPANY_DESCRIPTION =
   "Yike is a Nigerian real estate marketplace helping users discover verified apartments, houses, shortlets, land, and commercial properties through a mobile-first browsing experience.";

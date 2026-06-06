@@ -48,7 +48,7 @@ const BENEFITS = [
   {
     icon: ShieldCheck,
     title: "Trust marketplace",
-    body: "Report tools and moderation keep fake listings off the feed.",
+    body: "Report tools and moderation keep low-quality listings off the feed.",
   },
 ];
 

@@ -24,12 +24,12 @@ export function seoDescription(
   propertyType?: SeoPropertyType
 ): string {
   if (level === "propertyType" && neighborhood && propertyType) {
-    return `Find verified ${propertyType.label.toLowerCase()} listings in ${neighborhood}, ${city}. Compare prices, view photos and contact trusted agents directly on WhatsApp. No fake listings, no agent drama.`;
+    return `Find verified ${propertyType.label.toLowerCase()} listings in ${neighborhood}, ${city}. Compare prices, view photos and contact trusted agents on WhatsApp.`;
   }
   if (level === "neighborhood" && neighborhood) {
-    return `Browse verified apartments, self contains, mini flats, shops and homes for rent in ${neighborhood}, ${city}. Contact trusted agents directly on WhatsApp and avoid fake listings.`;
+    return `Browse verified apartments, self contains, mini flats, shops and homes for rent in ${neighborhood}, ${city}. Contact trusted agents directly on WhatsApp.`;
   }
-  return `Find verified houses, flats, self contain rooms, shops, shortlets and apartments for rent in ${city}. Browse real listings, compare prices and chat directly with trusted agents on WhatsApp.`;
+  return `Find verified houses, flats, self contain rooms, shops, shortlets and apartments for rent in ${city}. Explore trusted listings, compare prices and chat with agents on WhatsApp.`;
 }
 
 export function seoH1(
