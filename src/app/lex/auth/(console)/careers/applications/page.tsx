@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ApplicationActions } from "@/components/admin/application-actions";
 import { CreateStaffFromApplication } from "@/components/admin/create-staff-from-application";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 import { adminPath } from "@/lib/admin-paths";
+import { parseAdminPage } from "@/lib/admin/pagination";
 import type { ApplicationRow } from "@/lib/careers/constants";
 import { statusLabel } from "@/lib/careers/constants";
 
@@ -13,6 +15,7 @@ type Props = {
     job?: string;
     status?: string;
     score?: string;
+    page?: string;
   }>;
 };
 
@@ -34,6 +37,7 @@ function scoreColor(score: number): string {
 
 export default async function AdminApplicationsPage({ searchParams }: Props) {
   const sp = await searchParams;
+  const { page, from, to } = parseAdminPage(sp);
 
   if (!isSupabaseConfigured()) {
     return <p className="text-sm text-muted">Connect Supabase to view applications.</p>;
@@ -44,9 +48,9 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
 
   let query = supabase
     .from("job_applications")
-    .select("*, jobs(title, slug, category, department)")
+    .select("*, jobs(title, slug, category, department)", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(200);
+    .range(from, to);
 
   if (sp.status) query = query.eq("status", sp.status);
   if (sp.job) query = query.eq("job_id", sp.job);
@@ -54,8 +58,9 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
   if (sp.score === "mid") query = query.gte("score", 60).lt("score", 70);
   if (sp.score === "low") query = query.lt("score", 60);
 
-  const { data } = await query;
+  const { data, count } = await query;
   let applications = (data ?? []) as ApplicationRow[];
+  const total = count ?? applications.length;
 
   const q = sp.q?.trim().toLowerCase();
   if (q) {
@@ -85,7 +90,7 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
           </Link>
           <h1 className="mt-2 text-2xl font-bold text-navy">Applications</h1>
           <p className="mt-1 text-sm text-muted">
-            {applications.length} applicant{applications.length === 1 ? "" : "s"} — all scores visible
+            {applications.length} applicant{applications.length === 1 ? "" : "s"} — page {page} · {total} total
           </p>
         </div>
       </div>
@@ -267,6 +272,17 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
           ))}
         </div>
       )}
+      <AdminPagination
+        basePath={adminPath("careers/applications")}
+        total={total}
+        page={page}
+        params={{
+          q: sp.q,
+          job: sp.job,
+          status: sp.status,
+          score: sp.score,
+        }}
+      />
     </div>
   );
 }

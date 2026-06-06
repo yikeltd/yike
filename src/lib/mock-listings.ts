@@ -2,9 +2,16 @@ import type { Profile, Property } from "@/types/database";
 import type { PropertySearchParams } from "@/lib/properties";
 import { mergeQueryIntoParams } from "@/lib/location-search";
 import { buildMockListings } from "@/lib/mock-listings-seed";
+import { buildPropertySlugBase } from "@/lib/property-slugs";
 import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
 
-export const MOCK_LISTINGS: Property[] = buildMockListings();
+export const MOCK_LISTINGS: Property[] = buildMockListings().map((p) => ({
+  ...p,
+  slug: buildPropertySlugBase(p),
+  slug_locked: false,
+  seo_title: null,
+  seo_description: null,
+}));
 
 export function isDemoProperty(id: string) {
   return id.startsWith("demo-");

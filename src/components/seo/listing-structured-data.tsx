@@ -3,6 +3,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { ORG_ID } from "@/lib/seo/schema-ids";
 import { formatPrice, isVerifiedAgent } from "@/lib/utils";
 import { optimizeListingImageUrl } from "@/lib/image-url";
+import { propertyAbsoluteUrl } from "@/lib/property-url";
 
 function absoluteImage(url: string): string {
   if (url.startsWith("http")) return optimizeListingImageUrl(url, 1200);
@@ -10,7 +11,7 @@ function absoluteImage(url: string): string {
 }
 
 export function ListingStructuredData({ property }: { property: Property }) {
-  const pageUrl = `${SITE_URL}/properties/${property.id}`;
+  const pageUrl = propertyAbsoluteUrl(property);
   const images = property.media_urls
     .filter(Boolean)
     .slice(0, 8)

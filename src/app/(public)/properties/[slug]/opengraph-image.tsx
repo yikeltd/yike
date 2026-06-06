@@ -1,5 +1,5 @@
 import { buildOgImage, ogContentType, ogSize } from "@/lib/og-image";
-import { getPropertyById } from "@/lib/properties";
+import { resolvePropertyRoute } from "@/lib/properties";
 import { formatPrice } from "@/lib/utils";
 import { SITE_NAME } from "@/lib/constants";
 
@@ -11,10 +11,10 @@ export const contentType = ogContentType;
 export default async function Image({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const property = await getPropertyById(id);
+  const { slug } = await params;
+  const { property } = await resolvePropertyRoute(slug);
 
   if (!property) {
     return buildOgImage({ title: SITE_NAME });

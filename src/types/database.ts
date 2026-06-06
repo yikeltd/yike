@@ -203,6 +203,10 @@ export interface AuditLog {
 export interface Property {
   id: string;
   agent_id: string;
+  slug: string | null;
+  slug_locked: boolean;
+  seo_title: string | null;
+  seo_description: string | null;
   title: string;
   description: string | null;
   listing_type: ListingType;

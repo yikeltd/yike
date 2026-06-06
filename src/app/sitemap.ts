@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
-import { getSitemapPropertyIds } from "@/lib/seo/sitemap-data";
+import { getSitemapPropertyEntries } from "@/lib/seo/sitemap-data";
 import {
   getHousesCityParams,
   getHousesNeighborhoodParams,
@@ -12,8 +12,11 @@ const PROPERTY_CHUNK_SIZE = 500;
 const MAX_PROPERTY_URLS = 5000;
 
 export async function generateSitemaps() {
-  const ids = await getSitemapPropertyIds(MAX_PROPERTY_URLS);
-  const propertyChunks = Math.max(1, Math.ceil(ids.length / PROPERTY_CHUNK_SIZE));
+  const entries = await getSitemapPropertyEntries(MAX_PROPERTY_URLS);
+  const propertyChunks = Math.max(
+    1,
+    Math.ceil(entries.length / PROPERTY_CHUNK_SIZE)
+  );
   const maps: { id: number }[] = [{ id: 0 }];
   for (let i = 1; i <= propertyChunks; i++) maps.push({ id: i });
   return maps;
@@ -94,16 +97,17 @@ export default async function sitemap({
 }): Promise<MetadataRoute.Sitemap> {
   if (id === 0) return mainSitemapEntries();
 
-  const ids = await getSitemapPropertyIds(MAX_PROPERTY_URLS);
+  const entries = await getSitemapPropertyEntries(MAX_PROPERTY_URLS);
   const chunkIndex = id - 1;
-  const slice = ids.slice(
+  const slice = entries.slice(
     chunkIndex * PROPERTY_CHUNK_SIZE,
     (chunkIndex + 1) * PROPERTY_CHUNK_SIZE
   );
 
-  return slice.map((propertyId) => ({
-    url: `${SITE_URL}/properties/${propertyId}`,
-    changeFrequency: "daily",
+  return slice.map((entry) => ({
+    url: `${SITE_URL}/properties/${entry.path}`,
+    lastModified: entry.updated_at ? new Date(entry.updated_at) : undefined,
+    changeFrequency: "daily" as const,
     priority: 0.82,
   }));
 }

@@ -1,18 +1,30 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { AdminPageHeader } from "@/components/admin/dashboard/admin-ui";
+import { AdminPagination } from "@/components/admin/admin-pagination";
+import { parseAdminPage } from "@/lib/admin/pagination";
 
-export default async function SupportAccountsPage() {
+export default async function SupportAccountsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const { page, from, to } = parseAdminPage(sp);
   const supabase = await requireServerClient();
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("profiles")
-    .select("id, full_name, email, phone, phone_verified, email_verified, is_banned, created_at")
+    .select("id, full_name, email, phone, phone_verified, email_verified, is_banned, created_at", {
+      count: "exact",
+    })
     .eq("role", "user")
     .order("created_at", { ascending: false })
-    .limit(30);
+    .range(from, to);
+
+  const total = count ?? 0;
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Account support" description="User account lookup — read only" />
+      <AdminPageHeader title="Account support" description={`${total} user accounts — read only`} />
       <div className="overflow-x-auto rounded-2xl border border-navy/10 bg-white shadow-sm">
         <table className="w-full min-w-[520px] text-left text-sm">
           <thead>
@@ -38,6 +50,7 @@ export default async function SupportAccountsPage() {
           </tbody>
         </table>
       </div>
+      <AdminPagination basePath="/lex/support/accounts" total={total} page={page} />
     </div>
   );
 }

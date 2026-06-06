@@ -13,6 +13,7 @@ import {
 import { mergeQueryIntoParams } from "@/lib/location-search";
 import { propertyTypeLabel } from "@/lib/utils";
 import { sortPropertiesByMarketRank } from "@/lib/agent-tiers";
+import { isUuidParam, buildPropertySlugBase } from "@/lib/property-slugs";
 
 import type { DiscoverHub } from "@/types/database";
 import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
@@ -159,6 +160,90 @@ export async function getPropertyById(id: string): Promise<Property | null> {
   }
 
   return getMockPropertyById(id);
+}
+
+export async function getPropertyBySlug(slug: string): Promise<Property | null> {
+  if (isDemoProperty(slug)) return getMockPropertyById(slug);
+
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient();
+    if (supabase) {
+      const { data } = await supabase
+        .from("properties")
+        .select(PUBLIC_SELECT)
+        .eq("slug", slug)
+        .single();
+      if (data) return data as Property;
+    }
+  }
+
+  const mock = MOCK_LISTINGS.find(
+    (p) =>
+      p.slug === slug ||
+      buildPropertySlugBase(p) === slug ||
+      p.id === slug
+  );
+  return mock ?? null;
+}
+
+export type PropertyRouteResult = {
+  property: Property | null;
+  /** Permanent redirect when UUID resolves to a slug URL */
+  redirectTo?: string;
+};
+
+export async function resolvePropertyRoute(
+  param: string
+): Promise<PropertyRouteResult> {
+  if (isUuidParam(param)) {
+    const property = await getPropertyById(param);
+    if (!property) return { property: null };
+    const slug = property.slug ?? propertyPublicSlugFromProperty(property);
+    if (slug && slug !== param) {
+      return { property, redirectTo: `/properties/${slug}` };
+    }
+    return { property };
+  }
+
+  const bySlug = await getPropertyBySlug(param);
+  if (bySlug) return { property: bySlug };
+
+  if (isDemoProperty(param)) {
+    return { property: getMockPropertyById(param) };
+  }
+
+  return { property: null };
+}
+
+function propertyPublicSlugFromProperty(property: Property): string {
+  if (property.slug) return property.slug;
+  return property.id;
+}
+
+export async function getApprovedPropertySlugs(
+  limit = 200
+): Promise<{ id: string; slug: string | null }[]> {
+  if (!isSupabaseConfigured()) {
+    return MOCK_LISTINGS.slice(0, limit).map((p) => ({
+      id: p.id,
+      slug: p.slug,
+    }));
+  }
+  const supabase = await createClient();
+  if (!supabase) {
+    return MOCK_LISTINGS.slice(0, limit).map((p) => ({
+      id: p.id,
+      slug: p.slug,
+    }));
+  }
+  const { data } = await supabase
+    .from("properties")
+    .select("id, slug")
+    .eq("status", "approved")
+    .gt("expires_at", new Date().toISOString())
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []) as { id: string; slug: string | null }[];
 }
 
 export type RelatedSection = {

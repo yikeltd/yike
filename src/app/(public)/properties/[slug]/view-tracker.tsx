@@ -13,8 +13,10 @@ import type { Property } from "@/types/database";
 export function PropertyViewTracker({
   propertyId,
   property,
+  slug,
 }: {
   propertyId: string;
+  slug?: string;
   property?: Pick<
     Property,
     | "title"
@@ -47,7 +49,9 @@ export function PropertyViewTracker({
         listingType: property.listing_type,
         propertyType: property.property_type,
       });
-      cachePageForOffline(`/properties/${propertyId}`);
+      cachePageForOffline(
+        slug ? `/properties/${slug}` : `/properties/${propertyId}`
+      );
     }
 
     if (isDemoProperty(propertyId) || !isSupabaseConfigured()) return;

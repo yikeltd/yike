@@ -1,5 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminLeads } from "@/lib/leads/queries";
+import { AdminPagination } from "@/components/admin/admin-pagination";
+import { parseAdminPage, ADMIN_PAGE_SIZE } from "@/lib/admin/pagination";
 import type { LeadType } from "@/lib/leads/types";
 
 export default async function AdminLeadsPage({
@@ -10,35 +12,56 @@ export default async function AdminLeadsPage({
     city?: string;
     agent?: string;
     days?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
+  const { page, from } = parseAdminPage(params);
   const admin = createAdminClient();
   if (!admin) {
     return <p className="text-muted">Database unavailable.</p>;
   }
 
   const days = Number(params.days ?? 30);
-  const from = new Date(Date.now() - days * 86_400_000).toISOString();
+  const fromDate = new Date(Date.now() - days * 86_400_000).toISOString();
   const leadType =
     params.type === "whatsapp" || params.type === "call"
       ? (params.type as LeadType)
       : undefined;
 
+  let countQuery = admin
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .gte("clicked_at", fromDate);
+
+  if (leadType) countQuery = countQuery.eq("lead_type", leadType);
+  if (params.agent) countQuery = countQuery.eq("agent_id", params.agent);
+
+  const { count } = await countQuery;
+  const total = count ?? 0;
+
   const leads = await getAdminLeads(admin, {
     leadType,
     city: params.city,
     agentId: params.agent,
-    from,
-    limit: 200,
+    from: fromDate,
+    limit: ADMIN_PAGE_SIZE,
+    offset: from,
   });
+
+  const pageParams = {
+    type: params.type,
+    city: params.city,
+    agent: params.agent,
+    days: String(days),
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-navy">Leads</h1>
         <p className="text-sm text-muted">
-          All WhatsApp and call first-touch events — last {days} days.
+          All WhatsApp and call first-touch events — last {days} days · {total} total
         </p>
       </div>
 
@@ -114,6 +137,13 @@ export default async function AdminLeadsPage({
           <p className="p-6 text-center text-sm text-muted">No leads in this period.</p>
         )}
       </div>
+
+      <AdminPagination
+        basePath="/lex/auth/leads"
+        total={total}
+        page={page}
+        params={pageParams}
+      />
     </div>
   );
 }

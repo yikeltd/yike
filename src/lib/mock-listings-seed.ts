@@ -269,6 +269,10 @@ function seedToProperty(s: Seed, views: number, index: number): Property {
   return {
     id: s.id,
     agent_id: agent.id,
+    slug: null,
+    slug_locked: false,
+    seo_title: null,
+    seo_description: null,
     title: s.title,
     description: s.description,
     listing_type: s.listing_type,

@@ -2,25 +2,34 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { CareerJobForm } from "@/components/admin/career-job-form";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 import { adminPath } from "@/lib/admin-paths";
+import { parseAdminPage } from "@/lib/admin/pagination";
 import type { JobRow } from "@/lib/careers/constants";
 import { categoryLabel, jobTypeLabel } from "@/lib/careers/constants";
 
-export default async function AdminCareersPage() {
+export default async function AdminCareersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   if (!isSupabaseConfigured()) {
     return <p className="text-sm text-muted">Connect Supabase to manage careers.</p>;
   }
 
+  const sp = await searchParams;
+  const { page, from, to } = parseAdminPage(sp);
   const supabase = await createClient();
   if (!supabase) return null;
 
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("jobs")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(from, to);
 
   const jobs = (data ?? []) as JobRow[];
+  const total = count ?? 0;
 
   return (
     <div className="space-y-8">
@@ -42,7 +51,7 @@ export default async function AdminCareersPage() {
       <CareerJobForm />
 
       <div>
-        <h2 className="text-lg font-bold text-navy">All roles ({jobs.length})</h2>
+        <h2 className="text-lg font-bold text-navy">All roles ({total})</h2>
         {jobs.length === 0 ? (
           <p className="mt-4 rounded-2xl bg-white p-6 text-sm text-muted shadow-float">
             No jobs yet — publish your first role above.
@@ -91,6 +100,7 @@ export default async function AdminCareersPage() {
           </div>
         )}
       </div>
+      <AdminPagination basePath={adminPath("careers")} total={total} page={page} />
     </div>
   );
 }

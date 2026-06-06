@@ -76,15 +76,19 @@ export async function getAdminLeads(
     agentId?: string;
     from?: string;
     limit?: number;
+    offset?: number;
   }
 ): Promise<LeadWithListing[]> {
+  const limit = filters.limit ?? 50;
+  const offset = filters.offset ?? 0;
+
   let query = admin
     .from("leads")
     .select(
-      `*, listing:properties!leads_listing_id_fkey (title, city, area), agent:profiles!leads_agent_id_fkey (full_name)`
+      `*, listing:properties!leads_listing_id_fkey (title, city, area, slug), agent:profiles!leads_agent_id_fkey (full_name)`
     )
     .order("clicked_at", { ascending: false })
-    .limit(filters.limit ?? 100);
+    .range(offset, offset + limit - 1);
 
   if (filters.leadType) query = query.eq("lead_type", filters.leadType);
   if (filters.agentId) query = query.eq("agent_id", filters.agentId);

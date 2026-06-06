@@ -1,8 +1,11 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { ModerationCard } from "@/components/admin/moderation-card";
 import { ListingActions } from "@/components/admin/listing-actions";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
+import { parseAdminPage } from "@/lib/admin/pagination";
+import { propertyPath } from "@/lib/property-url";
 import type { Property, Profile } from "@/types/database";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,22 +14,31 @@ import { cn } from "@/lib/utils";
 export default async function AdminListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; agent?: string }>;
 }) {
-  const { status = "pending" } = await searchParams;
+  const sp = await searchParams;
+  const { status = "pending" } = sp;
+  const { page, from, to } = parseAdminPage(sp);
   const supabase = await requireServerClient();
-  const { data } = await supabase
+
+  let query = supabase
     .from("properties")
     .select(
-      `*, agent:profiles!properties_agent_id_fkey (id, full_name, verification_status)`
+      `*, agent:profiles!properties_agent_id_fkey (id, full_name, verification_status, verified_badge, role)`,
+      { count: "exact" }
     )
     .eq("status", status)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(from, to);
 
+  if (sp.agent) query = query.eq("agent_id", sp.agent);
+
+  const { data, count } = await query;
   const listings = (data ?? []) as (Property & { agent: Profile })[];
+  const total = count ?? 0;
 
   const tabs = ["pending", "approved", "hidden", "rejected"] as const;
+  const pageParams = { status, agent: sp.agent };
 
   return (
     <div className="space-y-6 pb-8">
@@ -34,7 +46,7 @@ export default async function AdminListingsPage({
         <h1 className="text-xl font-bold text-navy lg:text-2xl">
           Moderate listings
         </h1>
-        <p className="text-sm text-muted">{listings.length} in queue</p>
+        <p className="text-sm text-muted">{total} in queue</p>
       </div>
       <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
         {tabs.map((s) => (
@@ -58,12 +70,12 @@ export default async function AdminListingsPage({
         </p>
       ) : (
         <>
-          {/* Desktop table */}
           <div className="hidden overflow-hidden rounded-2xl bg-white shadow-float lg:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-surface bg-surface/50 text-xs font-bold uppercase tracking-wider text-muted">
                 <tr>
                   <th className="px-4 py-3">Listing</th>
+                  <th className="px-4 py-3">Slug</th>
                   <th className="px-4 py-3">Price</th>
                   <th className="px-4 py-3">Location</th>
                   <th className="px-4 py-3">Agent</th>
@@ -74,6 +86,7 @@ export default async function AdminListingsPage({
               <tbody>
                 {listings.map((p) => {
                   const thumb = p.media_urls[0];
+                  const pubPath = propertyPath(p);
                   return (
                     <tr
                       key={p.id}
@@ -81,7 +94,7 @@ export default async function AdminListingsPage({
                     >
                       <td className="px-4 py-4">
                         <Link
-                          href={`/properties/${p.id}`}
+                          href={`/lex/auth/listings/${p.id}`}
                           className="flex items-center gap-3 font-semibold text-navy hover:text-gold-dark"
                         >
                           <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface">
@@ -99,6 +112,15 @@ export default async function AdminListingsPage({
                           <span className="line-clamp-2 max-w-[220px]">
                             {p.title}
                           </span>
+                        </Link>
+                      </td>
+                      <td className="px-4 py-4">
+                        <Link
+                          href={pubPath}
+                          className="font-mono text-xs text-gold-dark hover:underline"
+                          target="_blank"
+                        >
+                          {p.slug ?? "—"}
                         </Link>
                       </td>
                       <td className="px-4 py-4 font-bold text-navy">
@@ -136,12 +158,17 @@ export default async function AdminListingsPage({
               </tbody>
             </table>
           </div>
-          {/* Mobile cards */}
           <ul className="space-y-3 lg:hidden">
             {listings.map((p) => (
               <ModerationCard key={p.id} property={p} />
             ))}
           </ul>
+          <AdminPagination
+            basePath="/lex/auth/listings"
+            total={total}
+            page={page}
+            params={pageParams}
+          />
         </>
       )}
     </div>

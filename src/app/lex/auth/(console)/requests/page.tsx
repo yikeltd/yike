@@ -1,31 +1,40 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { formatPrice, listingTypeLabel } from "@/lib/utils";
+import { AdminPagination } from "@/components/admin/admin-pagination";
+import { parseAdminPage } from "@/lib/admin/pagination";
 
-export default async function AdminRequestsPage() {
+export default async function AdminRequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   if (!isSupabaseConfigured()) {
     return <p className="text-sm text-muted">Connect Supabase to view requests.</p>;
   }
 
+  const sp = await searchParams;
+  const { page, from, to } = parseAdminPage(sp);
   const supabase = await createClient();
   if (!supabase) return null;
 
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("property_requests")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("status", "open")
     .order("created_at", { ascending: false })
-    .limit(100);
+    .range(from, to);
 
   const requests = data ?? [];
+  const total = count ?? 0;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-navy">Property requests</h1>
         <p className="mt-2 text-sm text-muted">
-          Tenant demand — {requests.length} open request
-          {requests.length === 1 ? "" : "s"}
+          Tenant demand — {total} open request
+          {total === 1 ? "" : "s"}
         </p>
       </div>
 
@@ -77,6 +86,7 @@ export default async function AdminRequestsPage() {
           ))}
         </div>
       )}
+      <AdminPagination basePath="/lex/auth/requests" total={total} page={page} />
     </div>
   );
 }

@@ -84,6 +84,6 @@ export function legacyAreaCanonical(citySlug: string, areaSlug: string) {
   return housesCanonical(citySlug, areaSlug);
 }
 
-export function propertyCanonical(id: string) {
-  return `${SITE_URL}/properties/${id}`;
+export function propertyCanonical(slugOrId: string) {
+  return `${SITE_URL}/properties/${slugOrId}`;
 }

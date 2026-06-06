@@ -9,6 +9,7 @@ import {
   analyzeListingQuality,
   qualityFlagLabel,
 } from "@/lib/listing-quality";
+import { propertyPath } from "@/lib/property-url";
 import type { Property, Profile } from "@/types/database";
 
 export function ModerationCard({
@@ -20,11 +21,14 @@ export function ModerationCard({
   const agent = property.agent;
   const flags = analyzeListingQuality(property);
 
+  const pubHref = propertyPath(property);
+  const editHref = `/lex/auth/listings/${property.id}`;
+
   return (
     <li className="overflow-hidden rounded-2xl bg-elevated shadow-float">
       <div className="flex gap-3 p-3">
         <Link
-          href={`/properties/${property.id}`}
+          href={editHref}
           className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-surface"
         >
           {thumb ? (
@@ -44,14 +48,14 @@ export function ModerationCard({
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <Link
-              href={`/properties/${property.id}`}
-              className="line-clamp-2 font-bold text-foreground"
-            >
+            <Link href={editHref} className="line-clamp-2 font-bold text-foreground">
               {property.title}
             </Link>
             <StatusBadge status={property.status} />
           </div>
+          <Link href={pubHref} className="text-[10px] text-gold-dark">
+            {property.slug ?? "View public"}
+          </Link>
           <p className="mt-1 text-lg font-bold text-navy">
             {formatPrice(
               Number(property.price),

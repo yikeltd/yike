@@ -1,18 +1,28 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { AdminPageHeader } from "@/components/admin/dashboard/admin-ui";
+import { AdminPagination } from "@/components/admin/admin-pagination";
+import { parseAdminPage } from "@/lib/admin/pagination";
 
-export default async function OtpFailuresPage() {
+export default async function OtpFailuresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const { page, from, to } = parseAdminPage(sp);
   const supabase = await requireServerClient();
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("otp_logs")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("status", "failed")
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(from, to);
+
+  const total = count ?? 0;
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="OTP failures" description="Sendchamp delivery issues" />
+      <AdminPageHeader title="OTP failures" description={`${total} Sendchamp delivery issues`} />
       <div className="overflow-x-auto rounded-2xl border border-navy/10 bg-white shadow-sm">
         <table className="w-full min-w-[480px] text-left text-sm">
           <thead>
@@ -37,6 +47,7 @@ export default async function OtpFailuresPage() {
           </tbody>
         </table>
       </div>
+      <AdminPagination basePath="/lex/tech/otp" total={total} page={page} />
     </div>
   );
 }

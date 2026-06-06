@@ -1,17 +1,27 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { AdminPageHeader } from "@/components/admin/dashboard/admin-ui";
+import { AdminPagination } from "@/components/admin/admin-pagination";
+import { parseAdminPage } from "@/lib/admin/pagination";
 
-export default async function TechEmailPage() {
+export default async function TechEmailPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const { page, from, to } = parseAdminPage(sp);
   const supabase = await requireServerClient();
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("email_logs")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(from, to);
+
+  const total = count ?? 0;
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Email status (Resend)" description="Recent delivery logs" />
+      <AdminPageHeader title="Email status (Resend)" description={`${total} delivery logs`} />
       <div className="overflow-x-auto rounded-2xl border border-navy/10 bg-white shadow-sm">
         <table className="w-full min-w-[480px] text-left text-sm">
           <thead>
@@ -36,6 +46,7 @@ export default async function TechEmailPage() {
           </tbody>
         </table>
       </div>
+      <AdminPagination basePath="/lex/tech/email" total={total} page={page} />
     </div>
   );
 }

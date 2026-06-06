@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getPropertyById } from "@/lib/properties";
+import { permanentRedirect } from "next/navigation";
+import { resolvePropertyRoute } from "@/lib/properties";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAgentRecentLeadsCount } from "@/lib/leads/queries";
 import {
@@ -9,6 +10,7 @@ import {
   propertyTypeLabel,
   isVerifiedAgent,
 } from "@/lib/utils";
+import { propertyAbsoluteUrl } from "@/lib/property-url";
 import { AgentTrustCard } from "@/components/property/agent-trust-card";
 import { ReportListingForm } from "@/components/property/report-form";
 import { ReportRentedButton } from "@/components/property/report-rented-button";
@@ -23,22 +25,20 @@ import { AmenityChips } from "@/components/property/amenity-chips";
 import { ListingStructuredData } from "@/components/seo/listing-structured-data";
 import { VerifiedBadge } from "@/components/ui/badge";
 import { ListingFreshness } from "@/components/property/listing-freshness";
-import { ConversionStrip } from "@/components/conversion/conversion-strip";
 import { BedDouble, Bath, MapPin, Navigation } from "lucide-react";
 import { PropertyViewTracker } from "./view-tracker";
 import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
 import { ListingUnavailable } from "@/components/property/listing-unavailable";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { optimizeListingImageUrl } from "@/lib/image-url";
-import { propertyCanonical } from "@/lib/seo/utils";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
-  const property = await getPropertyById(id);
+  const { slug } = await params;
+  const { property } = await resolvePropertyRoute(slug);
   if (!property) return { title: "Home not found" };
 
   const price = formatPrice(
@@ -46,14 +46,15 @@ export async function generateMetadata({
     property.payment_period,
     property.listing_type
   );
-  const title = `${property.title} · ${price}`;
+  const title = property.seo_title ?? `${property.title} · ${price}`;
   const description =
+    property.seo_description ??
     `${propertyTypeLabel(property.property_type)} in ${property.area}, ${property.city}. ${price}. Contact agent on WhatsApp — ${SITE_NAME}.`;
   const image = property.media_urls[0]?.startsWith("http")
     ? optimizeListingImageUrl(property.media_urls[0], 1200)
     : `${SITE_URL}/placeholder-property.svg`;
 
-  const canonical = propertyCanonical(id);
+  const canonical = propertyAbsoluteUrl(property);
   return {
     title,
     description,
@@ -77,10 +78,14 @@ export async function generateMetadata({
 export default async function PropertyDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const property = await getPropertyById(id);
+  const { slug } = await params;
+  const { property, redirectTo } = await resolvePropertyRoute(slug);
+
+  if (redirectTo) {
+    permanentRedirect(redirectTo);
+  }
 
   if (!property) {
     return <ListingUnavailable property={null} reason="missing" />;
@@ -115,11 +120,12 @@ export default async function PropertyDetailPage({
   );
 
   const amenities = property.extras?.amenities ?? [];
+  const shareUrl = propertyAbsoluteUrl(property);
 
   return (
     <div className="safe-bottom-detail lg:pb-0">
       <ListingStructuredData property={property} />
-      <PropertyViewTracker propertyId={property.id} property={property} />
+      <PropertyViewTracker propertyId={property.id} property={property} slug={slug} />
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10 lg:pt-8">
         <div>
@@ -135,7 +141,7 @@ export default async function PropertyDetailPage({
             title={property.title}
             featured={property.is_featured}
             verified={!!verified}
-            shareUrl={`${SITE_URL}/properties/${property.id}`}
+            shareUrl={shareUrl}
             imageSeo={property}
             listingId={property.id}
             city={property.city}

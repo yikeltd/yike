@@ -27,6 +27,7 @@ import { ListingImage } from "./listing-image";
 import { ListingFreshness, getListingFreshness } from "./listing-freshness";
 import { AmenityChips } from "./amenity-chips";
 import { formatMoveInHint } from "@/lib/rent-breakdown";
+import { propertyPath } from "@/lib/property-url";
 import {
   isGuestFavorite,
   toggleGuestFavorite,
@@ -59,7 +60,7 @@ export function PropertyCard({
   const wa = agent?.whatsapp || agent?.phone;
   const tel = agent?.phone || agent?.whatsapp;
   const isDemo = isDemoProperty(property.id);
-  const href = `/properties/${property.id}`;
+  const href = propertyPath(property);
 
   const price = formatPrice(
     Number(property.price),
@@ -159,7 +160,7 @@ export function PropertyCard({
       {
         type: "save",
         listingId: property.id,
-        redirectPath: `/properties/${property.id}`,
+        redirectPath: href,
       },
       () => void performSave()
     );
@@ -168,7 +169,7 @@ export function PropertyCard({
   const sourcePage =
     typeof window !== "undefined"
       ? window.location.pathname
-      : `/properties/${property.id}`;
+      : href;
 
   async function runLead(leadType: "whatsapp" | "call") {
     if (!agent?.id) return;
@@ -214,7 +215,7 @@ export function PropertyCard({
       {
         type: "whatsapp",
         listingId: property.id,
-        redirectPath: `/properties/${property.id}`,
+        redirectPath: href,
       },
       () => void runLead("whatsapp")
     );
@@ -228,7 +229,7 @@ export function PropertyCard({
       {
         type: "call",
         listingId: property.id,
-        redirectPath: `/properties/${property.id}`,
+        redirectPath: href,
       },
       () => setCallModalOpen(true)
     );
