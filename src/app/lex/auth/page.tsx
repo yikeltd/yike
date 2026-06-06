@@ -1,21 +1,15 @@
 import { redirect } from "next/navigation";
-import { getSession, getProfile, isAdmin } from "@/lib/auth";
-import { ADMIN_OVERVIEW_PATH } from "@/lib/admin-paths";
-import { AdminLoginForm } from "@/components/admin/admin-login-form";
+import { getSession, getProfile } from "@/lib/auth";
+import { canAccessAuthConsole } from "@/lib/admin/roles";
+import { ADMIN_OVERVIEW_PATH, STAFF_LOGIN_PATH } from "@/lib/admin-paths";
 
-export const metadata = {
-  title: "Sign in",
-  robots: { index: false, follow: false },
-};
-
-export default async function AdminLoginPage() {
+export default async function AuthLoginRedirect() {
   const user = await getSession();
   if (user) {
     const profile = await getProfile(user.id);
-    if (profile && !profile.is_banned && isAdmin(profile.role)) {
+    if (profile && !profile.is_banned && canAccessAuthConsole(profile.role)) {
       redirect(ADMIN_OVERVIEW_PATH);
     }
   }
-
-  return <AdminLoginForm />;
+  redirect(STAFF_LOGIN_PATH);
 }

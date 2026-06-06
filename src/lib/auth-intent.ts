@@ -4,14 +4,19 @@ export type AuthIntentType =
   | "save"
   | "profile"
   | "saved"
-  | "list_property";
+  | "list_property"
+  | "review_agent";
 
 /** No sign-in required — required for Play Store / SEO browsing. */
 export const AUTH_PUBLIC_INTENTS = new Set<AuthIntentType>(["whatsapp", "call"]);
 
+/** Sign-in only — email verification not required. */
+export const AUTH_LOGIN_ONLY_INTENTS = new Set<AuthIntentType>(["review_agent"]);
+
 export interface AuthIntent {
   type: AuthIntentType;
   listingId?: string;
+  agentId?: string;
   redirectPath?: string;
   /** WhatsApp / call payload */
   contactUrl?: string;

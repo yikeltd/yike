@@ -7,7 +7,6 @@ import { getMarketplaceStats } from "@/lib/marketplace-stats";
 import { parseSearchParams } from "@/lib/properties";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { PrefSync } from "@/components/personalization/pref-sync";
-import { SmartCityHint } from "@/components/personalization/smart-city-hint";
 import { BrowseRail } from "@/components/retention/browse-rail";
 
 function SectionFallback() {
@@ -53,7 +52,6 @@ export default async function HomePage({
       </div>
 
       <section className="mx-auto max-w-7xl px-3 pt-6 lg:px-6 xl:px-8">
-        <SmartCityHint className="mb-3" />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark dark:text-gold">

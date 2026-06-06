@@ -6,7 +6,6 @@ import { brand, colors } from "@/lib/design/tokens";
 import { StructuredData } from "@/components/seo/structured-data";
 import { PwaRegister } from "@/components/pwa/register";
 import { Analytics } from "@vercel/analytics/react";
-import { DeferredClientShell } from "@/components/layout/deferred-client-shell";
 import { Suspense } from "react";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -163,9 +162,6 @@ export default function RootLayout({
           </AuthProvider>
           <Analytics />
           <PwaRegister />
-          <Suspense fallback={null}>
-            <DeferredClientShell />
-          </Suspense>
         </ThemeProvider>
       </body>
     </html>

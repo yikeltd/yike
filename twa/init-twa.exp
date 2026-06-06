@@ -1,0 +1,43 @@
+#!/usr/bin/expect -f
+set timeout 900
+cd [file dirname [info script]]
+
+spawn npx --yes @bubblewrap/cli@latest init --manifest=https://yike.ng/manifest.json
+
+# Accept defaults for all TWA config prompts (host, name, package, colors, icons, etc.)
+expect {
+  "Key store location" {
+    send "./android.keystore\r"
+    exp_continue
+  }
+  "Key store password" {
+    send "\r"
+    exp_continue
+  }
+  "Key alias" {
+    send "yike\r"
+    exp_continue
+  }
+  "Key password" {
+    send "\r"
+    exp_continue
+  }
+  "Overwrite" {
+    send "y\r"
+    exp_continue
+  }
+  "Family Policy" {
+    send "\r"
+    exp_continue
+  }
+  "? " {
+    send "\r"
+    exp_continue
+  }
+  "project generated" {
+    exp_continue
+  }
+  eof
+}
+
+wait

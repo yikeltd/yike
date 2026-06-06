@@ -26,11 +26,12 @@ export async function getAgentById(id: string): Promise<Profile | null> {
     .from("profiles")
     .select("*")
     .eq("id", id)
-    .eq("is_banned", false)
     .maybeSingle();
 
-  if (data) return data as Profile;
-  return mock;
+  if (!data) return mock;
+  const profile = data as Profile;
+  if (profile.profile_status === "deleted") return null;
+  return profile;
 }
 
 export async function getAgentListings(

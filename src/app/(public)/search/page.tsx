@@ -7,7 +7,6 @@ import {
   parseSearchParams,
   type PropertySearchParams,
 } from "@/lib/properties";
-import { SearchDiscoveryHub } from "@/components/search/search-discovery-hub";
 import { SearchResultsChrome } from "@/components/search/search-results-chrome";
 import { withDemoFallback } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
@@ -18,6 +17,7 @@ import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
 import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
+
 export const metadata: Metadata = {
   title: `Search Homes in Nigeria`,
   description: `Search apartments, houses, land and shops across Nigeria. Filter by city, area, budget and property type on ${SITE_NAME}.`,
@@ -30,7 +30,12 @@ export const metadata: Metadata = {
 };
 
 function ResultsFallback() {
-  return <div className="h-24 border-b border-surface bg-elevated/95" />;
+  return (
+    <div className="space-y-3 px-3 pt-2">
+      <div className="skeleton h-14 w-full rounded-xl" />
+      <div className="skeleton h-11 w-full rounded-xl" />
+    </div>
+  );
 }
 
 export default async function SearchPage({
@@ -46,13 +51,6 @@ export default async function SearchPage({
   const { items: feedItems, isDemo } = withDemoFallback(properties);
 
   const feedAd = await getActiveAd("search_feed_mid");
-  const preloadLabel = [
-    preloadParams.city,
-    preloadParams.area,
-    preloadParams.listing_type,
-  ]
-    .filter(Boolean)
-    .join(" · ");
 
   const label = [
     params.hub ? hubLabel(params.hub) : null,
@@ -77,61 +75,38 @@ export default async function SearchPage({
   const helpLabel = helpCity ? seoHelpLabel(helpCity, helpArea) : "";
 
   return (
-    <div className="search-hub-canvas min-h-[100dvh] bg-background pb-24 lg:pb-12">
-      {!hasQuery ? (
-        <>
-          <PrefSync />
-          <SearchDiscoveryHub />
-          <section className="mx-auto mt-4 max-w-2xl px-3 lg:max-w-7xl lg:px-6 xl:px-8">
-            <div className="mb-3 flex items-end justify-between px-0.5">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark">
-                  Live now
-                </p>
-                <h2 className="text-lg font-bold text-foreground">
-                  {preloadLabel ? `Homes in ${preloadLabel}` : "Homes for you"}
-                </h2>
-              </div>
-            </div>
+    <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] pb-24 lg:pb-12">
+      <PrefSync />
+      <Suspense fallback={<ResultsFallback />}>
+        <SearchResultsChrome
+          resultCount={properties.length}
+          currentHref={currentHref}
+          currentLabel={label || undefined}
+          showEmptySuggestions={!hasQuery && feedItems.length === 0}
+        >
+          <AdSlot
+            placement="search_top"
+            className="mx-auto mt-2 hidden max-w-7xl px-3 lg:block lg:px-6 xl:px-8"
+          />
+
+          <section className="mx-auto mt-2 max-w-2xl px-3 lg:mt-3 lg:max-w-7xl lg:px-6 xl:px-8">
             <PropertyFeed
               properties={feedItems}
               isDemo={isDemo}
               midFeedAd={feedAd}
               feedAdInsertAfter={5}
               adPlacementKey="search_feed_mid"
-              emptyMessage="No homes in this view yet — try another city or list your property."
-              emptyCity={preloadParams.city}
-              emptyArea={preloadParams.area}
+              emptyMessage={
+                hasQuery
+                  ? "No homes match your filters. Try a nearby area or wider budget."
+                  : "No homes in this view yet — pick a location below or refine filters."
+              }
+              emptyCity={params.city ?? preloadParams.city}
+              emptyArea={params.area ?? preloadParams.area}
             />
           </section>
-        </>
-      ) : (
-        <Suspense fallback={<ResultsFallback />}>
-          <SearchResultsChrome
-            resultCount={properties.length}
-            currentHref={currentHref}
-            currentLabel={label || undefined}
-          >
-            <AdSlot
-              placement="search_top"
-              className="mt-3 hidden px-3 lg:block lg:px-0"
-            />
-
-            <section className="mt-3 lg:mt-4">
-              <PropertyFeed
-                properties={feedItems}
-                isDemo={isDemo}
-                midFeedAd={feedAd}
-                feedAdInsertAfter={5}
-                adPlacementKey="search_feed_mid"
-                emptyMessage="No homes match your filters. Try a nearby area or wider budget."
-                emptyCity={params.city}
-                emptyArea={params.area}
-              />
-            </section>
-          </SearchResultsChrome>
-        </Suspense>
-      )}
+        </SearchResultsChrome>
+      </Suspense>
 
       {helpUrl ? (
         <StickySeoHelpBar label={helpLabel} whatsAppUrl={helpUrl} />

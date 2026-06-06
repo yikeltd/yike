@@ -30,4 +30,4 @@ node scripts/optimize-brand-assets.mjs   # regenerate favicons from logo.png
 ## Supabase
 
 Migration: `supabase/migrations/20250604000000_initial_schema.sql`  
-Admin console (private): `/lex/auth` — `/admin` returns 404. Seed admin: `SUPABASE_SERVICE_ROLE_KEY=... npm run admin:ensure`
+Admin console (private): `/lex` — staff login · `/lex/auth` command center · `/lex/support` · `/lex/tech`. Seed admin: `SUPABASE_SERVICE_ROLE_KEY=... npm run admin:ensure`

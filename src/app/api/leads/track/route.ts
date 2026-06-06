@@ -31,6 +31,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
+  const supabase = await createClient();
+  if (supabase) {
+    const { data: agentProfile } = await supabase
+      .from("profiles")
+      .select("profile_status, is_banned")
+      .eq("id", agentId)
+      .maybeSingle();
+    if (
+      agentProfile?.is_banned ||
+      agentProfile?.profile_status === "suspended" ||
+      agentProfile?.profile_status === "deleted"
+    ) {
+      return NextResponse.json({ error: "Agent unavailable" }, { status: 403 });
+    }
+  }
+
   const agentName = String(body.agentName ?? "there");
   const title = String(body.title ?? "");
   const area = String(body.area ?? "");
@@ -49,7 +65,6 @@ export async function POST(request: Request) {
   const userAgent = request.headers.get("user-agent");
 
   let userId: string | null = null;
-  const supabase = await createClient();
   if (supabase) {
     const { data } = await supabase.auth.getUser();
     userId = data.user?.id ?? null;

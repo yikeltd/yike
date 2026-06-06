@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
-import { SearchFiltersBar } from "./search-filters-bar";
+import { SearchRefineFilters } from "./search-refine-filters";
 import { cn } from "@/lib/utils";
 
 export function SearchRefinePanel({
@@ -15,16 +15,21 @@ export function SearchRefinePanel({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className={cn("border-b border-surface bg-elevated/95", className)}>
+    <div
+      className={cn(
+        "mx-3 mb-2 overflow-hidden rounded-xl border border-navy/8 bg-white shadow-sm lg:mx-auto lg:max-w-2xl lg:px-0 xl:max-w-7xl",
+        className
+      )}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="pressable flex w-full items-center justify-between px-3 py-2.5 text-left lg:px-0"
+        className="pressable flex w-full items-center justify-between px-3.5 py-2.5 text-left"
         aria-expanded={open}
       >
         <span className="flex items-center gap-2 text-sm font-bold text-foreground">
           <SlidersHorizontal className="h-4 w-4 text-gold" />
-          Advanced filters
+          Refine filters
         </span>
         <ChevronDown
           className={cn(
@@ -33,11 +38,7 @@ export function SearchRefinePanel({
           )}
         />
       </button>
-      {open && (
-        <div className="border-t border-surface pb-2 pt-1">
-          <SearchFiltersBar />
-        </div>
-      )}
+      {open ? <SearchRefineFilters className="border-t border-navy/8 pt-2" /> : null}
     </div>
   );
 }

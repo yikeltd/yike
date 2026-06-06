@@ -14,7 +14,12 @@ import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
-export function HeaderMobileSearch() {
+export function HeaderMobileSearch({
+  variant = "default",
+}: {
+  variant?: "default" | "hero";
+}) {
+  const isHero = variant === "hero";
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
@@ -104,13 +109,24 @@ export function HeaderMobileSearch() {
     <div ref={wrapRef} className="relative min-w-0 flex-1">
       <div
         className={cn(
-          "flex items-center gap-2 rounded-full border bg-navy/[0.04] transition-all duration-200 dark:bg-surface/90",
+          "flex items-center gap-2 rounded-full border transition-all duration-200",
+          isHero
+            ? "border-white/15 bg-[#f4f6fa]/92 shadow-[0_2px_12px_rgba(0,0,0,0.12)]"
+            : "bg-navy/[0.04] dark:bg-surface/90",
           open
             ? "border-gold/50 shadow-glow-gold ring-2 ring-gold/20"
-            : "border-navy/10 shadow-sm dark:border-surface"
+            : isHero
+              ? ""
+              : "border-navy/10 shadow-sm dark:border-surface"
         )}
       >
-        <Search className="ml-3 h-4 w-4 shrink-0 text-muted" aria-hidden />
+        <Search
+          className={cn(
+            "ml-3 h-4 w-4 shrink-0",
+            isHero ? "text-navy/45" : "text-muted"
+          )}
+          aria-hidden
+        />
         <input
           ref={inputRef}
           type="search"
@@ -129,7 +145,12 @@ export function HeaderMobileSearch() {
             if (e.key === "Escape") setOpen(false);
           }}
           placeholder="2 bed in Aba, self contain Ogbor Hill…"
-          className="h-9 min-w-0 flex-1 bg-transparent py-0 pr-2 text-sm text-foreground outline-none placeholder:text-muted/80"
+          className={cn(
+            "h-9 min-w-0 flex-1 bg-transparent py-0 pr-2 text-sm outline-none",
+            isHero
+              ? "text-navy placeholder:text-navy/45"
+              : "text-foreground placeholder:text-muted/80"
+          )}
           aria-label="Search homes"
           aria-expanded={open}
           aria-controls="header-search-suggestions"

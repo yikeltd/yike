@@ -1,6 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { ADMIN_LOGIN_PATH } from "@/lib/admin-paths";
+import {
+  STAFF_LOGIN_PATH,
+  ADMIN_BASE_PATH,
+  SUPPORT_BASE_PATH,
+  TECH_BASE_PATH,
+} from "@/lib/admin-paths";
+import {
+  canAccessAuthConsole,
+  canAccessSupportConsole,
+  canAccessTechConsole,
+  isStaffRole,
+  isSuperAdmin,
+} from "@/lib/admin/roles";
 import type { Profile, UserRole } from "@/types/database";
 import { canListProperties } from "@/lib/agent-tiers";
 import { redirect } from "next/navigation";
@@ -88,15 +100,70 @@ export async function requireFullSession(redirectTo = "/auth/verify-email") {
   return { user, profile };
 }
 
-export async function requireAdmin() {
-  const user = await requireAuth(ADMIN_LOGIN_PATH);
+export function isAdmin(role: UserRole) {
+  return role === "admin" || role === "super_admin";
+}
+
+export function isStaff(role: UserRole) {
+  return isStaffRole(role);
+}
+
+export async function requireStaff() {
+  const user = await requireAuth(STAFF_LOGIN_PATH);
   const profile = await getProfile(user.id);
-  if (!profile || profile.is_banned || !isAdmin(profile.role)) {
-    redirect(ADMIN_LOGIN_PATH);
+  if (!profile || profile.is_banned || !isStaff(profile.role)) {
+    redirect(STAFF_LOGIN_PATH);
   }
   return { user, profile };
 }
 
-export function isAdmin(role: UserRole) {
-  return role === "admin" || role === "super_admin";
+export async function requireAdmin() {
+  const user = await requireAuth(STAFF_LOGIN_PATH);
+  const profile = await getProfile(user.id);
+  if (!profile || profile.is_banned || !canAccessAuthConsole(profile.role)) {
+    redirect(STAFF_LOGIN_PATH);
+  }
+  return { user, profile };
+}
+
+export async function requireSuperAdmin() {
+  const user = await requireAuth(STAFF_LOGIN_PATH);
+  const profile = await getProfile(user.id);
+  if (!profile || profile.is_banned || !isSuperAdmin(profile.role)) {
+    redirect(STAFF_LOGIN_PATH);
+  }
+  return { user, profile };
+}
+
+export async function requireSupportConsole() {
+  const user = await requireAuth(STAFF_LOGIN_PATH);
+  const profile = await getProfile(user.id);
+  if (!profile || profile.is_banned || !canAccessSupportConsole(profile.role)) {
+    redirect(STAFF_LOGIN_PATH);
+  }
+  return { user, profile };
+}
+
+export async function requireTechConsole() {
+  const user = await requireAuth(STAFF_LOGIN_PATH);
+  const profile = await getProfile(user.id);
+  if (!profile || profile.is_banned || !canAccessTechConsole(profile.role)) {
+    redirect(STAFF_LOGIN_PATH);
+  }
+  return { user, profile };
+}
+
+export async function requireAuthConsoleSegment(segment: string) {
+  const { user, profile } = await requireAdmin();
+  if (isSuperAdmin(profile.role)) return { user, profile };
+
+  const { authNavAllowlist } = await import("@/lib/admin/roles");
+  const allowed = authNavAllowlist(profile.role);
+  if (!allowed) return { user, profile };
+
+  const normalized = segment.replace(/^\//, "").split("/")[0] ?? "overview";
+  if (!allowed.includes(normalized)) {
+    redirect(`${ADMIN_BASE_PATH}/${allowed[0] ?? "overview"}`);
+  }
+  return { user, profile };
 }

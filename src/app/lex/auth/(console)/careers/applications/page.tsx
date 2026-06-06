@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ApplicationActions } from "@/components/admin/application-actions";
+import { CreateStaffFromApplication } from "@/components/admin/create-staff-from-application";
 import { adminPath } from "@/lib/admin-paths";
 import type { ApplicationRow } from "@/lib/careers/constants";
 import { statusLabel } from "@/lib/careers/constants";
@@ -253,8 +254,9 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
                 </div>
               </details>
 
-              <div className="mt-4 border-t border-surface pt-4">
+              <div className="mt-4 border-t border-surface pt-4 flex flex-wrap items-center gap-3">
                 <ApplicationActions applicationId={app.id} compact />
+                <CreateStaffFromApplication application={app} />
               </div>
 
               <p className="mt-2 text-[11px] text-muted">

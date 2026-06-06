@@ -1,6 +1,5 @@
 import { SITE_NAME, SITE_TAGLINE, SITE_URL, SOCIAL_LINKS } from "@/lib/constants";
 import { brand } from "@/lib/design/tokens";
-import badgeDims from "@/lib/email/badge-dimensions.json";
 
 const NAVY = "#031B4E";
 const NAVY_DARK = "#021428";
@@ -11,8 +10,6 @@ const SURFACE = "#f4f6f9";
 const WHITE = "#ffffff";
 
 const LOGO_URL = `${SITE_URL}${brand.logo}`;
-const APP_STORE_BADGE = `${SITE_URL}/email/badges/app-store.png`;
-const GOOGLE_PLAY_BADGE = `${SITE_URL}/email/badges/google-play.png`;
 
 type EmailSocialKey = Exclude<keyof typeof SOCIAL_LINKS, "linkedin">;
 
@@ -64,38 +61,6 @@ function socialIconsRow(): string {
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
       <tr>${cells}</tr>
-    </table>
-  `;
-}
-
-function storeBadgeImg(
-  src: string,
-  alt: string,
-  { width, height }: { width: number; height: number }
-): string {
-  const style = `display:block;border:0;width:${width}px;height:${height}px;max-width:${width}px;max-height:${height}px;`;
-  return `<img src="${src}" width="${width}" height="${height}" alt="${alt}" style="${style}" />`;
-}
-
-function appDownloadRow(): string {
-  const app = badgeDims.appStore;
-  const play = badgeDims.googlePlay;
-  const rowH = Math.max(app.height, play.height);
-
-  return `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:16px auto 0;">
-      <tr>
-        <td align="center" style="padding:0 8px;height:${rowH}px;vertical-align:middle;">
-          <a href="${SITE_URL}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;line-height:0;">
-            ${storeBadgeImg(APP_STORE_BADGE, "Download on the App Store", app)}
-          </a>
-        </td>
-        <td align="center" style="padding:0 8px;height:${rowH}px;vertical-align:middle;">
-          <a href="${SITE_URL}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;line-height:0;">
-            ${storeBadgeImg(GOOGLE_PLAY_BADGE, "Get it on Google Play", play)}
-          </a>
-        </td>
-      </tr>
     </table>
   `;
 }
@@ -207,11 +172,6 @@ export function buildEmailLayout(params: EmailLayoutParams): string {
                 Follow ${SITE_NAME}
               </p>
               <div style="margin-top:12px;">${socialIconsRow()}</div>
-
-              <p style="margin:24px 0 0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(228,181,71,0.9);">
-                Get the app
-              </p>
-              ${appDownloadRow()}
 
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0;">
                 <tr><td style="border-top:1px solid rgba(255,255,255,0.12);font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>

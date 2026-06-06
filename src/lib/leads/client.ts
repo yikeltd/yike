@@ -2,7 +2,6 @@
 
 import { getGuestId } from "@/lib/guest-id";
 import { trackContactClick, type ContactPlacement } from "@/lib/contact-tracking";
-import { recordPwaWhatsAppClick } from "@/lib/pwa/engagement";
 import { buildGatewayInquiryMessage } from "@/lib/leads/message";
 import { generateLeadReference } from "@/lib/leads/reference";
 import { handoffPath, yikeWhatsAppNumber } from "@/lib/leads/gateway";
@@ -64,14 +63,9 @@ export async function trackLeadAndRedirect(
   if (!res.ok) {
     const fallback = buildFallbackRedirect(input);
     if (fallback) {
-      if (input.leadType === "whatsapp") recordPwaWhatsAppClick();
       return fallback;
     }
     return { ok: false, error: data.error ?? "Lead tracking failed" };
-  }
-
-  if (input.leadType === "whatsapp") {
-    recordPwaWhatsAppClick();
   }
 
   return {

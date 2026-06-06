@@ -1,8 +1,15 @@
 android.keystore
 *.keystore
+signing.env
 app/
 build/
 .gradle/
 local.properties
 *.aab
 *.apk
+*.idsig
+build-run.log
+build.log
+init.log
+init2.log
+store_icon.png

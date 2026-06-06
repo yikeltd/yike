@@ -14,7 +14,6 @@ import {
 } from "@/lib/browse-preferences";
 import { BrowseSlide } from "./browse-slide";
 import { cn } from "@/lib/utils";
-import { recordPwaSwipe } from "@/lib/pwa/engagement";
 import {
   continueBrowsingHint,
   getSwipeMemory,
@@ -103,7 +102,6 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
   const advance = useCallback(
     (dir: SwipeDir) => {
       if (animating.current || count === 0) return;
-      recordPwaSwipe();
       recordSwipePace();
       animating.current = true;
       setExitDir(dir);
@@ -154,7 +152,6 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
         reason,
       });
       setFeed((prev) => prev.filter((p) => p.id !== property.id));
-      recordPwaSwipe();
       recordSwipePace();
     },
     []

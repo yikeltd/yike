@@ -1,0 +1,153 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { brand } from "@/lib/design/tokens";
+import {
+  canSwitchConsoles,
+  staffRoleLabel,
+  type AdminConsole,
+} from "@/lib/admin/roles";
+import { consoleTitle } from "@/lib/admin/navigation";
+import {
+  ADMIN_BASE_PATH,
+  SUPPORT_BASE_PATH,
+  TECH_BASE_PATH,
+  STAFF_LOGIN_PATH,
+} from "@/lib/admin-paths";
+import type { UserRole } from "@/types/database";
+import { AdminSidebar } from "./admin-sidebar";
+import type { NavGroup } from "@/lib/admin/navigation";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  console: AdminConsole;
+  groups: NavGroup[];
+  role: UserRole;
+  displayName: string;
+  lastLoginAt?: string | null;
+  children: React.ReactNode;
+};
+
+export function AdminShell({
+  console: consoleType,
+  groups,
+  role,
+  displayName,
+  lastLoginAt,
+  children,
+}: Props) {
+  const router = useRouter();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  async function logout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace(STAFF_LOGIN_PATH);
+    router.refresh();
+  }
+
+  return (
+    <div className="flex min-h-[100dvh] bg-surface">
+      <div className="hidden lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:shrink-0">
+        <AdminSidebar groups={groups} />
+      </div>
+
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-navy/60 backdrop-blur-sm"
+            aria-label="Close menu"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <div className="absolute left-0 top-0 h-full w-72 shadow-2xl">
+            <AdminSidebar
+              groups={groups}
+              onNavigate={() => setDrawerOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-40 border-b border-navy/10 bg-navy text-white">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                className="rounded-lg p-2 text-white/80 hover:bg-white/10 lg:hidden"
+                aria-label="Open menu"
+                onClick={() => setDrawerOpen(true)}
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <Image src={brand.logoSm} alt="" width={32} height={32} className="rounded-lg" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-gold">
+                  {consoleTitle(consoleType)}
+                </p>
+                <p className="truncate text-xs text-white/50">{displayName}</p>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="hidden rounded-full bg-gold/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold sm:inline">
+                {staffRoleLabel(role)}
+              </span>
+              {canSwitchConsoles(role) && (
+                <ConsoleSwitcher current={consoleType} />
+              )}
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+          {lastLoginAt && (
+            <p className="border-t border-white/5 px-4 py-1.5 text-[10px] text-white/40 lg:px-6">
+              Last login: {new Date(lastLoginAt).toLocaleString("en-NG")}
+            </p>
+          )}
+        </header>
+
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+function ConsoleSwitcher({ current }: { current: AdminConsole }) {
+  const consoles: { key: AdminConsole; label: string; href: string }[] = [
+    { key: "auth", label: "Command", href: `${ADMIN_BASE_PATH}/overview` },
+    { key: "support", label: "Support", href: SUPPORT_BASE_PATH },
+    { key: "tech", label: "Tech", href: TECH_BASE_PATH },
+  ];
+
+  return (
+    <div className="hidden items-center gap-1 rounded-lg bg-white/5 p-0.5 sm:flex">
+      {consoles.map((c) => (
+        <Link
+          key={c.key}
+          href={c.href}
+          className={cn(
+            "rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors",
+            current === c.key
+              ? "bg-gold text-navy"
+              : "text-white/60 hover:text-white"
+          )}
+        >
+          {c.label}
+        </Link>
+      ))}
+    </div>
+  );
+}

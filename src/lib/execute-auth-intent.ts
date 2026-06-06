@@ -40,6 +40,9 @@ export async function executeAuthIntent(
     case "saved":
       router.push("/saved");
       break;
+    case "review_agent":
+      if (intent.redirectPath) router.push(intent.redirectPath);
+      break;
     case "list_property": {
       const {
         data: { user },

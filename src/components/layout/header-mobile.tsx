@@ -16,10 +16,18 @@ export function HeaderMobile({
   mobileBanner?: SiteBanner | null;
 }) {
   const pathname = usePathname();
+  const isHome = pathname === "/";
   const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
 
   return (
-    <header className="sticky top-0 z-40 border-b border-surface bg-elevated/95 backdrop-blur-md lg:hidden">
+    <header
+      className={cn(
+        "sticky top-0 z-40 lg:hidden",
+        isHome
+          ? "border-b border-white/[0.08] bg-[#021433]/98 shadow-[0_4px_24px_rgba(2,20,51,0.35)]"
+          : "border-b border-surface bg-elevated/95 backdrop-blur-md"
+      )}
+    >
       <div
         className={cn(
           "flex min-h-12 items-center gap-2 px-3 py-2",
@@ -36,7 +44,7 @@ export function HeaderMobile({
             priority
           />
         </Link>
-        <HeaderMobileSearch />
+        <HeaderMobileSearch variant={isHome ? "hero" : "default"} />
       </div>
       {mobileBanner && <MobileHeaderBanner banner={mobileBanner} />}
     </header>

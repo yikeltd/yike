@@ -1,5 +1,9 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { AgentActions } from "@/components/admin/agent-actions";
+import {
+  AgentVerificationActions,
+  AgentStatusActions,
+} from "@/components/admin/agent-verification-actions";
 import { StatusBadge, VerifiedBadge } from "@/components/ui/badge";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
 import type { Profile, AgentVerification } from "@/types/database";
@@ -25,7 +29,7 @@ export default async function AdminAgentsPage() {
       <section>
         <h1 className="text-2xl font-bold">Pending verifications</h1>
         <p className="mt-1 text-sm text-muted">
-          Manual review — NIN and selfie are encrypted. Approve to grant verified badge and unlimited listings.
+          Manual review — NIN and selfie are encrypted. Verification call happens on WhatsApp (+2348035143299).
         </p>
         <ul className="mt-4 space-y-4">
           {(verifications ?? []).map((v) => {
@@ -63,11 +67,18 @@ export default async function AdminAgentsPage() {
                   </>
                 )}
                 <div className="mt-3">
-                  <AgentActions
-                    agentId={row.agent_id}
+                  <AgentVerificationActions
                     verificationId={row.id}
-                    listingLimit={row.agent?.listing_limit}
+                    agentId={row.agent_id}
+                    verification={row}
                   />
+                  <div className="mt-2">
+                    <AgentActions
+                      agentId={row.agent_id}
+                      verificationId={row.id}
+                      listingLimit={row.agent?.listing_limit}
+                    />
+                  </div>
                 </div>
               </li>
             );
@@ -99,10 +110,13 @@ export default async function AdminAgentsPage() {
                     )}
                   </div>
                 </div>
-                <AgentActions
-                  agentId={agent.id}
-                  listingLimit={agent.listing_limit}
-                />
+                <AgentStatusActions agentId={agent.id} />
+                <div className="mt-2">
+                  <AgentActions
+                    agentId={agent.id}
+                    listingLimit={agent.listing_limit}
+                  />
+                </div>
               </li>
             );
           })}

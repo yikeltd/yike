@@ -56,11 +56,14 @@ export function BrowseListingsBlock({
   onSearch,
   initial,
   title = "Discover homes across Nigeria",
+  variant = "default",
 }: {
   onSearch: (payload: BrowseSearchPayload) => void;
   initial?: BrowseListingsInitial;
   title?: string;
+  variant?: "default" | "home-premium";
 }) {
+  const isPremium = variant === "home-premium";
   const [dealKey, setDealKey] = useState(initial?.dealKey ?? "");
   const [state, setState] = useState(initial?.state ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
@@ -120,13 +123,28 @@ export function BrowseListingsBlock({
     onSearch(buildParams(overrides));
   }
 
-  return (
-    <div className="rounded-2xl border border-navy/10 bg-white/95 p-3.5 shadow-sm ring-1 ring-navy/[0.06] dark:border-white/10 dark:bg-elevated dark:ring-white/[0.05]">
-      <p className="mb-3 text-sm font-bold text-navy dark:text-foreground">
-        {title}
-      </p>
+  const shellClass = isPremium
+    ? "rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgb(228_181_71_/_12%),0_8px_32px_rgb(2_20_51_/_28%)] ring-1 ring-white/[0.05] lg:border-navy/10 lg:bg-white/95 lg:p-3.5 lg:shadow-sm lg:ring-navy/[0.06] lg:[box-shadow:none]"
+    : "rounded-2xl border border-navy/10 bg-white/95 p-3.5 shadow-sm ring-1 ring-navy/[0.06] dark:border-white/10 dark:bg-elevated dark:ring-white/[0.05]";
 
-      <div className="hide-scrollbar -mx-0.5 mb-3 flex gap-2 overflow-x-auto pb-0.5">
+  const titleClass = isPremium
+    ? "mb-3.5 text-[10px] font-bold uppercase tracking-[0.24em] text-gold lg:mb-3 lg:text-sm lg:normal-case lg:tracking-normal lg:text-navy lg:dark:text-foreground"
+    : "mb-3 text-sm font-bold text-navy dark:text-foreground";
+
+  const chipIdle = isPremium
+    ? "border border-white/12 bg-white/[0.07] text-white/85 hover:bg-white/10 lg:border-navy/10 lg:bg-navy/[0.04] lg:text-muted lg:hover:text-foreground"
+    : "bg-navy/[0.04] text-muted ring-1 ring-navy/10 hover:text-foreground dark:bg-white/5 dark:ring-white/[0.08]";
+
+  const selectPremium =
+    "home-hero-select h-10 w-full appearance-none rounded-xl border border-white/12 bg-[#021433]/90 px-3 pr-8 text-xs font-medium text-white outline-none focus:border-gold/40 focus:ring-2 focus:ring-gold/25 [&>option]:bg-[#031B4E] [&>option]:text-white lg:border-navy/10 lg:bg-white lg:pr-3 lg:text-foreground lg:focus:ring-gold/35 lg:[&>option]:bg-white lg:[&>option]:text-foreground lg:text-sm lg:[background-image:none]";
+
+  const selectMerged = isPremium ? selectPremium : selectClass;
+
+  return (
+    <div className={shellClass}>
+      <p className={titleClass}>{title}</p>
+
+      <div className="hide-scrollbar -mx-0.5 mb-3.5 flex gap-2 overflow-x-auto pb-0.5 lg:mb-3">
         {HOME_DEAL_TYPES.map((t) => {
           const key = chipKey(t);
           const active = dealKey === key;
@@ -136,10 +154,10 @@ export function BrowseListingsBlock({
               type="button"
               onClick={() => setDealKey(key)}
               className={cn(
-                "pressable shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all duration-200",
+                "pressable shrink-0 rounded-full px-4 py-2.5 text-sm font-bold transition-all duration-200",
                 active
                   ? "bg-gold text-navy shadow-glow-gold"
-                  : "bg-navy/[0.04] text-muted ring-1 ring-navy/10 hover:text-foreground dark:bg-white/5 dark:ring-white/[0.08]"
+                  : chipIdle
               )}
             >
               {t.label}
@@ -148,7 +166,7 @@ export function BrowseListingsBlock({
         })}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
         <select
           value={state}
           onChange={(e) => {
@@ -157,7 +175,7 @@ export function BrowseListingsBlock({
             setCity("");
           }}
           aria-label="State"
-          className={selectClass}
+          className={selectMerged}
         >
           <option value="">Any state</option>
           {getStates().map((s) => (
@@ -175,7 +193,7 @@ export function BrowseListingsBlock({
             if (inferred) setState(inferred);
           }}
           aria-label="City"
-          className={selectClass}
+          className={selectMerged}
         >
           <option value="">Any city</option>
           {cityOptions.map((c) => (
@@ -188,7 +206,7 @@ export function BrowseListingsBlock({
           value={propertyType}
           onChange={(e) => setPropertyType(e.target.value)}
           aria-label="Property type"
-          className={selectClass}
+          className={selectMerged}
         >
           <option value="">Any Property Type</option>
           {PROPERTY_TYPES.slice(0, 14).map((t) => (
@@ -201,7 +219,7 @@ export function BrowseListingsBlock({
           value={budget}
           onChange={(e) => setBudget(e.target.value)}
           aria-label="Budget"
-          className={selectClass}
+          className={selectMerged}
         >
           {BUDGET_RANGES.map((b, i) => (
             <option key={b.label} value={i}>

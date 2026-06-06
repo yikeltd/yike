@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   User,
 } from "lucide-react";
+import { VerificationWhatsAppCallBanner } from "@/components/agent/verification-whatsapp-call-banner";
 import { cn } from "@/lib/utils";
 import type { AgentVerification, Profile } from "@/types/database";
 
@@ -142,12 +143,15 @@ export function VerificationWizard({
     profile.verification_status === "pending"
   ) {
     return (
-      <div className="space-y-4 rounded-2xl border border-surface bg-elevated p-6 text-center">
-        <ShieldCheck className="mx-auto h-10 w-10 text-gold" />
-        <h1 className="text-xl font-bold">Under review</h1>
-        <p className="text-sm text-muted">
-          We&apos;re reviewing your documents. This usually takes 1–2 business days.
-        </p>
+      <div className="space-y-4">
+        <VerificationWhatsAppCallBanner verification={verification} />
+        <div className="rounded-2xl border border-surface bg-elevated p-6 text-center">
+          <ShieldCheck className="mx-auto h-10 w-10 text-gold" />
+          <h1 className="mt-3 text-xl font-bold">Under review</h1>
+          <p className="mt-2 text-sm text-muted">
+            We&apos;re reviewing your documents. This usually takes 1–2 business days.
+          </p>
+        </div>
       </div>
     );
   }
