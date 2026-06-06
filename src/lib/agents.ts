@@ -11,7 +11,7 @@ const AGENT_SELECT = `
   *,
   agent:profiles!properties_agent_id_fkey (
     id, full_name, phone, whatsapp, avatar_url,
-    verification_status, agent_type, role, trust_score
+    verification_status, agent_type, role, trust_score, verified_badge, ranking_score
   )
 `;
 

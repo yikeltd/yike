@@ -28,7 +28,7 @@ export function AgentTrustCard({
   verified?: boolean;
 }) {
   const verified =
-    verifiedProp ?? isVerifiedAgent(agent.verification_status);
+    verifiedProp ?? isVerifiedAgent(agent);
 
   return (
     <div

@@ -83,7 +83,7 @@ export function ModerationCard({
         <ListingActions
           propertyId={property.id}
           agentVerified={
-            agent ? isVerifiedAgent(agent.verification_status) : false
+            agent ? isVerifiedAgent(agent) : false
           }
         />
       </div>

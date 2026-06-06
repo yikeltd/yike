@@ -73,11 +73,17 @@ export function ListingActions({
           onClick={async () => {
             setBusy("feature");
             const supabase = createClient();
+            const featuredUntil = new Date(
+              Date.now() + 14 * 24 * 60 * 60 * 1000
+            ).toISOString();
             await supabase
               .from("properties")
               .update({
                 status: "approved",
                 is_featured: true,
+                featured_until: featuredUntil,
+                boost_score: 50,
+                sponsored_status: "boosted",
                 is_verified_listing: agentVerified,
               })
               .eq("id", propertyId);

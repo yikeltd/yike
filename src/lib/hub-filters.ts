@@ -11,7 +11,7 @@ const STUDENT_TYPES = new Set(
 export function isTrustVerified(property: Property): boolean {
   return (
     property.is_verified_listing ||
-    isVerifiedAgent(property.agent?.verification_status)
+    (property.agent ? isVerifiedAgent(property.agent) : false)
   );
 }
 

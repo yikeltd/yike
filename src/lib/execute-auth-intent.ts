@@ -47,13 +47,13 @@ export async function executeAuthIntent(
       if (!user) break;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("verification_status")
+        .select("role, verification_status, verified_badge, listing_limit, ranking_score")
         .eq("id", user.id)
         .single();
-      if (profile && canListProperties(profile.verification_status)) {
+      if (profile && canListProperties(profile)) {
         router.push("/agent/listings/new");
       } else {
-        router.push("/agent/verification");
+        router.push("/agent/become");
       }
       break;
     }

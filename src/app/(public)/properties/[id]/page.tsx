@@ -87,7 +87,7 @@ export default async function PropertyDetailPage({
   const agent = property.agent;
   const verified =
     property.is_verified_listing ||
-    (agent && isVerifiedAgent(agent.verification_status));
+    (agent ? isVerifiedAgent(agent) : false);
   const images =
     property.media_urls.length > 0
       ? property.media_urls

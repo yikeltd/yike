@@ -55,16 +55,32 @@ export function listingTypeLabel(value: string): string {
   return labels[value] ?? value;
 }
 
+import {
+  canListProperties as canListFromProfile,
+  isVerifiedAgentProfile,
+  type AgentProfileSlice,
+} from "@/lib/agent-tiers";
+
 export function isVerifiedAgent(
-  verificationStatus: string | null | undefined
+  profileOrStatus:
+    | AgentProfileSlice
+    | string
+    | null
+    | undefined
 ): boolean {
-  return verificationStatus === "approved" || verificationStatus === "verified";
+  if (!profileOrStatus) return false;
+  if (typeof profileOrStatus === "string") {
+    return (
+      profileOrStatus === "approved" || profileOrStatus === "verified"
+    );
+  }
+  return isVerifiedAgentProfile(profileOrStatus);
 }
 
 export function canListProperties(
-  verificationStatus: string | null | undefined
+  profile: AgentProfileSlice | null | undefined
 ): boolean {
-  return isVerifiedAgent(verificationStatus);
+  return canListFromProfile(profile);
 }
 
 export function canShowPublicly(property: {

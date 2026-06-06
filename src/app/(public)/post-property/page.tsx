@@ -56,11 +56,11 @@ export default async function PostPropertyPage() {
 
   if (user) {
     const profile = await getProfile(user.id);
-    if (profile && canListProperties(profile.verification_status)) {
+    if (profile && canListProperties(profile)) {
       redirect("/agent/listings/new");
     }
     if (profile) {
-      redirect("/agent/verification");
+      redirect("/agent/become");
     }
   }
 
@@ -68,7 +68,7 @@ export default async function PostPropertyPage() {
     <div className="pb-12">
       <PageHero
         title="List your property on Yike"
-        subtitle="Create your account, verify your identity, then list for free. Real prices only — no call for price."
+        subtitle="Create your account, verify phone & email, then list for free. Real prices only — no call for price."
         image={PAGE_IMAGERY.list}
         badge="For agents & landlords"
         cta={{ label: "Create account", href: "/auth/signup" }}
@@ -96,9 +96,9 @@ export default async function PostPropertyPage() {
             {[
               "Create one Yike account — renters and listers use the same signup",
               "Verify your phone and email",
-              "When ready to list, submit NIN + selfie for agent verification",
-              "WhatsApp contact required on every listing",
-              "Minimum 3 clear photos — real numeric prices only",
+              "Tap List Property → Become an Agent → post immediately",
+              "Optional verified badge later for more trust and visibility",
+              "WhatsApp contact required · minimum 3 clear photos · real prices only",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gold" />

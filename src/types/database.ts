@@ -1,4 +1,13 @@
-export type UserRole = "user" | "agent" | "admin" | "super_admin";
+export type UserRole =
+  | "user"
+  | "agent_unverified"
+  | "agent_verified"
+  | "admin"
+  | "super_admin"
+  /** @deprecated migrated to agent_unverified / agent_verified */
+  | "agent";
+
+export type SponsoredStatus = "none" | "sponsored" | "boosted";
 export type VerificationStatus =
   | "not_started"
   | "pending"
@@ -53,6 +62,9 @@ export interface Profile {
   verification_status: VerificationStatus;
   agent_type: "independent" | "agency" | "landlord" | null;
   trust_score: number;
+  listing_limit: number | null;
+  ranking_score: number;
+  verified_badge: boolean;
   is_banned: boolean;
   created_at: string;
 }
@@ -78,6 +90,9 @@ export interface Property {
   video_url: string | null;
   status: PropertyStatus;
   is_featured: boolean;
+  featured_until: string | null;
+  boost_score: number;
+  sponsored_status: SponsoredStatus;
   is_verified_listing: boolean;
   views_count: number;
   contact_clicks: number;
@@ -113,8 +128,19 @@ export interface AgentVerification {
   user_id?: string;
   status: "pending" | "approved" | "rejected";
   rejection_reason: string | null;
+  full_name?: string | null;
+  residential_address?: string | null;
+  state?: string | null;
+  city?: string | null;
+  date_of_birth?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  occupation?: string | null;
   nin_encrypted?: string | null;
   nin_number_encrypted?: string | null;
+  nin_provider?: string | null;
+  nin_verified?: boolean;
+  provider_reference?: string | null;
   selfie_url: string | null;
   id_document_url?: string | null;
   submitted_at?: string | null;

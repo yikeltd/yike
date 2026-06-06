@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { requireAuth, getProfile } from "@/lib/auth";
 import { VerifiedBadge, StatusBadge } from "@/components/ui/badge";
-import { isVerifiedAgent, canListProperties } from "@/lib/utils";
+import {
+  canListProperties,
+  getListingLimit,
+  isVerifiedAgentProfile,
+  countAsActiveListing,
+} from "@/lib/agent-tiers";
 import { requireServerClient } from "@/lib/supabase/require-client";
-import { PlusCircle, List, ShieldCheck } from "lucide-react";
+import { PlusCircle, List, ShieldCheck, BadgeCheck } from "lucide-react";
 import { AgentSignOut } from "./sign-out-button";
 import { DeleteAccountLink } from "@/components/account/delete-account-link";
+import type { Property } from "@/types/database";
 
 export default async function ProfilePage() {
   const user = await requireAuth("/auth/login?next=/agent");
@@ -16,19 +22,20 @@ export default async function ProfilePage() {
     return <p className="pt-8 text-center text-muted">Profile not found.</p>;
   }
 
-  const verified = isVerifiedAgent(profile.verification_status);
-  const canList = canListProperties(profile.verification_status);
+  const verified = isVerifiedAgentProfile(profile);
+  const canList = canListProperties(profile);
+  const limit = getListingLimit(profile);
 
-  const { count } = await supabase
+  const { data: listings } = await supabase
     .from("properties")
-    .select("*", { count: "exact", head: true })
+    .select("status, expires_at")
     .eq("agent_id", user.id);
 
-  const { count: pending } = await supabase
-    .from("properties")
-    .select("*", { count: "exact", head: true })
-    .eq("agent_id", user.id)
-    .eq("status", "pending");
+  const rows = (listings ?? []) as Pick<Property, "status" | "expires_at">[];
+  const activeCount = rows.filter((p) =>
+    countAsActiveListing(p.status, p.expires_at)
+  ).length;
+  const pending = rows.filter((p) => p.status === "pending").length;
 
   return (
     <div className="space-y-6 pt-4">
@@ -42,6 +49,10 @@ export default async function ProfilePage() {
         <div className="mt-2 flex flex-wrap gap-2">
           {verified ? (
             <VerifiedBadge />
+          ) : canList ? (
+            <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-muted">
+              Unverified agent
+            </span>
           ) : profile.verification_status !== "not_started" ? (
             <StatusBadge status={profile.verification_status} />
           ) : null}
@@ -61,11 +72,15 @@ export default async function ProfilePage() {
       {canList && (
         <div className="grid grid-cols-2 gap-3">
           <div className="card-shadow rounded-xl border border-border p-4">
-            <p className="text-2xl font-bold">{count ?? 0}</p>
-            <p className="text-xs text-muted">Total listings</p>
+            <p className="text-2xl font-bold">
+              {limit !== null ? `${activeCount}/${limit}` : rows.length}
+            </p>
+            <p className="text-xs text-muted">
+              {limit !== null ? "Active listings" : "Total listings"}
+            </p>
           </div>
           <div className="card-shadow rounded-xl border border-border p-4">
-            <p className="text-2xl font-bold">{pending ?? 0}</p>
+            <p className="text-2xl font-bold">{pending}</p>
             <p className="text-xs text-muted">Pending review</p>
           </div>
         </div>
@@ -91,19 +106,28 @@ export default async function ProfilePage() {
           </>
         ) : (
           <Link
-            href="/agent/verification"
+            href="/agent/become"
             className="flex items-center gap-3 rounded-xl bg-gold px-4 py-3 text-navy"
           >
-            <ShieldCheck className="h-5 w-5" />
-            <span className="font-medium">Verify to list property</span>
+            <BadgeCheck className="h-5 w-5" />
+            <span className="font-medium">Become an agent</span>
           </Link>
         )}
         {!canList && (
           <p className="text-sm text-muted">
-            To list properties on Yike, verify your identity first. This helps protect property seekers.
+            Verify phone & email, then become an agent to list properties. No NIN required to start.
           </p>
         )}
-        {canList && (
+        {canList && !verified && (
+          <Link
+            href="/agent/verification"
+            className="flex items-center gap-3 rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-navy"
+          >
+            <ShieldCheck className="h-5 w-5 text-gold-dark" />
+            <span className="font-medium">Get verified badge (optional)</span>
+          </Link>
+        )}
+        {canList && verified && (
           <Link
             href="/agent/verification"
             className="card-shadow flex items-center gap-3 rounded-xl border border-border px-4 py-3"

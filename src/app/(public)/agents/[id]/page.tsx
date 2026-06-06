@@ -17,7 +17,7 @@ export default async function AgentProfilePage({
   if (!agent) notFound();
 
   const listings = await getAgentListings(id);
-  const verified = isVerifiedAgent(agent.verification_status);
+  const verified = isVerifiedAgent(agent);
   const isDemo = listings.every((p) => isDemoProperty(p.id));
 
   return (

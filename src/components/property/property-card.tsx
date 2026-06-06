@@ -48,8 +48,7 @@ export function PropertyCard({
   const image = property.media_urls[0] ?? "/placeholder-property.svg";
   const agent = property.agent;
   const verified =
-    property.is_verified_listing ||
-    (agent && isVerifiedAgent(agent.verification_status));
+    property.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
   const wa = agent?.whatsapp || agent?.phone;
   const tel = agent?.phone || agent?.whatsapp;
   const isDemo = isDemoProperty(property.id);

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { Property } from "@/types/database";
 import {
   getBrowsePreferences,
   rankPropertiesForBrowse,
   syncBrowseFromRecentSearches,
   trackViewedListing,
+  trackSavedListing,
 } from "@/lib/browse-preferences";
 import { BrowseSlide } from "./browse-slide";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -81,6 +82,7 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
           }
         }
         trackViewedListing(current.id);
+        trackSavedListing(current.id);
         advance("right");
       }
     );
@@ -155,45 +157,6 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
         </div>
       </div>
 
-      <div className="absolute bottom-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))] left-0 right-0 z-30 flex justify-center gap-3 px-4">
-        <button
-          type="button"
-          onClick={skip}
-          className="pressable flex h-12 min-w-[100px] items-center justify-center gap-1.5 rounded-full bg-white/15 text-sm font-bold text-white backdrop-blur-md"
-        >
-          <X className="h-4 w-4" />
-          Skip
-        </button>
-        <button
-          type="button"
-          onClick={save}
-          className="pressable flex h-12 min-w-[100px] items-center justify-center gap-1.5 rounded-full bg-gold text-sm font-bold text-navy"
-        >
-          <Heart className="h-4 w-4" />
-          Save
-        </button>
-      </div>
-
-      {count > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={skip}
-            className="pressable absolute left-2 top-1/2 z-30 hidden -translate-y-1/2 rounded-full bg-black/35 p-3 text-white backdrop-blur-sm lg:flex"
-            aria-label="Skip"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          <button
-            type="button"
-            onClick={save}
-            className="pressable absolute right-2 top-1/2 z-30 hidden -translate-y-1/2 rounded-full bg-gold/90 p-3 text-navy backdrop-blur-sm lg:flex"
-            aria-label="Save"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </button>
-        </>
-      )}
     </div>
   );
 }

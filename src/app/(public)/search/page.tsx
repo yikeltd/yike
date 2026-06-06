@@ -4,7 +4,7 @@ import {
   getPublicProperties,
   parseSearchParams,
 } from "@/lib/properties";
-import { SearchExperience } from "@/components/search/search-experience";
+import { SearchDiscoveryHub } from "@/components/search/search-discovery-hub";
 import { SearchPanel } from "@/components/search/search-panel";
 import { SearchFiltersBar } from "@/components/search/search-filters-bar";
 import { SearchHubBanner } from "@/components/search/search-hub-banner";
@@ -48,21 +48,29 @@ export default async function SearchPage({
         ? ("shortlet" as DiscoverHub)
         : undefined;
 
+  const rawParams = await searchParams;
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(rawParams)) {
+    if (typeof value === "string") qs.set(key, value);
+    else if (Array.isArray(value) && value[0]) qs.set(key, value[0]);
+  }
+  const currentHref = qs.toString() ? `/search?${qs.toString()}` : undefined;
+
   return (
     <div className="pb-4 lg:pb-12">
       <section className="hidden lg:block lg:py-10">
-        <h1 className="text-3xl font-bold text-foreground">Search homes</h1>
+        <h1 className="text-3xl font-bold text-foreground">Search hub</h1>
         <p className="mt-2 text-muted">
-          Nationwide rent, lease, sales and shortlets
+          Advanced filters, saved searches, and nationwide discovery
         </p>
         <SearchPanel variant="inline" className="mt-8" />
       </section>
 
       <div className="lg:hidden">
-        <SearchExperience
-          initialType={params.listing_type}
-          initialCity={params.city}
-          initialArea={params.area}
+        <SearchDiscoveryHub
+          hasResults={hasQuery}
+          currentHref={currentHref}
+          currentLabel={label || undefined}
         />
       </div>
 

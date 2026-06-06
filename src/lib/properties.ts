@@ -12,6 +12,7 @@ import {
 } from "@/lib/mock-listings";
 import { mergeQueryIntoParams } from "@/lib/location-search";
 import { propertyTypeLabel } from "@/lib/utils";
+import { sortPropertiesByMarketRank } from "@/lib/agent-tiers";
 
 import type { DiscoverHub } from "@/types/database";
 import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
@@ -37,7 +38,8 @@ const PUBLIC_SELECT = `
   *,
   agent:profiles!properties_agent_id_fkey (
     id, full_name, phone, whatsapp, avatar_url,
-    verification_status, agent_type, role
+    verification_status, agent_type, role,
+    verified_badge, ranking_score, listing_limit
   )
 `;
 
@@ -92,7 +94,9 @@ export async function getPublicProperties(
   if (merged.amenity) {
     rows = rows.filter((p) => hasAmenity(p, merged.amenity!));
   }
-  if (rows.length > 0) return rows.slice(0, limit);
+  if (rows.length > 0) {
+    return sortPropertiesByMarketRank(rows).slice(0, limit);
+  }
   return filterMockListings(merged, limit);
 }
 

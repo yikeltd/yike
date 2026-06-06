@@ -112,7 +112,39 @@ export function BrowseSlide({
           )}
         </div>
 
-        {wa && (
+        {wa && horizontal ? (
+          <button
+            type="button"
+            className="pressable flex h-11 w-11 items-center justify-center self-end rounded-full bg-gold/95 text-navy shadow-glow-gold"
+            aria-label="WhatsApp agent"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!waUrl) return;
+              guardAction(
+                {
+                  type: "whatsapp",
+                  listingId: property.id,
+                  redirectPath: `/properties/${property.id}`,
+                  contactUrl: waUrl,
+                },
+                () => {
+                  void trackContactClick({
+                    propertyId: property.id,
+                    channel: "whatsapp",
+                    city: property.city,
+                    listingType: property.listing_type,
+                    propertyType: property.property_type,
+                    placement: "browse",
+                    agentId: agent?.id,
+                  });
+                  window.open(waUrl, "_blank", "noopener,noreferrer");
+                }
+              );
+            }}
+          >
+            <MessageCircle className="h-5 w-5" strokeWidth={2.5} />
+          </button>
+        ) : wa ? (
           <div className="flex gap-2.5">
             <button
               type="button"
@@ -176,7 +208,7 @@ export function BrowseSlide({
               <Heart className="h-4 w-4" />
             </button>
           </div>
-        )}
+        ) : null}
       </div>
     </article>
   );

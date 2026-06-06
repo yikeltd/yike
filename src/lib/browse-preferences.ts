@@ -1,4 +1,6 @@
 import type { Property } from "@/types/database";
+import { parseSmartSearchQuery } from "@/lib/smart-search";
+import { propertyMarketRank } from "@/lib/agent-tiers";
 
 const KEY = "yike_browse_prefs";
 const VIEWED_KEY = "yike_viewed_listings";
@@ -111,6 +113,18 @@ export function syncBrowseFromRecentSearches() {
     const searches = JSON.parse(raw) as { href: string }[];
     for (const s of searches) {
       const url = new URL(s.href, "https://yike.ng");
+      const q = url.searchParams.get("q");
+      if (q) {
+        const parsed = parseSmartSearchQuery(q);
+        saveBrowsePreferences({
+          city: parsed.city,
+          area: parsed.area,
+          listingType: parsed.listing_type,
+          propertyType: parsed.property_type,
+          minPrice: parsed.min_price,
+          maxPrice: parsed.max_price,
+        });
+      }
       saveBrowsePreferences({
         city: url.searchParams.get("city") || undefined,
         area: url.searchParams.get("area") || undefined,
@@ -161,6 +175,50 @@ function scoreProperty(p: Property, prefs: BrowsePreferences): number {
   return score;
 }
 
+function matchesBrowsePrefs(p: Property, prefs: BrowsePreferences): boolean {
+  if (prefs.cities.length > 0) {
+    const cityOk = prefs.cities.some(
+      (c) => c.toLowerCase() === p.city.toLowerCase()
+    );
+    if (!cityOk) return false;
+  }
+  if (prefs.areas.length > 0) {
+    const areaOk = prefs.areas.some(
+      (a) => a.toLowerCase() === p.area.toLowerCase()
+    );
+    if (!areaOk) return false;
+  }
+  if (prefs.listingTypes.length > 0 && !prefs.listingTypes.includes(p.listing_type)) {
+    return false;
+  }
+  if (
+    prefs.propertyTypes.length > 0 &&
+    p.property_type &&
+    !prefs.propertyTypes.includes(p.property_type)
+  ) {
+    return false;
+  }
+  if (prefs.minPrice && Number(p.price) < prefs.minPrice) return false;
+  if (prefs.maxPrice && Number(p.price) > prefs.maxPrice) return false;
+  return true;
+}
+
+/** Drop listings that conflict with strong user prefs (e.g. Aba search → no Abuja mansions). */
+export function filterPropertiesForBrowse(
+  properties: Property[],
+  prefs: BrowsePreferences
+): Property[] {
+  const hasStrongPrefs =
+    prefs.cities.length > 0 ||
+    prefs.areas.length > 0 ||
+    prefs.propertyTypes.length > 0;
+
+  if (!hasStrongPrefs) return properties;
+
+  const filtered = properties.filter((p) => matchesBrowsePrefs(p, prefs));
+  return filtered.length >= 3 ? filtered : properties;
+}
+
 export function rankPropertiesForBrowse(
   properties: Property[],
   prefs: BrowsePreferences
@@ -174,13 +232,29 @@ export function rankPropertiesForBrowse(
     prefs.minPrice ||
     prefs.maxPrice;
 
-  if (!hasPrefs) return properties;
+  const pool = filterPropertiesForBrowse(properties, prefs);
 
-  return [...properties].sort((a, b) => {
+  if (!hasPrefs) {
+    return pool.filter((p) => !viewed.has(p.id)).concat(pool.filter((p) => viewed.has(p.id)));
+  }
+
+  return [...pool].sort((a, b) => {
     const diff =
       scoreProperty(b, prefs) - scoreProperty(a, prefs) ||
+      propertyMarketRank(b) - propertyMarketRank(a) ||
       (viewed.has(a.id) ? 1 : 0) - (viewed.has(b.id) ? 1 : 0) ||
       (b.views_count ?? 0) - (a.views_count ?? 0);
     return diff;
   });
+}
+
+/** Record a saved listing id for guest personalization. */
+export function trackSavedListing(id: string) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]") as string[];
+    const next = [id, ...raw.filter((x) => x !== id)].slice(0, 30);
+    localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
 }

@@ -38,7 +38,7 @@ export async function getAdminHotPicks(limit = 12): Promise<HotPickDisplay[]> {
             *,
             agent:profiles!properties_agent_id_fkey (
               id, full_name, phone, whatsapp, avatar_url,
-              verification_status, agent_type, role
+              verification_status, agent_type, role, verified_badge, ranking_score
             )
           )`
         )

@@ -23,10 +23,10 @@ export function ListPropertyButton({
       { type: "list_property", redirectPath: "/post-property" },
       () => {
         if (!user || !emailVerified) return;
-        if (profile && canListProperties(profile.verification_status)) {
+        if (profile && canListProperties(profile)) {
           router.push("/agent/listings/new");
         } else {
-          router.push("/agent/verification");
+          router.push("/agent/become");
         }
       }
     );

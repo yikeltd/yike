@@ -34,9 +34,16 @@ import type { ListingExtras, Property } from "@/types/database";
 type ListingFormProps = {
   agentId: string;
   initial?: Property;
+  activeCount?: number;
+  listingLimit?: number | null;
 };
 
-export function ListingForm({ agentId, initial }: ListingFormProps) {
+export function ListingForm({
+  agentId,
+  initial,
+  activeCount = 0,
+  listingLimit = null,
+}: ListingFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -158,6 +165,17 @@ export function ListingForm({ agentId, initial }: ListingFormProps) {
       }
       router.push("/agent/listings");
     } else {
+      if (
+        listingLimit !== null &&
+        activeCount >= listingLimit
+      ) {
+        setError(
+          `Listing limit reached (${listingLimit}). Get verified for unlimited listings.`
+        );
+        setLoading(false);
+        return;
+      }
+
       const { error: insertError } = await supabase
         .from("properties")
         .insert(payload);

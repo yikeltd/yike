@@ -23,9 +23,9 @@ export const metadata = {
 
 const TIMELINE = [
   { step: "1", title: "Create your Yike account", body: "One signup for renters and listers — verify phone and email." },
-  { step: "2", title: "Submit NIN + selfie", body: "Identity check when you want to list property." },
-  { step: "3", title: "Manual review", body: "Our team reviews within 1–2 business days." },
-  { step: "4", title: "Verified badge live", body: "Badge appears on profile and listing cards." },
+  { step: "2", title: "Become an agent & list", body: "Start posting immediately — no NIN required at signup." },
+  { step: "3", title: "Apply for verified badge (optional)", body: "Submit NIN + selfie when you want more trust and visibility." },
+  { step: "4", title: "Manual review & badge", body: "Our team reviews within 1–2 business days. Unlimited listings when approved." },
 ];
 
 const BENEFITS = [

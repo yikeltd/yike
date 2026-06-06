@@ -121,7 +121,11 @@ export default async function AdminListingsPage({
                         <ListingActions
                           propertyId={p.id}
                           agentVerified={
-                            p.agent?.verification_status === "verified"
+                            !!(
+                              p.agent?.verified_badge ||
+                              p.agent?.role === "agent_verified" ||
+                              p.agent?.verification_status === "approved"
+                            )
                           }
                           compact
                         />

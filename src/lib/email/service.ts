@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SITE_URL } from "@/lib/constants";
 import { EMAIL_USER_MESSAGES } from "@/lib/notifications/messages";
+import { buildAdminAlertEmailHtml } from "@/lib/email/templates";
 import {
   buildVerificationEmailHtml,
   buildWelcomeEmailHtml,
@@ -115,12 +116,10 @@ export async function sendAdminAlert(
   admin: SupabaseClient,
   params: { to: string; subject: string; body: string }
 ): Promise<EmailResult> {
-  const html = `
-    <div style="font-family:system-ui,sans-serif;padding:16px;color:#031B4E;">
-      <p style="font-weight:700;">Yike admin alert</p>
-      <p>${params.body}</p>
-    </div>
-  `.trim();
+  const html = buildAdminAlertEmailHtml({
+    subject: params.subject,
+    body: params.body,
+  });
 
   return sendEmail(admin, {
     email: params.to,

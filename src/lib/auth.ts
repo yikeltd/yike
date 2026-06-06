@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ADMIN_LOGIN_PATH } from "@/lib/admin-paths";
 import type { Profile, UserRole } from "@/types/database";
-import { canListProperties } from "@/lib/utils";
+import { canListProperties } from "@/lib/agent-tiers";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 
@@ -44,26 +44,40 @@ export async function requireRole(roles: UserRole[], redirectTo = "/") {
 }
 
 export async function requireAgent() {
-  return requireRole(["agent", "admin", "super_admin"], "/agent");
+  return requireRole(
+    ["agent_unverified", "agent_verified", "admin", "super_admin"],
+    "/agent"
+  );
 }
 
-export function isEmailVerified(user: User, profile?: Profile | null): boolean {
+export function isEmailVerified(
+  user: User,
+  profile?: Pick<Profile, "email_verified"> | null
+): boolean {
   if (user.email_confirmed_at) return true;
   return profile?.email_verified === true;
 }
 
-export async function requireVerifiedLister(redirectTo = "/agent/verification") {
+export async function requireAgentLister(redirectTo = "/agent/become") {
   const user = await requireAuth();
   const profile = await getProfile(user.id);
   if (!profile || profile.is_banned) redirect("/");
-  if (
-    isAdmin(profile.role) ||
-    canListProperties(profile.verification_status)
-  ) {
+
+  if (!profile.phone_verified) {
+    redirect("/auth/verify-phone?next=/agent/become");
+  }
+  if (!isEmailVerified(user, profile)) {
+    redirect("/auth/verify-email?next=/agent/become");
+  }
+
+  if (isAdmin(profile.role) || canListProperties(profile)) {
     return { user, profile };
   }
   redirect(redirectTo);
 }
+
+/** @deprecated use requireAgentLister */
+export const requireVerifiedLister = requireAgentLister;
 
 export async function requireFullSession(redirectTo = "/auth/verify-email") {
   const user = await requireAuth();
