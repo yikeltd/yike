@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import {
   getBlogPost,
   getRelatedBlogPosts,
@@ -11,6 +10,7 @@ import { blogCanonical } from "@/lib/seo/utils";
 import { SeoFAQ } from "@/components/seo/programmatic/seo-faq";
 import { InternalLinkGrid } from "@/components/seo/programmatic/internal-link-grid";
 import { BlogCard } from "@/components/seo/programmatic/blog-card";
+import { RouteFallback } from "@/components/layout/route-fallback";
 import { ConversionStrip } from "@/components/conversion/conversion-strip";
 import { SafetyNotice } from "@/components/property/safety-notice";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
@@ -46,7 +46,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const post = getBlogPost(slug);
-  if (!post) notFound();
+  if (!post) {
+    return (
+      <div className="pb-12">
+        <RouteFallback
+          title="Guide not found"
+          message="That article may have moved — browse our guides or search homes instead."
+          pathHint={slug}
+        />
+        <div className="mx-auto max-w-3xl px-3 lg:px-8">
+          <Link href="/blog" className="text-sm font-bold text-gold-dark hover:underline">
+            ← All guides
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const related = getRelatedBlogPosts(post, 3);
   const url = blogCanonical(slug);

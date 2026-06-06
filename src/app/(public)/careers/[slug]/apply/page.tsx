@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { CareerApplicationForm } from "@/components/careers/application-form";
 import type { JobRow } from "@/lib/careers/constants";
+import { RouteFallback } from "@/components/layout/route-fallback";
 import { SITE_NAME } from "@/lib/constants";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -34,7 +34,21 @@ export async function generateMetadata({ params }: Props) {
 export default async function CareerApplyPage({ params }: Props) {
   const { slug } = await params;
   const job = await getJob(slug);
-  if (!job) notFound();
+  if (!job) {
+    return (
+      <div className="pb-12">
+        <RouteFallback
+          title="Application unavailable"
+          message="This role is no longer open or the link is incorrect."
+        />
+        <div className="mx-auto max-w-xl px-3 text-center">
+          <Link href="/careers" className="text-sm font-bold text-gold-dark hover:underline">
+            ← View open roles
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-12">

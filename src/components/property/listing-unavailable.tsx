@@ -17,7 +17,7 @@ function reasonCopy(reason: ListingUnavailableProps["reason"]) {
     case "unpublished":
       return "This listing is no longer available.";
     default:
-      return "We couldn't find that listing.";
+      return "This property may no longer be available.";
   }
 }
 
@@ -41,7 +41,7 @@ export async function ListingUnavailable({
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface">
           <MapPin className="h-7 w-7 text-gold" />
         </div>
-        <h1 className="mt-4 text-xl font-bold text-navy">Listing unavailable</h1>
+        <h1 className="mt-4 text-xl font-bold text-navy">This home is unavailable</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted">{reasonCopy(reason)}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -52,10 +52,10 @@ export async function ListingUnavailable({
             Search homes
           </Link>
           <Link
-            href="/explore"
+            href="/"
             className="inline-flex h-11 items-center rounded-xl border border-border bg-white px-5 text-sm font-semibold text-navy"
           >
-            Explore feed
+            Explore listings
           </Link>
         </div>
       </div>

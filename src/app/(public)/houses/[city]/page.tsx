@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function HousesCityPage({ params }: Props) {
   const { city: citySlug } = await params;
   const resolved = resolveCitySlug(citySlug);
-  if (!resolved) redirect("/explore");
+  if (!resolved) redirect("/search");
 
   const listings = await getPublicProperties({ city: resolved.city }, 24);
   const isDemo =

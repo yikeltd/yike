@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Compass, Search } from "lucide-react";
+import { Home, Search } from "lucide-react";
 import { TRENDING_CITIES } from "@/constants/trendingCities";
 import { Logo } from "@/components/brand/logo";
 
@@ -9,8 +9,8 @@ export function PageNotFound() {
       <Logo href="/" size={56} />
       <h1 className="mt-6 text-2xl font-bold text-navy">Page not found</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        That link may be old or mistyped. Try search or jump into the explore feed
-        instead.
+        That link may be old or mistyped. Try search or browse listings on the home
+        feed instead.
       </p>
 
       <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
@@ -22,11 +22,11 @@ export function PageNotFound() {
           Search homes
         </Link>
         <Link
-          href="/explore"
+          href="/"
           className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-white px-6 text-sm font-semibold text-navy"
         >
-          <Compass className="h-4 w-4" />
-          Explore feed
+          <Home className="h-4 w-4" />
+          Explore listings
         </Link>
       </div>
 

@@ -62,7 +62,7 @@ export default async function HousesPropertyTypePage({ params }: Props) {
     await params;
   const resolved = resolveAreaSlug(citySlug, neighborhoodSlug);
   const type = resolveSeoPropertyType(typeSlug);
-  if (!resolved || !type) redirect("/explore");
+  if (!resolved || !type) redirect("/search");
 
   const searchParams: Parameters<typeof getPublicProperties>[0] = {
     city: resolved.city,

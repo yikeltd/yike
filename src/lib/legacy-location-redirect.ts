@@ -7,7 +7,7 @@ import { RESERVED_PATH_PREFIXES } from "@/lib/public-routes";
 
 /**
  * Legacy SEO URLs like /enugu or /aba/ogbor-hill → /houses/...
- * Unknown short paths → /explore (avoid generic 404 dead-ends).
+ * Unknown short paths → /search (avoid generic 404 dead-ends).
  */
 export function legacyLocationRedirect(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
@@ -21,7 +21,7 @@ export function legacyLocationRedirect(pathname: string): string | null {
       return `/houses/${slug}`;
     }
 
-    return "/explore";
+    return "/search";
   }
 
   if (parts.length === 2) {
@@ -41,7 +41,25 @@ export function legacyLocationRedirect(pathname: string): string | null {
       return `/search?${params.toString()}`;
     }
 
-    return "/explore";
+    return "/search";
+  }
+
+  if (parts.length >= 3) {
+    const [citySlug, areaSlug] = parts;
+    if (RESERVED_PATH_PREFIXES.has(citySlug)) return null;
+
+    if (resolveAreaSlug(citySlug, areaSlug!)) {
+      return `/houses/${parts.slice(0, 3).join("/")}`;
+    }
+
+    const city = resolveCitySlug(citySlug);
+    if (city) {
+      const params = new URLSearchParams({ city: city.city });
+      if (areaSlug) params.set("area", fromSlug(areaSlug));
+      return `/search?${params.toString()}`;
+    }
+
+    return "/search";
   }
 
   return null;

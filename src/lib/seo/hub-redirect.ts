@@ -1,4 +1,4 @@
-import { resolveAreaSlug, resolveCitySlug } from "@/lib/location-slugs";
+import { fromSlug, resolveAreaSlug, resolveCitySlug } from "@/lib/location-slugs";
 
 const HUB_QUERY: Record<string, string> = {
   buy: "type=buy",
@@ -10,7 +10,7 @@ const HUB_QUERY: Record<string, string> = {
  * SEO-friendly hub URLs → programmatic /houses/* pages.
  * /rent/aba → /houses/aba
  * /buy/enugu → /houses/enugu?type=buy
- * /shops/ariaria → /explore (city-only shops hub)
+ * Unknown city slugs → /search with city hint
  */
 export function seoHubRedirect(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
@@ -28,7 +28,7 @@ export function seoHubRedirect(pathname: string): string | null {
     if (resolveCitySlug(citySlug)) {
       return appendQuery(`/houses/${citySlug}`);
     }
-    return null;
+    return `/search?city=${encodeURIComponent(fromSlug(citySlug))}`;
   }
 
   if (parts.length === 3) {
@@ -39,7 +39,14 @@ export function seoHubRedirect(pathname: string): string | null {
     if (citySlug && resolveCitySlug(citySlug)) {
       return appendQuery(`/houses/${citySlug}`);
     }
+    if (citySlug) {
+      const params = new URLSearchParams({
+        city: fromSlug(citySlug),
+      });
+      if (areaSlug) params.set("area", fromSlug(areaSlug));
+      return `/search?${params.toString()}`;
+    }
   }
 
-  return null;
+  return `/search`;
 }
