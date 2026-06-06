@@ -84,6 +84,7 @@ export type JobRow = {
   salary_min: number | null;
   salary_max: number | null;
   short_description: string;
+  responsibilities: string;
   requirements: string;
   role_questions: RoleQuestion[];
   scoring_criteria: ScoringCriteria;

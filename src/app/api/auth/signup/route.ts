@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendEmailVerification } from "@/lib/email";
 import { EMAIL_USER_MESSAGES } from "@/lib/notifications/messages";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, createVerifiedAdminClient } from "@/lib/supabase/admin";
 import { createOtpDbClient, otpFindVerified } from "@/lib/otp/rpc";
 import { normalizeNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,24}$/;
 
 export async function POST(request: Request) {
-  const admin = createAdminClient();
+  const admin = (await createVerifiedAdminClient()) ?? createAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
   }

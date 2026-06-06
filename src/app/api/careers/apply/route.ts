@@ -1,14 +1,47 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createPublicClient } from "@/lib/supabase/public";
 import { scoreApplication, type ApplicationPayload } from "@/lib/careers/scoring";
 import type { JobRow } from "@/lib/careers/constants";
 import { sendCareerApplicationEmails } from "@/lib/email/service";
 
 export const runtime = "nodejs";
 
+async function loadPublishedJob(
+  supabase: NonNullable<ReturnType<typeof createPublicClient>>,
+  jobId: string,
+  jobSlug: string
+): Promise<{ job: JobRow | null; error: string | null }> {
+  if (jobId) {
+    const { data, error } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("id", jobId)
+      .eq("status", "published")
+      .maybeSingle();
+
+    if (error) return { job: null, error: error.message };
+    if (data) return { job: data as JobRow, error: null };
+  }
+
+  if (jobSlug) {
+    const { data, error } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("slug", jobSlug)
+      .eq("status", "published")
+      .maybeSingle();
+
+    if (error) return { job: null, error: error.message };
+    return { job: (data as JobRow | null) ?? null, error: null };
+  }
+
+  return { job: null, error: null };
+}
+
 export async function POST(request: Request) {
-  const admin = createAdminClient();
-  if (!admin) {
+  const supabase = createPublicClient();
+  if (!supabase) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
   }
 
@@ -20,6 +53,7 @@ export async function POST(request: Request) {
   }
 
   const jobId = String(body.jobId ?? "").trim();
+  const jobSlug = String(body.jobSlug ?? "").trim();
   const fullName = String(body.fullName ?? "").trim();
   const email = String(body.email ?? "").trim().toLowerCase();
   const whatsapp = String(body.whatsapp ?? "").trim();
@@ -27,7 +61,7 @@ export async function POST(request: Request) {
   const state = String(body.state ?? "").trim();
   const whyApply = String(body.whyApply ?? "").trim();
 
-  if (!jobId || !fullName || !email || !whatsapp || !city || !state || !whyApply) {
+  if ((!jobId && !jobSlug) || !fullName || !email || !whatsapp || !city || !state || !whyApply) {
     return NextResponse.json({ error: "Please fill all required fields" }, { status: 400 });
   }
 
@@ -35,14 +69,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  const { data: job, error: jobError } = await admin
-    .from("jobs")
-    .select("*")
-    .eq("id", jobId)
-    .eq("status", "published")
-    .maybeSingle();
+  const { job, error: jobError } = await loadPublishedJob(supabase, jobId, jobSlug);
 
-  if (jobError || !job) {
+  if (jobError) {
+    console.error("[careers/apply] job lookup failed:", jobError);
+    return NextResponse.json({ error: "Could not verify this role" }, { status: 500 });
+  }
+
+  if (!job) {
     return NextResponse.json({ error: "Role not found or closed" }, { status: 404 });
   }
 
@@ -69,12 +103,12 @@ export async function POST(request: Request) {
     extra_answers: (body.extraAnswers as Record<string, string>) ?? {},
   };
 
-  const { score, breakdown, status } = scoreApplication(payload, job as JobRow);
+  const { score, breakdown, status } = scoreApplication(payload, job);
 
-  const { data: application, error } = await admin
+  const { data: application, error } = await supabase
     .from("job_applications")
     .insert({
-      job_id: jobId,
+      job_id: job.id,
       ...payload,
       score,
       score_breakdown: breakdown,
@@ -85,17 +119,21 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !application) {
+    console.error("[careers/apply] insert failed:", error?.message);
     return NextResponse.json({ error: "Could not save application" }, { status: 500 });
   }
 
-  void sendCareerApplicationEmails(admin, {
-    applicationId: application.id,
-    applicantEmail: email,
-    applicantName: fullName,
-    jobTitle: job.title,
-    score,
-    status,
-  });
+  const admin = createAdminClient();
+  if (admin) {
+    void sendCareerApplicationEmails(admin, {
+      applicationId: application.id,
+      applicantEmail: email,
+      applicantName: fullName,
+      jobTitle: job.title,
+      score,
+      status,
+    });
+  }
 
   return NextResponse.json({ ok: true, applicationId: application.id, score });
 }

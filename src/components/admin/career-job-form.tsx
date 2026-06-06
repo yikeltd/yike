@@ -17,6 +17,7 @@ export function CareerJobForm() {
   const [category, setCategory] = useState("marketing");
   const [jobType, setJobType] = useState("full_time");
   const [shortDescription, setShortDescription] = useState("");
+  const [responsibilities, setResponsibilities] = useState("");
   const [requirements, setRequirements] = useState("");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
@@ -34,6 +35,7 @@ export function CareerJobForm() {
         category,
         jobType,
         shortDescription,
+        responsibilities,
         requirements,
         salaryMin: salaryMin || null,
         salaryMax: salaryMax || null,
@@ -48,6 +50,7 @@ export function CareerJobForm() {
     }
     setTitle("");
     setShortDescription("");
+    setResponsibilities("");
     setRequirements("");
     router.refresh();
   }
@@ -137,22 +140,42 @@ export function CareerJobForm() {
           />
         </label>
         <label className="block sm:col-span-2">
-          <span className="text-xs font-semibold text-navy">Short description *</span>
+          <span className="text-xs font-semibold text-navy">Role summary *</span>
+          <span className="mt-0.5 block text-[11px] text-muted">
+            One or two sentences for the hero — the pitch, not the full task list.
+          </span>
           <textarea
             rows={2}
             value={shortDescription}
             onChange={(e) => setShortDescription(e.target.value)}
             className="mt-1 w-full rounded-xl border border-navy/10 px-3 py-2 text-sm"
+            placeholder="Join Yike as a Field Verification Agent and help eliminate housing fraud."
           />
         </label>
         <label className="block sm:col-span-2">
-          <span className="text-xs font-semibold text-navy">Requirements *</span>
+          <span className="text-xs font-semibold text-navy">What they&apos;ll do</span>
+          <span className="mt-0.5 block text-[11px] text-muted">
+            One responsibility per line — shown as bullets on the job page.
+          </span>
+          <textarea
+            rows={4}
+            value={responsibilities}
+            onChange={(e) => setResponsibilities(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-navy/10 px-3 py-2 text-sm"
+            placeholder={"Visit listed properties and confirm they exist\nVerify landlord or agent identity on site\nInspect condition vs listing photos\nSubmit verification report within 24 hours"}
+          />
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="text-xs font-semibold text-navy">What we&apos;re looking for *</span>
+          <span className="mt-0.5 block text-[11px] text-muted">
+            Candidate requirements — one point per line.
+          </span>
           <textarea
             rows={4}
             value={requirements}
             onChange={(e) => setRequirements(e.target.value)}
             className="mt-1 w-full rounded-xl border border-navy/10 px-3 py-2 text-sm"
-            placeholder="What should great candidates bring?"
+            placeholder="Based in Aba, Enugu, or Owerri&#10;Smartphone with mobile data&#10;Comfortable visiting properties daily"
           />
         </label>
       </div>

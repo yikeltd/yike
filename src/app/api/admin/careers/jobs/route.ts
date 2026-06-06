@@ -46,6 +46,7 @@ export async function POST(request: Request) {
   const category = String(body.category ?? "").trim() as RoleCategory;
   const jobType = String(body.jobType ?? "full_time").trim() as JobType;
   const shortDescription = String(body.shortDescription ?? "").trim();
+  const responsibilities = String(body.responsibilities ?? "").trim();
   const requirements = String(body.requirements ?? "").trim();
   const publish = body.publish === true;
 
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
       salary_min: salaryMin,
       salary_max: salaryMax,
       short_description: shortDescription,
+      responsibilities,
       requirements,
       role_questions: intelligence.role_questions,
       scoring_criteria: intelligence.scoring_criteria,

@@ -7,9 +7,17 @@ function adminKeyCandidates(): string[] {
   ].filter((key): key is string => Boolean(key));
 }
 
+function supabaseUrl(): string | null {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    process.env.SUPABASE_URL?.trim() ||
+    null
+  );
+}
+
 /** Service-role client for trusted server operations only. */
 export function createAdminClient(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const url = supabaseUrl();
   if (!url) return null;
 
   const keys = adminKeyCandidates();
@@ -20,8 +28,25 @@ export function createAdminClient(): SupabaseClient | null {
   });
 }
 
-export function isAdminClientConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() && adminKeyCandidates().length > 0
-  );
+/** Pick the first service key that can read a protected table (handles stale env keys). */
+export async function createVerifiedAdminClient(): Promise<SupabaseClient | null> {
+  const url = supabaseUrl();
+  const keys = adminKeyCandidates();
+  if (!url || keys.length === 0) return null;
+
+  for (const key of keys) {
+    const client = createClient(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { error } = await client.from("profiles").select("id").limit(1);
+    if (!error) return client;
+    console.error("[supabase/admin] service key rejected:", error.message);
+  }
+
+  return null;
 }
+
+export function isAdminClientConfigured(): boolean {
+  return Boolean(supabaseUrl() && adminKeyCandidates().length > 0);
+}
+

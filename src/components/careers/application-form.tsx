@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FileText, Loader2, Upload, X } from "lucide-react";
 import type { JobRow, RoleQuestion } from "@/lib/careers/constants";
 import {
   AGE_RANGES,
@@ -49,6 +50,7 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
   const [cvName, setCvName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const cvInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<FormState>({
     fullName: "",
@@ -125,6 +127,12 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
     setCvName(file.name);
   }
 
+  function clearCv() {
+    setCvUrl(null);
+    setCvName(null);
+    if (cvInputRef.current) cvInputRef.current.value = "";
+  }
+
   function validateStep(): string | null {
     if (step === 0) {
       if (!form.fullName.trim()) return "Full name is required";
@@ -162,6 +170,7 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         jobId: job.id,
+        jobSlug: job.slug,
         ...form,
         cvUrl,
         yearsExperience: Number(form.yearsExperience) || 0,
@@ -344,15 +353,46 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
           </Field>
           <Field label="CV (optional)" className="sm:col-span-2">
             <input
+              ref={cvInputRef}
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              className="sr-only"
+              disabled={cvUploading}
               onChange={(e) => void handleCv(e.target.files?.[0] ?? null)}
-              className="text-sm"
             />
-            {cvUploading && <p className="mt-1 text-xs text-muted">Uploading…</p>}
-            {cvName && !cvUploading && (
-              <p className="mt-1 text-xs text-gold-dark">Attached: {cvName}</p>
-            )}
+            <div className="rounded-xl border border-navy/10 bg-surface/60 p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  disabled={cvUploading}
+                  onClick={() => cvInputRef.current?.click()}
+                  className="pressable inline-flex min-h-11 items-center gap-2 rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy shadow-sm disabled:opacity-60"
+                >
+                  {cvUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {cvUploading ? "Uploading…" : cvName ? "Replace CV" : "Choose CV"}
+                </button>
+
+                {cvName && !cvUploading && (
+                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-white px-3 py-2 ring-1 ring-navy/8">
+                    <FileText className="h-4 w-4 shrink-0 text-gold-dark" />
+                    <span className="truncate text-sm font-medium text-navy">{cvName}</span>
+                    <button
+                      type="button"
+                      onClick={clearCv}
+                      className="pressable ml-auto shrink-0 rounded-lg p-1 text-muted hover:bg-navy/5 hover:text-navy"
+                      aria-label="Remove CV"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="mt-2 text-xs text-muted">PDF or Word · max 5MB · optional</p>
+            </div>
           </Field>
         </div>
       )}
@@ -486,12 +526,12 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 pt-1">
         {step > 0 && (
           <button
             type="button"
             onClick={() => setStep((s) => s - 1)}
-            className="pressable rounded-xl border border-navy/15 px-5 py-3 text-sm font-semibold text-navy"
+            className="pressable inline-flex min-h-11 items-center justify-center rounded-xl border border-navy/15 bg-white px-6 py-2.5 text-sm font-bold text-navy shadow-sm"
           >
             Back
           </button>
@@ -499,7 +539,7 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
         <button
           type="submit"
           disabled={busy || cvUploading}
-          className="pressable flex-1 rounded-xl bg-gold px-6 py-3 text-sm font-bold text-navy disabled:opacity-60 sm:flex-none"
+          className="pressable inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-gold px-6 py-2.5 text-sm font-bold text-navy shadow-sm disabled:opacity-60 sm:flex-none"
         >
           {busy ? "Submitting…" : step < STEPS.length - 1 ? "Continue" : "Submit application"}
         </button>
