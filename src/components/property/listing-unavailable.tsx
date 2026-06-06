@@ -25,15 +25,38 @@ export async function ListingUnavailable({
   property,
   reason,
 }: ListingUnavailableProps) {
-  const alternatives =
-    property != null
-      ? await getPublicProperties(
-          { city: property.city, area: property.area },
-          6
-        )
-      : await getPublicProperties({}, 6);
+  const searchParams: Parameters<typeof getPublicProperties>[0] = {};
 
+  if (property != null) {
+    searchParams.city = property.city;
+    searchParams.area = property.area;
+    if (property.property_type) {
+      searchParams.property_type = property.property_type;
+    }
+    if (property.listing_type) {
+      searchParams.listing_type = property.listing_type;
+    }
+    const price = Number(property.price);
+    if (Number.isFinite(price) && price > 0) {
+      searchParams.min_price = Math.floor(price * 0.75);
+      searchParams.max_price = Math.ceil(price * 1.25);
+    }
+  }
+
+  const alternatives = await getPublicProperties(searchParams, 12);
   const filtered = alternatives.filter((p) => p.id !== property?.id).slice(0, 4);
+  const searchHref =
+    property != null
+      ? `/search?city=${encodeURIComponent(property.city)}${
+          property.area
+            ? `&area=${encodeURIComponent(property.area)}`
+            : ""
+        }${
+          property.property_type
+            ? `&property_type=${encodeURIComponent(property.property_type)}`
+            : ""
+        }`
+      : "/search";
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 lg:px-0 lg:py-14">
@@ -45,7 +68,7 @@ export async function ListingUnavailable({
         <p className="mx-auto mt-2 max-w-md text-sm text-muted">{reasonCopy(reason)}</p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/search"
+            href={searchHref}
             className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white"
           >
             <Search className="h-4 w-4" />

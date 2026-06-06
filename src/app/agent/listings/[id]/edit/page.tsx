@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { requireVerifiedLister } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { ListingForm } from "@/components/agent/listing-form";
@@ -19,7 +19,7 @@ export default async function EditListingPage({
     .eq("agent_id", user.id)
     .single();
 
-  if (!data) notFound();
+  if (!data) redirect("/agent/listings");
 
   return (
     <div className="space-y-4 px-3 pt-2 pb-8">

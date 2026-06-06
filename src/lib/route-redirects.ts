@@ -1,4 +1,20 @@
 /**
+ * Unknown paths under internal route groups — used by the public catch-all only
+ * when no more specific route exists in that group.
+ */
+export function internalPrefixRedirect(slug: string[]): string | null {
+  const first = slug[0];
+  if (!first) return null;
+
+  if (first === "agent") return "/agent";
+  if (first === "auth") return "/auth/login";
+  if (first === "dev") return "/";
+  if (first === "lex") return slug[1] === "auth" ? "/lex/auth" : "/lex";
+
+  return null;
+}
+
+/**
  * Static path redirects for old bookmarks, marketing links, and aliases.
  * Returns destination pathname (optionally with query) or null.
  */

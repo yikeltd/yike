@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getHandoffByReference } from "@/lib/leads/handoff";
 import { LeadHandoffActions } from "@/components/leads/lead-handoff-actions";
+import { LeadHandoffUnavailable } from "@/components/leads/lead-handoff-unavailable";
 
 export const metadata = {
   title: "Chat Agent",
@@ -15,7 +15,7 @@ export default async function LeadHandoffPage({
 }) {
   const { ref } = await params;
   const data = await getHandoffByReference(decodeURIComponent(ref));
-  if (!data) notFound();
+  if (!data) return <LeadHandoffUnavailable />;
 
   return (
     <div className="mx-auto min-h-[100dvh] max-w-lg px-4 py-8 pb-24">
