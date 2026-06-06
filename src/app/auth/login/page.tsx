@@ -48,7 +48,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Welcome back"
-      subtitle="Create an account to post or find homes — sign in to save listings and contact agents."
+      compact
       footer={
         <p className="text-sm text-muted">
           Don&apos;t have an account?{" "}
