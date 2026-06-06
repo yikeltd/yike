@@ -72,10 +72,9 @@ export const HOME_DEAL_TYPES: SearchDealChip[] = [
   { value: "", label: "All" },
   { value: "rent", label: "Rent" },
   { value: "sale", label: "Buy" },
-  { value: "shortlet", label: "Shortlet" },
+  { value: "hotel", label: "Hotel", propertyType: "hotel" },
   { value: "land", label: "Land", hub: "land_sale" },
   { value: "shops", label: "Shops", propertyType: "shop" },
-  { value: "hotel", label: "Hotels", propertyType: "hotel" },
 ];
 
 export const SEARCH_DEAL_TYPES: SearchDealChip[] = [...HOME_DEAL_TYPES];

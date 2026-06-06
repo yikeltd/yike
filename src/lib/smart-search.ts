@@ -35,9 +35,10 @@ const PROPERTY_PHRASES: { pattern: RegExp; value: string }[] = [
   { pattern: /\bland\b/i, value: "land" },
 ];
 
-const LISTING_PHRASES: { pattern: RegExp; type?: string; hub?: string }[] = [
-  { pattern: /\bshortlet(s)?\b/i, type: "shortlet" },
-  { pattern: /\bairbnb\b/i, type: "shortlet" },
+const LISTING_PHRASES: { pattern: RegExp; type?: string; hub?: string; property_type?: string }[] = [
+  { pattern: /\bshortlet(s)?\b/i, property_type: "hotel" },
+  { pattern: /\bairbnb\b/i, property_type: "hotel" },
+  { pattern: /\bhotel(s)?\b/i, property_type: "hotel" },
   { pattern: /\bfor\s*sale\b/i, type: "sale" },
   { pattern: /\bbuy\b/i, type: "sale" },
   { pattern: /\blease\b/i, type: "lease" },
@@ -74,10 +75,11 @@ export function parseSmartSearchQuery(raw: string): SmartSearchResult {
 
   let listing_type: string | undefined;
   let hub: DiscoverHub | undefined;
-  for (const { pattern, type, hub: h } of LISTING_PHRASES) {
+  for (const { pattern, type, hub: h, property_type: listingPropertyType } of LISTING_PHRASES) {
     if (pattern.test(trimmed)) {
       listing_type = type;
       hub = h as DiscoverHub | undefined;
+      if (listingPropertyType) property_type = listingPropertyType;
       break;
     }
   }
