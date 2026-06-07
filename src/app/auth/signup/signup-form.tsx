@@ -273,13 +273,18 @@ export function SignupForm({
         </p>
       )}
 
-      {!phoneOtpEnabled && (
-        <p className="mb-4 rounded-xl border border-navy/10 bg-surface px-3 py-2.5 text-sm text-muted">
-          Sign up with email — verify your inbox to get started. WhatsApp number is optional.
-        </p>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Full name">
+          <Input
+            placeholder="Your full name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+            className="h-12 rounded-xl"
+            autoComplete="name"
+          />
+        </Field>
+
         <Field label="Email">
           <Input
             type="email"
@@ -289,17 +294,6 @@ export function SignupForm({
             required
             className="h-12 rounded-xl"
             autoComplete="email"
-          />
-        </Field>
-
-        <Field label="Full name">
-          <Input
-            placeholder="Your full name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-            className="h-12 rounded-xl"
-            autoComplete="name"
           />
         </Field>
 
@@ -384,20 +378,17 @@ export function SignupForm({
             )}
           </Field>
         ) : (
-          <Field label="WhatsApp number (optional)">
+          <Field label="Phone number">
             <Input
               type="tel"
               inputMode="numeric"
-              placeholder="08012345678 — add later if you prefer"
+              placeholder="08012345678"
               value={phone}
               onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
               maxLength={11}
               className="h-12 rounded-xl"
               autoComplete="tel"
             />
-            <p className="mt-1.5 text-xs text-muted">
-              Optional contact number — helps agents reach you faster on WhatsApp.
-            </p>
           </Field>
         )}
 
