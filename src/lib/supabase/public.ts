@@ -1,9 +1,25 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-/** Anon client for public API routes (careers apply, lead logging, etc.). */
+function supabaseUrl(): string | null {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    process.env.SUPABASE_URL?.trim() ||
+    null
+  );
+}
+
+function publicKey(): string | null {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    null
+  );
+}
+
+/** Anon/publishable client for public API routes (signup, OTP, careers, etc.). */
 export function createPublicClient(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const url = supabaseUrl();
+  const key = publicKey();
   if (!url || !key) return null;
 
   return createClient(url, key, {

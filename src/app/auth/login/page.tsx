@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -31,7 +32,8 @@ export default function LoginPage() {
       setError(authError.message);
       return;
     }
-    if (!data.user?.email_confirmed_at) {
+    const reviewerAccount = isReviewerAccountEmail(email);
+    if (!data.user?.email_confirmed_at && !reviewerAccount) {
       router.push(
         `/auth/verify-email?next=${encodeURIComponent(next)}`
       );

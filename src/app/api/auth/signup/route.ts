@@ -1,21 +1,28 @@
 import { NextResponse } from "next/server";
+import { SITE_URL } from "@/lib/constants";
+import {
+  completeSignupProfile,
+  confirmReviewerEmail,
+  isUsernameAvailable,
+} from "@/lib/auth/signup-rpc";
 import { sendEmailVerification } from "@/lib/email";
 import { EMAIL_USER_MESSAGES } from "@/lib/notifications/messages";
-import { createAdminClient, createVerifiedAdminClient } from "@/lib/supabase/admin";
 import { createOtpDbClient, otpFindVerified } from "@/lib/otp/rpc";
 import { normalizeNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
 import { passwordPolicyError } from "@/lib/password-policy";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { validateMathChallenge } from "@/lib/signup-math-challenge";
+import { createVerifiedAdminClient } from "@/lib/supabase/admin";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export const runtime = "nodejs";
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,24}$/;
 
 export async function POST(request: Request) {
-  const admin = (await createVerifiedAdminClient()) ?? createAdminClient();
-  if (!admin) {
+  const supabase = createPublicClient();
+  if (!supabase) {
     return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
   }
 
@@ -73,13 +80,11 @@ export async function POST(request: Request) {
     }
   }
 
-  const { data: existingUsername } = await admin
-    .from("profiles")
-    .select("id")
-    .ilike("username", username)
-    .maybeSingle();
-
-  if (existingUsername) {
+  const usernameFree = await isUsernameAvailable(username);
+  if (usernameFree === null) {
+    return NextResponse.json({ error: "Could not verify username" }, { status: 503 });
+  }
+  if (!usernameFree) {
     return NextResponse.json({ error: "Username already taken" }, { status: 409 });
   }
 
@@ -90,63 +95,67 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid PIN" }, { status: 400 });
   }
 
-  const { data: authData, error: signUpError } = await admin.auth.admin.createUser({
+  const redirectTo = `${SITE_URL}/auth/callback?next=${encodeURIComponent("/auth/verify-email")}`;
+  const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
-    email_confirm: false,
-    user_metadata: {
-      full_name: fullName,
-      phone,
-      username,
+    options: {
+      data: {
+        full_name: fullName,
+        phone,
+        username,
+      },
+      emailRedirectTo: redirectTo,
     },
   });
 
-  if (signUpError || !authData.user) {
-    return NextResponse.json(
-      { error: signUpError?.message ?? "Could not create account" },
-      { status: 400 }
-    );
+  if (signUpError) {
+    const message = signUpError.message.includes("already registered")
+      ? "An account with this email already exists"
+      : signUpError.message;
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  if (!authData.user) {
+    return NextResponse.json({ error: "Could not create account" }, { status: 400 });
   }
 
   const userId = authData.user.id;
 
-  const { error: profileError } = await admin
-    .from("profiles")
-    .update({
-      full_name: fullName,
-      username,
-      email,
-      phone,
-      phone_verified: true,
-      email_verified: false,
-      pin_hash: pinHash,
-      role: "user",
-      verification_status: "not_started",
-      whatsapp: phone,
-    })
-    .eq("id", userId);
-
-  if (profileError) {
-    await admin.auth.admin.deleteUser(userId);
-    return NextResponse.json({ error: profileError.message }, { status: 500 });
-  }
-
-  const emailResult = await sendEmailVerification(admin, {
-    email,
-    fullName,
+  const profileOk = await completeSignupProfile({
     userId,
+    username,
+    pinHash,
+    phone,
+    fullName,
+    phoneVerified: true,
   });
 
-  if (!emailResult.ok) {
-    return NextResponse.json(
-      { error: emailResult.error },
-      { status: 502 }
-    );
+  if (!profileOk) {
+    return NextResponse.json({ error: "Could not finish account setup" }, { status: 500 });
+  }
+
+  if (reviewerBypass) {
+    await confirmReviewerEmail(email);
+  }
+
+  const admin = await createVerifiedAdminClient();
+  if (admin) {
+    const emailResult = await sendEmailVerification(admin, {
+      email,
+      fullName,
+      userId,
+    });
+    if (!emailResult.ok) {
+      console.warn("[auth/signup] verification email skipped:", emailResult.error);
+    }
   }
 
   return NextResponse.json({
     ok: true,
     userId,
-    message: EMAIL_USER_MESSAGES.verificationSent,
+    message: reviewerBypass
+      ? "Reviewer account ready — sign in with your password."
+      : EMAIL_USER_MESSAGES.verificationSent,
   });
 }
