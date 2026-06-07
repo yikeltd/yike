@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
   const { data: property } = await admin
     .from("properties")
-    .select("id, title")
+    .select("id, title, agent_id")
     .eq("id", propertyId)
     .maybeSingle();
 
@@ -62,6 +62,12 @@ export async function POST(request: Request) {
 
   if (error || !report) {
     return NextResponse.json({ error: "Could not save report" }, { status: 500 });
+  }
+
+  if (property.agent_id) {
+    void admin.rpc("yike_refresh_abuse_review_flag", {
+      p_user_id: property.agent_id,
+    });
   }
 
   const email = body.reporterEmail?.trim();

@@ -20,6 +20,7 @@ import { DeleteAccountLink } from "@/components/account/delete-account-link";
 import { OptionalWhatsAppCard } from "@/components/profile/optional-whatsapp-card";
 import { isPhoneOtpEnabledClient } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
+import { accountStatusMessage } from "@/lib/account-control";
 
 export function ProfilePageClient({
   profile,
@@ -55,9 +56,18 @@ export function ProfilePageClient({
   const completionPct = Math.round(
     (completionSteps.filter(Boolean).length / completionSteps.length) * 100
   );
+  const statusMessage = accountStatusMessage(profile);
 
   return (
     <div className="space-y-6 pb-4 pt-2">
+      {statusMessage && (
+        <div
+          className="rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          role="status"
+        >
+          {statusMessage}
+        </div>
+      )}
       <section className="relative overflow-hidden rounded-[1.75rem] bg-navy px-5 pb-6 pt-8 text-white shadow-float-lg">
         <div
           className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/25 blur-3xl"
