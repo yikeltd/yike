@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { AuthIntent } from "@/lib/auth-intent";
 import { peekAuthIntent, clearAuthIntent } from "@/lib/auth-intent";
