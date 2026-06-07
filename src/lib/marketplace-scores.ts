@@ -47,6 +47,65 @@ export function computeHiddenQualityScore(
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+/** Soft deprioritize weak inventory — never hide from marketplace. */
+export function softQualityRankAdjustment(
+  property: Pick<
+    Property,
+    | "quality_level"
+    | "hidden_quality_score"
+    | "image_quality_score"
+    | "listing_activity_status"
+    | "image_quality_flags"
+    | "approved_value_driver_count"
+    | "value_drivers_status"
+  >
+): number {
+  let delta = 0;
+
+  const approvedDrivers = property.approved_value_driver_count ?? 0;
+  if (approvedDrivers > 0) {
+    delta += Math.min(approvedDrivers, 4) * 45;
+  }
+  if (
+    property.value_drivers_status === "rejected" ||
+    (property.value_drivers_status === "partially_approved" &&
+      approvedDrivers === 0)
+  ) {
+    delta -= 120;
+  }
+
+  switch (property.quality_level) {
+    case "low":
+      delta -= 1_200;
+      break;
+    case "medium":
+      delta -= 150;
+      break;
+    case "premium":
+      delta += 180;
+      break;
+    case "high":
+      delta += 80;
+      break;
+    default:
+      break;
+  }
+
+  if (property.hidden_quality_score != null && property.hidden_quality_score < 35) {
+    delta -= 700;
+  }
+  if (property.image_quality_score != null && property.image_quality_score < 45) {
+    delta -= 500;
+  }
+
+  const imgFlags = property.image_quality_flags ?? [];
+  if (imgFlags.includes("watermark_hint")) delta -= 350;
+  if (imgFlags.includes("duplicate_url")) delta -= 450;
+  if (imgFlags.includes("low_resolution_hint")) delta -= 250;
+
+  return delta;
+}
+
 export function marketplaceRankAdjustments(
   property: Pick<
     Property,
@@ -71,7 +130,7 @@ export function marketplaceRankAdjustments(
   delta += Math.min(property.engagement_score ?? 0, 120) * 4;
   delta += Math.min(property.inquiry_score ?? 0, 100) * 5;
   if (property.hidden_quality_score != null) {
-    delta += property.hidden_quality_score * 3;
+    delta += property.hidden_quality_score * 4;
   }
 
   if (property.report_review_recommended) delta -= 600;

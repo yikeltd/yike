@@ -20,6 +20,7 @@ import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
 import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
+import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
 import {
   buildSearchEmptyCopy,
   buildStateBrowseHref,
@@ -109,7 +110,7 @@ export default async function SearchPage({
   const showingNearby = hasQuery && exactCount === 0 && nearbyItems.length > 0;
 
   return (
-    <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] pb-24 lg:pb-12">
+    <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
       <PrefSync />
       <Suspense fallback={<ResultsFallback />}>
         <SearchResultsChrome
@@ -127,6 +128,7 @@ export default async function SearchPage({
           />
 
           <section className="mt-2 w-full px-3 lg:px-6 xl:px-8">
+            <VerificationPromoSlot placement="search_page" variant="inline" className="mb-4" />
             {showingNearby ? (
               <div className="mb-4 rounded-2xl border border-navy/8 bg-white px-4 py-4 shadow-sm">
                 <p className="text-base font-bold text-navy">{emptyCopy.title}</p>

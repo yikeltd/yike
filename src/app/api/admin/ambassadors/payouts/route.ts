@@ -333,6 +333,16 @@ export async function POST(request: Request) {
         updated_at: now,
       })
       .eq("id", ambassadorId);
+
+    await writeAuditLog({
+      actor_id: auth.user.id,
+      actor_role: auth.profile.role,
+      action: "ambassador.payout.frozen",
+      target_type: "city_ambassador",
+      target_id: ambassadorId,
+      metadata: { notes: notes ?? null },
+      ip,
+    });
     return NextResponse.json({ ok: true });
   }
 

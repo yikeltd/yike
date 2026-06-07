@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { AuthEmailOtpPurpose } from "./types";
 
 export type AuthOtpRow = {
@@ -24,6 +25,9 @@ function otpServerToken(): string | null {
 }
 
 export function createAuthEmailOtpDbClient(): SupabaseClient | null {
+  const admin = createAdminClient();
+  if (admin) return admin;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const key =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
@@ -109,11 +113,21 @@ export async function authOtpInvalidateActive(
   email: string,
   purpose: AuthEmailOtpPurpose
 ): Promise<void> {
-  await client.rpc("yike_auth_otp_invalidate_active", {
+  const { error } = await client.rpc("yike_auth_otp_invalidate_active", {
     p_token: token(),
     p_email: email.trim().toLowerCase(),
     p_purpose: purpose,
   });
+  if (!error) return;
+
+  const admin = createAdminClient();
+  if (!admin) return;
+  await admin
+    .from("auth_email_otps")
+    .update({ consumed_at: new Date().toISOString() })
+    .eq("email", email.trim().toLowerCase())
+    .eq("purpose", purpose)
+    .is("consumed_at", null);
 }
 
 export async function authOtpLastSentAt(
@@ -175,11 +189,36 @@ export async function authOtpInsert(
     p_ip_hash: params.ipHash,
     p_user_agent_hash: params.userAgentHash,
   });
-  if (error || !data) {
-    console.error("[auth-email-otp] insert failed", error?.message);
+  if (!error && data) {
+    return String(data);
+  }
+
+  if (error) {
+    console.error("[auth-email-otp] RPC insert failed", error.message);
+  }
+
+  const admin = createAdminClient();
+  if (!admin) return null;
+
+  const { data: row, error: insertError } = await admin
+    .from("auth_email_otps")
+    .insert({
+      email: params.email.trim().toLowerCase(),
+      purpose: params.purpose,
+      otp_hash: params.otpHash,
+      expires_at: params.expiresAt,
+      ip_hash: params.ipHash,
+      user_agent_hash: params.userAgentHash,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !row) {
+    console.error("[auth-email-otp] admin insert failed", insertError?.message);
     return null;
   }
-  return String(data);
+
+  return String(row.id);
 }
 
 export async function authOtpLatestActive(
@@ -192,9 +231,24 @@ export async function authOtpLatestActive(
     p_email: email.trim().toLowerCase(),
     p_purpose: purpose,
   });
-  if (error) return null;
-  const row = Array.isArray(data) ? data[0] : data;
-  return (row as AuthOtpRow | undefined) ?? null;
+  if (!error) {
+    const row = Array.isArray(data) ? data[0] : data;
+    return (row as AuthOtpRow | undefined) ?? null;
+  }
+
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data: rows } = await admin
+    .from("auth_email_otps")
+    .select("id, otp_hash, expires_at, attempts, max_attempts")
+    .eq("email", email.trim().toLowerCase())
+    .eq("purpose", purpose)
+    .is("consumed_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  return (rows?.[0] as AuthOtpRow | undefined) ?? null;
 }
 
 export async function authOtpIncrementAttempts(
@@ -205,14 +259,36 @@ export async function authOtpIncrementAttempts(
     p_token: token(),
     p_id: id,
   });
-  return typeof data === "number" ? data : 0;
+  if (typeof data === "number") return data;
+
+  const admin = createAdminClient();
+  if (!admin) return 0;
+  const { data: row } = await admin
+    .from("auth_email_otps")
+    .select("attempts")
+    .eq("id", id)
+    .single();
+  const next = (row?.attempts ?? 0) + 1;
+  await admin.from("auth_email_otps").update({ attempts: next }).eq("id", id);
+  return next;
 }
 
 export async function authOtpConsume(
   client: SupabaseClient,
   id: string
 ): Promise<void> {
-  await client.rpc("yike_auth_otp_consume", { p_token: token(), p_id: id });
+  const { error } = await client.rpc("yike_auth_otp_consume", {
+    p_token: token(),
+    p_id: id,
+  });
+  if (!error) return;
+
+  const admin = createAdminClient();
+  if (!admin) return;
+  await admin
+    .from("auth_email_otps")
+    .update({ consumed_at: new Date().toISOString() })
+    .eq("id", id);
 }
 
 export async function emailConfirmUser(

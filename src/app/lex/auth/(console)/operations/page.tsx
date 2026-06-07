@@ -60,6 +60,8 @@ export default async function AdminOperationsPage() {
     {
       title: "Trust & moderation",
       items: [
+        { href: adminPath("trust"), label: "Trust Command Center" },
+        { href: adminPath("property-verifications"), label: "Property verifications" },
         { href: adminPath("reports"), label: "Reports queue", count: openReports.count ?? 0 },
         { href: adminPath("duplicates"), label: "Duplicate review", count: duplicateFlags.count ?? 0 },
         { href: adminPath("listing-health"), label: "Listing health", count: moderationQueue.count ?? 0 },

@@ -35,7 +35,10 @@ export function ConsumerShell({
       <main
         className={cn(
           "mx-auto w-full flex-1",
-          !isHome && "px-3 lg:max-w-7xl lg:px-6 xl:px-8",
+          !isHome &&
+            !isDetail &&
+            "px-3 lg:max-w-7xl lg:px-6 xl:px-8",
+          isDetail && "lg:max-w-7xl lg:px-6 xl:px-8",
           isDetail
             ? "safe-bottom-detail lg:safe-bottom-detail lg:pb-12"
             : "safe-bottom lg:pb-16",

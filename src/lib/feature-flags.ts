@@ -76,3 +76,15 @@ export function isLeadGatewayEnabled(): boolean {
 export function isWhatsappLeadAutoreplyEnabled(): boolean {
   return envFlag("ENABLE_WHATSAPP_LEAD_AUTOREPLY", false);
 }
+
+/** Home & relocation services marketplace — off until supply + moderation ready. */
+export function isHomeServicesEnabled(): boolean {
+  return envFlag("ENABLE_HOME_SERVICES", false);
+}
+
+/** Client bundle — mirrors ENABLE_HOME_SERVICES for any future public UI. */
+export function isHomeServicesEnabledClient(): boolean {
+  const raw = process.env.NEXT_PUBLIC_ENABLE_HOME_SERVICES?.trim().toLowerCase();
+  if (!raw) return false;
+  return raw === "true" || raw === "1" || raw === "yes";
+}

@@ -14,6 +14,8 @@ import { normalizePropertyMedia } from "@/lib/media/items";
 import { ListingActions } from "@/components/admin/listing-actions";
 import { ListingLeadRoutingBox } from "@/components/admin/listing-lead-routing-box";
 import { AdminPriceHint } from "@/components/admin/admin-price-hint";
+import { AdminListingHistoryTimeline } from "@/components/admin/admin-listing-history-timeline";
+import { AdminValueDriversPanel } from "@/components/admin/admin-value-drivers-panel";
 
 type ListingRow = Property & { agent?: Profile | null };
 
@@ -512,6 +514,10 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
           Save photo order (PIN required)
         </Button>
       </section>
+
+      <AdminListingHistoryTimeline listingId={listing.id} />
+
+      <AdminValueDriversPanel listingId={listing.id} />
 
       <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
         <h2 className="mb-3 font-bold text-navy">Quick moderation</h2>

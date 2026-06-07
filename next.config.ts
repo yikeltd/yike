@@ -30,6 +30,21 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/areas/:city",
+        destination: "/houses/:city",
+        permanent: true,
+      },
+      {
+        source: "/areas/:city/:neighborhood",
+        destination: "/houses/:city/:neighborhood",
+        permanent: true,
+      },
+      {
+        source: "/areas/:city/:neighborhood/:propertyType",
+        destination: "/houses/:city/:neighborhood/:propertyType",
+        permanent: true,
+      },
+      {
         source: "/admin",
         destination: "/lex",
         permanent: true,

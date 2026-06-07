@@ -5,6 +5,34 @@ function norm(value?: string): string {
   return (value ?? "").trim().toLowerCase();
 }
 
+function locationMatches(
+  filter: string,
+  value: string
+): "exact" | "partial" | "none" {
+  if (!filter) return "exact";
+  if (value === filter) return "exact";
+  if (value.includes(filter) || filter.includes(value)) return "partial";
+  return "none";
+}
+
+/** Drop listings that clearly violate an active location filter. */
+export function matchesLocationIntent(
+  property: Property,
+  params: PropertySearchParams
+): boolean {
+  const state = norm(params.state);
+  const city = norm(params.city);
+  const area = norm(params.area);
+  const propState = norm(property.state);
+  const propCity = norm(property.city);
+  const propArea = norm(property.area);
+
+  if (state && locationMatches(state, propState) === "none") return false;
+  if (city && locationMatches(city, propCity) === "none") return false;
+  if (area && locationMatches(area, propArea) === "none") return false;
+  return true;
+}
+
 /** Higher = better match. Featured/boost must not beat wrong-city results. */
 export function propertySearchRelevance(
   property: Property,
@@ -19,20 +47,24 @@ export function propertySearchRelevance(
   const propArea = norm(property.area);
 
   if (state) {
-    if (propState === state) score += 10_000;
-    else if (propState.includes(state) || state.includes(propState)) score += 6_000;
-    else score -= 12_000;
+    const match = locationMatches(state, propState);
+    if (match === "exact") score += 10_000;
+    else if (match === "partial") score += 6_000;
+    else score -= 50_000;
   }
 
   if (city) {
-    if (propCity === city) score += 8_000;
-    else if (propCity.includes(city) || city.includes(propCity)) score += 4_000;
-    else score -= 6_000;
+    const match = locationMatches(city, propCity);
+    if (match === "exact") score += 8_000;
+    else if (match === "partial") score += 4_000;
+    else score -= 40_000;
   }
 
   if (area) {
-    if (propArea === area) score += 5_000;
-    else if (propArea.includes(area) || area.includes(propArea)) score += 2_500;
+    const match = locationMatches(area, propArea);
+    if (match === "exact") score += 5_000;
+    else if (match === "partial") score += 2_500;
+    else if (area) score -= 25_000;
   }
 
   if (params.property_type && property.property_type === params.property_type) {

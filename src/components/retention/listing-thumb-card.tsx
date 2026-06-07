@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { optimizeListingImageUrl } from "@/lib/image-url";
+import { ListingImage } from "@/components/property/listing-image";
 
 export function ListingThumbCard({
   href,
@@ -17,24 +16,18 @@ export function ListingThumbCard({
   subtitle?: string;
   priority?: boolean;
 }) {
-  const src = image.startsWith("http")
-    ? optimizeListingImageUrl(image, 400)
-    : image;
-
   return (
     <Link
       href={href}
       className="pressable flex w-36 shrink-0 flex-col overflow-hidden rounded-xl bg-elevated shadow-float ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
     >
       <div className="relative aspect-[4/3] bg-surface">
-        <Image
-          src={src}
-          alt=""
-          fill
-          sizes="144px"
-          className="object-cover"
+        <ListingImage
+          src={image}
+          alt={title}
           priority={priority}
-          loading={priority ? undefined : "lazy"}
+          sizes="144px"
+          width={400}
         />
       </div>
       <div className="p-2">

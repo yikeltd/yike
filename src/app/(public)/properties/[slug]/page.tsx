@@ -30,10 +30,13 @@ import { ListingFreshness } from "@/components/property/listing-freshness";
 import { BedDouble, Bath, MapPin, Navigation } from "lucide-react";
 import { PropertyViewTracker } from "./view-tracker";
 import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
+import { PropertyBackButton } from "@/components/property/property-back-button";
 import { ListingUnavailable } from "@/components/property/listing-unavailable";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
-import { VerifiedBadge, YikeVerifiedBadge } from "@/components/ui/badge";
 import { RequestVerificationCard } from "@/components/property/request-verification-card";
+import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
+import { ListingInsightsSection } from "@/components/property/listing-insights-section";
+import { ListingValueDriversSection } from "@/components/property/listing-value-drivers-section";
 
 export async function generateMetadata({
   params,
@@ -134,7 +137,8 @@ export default async function PropertyDetailPage({
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10 lg:pt-8">
         <div>
-          <div className="px-4 lg:px-0">
+          <div className="px-4 pt-3 lg:px-0 lg:pt-0">
+            <PropertyBackButton />
             <PropertyBreadcrumbs
               city={property.city}
               area={property.area}
@@ -165,24 +169,14 @@ export default async function PropertyDetailPage({
             </div>
           )}
 
-          <div className="space-y-5 px-4 pt-5 lg:space-y-6 lg:px-0 lg:pt-8">
+          <div className="space-y-4 px-4 pt-4 lg:space-y-6 lg:px-0 lg:pt-8">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-gold-dark lg:text-xs">
                 {listingTypeLabel(property.listing_type)}
               </p>
-              <p className="mt-2 text-[2rem] font-bold leading-none tracking-tight text-navy tabular-nums lg:text-4xl">
+              <p className="mt-1.5 text-[2rem] font-bold leading-none tracking-tight text-navy tabular-nums lg:text-4xl">
                 {price}
               </p>
-              {verified && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <VerifiedBadge />
-                </div>
-              )}
-              {property.yike_verified && (
-                <div className="mt-2">
-                  <YikeVerifiedBadge />
-                </div>
-              )}
               <ListingFreshness
                 updatedAt={property.updated_at}
                 createdAt={property.created_at}
@@ -192,33 +186,30 @@ export default async function PropertyDetailPage({
                 contactClicks={property.contact_clicks}
                 className="mt-2 block"
               />
-              <h1 className="mt-3 text-lg font-semibold leading-snug text-foreground lg:text-2xl">
+              <h1 className="mt-2.5 text-lg font-semibold leading-snug text-foreground lg:text-2xl">
                 {property.title}
               </h1>
-              <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-muted lg:text-base">
-                <MapPin className="h-4 w-4 text-gold" />
+              <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-muted lg:text-base">
+                <MapPin className="h-4 w-4 shrink-0 text-gold" />
                 {property.area}, {property.city}
               </p>
               {property.landmark && (
-                <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted">
-                  <Navigation className="h-3.5 w-3.5 text-gold" />
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
+                  <Navigation className="h-3.5 w-3.5 shrink-0 text-gold" />
                   Near {property.landmark}
                 </p>
               )}
             </div>
+
+            <ListingInsightsSection property={property} agent={agent} />
+
+            <ListingValueDriversSection listingId={property.id} />
 
             {amenities.length > 0 && (
               <AmenityChips amenities={amenities} max={8} size="md" />
             )}
 
             <RentTransparencyCard property={property} />
-
-            <RequestVerificationCard
-              listingId={property.id}
-              listingTitle={property.title}
-              loginNext={propertyAbsoluteUrl(property)}
-              className="lg:mt-2"
-            />
 
             <div className="flex flex-wrap gap-2">
               {property.bedrooms > 0 && (
@@ -251,6 +242,13 @@ export default async function PropertyDetailPage({
               </section>
             )}
 
+            <VerificationPromoSlot placement="listing_page" variant="card" />
+            <RequestVerificationCard
+              listingId={property.id}
+              listingTitle={property.title}
+              loginNext={propertyAbsoluteUrl(property)}
+            />
+
             {agent && (
               <section className="lg:hidden">
                 <h2 className="mb-2 text-sm font-bold text-navy">Your agent</h2>
@@ -272,10 +270,6 @@ export default async function PropertyDetailPage({
                 />
               </section>
             )}
-
-            <section className="lg:hidden">
-              <SafetyNotice compact />
-            </section>
 
             <ReportRentedButton propertyId={property.id} />
             <ReportListingForm propertyId={property.id} />

@@ -13,7 +13,7 @@ export function StickySeoHelpBar({
   if (!whatsAppUrl) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-lg px-3 lg:bottom-6">
+    <div className="fixed inset-x-0 bottom-[var(--bottom-nav-stack)] z-30 mx-auto max-w-lg px-3 lg:bottom-6">
       <a
         href={whatsAppUrl}
         target="_blank"

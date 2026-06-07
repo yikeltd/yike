@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
+import { upsertSuspiciousPropertyFlag } from "@/lib/trust/operations/suspicious-flags";
 import type { Property, Profile } from "@/types/database";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
 import {
@@ -14,6 +15,7 @@ import {
   computeInquiryScore,
   computeResponsivenessScore,
 } from "@/lib/marketplace-scores";
+import { recalculateTrustScoresBatch } from "@/lib/trust/score-engine/recalculate";
 import { analyzeAndPersistListingPrice } from "@/lib/pricing/recalculate";
 import {
   buildModerationFlags,
@@ -107,6 +109,16 @@ export async function scanListingDuplicates(
         })
         .in("id", [a.id, b.id]);
 
+      for (const pid of [a.id, b.id]) {
+        await upsertSuspiciousPropertyFlag(admin, {
+          propertyId: pid,
+          flagType: "possible_duplicate",
+          severity: confidence >= 0.85 ? "high" : "moderate",
+          detail: `Duplicate confidence ${Math.round(confidence * 100)}%`,
+          metadata: { duplicate_group_id: groupId, paired_with: pid === a.id ? b.id : a.id },
+        });
+      }
+
       flagged += 2;
     }
   }
@@ -182,6 +194,26 @@ export async function recalculateListingQuality(
       .eq("id", row.id);
 
     void analyzeAndPersistListingPrice(admin, enrichedRow as Property);
+
+    if (fraud_risk_score >= 65) {
+      await upsertSuspiciousPropertyFlag(admin, {
+        propertyId: row.id,
+        flagType: "fraud_risk_score",
+        severity: fraud_risk_score >= 80 ? "high" : "moderate",
+        detail: `Internal fraud risk score ${fraud_risk_score}`,
+        metadata: { fraud_risk_score, moderation_flags },
+      });
+    }
+    if ((images.image_quality_score ?? 100) < 40) {
+      await upsertSuspiciousPropertyFlag(admin, {
+        propertyId: row.id,
+        flagType: "low_image_quality",
+        severity: "moderate",
+        detail: `Image quality score ${images.image_quality_score}`,
+        metadata: { image_quality_flags: images.image_quality_flags },
+      });
+    }
+
     updated++;
   }
   return updated;
@@ -361,9 +393,11 @@ export async function runTrustQualityBatch(admin: SupabaseClient): Promise<{
   listingsUpdated: number;
   duplicatesFlagged: number;
   agentsUpdated: number;
+  trustScoresUpdated: Record<string, number>;
 }> {
   const listingsUpdated = await recalculateListingQuality(admin);
   const duplicatesFlagged = await scanListingDuplicates(admin);
   const agentsUpdated = await recalculateAgentTrustMetrics(admin);
-  return { listingsUpdated, duplicatesFlagged, agentsUpdated };
+  const trustScoresUpdated = await recalculateTrustScoresBatch(admin);
+  return { listingsUpdated, duplicatesFlagged, agentsUpdated, trustScoresUpdated };
 }

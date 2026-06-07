@@ -8,6 +8,7 @@ import { RESUME_VERIFICATION_KEY } from "@/lib/resume-auth-intent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { LEGAL_DISCLAIMER } from "@/lib/verifier/constants";
 
 type Props = {
   listingId: string;
@@ -86,8 +87,9 @@ export function RequestVerificationCard({
               Request Yike verification
             </h2>
             <p className="mt-1 text-sm text-muted">
-              Yike can help review key property details before your visit.
+              Request an independent physical inspection before you travel or pay.
             </p>
+            <p className="mt-2 text-xs text-muted">{LEGAL_DISCLAIMER}</p>
             <Button
               type="button"
               className="mt-3 bg-navy text-gold hover:bg-navy/90"
@@ -115,8 +117,9 @@ export function RequestVerificationCard({
             Request Yike verification
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Yike can help review key property details before your visit.
+            Request an independent physical inspection before you travel or pay.
           </p>
+          <p className="mt-2 text-xs text-muted">{LEGAL_DISCLAIMER}</p>
 
           {!open ? (
             <Button

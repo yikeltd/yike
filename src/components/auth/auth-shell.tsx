@@ -33,7 +33,9 @@ export function AuthShell({
           aria-hidden
         />
         <div className="relative mx-auto max-w-md">
-          <Logo href="/" showText className="text-white [&_span]:text-white" />
+          <div className="flex justify-center">
+            <Logo href="/" showText className="text-white [&_span]:text-white" />
+          </div>
           <h1 className="mt-8 text-[1.65rem] font-bold leading-tight tracking-tight text-white sm:text-3xl">
             {title}
           </h1>

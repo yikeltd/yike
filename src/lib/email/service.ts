@@ -378,3 +378,38 @@ export async function sendInspectionRequestAlert(
     body: `${params.requesterName} (${params.requesterEmail}) requested Yike verification for "${params.listingTitle}" in ${params.listingArea}, ${params.listingCity}.\n\nReview: /lex/support/inspections?id=${params.requestId}`,
   });
 }
+
+export async function sendPropertyVerificationAlert(
+  admin: SupabaseClient,
+  params: {
+    reference: string;
+    buyerName: string;
+    buyerEmail: string;
+    propertyTitle: string;
+    propertyLocation: string;
+    priority: string;
+  }
+): Promise<EmailResult> {
+  return sendAdminAlert(admin, {
+    to: getAdminAlertInbox(),
+    subject: `New property verification request — ${params.reference}`,
+    body: `${params.buyerName} (${params.buyerEmail}) submitted ${params.reference} for "${params.propertyTitle}" in ${params.propertyLocation}. Priority: ${params.priority}.\n\nReview: /lex/auth/property-verifications?ref=${encodeURIComponent(params.reference)}`,
+  });
+}
+
+export async function sendLegalVerificationAlert(
+  admin: SupabaseClient,
+  params: {
+    reference: string;
+    buyerName: string;
+    buyerEmail: string;
+    propertyTitle: string;
+    reviewType: string;
+  }
+): Promise<EmailResult> {
+  return sendAdminAlert(admin, {
+    to: getAdminAlertInbox(),
+    subject: `New legal verification request — ${params.reference}`,
+    body: `${params.buyerName} (${params.buyerEmail}) submitted ${params.reference} for "${params.propertyTitle}" (${params.reviewType}).\n\nReview: /lex/auth/legal-partners?tab=pending&ref=${encodeURIComponent(params.reference)}`,
+  });
+}

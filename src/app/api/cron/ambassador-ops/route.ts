@@ -6,6 +6,9 @@ import {
   runMonthlyAmbassadorReset,
 } from "@/lib/ambassador/commission";
 import { lagosYearMonth } from "@/lib/ambassador/constants";
+import { releaseDueVerifierEarnings } from "@/lib/verifier/earnings";
+import { releaseDueLegalEarnings } from "@/lib/legal-partner/earnings";
+import { expireStaleAssignments } from "@/lib/verification/assignments";
 
 export const runtime = "nodejs";
 
@@ -40,6 +43,9 @@ export async function GET(request: Request) {
   }
 
   const released = await releaseDueCommissions(admin);
+  const releasedVerifierEarnings = await releaseDueVerifierEarnings(admin);
+  const releasedLegalEarnings = await releaseDueLegalEarnings(admin);
+  const expiredAssignments = await expireStaleAssignments(admin);
   const inactive = await markInactiveAmbassadors(admin);
 
   let monthlyReset = false;
@@ -52,6 +58,9 @@ export async function GET(request: Request) {
     ok: true,
     period: lagosYearMonth(),
     releasedCommissions: released,
+    releasedVerifierEarnings,
+    releasedLegalEarnings,
+    expiredAssignments,
     markedInactive: inactive,
     monthlyReset,
   });

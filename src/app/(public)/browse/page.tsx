@@ -8,6 +8,7 @@ import { withDemoFallback } from "@/lib/mock-listings";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { SITE_NAME } from "@/lib/constants";
 import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
+import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
 
 export const metadata = {
   title: `Swipe Homes | ${SITE_NAME}`,
@@ -23,6 +24,11 @@ export default async function BrowsePage() {
     <>
       <div className="lg:hidden">
         <HorizontalBrowse properties={items} />
+        <VerificationPromoSlot
+          placement="swipe_page"
+          variant="sticky"
+          className="!bottom-[var(--bottom-edge-stack)]"
+        />
       </div>
       <div className="hidden lg:block">
         <PageHero

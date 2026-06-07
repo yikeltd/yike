@@ -198,6 +198,11 @@ body {
   );
 }
 
+:root {
+  --bottom-nav-stack: calc(4.75rem + env(safe-area-inset-bottom));
+  --bottom-edge-stack: max(0.75rem, env(safe-area-inset-bottom));
+}
+
 .safe-bottom {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
 }

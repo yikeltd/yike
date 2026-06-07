@@ -160,13 +160,29 @@ export async function sendAuthEmailOtp(
       fullName: params.fullName ?? "",
       code,
     }),
-    idempotencyKey: `auth-email-otp/${params.purpose}/${email}/${Math.floor(now.getTime() / OTP_RESEND_COOLDOWN_MS)}`,
+    idempotencyKey: `auth-email-otp/${params.purpose}/${email}/${now.getTime()}`,
   });
 
   if (!result.ok) {
     console.error(
       "[auth-email-otp] Resend send failed:",
       result.error,
+      "— retrying without idempotency key"
+    );
+    const retry = await sendTransactionalEmail({
+      to: email,
+      subject: authOtpSubject(),
+      html: buildEmailOtpHtml({
+        fullName: params.fullName ?? "",
+        code,
+      }),
+    });
+    if (retry.ok) {
+      return { ok: true, message: EMAIL_OTP_USER_MESSAGES.sent };
+    }
+    console.error(
+      "[auth-email-otp] Resend retry failed:",
+      retry.error,
       "— check AUTH_EMAIL_FROM domain verification and RESEND_API_KEY"
     );
     if (!isProductionEnv()) {

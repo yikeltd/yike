@@ -4,6 +4,7 @@ import { requireAdminApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recordListingHistoryEvent } from "@/lib/listing-history/record";
 import type { PropertyStatus } from "@/types/database";
 
 type RouteCtx = { params: Promise<{ id: string }> };
@@ -115,6 +116,18 @@ export async function POST(req: Request, ctx: RouteCtx) {
       new_status: nextStatus,
     },
     ip,
+  });
+
+  void recordListingHistoryEvent(admin, {
+    listingId: id,
+    eventType: "admin_reviewed",
+    oldValue: { status: existing.status },
+    newValue: { status: nextStatus, action: body.action },
+    actorId: auth.user.id,
+    actorRole: auth.profile.role,
+    source: "admin_moderate",
+    publicVisible: false,
+    internalNote: body.note?.trim() || null,
   });
 
   return NextResponse.json({ listing: data });

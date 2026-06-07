@@ -8,6 +8,7 @@ import { parseSearchParams } from "@/lib/properties";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { BrowseRail } from "@/components/retention/browse-rail";
+import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
 
 function SectionFallback() {
   return (
@@ -37,22 +38,32 @@ export default async function HomePage({
   };
 
   return (
-    <div className="home-canvas min-h-[100dvh] pb-4 lg:pb-8">
+    <div className="home-canvas min-h-[100dvh] lg:pb-8">
       <PrefSync />
       <Suspense fallback={null}>
         <HomeSearchHero initial={initial} />
       </Suspense>
 
+      <div className="mx-auto max-w-7xl px-3 pt-3 lg:px-6 xl:px-8">
+        <VerificationPromoSlot placement="homepage_hero" variant="hero" />
+      </div>
+
       <Suspense fallback={<SectionFallback />}>
         <HomeHotPicksSections />
       </Suspense>
 
-      <div className="mt-4">
+      <div className="mx-auto max-w-7xl px-3 pt-3 lg:px-6 xl:px-8">
+        <VerificationPromoSlot placement="homepage_inline" variant="card" />
+      </div>
+
+      <VerificationPromoSlot placement="mobile_sticky_cta" variant="sticky" />
+
+      <div className="mt-3">
         <BrowseRail />
       </div>
 
-      <section className="mx-auto max-w-7xl px-3 pt-6 lg:px-6 xl:px-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <section className="mx-auto max-w-7xl px-3 pt-5 lg:px-6 xl:px-8">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark dark:text-gold">
               For you

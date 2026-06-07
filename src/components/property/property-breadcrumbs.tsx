@@ -41,7 +41,7 @@ export function PropertyBreadcrumbs({
       />
       <nav
         aria-label="Breadcrumb"
-        className="mb-4 flex flex-wrap items-center gap-1 text-xs text-muted sm:text-sm"
+        className="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted sm:text-sm"
       >
         {crumbs.map((c, i) => (
           <span key={c.name} className="flex items-center gap-1">

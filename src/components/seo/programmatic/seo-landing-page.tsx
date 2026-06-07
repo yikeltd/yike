@@ -101,7 +101,7 @@ export function SeoLandingPage({
   const searchHref = `/search?${searchParams.toString()}`;
 
   return (
-    <div className="pb-28 lg:pb-16">
+    <div className="lg:pb-12">
       <SeoStructuredData
         pageUrl={pageUrl}
         pageName={h1}

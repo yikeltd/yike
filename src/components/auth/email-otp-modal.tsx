@@ -20,6 +20,7 @@ export function EmailOtpModal({
   onClose,
   onVerified,
   autoSend = true,
+  initialCodeSent = false,
 }: {
   open: boolean;
   email: string;
@@ -29,10 +30,12 @@ export function EmailOtpModal({
   onClose?: () => void;
   onVerified: () => void | Promise<void>;
   autoSend?: boolean;
+  initialCodeSent?: boolean;
 }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -49,8 +52,10 @@ export function EmailOtpModal({
       const data = (await res.json()) as { error?: string; message?: string };
       if (!res.ok) {
         setError(data.error ?? EMAIL_OTP_USER_MESSAGES.sendFailed);
+        setCodeSent(false);
         return;
       }
+      setCodeSent(true);
       setCooldown(RESEND_COOLDOWN_SEC);
     } catch {
       setError(EMAIL_OTP_USER_MESSAGES.network);
@@ -64,8 +69,14 @@ export function EmailOtpModal({
     setCode("");
     setError("");
     setSuccess("");
+    if (initialCodeSent) {
+      setCodeSent(true);
+      setCooldown(RESEND_COOLDOWN_SEC);
+      return;
+    }
+    setCodeSent(false);
     if (autoSend) void sendCode();
-  }, [open, autoSend, sendCode]);
+  }, [open, autoSend, initialCodeSent, sendCode]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -109,6 +120,7 @@ export function EmailOtpModal({
         return;
       }
       setSuccess(data.message ?? EMAIL_OTP_USER_MESSAGES.verified);
+      await new Promise((r) => window.setTimeout(r, 400));
       await onVerified();
     } catch {
       setError(EMAIL_OTP_USER_MESSAGES.network);
@@ -149,9 +161,27 @@ export function EmailOtpModal({
           Verify your email
         </h2>
         <p className="mt-1 text-sm text-muted">
-          We sent a 6-digit code to{" "}
-          <span className="font-semibold text-foreground">{email}</span>.
+          {codeSent ? (
+            <>
+              Code sent to{" "}
+              <span className="font-semibold text-foreground">{email}</span>.
+              Enter all 6 digits — we&apos;ll verify automatically.
+            </>
+          ) : sending ? (
+            <>Sending your code to {email}…</>
+          ) : (
+            <>
+              We&apos;ll send a 6-digit code to{" "}
+              <span className="font-semibold text-foreground">{email}</span>.
+            </>
+          )}
         </p>
+
+        {codeSent && !error && !success && (
+          <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+            Check your inbox — code expires in 10 minutes.
+          </p>
+        )}
 
         <div className="mt-6">
           <OtpCodeInput

@@ -141,7 +141,10 @@ export type AccountType =
   | "agency"
   | "developer"
   | "landlord"
-  | "city_ambassador";
+  | "city_ambassador"
+  | "field_verifier"
+  | "legal_partner"
+  | "service_provider";
 
 export type AmbassadorStatus =
   | "pending"
@@ -515,11 +518,158 @@ export interface Property {
   quality_level?: "low" | "medium" | "high" | "premium" | null;
   fraud_risk_score?: number;
   moderation_flags?: string[];
+  price_change_count?: number;
+  last_price_changed_at?: string | null;
+  last_status_changed_at?: string | null;
+  last_verified_at?: string | null;
+  history_summary_updated_at?: string | null;
+  had_unavailable_state?: boolean;
+  reactivation_count?: number;
+  internal_trust_score?: number;
+  internal_risk_score?: number;
+  internal_trust_status?: string;
+  value_drivers_status?:
+    | "none"
+    | "pending_review"
+    | "approved"
+    | "rejected"
+    | "partially_approved";
+  approved_value_driver_count?: number;
   public_listing_code?: string | null;
   created_at: string;
   updated_at: string;
   extras?: ListingExtras | null;
   agent?: Profile | null;
+}
+
+export interface ListingValueDriver {
+  id: string;
+  listing_id: string;
+  driver_key: string;
+  label: string;
+  category: string;
+  status: "pending_review" | "approved" | "rejected" | "requires_evidence";
+  submitted_by: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  rejection_reason: string | null;
+  evidence_url: string | null;
+  evidence_requested: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrustScoreRecord {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  trust_score: number;
+  risk_score: number;
+  confidence_score: number;
+  trust_level: string;
+  event_count: number;
+  score_frozen: boolean;
+  manual_trust_score: number | null;
+  manual_risk_score: number | null;
+  manual_trust_level: string | null;
+  escalated: boolean;
+  admin_notes: string | null;
+  last_calculated_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrustScoreEvent {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  event_type: string;
+  score_delta: number;
+  risk_delta: number;
+  confidence_delta: number;
+  reason: string;
+  metadata: Record<string, unknown>;
+  actor_id: string | null;
+  created_at: string;
+}
+
+export type ServiceProviderVerificationStatus =
+  | "pending"
+  | "under_review"
+  | "approved"
+  | "paused"
+  | "suspended"
+  | "fraud_review";
+
+export interface ServiceProviderProfile {
+  id: string;
+  user_id: string | null;
+  application_id: string | null;
+  provider_reference: string;
+  provider_type: string;
+  business_name: string | null;
+  full_name: string;
+  slug: string;
+  bio: string | null;
+  profile_image: string | null;
+  banner_image: string | null;
+  city: string;
+  state: string;
+  service_areas: string[];
+  whatsapp: string;
+  phone: string | null;
+  address: string | null;
+  years_experience: number | null;
+  verification_status: ServiceProviderVerificationStatus;
+  trust_status: string;
+  availability_status: string;
+  average_rating: number | null;
+  total_jobs: number;
+  complaint_count: number;
+  featured: boolean;
+  payout_enabled: boolean;
+  admin_notes: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  last_activity_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ServiceRequest {
+  id: string;
+  request_reference: string;
+  requester_id: string | null;
+  provider_id: string | null;
+  service_type: string;
+  city: string;
+  state: string;
+  area: string | null;
+  area_id: string | null;
+  status: string;
+  requester_name: string | null;
+  requester_whatsapp: string | null;
+  notes: string | null;
+  admin_notes: string | null;
+  assigned_by: string | null;
+  assigned_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ListingHistoryEvent {
+  id: string;
+  listing_id: string;
+  event_type: string;
+  old_value: Record<string, unknown> | null;
+  new_value: Record<string, unknown> | null;
+  actor_id: string | null;
+  actor_role: string | null;
+  source: string | null;
+  public_visible: boolean;
+  internal_note: string | null;
+  created_at: string;
 }
 
 export interface InspectionRequest {
@@ -697,7 +847,9 @@ export interface AdPlacement {
 export interface SiteBanner {
   id: string;
   title: string | null;
+  subtitle: string | null;
   message: string;
+  cta_text: string | null;
   image_url: string | null;
   link_url: string | null;
   is_active: boolean;

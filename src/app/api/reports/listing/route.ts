@@ -4,6 +4,8 @@ import { getAdminAlertInbox } from "@/lib/email/admin-inbox";
 import { sendAdminAlert, sendReportReceivedEmail } from "@/lib/email/service";
 import { REPORT_REASONS } from "@/lib/constants";
 import { getSession } from "@/lib/auth";
+import { recordListingHistoryEvent } from "@/lib/listing-history/record";
+import { recordTrustScoreEvent } from "@/lib/trust/score-engine/events";
 
 export const runtime = "nodejs";
 
@@ -72,6 +74,34 @@ export async function POST(request: Request) {
   void admin.rpc("yike_refresh_listing_report_thresholds", {
     p_property_id: propertyId,
   });
+
+  void recordListingHistoryEvent(admin, {
+    listingId: propertyId,
+    eventType: "report_received",
+    newValue: { reason, reportId: report.id },
+    actorId: session?.id ?? null,
+    actorRole: session ? "user" : "guest",
+    source: "reports_api",
+    publicVisible: false,
+    internalNote: body.message?.trim() || null,
+  });
+
+  void recordTrustScoreEvent(admin, {
+    entityType: "listing",
+    entityId: propertyId,
+    eventType: "complaint_received",
+    reason: `Listing reported: ${reason}`,
+    metadata: { reportId: report.id, reason },
+  });
+  if (property.agent_id) {
+    void recordTrustScoreEvent(admin, {
+      entityType: "agent",
+      entityId: property.agent_id,
+      eventType: "complaint_received",
+      reason: `Complaint on listing: ${reason}`,
+      metadata: { propertyId, reportId: report.id },
+    });
+  }
 
   const email = body.reporterEmail?.trim();
   if (email) {

@@ -13,6 +13,7 @@ import {
 import { mergeQueryIntoParams } from "@/lib/location-search";
 import { propertyTypeLabel } from "@/lib/utils";
 import { sortPropertiesByMarketRank, isFeaturedActive } from "@/lib/agent-tiers";
+import { matchesLocationIntent } from "@/lib/search-relevance";
 import { isListingDiscoverable } from "@/lib/leads/availability";
 import { isUuidParam, buildPropertySlugBase } from "@/lib/property-slugs";
 
@@ -79,6 +80,9 @@ async function queryPublicPropertiesRows(
   const { data } = await query;
   let rows = (data ?? []) as Property[];
   rows = rows.filter((p) => isListingDiscoverable(p));
+  if (merged.state || merged.city || merged.area) {
+    rows = rows.filter((p) => matchesLocationIntent(p, merged));
+  }
   if (params.featured) {
     rows = rows.filter((p) => isFeaturedActive(p));
   }

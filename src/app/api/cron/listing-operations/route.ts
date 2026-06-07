@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runTrustQualityBatch } from "@/lib/trust/recalculate";
+import { archiveDueListings } from "@/lib/trust/listing-staleness";
+import { expireStaleVerificationReports } from "@/lib/verification/report-expiry";
 
 export const runtime = "nodejs";
 
@@ -29,6 +31,8 @@ export async function GET(request: Request) {
   );
 
   const trust = await runTrustQualityBatch(admin);
+  const archivedListings = await archiveDueListings(admin);
+  const expiredReports = await expireStaleVerificationReports(admin);
 
   if (expireError) {
     return NextResponse.json(
@@ -40,6 +44,8 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     expiredMarked: expiredCount ?? 0,
+    archivedListings,
+    expiredReports,
     ...trust,
   });
 }

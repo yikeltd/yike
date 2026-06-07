@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   const { data: listing } = await supabase
     .from("properties")
-    .select("id, title, city, area, status, expires_at")
+    .select("id, title, city, area, status, expires_at, agent_id")
     .eq("id", listingId)
     .maybeSingle();
 
@@ -99,6 +99,45 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   if (admin) {
+    const { getDefaultVerifierFee } = await import("@/lib/verifier/earnings");
+    const { generateUniqueYvrReference } = await import("@/lib/verification/reference");
+    const { createStaffOpsAlert } = await import("@/lib/verification/ops-alerts");
+    const verifierFee = await getDefaultVerifierFee(admin);
+    const reference = await generateUniqueYvrReference(admin);
+    void admin
+      .from("property_verification_requests")
+      .insert({
+        request_reference: reference,
+        source: "listing",
+        property_id: listingId,
+        requester_user_id: user.id,
+        inspection_request_id: created.id,
+        listing_agent_id: listing.agent_id,
+        status: "submitted",
+        requester_notes: userNote,
+        verifier_fee: verifierFee,
+        buyer_full_name: requesterName,
+        buyer_email: requesterEmail,
+        buyer_whatsapp: requesterWhatsapp,
+        property_title: listing.title,
+        property_location_text: `${listing.area}, ${listing.city}`,
+        terms_accepted: true,
+      })
+      .then(async ({ error: pvrError }) => {
+        if (pvrError) {
+          console.warn("[inspection-request] verifier queue failed", pvrError);
+          return;
+        }
+        await createStaffOpsAlert(admin, {
+          alertType: "property_verification_new",
+          title: "New Property Verification Request",
+          body: `${requesterName ?? "User"} · ${listing.area}, ${listing.city} · ${reference}`,
+          referenceType: "property_verification_request",
+          referenceId: reference,
+          priority: "normal",
+        });
+      });
+
     void autoAssignInspectionRequest(admin, created.id);
     void sendInspectionRequestAlert(admin, {
       listingTitle: listing.title,

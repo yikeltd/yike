@@ -40,19 +40,30 @@ import {
   qualityFlagLabel,
 } from "@/lib/listing-quality";
 import { PriceConfirmDialog } from "@/components/agent/price-confirm-dialog";
+import { ValueDriverPicker } from "@/components/agent/value-driver-picker";
 import { softenListingTitle } from "@/lib/title-normalize";
 import type { PriceAnalysisResult } from "@/lib/pricing/types";
 
 type ListingFormProps = {
   agentId: string;
   initial?: Property;
+  initialValueDriverKeys?: string[];
   activeCount?: number;
   listingLimit?: number | null;
 };
 
+async function syncValueDrivers(listingId: string, driverKeys: string[]) {
+  await fetch(`/api/agent/listings/${listingId}/value-drivers`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ driverKeys }),
+  });
+}
+
 export function ListingForm({
   agentId,
   initial,
+  initialValueDriverKeys = [],
   activeCount = 0,
   listingLimit = null,
 }: ListingFormProps) {
@@ -68,6 +79,9 @@ export function ListingForm({
   );
   const [amenities, setAmenities] = useState<string[]>(
     initial?.extras?.amenities ?? []
+  );
+  const [valueDriverKeys, setValueDriverKeys] = useState<string[]>(
+    initialValueDriverKeys
   );
   const [listingType, setListingType] = useState<ListingTypeValue>(
     (initial?.listing_type as ListingTypeValue) ?? "rent"
@@ -115,6 +129,7 @@ export function ListingForm({
         setError(updateError.message);
         return;
       }
+      void syncValueDrivers(initial.id, valueDriverKeys);
       if (priceMeta?.confirmed) {
         void fetch("/api/pricing/confirm", {
           method: "POST",
@@ -147,6 +162,7 @@ export function ListingForm({
       return;
     }
     if (created?.id) {
+      void syncValueDrivers(created.id, valueDriverKeys);
       void fetch("/api/notifications/email/listing-submitted", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -638,6 +654,17 @@ export function ListingForm({
               />
             )}
           </div>
+        </FormSection>
+
+        <FormSection
+          title="Why this property stands out"
+          hint="Select only what truly applies"
+        >
+          <ValueDriverPicker
+            selected={valueDriverKeys}
+            onChange={setValueDriverKeys}
+            disabled={loading}
+          />
         </FormSection>
 
         <FormSection title="Details (optional)">

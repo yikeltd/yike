@@ -24,6 +24,7 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: adminPath("overview"), label: "Dashboard", segment: "overview" },
       { href: adminPath("operations"), label: "Operations", segment: "operations" },
+      { href: adminPath("trust"), label: "Trust Command Center", segment: "trust" },
     ],
   },
   {
@@ -51,6 +52,12 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
       { href: adminPath("hot-picks"), label: "Hot Picks", segment: "hot-picks" },
       { href: adminPath("ads"), label: "Ads", segment: "ads" },
       { href: adminPath("banners"), label: "Banners", segment: "banners" },
+      { href: adminPath("promo-banners"), label: "Promo Banners", segment: "promo-banners" },
+      {
+        href: adminPath("property-verifications"),
+        label: "Property Verifications",
+        segment: "property-verifications",
+      },
     ],
   },
   {
@@ -73,11 +80,34 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
         label: "Applications",
         segment: "careers",
       },
+    ],
+  },
+  {
+    id: "partners",
+    label: "Partners",
+    items: [
       { href: adminPath("ambassadors"), label: "Ambassadors", segment: "ambassadors" },
       {
         href: adminPath("ambassadors/payouts"),
         label: "Ambassador Payouts",
         segment: "ambassadors",
+      },
+      { href: adminPath("verifiers"), label: "Field Verifiers", segment: "verifiers" },
+      {
+        href: adminPath("verifiers/payouts"),
+        label: "Verifier Payouts",
+        segment: "verifiers",
+      },
+      { href: adminPath("legal-partners"), label: "Legal Partners", segment: "legal-partners" },
+      {
+        href: adminPath("legal-partners/payouts"),
+        label: "Legal Partner Payouts",
+        segment: "legal-partners",
+      },
+      {
+        href: adminPath("home-services"),
+        label: "Home Services (Prep)",
+        segment: "home-services",
       },
     ],
   },

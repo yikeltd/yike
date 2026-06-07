@@ -540,6 +540,7 @@ export function SignupForm({
           purpose="signup"
           password={pendingSignup.password}
           autoSend={false}
+          initialCodeSent
           onVerified={() => finishSignupSession(pendingSignup)}
         />
       )}

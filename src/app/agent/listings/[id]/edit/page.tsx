@@ -21,10 +21,22 @@ export default async function EditListingPage({
 
   if (!data) redirect("/agent/listings");
 
+  const { data: driverRows } = await supabase
+    .from("listing_value_drivers")
+    .select("driver_key")
+    .eq("listing_id", id);
+
+  const initialValueDriverKeys =
+    driverRows?.map((r) => r.driver_key as string) ?? [];
+
   return (
     <div className="space-y-4 px-3 pt-2 pb-8">
       <h1 className="text-xl font-bold">Edit listing</h1>
-      <ListingForm agentId={user.id} initial={data as Property} />
+      <ListingForm
+        agentId={user.id}
+        initial={data as Property}
+        initialValueDriverKeys={initialValueDriverKeys}
+      />
     </div>
   );
 }
