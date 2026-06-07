@@ -136,7 +136,10 @@ export async function POST(request: Request) {
   }
 
   if (reviewerBypass) {
-    await confirmReviewerEmail(email);
+    const confirmed = await confirmReviewerEmail(email);
+    if (!confirmed) {
+      console.error("[auth/signup] reviewer email confirm failed:", email);
+    }
   }
 
   const admin = await createVerifiedAdminClient();

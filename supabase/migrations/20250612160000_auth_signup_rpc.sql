@@ -86,9 +86,7 @@ BEGIN
     RAISE EXCEPTION 'not_reviewer';
   END IF;
   UPDATE auth.users
-  SET
-    email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
-    confirmed_at = COALESCE(confirmed_at, NOW())
+  SET email_confirmed_at = COALESCE(email_confirmed_at, NOW())
   WHERE LOWER(email) = LOWER(TRIM(p_email));
 END;
 $$;
