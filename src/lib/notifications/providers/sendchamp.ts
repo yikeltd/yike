@@ -7,7 +7,8 @@ import {
 } from "./sendchamp-response";
 
 const DEFAULT_BASE_URL = "https://api.sendchamp.com/api/v1";
-const FETCH_TIMEOUT_MS = 12_000;
+const FETCH_TIMEOUT_MS = 25_000;
+const FETCH_RETRIES = 2;
 
 function getBaseUrl(): string {
   return process.env.SENDCHAMP_LIVE_BASE_URL?.trim() || DEFAULT_BASE_URL;
@@ -86,32 +87,42 @@ async function sendchampPost<T extends Record<string, unknown>>(
   let lastError = "Sendchamp request failed";
 
   for (const apiKey of config.apiKeys) {
-    try {
-      const res = await fetch(`${baseUrl}${path}`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      });
+    for (let attempt = 0; attempt < FETCH_RETRIES; attempt++) {
+      try {
+        const res = await fetch(`${baseUrl}${path}`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        });
 
-      const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+        const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
 
-      if (isSendchampSuccess(data, res.ok)) {
-        return { ok: true, data: data as SendchampEnvelope<T> };
+        if (isSendchampSuccess(data, res.ok)) {
+          return { ok: true, data: data as SendchampEnvelope<T> };
+        }
+
+        lastError = sendchampErrorMessage(data, res.status);
+        console.error(
+          "[sendchamp]",
+          path,
+          res.status,
+          lastError,
+          JSON.stringify(data).slice(0, 500)
+        );
+        break;
+      } catch (err) {
+        lastError =
+          err instanceof Error && err.name === "TimeoutError"
+            ? "Sendchamp request timed out"
+            : "Sendchamp network error";
+        console.error("[sendchamp]", path, lastError, `attempt ${attempt + 1}`);
+        if (attempt + 1 < FETCH_RETRIES) continue;
       }
-
-      lastError = sendchampErrorMessage(data, res.status);
-      console.error("[sendchamp]", path, res.status, lastError, JSON.stringify(data));
-    } catch (err) {
-      lastError =
-        err instanceof Error && err.name === "TimeoutError"
-          ? "Sendchamp request timed out"
-          : "Sendchamp network error";
-      console.error("[sendchamp]", path, lastError);
     }
   }
 
@@ -212,9 +223,9 @@ export async function sendOtpSms(
   if (!config) return { ok: false, error: "Sendchamp not configured" };
 
   const mobile = toSendchampPhone(phone);
-  const message = `Your Yike code is ${code}. Expires in 10 minutes.`;
+  const message = `Your Yike verification code is ${code}. Valid for 10 minutes. Do not share this code.`;
 
-  // Approved sender "Yike" — non_dnd route first per Sendchamp approval.
+  // Direct SMS with explicit code — most reliable for signup OTP.
   for (const route of ["non_dnd", "dnd"] as const) {
     const direct = await sendSmsMessage(mobile, message, config.smsSender, route);
     if (direct.ok) return direct;
@@ -239,6 +250,13 @@ export async function sendOtpWhatsApp(
     return { ok: false, error: "WhatsApp sender not configured" };
   }
 
+  if (!/^234\d{10}$/.test(config.whatsappSender)) {
+    return {
+      ok: false,
+      error: `WhatsApp sender must be a 234… phone number (got ${config.whatsappSender.slice(0, 8)}…)`,
+    };
+  }
+
   const verification = await sendVerificationOtp(
     "WHATSAPP",
     config.whatsappSender,
@@ -249,7 +267,7 @@ export async function sendOtpWhatsApp(
 
   return sendWhatsAppText(
     phone,
-    `Your Yike verification code is ${code}. Expires in 10 minutes.`,
+    `Your Yike verification code is ${code}. Valid for 10 minutes. Do not share this code.`,
     config.whatsappSender
   );
 }

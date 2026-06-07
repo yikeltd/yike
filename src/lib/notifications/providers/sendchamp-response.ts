@@ -50,15 +50,15 @@ export function isSendchampSuccess(
 
   if (body.errors != null && body.errors !== "") {
     if (Array.isArray(body.errors) && body.errors.length === 0) {
-      return httpOk;
+      return false;
     }
     if (body.errors === null) {
-      return httpOk;
+      return false;
     }
     return false;
   }
 
-  return httpOk;
+  return false;
 }
 
 export function sendchampErrorMessage(body: Record<string, unknown>, httpStatus: number): string {
