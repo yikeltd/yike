@@ -19,7 +19,15 @@ function getClient(): Resend | null {
 }
 
 function fromAddress(): string {
-  return process.env.RESEND_FROM_EMAIL?.trim() || "Yike <hello@yike.ng>";
+  return (
+    process.env.AUTH_EMAIL_FROM?.trim() ||
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    "Yike <no-reply@yike.ng>"
+  );
+}
+
+export function authOtpSubject(): string {
+  return "Your Yike verification code";
 }
 
 export function isResendConfigured(): boolean {
@@ -57,7 +65,7 @@ export async function sendTransactionalEmail(params: {
 export function emailSubjectForType(type: EmailType): string {
   switch (type) {
     case "email_verification":
-      return "Verify your Yike account";
+      return "Your Yike verification code";
     case "welcome":
       return "Welcome to Yike";
     case "password_reset":

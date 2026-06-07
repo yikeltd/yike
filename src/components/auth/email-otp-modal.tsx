@@ -9,11 +9,14 @@ import { cn } from "@/lib/utils";
 
 const RESEND_COOLDOWN_SEC = 60;
 
+export type EmailOtpPurpose = "signup" | "login" | "email_verify" | "password_reset";
+
 export function EmailOtpModal({
   open,
   email,
   fullName,
-  userId,
+  purpose = "signup",
+  password,
   onClose,
   onVerified,
   autoSend = true,
@@ -21,7 +24,8 @@ export function EmailOtpModal({
   open: boolean;
   email: string;
   fullName?: string;
-  userId?: string;
+  purpose?: EmailOtpPurpose;
+  password?: string;
   onClose?: () => void;
   onVerified: () => void | Promise<void>;
   autoSend?: boolean;
@@ -37,10 +41,10 @@ export function EmailOtpModal({
     setSending(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/email/otp/send", {
+      const res = await fetch("/api/auth/send-email-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, fullName, userId }),
+        body: JSON.stringify({ email, fullName, purpose }),
       });
       const data = (await res.json()) as { error?: string; message?: string };
       if (!res.ok) {
@@ -53,7 +57,7 @@ export function EmailOtpModal({
     } finally {
       setSending(false);
     }
-  }, [email, fullName, userId]);
+  }, [email, fullName, purpose]);
 
   useEffect(() => {
     if (!open) return;
@@ -88,10 +92,15 @@ export function EmailOtpModal({
     setVerifying(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/email/otp/verify", {
+      const res = await fetch("/api/auth/verify-email-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: otp }),
+        body: JSON.stringify({
+          email,
+          otp,
+          purpose,
+          ...(purpose === "signup" && password ? { password } : {}),
+        }),
       });
       const data = (await res.json()) as { error?: string; message?: string };
       if (!res.ok) {

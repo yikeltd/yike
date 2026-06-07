@@ -191,6 +191,7 @@ export default function LoginPage() {
       <EmailOtpModal
         open={emailVerifyOpen}
         email={email}
+        purpose="email_verify"
         onVerified={async () => {
           await completeLogin(email, password);
         }}

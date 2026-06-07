@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { SITE_URL } from "@/lib/constants";
+import { hashClientIp, hashUserAgent } from "@/lib/auth-email-otp/request-meta";
+import { createConfirmedAuthUser } from "@/lib/auth-email-otp/create-user";
+import { createAuthEmailOtpDbClient, emailIsRegistered, signupPendingUpsert } from "@/lib/auth-email-otp/rpc";
+import { sendAuthEmailOtp, SIGNUP_PENDING_MS } from "@/lib/auth-email-otp/service";
 import {
   completeSignupProfile,
   confirmReviewerEmail,
   isUsernameAvailable,
 } from "@/lib/auth/signup-rpc";
-import { EMAIL_USER_MESSAGES } from "@/lib/notifications/messages";
 import { createOtpDbClient, otpFindVerified } from "@/lib/otp/rpc";
 import { normalizeNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
@@ -16,15 +18,17 @@ import {
 } from "@/lib/feature-flags";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { validateMathChallenge } from "@/lib/signup-math-challenge";
-import { createPublicClient } from "@/lib/supabase/public";
+import { isProductionEnv } from "@/lib/env";
+import { EMAIL_OTP_USER_MESSAGES } from "@/lib/notifications/messages";
+import { createVerifiedAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,24}$/;
 
 export async function POST(request: Request) {
-  const supabase = createPublicClient();
-  if (!supabase) {
+  const db = createAuthEmailOtpDbClient();
+  if (!db) {
     return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
   }
 
@@ -102,6 +106,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Username already taken" }, { status: 409 });
   }
 
+  const emailTaken = await emailIsRegistered(db, email);
+  if (emailTaken === null) {
+    return NextResponse.json({ error: "Could not verify email" }, { status: 503 });
+  }
+  if (emailTaken) {
+    return NextResponse.json(
+      { error: "An account already exists with this email. Please sign in." },
+      { status: 409 }
+    );
+  }
+
   let pinHash: string;
   try {
     pinHash = hashPin(pin);
@@ -109,59 +124,78 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid PIN" }, { status: 400 });
   }
 
-  const redirectTo = `${SITE_URL}/auth/callback?next=${encodeURIComponent("/auth/verify-email")}`;
-  const { data: authData, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-        phone,
-        username,
-      },
-      emailRedirectTo: redirectTo,
-    },
-  });
-
-  if (signUpError) {
-    const message = signUpError.message.toLowerCase().includes("already registered")
-      ? "An account already exists with this email. Please sign in."
-      : "Could not create account. Please try again.";
-    return NextResponse.json({ error: message }, { status: 400 });
-  }
-
-  if (!authData.user) {
-    return NextResponse.json({ error: "Could not create account" }, { status: 400 });
-  }
-
-  const userId = authData.user.id;
-
-  const profileOk = await completeSignupProfile({
-    userId,
-    username,
-    pinHash,
-    phone,
-    fullName,
-    phoneVerified: reviewerBypass || phoneOtpRequired,
-  });
-
-  if (!profileOk) {
-    return NextResponse.json({ error: "Could not finish account setup" }, { status: 500 });
-  }
-
   if (reviewerBypass) {
-    const confirmed = await confirmReviewerEmail(email);
-    if (!confirmed) {
-      console.error("[auth/signup] reviewer email confirm failed:", email);
+    const admin = await createVerifiedAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
     }
+
+    const created = await createConfirmedAuthUser(admin, {
+      email,
+      password,
+      fullName,
+      phone,
+      username,
+    });
+
+    if (!created.ok) {
+      return NextResponse.json({ error: created.error }, { status: 400 });
+    }
+
+    const profileOk = await completeSignupProfile({
+      userId: created.userId,
+      username,
+      pinHash,
+      phone,
+      fullName,
+      phoneVerified: true,
+    });
+
+    if (!profileOk) {
+      return NextResponse.json({ error: "Could not finish account setup" }, { status: 500 });
+    }
+
+    await confirmReviewerEmail(email);
+
+    return NextResponse.json({
+      ok: true,
+      userId: created.userId,
+      needsEmailVerification: false,
+      message: "Reviewer account ready — sign in with your password.",
+    });
+  }
+
+  const pendingExpires = new Date(Date.now() + SIGNUP_PENDING_MS).toISOString();
+  const pendingOk = await signupPendingUpsert(db, {
+    email,
+    username,
+    fullName,
+    phone,
+    pinHash,
+    phoneVerified: phoneOtpRequired,
+    expiresAt: pendingExpires,
+  });
+
+  if (!pendingOk) {
+    return NextResponse.json({ error: "Could not start signup" }, { status: 500 });
+  }
+
+  const otpResult = await sendAuthEmailOtp(db, {
+    email,
+    purpose: "signup",
+    fullName,
+    ipHash: hashClientIp(request),
+    userAgentHash: hashUserAgent(request),
+  });
+
+  if (!otpResult.ok) {
+    return NextResponse.json({ error: otpResult.error }, { status: otpResult.status });
   }
 
   return NextResponse.json({
     ok: true,
-    userId,
-    needsEmailVerification: !reviewerBypass,
-    message: reviewerBypass
-      ? "Reviewer account ready — sign in with your password."
-      : EMAIL_USER_MESSAGES.verificationSent,
+    needsEmailVerification: true,
+    message: EMAIL_OTP_USER_MESSAGES.sent,
+    ...(!isProductionEnv() && otpResult.devOtp ? { devOtp: otpResult.devOtp } : {}),
   });
 }

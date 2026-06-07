@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { verifyEmailOtp } from "@/lib/email-otp/service";
-import { createEmailOtpDbClient } from "@/lib/email-otp/rpc";
+import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
+import { verifyAuthEmailOtp } from "@/lib/auth-email-otp/service";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { EMAIL_OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 
 export const runtime = "nodejs";
 
+/** @deprecated Use POST /api/auth/verify-email-otp */
 export async function POST(request: Request) {
   if (!isEmailOtpEnabled()) {
     return NextResponse.json(
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const db = createEmailOtpDbClient();
+  const db = createAuthEmailOtpDbClient();
   if (!db) {
     return NextResponse.json(
       { error: EMAIL_OTP_USER_MESSAGES.unavailable },
@@ -25,10 +26,16 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     email?: string;
     code?: string;
+    password?: string;
+    purpose?: string;
   };
 
   const email = String(body.email ?? "").trim();
   const code = String(body.code ?? "").trim();
+  const purpose =
+    body.purpose === "login" || body.purpose === "email_verify"
+      ? body.purpose
+      : "signup";
 
   if (!email || code.length !== 6) {
     return NextResponse.json(
@@ -37,7 +44,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await verifyEmailOtp(db, email, code);
+  const result = await verifyAuthEmailOtp(db, {
+    email,
+    code,
+    purpose,
+    password: body.password,
+  });
+
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }

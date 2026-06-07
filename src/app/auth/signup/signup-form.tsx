@@ -36,7 +36,6 @@ type PendingSignup = {
   password: string;
   fullName: string;
   username: string;
-  userId: string;
 };
 
 export function SignupForm({
@@ -248,6 +247,7 @@ export function SignupForm({
     const data = (await res.json()) as {
       ok?: boolean;
       userId?: string;
+      needsEmailVerification?: boolean;
       error?: string;
     };
 
@@ -264,18 +264,16 @@ export function SignupForm({
         password,
         fullName,
         username,
-        userId: data.userId,
       });
       return;
     }
 
-    if (data.userId) {
+    if (data.needsEmailVerification) {
       setPendingSignup({
         email,
         password,
         fullName,
         username,
-        userId: data.userId,
       });
       setEmailVerifyOpen(true);
     }
@@ -525,7 +523,9 @@ export function SignupForm({
           open={emailVerifyOpen}
           email={pendingSignup.email}
           fullName={pendingSignup.fullName}
-          userId={pendingSignup.userId}
+          purpose="signup"
+          password={pendingSignup.password}
+          autoSend={false}
           onVerified={() => finishSignupSession(pendingSignup)}
         />
       )}

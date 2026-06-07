@@ -2,13 +2,16 @@ import { NextResponse } from "next/server";
 import { hashClientIp, hashUserAgent } from "@/lib/auth-email-otp/request-meta";
 import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
 import { sendAuthEmailOtp } from "@/lib/auth-email-otp/service";
+import {
+  isAuthEmailOtpPurpose,
+  type AuthEmailOtpPurpose,
+} from "@/lib/auth-email-otp/types";
 import { isProductionEnv } from "@/lib/env";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { EMAIL_OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 
 export const runtime = "nodejs";
 
-/** @deprecated Use POST /api/auth/send-email-otp */
 export async function POST(request: Request) {
   if (!isEmailOtpEnabled()) {
     return NextResponse.json(
@@ -27,22 +30,22 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => ({}))) as {
     email?: string;
-    fullName?: string;
     purpose?: string;
+    fullName?: string;
   };
 
   const email = String(body.email ?? "").trim();
+  const purposeRaw = String(body.purpose ?? "signup").trim();
+  const purpose: AuthEmailOtpPurpose = isAuthEmailOtpPurpose(purposeRaw)
+    ? purposeRaw
+    : "email_verify";
+
   if (!email) {
     return NextResponse.json(
       { error: EMAIL_OTP_USER_MESSAGES.invalidEmail },
       { status: 400 }
     );
   }
-
-  const purpose =
-    body.purpose === "login" || body.purpose === "email_verify"
-      ? body.purpose
-      : "signup";
 
   const result = await sendAuthEmailOtp(db, {
     email,
