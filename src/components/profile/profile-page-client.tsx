@@ -18,6 +18,7 @@ import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { VerifiedBadge, StatusBadge } from "@/components/ui/badge";
 import { AgentSignOut } from "@/app/agent/sign-out-button";
 import { DeleteAccountLink } from "@/components/account/delete-account-link";
+import { AccountSecurityCard } from "@/components/profile/account-security-card";
 import { OptionalWhatsAppCard } from "@/components/profile/optional-whatsapp-card";
 import { isPhoneOtpEnabledClient } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
@@ -299,6 +300,8 @@ export function ProfilePageClient({
           )}
         </dl>
       </section>
+
+      <AccountSecurityCard email={email} />
 
       <AgentSignOut />
 

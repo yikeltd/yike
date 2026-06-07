@@ -1,6 +1,7 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { createOtpDbClient } from "@/lib/otp/rpc";
 import { getSendchampConfigSummary } from "@/lib/notifications/providers/sendchamp";
+import { EnvHealthPanel } from "@/components/admin/env-health-panel";
 import {
   AdminPageHeader,
   MetricCard,
@@ -43,6 +44,8 @@ export default async function TechDashboardPage() {
         <MetricCard label="Email failure rate" value={`${emailFailRate}%`} href="/lex/tech/email" variant={emailFailRate > 5 ? "danger" : "default"} />
         <MetricCard label="Deployment" value={process.env.VERCEL_ENV ?? "local"} sub={process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev"} />
       </div>
+
+      <EnvHealthPanel />
 
       <section className="grid gap-4 lg:grid-cols-2">
         <ErrorList title="Latest OTP errors" items={(recentOtpErrors.data ?? []).map((e) => ({ id: e.id, label: `${e.phone} — ${e.error_message ?? e.channel ?? "failed"}`, time: e.created_at }))} />

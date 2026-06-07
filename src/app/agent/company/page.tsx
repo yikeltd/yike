@@ -23,7 +23,7 @@ export default async function AgentCompanyPage() {
           Your company is verified on Yike.
         </p>
       ) : (
-        <CompanyVerificationForm />
+        <CompanyVerificationForm email={user.email ?? profile?.email ?? ""} />
       )}
     </div>
   );

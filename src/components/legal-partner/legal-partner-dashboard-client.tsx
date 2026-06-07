@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSensitiveActionGate } from "@/components/auth/use-sensitive-action-gate";
 import { LEGAL_DISCLAIMER } from "@/lib/legal-partner/constants";
 
 type Tab = "assignments" | "reports" | "payouts" | "bank" | "profile";
@@ -66,6 +67,9 @@ export function LegalPartnerDashboardClient() {
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reportRequestId, setReportRequestId] = useState<string | null>(null);
+  const { gateSensitiveAction, sensitiveActionModals } = useSensitiveActionGate(
+    data?.partner.email
+  );
 
   const load = useCallback(async () => {
     const [dashRes, banksRes] = await Promise.all([
@@ -140,6 +144,9 @@ export function LegalPartnerDashboardClient() {
 
   async function saveBank(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const gate = await gateSensitiveAction("change_payout_bank");
+    if (!gate.ok) return;
+
     setBusy(true);
     const form = new FormData(e.currentTarget);
     const res = await fetch("/api/legal-partner/bank", {
@@ -149,6 +156,7 @@ export function LegalPartnerDashboardClient() {
         bankCode: form.get("bankCode"),
         accountNumber: form.get("accountNumber"),
         accountName: form.get("accountName"),
+        sensitiveConfirmationToken: gate.confirmationToken,
       }),
     });
     const json = await res.json().catch(() => ({}));
@@ -202,6 +210,7 @@ export function LegalPartnerDashboardClient() {
 
   return (
     <div className="mx-auto max-w-2xl px-4">
+      {sensitiveActionModals}
       <div className="mb-6">
         <p className="text-xs font-bold uppercase tracking-wide text-gold-dark">Legal partner</p>
         <h1 className="text-2xl font-bold text-navy">{data.partner.firmName}</h1>

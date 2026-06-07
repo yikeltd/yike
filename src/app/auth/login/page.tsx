@@ -203,6 +203,14 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 revealLabel="password"
               />
+              <div className="mt-2 text-right">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm font-semibold text-gold-dark hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
             {error && (
               <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger dark:bg-red-500/15 dark:text-red-300">

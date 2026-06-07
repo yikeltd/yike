@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionPolicy, sensitiveActionRequiresOtp } from "@/lib/auth/session-policy";
+import { createSensitiveConfirmationToken } from "@/lib/auth/sensitive-token";
 import { logAuthSecurityEvent } from "@/lib/auth/security-events";
 import { getAuthenticatedUserId, getRequestMeta } from "@/lib/auth/session-state";
 import { verifyPin } from "@/lib/pin";
@@ -74,9 +75,14 @@ export async function POST(request: Request) {
     userAgent,
   });
 
+  const confirmationToken = createSensitiveConfirmationToken(userId, action);
+  if (!confirmationToken) {
+    return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+  }
+
   return NextResponse.json({
     ok: true,
     requiresOtp: sensitiveActionRequiresOtp(policy, action),
-    confirmationToken: Buffer.from(`${userId}:${action}:${Date.now()}`).toString("base64url"),
+    confirmationToken,
   });
 }

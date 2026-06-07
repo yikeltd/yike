@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSensitiveActionGate } from "@/components/auth/use-sensitive-action-gate";
 import { LEGAL_DISCLAIMER } from "@/lib/verifier/constants";
 import { OCCUPANCY_OPTIONS, PHOTO_CHECKLIST_ITEMS } from "@/lib/verification/constants";
 
@@ -69,6 +70,9 @@ export function VerifierDashboardClient() {
   const [reportRequestId, setReportRequestId] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [photoChecklist, setPhotoChecklist] = useState<Record<string, boolean>>({});
+  const { gateSensitiveAction, sensitiveActionModals } = useSensitiveActionGate(
+    data?.verifier.email
+  );
 
   const load = useCallback(async () => {
     const [dashRes, banksRes] = await Promise.all([
@@ -158,6 +162,9 @@ export function VerifierDashboardClient() {
 
   async function saveBank(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const gate = await gateSensitiveAction("change_payout_bank");
+    if (!gate.ok) return;
+
     setBusy(true);
     const form = new FormData(e.currentTarget);
     const res = await fetch("/api/verifier/bank", {
@@ -167,6 +174,7 @@ export function VerifierDashboardClient() {
         bankCode: form.get("bankCode"),
         accountNumber: form.get("accountNumber"),
         accountName: form.get("accountName"),
+        sensitiveConfirmationToken: gate.confirmationToken,
       }),
     });
     const json = await res.json().catch(() => ({}));
@@ -219,6 +227,7 @@ export function VerifierDashboardClient() {
 
   return (
     <div className="mx-auto max-w-3xl px-4">
+      {sensitiveActionModals}
       <div className="mb-6">
         <p className="text-xs font-bold uppercase tracking-wide text-gold-dark">Field verifier</p>
         <h1 className="text-2xl font-bold text-navy">{verifier.fullName ?? "Dashboard"}</h1>

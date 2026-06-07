@@ -240,6 +240,46 @@ export async function verifyAuthEmailOtp(
 
   await authOtpConsume(db, row.id);
 
+  if (params.purpose === "password_reset") {
+    const password = String(params.password ?? "");
+    if (password.length < 8) {
+      return {
+        ok: false,
+        error: "Choose a password with at least 8 characters.",
+        status: 400,
+      };
+    }
+
+    const admin = await createVerifiedAdminClient();
+    if (!admin) {
+      return { ok: false, error: EMAIL_OTP_USER_MESSAGES.verifyFailed, status: 503 };
+    }
+
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("id")
+      .ilike("email", email)
+      .maybeSingle();
+
+    if (!profile?.id) {
+      return { ok: false, error: EMAIL_OTP_USER_MESSAGES.verifyFailed, status: 400 };
+    }
+
+    const { error } = await admin.auth.admin.updateUserById(profile.id, {
+      password,
+    });
+
+    if (error) {
+      return { ok: false, error: EMAIL_OTP_USER_MESSAGES.verifyFailed, status: 500 };
+    }
+
+    return {
+      ok: true,
+      message: "Password updated. You can sign in now.",
+      userId: profile.id,
+    };
+  }
+
   if (params.purpose === "signup") {
     const pending = await signupPendingGet(db, email);
     if (!pending) {

@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { logAuthSecurityEvent } from "@/lib/auth/security-events";
+import {
+  parseSensitiveConfirmationToken,
+  requireSensitiveConfirmation,
+} from "@/lib/auth/require-sensitive-confirmation";
+import { getRequestMeta } from "@/lib/auth/session-state";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAuditLog } from "@/lib/admin/audit";
@@ -28,6 +34,15 @@ export async function POST(request: Request) {
   if (!partner) return NextResponse.json({ error: "Not a legal partner" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));
+  const gate = requireSensitiveConfirmation(
+    parseSensitiveConfirmationToken(body),
+    user.id,
+    "change_payout_bank"
+  );
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: 401 });
+  }
+
   const bank = resolveBankByCode(String(body.bankCode ?? ""));
   const accountNumber = String(body.accountNumber ?? "").trim();
   const accountName = String(body.accountName ?? "").trim();
@@ -78,6 +93,15 @@ export async function POST(request: Request) {
     target_id: partner.id,
     metadata: { bankCode: bank.code },
     ip: hdrs.get("x-forwarded-for")?.split(",")[0]?.trim(),
+  });
+
+  const { ip, userAgent } = await getRequestMeta(request);
+  await logAuthSecurityEvent({
+    userId: user.id,
+    eventType: "bank_change.confirmed",
+    metadata: { scope: "legal_partner" },
+    ip,
+    userAgent,
   });
 
   return NextResponse.json({ ok: true, message: "Bank saved. Payouts paused until admin review." });

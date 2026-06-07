@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSensitiveActionGate } from "@/components/auth/use-sensitive-action-gate";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { REVENUE_SOURCE_LABELS } from "@/lib/ambassador/constants";
 import type { RevenueSourceType } from "@/lib/ambassador/constants";
@@ -82,6 +83,9 @@ export function AmbassadorDashboardClient() {
   const [bankSaving, setBankSaving] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const { gateSensitiveAction, sensitiveActionModals } = useSensitiveActionGate(
+    data?.ambassador.email
+  );
 
   const load = useCallback(async () => {
     const [dashRes, banksRes] = await Promise.all([
@@ -113,6 +117,9 @@ export function AmbassadorDashboardClient() {
 
   async function saveBank(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const gate = await gateSensitiveAction("change_payout_bank");
+    if (!gate.ok) return;
+
     setBankSaving(true);
     setActionMessage(null);
     const form = new FormData(e.currentTarget);
@@ -123,6 +130,7 @@ export function AmbassadorDashboardClient() {
         bankCode: form.get("bankCode"),
         accountNumber: form.get("accountNumber"),
         accountName: form.get("accountName"),
+        sensitiveConfirmationToken: gate.confirmationToken,
       }),
     });
     const json = await res.json().catch(() => ({}));
@@ -133,6 +141,9 @@ export function AmbassadorDashboardClient() {
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const gate = await gateSensitiveAction("change_identity");
+    if (!gate.ok) return;
+
     setProfileSaving(true);
     setActionMessage(null);
     const form = new FormData(e.currentTarget);
@@ -146,6 +157,7 @@ export function AmbassadorDashboardClient() {
         nearestLandmark: form.get("nearestLandmark"),
         phoneNumber: form.get("phoneNumber"),
         whatsappNumber: form.get("whatsappNumber"),
+        sensitiveConfirmationToken: gate.confirmationToken,
       }),
     });
     const json = await res.json().catch(() => ({}));
@@ -182,6 +194,7 @@ export function AmbassadorDashboardClient() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-3 pb-16">
+      {sensitiveActionModals}
       {inactive ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Your ambassador account is {a.status}. Onboarding may be paused — contact Yike support if you need help.

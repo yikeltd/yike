@@ -1,6 +1,7 @@
 import { requireSuperAdmin } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { AdminPageHeader, MetricCard } from "@/components/admin/dashboard/admin-ui";
+import { EnvHealthPanel } from "@/components/admin/env-health-panel";
 import { adminPath } from "@/lib/admin-paths";
 import Link from "next/link";
 import { TECH_BASE_PATH } from "@/lib/admin-paths";
@@ -34,6 +35,7 @@ export default async function AdminHealthPage() {
         <MetricCard label="Sendchamp OTP sent" value={otpSent.count ?? 0} variant="success" />
         <MetricCard label="OTP failures" value={otpFailed.count ?? 0} variant={(otpFailed.count ?? 0) > 0 ? "warning" : "default"} />
       </div>
+      <EnvHealthPanel />
       <p className="text-sm text-muted">
         Supabase status: connected. Detailed logs available in{" "}
         <Link href={adminPath("audit-logs")} className="text-gold-dark underline">

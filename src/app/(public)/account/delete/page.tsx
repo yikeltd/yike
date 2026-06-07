@@ -45,7 +45,7 @@ export default async function DeleteAccountPage() {
               Signed in as <strong className="text-foreground">{user.email}</strong>.
               Confirm below to delete immediately.
             </p>
-            <DeleteAccountForm />
+            <DeleteAccountForm email={user.email ?? ""} />
           </div>
         ) : (
           <p>

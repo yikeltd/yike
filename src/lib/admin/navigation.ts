@@ -73,6 +73,7 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
       { href: adminPath("trust-metrics"), label: "Trust Metrics", segment: "trust-metrics" },
       { href: adminPath("users"), label: "Users", segment: "users" },
       { href: adminPath("auth-sync"), label: "Auth Sync", segment: "auth-sync" },
+      { href: adminPath("security-events"), label: "Security Events", segment: "security-events" },
       { href: adminPath("staff"), label: "Staff", segment: "staff" },
       { href: adminPath("careers"), label: "Careers", segment: "careers" },
       {
@@ -158,6 +159,7 @@ export const TECH_NAV_GROUPS: NavGroup[] = [
       { href: techPath("webhooks"), label: "Webhooks", segment: "webhooks" },
       { href: techPath("otp"), label: "OTP Failures", segment: "otp" },
       { href: techPath("email"), label: "Email Status", segment: "email" },
+      { href: techPath("env"), label: "Env Health", segment: "env" },
       { href: techPath("errors"), label: "Error Logs", segment: "errors" },
       { href: techPath("uploads"), label: "Failed Uploads", segment: "uploads" },
     ],

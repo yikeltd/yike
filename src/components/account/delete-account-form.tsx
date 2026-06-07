@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSensitiveConfirm } from "@/components/auth/sensitive-confirm-modal";
+import { useSensitiveActionGate } from "@/components/auth/use-sensitive-action-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export function DeleteAccountForm() {
+export function DeleteAccountForm({ email }: { email: string }) {
   const router = useRouter();
-  const { confirmSensitiveAction, sensitiveConfirmModal } = useSensitiveConfirm();
+  const { gateSensitiveAction, sensitiveActionModals } = useSensitiveActionGate(email);
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -17,7 +17,7 @@ export function DeleteAccountForm() {
     e.preventDefault();
     setError("");
 
-    const verified = await confirmSensitiveAction("delete_account");
+    const verified = await gateSensitiveAction("delete_account");
     if (!verified.ok) return;
 
     setLoading(true);
@@ -42,31 +42,31 @@ export function DeleteAccountForm() {
 
   return (
     <>
-      {sensitiveConfirmModal}
+      {sensitiveActionModals}
       <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="text-sm text-muted">
-        This permanently removes your profile, saved homes, and listings. Type{" "}
-        <strong className="text-foreground">DELETE</strong> to confirm.
-      </p>
-      <Input
-        value={confirm}
-        onChange={(e) => setConfirm(e.target.value)}
-        placeholder="Type DELETE"
-        autoComplete="off"
-        aria-label="Confirm deletion"
-      />
-      {error && (
-        <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger">{error}</p>
-      )}
-      <Button
-        type="submit"
-        variant="danger"
-        fullWidth
-        disabled={loading || confirm !== "DELETE"}
-      >
-        {loading ? "Deleting…" : "Delete my account permanently"}
-      </Button>
-    </form>
+        <p className="text-sm text-muted">
+          This permanently removes your profile, saved homes, and listings. Type{" "}
+          <strong className="text-foreground">DELETE</strong> to confirm.
+        </p>
+        <Input
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder="Type DELETE"
+          autoComplete="off"
+          aria-label="Confirm deletion"
+        />
+        {error && (
+          <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger">{error}</p>
+        )}
+        <Button
+          type="submit"
+          variant="danger"
+          fullWidth
+          disabled={loading || confirm !== "DELETE"}
+        >
+          {loading ? "Deleting…" : "Delete my account permanently"}
+        </Button>
+      </form>
     </>
   );
 }

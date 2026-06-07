@@ -1,0 +1,51 @@
+import { NextResponse } from "next/server";
+import { requireAdminApi } from "@/lib/admin/api-auth";
+import { isEmailOtpEnabled } from "@/lib/feature-flags";
+import { isResendConfigured } from "@/lib/notifications/providers/resend";
+import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
+import { probeSupabaseAdmin } from "@/lib/supabase/admin";
+
+export const runtime = "nodejs";
+
+export async function GET() {
+  const auth = await requireAdminApi();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const supabaseProbe = await probeSupabaseAdmin();
+  const otpDb = createAuthEmailOtpDbClient();
+
+  const envChecks = {
+    RESEND_API_KEY: Boolean(process.env.RESEND_API_KEY?.trim()),
+    AUTH_EMAIL_FROM: Boolean(
+      process.env.AUTH_EMAIL_FROM?.trim() || process.env.RESEND_FROM_EMAIL?.trim()
+    ),
+    SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
+    NEXT_PUBLIC_SUPABASE_URL: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()),
+    CRON_SECRET: Boolean(process.env.CRON_SECRET?.trim()),
+  };
+
+  const emailSenderConfigured = envChecks.AUTH_EMAIL_FROM && isResendConfigured();
+  const otpRouteReady =
+    isEmailOtpEnabled() && Boolean(otpDb) && envChecks.RESEND_API_KEY && emailSenderConfigured;
+
+  const allRequiredPresent = Object.values(envChecks).every(Boolean);
+
+  return NextResponse.json({
+    ok: allRequiredPresent && supabaseProbe.ok && otpRouteReady,
+    env: Object.fromEntries(
+      Object.entries(envChecks).map(([key, present]) => [key, present ? "present" : "missing"])
+    ),
+    emailSenderConfigured,
+    otpRouteReady,
+    emailOtpEnabled: isEmailOtpEnabled(),
+    resendConfigured: isResendConfigured(),
+    supabaseServiceRole: supabaseProbe,
+    authEmailFromDomain:
+      process.env.AUTH_EMAIL_FROM?.split("@")[1]?.replace(/>.*$/, "") ??
+      process.env.RESEND_FROM_EMAIL?.split("@")[1]?.replace(/>.*$/, "") ??
+      null,
+  });
+}

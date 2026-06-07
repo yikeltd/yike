@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import {
+  parseSensitiveConfirmationToken,
+  requireSensitiveConfirmation,
+} from "@/lib/auth/require-sensitive-confirmation";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/admin/audit";
 
@@ -27,7 +31,18 @@ export async function POST(req: Request) {
     applicant_phone?: string;
     applicant_email?: string;
     applicant_id_url?: string;
+    sensitiveConfirmationToken?: string;
+    confirmationToken?: string;
   };
+
+  const gate = requireSensitiveConfirmation(
+    parseSensitiveConfirmationToken(body),
+    user.id,
+    "change_identity"
+  );
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: 401 });
+  }
 
   const { data: profile } = await supabase
     .from("profiles")

@@ -2,16 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSensitiveActionGate } from "@/components/auth/use-sensitive-action-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export function CompanyVerificationForm() {
+export function CompanyVerificationForm({ email }: { email: string }) {
   const router = useRouter();
+  const { gateSensitiveAction, sensitiveActionModals } = useSensitiveActionGate(email);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const gate = await gateSensitiveAction("change_identity");
+    if (!gate.ok) return;
+
     setBusy(true);
     setMessage("");
     const form = new FormData(e.currentTarget);
@@ -28,6 +33,7 @@ export function CompanyVerificationForm() {
         applicant_role: form.get("applicant_role"),
         applicant_phone: form.get("applicant_phone"),
         applicant_email: form.get("applicant_email"),
+        sensitiveConfirmationToken: gate.confirmationToken,
       }),
     });
     const data = (await res.json()) as { error?: string };
@@ -41,25 +47,28 @@ export function CompanyVerificationForm() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
-      <p className="text-sm text-muted">
-        Submit your company details for Yike verification. Bank details are private and only visible to admin.
-      </p>
-      <Input name="cac_number" placeholder="CAC registration number" required />
-      <Input name="cac_document_url" placeholder="CAC document URL (upload link)" />
-      <Input name="applicant_name" placeholder="Applicant full name" required />
-      <Input name="applicant_role" placeholder="Your role (e.g. Director)" />
-      <Input name="applicant_phone" placeholder="Applicant phone / WhatsApp" />
-      <Input name="applicant_email" type="email" placeholder="Applicant email" />
-      <Input name="bank_name" placeholder="Bank name" />
-      <Input name="bank_account_name" placeholder="Account name" />
-      <Input name="bank_account_number" placeholder="Account number (private)" />
-      {message ? (
-        <p className="rounded-lg bg-surface px-3 py-2 text-sm text-navy">{message}</p>
-      ) : null}
-      <Button type="submit" disabled={busy}>
-        Submit for verification
-      </Button>
-    </form>
+    <>
+      {sensitiveActionModals}
+      <form onSubmit={submit} className="space-y-4 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+        <p className="text-sm text-muted">
+          Submit your company details for Yike verification. Bank details are private and only visible to admin.
+        </p>
+        <Input name="cac_number" placeholder="CAC registration number" required />
+        <Input name="cac_document_url" placeholder="CAC document URL (upload link)" />
+        <Input name="applicant_name" placeholder="Applicant full name" required />
+        <Input name="applicant_role" placeholder="Your role (e.g. Director)" />
+        <Input name="applicant_phone" placeholder="Applicant phone / WhatsApp" />
+        <Input name="applicant_email" type="email" placeholder="Applicant email" />
+        <Input name="bank_name" placeholder="Bank name" />
+        <Input name="bank_account_name" placeholder="Account name" />
+        <Input name="bank_account_number" placeholder="Account number (private)" />
+        {message ? (
+          <p className="rounded-lg bg-surface px-3 py-2 text-sm text-navy">{message}</p>
+        ) : null}
+        <Button type="submit" disabled={busy}>
+          Submit for verification
+        </Button>
+      </form>
+    </>
   );
 }

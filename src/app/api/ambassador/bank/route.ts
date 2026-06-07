@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { logAuthSecurityEvent } from "@/lib/auth/security-events";
+import {
+  parseSensitiveConfirmationToken,
+  requireSensitiveConfirmation,
+} from "@/lib/auth/require-sensitive-confirmation";
+import { getRequestMeta } from "@/lib/auth/session-state";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAuditLog } from "@/lib/admin/audit";
@@ -78,6 +84,15 @@ export async function POST(request: Request) {
   if (!ambassador) return NextResponse.json({ error: "Not an ambassador" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));
+  const gate = requireSensitiveConfirmation(
+    parseSensitiveConfirmationToken(body as Record<string, unknown>),
+    user.id,
+    "change_payout_bank"
+  );
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: 401 });
+  }
+
   const bankCode = String(body.bankCode ?? "").trim();
   const accountNumber = String(body.accountNumber ?? "").trim();
   const accountName = String(body.accountName ?? "").trim();
@@ -147,6 +162,15 @@ export async function POST(request: Request) {
       isChange: Boolean(isChange),
     },
     ip,
+  });
+
+  const { ip: reqIp, userAgent } = await getRequestMeta(request);
+  await logAuthSecurityEvent({
+    userId: user.id,
+    eventType: "bank_change.confirmed",
+    metadata: { scope: "ambassador" },
+    ip: reqIp,
+    userAgent,
   });
 
   return NextResponse.json({
