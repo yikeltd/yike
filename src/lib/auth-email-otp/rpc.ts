@@ -25,9 +25,6 @@ function otpServerToken(): string | null {
 }
 
 export function createAuthEmailOtpDbClient(): SupabaseClient | null {
-  const admin = createAdminClient();
-  if (admin) return admin;
-
   const url =
     process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
     process.env.SUPABASE_URL?.trim();
@@ -35,10 +32,13 @@ export function createAuthEmailOtpDbClient(): SupabaseClient | null {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
   const token = otpServerToken();
-  if (!url || !key || !token) return null;
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  if (url && key && token) {
+    return createClient(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+  }
+
+  return createAdminClient();
 }
 
 function token(): string {
@@ -72,21 +72,6 @@ export async function signupPendingUpsert(
   }
 ): Promise<boolean> {
   const email = params.email.trim().toLowerCase();
-  const row = {
-    email,
-    username: params.username.trim().toLowerCase(),
-    full_name: params.fullName.trim(),
-    phone: params.phone.trim() || null,
-    pin_hash: params.pinHash,
-    phone_verified: params.phoneVerified,
-    expires_at: params.expiresAt,
-  };
-
-  const { error: directError } = await client
-    .from("auth_signup_pending")
-    .upsert(row, { onConflict: "email" });
-  if (!directError) return true;
-  console.error("[auth-email-otp] pending direct upsert failed", directError.message);
 
   const { error } = await client.rpc("yike_signup_pending_upsert", {
     p_token: token(),
@@ -98,8 +83,28 @@ export async function signupPendingUpsert(
     p_phone_verified: params.phoneVerified,
     p_expires_at: params.expiresAt,
   });
-  if (error) {
-    console.error("[auth-email-otp] pending upsert RPC failed", error.message);
+  if (!error) return true;
+
+  console.error("[auth-email-otp] pending upsert RPC failed", error.message);
+
+  const admin = createAdminClient();
+  if (!admin) return false;
+
+  const { error: directError } = await admin.from("auth_signup_pending").upsert(
+    {
+      email,
+      username: params.username.trim().toLowerCase(),
+      full_name: params.fullName.trim(),
+      phone: params.phone.trim() || null,
+      pin_hash: params.pinHash,
+      phone_verified: params.phoneVerified,
+      expires_at: params.expiresAt,
+    },
+    { onConflict: "email" }
+  );
+
+  if (directError) {
+    console.error("[auth-email-otp] pending direct upsert failed", directError.message);
     return false;
   }
   return true;
