@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAdminProfileStats } from "@/lib/admin/profile-stats";
+import { fetchUserAuditLogs } from "@/lib/admin/user-audit";
 import { notFound } from "next/navigation";
 import { AdminUserDetail } from "@/components/admin/admin-user-detail";
 import { AdminAgentVerificationSection } from "@/components/admin/admin-agent-verification-section";
@@ -18,33 +19,40 @@ export default async function AdminAgentDetailPage({
 
   if (!agent) notFound();
 
-  const stats = await fetchAdminProfileStats(supabase, id);
+  const [stats, auditLogs, listingsResult, verificationResult] = await Promise.all([
+    fetchAdminProfileStats(supabase, id),
+    fetchUserAuditLogs(supabase, id),
+    supabase
+      .from("properties")
+      .select("id, title, status, city")
+      .eq("agent_id", id)
+      .order("created_at", { ascending: false })
+      .limit(12),
+    supabase
+      .from("agent_verifications")
+      .select("id, status")
+      .eq("agent_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
-  const { data: verification } = await supabase
-    .from("agent_verifications")
-    .select("id, status")
-    .eq("agent_id", id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const verification = verificationResult.data;
 
   return (
-    <>
-      <AdminUserDetail
-        profile={agent as Profile}
-        stats={stats}
-        backHref="/lex/auth/agents"
-        backLabel="All agents"
-        showListingLimit
-      />
-      {verification && (
-        <div className="-mt-4">
-          <AdminAgentVerificationSection
-            agentId={id}
-            verificationId={verification.id}
-          />
-        </div>
-      )}
-    </>
+    <AdminUserDetail
+      profile={agent as Profile}
+      stats={stats}
+      backHref="/lex/auth/agents"
+      backLabel="All agents"
+      showListingLimit
+      auditLogs={auditLogs}
+      listings={listingsResult.data ?? []}
+      verificationSection={
+        verification ? (
+          <AdminAgentVerificationSection agentId={id} verificationId={verification.id} />
+        ) : undefined
+      }
+    />
   );
 }

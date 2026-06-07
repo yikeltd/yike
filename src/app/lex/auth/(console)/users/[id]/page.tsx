@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAdminProfileStats } from "@/lib/admin/profile-stats";
+import { fetchUserAuditLogs } from "@/lib/admin/user-audit";
 import { notFound } from "next/navigation";
 import { AdminUserDetail } from "@/components/admin/admin-user-detail";
 import type { Profile } from "@/types/database";
@@ -17,11 +18,23 @@ export default async function AdminUserDetailPage({
 
   if (!profile) notFound();
 
-  const stats = await fetchAdminProfileStats(supabase, id);
   const isAgent =
     profile.role === "agent_unverified" ||
     profile.role === "agent_verified" ||
     profile.role === "agent";
+
+  const [stats, auditLogs, listingsResult] = await Promise.all([
+    fetchAdminProfileStats(supabase, id),
+    fetchUserAuditLogs(supabase, id),
+    isAgent
+      ? supabase
+          .from("properties")
+          .select("id, title, status, city")
+          .eq("agent_id", id)
+          .order("created_at", { ascending: false })
+          .limit(12)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   return (
     <AdminUserDetail
@@ -30,6 +43,8 @@ export default async function AdminUserDetailPage({
       backHref="/lex/auth/users"
       backLabel="All users"
       showListingLimit={isAgent}
+      auditLogs={auditLogs}
+      listings={listingsResult.data ?? []}
     />
   );
 }

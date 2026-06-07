@@ -76,16 +76,25 @@ export async function PATCH(req: Request) {
     verificationUpdate.verified_by = auth.user.id;
     verificationUpdate.verification_call_status = "completed";
 
-    await supabase
+    const { data: agentProfile } = await supabase
       .from("profiles")
-      .update({
-        role: "agent_verified",
-        verification_status: "approved",
-        verified_badge: true,
-        listing_limit: null,
-        ranking_score: 100,
-      })
-      .eq("id", body.agent_id);
+      .select("listing_limit_updated_by")
+      .eq("id", body.agent_id)
+      .single();
+
+    const profilePatch: Record<string, unknown> = {
+      role: "agent_verified",
+      verification_status: "approved",
+      verified_badge: true,
+      ranking_score: 100,
+      verification_required: false,
+    };
+
+    if (!agentProfile?.listing_limit_updated_by) {
+      profilePatch.listing_limit = null;
+    }
+
+    await supabase.from("profiles").update(profilePatch).eq("id", body.agent_id);
   } else if (body.action === "reject") {
     verificationUpdate.status = "rejected";
     verificationUpdate.rejection_reason =
