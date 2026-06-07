@@ -28,18 +28,21 @@ export async function GET(request: Request) {
     process.env.AUTH_EMAIL_FROM?.trim() || process.env.RESEND_FROM_EMAIL?.trim()
   );
   const otpToken = Boolean(process.env.YIKE_OTP_SERVER_TOKEN?.trim());
+  const serviceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "";
+
+  const otpDbReady = Boolean(otpDb) && (serviceRole || otpToken);
 
   return NextResponse.json({
     ok:
       isEmailOtpEnabled() &&
-      Boolean(otpDb) &&
+      otpDbReady &&
       resendKey &&
       authFrom &&
-      otpToken &&
       supabaseProbe.ok,
     emailOtpEnabled: isEmailOtpEnabled(),
     otpRpcClient: Boolean(otpDb),
+    supabaseServiceRole: serviceRole,
     yikeOtpServerToken: otpToken,
     resendApiKey: resendKey,
     authEmailFrom: authFrom,
