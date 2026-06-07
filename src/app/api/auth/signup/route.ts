@@ -23,7 +23,8 @@ import { isProductionEnv } from "@/lib/env";
 import { EMAIL_OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
 import { parseAmbassadorRefFromCookieHeader } from "@/lib/ambassador/cookie";
-import { createVerifiedAdminClient } from "@/lib/supabase/admin";
+import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
+import { getTrustedAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -32,7 +33,10 @@ const USERNAME_RE = /^[a-zA-Z0-9_]{3,24}$/;
 export async function POST(request: Request) {
   const db = createAuthEmailOtpDbClient();
   if (!db) {
-    return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
+    return NextResponse.json(
+      { error: AUTH_USER_MESSAGES.signupUnavailable },
+      { status: 503 }
+    );
   }
 
   const body = await request.json().catch(() => ({}));
@@ -109,9 +113,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Username already taken" }, { status: 409 });
   }
 
-  const adminForState = await createVerifiedAdminClient();
+  const adminForState = await getTrustedAdminClient();
   if (!adminForState) {
-    return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
+    return NextResponse.json(
+      { error: AUTH_USER_MESSAGES.signupUnavailable },
+      { status: 503 }
+    );
   }
 
   const emailState = await resolveSignupEmailState(adminForState, db, email);
@@ -145,9 +152,12 @@ export async function POST(request: Request) {
   }
 
   if (reviewerBypass) {
-    const admin = await createVerifiedAdminClient();
+    const admin = await getTrustedAdminClient();
     if (!admin) {
-      return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
+      return NextResponse.json(
+        { error: AUTH_USER_MESSAGES.signupUnavailable },
+        { status: 503 }
+      );
     }
 
     const created = await createConfirmedAuthUser(admin, {

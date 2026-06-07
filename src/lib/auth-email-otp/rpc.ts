@@ -28,11 +28,14 @@ export function createAuthEmailOtpDbClient(): SupabaseClient | null {
   const admin = createAdminClient();
   if (admin) return admin;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    process.env.SUPABASE_URL?.trim();
   const key =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
-  if (!url || !key || !otpServerToken()) return null;
+  const token = otpServerToken();
+  if (!url || !key || !token) return null;
   return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });

@@ -13,4 +13,6 @@ export const AUTH_USER_MESSAGES = {
   pinSetupBody: "Set a 6-digit PIN for quick unlock on this device.",
   sessionLocked: "Your session was locked for security.",
   fullLoginRequired: "Please sign in again to continue.",
+  signupUnavailable: "We could not start signup right now. Please try again.",
+  signInToContinue: "Sign in to continue",
 } as const;

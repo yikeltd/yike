@@ -39,7 +39,7 @@ export const EMAIL_OTP_USER_MESSAGES = {
   noCode: "No code found for this email. Request a new one.",
   sendFailed: "We could not send the code right now. Please try again.",
   verifyFailed: "Could not verify your email. Please try again.",
-  unavailable: "Email verification is temporarily unavailable.",
+  unavailable: "We could not start signup right now. Please try again.",
   invalidEmail: "Enter a valid email address.",
   network: "Connection issue. Please try again.",
 } as const;

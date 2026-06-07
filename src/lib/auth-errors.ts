@@ -17,6 +17,9 @@ export function friendlyAuthError(message: string): string {
 
 export function friendlySignupError(message: string): string {
   const lower = message.toLowerCase();
+  if (lower.includes("auth service unavailable") || lower.includes("could not start signup")) {
+    return "We could not start signup right now. Please try again.";
+  }
   if (lower.includes("already") && lower.includes("email")) {
     return "An account already exists with this email. Please sign in.";
   }

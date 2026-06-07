@@ -16,7 +16,6 @@ import {
   saveQuickLoginUser,
 } from "@/lib/auth/quick-login";
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
-import { peekAuthIntent } from "@/lib/auth-intent";
 import { getDefaultConsolePath, isStaffRole } from "@/lib/admin/roles";
 import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
 import type { UserRole } from "@/types/database";
@@ -30,7 +29,7 @@ export default function LoginPage() {
   const forcePassword = searchParams.get("mode") === "password" || searchParams.get("switch") === "1";
   const resetPin = searchParams.get("resetPin") === "1";
   const sessionReason = searchParams.get("reason");
-  const next = nextParam ?? (peekAuthIntent() ? "/" : "/profile");
+  const next = nextParam ?? "/";
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

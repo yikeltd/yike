@@ -41,13 +41,18 @@ export function createAdminClient(): SupabaseClient | null {
 }
 
 async function verifyServiceClient(client: SupabaseClient): Promise<string | null> {
-  const { error: authError } = await client.auth.admin.listUsers({ page: 1, perPage: 1 });
-  if (!authError) return null;
-
   const { error: restError } = await client.from("profiles").select("id").limit(1);
   if (!restError) return null;
 
-  return authError.message || restError.message || "service key rejected";
+  const { error: authError } = await client.auth.admin.listUsers({ page: 1, perPage: 1 });
+  if (!authError) return null;
+
+  return restError.message || authError.message || "service key rejected";
+}
+
+/** Verified admin when possible; falls back to configured service client. */
+export async function getTrustedAdminClient(): Promise<SupabaseClient | null> {
+  return (await createVerifiedAdminClient()) ?? createAdminClient();
 }
 
 function describeKey(key: string): "sb_secret" | "jwt" | "invalid" {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isProtectedConsumerRoute } from "@/lib/auth/route-access";
 import { useAuth } from "./auth-provider";
 import { SessionLockOverlay } from "./session-lock-overlay";
 import { PinSetupModal } from "./pin-setup-modal";
@@ -50,7 +51,14 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
       if (data.requiresFullLogin && data.authenticated) {
         const supabase = createClient();
         await supabase.auth.signOut();
-        router.replace("/auth/login?reason=session");
+        setSession(null);
+
+        if (isProtectedConsumerRoute(pathname)) {
+          const next = encodeURIComponent(pathname);
+          router.replace(`/auth/login?reason=session&next=${next}`);
+        } else {
+          router.refresh();
+        }
         return;
       }
 
@@ -64,7 +72,7 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
     } finally {
       checking.current = false;
     }
-  }, [skip, router]);
+  }, [skip, router, pathname]);
 
   useEffect(() => {
     if (loading || skip || !user) {
