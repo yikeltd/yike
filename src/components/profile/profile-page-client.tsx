@@ -6,6 +6,7 @@ import {
   Bookmark,
   Heart,
   List,
+  Bell,
   MessageCircle,
   PlusCircle,
   Search,
@@ -222,6 +223,12 @@ export function ProfilePageClient({
               icon={MessageCircle}
               title="Inquiries & leads"
               subtitle="WhatsApp and call leads from your listings"
+            />
+            <ActionLink
+              href="/agent/notifications"
+              icon={Bell}
+              title="Notifications"
+              subtitle="Updates from Yike about your account and listings"
             />
             {(profile.account_type === "agency" ||
               profile.account_type === "developer" ||

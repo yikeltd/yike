@@ -534,6 +534,55 @@ export interface SavedSearch {
   updated_at: string;
 }
 
+export type AdminNotificationCampaignStatus =
+  | "draft"
+  | "scheduled"
+  | "sending"
+  | "sent"
+  | "failed"
+  | "cancelled";
+
+export interface AdminNotificationCampaign {
+  id: string;
+  title: string;
+  body: string;
+  category: string;
+  priority: string;
+  target_type: string;
+  target_filters: Record<string, unknown>;
+  action_label: string | null;
+  action_url: string | null;
+  status: AdminNotificationCampaignStatus;
+  recipient_count: number;
+  failed_count: number;
+  delivery_channel: string;
+  email_sent_at: string | null;
+  push_sent_at: string | null;
+  created_by: string;
+  sent_by: string | null;
+  sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserNotification {
+  id: string;
+  campaign_id: string | null;
+  recipient_user_id: string;
+  title: string;
+  body: string;
+  category: string;
+  priority: string;
+  action_label: string | null;
+  action_url: string | null;
+  delivery_channel: string;
+  read_at: string | null;
+  delivered_at: string | null;
+  email_sent_at: string | null;
+  push_sent_at: string | null;
+  created_at: string;
+}
+
 export interface ListingAnalyticsEvent {
   id: string;
   listing_id: string;

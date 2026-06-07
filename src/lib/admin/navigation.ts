@@ -79,6 +79,7 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     label: "System",
     items: [
       { href: adminPath("seo-pages"), label: "SEO Pages", segment: "seo-pages" },
+      { href: adminPath("notifications"), label: "Notifications", segment: "notifications" },
       { href: adminPath("audit-logs"), label: "Audit Logs", segment: "audit-logs" },
       { href: adminPath("settings"), label: "Settings", segment: "settings" },
       { href: adminPath("health"), label: "Health", segment: "health" },
