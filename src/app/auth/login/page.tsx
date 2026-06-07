@@ -231,13 +231,26 @@ export default function LoginPage() {
         email={resolvedEmail || identifier}
         purpose="email_verify"
         onVerified={async () => {
-          await finishLogin({
-            id: quickUser?.userId ?? "",
-            email: resolvedEmail || identifier,
-            full_name: quickUser?.fullName,
-            username: quickUser?.username,
-            avatar_url: quickUser?.avatarUrl,
-          });
+          const supabase = createClient();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (!user) return;
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, full_name, username, avatar_url, email, role")
+            .eq("id", user.id)
+            .maybeSingle();
+          if (profile) {
+            await finishLogin({
+              id: profile.id,
+              email: profile.email ?? (resolvedEmail || identifier),
+              full_name: profile.full_name,
+              username: profile.username,
+              avatar_url: profile.avatar_url,
+              role: profile.role as UserRole,
+            });
+          }
         }}
         autoSend
       />
