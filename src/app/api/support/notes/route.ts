@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { requireSupportApi } from "@/lib/admin/api-auth";
+import { supportCanWriteProfileNotes } from "@/lib/admin/support-permissions";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -34,6 +35,10 @@ export async function POST(req: Request) {
   const auth = await requireSupportApi();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  if (!supportCanWriteProfileNotes(auth.profile.role)) {
+    return NextResponse.json({ error: "Action not permitted" }, { status: 403 });
   }
 
   const body = (await req.json()) as { profile_id: string; note: string };

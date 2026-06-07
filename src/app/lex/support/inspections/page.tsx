@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireSupportConsole } from "@/lib/auth";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { InspectionRequestActions } from "@/components/admin/inspection-request-actions";
 import { parseAdminPage } from "@/lib/admin/pagination";
@@ -12,6 +13,7 @@ export default async function SupportInspectionsPage({
 }) {
   const params = await searchParams;
   const { page, from, to } = parseAdminPage(params);
+  const { profile, user } = await requireSupportConsole();
   const admin = createAdminClient();
   if (!admin) {
     return <p className="text-muted">Database unavailable.</p>;
@@ -31,6 +33,9 @@ export default async function SupportInspectionsPage({
   }
   if (params.id) {
     query = query.eq("id", params.id);
+  }
+  if (profile.role === "support") {
+    query = query.eq("assigned_to", user.id);
   }
 
   const { data, count } = await query;

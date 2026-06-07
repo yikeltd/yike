@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { requireSupportApi } from "@/lib/admin/api-auth";
+import {
+  supportCanUseLeadAction,
+  supportOwnsAssignment,
+} from "@/lib/admin/support-permissions";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadEvent } from "@/lib/leads/events";
@@ -15,20 +19,39 @@ export async function PATCH(req: Request) {
 
   const body = (await req.json()) as {
     lead_id: string;
-    action: "archive" | "unarchive" | "quality" | "assign" | "mark_spam" | "waive_charge";
+    action: "archive" | "unarchive" | "quality" | "mark_spam" | "waive_charge";
     lead_quality_label?: LeadQualityLabel;
     lead_quality_score?: number;
     archive_reason?: string;
-    assigned_support_id?: string | null;
   };
 
   if (!body.lead_id || !body.action) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
+  if (!supportCanUseLeadAction(auth.profile.role, body.action)) {
+    return NextResponse.json({ error: "Action not permitted" }, { status: 403 });
+  }
+
   const admin = createAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
+
+  const { data: existing } = await admin
+    .from("leads")
+    .select("assigned_support_id")
+    .eq("id", body.lead_id)
+    .maybeSingle();
+
+  if (
+    !supportOwnsAssignment(
+      auth.profile.role,
+      existing?.assigned_support_id,
+      auth.user.id
+    )
+  ) {
+    return NextResponse.json({ error: "Not assigned to you" }, { status: 403 });
   }
 
   const now = new Date().toISOString();
@@ -55,8 +78,6 @@ export async function PATCH(req: Request) {
     if (body.lead_quality_score != null) {
       updates.lead_quality_score = body.lead_quality_score;
     }
-  } else if (body.action === "assign") {
-    updates.assigned_support_id = body.assigned_support_id ?? auth.user.id;
   } else if (body.action === "waive_charge") {
     await waiveLeadCharge(body.lead_id, auth.user.id);
     updates.charge_status = "waived";
@@ -73,9 +94,7 @@ export async function PATCH(req: Request) {
       ? "archived"
       : body.action === "quality"
         ? "quality_updated"
-        : body.action === "assign"
-          ? "assigned"
-          : "note_added";
+        : "note_added";
 
   await logLeadEvent({
     leadId: body.lead_id,
@@ -90,9 +109,7 @@ export async function PATCH(req: Request) {
       ? "lead.charge_waived"
       : body.action === "archive" || body.action === "mark_spam"
         ? "lead.archive"
-        : body.action === "quality"
-          ? "lead.quality"
-          : "lead.assign";
+        : "lead.quality";
 
   await writeAuditLog({
     actor_id: auth.user.id,

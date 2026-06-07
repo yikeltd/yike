@@ -14,6 +14,8 @@ import {
 } from "@/lib/auth/quick-login";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
+import { getDefaultConsolePath, isStaffRole } from "@/lib/admin/roles";
+import type { UserRole } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -55,9 +57,18 @@ export default function LoginPage() {
     }
     const { data: profile } = await supabase
       .from("profiles")
-      .select("id, full_name, username, avatar_url, email")
+      .select("id, full_name, username, avatar_url, email, role, is_banned")
       .eq("id", data.user.id)
       .maybeSingle();
+
+    if (
+      profile &&
+      !profile.is_banned &&
+      isStaffRole(profile.role as UserRole)
+    ) {
+      router.replace(getDefaultConsolePath(profile.role as UserRole));
+      return;
+    }
 
     await supabase
       .from("profiles")

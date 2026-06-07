@@ -4,6 +4,7 @@ import { requireSupportApi } from "@/lib/admin/api-auth";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadEvent } from "@/lib/leads/events";
+import { assertSupportLeadAccess } from "@/lib/support/lead-access";
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
@@ -40,6 +41,16 @@ export async function POST(req: Request, ctx: RouteCtx) {
   const admin = createAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
+
+  const access = await assertSupportLeadAccess(
+    admin,
+    id,
+    auth.user.id,
+    auth.profile.role
+  );
+  if (!access.ok) {
+    return NextResponse.json({ error: access.error }, { status: 403 });
   }
 
   const now = new Date().toISOString();

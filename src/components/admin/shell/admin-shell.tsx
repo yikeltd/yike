@@ -1,27 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { brand } from "@/lib/design/tokens";
-import {
-  canSwitchConsoles,
-  staffRoleLabel,
-  type AdminConsole,
-} from "@/lib/admin/roles";
+import { staffRoleLabel, type AdminConsole } from "@/lib/admin/roles";
 import { consoleTitle } from "@/lib/admin/navigation";
-import {
-  ADMIN_BASE_PATH,
-  SUPPORT_BASE_PATH,
-  TECH_BASE_PATH,
-  STAFF_LOGIN_PATH,
-} from "@/lib/admin-paths";
+import { STAFF_LOGIN_PATH } from "@/lib/admin-paths";
 import type { UserRole } from "@/types/database";
 import { AdminSidebar } from "./admin-sidebar";
 import type { NavGroup } from "@/lib/admin/navigation";
-import { cn } from "@/lib/utils";
 
 type Props = {
   console: AdminConsole;
@@ -100,9 +89,6 @@ export function AdminShell({
               <span className="hidden rounded-full bg-gold/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold sm:inline">
                 {staffRoleLabel(role)}
               </span>
-              {canSwitchConsoles(role) && (
-                <ConsoleSwitcher current={consoleType} />
-              )}
               <button
                 type="button"
                 onClick={() => void logout()}
@@ -125,29 +111,3 @@ export function AdminShell({
   );
 }
 
-function ConsoleSwitcher({ current }: { current: AdminConsole }) {
-  const consoles: { key: AdminConsole; label: string; href: string }[] = [
-    { key: "auth", label: "Command", href: `${ADMIN_BASE_PATH}/overview` },
-    { key: "support", label: "Support", href: SUPPORT_BASE_PATH },
-    { key: "tech", label: "Tech", href: TECH_BASE_PATH },
-  ];
-
-  return (
-    <div className="hidden items-center gap-1 rounded-lg bg-white/5 p-0.5 sm:flex">
-      {consoles.map((c) => (
-        <Link
-          key={c.key}
-          href={c.href}
-          className={cn(
-            "rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors",
-            current === c.key
-              ? "bg-gold text-navy"
-              : "text-white/60 hover:text-white"
-          )}
-        >
-          {c.label}
-        </Link>
-      ))}
-    </div>
-  );
-}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { requireSupportApi } from "@/lib/admin/api-auth";
+import { supportCanChangeAvailability } from "@/lib/admin/support-permissions";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
@@ -22,6 +23,10 @@ export async function PATCH(req: Request) {
 
   if (!body.id || !body.target || !body.availability_status) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  if (!supportCanChangeAvailability(auth.profile.role)) {
+    return NextResponse.json({ error: "Action not permitted" }, { status: 403 });
   }
 
   const admin = createAdminClient();

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireSupportConsole } from "@/lib/auth";
 import { AdminPageHeader } from "@/components/admin/dashboard/admin-ui";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { parseAdminPage } from "@/lib/admin/pagination";
@@ -53,6 +54,7 @@ export default async function SupportLeadsPage({
   const q = sp.q?.trim();
   const channel = sp.channel?.trim();
 
+  const { profile, user } = await requireSupportConsole();
   const admin = createAdminClient();
   if (!admin) {
     return <p className="text-muted">Database unavailable.</p>;
@@ -71,6 +73,7 @@ export default async function SupportLeadsPage({
           : undefined,
     leadType:
       channel === "whatsapp" || channel === "call" ? channel : undefined,
+    assignedTo: profile.role === "support" ? user.id : undefined,
     q,
     limit: to - from + 1,
     offset: from,
@@ -79,8 +82,12 @@ export default async function SupportLeadsPage({
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Leads"
-        description={`${total} inquiries · search by List ID, agent code, or lead code`}
+        title="My lead queue"
+        description={
+          profile.role === "support"
+            ? `${total} inquiries assigned to you · round-robin dispatch`
+            : `${total} inquiries · search by List ID, agent code, or lead code`
+        }
       />
 
       <form method="get" className="flex flex-wrap items-center gap-3">

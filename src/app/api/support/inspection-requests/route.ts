@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { requireSupportApi } from "@/lib/admin/api-auth";
+import { isSupportRole, supportOwnsAssignment } from "@/lib/admin/support-permissions";
 import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -75,6 +76,21 @@ export async function PATCH(req: Request) {
 
   if (!existing) {
     return NextResponse.json({ error: "Request not found" }, { status: 404 });
+  }
+
+  if (isSupportRole(auth.profile.role)) {
+    if (
+      !supportOwnsAssignment(
+        auth.profile.role,
+        existing.assigned_to,
+        auth.user.id
+      )
+    ) {
+      return NextResponse.json({ error: "Not assigned to you" }, { status: 403 });
+    }
+    if (body.assigned_to !== undefined) {
+      return NextResponse.json({ error: "Cannot reassign requests" }, { status: 403 });
+    }
   }
 
   const patch: Record<string, unknown> = {

@@ -5,6 +5,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadEvent } from "@/lib/leads/events";
 import { refundLeadCharge } from "@/lib/leads/billing";
+import { supportCanUseDisputeAction } from "@/lib/admin/support-permissions";
+import { assertSupportLeadAccess } from "@/lib/support/lead-access";
 
 export type DisputeReason =
   | "duplicate"
@@ -32,9 +34,23 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
+  if (!supportCanUseDisputeAction(auth.profile.role, body.action)) {
+    return NextResponse.json({ error: "Action not permitted" }, { status: 403 });
+  }
+
   const admin = createAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
+
+  const access = await assertSupportLeadAccess(
+    admin,
+    body.lead_id,
+    auth.user.id,
+    auth.profile.role
+  );
+  if (!access.ok) {
+    return NextResponse.json({ error: access.error }, { status: 403 });
   }
 
   const now = new Date().toISOString();

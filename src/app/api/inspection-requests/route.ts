@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendInspectionRequestAlert } from "@/lib/email/service";
+import { autoAssignInspectionRequest } from "@/lib/support/dispatch";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   if (admin) {
+    void autoAssignInspectionRequest(admin, created.id);
     void sendInspectionRequestAlert(admin, {
       listingTitle: listing.title,
       listingCity: listing.city,

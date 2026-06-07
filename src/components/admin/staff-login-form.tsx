@@ -76,9 +76,9 @@ export function StaffLoginForm() {
             <Image src={brand.logoSm} alt="" width={48} height={48} className="rounded-xl" />
             <span className="text-xl font-bold text-white">{brand.name}</span>
           </div>
-          <h1 className="text-lg font-semibold text-gold">Internal Operations</h1>
+          <h1 className="text-lg font-semibold text-gold">Yike Ops</h1>
           <p className="mt-1 text-sm text-white/50">
-            Staff login — authorised personnel only
+            One login for all teams — you&apos;ll land in your workspace automatically
           </p>
         </div>
 

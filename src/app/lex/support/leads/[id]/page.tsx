@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireSupportConsole } from "@/lib/auth";
+import { supportOwnsAssignment } from "@/lib/admin/support-permissions";
 import { AdminPageHeader } from "@/components/admin/dashboard/admin-ui";
 import { supportPath } from "@/lib/admin-paths";
 import { getSupportLeadDetail } from "@/lib/leads/support-queries";
@@ -18,6 +20,7 @@ export default async function SupportLeadDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { profile, user } = await requireSupportConsole();
   const admin = createAdminClient();
   if (!admin) {
     return <p className="text-muted">Database unavailable.</p>;
@@ -25,6 +28,15 @@ export default async function SupportLeadDetailPage({
 
   const lead = await getSupportLeadDetail(admin, id);
   if (!lead) notFound();
+  if (
+    !supportOwnsAssignment(
+      profile.role,
+      lead.assigned_support_id,
+      user.id
+    )
+  ) {
+    notFound();
+  }
 
   const listing = lead.listing as {
     title: string;

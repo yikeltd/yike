@@ -10,6 +10,7 @@ import {
   canAccessAuthConsole,
   canAccessSupportConsole,
   canAccessTechConsole,
+  getDefaultConsolePath,
   isStaffRole,
   isSuperAdmin,
 } from "@/lib/admin/roles";
@@ -121,8 +122,9 @@ export async function requireStaff() {
 export async function requireAdmin() {
   const user = await requireAuth(STAFF_LOGIN_PATH);
   const profile = await getProfile(user.id);
-  if (!profile || profile.is_banned || !canAccessAuthConsole(profile.role)) {
-    redirect(STAFF_LOGIN_PATH);
+  if (!profile || profile.is_banned) redirect(STAFF_LOGIN_PATH);
+  if (!canAccessAuthConsole(profile.role)) {
+    redirect(getDefaultConsolePath(profile.role));
   }
   return { user, profile };
 }
@@ -139,8 +141,9 @@ export async function requireSuperAdmin() {
 export async function requireSupportConsole() {
   const user = await requireAuth(STAFF_LOGIN_PATH);
   const profile = await getProfile(user.id);
-  if (!profile || profile.is_banned || !canAccessSupportConsole(profile.role)) {
-    redirect(STAFF_LOGIN_PATH);
+  if (!profile || profile.is_banned) redirect(STAFF_LOGIN_PATH);
+  if (!canAccessSupportConsole(profile.role)) {
+    redirect(getDefaultConsolePath(profile.role));
   }
   return { user, profile };
 }
@@ -148,8 +151,9 @@ export async function requireSupportConsole() {
 export async function requireTechConsole() {
   const user = await requireAuth(STAFF_LOGIN_PATH);
   const profile = await getProfile(user.id);
-  if (!profile || profile.is_banned || !canAccessTechConsole(profile.role)) {
-    redirect(STAFF_LOGIN_PATH);
+  if (!profile || profile.is_banned) redirect(STAFF_LOGIN_PATH);
+  if (!canAccessTechConsole(profile.role)) {
+    redirect(getDefaultConsolePath(profile.role));
   }
   return { user, profile };
 }

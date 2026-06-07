@@ -146,6 +146,26 @@ export function filterNavForRole(
     .filter((g) => g.items.length > 0);
 }
 
+/** Support workers get a limited nav until ops expands permissions. */
+const SUPPORT_BASIC_SEGMENTS = new Set([
+  "",
+  "reports",
+  "requests",
+  "leads",
+  "inspections",
+  "quick-replies",
+]);
+
+export function filterSupportNavForRole(groups: NavGroup[], role: string): NavGroup[] {
+  if (role !== "support") return groups;
+  return groups
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((item) => SUPPORT_BASIC_SEGMENTS.has(item.segment)),
+    }))
+    .filter((g) => g.items.length > 0);
+}
+
 export function consoleTitle(console: AdminConsole): string {
   switch (console) {
     case "auth":

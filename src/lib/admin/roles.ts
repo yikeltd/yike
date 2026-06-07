@@ -39,16 +39,19 @@ export function canAccessAuthConsole(role: UserRole) {
   );
 }
 
+/** Support console — support staff only (no cross-room access). */
 export function canAccessSupportConsole(role: UserRole) {
-  return role === "super_admin" || role === "admin" || role === "support";
+  return role === "support";
 }
 
+/** Tech console — tech staff only (no cross-room access). */
 export function canAccessTechConsole(role: UserRole) {
-  return role === "super_admin" || role === "admin" || role === "tech";
+  return role === "tech";
 }
 
-export function canSwitchConsoles(role: UserRole) {
-  return role === "super_admin" || role === "admin";
+/** @deprecated Consoles are strictly isolated per role. */
+export function canSwitchConsoles(_role: UserRole) {
+  return false;
 }
 
 export function getDefaultConsolePath(role: UserRole): string {

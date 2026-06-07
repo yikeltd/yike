@@ -1,14 +1,26 @@
 import Link from "next/link";
+import { requireSupportConsole } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { supportPath } from "@/lib/admin-paths";
 import {
   AdminPageHeader,
   MetricCard,
 } from "@/components/admin/dashboard/admin-ui";
-import { LeadSummaryPanel } from "@/components/admin/lead-summary-panel";
 
 export default async function SupportDashboardPage() {
+  const { profile, user } = await requireSupportConsole();
   const supabase = await requireServerClient();
+
+  let recentLeadsQuery = supabase
+    .from("leads")
+    .select("id, created_at, lead_type, property_id")
+    .eq("lead_type", "whatsapp")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (profile.role === "support") {
+    recentLeadsQuery = recentLeadsQuery.eq("assigned_support_id", user.id);
+  }
 
   const [openReports, openRequests, recentLeads] = await Promise.all([
     supabase
@@ -19,22 +31,19 @@ export default async function SupportDashboardPage() {
       .from("property_requests")
       .select("*", { count: "exact", head: true })
       .eq("status", "pending"),
-    supabase
-      .from("leads")
-      .select("id, created_at, lead_type, property_id")
-      .eq("lead_type", "whatsapp")
-      .order("created_at", { ascending: false })
-      .limit(10),
+    recentLeadsQuery,
   ]);
 
   return (
     <div className="space-y-8">
       <AdminPageHeader
-        title="Support dashboard"
-        description="Open tickets, reports, and customer messages"
+        title={profile.role === "support" ? "My support workspace" : "Support dashboard"}
+        description={
+          profile.role === "support"
+            ? "Your assigned leads and open customer items — one worker, one queue"
+            : "Open tickets, reports, and customer messages"
+        }
       />
-
-      <LeadSummaryPanel />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard

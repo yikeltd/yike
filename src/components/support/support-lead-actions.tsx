@@ -55,14 +55,6 @@ export function SupportLeadActions({
       </button>
       <button
         type="button"
-        disabled={loading === "assign"}
-        onClick={() => void patch("assign")}
-        className="rounded-lg border border-navy/15 px-3 py-1.5 text-xs font-semibold text-navy"
-      >
-        Assign to me
-      </button>
-      <button
-        type="button"
         disabled={loading === "respond"}
         onClick={async () => {
           setLoading("respond");

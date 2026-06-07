@@ -20,6 +20,7 @@ import { enrichConciergeLead } from "@/lib/leads/concierge";
 import { listingPublicUrl } from "@/lib/leads/whatsapp-urls";
 import { createLeadReceipt } from "@/lib/leads/receipts";
 import { buildSupportFallbackResult } from "@/lib/leads/fallback";
+import { autoAssignSupportLead } from "@/lib/support/dispatch";
 import { whatsAppDeepLink } from "@/lib/whatsapp";
 import type { LeadType } from "./types";
 
@@ -244,6 +245,9 @@ async function runLeadRouting(
       yikeReference: input.yikeReference,
     });
 
+    if (decision.route_to === "yike_support") {
+      void autoAssignSupportLead(admin, input.leadId);
+    }
   }
 
   if (input.leadType !== "whatsapp") {
