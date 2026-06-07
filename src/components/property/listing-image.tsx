@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { optimizeListingImageUrl } from "@/lib/image-url";
+import { isPreOptimizedListingUrl, optimizeListingImageUrl } from "@/lib/image-url";
 import { cn } from "@/lib/utils";
 
 export function ListingImage({
@@ -21,8 +21,8 @@ export function ListingImage({
   width?: number;
 }) {
   const [loaded, setLoaded] = useState(false);
-  const remote = src.startsWith("http");
   const optimized = optimizeListingImageUrl(src, width);
+  const skipNextOptimize = isPreOptimizedListingUrl(optimized);
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-surface">
@@ -37,7 +37,7 @@ export function ListingImage({
         alt={alt}
         fill
         priority={priority}
-        sizes={sizes ?? "100vw"}
+        sizes={sizes ?? "(max-width: 640px) 94vw, 420px"}
         className={cn(
           "object-cover object-center transition-[opacity,transform] duration-500 ease-out",
           loaded ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]",
@@ -45,7 +45,7 @@ export function ListingImage({
         )}
         loading={priority ? undefined : "lazy"}
         decoding="async"
-        unoptimized={remote}
+        unoptimized={skipNextOptimize}
         onLoad={() => setLoaded(true)}
       />
     </div>

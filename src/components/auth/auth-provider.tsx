@@ -33,6 +33,9 @@ interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
   emailVerified: boolean;
+  savedListingIds: ReadonlySet<string>;
+  isListingSaved: (listingId: string) => boolean;
+  setListingSaved: (listingId: string, saved: boolean) => void;
   openAuth: (intent?: AuthIntent) => void;
   closeAuth: () => void;
   refreshAuth: () => Promise<void>;
@@ -48,12 +51,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalIntent, setModalIntent] = useState<AuthIntent | undefined>();
+  const [savedListingIds, setSavedListingIds] = useState<ReadonlySet<string>>(
+    () => new Set()
+  );
   const intentResumeRef = useRef<string | null>(null);
 
   const refreshAuth = useCallback(async () => {
     if (!isSupabaseConfigured()) {
       setUser(null);
       setProfile(null);
+      setSavedListingIds(new Set());
       setLoading(false);
       return;
     }
@@ -63,13 +70,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = await supabase.auth.getUser();
     setUser(u);
     if (u) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", u.id)
-        .single();
+      const [{ data }, { data: favorites }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", u.id).single(),
+        supabase.from("favorites").select("property_id").eq("user_id", u.id),
+      ]);
       const p = data as Profile | null;
       setProfile(p);
+      setSavedListingIds(
+        new Set((favorites ?? []).map((row) => row.property_id as string))
+      );
       if (p && u.email) {
         saveQuickLoginUser({
           userId: p.id,
@@ -81,8 +90,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } else {
       setProfile(null);
+      setSavedListingIds(new Set());
     }
     setLoading(false);
+  }, []);
+
+  const isListingSaved = useCallback(
+    (listingId: string) => savedListingIds.has(listingId),
+    [savedListingIds]
+  );
+
+  const setListingSaved = useCallback((listingId: string, saved: boolean) => {
+    setSavedListingIds((prev) => {
+      const next = new Set(prev);
+      if (saved) next.add(listingId);
+      else next.delete(listingId);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -159,6 +183,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       loading,
       emailVerified,
+      savedListingIds,
+      isListingSaved,
+      setListingSaved,
       openAuth,
       closeAuth,
       refreshAuth,
@@ -169,6 +196,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       loading,
       emailVerified,
+      savedListingIds,
+      isListingSaved,
+      setListingSaved,
       openAuth,
       closeAuth,
       refreshAuth,

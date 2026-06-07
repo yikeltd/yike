@@ -151,7 +151,10 @@ export function buildMotionSlides(property: Property): MotionSlideFrame[] {
   }
 
   return items.map((item, i) => {
-    const url = displayUrl(item);
+    const url =
+      item.thumbnail_url && i > 0
+        ? item.thumbnail_url
+        : displayUrl(item);
     const label =
       item.room_label && item.room_label !== "Other"
         ? String(item.room_label)

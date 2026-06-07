@@ -17,7 +17,7 @@ export const metadata = {
 };
 
 export default async function BrowsePage() {
-  const rows = await getPublicProperties({}, 120);
+  const rows = await getPublicProperties({}, 48);
   const { items, isDemo } = withDemoFallback(rows);
 
   return (

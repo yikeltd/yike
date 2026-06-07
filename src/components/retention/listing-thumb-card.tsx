@@ -27,7 +27,7 @@ export function ListingThumbCard({
           alt={title}
           priority={priority}
           sizes="144px"
-          width={400}
+          width={320}
         />
       </div>
       <div className="p-2">

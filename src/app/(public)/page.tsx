@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { HomeSearchHero } from "@/components/home/home-search-hero";
 import { HomeHotPicksSections } from "@/components/home/home-hotspot-row";
 import { HomeFilteredFeed } from "@/components/home/home-sections";
@@ -7,8 +8,15 @@ import { getMarketplaceStats } from "@/lib/marketplace-stats";
 import { parseSearchParams } from "@/lib/properties";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { PrefSync } from "@/components/personalization/pref-sync";
-import { BrowseRail } from "@/components/retention/browse-rail";
 import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
+
+const BrowseRail = dynamic(
+  () =>
+    import("@/components/retention/browse-rail").then((m) => ({
+      default: m.BrowseRail,
+    })),
+  { loading: () => null }
+);
 
 function SectionFallback() {
   return (
@@ -52,15 +60,19 @@ export default async function HomePage({
         <HomeHotPicksSections />
       </Suspense>
 
-      <div className="mx-auto max-w-7xl px-3 pt-3 lg:px-6 xl:px-8">
-        <VerificationPromoSlot placement="homepage_inline" variant="card" />
-      </div>
+      <Suspense fallback={null}>
+        <div className="mx-auto max-w-7xl px-3 pt-3 lg:px-6 xl:px-8">
+          <VerificationPromoSlot placement="homepage_inline" variant="card" />
+        </div>
+      </Suspense>
 
       <VerificationPromoSlot placement="mobile_sticky_cta" variant="sticky" />
 
-      <div className="mt-3">
-        <BrowseRail />
-      </div>
+      <Suspense fallback={null}>
+        <div className="mt-3">
+          <BrowseRail />
+        </div>
+      </Suspense>
 
       <section className="mx-auto max-w-7xl px-3 pt-5 lg:px-6 xl:px-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

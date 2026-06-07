@@ -100,7 +100,7 @@ export function BrowseSlide({
   motionEnabled?: boolean;
   onNotInterested?: (property: Property, reason: NotInterestedReason) => void;
 }) {
-  const { guardAction, user } = useAuth();
+  const { guardAction, user, isListingSaved, setListingSaved } = useAuth();
   const [waLoading, setWaLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savePulse, setSavePulse] = useState(false);
@@ -123,16 +123,8 @@ export function BrowseSlide({
       setSaved(isGuestFavorite(property.id));
       return;
     }
-    if (!isSupabaseConfigured()) return;
-    const supabase = createClient();
-    supabase
-      .from("favorites")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("property_id", property.id)
-      .maybeSingle()
-      .then(({ data }) => setSaved(!!data));
-  }, [property.id, isDemo, user?.id]);
+    setSaved(isListingSaved(property.id));
+  }, [property.id, isDemo, user?.id, isListingSaved]);
 
   const handleSave = useCallback(() => {
     if (isDemo || saved) return;
@@ -181,6 +173,7 @@ export function BrowseSlide({
           { user_id: u.id, property_id: property.id },
           { onConflict: "user_id,property_id", ignoreDuplicates: true }
         );
+        setListingSaved(property.id, true);
         recordEngagementSave();
         trackSavedListing(property.id, {
           city: property.city,

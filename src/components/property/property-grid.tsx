@@ -78,8 +78,10 @@ export function PropertyGrid({
               </div>
             )}
             <div
-              className="animate-fade-up"
-              style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+              className={i < 4 ? "animate-fade-up" : undefined}
+              style={
+                i < 4 ? { animationDelay: `${Math.min(i, 3) * 40}ms` } : undefined
+              }
             >
               <PropertyCard
                 property={p}

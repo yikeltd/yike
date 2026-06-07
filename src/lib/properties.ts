@@ -57,7 +57,7 @@ async function queryPublicPropertiesRows(
     .eq("status", "approved")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
-    .limit(Math.max(limit * 2, 48));
+    .limit(Math.min(Math.max(limit + 12, limit * 2), 60));
 
   if (params.featured) query = query.eq("is_featured", true);
   if (merged.listing_type) query = query.eq("listing_type", merged.listing_type);

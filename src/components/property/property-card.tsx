@@ -53,7 +53,7 @@ export function PropertyCard({
   priorityImage?: boolean;
   inline?: boolean;
 }) {
-  const { guardAction, user } = useAuth();
+  const { guardAction, user, isListingSaved, setListingSaved } = useAuth();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [fallbackOpen, setFallbackOpen] = useState(false);
@@ -84,16 +84,8 @@ export function PropertyCard({
       setSaved(isGuestFavorite(property.id));
       return;
     }
-    if (!isSupabaseConfigured()) return;
-    const supabase = createClient();
-    supabase
-      .from("favorites")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("property_id", property.id)
-      .maybeSingle()
-      .then(({ data }) => setSaved(!!data));
-  }, [property.id, isDemo, user?.id]);
+    setSaved(isListingSaved(property.id));
+  }, [property.id, isDemo, user?.id, isListingSaved]);
 
   async function performSave() {
     if (!user?.id || !isSupabaseConfigured()) return;
@@ -106,6 +98,7 @@ export function PropertyCard({
         .eq("user_id", user.id)
         .eq("property_id", property.id);
       setSaved(false);
+      setListingSaved(property.id, false);
       trackEvent("unsave_listing", {
         listing_id: property.id,
         city: property.city,
@@ -117,6 +110,7 @@ export function PropertyCard({
         property_id: property.id,
       });
       setSaved(true);
+      setListingSaved(property.id, true);
       recordEngagementSave();
       trackSavedListing(property.id, {
         city: property.city,
@@ -449,8 +443,8 @@ export function PropertyCard({
             src={image}
             alt={imageAlt}
             priority={priorityImage}
-            sizes="100vw"
-            width={1080}
+            sizes="(max-width: 1024px) 94vw, 420px"
+              width={720}
           />
           <div className="gradient-scrim pointer-events-none absolute inset-0" />
           {badges}

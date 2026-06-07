@@ -8,7 +8,7 @@ import { VerifiedBadge, FeaturedBadge, YikeVerifiedBadge } from "@/components/ui
 import { ShareButton } from "./listing-share-menu";
 import type { Property } from "@/types/database";
 import { listingImageAlt } from "@/lib/image-seo";
-import { optimizeListingImageUrl } from "@/lib/image-url";
+import { isPreOptimizedListingUrl, optimizeListingImageUrl } from "@/lib/image-url";
 import { prefetchListingImages } from "@/lib/image-prefetch";
 import { cn } from "@/lib/utils";
 
@@ -66,13 +66,13 @@ export function PropertyGallery({
 
   useEffect(() => {
     prefetchListingImages(
-      images.slice(index + 1, index + 4),
-      1200
+      images.slice(index + 1, index + 3),
+      720
     );
   }, [index, images]);
 
   useEffect(() => {
-    prefetchListingImages(images.slice(1, 4), 1200);
+    prefetchListingImages(images.slice(1, 3), 720);
   }, [images]);
 
   function scrollTo(i: number) {
@@ -135,7 +135,9 @@ export function PropertyGallery({
         ref={scrollRef}
         className="snap-x-mandatory hide-scrollbar flex aspect-[5/6] overflow-x-auto sm:aspect-[4/5]"
       >
-        {images.map((url, i) => (
+        {images.map((url, i) => {
+          const nearViewport = i === 0 || Math.abs(i - index) <= 1;
+          return (
           <button
             key={`${url}-${i}`}
             type="button"
@@ -145,15 +147,20 @@ export function PropertyGallery({
               setFullscreen(true);
             }}
           >
+            {nearViewport ? (
             <ListingImage
               src={url}
               alt={altFor(i)}
               priority={i === 0}
               sizes="100vw"
-              width={1200}
+              width={720}
             />
+            ) : (
+              <div className="skeleton aspect-[5/6] w-full sm:aspect-[4/5]" aria-hidden />
+            )}
           </button>
-        ))}
+        );
+        })}
       </div>
       {badges}
       {share}
@@ -257,11 +264,13 @@ export function PropertyGallery({
           <div className="flex flex-1 items-center justify-center p-3">
             <div className="relative h-full w-full max-h-[88vh] animate-image-reveal">
               <Image
-                src={optimizeListingImageUrl(images[index], 1600)}
+                src={optimizeListingImageUrl(images[index], 1200)}
                 alt={altFor(index)}
                 fill
                 className="object-contain"
-                unoptimized
+                unoptimized={isPreOptimizedListingUrl(
+                  optimizeListingImageUrl(images[index], 1200)
+                )}
                 priority
               />
             </div>

@@ -20,15 +20,25 @@ export function FeedList({
   return (
     <div className="feed-rhythm flex flex-col pb-2">
       {properties.map((p, i) => (
-        <div key={p.id}>
+        <div
+          key={p.id}
+          className="feed-item"
+          style={
+            i > 2
+              ? { contentVisibility: "auto", containIntrinsicSize: "520px" }
+              : undefined
+          }
+        >
           {midFeedAd && i === insertAfter && (
             <div className="mb-5 animate-fade-up">
               <AdFeedInsert ad={midFeedAd} placementKey={adPlacementKey} />
             </div>
           )}
           <div
-            className="animate-fade-up"
-            style={{ animationDelay: `${Math.min(i, 12) * 55}ms` }}
+            className={i < 4 ? "animate-fade-up" : undefined}
+            style={
+              i < 4 ? { animationDelay: `${Math.min(i, 3) * 40}ms` } : undefined
+            }
           >
             <PropertyCard
               property={p}

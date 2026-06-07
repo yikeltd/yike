@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import { permanentRedirect } from "next/navigation";
 import { resolvePropertyRoute } from "@/lib/properties";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,7 +15,6 @@ import {
 import { propertyAbsoluteUrl } from "@/lib/property-url";
 import { optimizeListingImageUrl } from "@/lib/image-url";
 import { AgentTrustCard } from "@/components/property/agent-trust-card";
-import { ReportListingForm } from "@/components/property/report-form";
 import { ReportRentedButton } from "@/components/property/report-rented-button";
 import { ListingGallery } from "@/components/property/listing-gallery";
 import { StickyContactBar } from "@/components/property/sticky-contact-bar";
@@ -33,10 +34,29 @@ import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs"
 import { PropertyBackButton } from "@/components/property/property-back-button";
 import { ListingUnavailable } from "@/components/property/listing-unavailable";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
-import { RequestVerificationCard } from "@/components/property/request-verification-card";
 import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
 import { ListingInsightsSection } from "@/components/property/listing-insights-section";
 import { ListingValueDriversSection } from "@/components/property/listing-value-drivers-section";
+
+const ReportListingForm = dynamic(
+  () =>
+    import("@/components/property/report-form").then((m) => ({
+      default: m.ReportListingForm,
+    })),
+  { loading: () => null }
+);
+
+const RequestVerificationCardLazy = dynamic(
+  () =>
+    import("@/components/property/request-verification-card").then((m) => ({
+      default: m.RequestVerificationCard,
+    })),
+  { loading: () => null }
+);
+
+function DetailSectionFallback() {
+  return <div className="skeleton h-24 w-full rounded-2xl" aria-hidden />;
+}
 
 export async function generateMetadata({
   params,
@@ -201,9 +221,13 @@ export default async function PropertyDetailPage({
               )}
             </div>
 
-            <ListingInsightsSection property={property} agent={agent} />
+            <Suspense fallback={<DetailSectionFallback />}>
+              <ListingInsightsSection property={property} agent={agent} />
+            </Suspense>
 
-            <ListingValueDriversSection listingId={property.id} />
+            <Suspense fallback={null}>
+              <ListingValueDriversSection listingId={property.id} />
+            </Suspense>
 
             {amenities.length > 0 && (
               <AmenityChips amenities={amenities} max={8} size="md" />
@@ -242,8 +266,10 @@ export default async function PropertyDetailPage({
               </section>
             )}
 
-            <VerificationPromoSlot placement="listing_page" variant="card" />
-            <RequestVerificationCard
+            <Suspense fallback={null}>
+              <VerificationPromoSlot placement="listing_page" variant="card" />
+            </Suspense>
+            <RequestVerificationCardLazy
               listingId={property.id}
               listingTitle={property.title}
               loginNext={propertyAbsoluteUrl(property)}
@@ -281,9 +307,13 @@ export default async function PropertyDetailPage({
               ← Browse more homes
             </Link>
 
-            <AdSlot placement="property_detail" className="!px-0" />
+            <Suspense fallback={null}>
+              <AdSlot placement="property_detail" className="!px-0" />
+            </Suspense>
 
-            <RelatedListings property={property} />
+            <Suspense fallback={<DetailSectionFallback />}>
+              <RelatedListings property={property} />
+            </Suspense>
           </div>
         </div>
 

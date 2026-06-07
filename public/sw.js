@@ -1,6 +1,7 @@
-const SHELL_CACHE = "yike-shell-v10";
-const IMAGE_CACHE = "yike-images-v3";
-const LISTING_CACHE = "yike-listings-v1";
+const SHELL_CACHE = "yike-shell-v11";
+const IMAGE_CACHE = "yike-images-v4";
+const LISTING_CACHE = "yike-listings-v2";
+const CACHE_PREFIX = "yike-";
 
 const SHELL = [
   "/",
@@ -15,6 +16,7 @@ const SHELL = [
   "/icons/android-chrome-192.png",
 ];
 
+const ACTIVE_CACHES = new Set([SHELL_CACHE, IMAGE_CACHE, LISTING_CACHE]);
 const IMAGE_HOSTS = ["images.unsplash.com", "supabase.co"];
 
 self.addEventListener("install", (event) => {
@@ -35,7 +37,8 @@ self.addEventListener("activate", (event) => {
           keys
             .filter(
               (k) =>
-                k !== SHELL_CACHE && k !== IMAGE_CACHE && k !== LISTING_CACHE
+                k.startsWith(CACHE_PREFIX) &&
+                !ACTIVE_CACHES.has(k)
             )
             .map((k) => caches.delete(k))
         )
@@ -99,7 +102,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(event.request, preferNetwork ? { cache: "no-store" } : undefined)
         .then((res) => {
-          if (res.ok) {
+          if (res.ok && !preferNetwork) {
             const clone = res.clone();
             const cacheName = url.pathname.startsWith("/properties/")
               ? LISTING_CACHE

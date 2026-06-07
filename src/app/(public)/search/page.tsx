@@ -65,7 +65,7 @@ export default async function SearchPage({
     const bundle = await resolveSearchResults(
       getPublicPropertiesStrict,
       preloadParams,
-      48
+      24
     );
     exactCount = bundle.exact.length;
     feedItems = bundle.exact;
@@ -73,7 +73,7 @@ export default async function SearchPage({
     isDemo =
       feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   } else {
-    const properties = await getPublicProperties(preloadParams, 48);
+    const properties = await getPublicProperties(preloadParams, 24);
     const demo = withDemoFallback(properties);
     feedItems = demo.items;
     exactCount = properties.length;

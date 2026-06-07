@@ -1,8 +1,24 @@
+import dynamic from "next/dynamic";
 import { PageHero } from "@/components/pages/page-hero";
-import { PropertyVerificationForm } from "@/components/verification/property-verification-form";
 import { SITE_NAME } from "@/lib/constants";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { VERIFICATION_LEGAL_DISCLAIMER } from "@/lib/verification/constants";
+
+const PropertyVerificationForm = dynamic(
+  () =>
+    import("@/components/verification/property-verification-form").then((m) => ({
+      default: m.PropertyVerificationForm,
+    })),
+  {
+    loading: () => (
+      <div className="space-y-4">
+        <div className="skeleton h-12 w-full rounded-xl" />
+        <div className="skeleton h-12 w-full rounded-xl" />
+        <div className="skeleton h-32 w-full rounded-xl" />
+      </div>
+    ),
+  }
+);
 
 export const metadata = {
   title: `Property Verification — ${SITE_NAME}`,
