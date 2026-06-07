@@ -157,6 +157,17 @@ export async function POST(request: Request) {
   } else {
     const admin = createAdminClient();
     if (admin) {
+      const dedupeKey = buildDedupeKey({
+        listingId,
+        agentId,
+        visitor: { userId, guestId, ipHash: hashClientIp(ip) },
+      });
+      void admin.rpc("yike_bump_recent_lead_interaction", {
+        p_listing_id: listingId,
+        p_agent_id: agentId,
+        p_dedupe_key: dedupeKey,
+        p_lead_id: logResult.leadId,
+      });
       const attribution = buildLeadAttribution({
         sourcePage,
         sourceSurface: body.sourceSurface ? String(body.sourceSurface) : null,

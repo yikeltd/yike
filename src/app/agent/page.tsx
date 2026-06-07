@@ -6,6 +6,7 @@ import {
   isVerifiedAgentProfile,
   countAsActiveListing,
 } from "@/lib/agent-tiers";
+import { isExpiringSoon, isListingExpired } from "@/lib/listing-lifecycle";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { ProfilePageClient } from "@/components/profile/profile-page-client";
 import type { Property } from "@/types/database";
@@ -34,19 +35,34 @@ export default async function ProfilePage() {
   const canList = canListProperties(profile);
   const limit = getListingLimit(profile);
 
-  const [{ data: listings }, { count: savedCount }] = await Promise.all([
-    supabase.from("properties").select("status, expires_at").eq("agent_id", user.id),
-    supabase
-      .from("favorites")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id),
-  ]);
+  const [{ data: listings }, { count: savedCount }, { count: leadsCount }] =
+    await Promise.all([
+      supabase
+        .from("properties")
+        .select("status, expires_at")
+        .eq("agent_id", user.id),
+      supabase
+        .from("favorites")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id),
+      supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("agent_id", user.id)
+        .gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString()),
+    ]);
 
   const rows = (listings ?? []) as Pick<Property, "status" | "expires_at">[];
   const activeCount = rows.filter((p) =>
     countAsActiveListing(p.status, p.expires_at)
   ).length;
   const pending = rows.filter((p) => p.status === "pending").length;
+  const expiringSoon = rows.filter(
+    (p) => p.status === "approved" && isExpiringSoon(p, 3)
+  ).length;
+  const expiredCount = rows.filter(
+    (p) => p.status === "approved" && isListingExpired(p)
+  ).length;
 
   return (
     <ProfilePageClient
@@ -58,6 +74,9 @@ export default async function ProfilePage() {
       pending={pending}
       limit={limit}
       savedCount={savedCount ?? 0}
+      expiringSoon={expiringSoon}
+      expiredCount={expiredCount}
+      leadsCount={leadsCount ?? 0}
       memberSince={formatMemberSince(profile.created_at)}
     />
   );

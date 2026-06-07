@@ -127,6 +127,23 @@ export default async function AdminOverviewPage() {
 
       <LeadSummaryPanel />
 
+      <section className="rounded-2xl border border-navy/10 bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-navy">Operations hub</h2>
+            <p className="text-xs text-muted">
+              Moderation, duplicates, expiring listings, boosts, and lead snapshot
+            </p>
+          </div>
+          <Link
+            href={adminPath("operations")}
+            className="pressable rounded-xl bg-navy px-4 py-2 text-sm font-semibold text-white"
+          >
+            Open operations
+          </Link>
+        </div>
+      </section>
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Active listings"

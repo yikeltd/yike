@@ -8,6 +8,19 @@ import {
 } from "@/lib/trust/quality";
 import { computeListingConfidence } from "@/lib/trust/confidence";
 import { analyzeImageQuality } from "@/lib/trust/image-quality";
+import {
+  computeEngagementScore,
+  computeHiddenQualityScore,
+  computeInquiryScore,
+  computeResponsivenessScore,
+} from "@/lib/marketplace-scores";
+import { analyzeAndPersistListingPrice } from "@/lib/pricing/recalculate";
+import {
+  buildModerationFlags,
+  computeFraudRiskScore,
+  computeListingQualityBundle,
+} from "@/lib/pricing/quality-level";
+import { computeProfileCompletionScore } from "@/lib/profile-completion";
 
 export type DuplicateCandidate = {
   id: string;
@@ -126,6 +139,24 @@ export async function recalculateListingQuality(
       image_quality_flags: images.image_quality_flags,
     };
     const confidence_score = computeListingConfidence(enriched);
+    const engagement_score = computeEngagementScore(row);
+    const inquiry_score = computeInquiryScore(row);
+    const hidden_quality_score = computeHiddenQualityScore({
+      ...enriched,
+      confidence_score,
+    });
+    const enrichedRow = {
+      ...row,
+      ...freshness,
+      listing_health_score: health.listing_health_score,
+      image_quality_score: images.image_quality_score,
+      image_quality_flags: images.image_quality_flags,
+      confidence_score,
+    };
+    const quality = computeListingQualityBundle(enrichedRow as Property);
+    const fraud_risk_score = computeFraudRiskScore(enrichedRow as Property);
+    const moderation_flags = buildModerationFlags(enrichedRow as Property);
+
     await admin
       .from("properties")
       .update({
@@ -135,6 +166,13 @@ export async function recalculateListingQuality(
         image_quality_score: images.image_quality_score,
         image_quality_flags: images.image_quality_flags,
         confidence_score,
+        engagement_score,
+        inquiry_score,
+        hidden_quality_score,
+        quality_score: quality.quality_score,
+        quality_level: quality.quality_level,
+        fraud_risk_score,
+        moderation_flags,
         yike_inspection_eligible:
           (health.listing_health_score ?? 0) >= 55 &&
           images.image_quality_score >= 50 &&
@@ -142,6 +180,8 @@ export async function recalculateListingQuality(
         updated_at: row.updated_at,
       })
       .eq("id", row.id);
+
+    void analyzeAndPersistListingPrice(admin, enrichedRow as Property);
     updated++;
   }
   return updated;
@@ -166,6 +206,17 @@ export async function recalculateAgentTrustMetrics(
       updated_at: new Date().toISOString(),
     });
 
+    const responsiveness_score = computeResponsivenessScore({
+      ...agent,
+      response_rate: metrics.response_rate,
+      avg_response_time_minutes: metrics.avg_response_time_minutes,
+      is_responsive:
+        (metrics.response_rate ?? 0) >= 0.6 &&
+        (metrics.avg_response_time_minutes ?? 999) <= 360,
+    });
+
+    const profile_completion_score = computeProfileCompletionScore(agent);
+
     await admin
       .from("profiles")
       .update({
@@ -176,6 +227,8 @@ export async function recalculateAgentTrustMetrics(
         response_rate: metrics.response_rate,
         avg_response_time_minutes: metrics.avg_response_time_minutes,
         stale_listing_ratio: metrics.stale_listing_ratio,
+        responsiveness_score,
+        profile_completion_score,
         is_responsive:
           (metrics.response_rate ?? 0) >= 0.6 &&
           (metrics.avg_response_time_minutes ?? 999) <= 360,

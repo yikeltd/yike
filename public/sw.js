@@ -1,4 +1,4 @@
-const SHELL_CACHE = "yike-shell-v8";
+const SHELL_CACHE = "yike-shell-v10";
 const IMAGE_CACHE = "yike-images-v3";
 const LISTING_CACHE = "yike-listings-v1";
 
@@ -50,7 +50,14 @@ function isListingImage(url) {
 
 self.addEventListener("message", (event) => {
   const data = event.data;
-  if (!data || data.type !== "CACHE_URL" || !data.url) return;
+  if (!data) return;
+
+  if (data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+    return;
+  }
+
+  if (data.type !== "CACHE_URL" || !data.url) return;
 
   event.waitUntil(
     caches.open(LISTING_CACHE).then(async (cache) => {
@@ -87,8 +94,10 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (event.request.mode === "navigate") {
+    const dynamicPaths = ["/search", "/browse", "/agent", "/properties/"];
+    const preferNetwork = dynamicPaths.some((p) => url.pathname.startsWith(p));
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, preferNetwork ? { cache: "no-store" } : undefined)
         .then((res) => {
           if (res.ok) {
             const clone = res.clone();

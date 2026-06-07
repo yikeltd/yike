@@ -63,4 +63,15 @@ export async function trackContactClick(input: ContactTrackInput) {
   await supabase.rpc("increment_contact_clicks", {
     property_id: propertyId,
   });
+
+  void fetch("/api/analytics/listing-event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      listingId: propertyId,
+      eventType: channel === "whatsapp" ? "whatsapp_click" : "call_click",
+      city,
+      metadata: { placement, listingType, propertyType },
+    }),
+  });
 }

@@ -23,6 +23,7 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     label: "Overview",
     items: [
       { href: adminPath("overview"), label: "Dashboard", segment: "overview" },
+      { href: adminPath("operations"), label: "Operations", segment: "operations" },
     ],
   },
   {
@@ -32,7 +33,10 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
       { href: adminPath("listings"), label: "Listings", segment: "listings" },
       { href: adminPath("leads"), label: "Leads", segment: "leads" },
       { href: adminPath("duplicates"), label: "Duplicate Flags", segment: "duplicates" },
+      { href: adminPath("expiring-listings"), label: "Expiring Listings", segment: "expiring-listings" },
       { href: adminPath("listing-health"), label: "Listing Health", segment: "listing-health" },
+      { href: adminPath("market-intelligence"), label: "Market Intelligence", segment: "market-intelligence" },
+      { href: adminPath("pricing-warnings"), label: "Pricing Warnings", segment: "pricing-warnings" },
       { href: adminPath("reviews"), label: "Reviews", segment: "reviews" },
       { href: adminPath("reports"), label: "Reports", segment: "reports" },
       { href: adminPath("requests"), label: "Requests", segment: "requests" },

@@ -60,12 +60,19 @@ export function listingAvailability(
 }
 
 export function isListingDiscoverable(
-  property: Pick<Property, "availability_status" | "status"> & {
+  property: Pick<Property, "availability_status" | "status" | "moderation_state"> & {
     expires_at?: string | null;
+    soft_hold_recommended?: boolean;
   }
 ): boolean {
   const avail = listingAvailability(property);
   if (avail === "hidden") return false;
+  if (
+    property.moderation_state === "under_investigation" ||
+    property.moderation_state === "rejected"
+  ) {
+    return false;
+  }
   if (!["approved"].includes(property.status)) return false;
   if (["rented", "archived", "hidden", "rejected", "flagged"].includes(property.status)) {
     return false;

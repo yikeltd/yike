@@ -9,6 +9,7 @@ import {
   listingFreshnessRankAdjustment,
   listingHealthRankAdjustment,
 } from "@/lib/trust/quality";
+import { marketplaceRankAdjustments } from "@/lib/marketplace-scores";
 import { listingConfidenceRankAdjustment } from "@/lib/trust/confidence";
 import { imageQualityRankAdjustment } from "@/lib/trust/image-quality";
 import { propertySearchRelevance } from "@/lib/search-relevance";
@@ -148,6 +149,25 @@ export function propertyMarketRank(property: Property): number {
   score += listingHealthRankAdjustment(property);
   score += listingConfidenceRankAdjustment(property);
   score += imageQualityRankAdjustment(property);
+  score += marketplaceRankAdjustments(property);
+
+  if (agent?.responsiveness_score != null) {
+    score += Math.min(400, Math.round(Number(agent.responsiveness_score) * 4));
+  }
+
+  if (
+    (property.price_anomaly_level === "unusually_low" ||
+      property.price_anomaly_level === "unusually_high") &&
+    property.price_review_status !== "confirmed_by_agent" &&
+    property.price_review_status !== "approved"
+  ) {
+    const unverified = !agent || !isVerifiedAgentProfile(agent);
+    if (unverified || (property.fraud_risk_score ?? 0) >= 40) {
+      score -= 500;
+    } else {
+      score -= 150;
+    }
+  }
 
   return score;
 }

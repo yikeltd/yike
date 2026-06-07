@@ -121,6 +121,22 @@ export function canAgentReactivate(
   return { ok: true };
 }
 
+export function daysUntilExpiry(
+  property: Pick<Property, "expires_at">
+): number {
+  const ms = new Date(property.expires_at).getTime() - Date.now();
+  return Math.ceil(ms / 86_400_000);
+}
+
+export function isExpiringSoon(
+  property: Pick<Property, "expires_at" | "status">,
+  withinDays = 3
+): boolean {
+  if (property.status !== "approved") return false;
+  const days = daysUntilExpiry(property);
+  return days > 0 && days <= withinDays;
+}
+
 export function maskBankAccount(account: string | null | undefined): string {
   const digits = String(account ?? "").replace(/\D/g, "");
   if (digits.length < 6) return "••••••";

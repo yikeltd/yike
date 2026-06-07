@@ -39,6 +39,9 @@ import {
   moderateListingDraft,
   qualityFlagLabel,
 } from "@/lib/listing-quality";
+import { PriceConfirmDialog } from "@/components/agent/price-confirm-dialog";
+import { softenListingTitle } from "@/lib/title-normalize";
+import type { PriceAnalysisResult } from "@/lib/pricing/types";
 
 type ListingFormProps = {
   agentId: string;
@@ -70,8 +73,103 @@ export function ListingForm({
     (initial?.listing_type as ListingTypeValue) ?? "rent"
   );
   const [verifyOk, setVerifyOk] = useState(false);
+  const [priceDialog, setPriceDialog] = useState<{
+    analysis: PriceAnalysisResult;
+    price: number;
+    paymentPeriod: string;
+    payload: Record<string, unknown>;
+    isEdit: boolean;
+    propertyId?: string;
+  } | null>(null);
   const propertyTypeOptions = propertyTypesForListingType(listingType);
   const listingPlan = initial?.listing_plan ?? "free";
+
+  async function persistListing(
+    payload: Record<string, unknown>,
+    priceMeta?: {
+      analysis: PriceAnalysisResult;
+      confirmed: boolean;
+    }
+  ) {
+    setLoading(true);
+    const supabase = createClient();
+    const pricingFields = priceMeta
+      ? {
+          price_confidence_score: priceMeta.analysis.confidence_score,
+          price_anomaly_level: priceMeta.analysis.anomaly_level,
+          price_anomaly_reason: priceMeta.analysis.reason,
+          market_price_snapshot: priceMeta.analysis.market_snapshot,
+          price_review_status: priceMeta.confirmed
+            ? "confirmed_by_agent"
+            : priceMeta.analysis.price_review_status,
+        }
+      : {};
+
+    if (initial) {
+      const { error: updateError } = await supabase
+        .from("properties")
+        .update({ ...payload, ...pricingFields })
+        .eq("id", initial.id);
+      setLoading(false);
+      if (updateError) {
+        setError(updateError.message);
+        return;
+      }
+      if (priceMeta?.confirmed) {
+        void fetch("/api/pricing/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            propertyId: initial.id,
+            price: payload.price,
+            ...pricingFields,
+          }),
+        });
+      }
+      router.push("/agent/listings");
+      return;
+    }
+
+    if (listingLimit !== null && activeCount >= listingLimit) {
+      setError(LISTING_LIMIT_REACHED_MESSAGE);
+      setLoading(false);
+      return;
+    }
+
+    const { data: created, error: insertError } = await supabase
+      .from("properties")
+      .insert({ ...payload, ...pricingFields })
+      .select("id")
+      .single();
+    setLoading(false);
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+    if (created?.id) {
+      void fetch("/api/notifications/email/listing-submitted", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId: created.id }),
+      });
+      if (priceMeta?.confirmed) {
+        void fetch("/api/pricing/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            propertyId: created.id,
+            price: payload.price,
+            ...pricingFields,
+          }),
+        });
+      }
+    }
+    setSuccess(true);
+    setTimeout(() => {
+      router.push("/agent/listings");
+      router.refresh();
+    }, 1200);
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -116,7 +214,8 @@ export function ListingForm({
       return;
     }
 
-    const title = form.get("title") as string;
+    const rawTitle = form.get("title") as string;
+    const title = softenListingTitle(rawTitle);
     const description = (form.get("description") as string) || "";
     const draftCity = form.get("city") as string;
     const qualityFlags = moderateListingDraft({
@@ -167,17 +266,21 @@ export function ListingForm({
       if (legal > 0) extras.legal_fee = legal;
     }
 
+    const property_type = form.get("property_type") as string;
+    const payment_period = form.get("payment_period") as string;
+    const bedrooms = Number(form.get("bedrooms") || 0);
+
     const payload = {
       agent_id: agentId,
-      title: form.get("title") as string,
+      title,
       description: (form.get("description") as string) || null,
       listing_type: dealType,
-      property_type: form.get("property_type") as string,
-      bedrooms: Number(form.get("bedrooms") || 0),
+      property_type,
+      bedrooms,
       bathrooms: Number(form.get("bathrooms") || 0),
       toilets: Number(form.get("toilets") || 0),
       price,
-      payment_period: form.get("payment_period") as string,
+      payment_period,
       state: form.get("state") as string,
       city: form.get("city") as string,
       area: form.get("area") as string,
@@ -199,55 +302,43 @@ export function ListingForm({
       })(),
     };
 
-    setLoading(true);
-    const supabase = createClient();
-
-    if (initial) {
-      const { error: updateError } = await supabase
-        .from("properties")
-        .update(payload)
-        .eq("id", initial.id);
-      setLoading(false);
-      if (updateError) {
-        setError(updateError.message);
+    try {
+      const analyzeRes = await fetch("/api/pricing/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          state: form.get("state"),
+          city: draftCity,
+          area: form.get("area"),
+          property_type,
+          listing_type: dealType,
+          price,
+          bedrooms,
+        }),
+      });
+      if (analyzeRes.ok) {
+        const { analysis } = (await analyzeRes.json()) as {
+          analysis: PriceAnalysisResult;
+        };
+        if (analysis.requires_agent_confirmation) {
+          setPriceDialog({
+            analysis,
+            price,
+            paymentPeriod: payment_period,
+            payload,
+            isEdit: Boolean(initial),
+            propertyId: initial?.id,
+          });
+          return;
+        }
+        await persistListing(payload, { analysis, confirmed: false });
         return;
       }
-      router.push("/agent/listings");
-    } else {
-      if (
-        listingLimit !== null &&
-        activeCount >= listingLimit
-      ) {
-        setError(
-          LISTING_LIMIT_REACHED_MESSAGE
-        );
-        setLoading(false);
-        return;
-      }
-
-      const { data: created, error: insertError } = await supabase
-        .from("properties")
-        .insert(payload)
-        .select("id")
-        .single();
-      setLoading(false);
-      if (insertError) {
-        setError(insertError.message);
-        return;
-      }
-      if (created?.id) {
-        void fetch("/api/notifications/email/listing-submitted", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ propertyId: created.id }),
-        });
-      }
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/agent/listings");
-        router.refresh();
-      }, 1200);
+    } catch {
+      /* proceed without blocking */
     }
+
+    await persistListing(payload);
   }
 
   if (success) {
@@ -266,6 +357,23 @@ export function ListingForm({
 
   return (
     <>
+      {priceDialog && (
+        <PriceConfirmDialog
+          analysis={priceDialog.analysis}
+          price={priceDialog.price}
+          paymentPeriod={priceDialog.paymentPeriod}
+          busy={loading}
+          onEdit={() => setPriceDialog(null)}
+          onConfirm={() => {
+            const pending = priceDialog;
+            setPriceDialog(null);
+            void persistListing(pending.payload, {
+              analysis: pending.analysis,
+              confirmed: true,
+            });
+          }}
+        />
+      )}
       <SubmitOverlay
         show={loading}
         message={initial ? "Updating…" : "Submitting for review…"}
@@ -326,6 +434,9 @@ export function ListingForm({
             defaultValue={initial?.price}
             required
           />
+          <p className="text-xs text-muted">
+            Listings with clearer photos and accurate prices perform better on Yike.
+          </p>
           <Select
             name="payment_period"
             defaultValue={

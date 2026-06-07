@@ -7,18 +7,31 @@ import { Button } from "@/components/ui/button";
 export function ResolveReportButton({ reportId }: { reportId: string }) {
   const router = useRouter();
 
-  async function resolve() {
+  async function updateStatus(
+    status: "action_taken" | "dismissed" | "reviewed"
+  ) {
     const supabase = createClient();
     await supabase
       .from("listing_reports")
-      .update({ status: "resolved" })
+      .update({
+        status,
+        reviewed_at: new Date().toISOString(),
+      })
       .eq("id", reportId);
     router.refresh();
   }
 
   return (
-    <Button size="sm" variant="outline" onClick={resolve}>
-      Mark resolved
-    </Button>
+    <div className="flex flex-wrap gap-2">
+      <Button size="sm" variant="outline" onClick={() => updateStatus("action_taken")}>
+        Action taken
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => updateStatus("dismissed")}>
+        Dismiss
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => updateStatus("reviewed")}>
+        Mark reviewed
+      </Button>
+    </div>
   );
 }

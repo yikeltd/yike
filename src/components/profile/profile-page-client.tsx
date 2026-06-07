@@ -31,6 +31,9 @@ export function ProfilePageClient({
   pending,
   limit,
   savedCount,
+  expiringSoon = 0,
+  expiredCount = 0,
+  leadsCount = 0,
   memberSince,
 }: {
   profile: Profile;
@@ -41,6 +44,9 @@ export function ProfilePageClient({
   pending: number;
   limit: number | null;
   savedCount: number;
+  expiringSoon?: number;
+  expiredCount?: number;
+  leadsCount?: number;
   memberSince: string;
 }) {
   const displayName = profile.full_name ?? profile.username ?? "Your profile";
@@ -150,7 +156,28 @@ export function ProfilePageClient({
               href="/agent/listings"
             />
             <StatCard icon={ShieldCheck} label="Pending review" value={String(pending)} href="/agent/listings" />
-            <StatCard icon={MessageCircle} label="My leads" value="View" href="/agent/leads" />
+            <StatCard
+              icon={MessageCircle}
+              label="Leads (30d)"
+              value={leadsCount > 0 ? String(leadsCount) : "View"}
+              href="/agent/leads"
+            />
+            {expiringSoon > 0 && (
+              <StatCard
+                icon={List}
+                label="Expiring soon"
+                value={String(expiringSoon)}
+                href="/agent/listings"
+              />
+            )}
+            {expiredCount > 0 && (
+              <StatCard
+                icon={List}
+                label="Expired"
+                value={String(expiredCount)}
+                href="/agent/listings"
+              />
+            )}
           </>
         ) : (
           <>
@@ -175,7 +202,26 @@ export function ProfilePageClient({
               href="/agent/listings"
               icon={List}
               title="My listings"
-              subtitle="Active, expired, rented — manage lifecycle"
+              subtitle={
+                expiredCount > 0
+                  ? `${expiredCount} expired — reactivate when still available`
+                  : "Active, expired, rented — manage lifecycle"
+              }
+            />
+            {expiringSoon > 0 && (
+              <ActionLink
+                href="/agent/listings"
+                icon={Sparkles}
+                title="Renew expiring listings"
+                subtitle={`${expiringSoon} listing${expiringSoon === 1 ? "" : "s"} expiring within 3 days`}
+                accent
+              />
+            )}
+            <ActionLink
+              href="/agent/leads"
+              icon={MessageCircle}
+              title="Inquiries & leads"
+              subtitle="WhatsApp and call leads from your listings"
             />
             {(profile.account_type === "agency" ||
               profile.account_type === "developer" ||
@@ -221,6 +267,15 @@ export function ProfilePageClient({
           </>
         )}
       </section>
+
+      {canList && (
+        <section className="rounded-2xl border border-dashed border-gold/30 bg-gold/5 p-4">
+          <p className="text-sm font-semibold text-navy">Premium tools</p>
+          <p className="mt-1 text-xs text-muted">
+            Featured listings and boost placement — coming soon. Admin can assign boosts manually for now.
+          </p>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-border bg-elevated p-4">
         <p className="text-xs font-bold uppercase tracking-wider text-muted">Account</p>

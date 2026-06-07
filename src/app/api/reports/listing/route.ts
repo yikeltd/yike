@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminAlertInbox } from "@/lib/email/admin-inbox";
 import { sendAdminAlert, sendReportReceivedEmail } from "@/lib/email/service";
 import { REPORT_REASONS } from "@/lib/constants";
+import { getSession } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -48,14 +49,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
+  const session = await getSession();
+
   const { data: report, error } = await admin
     .from("listing_reports")
     .insert({
       property_id: propertyId,
+      reporter_user_id: session?.id ?? null,
       reporter_name: body.reporterName?.trim() || null,
       reporter_phone: body.reporterPhone?.trim() || null,
       reason,
       message: body.message?.trim() || null,
+      status: "open",
     })
     .select("id")
     .single();
@@ -64,11 +69,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not save report" }, { status: 500 });
   }
 
-  if (property.agent_id) {
-    void admin.rpc("yike_refresh_abuse_review_flag", {
-      p_user_id: property.agent_id,
-    });
-  }
+  void admin.rpc("yike_refresh_listing_report_thresholds", {
+    p_property_id: propertyId,
+  });
 
   const email = body.reporterEmail?.trim();
   if (email) {

@@ -1,4 +1,5 @@
 import { nigeriaLocations } from "@/constants/nigeriaLocations";
+import { getLgasForState } from "@/constants/nigeriaLgas";
 
 export function toSlug(value: string): string {
   return value
@@ -27,6 +28,13 @@ export type ResolvedArea = ResolvedCity & {
   areaSlug: string;
 };
 
+export type ResolvedLga = {
+  state: string;
+  stateSlug: string;
+  lga: string;
+  lgaSlug: string;
+};
+
 /** SEO-friendly city slug aliases */
 const CITY_ALIASES: Record<string, ResolvedCity> = {
   lagos: { city: "Lagos", state: "Lagos", slug: "lagos" },
@@ -47,6 +55,18 @@ const CITY_ALIASES: Record<string, ResolvedCity> = {
 
 const citySlugIndex = new Map<string, ResolvedCity>();
 const areaSlugIndex = new Map<string, ResolvedArea>();
+const stateSlugIndex = new Map<string, string>();
+const lgaSlugIndex = new Map<string, ResolvedLga>();
+
+/** Common SEO aliases for LGAs (unofficial vs official names). */
+const LGA_ALIASES: Record<string, ResolvedLga> = {
+  "anambra/orumba-east": {
+    state: "Anambra",
+    stateSlug: "anambra",
+    lga: "Orumba North",
+    lgaSlug: "orumba-east",
+  },
+};
 
 function registerCity(city: string, state: string) {
   const slug = toSlug(city);
@@ -92,6 +112,27 @@ function buildSlugIndexes() {
       registerArea("Lagos", "Lagos", sub);
     }
   }
+
+  for (const [state, { cities }] of Object.entries(nigeriaLocations)) {
+    const stateSlug = toSlug(state);
+    if (!stateSlugIndex.has(stateSlug)) {
+      stateSlugIndex.set(stateSlug, state);
+    }
+    for (const lga of getLgasForState(state)) {
+      const lgaSlug = toSlug(lga);
+      const key = `${stateSlug}/${lgaSlug}`;
+      if (!lgaSlugIndex.has(key)) {
+        lgaSlugIndex.set(key, { state, stateSlug, lga, lgaSlug });
+      }
+      for (const [city] of Object.entries(cities)) {
+        registerArea(city, state, lga);
+      }
+    }
+  }
+
+  for (const [key, alias] of Object.entries(LGA_ALIASES)) {
+    lgaSlugIndex.set(key, alias);
+  }
 }
 
 buildSlugIndexes();
@@ -111,6 +152,30 @@ export function getSeoCityPaths(): { citySlug: string }[] {
   const slugs = new Set<string>(Object.keys(CITY_ALIASES));
   for (const key of citySlugIndex.keys()) slugs.add(key);
   return [...slugs].map((citySlug) => ({ citySlug }));
+}
+
+export function resolveStateSlug(slug: string): string | null {
+  return stateSlugIndex.get(slug) ?? null;
+}
+
+export function resolveLgaSlug(
+  stateSlug: string,
+  lgaSlug: string
+): ResolvedLga | null {
+  return (
+    LGA_ALIASES[`${stateSlug}/${lgaSlug}`] ??
+    lgaSlugIndex.get(`${stateSlug}/${lgaSlug}`) ??
+    null
+  );
+}
+
+export function getSeoLgaPaths(): { stateSlug: string; lgaSlug: string }[] {
+  const paths: { stateSlug: string; lgaSlug: string }[] = [];
+  for (const [key] of lgaSlugIndex) {
+    const [stateSlug, lgaSlug] = key.split("/");
+    if (stateSlug && lgaSlug) paths.push({ stateSlug, lgaSlug });
+  }
+  return paths.slice(0, 600);
 }
 
 export function getSeoAreaPaths(): { citySlug: string; areaSlug: string }[] {

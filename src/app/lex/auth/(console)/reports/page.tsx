@@ -5,6 +5,14 @@ import { AdminPagination } from "@/components/admin/admin-pagination";
 import { parseAdminPage } from "@/lib/admin/pagination";
 import { propertyPath } from "@/lib/property-url";
 import type { Property } from "@/types/database";
+import { OPEN_REPORT_STATUSES } from "@/lib/constants";
+
+const STATUS_TABS = [
+  { id: "open", label: "Open" },
+  { id: "reviewed", label: "Reviewed" },
+  { id: "action_taken", label: "Action taken" },
+  { id: "dismissed", label: "Dismissed" },
+] as const;
 
 export default async function AdminReportsPage({
   searchParams,
@@ -33,6 +41,26 @@ export default async function AdminReportsPage({
         <h1 className="text-2xl font-bold">Reports</h1>
         <p className="text-sm text-muted">{total} {status} reports</p>
       </div>
+      <div className="flex flex-wrap gap-2">
+        {STATUS_TABS.map((tab) => (
+          <a
+            key={tab.id}
+            href={`/lex/auth/reports?status=${tab.id}`}
+            className={`rounded-full px-3 py-1 text-xs font-bold ${
+              status === tab.id
+                ? "bg-navy text-white"
+                : "border border-border bg-white text-navy"
+            }`}
+          >
+            {tab.label}
+          </a>
+        ))}
+      </div>
+      {OPEN_REPORT_STATUSES.includes(status as (typeof OPEN_REPORT_STATUSES)[number]) && (
+        <p className="text-xs text-muted">
+          3+ unresolved reports flag a listing for review; 5+ recommend a soft hold.
+        </p>
+      )}
       <ul className="space-y-4">
         {(data ?? []).map((r) => {
           const prop = r.property as Property | null;

@@ -13,6 +13,7 @@ import { formatPrice } from "@/lib/utils";
 import { normalizePropertyMedia } from "@/lib/media/items";
 import { ListingActions } from "@/components/admin/listing-actions";
 import { ListingLeadRoutingBox } from "@/components/admin/listing-lead-routing-box";
+import { AdminPriceHint } from "@/components/admin/admin-price-hint";
 
 type ListingRow = Property & { agent?: Profile | null };
 
@@ -150,6 +151,7 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
   return (
     <div className="space-y-8 pb-12">
       {pinModal}
+      <AdminPriceHint listing={listing} />
       <ListingLeadRoutingBox
         listingId={listing.id}
         listingTitle={listing.title}

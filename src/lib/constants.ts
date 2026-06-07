@@ -123,12 +123,18 @@ export { AREA_PROFILES, getAreaProfiles, getAreasByProfile } from "@/constants/a
 export const REPORT_REASONS = [
   "Fake listing",
   "Wrong price",
-  "Already rented",
-  "Spam",
+  "Already rented/sold",
+  "Scam/fraud suspicion",
   "Duplicate listing",
-  "Scam / asks for fee before viewing",
+  "Abusive agent",
+  "Wrong location",
+  "Misleading photos",
+  "Spam",
   "Other",
 ] as const;
+
+/** Unresolved report statuses for threshold automation. */
+export const OPEN_REPORT_STATUSES = ["open", "pending"] as const;
 
 export const SAFETY_WARNING =
   "Never pay inspection fees before seeing a property. Meet at the property, verify documents, and pay only after you are satisfied.";

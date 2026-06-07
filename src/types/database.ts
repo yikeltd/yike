@@ -114,6 +114,20 @@ export type CompanyVerificationStatus =
   | "needs_more_info";
 
 export type ListingActivityStatus = "active" | "stale" | "inactive" | "archived";
+export type ModerationState =
+  | "auto_approved"
+  | "pending_review"
+  | "flagged"
+  | "under_investigation"
+  | "approved"
+  | "rejected";
+export type ListingReportStatus =
+  | "open"
+  | "pending"
+  | "reviewed"
+  | "action_taken"
+  | "dismissed"
+  | "resolved";
 
 export type InquiryStatus =
   | "new"
@@ -231,6 +245,11 @@ export interface Profile {
   inquiry_count?: number;
   avg_response_time_minutes?: number | null;
   response_rate?: number | null;
+  responsiveness_score?: number | null;
+  profile_completion_score?: number | null;
+  parent_company_id?: string | null;
+  managed_by_company?: boolean;
+  company_role?: string | null;
   successful_handoffs?: number;
   complaint_count?: number;
   spam_lead_ratio?: number | null;
@@ -422,6 +441,16 @@ export interface Property {
   last_refreshed_at?: string | null;
   stale_score?: number;
   freshness_score?: number | null;
+  engagement_score?: number;
+  inquiry_score?: number;
+  hidden_quality_score?: number | null;
+  moderation_state?: ModerationState;
+  boost_level?: number;
+  boost_priority?: number;
+  boosted_at?: string | null;
+  boosted_by?: string | null;
+  report_review_recommended?: boolean;
+  soft_hold_recommended?: boolean;
   stale_at?: string | null;
   auto_expire_at?: string | null;
   auto_archive_at?: string | null;
@@ -439,6 +468,17 @@ export interface Property {
   listing_health_score?: number | null;
   listing_quality_flags?: string[];
   moderation_note?: string | null;
+  price_confidence_score?: number | null;
+  price_anomaly_level?: string | null;
+  price_anomaly_reason?: string | null;
+  price_review_status?: string;
+  price_reviewed_by?: string | null;
+  price_reviewed_at?: string | null;
+  market_price_snapshot?: Record<string, unknown> | null;
+  quality_score?: number | null;
+  quality_level?: "low" | "medium" | "high" | "premium" | null;
+  fraud_risk_score?: number;
+  moderation_flags?: string[];
   public_listing_code?: string | null;
   created_at: string;
   updated_at: string;
@@ -472,11 +512,37 @@ export interface InspectionRequest {
 export interface ListingReport {
   id: string;
   property_id: string;
+  reporter_user_id?: string | null;
   reporter_name: string | null;
   reporter_phone: string | null;
   reason: string;
   message: string | null;
-  status: "open" | "reviewed" | "resolved";
+  status: ListingReportStatus;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+}
+
+export interface SavedSearch {
+  id: string;
+  user_id: string;
+  label: string;
+  query_path: string;
+  filters: Record<string, unknown>;
+  notify_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ListingAnalyticsEvent {
+  id: string;
+  listing_id: string;
+  event_type: string;
+  user_id: string | null;
+  session_id: string | null;
+  city: string | null;
+  state: string | null;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 

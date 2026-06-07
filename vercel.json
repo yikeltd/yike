@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/listing-operations",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/trust-quality",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/market-intelligence",
+      "schedule": "0 5 * * *"
+    }
+  ]
+}
