@@ -8,7 +8,7 @@ export default async function AdminNotificationsPage() {
     ? await admin
         .from("admin_notification_campaigns")
         .select(
-          "id, title, category, priority, target_type, status, recipient_count, sent_at, created_at"
+          "id, title, body, category, priority, target_type, status, recipient_count, sent_count, scheduled_at, sent_at, created_at, created_by, sent_by, selected_recipient_ids, action_label, action_url"
         )
         .order("created_at", { ascending: false })
         .limit(40)

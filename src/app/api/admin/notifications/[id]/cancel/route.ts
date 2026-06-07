@@ -30,7 +30,7 @@ export async function POST(
   if (!campaign) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (campaign.status === "sent") {
+  if (campaign.status === "sent" || campaign.status === "sending") {
     return NextResponse.json({ error: "Cannot cancel a sent campaign" }, { status: 400 });
   }
 

@@ -554,8 +554,13 @@ export interface AdminNotificationCampaign {
   action_url: string | null;
   status: AdminNotificationCampaignStatus;
   recipient_count: number;
+  sent_count: number;
   failed_count: number;
   delivery_channel: string;
+  scheduled_at: string | null;
+  timezone: string;
+  selected_recipient_ids: string[];
+  resolved_recipient_snapshot: Record<string, unknown> | null;
   email_sent_at: string | null;
   push_sent_at: string | null;
   created_by: string;

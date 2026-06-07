@@ -1,17 +1,26 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { NotificationTargetType } from "@/lib/notifications/admin/constants";
+import {
+  normalizeTargetType,
+  type NotificationTargetType,
+} from "@/lib/notifications/admin/constants";
 
 const AGENT_ROLES = ["agent", "agent_unverified", "agent_verified"] as const;
 const BATCH = 1000;
 
-function parseIds(filters: Record<string, unknown> | null | undefined): string[] {
+const COMPANY_OR_FILTER =
+  "account_type.eq.agency,account_type.eq.developer,company_name.not.is.null";
+
+function parseIds(
+  filters: Record<string, unknown> | null | undefined,
+  selectedIds?: string[] | null
+): string[] {
+  if (selectedIds?.length) {
+    return [...new Set(selectedIds.map((id) => String(id).trim()).filter(Boolean))];
+  }
   const raw = filters?.recipient_ids;
   if (!Array.isArray(raw)) return [];
   return [...new Set(raw.map((id) => String(id).trim()).filter(Boolean))];
 }
-
-const COMPANY_OR_FILTER =
-  "account_type.eq.agency,account_type.eq.developer,company_name.not.is.null";
 
 function companyProfilesQuery(
   admin: SupabaseClient,
@@ -51,37 +60,41 @@ async function fetchIds(build: () => IdQuery): Promise<string[]> {
 
 export async function resolveNotificationRecipients(
   admin: SupabaseClient,
-  targetType: NotificationTargetType,
-  targetFilters: Record<string, unknown> = {}
+  rawTargetType: string,
+  targetFilters: Record<string, unknown> = {},
+  selectedRecipientIds?: string[] | null
 ): Promise<string[]> {
+  const targetType = normalizeTargetType(rawTargetType);
+  if (!targetType) return [];
+
   const now = new Date().toISOString();
   const inThreeDays = new Date(Date.now() + 3 * 86_400_000).toISOString();
+  const ids = parseIds(targetFilters, selectedRecipientIds);
 
   switch (targetType) {
-    case "user": {
-      const ids = parseIds(targetFilters);
+    case "selected_users": {
       if (ids.length === 0) return [];
       const { data } = await admin
         .from("profiles")
         .select("id")
         .in("id", ids)
+        .eq("role", "user")
         .eq("is_banned", false);
       return (data ?? []).map((r) => r.id);
     }
 
-    case "agent": {
-      const ids = parseIds(targetFilters);
-      let q = admin
+    case "selected_agents": {
+      if (ids.length === 0) return [];
+      const { data } = await admin
         .from("profiles")
         .select("id")
+        .in("id", ids)
         .in("role", [...AGENT_ROLES])
         .eq("is_banned", false);
-      if (ids.length > 0) q = q.in("id", ids);
-      return fetchIds(() => q);
+      return (data ?? []).map((r) => r.id);
     }
 
-    case "company": {
-      const ids = parseIds(targetFilters);
+    case "selected_companies": {
       if (ids.length === 0) return [];
       return fetchIds(() => companyProfilesQuery(admin, { ids }));
     }
@@ -135,7 +148,7 @@ export async function resolveNotificationRecipients(
           .in("account_status", ["suspended", "on_hold"])
       );
 
-    case "expiring_listings_agents": {
+    case "expiring_listing_agents": {
       const { data: listings } = await admin
         .from("properties")
         .select("agent_id")
@@ -158,7 +171,7 @@ export async function resolveNotificationRecipients(
       return (data ?? []).map((r) => r.id);
     }
 
-    case "pending_company_verification": {
+    case "pending_verification_companies": {
       const { data: requests } = await admin
         .from("company_verification_requests")
         .select("company_id")

@@ -7,12 +7,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   createNotificationDraft,
   sendNotificationCampaign,
+  updateNotificationCampaign,
 } from "@/lib/notifications/admin/send";
 import { requiresAdminPinForSend } from "@/lib/notifications/admin/pin-required";
 import { sanitizeNotificationActionUrl } from "@/lib/notifications/admin/safe-url";
 import {
+  DEFAULT_NOTIFICATION_TIMEZONE,
+  INDIVIDUAL_TARGET_TYPES,
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_PRIORITIES,
+  normalizeTargetType,
   TARGET_TYPES,
   type NotificationCategory,
   type NotificationPriority,
@@ -21,21 +25,21 @@ import {
 
 export const runtime = "nodejs";
 
+type SendMode = "draft" | "now" | "schedule";
+
 function parseRecipientIds(raw: unknown): string[] {
   if (Array.isArray(raw)) {
     return [...new Set(raw.map((id) => String(id).trim()).filter(Boolean))];
   }
-  if (typeof raw === "string") {
-    return [
-      ...new Set(
-        raw
-          .split(/[\n,]+/)
-          .map((s) => s.trim())
-          .filter(Boolean)
-      ),
-    ];
-  }
   return [];
+}
+
+function parseScheduledAt(raw: unknown): string | null {
+  if (!raw) return null;
+  const iso = new Date(String(raw)).toISOString();
+  if (Number.isNaN(Date.parse(iso))) return null;
+  if (Date.parse(iso) <= Date.now()) return null;
+  return iso;
 }
 
 function validatePayload(body: Record<string, unknown>) {
@@ -43,7 +47,8 @@ function validatePayload(body: Record<string, unknown>) {
   const message = String(body.body ?? body.message ?? "").trim();
   const category = String(body.category ?? "general") as NotificationCategory;
   const priority = String(body.priority ?? "normal") as NotificationPriority;
-  const targetType = String(body.targetType ?? "") as NotificationTargetType;
+  const rawTarget = String(body.targetType ?? "");
+  const targetType = normalizeTargetType(rawTarget);
 
   if (!title || title.length > 120) {
     return { error: "Title required (max 120 chars)" };
@@ -57,14 +62,22 @@ function validatePayload(body: Record<string, unknown>) {
   if (!NOTIFICATION_PRIORITIES.some((p) => p.value === priority)) {
     return { error: "Invalid priority" };
   }
-  if (!TARGET_TYPES.some((t) => t.value === targetType)) {
+  if (!targetType || !TARGET_TYPES.some((t) => t.value === targetType)) {
     return { error: "Invalid target audience" };
   }
 
-  const recipientIds = parseRecipientIds(body.recipientIds);
-  const targetFilters: Record<string, unknown> = { ...((body.targetFilters as object) ?? {}) };
-  if (recipientIds.length > 0) {
-    targetFilters.recipient_ids = recipientIds;
+  const selectedRecipientIds = parseRecipientIds(
+    body.selectedRecipientIds ?? body.recipientIds
+  );
+  const targetFilters: Record<string, unknown> = {
+    ...((body.targetFilters as object) ?? {}),
+  };
+  if (selectedRecipientIds.length > 0) {
+    targetFilters.recipient_ids = selectedRecipientIds;
+  }
+
+  if (INDIVIDUAL_TARGET_TYPES.has(targetType) && selectedRecipientIds.length === 0) {
+    return { error: "Select at least one recipient" };
   }
 
   const actionUrl = sanitizeNotificationActionUrl(
@@ -74,6 +87,17 @@ function validatePayload(body: Record<string, unknown>) {
     return { error: "Action URL must be an internal path starting with /" };
   }
 
+  const sendMode = (String(body.sendMode ?? (body.sendNow ? "now" : "draft")) as SendMode);
+  if (!["draft", "now", "schedule"].includes(sendMode)) {
+    return { error: "Invalid send mode" };
+  }
+
+  const scheduledAt =
+    sendMode === "schedule" ? parseScheduledAt(body.scheduledAt) : null;
+  if (sendMode === "schedule" && !scheduledAt) {
+    return { error: "Valid future schedule time required" };
+  }
+
   return {
     title,
     message,
@@ -81,9 +105,12 @@ function validatePayload(body: Record<string, unknown>) {
     priority,
     targetType,
     targetFilters,
+    selectedRecipientIds,
     actionLabel: body.actionLabel ? String(body.actionLabel).trim().slice(0, 40) : null,
     actionUrl,
-    sendNow: Boolean(body.sendNow),
+    sendMode,
+    scheduledAt,
+    timezone: String(body.timezone ?? DEFAULT_NOTIFICATION_TIMEZONE),
     campaignId: body.campaignId ? String(body.campaignId) : null,
   };
 }
@@ -102,10 +129,10 @@ export async function GET() {
   const { data } = await admin
     .from("admin_notification_campaigns")
     .select(
-      "id, title, body, category, priority, target_type, status, recipient_count, failed_count, sent_at, created_at, created_by"
+      "id, title, body, category, priority, target_type, status, recipient_count, sent_count, failed_count, scheduled_at, timezone, selected_recipient_ids, sent_at, created_at, created_by, sent_by"
     )
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
 
   return NextResponse.json({ campaigns: data ?? [] });
 }
@@ -140,16 +167,24 @@ export async function POST(request: Request) {
     priority,
     targetType,
     targetFilters,
+    selectedRecipientIds,
     actionLabel,
     actionUrl,
-    sendNow,
+    sendMode,
+    scheduledAt,
+    timezone,
     campaignId,
   } = parsed;
+
+  const needsPin =
+    sendMode === "now" || sendMode === "schedule"
+      ? requiresAdminPinForSend({ targetType, priority, category })
+      : false;
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim();
 
-  if (sendNow && requiresAdminPinForSend({ targetType, priority, category })) {
+  if (needsPin) {
     const pinValid = await hasValidPinSession(auth.user.id);
     if (!pinValid) {
       return NextResponse.json({ error: "Admin PIN required" }, { status: 403 });
@@ -165,40 +200,84 @@ export async function POST(request: Request) {
       priority,
       targetType,
       targetFilters,
+      selectedRecipientIds,
       actionLabel,
       actionUrl,
       createdBy: auth.user.id,
+      scheduledAt: sendMode === "schedule" ? scheduledAt : null,
+      timezone,
     });
     id = draft.campaignId;
 
     await writeAuditLog({
       actor_id: auth.user.id,
       actor_role: auth.profile.role,
-      action: "notification.draft_created",
+      action:
+        sendMode === "schedule" ? "notification.scheduled" : "notification.draft_created",
       target_type: "notification_campaign",
       target_id: id,
-      metadata: { targetType, category, priority, title },
+      metadata: {
+        targetType,
+        category,
+        priority,
+        title,
+        scheduled_at: scheduledAt,
+        recipient_count: selectedRecipientIds.length,
+      },
       ip,
     });
   } else {
-    await admin
+    const { data: existing } = await admin
       .from("admin_notification_campaigns")
-      .update({
-        title,
-        body: message,
-        category,
-        priority,
-        target_type: targetType,
-        target_filters: targetFilters,
-        action_label: actionLabel,
-        action_url: actionUrl,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
+      .select("status")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!existing || !["draft", "scheduled"].includes(existing.status)) {
+      return NextResponse.json(
+        { error: "Only draft or scheduled campaigns can be updated" },
+        { status: 400 }
+      );
+    }
+
+    await updateNotificationCampaign(admin, id, {
+      title,
+      body: message,
+      category,
+      priority,
+      targetType,
+      targetFilters,
+      selectedRecipientIds,
+      actionLabel,
+      actionUrl,
+      scheduledAt: sendMode === "schedule" ? scheduledAt : null,
+      timezone,
+      status:
+        sendMode === "schedule"
+          ? "scheduled"
+          : sendMode === "draft"
+            ? "draft"
+            : existing.status,
+    });
+
+    await writeAuditLog({
+      actor_id: auth.user.id,
+      actor_role: auth.profile.role,
+      action: "notification.updated",
+      target_type: "notification_campaign",
+      target_id: id,
+      metadata: { targetType, category, priority, title, scheduled_at: scheduledAt },
+      ip,
+    });
   }
 
-  if (!sendNow) {
-    return NextResponse.json({ ok: true, campaignId: id, status: "draft" });
+  if (sendMode === "draft" || sendMode === "schedule") {
+    return NextResponse.json({
+      ok: true,
+      campaignId: id,
+      status: sendMode === "schedule" ? "scheduled" : "draft",
+      scheduledAt,
+    });
   }
 
   const result = await sendNotificationCampaign(admin, id, auth.user.id);
@@ -216,6 +295,7 @@ export async function POST(request: Request) {
       title,
       recipient_count: result.recipientCount,
       failed_count: result.failedCount,
+      sent_count: result.sentCount,
     },
     ip,
   });
