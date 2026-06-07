@@ -5,7 +5,6 @@ import {
   confirmReviewerEmail,
   isUsernameAvailable,
 } from "@/lib/auth/signup-rpc";
-import { sendEmailVerification } from "@/lib/email";
 import { EMAIL_USER_MESSAGES } from "@/lib/notifications/messages";
 import { createOtpDbClient, otpFindVerified } from "@/lib/otp/rpc";
 import { normalizeNigerianPhone } from "@/lib/phone";
@@ -17,7 +16,6 @@ import {
 } from "@/lib/feature-flags";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { validateMathChallenge } from "@/lib/signup-math-challenge";
-import { createVerifiedAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
 
 export const runtime = "nodejs";
@@ -126,9 +124,9 @@ export async function POST(request: Request) {
   });
 
   if (signUpError) {
-    const message = signUpError.message.includes("already registered")
-      ? "An account with this email already exists"
-      : signUpError.message;
+    const message = signUpError.message.toLowerCase().includes("already registered")
+      ? "An account already exists with this email. Please sign in."
+      : "Could not create account. Please try again.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
@@ -158,21 +156,10 @@ export async function POST(request: Request) {
     }
   }
 
-  const admin = await createVerifiedAdminClient();
-  if (admin) {
-    const emailResult = await sendEmailVerification(admin, {
-      email,
-      fullName,
-      userId,
-    });
-    if (!emailResult.ok) {
-      console.warn("[auth/signup] verification email skipped:", emailResult.error);
-    }
-  }
-
   return NextResponse.json({
     ok: true,
     userId,
+    needsEmailVerification: !reviewerBypass,
     message: reviewerBypass
       ? "Reviewer account ready — sign in with your password."
       : EMAIL_USER_MESSAGES.verificationSent,

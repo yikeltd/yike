@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { peekAuthIntent } from "@/lib/auth-intent";
+import { useRouter } from "next/navigation";
+import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
 import { cn } from "@/lib/utils";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"] as const;
@@ -88,6 +89,7 @@ export function PinLoginPanel({
   onSwitchAccount: () => void;
   onUsePassword: () => void;
 }) {
+  const router = useRouter();
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,9 +109,11 @@ export function PinLoginPanel({
         setPin("");
         return;
       }
-      const pending = peekAuthIntent();
-      const target = (pending?.redirectPath ?? nextPath) || "/";
-      window.location.href = target;
+      const resumed = await resumePendingAuthIntent(router, {
+        fallbackPath: nextPath || "/profile",
+        emailVerified: true,
+      });
+      if (!resumed) router.refresh();
     } catch {
       setError("Network error. Try again.");
       setPin("");

@@ -28,3 +28,18 @@ export const EMAIL_USER_MESSAGES = {
   sendFailed: "We could not send the email right now.",
   notSignedIn: "Not signed in",
 } as const;
+
+export const EMAIL_OTP_USER_MESSAGES = {
+  sent: "We sent a 6-digit code to your email.",
+  verified: "Email verified. Welcome to Yike.",
+  incorrect: "That code looks incorrect. Please check your email and try again.",
+  expired: "This code has expired. Please request a new one.",
+  cooldown: "Please wait a moment before requesting another code.",
+  maxAttempts: "Too many attempts. Please request a new code.",
+  noCode: "No code found for this email. Request a new one.",
+  sendFailed: "We could not send the code right now. Please try again.",
+  verifyFailed: "Could not verify your email. Please try again.",
+  unavailable: "Email verification is temporarily unavailable.",
+  invalidEmail: "Enter a valid email address.",
+  network: "Connection issue. Please try again.",
+} as const;

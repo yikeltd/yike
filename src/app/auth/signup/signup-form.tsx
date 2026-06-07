@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { EmailOtpModal } from "@/components/auth/email-otp-modal";
+import { PasswordChecklist } from "@/components/auth/password-checklist";
+import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,13 +16,13 @@ import {
 } from "@/lib/phone";
 import {
   isStrongPassword,
-  passwordChecks,
   PASSWORD_MIN_LENGTH,
 } from "@/lib/password-policy";
 import { createMathChallenge } from "@/lib/signup-math-challenge";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
+import { friendlySignupError } from "@/lib/auth-errors";
 import { isPhoneOtpEnabledClient } from "@/lib/feature-flags";
 import { CheckCircle2, Loader2, MessageSquareText, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,6 +30,14 @@ import { cn } from "@/lib/utils";
 const PASSWORD_PLACEHOLDER = "••••••••";
 
 type OtpChannel = "sms" | "whatsapp";
+
+type PendingSignup = {
+  email: string;
+  password: string;
+  fullName: string;
+  username: string;
+  userId: string;
+};
 
 export function SignupForm({
   agentNote,
@@ -61,6 +72,8 @@ export function SignupForm({
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
+  const [pendingSignup, setPendingSignup] = useState<PendingSignup | null>(null);
 
   const normalizedPhone = useMemo(() => normalizeNigerianPhone(phone), [phone]);
   const reviewerBypass = useMemo(
@@ -70,7 +83,6 @@ export function SignupForm({
   const phoneOtpRequired = phoneOtpEnabled && !reviewerBypass;
   const showVerifyPhone =
     phoneOtpRequired && canRequestPhoneOtp(normalizedPhone);
-  const passwordRules = useMemo(() => passwordChecks(password), [password]);
   const mathOk =
     mathAnswer.trim() !== "" &&
     Number(mathAnswer) === mathChallenge.a + mathChallenge.b;
@@ -155,6 +167,37 @@ export function SignupForm({
     setPhoneVerificationToken(data.phoneVerificationToken);
   }
 
+  async function finishSignupSession(creds: PendingSignup) {
+    const supabase = createClient();
+    const { data: signInData, error: signInError } =
+      await supabase.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password,
+      });
+
+    if (signInError) {
+      setError("Account created — sign in with your email and password.");
+      return;
+    }
+
+    if (signInData.user) {
+      saveQuickLoginUser({
+        userId: signInData.user.id,
+        email: creds.email,
+        fullName: creds.fullName,
+        username: creds.username,
+        avatarUrl: null,
+      });
+    }
+
+    setEmailVerifyOpen(false);
+    const resumed = await resumePendingAuthIntent(router, {
+      fallbackPath: nextPath ?? "/profile",
+      emailVerified: true,
+    });
+    if (!resumed) router.refresh();
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (phoneOtpRequired && (!phoneVerified || !phoneVerificationToken)) {
@@ -202,295 +245,291 @@ export function SignupForm({
         mathAnswer: Number(mathAnswer),
       }),
     });
-    const data = await res.json();
-
-    if (!res.ok) {
-      setLoading(false);
-      setError(data.error ?? "Could not create account");
-      return;
-    }
-
-    const supabase = createClient();
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const data = (await res.json()) as {
+      ok?: boolean;
+      userId?: string;
+      error?: string;
+    };
 
     setLoading(false);
-    if (signInError) {
-      router.push("/auth/verify-email");
+
+    if (!res.ok) {
+      setError(friendlySignupError(data.error ?? "Could not create account"));
       return;
     }
 
-    if (signInData.user) {
-      saveQuickLoginUser({
-        userId: signInData.user.id,
+    if (reviewerBypass && data.userId) {
+      await finishSignupSession({
         email,
+        password,
         fullName,
         username,
-        avatarUrl: null,
+        userId: data.userId,
       });
-    }
-
-    if (reviewerBypass) {
-      const resumed = await resumePendingAuthIntent(router, {
-        fallbackPath: nextPath ?? "/",
-        emailVerified: true,
-      });
-      if (!resumed) router.refresh();
       return;
     }
 
-    const verifyUrl = nextPath
-      ? `/auth/verify-email?next=${encodeURIComponent(nextPath)}`
-      : "/auth/verify-email";
-    router.push(verifyUrl);
-    router.refresh();
+    if (data.userId) {
+      setPendingSignup({
+        email,
+        password,
+        fullName,
+        username,
+        userId: data.userId,
+      });
+      setEmailVerifyOpen(true);
+    }
   }
 
   const canSubmit =
     !loading &&
     mathOk &&
     isStrongPassword(password) &&
+    password === confirmPassword &&
     (!phoneOtpRequired || phoneVerified);
 
   return (
-    <AuthShell
-      title="Create your Yike account"
-      compact
-      footer={
-        <p className="text-sm text-muted">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="font-semibold text-gold-dark dark:text-gold">
-            Sign in
-          </Link>
-        </p>
-      }
-    >
-      {agentNote && (
-        <p className="mb-4 rounded-xl border border-gold/25 bg-gold/10 px-3 py-2.5 text-sm text-foreground">
-          Agent verification after signup.
-        </p>
-      )}
+    <>
+      <AuthShell
+        title="Create your Yike account"
+        compact
+        footer={
+          <p className="text-sm text-muted">
+            Already have an account?{" "}
+            <Link href="/auth/login" className="font-semibold text-gold-dark dark:text-gold">
+              Sign in
+            </Link>
+          </p>
+        }
+      >
+        {agentNote && (
+          <p className="mb-4 rounded-xl border border-gold/25 bg-gold/10 px-3 py-2.5 text-sm text-foreground">
+            Agent verification after signup.
+          </p>
+        )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Full name">
-          <Input
-            placeholder="Your full name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-            className="h-12 rounded-xl"
-            autoComplete="name"
-          />
-        </Field>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Field label="Full name">
+            <Input
+              placeholder="Your full name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="h-12 rounded-xl"
+              autoComplete="name"
+            />
+          </Field>
 
-        <Field label="Email">
-          <Input
-            type="email"
-            placeholder="email@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="h-12 rounded-xl"
-            autoComplete="email"
-          />
-        </Field>
+          <Field label="Email">
+            <Input
+              type="email"
+              placeholder="email@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="h-12 rounded-xl"
+              autoComplete="email"
+            />
+          </Field>
 
-        <Field label="Username">
-          <Input
-            placeholder="your_username"
-            value={username}
-            onChange={(e) =>
-              setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
-            }
-            required
-            minLength={3}
-            maxLength={24}
-            className="h-12 rounded-xl"
-            autoComplete="username"
-          />
-        </Field>
+          <Field label="Username">
+            <Input
+              placeholder="your_username"
+              value={username}
+              onChange={(e) =>
+                setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
+              }
+              required
+              minLength={3}
+              maxLength={24}
+              className="h-12 rounded-xl"
+              autoComplete="username"
+            />
+          </Field>
 
-        {phoneOtpEnabled ? (
-          <Field label="Phone number">
-            <div className="flex items-center gap-2">
+          {phoneOtpEnabled ? (
+            <Field label="Phone number">
+              <div className="flex items-center gap-2">
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="08012345678"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(normalizeNigerianPhone(e.target.value));
+                    setPhoneVerified(false);
+                    setOtpSent(false);
+                    setOtp("");
+                  }}
+                  required
+                  maxLength={11}
+                  className="h-12 min-w-0 flex-1 rounded-xl"
+                  autoComplete="tel"
+                />
+                {phoneVerified ? (
+                  <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Verified
+                  </span>
+                ) : showVerifyPhone ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-12 shrink-0 px-4"
+                    onClick={openChannelModal}
+                    disabled={sendingOtp}
+                  >
+                    Verify phone
+                  </Button>
+                ) : null}
+              </div>
+              {otpSent && !phoneVerified && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    inputMode="numeric"
+                    placeholder="Code"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    maxLength={6}
+                    className="h-12 min-w-0 flex-1 rounded-xl tracking-widest"
+                  />
+                  {otp.length === 6 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-12 shrink-0 px-4"
+                      onClick={verifyOtp}
+                      disabled={verifyingOtp}
+                    >
+                      {verifyingOtp ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Verify"
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </Field>
+          ) : (
+            <Field label="Phone number">
               <Input
                 type="tel"
                 inputMode="numeric"
                 placeholder="08012345678"
                 value={phone}
-                onChange={(e) => {
-                  setPhone(normalizeNigerianPhone(e.target.value));
-                  setPhoneVerified(false);
-                  setOtpSent(false);
-                  setOtp("");
-                }}
-                required
+                onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
                 maxLength={11}
-                className="h-12 min-w-0 flex-1 rounded-xl"
+                className="h-12 rounded-xl"
                 autoComplete="tel"
               />
-              {phoneVerified ? (
-                <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Verified
-                </span>
-              ) : showVerifyPhone ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-12 shrink-0 px-4"
-                  onClick={openChannelModal}
-                  disabled={sendingOtp}
-                >
-                  Verify phone
-                </Button>
-              ) : null}
-            </div>
-            {otpSent && !phoneVerified && (
-              <div className="mt-2 flex items-center gap-2">
-                <Input
-                  inputMode="numeric"
-                  placeholder="Code"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  maxLength={6}
-                  className="h-12 min-w-0 flex-1 rounded-xl tracking-widest"
-                />
-                {otp.length === 6 && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="h-12 shrink-0 px-4"
-                    onClick={verifyOtp}
-                    disabled={verifyingOtp}
-                  >
-                    {verifyingOtp ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Verify"
-                    )}
-                  </Button>
-                )}
-              </div>
-            )}
-          </Field>
-        ) : (
-          <Field label="Phone number">
-            <Input
-              type="tel"
-              inputMode="numeric"
-              placeholder="08012345678"
-              value={phone}
-              onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
-              maxLength={11}
+            </Field>
+          )}
+
+          <Field label="Password">
+            <PasswordInput
+              placeholder={PASSWORD_PLACEHOLDER}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={PASSWORD_MIN_LENGTH}
+              required
               className="h-12 rounded-xl"
-              autoComplete="tel"
+              autoComplete="new-password"
+              revealLabel="password"
+            />
+            <PasswordChecklist password={password} confirmPassword={confirmPassword} />
+          </Field>
+
+          <Field label="Confirm password">
+            <PasswordInput
+              placeholder={PASSWORD_PLACEHOLDER}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              minLength={PASSWORD_MIN_LENGTH}
+              required
+              className={cn(
+                "h-12 rounded-xl",
+                confirmPassword && confirmPassword !== password && "ring-2 ring-red-400/50"
+              )}
+              autoComplete="new-password"
+              revealLabel="confirm password"
             />
           </Field>
-        )}
 
-        <Field label="Password">
-          <Input
-            type="password"
-            placeholder={PASSWORD_PLACEHOLDER}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={PASSWORD_MIN_LENGTH}
-            required
-            className="h-12 rounded-xl"
-            autoComplete="new-password"
-          />
-          {password.length > 0 && (
-            <ul className="mt-2 space-y-1 text-xs text-muted">
-              <PasswordRule ok={passwordRules.minLength} label="At least 8 characters" />
-              <PasswordRule ok={passwordRules.uppercase} label="One uppercase letter" />
-              <PasswordRule ok={passwordRules.lowercase} label="One lowercase letter" />
-              <PasswordRule ok={passwordRules.number} label="One number" />
-            </ul>
+          <Field label="Choose PIN">
+            <PasswordInput
+              inputMode="numeric"
+              placeholder="••••••"
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              maxLength={6}
+              required
+              className="h-12 rounded-xl tracking-[0.3em]"
+              autoComplete="off"
+              revealLabel="PIN"
+            />
+          </Field>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <p className="text-sm text-muted sm:shrink-0">
+              What is {mathChallenge.a} + {mathChallenge.b}?
+            </p>
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="Your answer"
+              aria-label={`Answer: ${mathChallenge.a} plus ${mathChallenge.b}`}
+              value={mathAnswer}
+              onChange={(e) => setMathAnswer(e.target.value.replace(/\D/g, "").slice(0, 3))}
+              required
+              className={cn(
+                "h-12 rounded-xl sm:max-w-[9.5rem]",
+                mathAnswer && !mathOk && "ring-2 ring-red-400/50"
+              )}
+              autoComplete="off"
+            />
+          </div>
+
+          {error && (
+            <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger dark:bg-red-500/15 dark:text-red-300">
+              {error}
+            </p>
           )}
-        </Field>
 
-        <Field label="Confirm password">
-          <Input
-            type="password"
-            placeholder={PASSWORD_PLACEHOLDER}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            minLength={PASSWORD_MIN_LENGTH}
-            required
-            className={cn(
-              "h-12 rounded-xl",
-              confirmPassword && confirmPassword !== password && "ring-2 ring-red-400/50"
-            )}
-            autoComplete="new-password"
+          <Button type="submit" fullWidth size="lg" disabled={!canSubmit}>
+            {loading ? "Creating account…" : "Create account"}
+          </Button>
+        </form>
+
+        {phoneOtpEnabled && (
+          <PhoneChannelModal
+            open={channelModalOpen}
+            sending={sendingOtp}
+            codeSent={codeSentFlash}
+            codeSentMessage={codeSentMessage}
+            whatsappFailedHint={whatsappFailedHint}
+            onClose={() => {
+              if (sendingOtp) return;
+              setCodeSentFlash(false);
+              setWhatsappFailedHint(false);
+              setChannelModalOpen(false);
+            }}
+            onSelect={sendOtp}
           />
-        </Field>
-
-        <Field label="Choose PIN">
-          <Input
-            type="password"
-            inputMode="numeric"
-            placeholder="••••••"
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            maxLength={6}
-            required
-            className="h-12 rounded-xl tracking-[0.3em]"
-            autoComplete="off"
-          />
-        </Field>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-          <p className="text-sm text-muted sm:shrink-0">
-            What is {mathChallenge.a} + {mathChallenge.b}?
-          </p>
-          <Input
-            type="text"
-            inputMode="numeric"
-            placeholder="Your answer"
-            aria-label={`Answer: ${mathChallenge.a} plus ${mathChallenge.b}`}
-            value={mathAnswer}
-            onChange={(e) => setMathAnswer(e.target.value.replace(/\D/g, "").slice(0, 3))}
-            required
-            className={cn(
-              "h-12 rounded-xl sm:max-w-[9.5rem]",
-              mathAnswer && !mathOk && "ring-2 ring-red-400/50"
-            )}
-            autoComplete="off"
-          />
-        </div>
-
-        {error && (
-          <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger dark:bg-red-500/15 dark:text-red-300">
-            {error}
-          </p>
         )}
+      </AuthShell>
 
-        <Button type="submit" fullWidth size="lg" disabled={!canSubmit}>
-          {loading ? "Creating account…" : "Create account"}
-        </Button>
-      </form>
-
-      {phoneOtpEnabled && (
-        <PhoneChannelModal
-          open={channelModalOpen}
-          sending={sendingOtp}
-          codeSent={codeSentFlash}
-          codeSentMessage={codeSentMessage}
-          whatsappFailedHint={whatsappFailedHint}
-          onClose={() => {
-            if (sendingOtp) return;
-            setCodeSentFlash(false);
-            setWhatsappFailedHint(false);
-            setChannelModalOpen(false);
-          }}
-          onSelect={sendOtp}
+      {pendingSignup && (
+        <EmailOtpModal
+          open={emailVerifyOpen}
+          email={pendingSignup.email}
+          fullName={pendingSignup.fullName}
+          userId={pendingSignup.userId}
+          onVerified={() => finishSignupSession(pendingSignup)}
         />
       )}
-    </AuthShell>
+    </>
   );
 }
 
@@ -620,17 +659,6 @@ function PhoneChannelModal({
         )}
       </div>
     </div>
-  );
-}
-
-function PasswordRule({ ok, label }: { ok: boolean; label: string }) {
-  return (
-    <li className={cn("flex items-center gap-1.5", ok && "text-emerald-600 dark:text-emerald-400")}>
-      <span className="text-[10px]" aria-hidden>
-        {ok ? "✓" : "○"}
-      </span>
-      {label}
-    </li>
   );
 }
 
