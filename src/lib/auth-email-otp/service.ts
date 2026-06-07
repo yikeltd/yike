@@ -132,6 +132,9 @@ export async function sendAuthEmailOtp(
   });
 
   if (!insertedId) {
+    console.error(
+      "[auth-email-otp] OTP insert failed — check YIKE_OTP_SERVER_TOKEN, auth_email_otps RPC, and Supabase migration"
+    );
     return { ok: false, error: EMAIL_OTP_USER_MESSAGES.sendFailed, status: 500 };
   }
 
@@ -144,6 +147,9 @@ export async function sendAuthEmailOtp(
         devOtp: code,
       };
     }
+    console.error(
+      "[auth-email-otp] RESEND_API_KEY missing in production — set in Vercel env"
+    );
     return { ok: false, error: EMAIL_OTP_USER_MESSAGES.sendFailed, status: 503 };
   }
 
@@ -158,6 +164,11 @@ export async function sendAuthEmailOtp(
   });
 
   if (!result.ok) {
+    console.error(
+      "[auth-email-otp] Resend send failed:",
+      result.error,
+      "— check AUTH_EMAIL_FROM domain verification and RESEND_API_KEY"
+    );
     if (!isProductionEnv()) {
       console.info(`[Yike auth email OTP dev fallback] ${email}: ${code}`);
       return {

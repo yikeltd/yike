@@ -1,0 +1,55 @@
+import { NextResponse } from "next/server";
+import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
+import { isResendConfigured } from "@/lib/notifications/providers/resend";
+import { isEmailOtpEnabled } from "@/lib/feature-flags";
+import { probeSupabaseAdmin } from "@/lib/supabase/admin";
+
+export const runtime = "nodejs";
+
+function authorized(request: Request): boolean {
+  const secret = process.env.CRON_SECRET?.trim();
+  if (!secret) return false;
+  const auth = request.headers.get("authorization");
+  if (auth === `Bearer ${secret}`) return true;
+  const header =
+    request.headers.get("x-cron-secret") ?? request.headers.get("x-vercel-cron-secret");
+  return header === secret;
+}
+
+export async function GET(request: Request) {
+  if (!authorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const supabaseProbe = await probeSupabaseAdmin();
+  const otpDb = createAuthEmailOtpDbClient();
+  const resendKey = Boolean(process.env.RESEND_API_KEY?.trim());
+  const authFrom = Boolean(
+    process.env.AUTH_EMAIL_FROM?.trim() || process.env.RESEND_FROM_EMAIL?.trim()
+  );
+  const otpToken = Boolean(process.env.YIKE_OTP_SERVER_TOKEN?.trim());
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "";
+
+  return NextResponse.json({
+    ok:
+      isEmailOtpEnabled() &&
+      Boolean(otpDb) &&
+      resendKey &&
+      authFrom &&
+      otpToken &&
+      supabaseProbe.ok,
+    emailOtpEnabled: isEmailOtpEnabled(),
+    otpRpcClient: Boolean(otpDb),
+    yikeOtpServerToken: otpToken,
+    resendApiKey: resendKey,
+    authEmailFrom: authFrom,
+    authEmailFromValue:
+      process.env.AUTH_EMAIL_FROM?.trim() ||
+      process.env.RESEND_FROM_EMAIL?.trim() ||
+      null,
+    siteUrl: siteUrl || null,
+    siteUrlIsProduction: siteUrl.includes("yike.ng"),
+    supabaseAdmin: supabaseProbe,
+    resendConfigured: isResendConfigured(),
+  });
+}

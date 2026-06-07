@@ -90,6 +90,8 @@ export type AuditAction =
   | "notification.sent"
   | "notification.cancelled"
   | "notification.scheduled_processed"
+  | "user.profile_repair"
+  | "user.profile_repair_bulk"
   | "lead.deal_status"
   | "inspection.create"
   | "inspection.status"

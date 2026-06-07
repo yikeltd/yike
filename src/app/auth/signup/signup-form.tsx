@@ -248,12 +248,23 @@ export function SignupForm({
       ok?: boolean;
       userId?: string;
       needsEmailVerification?: boolean;
+      resume?: boolean;
+      message?: string;
+      code?: string;
       error?: string;
     };
 
     setLoading(false);
 
     if (!res.ok) {
+      if (data.code === "account_exists") {
+        setError("An account already exists with this email. Please sign in.");
+        return;
+      }
+      if (data.code === "account_deleted") {
+        setError("This account needs support review. Please contact Yike support.");
+        return;
+      }
       setError(friendlySignupError(data.error ?? "Could not create account"));
       return;
     }
@@ -275,6 +286,9 @@ export function SignupForm({
         fullName,
         username,
       });
+      if (data.resume) {
+        setError("");
+      }
       setEmailVerifyOpen(true);
     }
   }

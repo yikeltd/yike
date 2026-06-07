@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { findAuthUserByEmail } from "@/lib/auth/find-auth-user";
+import { repairUserProfile } from "@/lib/auth/profile-repair";
 import {
   completeSignupProfile,
   confirmReviewerEmail,
@@ -51,18 +53,41 @@ export async function finalizeSignupAfterOtp(
   pending: SignupPendingRow,
   password: string
 ): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
-  const created = await createConfirmedAuthUser(admin, {
-    email: pending.email,
-    password,
-    fullName: pending.full_name,
-    phone: pending.phone ?? "",
-    username: pending.username,
-  });
+  const existing = await findAuthUserByEmail(admin, pending.email);
+  let userId: string;
 
-  if (!created.ok) return created;
+  if (existing) {
+    const { error: updateError } = await admin.auth.admin.updateUserById(
+      existing.id,
+      {
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: pending.full_name,
+          phone: pending.phone ?? "",
+          username: pending.username,
+        },
+      }
+    );
+    if (updateError) {
+      console.error("[auth-email-otp] updateUser failed:", updateError.message);
+      return { ok: false, error: "Could not finish account setup" };
+    }
+    userId = existing.id;
+  } else {
+    const created = await createConfirmedAuthUser(admin, {
+      email: pending.email,
+      password,
+      fullName: pending.full_name,
+      phone: pending.phone ?? "",
+      username: pending.username,
+    });
+    if (!created.ok) return created;
+    userId = created.userId;
+  }
 
   const profileOk = await completeSignupProfile({
-    userId: created.userId,
+    userId,
     username: pending.username,
     pinHash: pending.pin_hash,
     phone: pending.phone ?? "",
@@ -71,8 +96,30 @@ export async function finalizeSignupAfterOtp(
   });
 
   if (!profileOk) {
-    return { ok: false, error: "Could not finish account setup" };
+    const repaired = await repairUserProfile(admin, {
+      userId,
+      email: pending.email,
+    });
+    if (!repaired.ok) {
+      return { ok: false, error: "Could not finish account setup" };
+    }
+    const retry = await completeSignupProfile({
+      userId,
+      username: pending.username,
+      pinHash: pending.pin_hash,
+      phone: pending.phone ?? "",
+      fullName: pending.full_name,
+      phoneVerified: pending.phone_verified,
+    });
+    if (!retry) {
+      return { ok: false, error: "Could not finish account setup" };
+    }
   }
+
+  await admin
+    .from("profiles")
+    .update({ email: pending.email, email_verified: true })
+    .eq("id", userId);
 
   if (isReviewerAccountEmail(pending.email)) {
     await confirmReviewerEmail(pending.email);
@@ -81,5 +128,5 @@ export async function finalizeSignupAfterOtp(
   }
 
   await signupPendingDelete(db, pending.email);
-  return { ok: true, userId: created.userId };
+  return { ok: true, userId };
 }

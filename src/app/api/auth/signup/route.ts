@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { hashClientIp, hashUserAgent } from "@/lib/auth-email-otp/request-meta";
 import { createConfirmedAuthUser } from "@/lib/auth-email-otp/create-user";
-import { createAuthEmailOtpDbClient, emailIsRegistered, signupPendingUpsert } from "@/lib/auth-email-otp/rpc";
+import { createAuthEmailOtpDbClient, signupPendingUpsert } from "@/lib/auth-email-otp/rpc";
+import { resolveSignupEmailState } from "@/lib/auth/signup-email-state";
 import { sendAuthEmailOtp, SIGNUP_PENDING_MS } from "@/lib/auth-email-otp/service";
 import {
   completeSignupProfile,
@@ -106,16 +107,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Username already taken" }, { status: 409 });
   }
 
-  const emailTaken = await emailIsRegistered(db, email);
-  if (emailTaken === null) {
-    return NextResponse.json({ error: "Could not verify email" }, { status: 503 });
+  const adminForState = await createVerifiedAdminClient();
+  if (!adminForState) {
+    return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
   }
-  if (emailTaken) {
+
+  const emailState = await resolveSignupEmailState(adminForState, db, email);
+  if (emailState.status === "complete") {
     return NextResponse.json(
-      { error: "An account already exists with this email. Please sign in." },
+      {
+        error: "An account already exists with this email. Please sign in.",
+        code: "account_exists",
+      },
       { status: 409 }
     );
   }
+  if (emailState.status === "deleted") {
+    return NextResponse.json(
+      {
+        error: "This account needs support review. Please contact Yike support.",
+        code: "account_deleted",
+      },
+      { status: 409 }
+    );
+  }
+
+  const resumeSignup =
+    emailState.status === "incomplete" || emailState.status === "pending_signup";
 
   let pinHash: string;
   try {
@@ -195,7 +213,10 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     needsEmailVerification: true,
-    message: EMAIL_OTP_USER_MESSAGES.sent,
+    resume: resumeSignup,
+    message: resumeSignup
+      ? "Let's finish verifying your email."
+      : EMAIL_OTP_USER_MESSAGES.sent,
     ...(!isProductionEnv() && otpResult.devOtp ? { devOtp: otpResult.devOtp } : {}),
   });
 }
