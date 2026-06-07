@@ -80,17 +80,13 @@ export async function signupPendingUpsert(
     pin_hash: params.pinHash,
     phone_verified: params.phoneVerified,
     expires_at: params.expiresAt,
-    created_at: new Date().toISOString(),
   };
 
-  const admin = createAdminClient();
-  if (admin) {
-    const { error: directError } = await admin
-      .from("auth_signup_pending")
-      .upsert(row, { onConflict: "email" });
-    if (!directError) return true;
-    console.error("[auth-email-otp] pending direct upsert failed", directError.message);
-  }
+  const { error: directError } = await client
+    .from("auth_signup_pending")
+    .upsert(row, { onConflict: "email" });
+  if (!directError) return true;
+  console.error("[auth-email-otp] pending direct upsert failed", directError.message);
 
   const { error } = await client.rpc("yike_signup_pending_upsert", {
     p_token: token(),
