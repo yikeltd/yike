@@ -5,7 +5,7 @@ import {
   hasValidPinSession,
   verifyAdminPin,
 } from "@/lib/admin/pin";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { hashPin } from "@/lib/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
@@ -67,7 +67,11 @@ export async function POST(req: Request) {
     .eq("id", auth.user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[admin/pin/setup] update failed:", error.message);
+    return NextResponse.json(
+      { error: "Could not save PIN. Sign in again and retry." },
+      { status: 500 }
+    );
   }
 
   const hdrs = await headers();

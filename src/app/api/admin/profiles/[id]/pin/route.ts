@@ -2,12 +2,21 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { requireSuperAdminApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { hashPin } from "@/lib/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
-import { isStaffRole } from "@/lib/admin/roles";
 
 type PinType = "login" | "admin";
+
+function rpcErrorMessage(message: string): string {
+  if (message.includes("profile_not_found")) return "Profile not found";
+  if (message.includes("profile_banned")) return "Cannot update PIN for banned account";
+  if (message.includes("admin_pin_staff_only")) {
+    return "Admin PIN applies to staff accounts only";
+  }
+  if (message.includes("not_authorized")) return "Super admin access required";
+  return "Could not reset PIN";
+}
 
 export async function PATCH(
   req: Request,
@@ -37,41 +46,28 @@ export async function PATCH(
     return NextResponse.json({ error: "PIN must be 6 digits" }, { status: 400 });
   }
 
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
 
-  const { data: target, error: fetchError } = await supabase
+  const { data: target } = await supabase
     .from("profiles")
     .select("id, role, is_banned, full_name, email")
     .eq("id", id)
     .maybeSingle();
 
-  if (fetchError || !target) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-  }
-
-  if (target.is_banned) {
-    return NextResponse.json({ error: "Cannot update PIN for banned account" }, { status: 400 });
-  }
-
-  if (pinType === "admin" && !isStaffRole(target.role)) {
-    return NextResponse.json(
-      { error: "Admin PIN applies to staff accounts only" },
-      { status: 400 }
-    );
-  }
-
-  const updateField = pinType === "admin" ? "admin_pin_hash" : "pin_hash";
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ [updateField]: hashPin(pin) })
-    .eq("id", id);
+  const { error } = await supabase.rpc("yike_admin_reset_profile_pin", {
+    p_target_id: id,
+    p_pin_type: pinType,
+    p_pin_hash: hashPin(pin),
+  });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: rpcErrorMessage(error.message) },
+      { status: error.message.includes("not_found") ? 404 : 500 }
+    );
   }
 
   const hdrs = await headers();
@@ -84,9 +80,9 @@ export async function PATCH(
     target_type: "profile",
     target_id: id,
     metadata: {
-      role: target.role,
-      email: target.email,
-      name: target.full_name,
+      role: target?.role,
+      email: target?.email,
+      name: target?.full_name,
     },
     ip,
   });

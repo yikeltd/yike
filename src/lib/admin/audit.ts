@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/types/database";
 
 export type AuditAction =
@@ -98,10 +99,7 @@ export function hashIp(ip: string): string {
 }
 
 export async function writeAuditLog(entry: AuditLogEntry): Promise<void> {
-  const supabase = createAdminClient();
-  if (!supabase) return;
-
-  await supabase.from("audit_logs").insert({
+  const row = {
     actor_id: entry.actor_id,
     actor_role: entry.actor_role,
     action: entry.action,
@@ -109,5 +107,15 @@ export async function writeAuditLog(entry: AuditLogEntry): Promise<void> {
     target_id: entry.target_id ?? null,
     metadata: entry.metadata ?? {},
     ip_hash: entry.ip ? hashIp(entry.ip) : null,
-  });
+  };
+
+  const session = await createClient();
+  if (session) {
+    const { error } = await session.from("audit_logs").insert(row);
+    if (!error) return;
+  }
+
+  const admin = createAdminClient();
+  if (!admin) return;
+  await admin.from("audit_logs").insert(row);
 }

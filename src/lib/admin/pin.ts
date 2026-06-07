@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { verifyPin } from "@/lib/pin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const ADMIN_PIN_COOKIE = "yike_admin_pin_session";
 export const PIN_SESSION_MINUTES = 10;
@@ -14,9 +16,16 @@ export async function verifyAdminPin(
   return verifyPin(pin, storedHash);
 }
 
+/** Prefer the signed-in user's session client; fall back to service role if configured. */
+async function pinDbClient(): Promise<SupabaseClient | null> {
+  const session = await createClient();
+  if (session) return session;
+  return createAdminClient();
+}
+
 export async function createPinSession(userId: string): Promise<string> {
-  const supabase = createAdminClient();
-  if (!supabase) throw new Error("Admin client unavailable");
+  const supabase = await pinDbClient();
+  if (!supabase) throw new Error("Database unavailable");
 
   const expiresAt = new Date(Date.now() + PIN_SESSION_MINUTES * 60 * 1000);
 
@@ -45,7 +54,7 @@ export async function hasValidPinSession(userId: string): Promise<boolean> {
   const sessionId = cookieStore.get(ADMIN_PIN_COOKIE)?.value;
   if (!sessionId) return false;
 
-  const supabase = createAdminClient();
+  const supabase = await pinDbClient();
   if (!supabase) return false;
 
   const { data } = await supabase
@@ -65,7 +74,7 @@ export async function clearPinSession(): Promise<void> {
   cookieStore.delete(ADMIN_PIN_COOKIE);
 
   if (!sessionId) return;
-  const supabase = createAdminClient();
+  const supabase = await pinDbClient();
   if (!supabase) return;
   await supabase.from("admin_pin_sessions").delete().eq("id", sessionId);
 }
