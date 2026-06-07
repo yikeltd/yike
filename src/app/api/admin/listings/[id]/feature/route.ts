@@ -4,7 +4,9 @@ import { requireAdminApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recordAmbassadorCommission } from "@/lib/ambassador/commission";
 import type { FeaturedTier } from "@/types/database";
+import type { RevenueSourceType } from "@/lib/ambassador/constants";
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
@@ -27,6 +29,9 @@ export async function POST(req: Request, ctx: RouteCtx) {
     featured_until?: string | null;
     featured_tier?: FeaturedTier | null;
     featured_reason?: string | null;
+    net_revenue?: number;
+    gross_revenue?: number;
+    payment_reference?: string;
   };
 
   if (body.action !== "feature" && body.action !== "unfeature") {
@@ -45,7 +50,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
   const { data: existing } = await supabase
     .from("properties")
     .select(
-      "id, title, is_featured, featured_until, featured_tier, featured_reason, featured_by, featured_created_at"
+      "id, title, agent_id, is_featured, featured_until, featured_tier, featured_reason, featured_by, featured_created_at"
     )
     .eq("id", id)
     .single();
@@ -103,6 +108,19 @@ export async function POST(req: Request, ctx: RouteCtx) {
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim();
+
+  if (body.action === "feature" && body.net_revenue && body.net_revenue > 0 && existing.agent_id) {
+    const paymentRef =
+      body.payment_reference?.trim() ||
+      `featured:${id}:${Date.now()}`;
+    await recordAmbassadorCommission(supabase, {
+      sourceUserId: existing.agent_id as string,
+      revenueSourceType: "featured_listing" as RevenueSourceType,
+      paymentReference: paymentRef,
+      grossAmount: body.gross_revenue ?? body.net_revenue,
+      netAmount: body.net_revenue,
+    });
+  }
 
   await writeAuditLog({
     actor_id: auth.user.id,

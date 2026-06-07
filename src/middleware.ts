@@ -6,6 +6,12 @@ import {
   trailingSlashRedirect,
 } from "@/lib/route-redirects";
 import { updateSession } from "@/lib/supabase/middleware";
+import {
+  AMBASSADOR_REF_COOKIE,
+  AMBASSADOR_REF_COOKIE_MAX_AGE,
+  isValidAmbassadorCode,
+  normalizeAmbassadorCode,
+} from "@/lib/ambassador/constants";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -45,7 +51,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, permanent ? 308 : 307);
   }
 
-  return await updateSession(request);
+  const refRaw = request.nextUrl.searchParams.get("ref");
+  const response = await updateSession(request);
+
+  if (refRaw) {
+    const code = normalizeAmbassadorCode(refRaw);
+    if (isValidAmbassadorCode(code)) {
+      response.cookies.set(AMBASSADOR_REF_COOKIE, code, {
+        maxAge: AMBASSADOR_REF_COOKIE_MAX_AGE,
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+  }
+
+  return response;
 }
 
 export const config = {

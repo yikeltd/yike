@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
+import { parseAmbassadorRefFromCookieHeader } from "@/lib/ambassador/cookie";
 import { verifyAuthEmailOtp } from "@/lib/auth-email-otp/service";
 import {
   isAuthEmailOtpPurpose,
@@ -48,11 +49,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const referralCode = parseAmbassadorRefFromCookieHeader(request.headers.get("cookie"));
+
   const result = await verifyAuthEmailOtp(db, {
     email,
     code,
     purpose,
     password: body.password,
+    referralCode,
   });
 
   if (!result.ok) {

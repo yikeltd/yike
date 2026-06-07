@@ -106,7 +106,24 @@ export type AuditAction =
   | "lead.handoff_copied"
   | "lead.handoff_shared"
   | "lead.concierge.spam"
-  | "lead.concierge.cancel";
+  | "lead.concierge.cancel"
+  | "ambassador.application.submit"
+  | "ambassador.approve"
+  | "ambassador.reject"
+  | "ambassador.pause"
+  | "ambassador.disable"
+  | "ambassador.slot.update"
+  | "ambassador.commission.hide"
+  | "ambassador.commission.reverse"
+  | "ambassador.commission.record"
+  | "ambassador.payout.approve"
+  | "ambassador.payout.paid"
+  | "ambassador.attribution.override"
+  | "ambassador.bank.changed"
+  | "ambassador.bank.approved"
+  | "ambassador.payout.held"
+  | "ambassador.payout.rejected"
+  | "ambassador.profile.updated";
 
 export type AuditLogEntry = {
   actor_id: string;

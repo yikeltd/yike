@@ -21,6 +21,8 @@ import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { validateMathChallenge } from "@/lib/signup-math-challenge";
 import { isProductionEnv } from "@/lib/env";
 import { EMAIL_OTP_USER_MESSAGES } from "@/lib/notifications/messages";
+import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
+import { parseAmbassadorRefFromCookieHeader } from "@/lib/ambassador/cookie";
 import { createVerifiedAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -174,6 +176,16 @@ export async function POST(request: Request) {
     }
 
     await confirmReviewerEmail(email);
+
+    const referralCode = parseAmbassadorRefFromCookieHeader(request.headers.get("cookie"));
+    if (referralCode) {
+      await applyAmbassadorAttribution(admin, {
+        userId: created.userId,
+        referralCode,
+        userEmail: email,
+        userPhone: phone,
+      });
+    }
 
     return NextResponse.json({
       ok: true,

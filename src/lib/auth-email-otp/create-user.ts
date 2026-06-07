@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
 import { findAuthUserByEmail } from "@/lib/auth/find-auth-user";
 import { repairUserProfile } from "@/lib/auth/profile-repair";
 import {
@@ -51,7 +52,8 @@ export async function finalizeSignupAfterOtp(
   admin: SupabaseClient,
   db: SupabaseClient,
   pending: SignupPendingRow,
-  password: string
+  password: string,
+  referralCode?: string | null
 ): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
   const existing = await findAuthUserByEmail(admin, pending.email);
   let userId: string;
@@ -120,6 +122,15 @@ export async function finalizeSignupAfterOtp(
     .from("profiles")
     .update({ email: pending.email, email_verified: true })
     .eq("id", userId);
+
+  if (referralCode) {
+    await applyAmbassadorAttribution(admin, {
+      userId,
+      referralCode,
+      userEmail: pending.email,
+      userPhone: pending.phone,
+    });
+  }
 
   if (isReviewerAccountEmail(pending.email)) {
     await confirmReviewerEmail(pending.email);

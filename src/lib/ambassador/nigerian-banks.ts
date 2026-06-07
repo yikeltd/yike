@@ -1,0 +1,45 @@
+/** Mainstream Nigerian commercial banks only — no fintech wallets. */
+export type NigerianBank = {
+  name: string;
+  code: string;
+};
+
+export const NIGERIAN_COMMERCIAL_BANKS: NigerianBank[] = [
+  { name: "Access Bank", code: "044" },
+  { name: "Citibank", code: "023" },
+  { name: "Ecobank", code: "050" },
+  { name: "FCMB", code: "214" },
+  { name: "Fidelity Bank", code: "070" },
+  { name: "First Bank", code: "011" },
+  { name: "GTBank", code: "058" },
+  { name: "Heritage Bank", code: "030" },
+  { name: "Keystone Bank", code: "082" },
+  { name: "Polaris Bank", code: "076" },
+  { name: "Stanbic IBTC", code: "221" },
+  { name: "Standard Chartered", code: "068" },
+  { name: "Sterling Bank", code: "232" },
+  { name: "SunTrust Bank", code: "100" },
+  { name: "Titan Trust Bank", code: "102" },
+  { name: "UBA", code: "033" },
+  { name: "Union Bank", code: "032" },
+  { name: "Unity Bank", code: "215" },
+  { name: "Wema Bank", code: "035" },
+  { name: "Zenith Bank", code: "057" },
+];
+
+export function resolveBankByCode(code: string): NigerianBank | null {
+  const normalized = code.trim();
+  return NIGERIAN_COMMERCIAL_BANKS.find((b) => b.code === normalized) ?? null;
+}
+
+export function resolveBankByName(name: string): NigerianBank | null {
+  const normalized = name.trim().toLowerCase();
+  return (
+    NIGERIAN_COMMERCIAL_BANKS.find((b) => b.name.toLowerCase() === normalized) ??
+    null
+  );
+}
+
+export function isValidAccountNumber(accountNumber: string): boolean {
+  return /^\d{10}$/.test(accountNumber.trim());
+}

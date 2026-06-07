@@ -136,7 +136,39 @@ export type InquiryStatus =
   | "ignored"
   | "spam";
 
-export type AccountType = "individual" | "agency" | "developer" | "landlord";
+export type AccountType =
+  | "individual"
+  | "agency"
+  | "developer"
+  | "landlord"
+  | "city_ambassador";
+
+export type AmbassadorStatus =
+  | "pending"
+  | "under_review"
+  | "approved"
+  | "rejected"
+  | "paused"
+  | "disabled"
+  | "inactive";
+
+export type AmbassadorCommissionStatus =
+  | "pending"
+  | "approved"
+  | "payable"
+  | "paid"
+  | "reversed"
+  | "fraud_review"
+  | "held";
+
+export type AmbassadorRevenueSource =
+  | "featured_listing"
+  | "premium_plan"
+  | "listing_boost"
+  | "company_verification"
+  | "inspection_fee"
+  | "direct_lead_package"
+  | "future_premium_service";
 
 export type ListingAvailabilityStatus =
   | "available"
@@ -282,6 +314,10 @@ export interface Profile {
   deleted_at?: string | null;
   public_slug?: string | null;
   account_type?: AccountType;
+  referred_by_ambassador_id?: string | null;
+  referral_code_used?: string | null;
+  attributed_at?: string | null;
+  attribution_locked?: boolean;
   developer_verified?: boolean;
   agency_verified?: boolean;
   company_name?: string | null;

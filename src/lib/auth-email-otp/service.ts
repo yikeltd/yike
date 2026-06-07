@@ -190,6 +190,7 @@ export async function verifyAuthEmailOtp(
     code: string;
     purpose: AuthEmailOtpPurpose;
     password?: string;
+    referralCode?: string | null;
   }
 ): Promise<VerifyAuthEmailOtpResult> {
   const email = normalizeEmail(params.email);
@@ -251,7 +252,13 @@ export async function verifyAuthEmailOtp(
       return { ok: false, error: EMAIL_OTP_USER_MESSAGES.verifyFailed, status: 503 };
     }
 
-    const finalized = await finalizeSignupAfterOtp(admin, db, pending, password);
+    const finalized = await finalizeSignupAfterOtp(
+      admin,
+      db,
+      pending,
+      password,
+      params.referralCode
+    );
     if (!finalized.ok) {
       return { ok: false, error: finalized.error, status: 400 };
     }

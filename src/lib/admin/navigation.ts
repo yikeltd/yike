@@ -73,6 +73,12 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
         label: "Applications",
         segment: "careers",
       },
+      { href: adminPath("ambassadors"), label: "Ambassadors", segment: "ambassadors" },
+      {
+        href: adminPath("ambassadors/payouts"),
+        label: "Ambassador Payouts",
+        segment: "ambassadors",
+      },
     ],
   },
   {

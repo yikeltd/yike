@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
 import { isPhoneVerificationRequired } from "@/lib/feature-flags";
+import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
+import { getAmbassadorRefFromCookies } from "@/lib/ambassador/cookie";
 import { isEmailVerified } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -69,6 +71,15 @@ export async function POST() {
 
   if (error) {
     return NextResponse.json({ error: "Could not upgrade account" }, { status: 500 });
+  }
+
+  const referralCode = await getAmbassadorRefFromCookies();
+  if (referralCode) {
+    await applyAmbassadorAttribution(admin, {
+      userId: user.id,
+      referralCode,
+      userEmail: user.email,
+    });
   }
 
   return NextResponse.json({
