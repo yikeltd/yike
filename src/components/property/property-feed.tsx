@@ -7,6 +7,7 @@ import { EmptyStateRich } from "./empty-state-rich";
 export function PropertyFeed({
   properties,
   emptyMessage = "Beautiful homes are coming soon.",
+  emptyTitle,
   showCount,
   isDemo,
   midFeedAd,
@@ -16,9 +17,12 @@ export function PropertyFeed({
   emptyArea,
   emptyListingType,
   emptyPropertyType,
+  stateBrowseHref,
+  clearFiltersHref,
 }: {
   properties: Property[];
   emptyMessage?: string;
+  emptyTitle?: string;
   showCount?: boolean;
   isDemo?: boolean;
   midFeedAd?: AdPlacement | null;
@@ -28,15 +32,21 @@ export function PropertyFeed({
   emptyArea?: string;
   emptyListingType?: string;
   emptyPropertyType?: string;
+  stateBrowseHref?: string;
+  clearFiltersHref?: string;
 }) {
   if (properties.length === 0) {
     return (
       <EmptyStateRich
+        title={emptyTitle}
         message={emptyMessage}
         city={emptyCity}
         area={emptyArea}
         listingType={emptyListingType}
         propertyType={emptyPropertyType}
+        stateBrowseHref={stateBrowseHref}
+        clearFiltersHref={clearFiltersHref}
+        layout="full"
       />
     );
   }
@@ -53,6 +63,7 @@ export function PropertyFeed({
       emptyArea={emptyArea}
       emptyListingType={emptyListingType}
       emptyPropertyType={emptyPropertyType}
+      richEmpty={false}
     />
   );
 }

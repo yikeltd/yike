@@ -63,7 +63,7 @@ export function SearchSuggestions({
   return (
     <section
       className={cn(
-        "mx-auto max-w-2xl px-3 lg:max-w-7xl lg:px-6 xl:px-8",
+        "w-full px-3 lg:px-6 xl:px-8",
         isEmpty ? "py-6" : "pb-4 pt-2"
       )}
     >

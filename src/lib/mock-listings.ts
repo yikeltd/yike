@@ -147,7 +147,10 @@ export function getMockListingsByAgent(
   ).slice(0, limit);
 }
 
-export function withDemoFallback(properties: Property[]): {
+export function withDemoFallback(
+  properties: Property[],
+  options?: { allowEmpty?: boolean }
+): {
   items: Property[];
   isDemo: boolean;
 } {
@@ -156,6 +159,9 @@ export function withDemoFallback(properties: Property[]): {
       items: properties,
       isDemo: properties.every((p) => isDemoProperty(p.id)),
     };
+  }
+  if (options?.allowEmpty) {
+    return { items: [], isDemo: false };
   }
   return { items: MOCK_LISTINGS.slice(0, 24), isDemo: true };
 }

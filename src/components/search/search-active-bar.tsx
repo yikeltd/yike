@@ -24,12 +24,16 @@ const PILL_KEYS: { key: string; label: (v: string) => string }[] = [
 
 export function SearchActiveBar({
   resultCount,
+  nearbyCount = 0,
+  showingFallback = false,
   currentHref,
   currentLabel,
   compact,
   className,
 }: {
   resultCount: number;
+  nearbyCount?: number;
+  showingFallback?: boolean;
   currentHref?: string;
   currentLabel?: string;
   compact?: boolean;
@@ -80,13 +84,15 @@ export function SearchActiveBar({
         className
       )}
     >
-      <div className="mx-auto max-w-2xl lg:max-w-7xl">
+      <div className="w-full lg:max-w-7xl lg:mx-auto">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-navy/45">
           Search results
         </p>
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p className="text-sm font-bold text-foreground lg:text-base">
-            {resultCount} {resultCount === 1 ? "home" : "homes"} found
+            {showingFallback
+              ? `No exact matches · ${nearbyCount} nearby in your area`
+              : `${resultCount} ${resultCount === 1 ? "listing" : "listings"} found`}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
             {currentHref && currentLabel ? (

@@ -1,22 +1,30 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { PropertyFeed } from "@/components/property/property-feed";
 import {
   getPublicProperties,
+  getPublicPropertiesStrict,
   parseSearchParams,
   type PropertySearchParams,
 } from "@/lib/properties";
 import { SearchResultsChrome } from "@/components/search/search-results-chrome";
-import { withDemoFallback } from "@/lib/mock-listings";
+import { withDemoFallback, isDemoProperty } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
 import { hubLabel } from "@/constants/listingTypes";
+import { propertyTypeLabel } from "@/lib/utils";
 import { getActiveAd } from "@/lib/ads";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
 import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
+import {
+  buildSearchEmptyCopy,
+  buildStateBrowseHref,
+  resolveSearchResults,
+} from "@/lib/search-fallback";
 
 export const metadata: Metadata = {
   title: `Search Homes in Nigeria`,
@@ -47,16 +55,38 @@ export default async function SearchPage({
   const hasQuery = hasActiveFilters(params);
   const prefs = hasQuery ? {} : await getServerSearchPreferences();
   const preloadParams: PropertySearchParams = hasQuery ? params : prefs;
-  const properties = await getPublicProperties(preloadParams, 48);
-  const { items: feedItems, isDemo } = withDemoFallback(properties);
+
+  let exactCount = 0;
+  let feedItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
+  let nearbyItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
+  let isDemo = false;
+  if (hasQuery) {
+    const bundle = await resolveSearchResults(
+      getPublicPropertiesStrict,
+      preloadParams,
+      48
+    );
+    exactCount = bundle.exact.length;
+    feedItems = bundle.exact;
+    nearbyItems = bundle.nearby;
+    isDemo =
+      feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
+  } else {
+    const properties = await getPublicProperties(preloadParams, 48);
+    const demo = withDemoFallback(properties);
+    feedItems = demo.items;
+    exactCount = properties.length;
+    isDemo = demo.isDemo;
+  }
 
   const feedAd = await getActiveAd("search_feed_mid");
 
   const label = [
     params.hub ? hubLabel(params.hub) : null,
-    params.listing_type,
+    params.property_type ? propertyTypeLabel(params.property_type) : params.listing_type,
     params.city,
     params.area,
+    params.state,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -74,36 +104,92 @@ export default async function SearchPage({
   const helpUrl = helpCity ? buildSeoHelpWhatsAppUrl(helpCity, helpArea) : null;
   const helpLabel = helpCity ? seoHelpLabel(helpCity, helpArea) : "";
 
+  const emptyCopy = buildSearchEmptyCopy(preloadParams);
+  const stateBrowseHref = buildStateBrowseHref(preloadParams);
+  const showingNearby = hasQuery && exactCount === 0 && nearbyItems.length > 0;
+
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] pb-24 lg:pb-12">
       <PrefSync />
       <Suspense fallback={<ResultsFallback />}>
         <SearchResultsChrome
-          resultCount={properties.length}
+          resultCount={exactCount}
+          nearbyCount={nearbyItems.length}
+          showingFallback={showingNearby}
           currentHref={currentHref}
           currentLabel={label || undefined}
           showEmptySuggestions={!hasQuery && feedItems.length === 0}
+          hideSuggestions={hasQuery && exactCount === 0}
         >
           <AdSlot
             placement="search_top"
-            className="mx-auto mt-2 hidden max-w-7xl px-3 lg:block lg:px-6 xl:px-8"
+            className="mt-2 hidden px-3 lg:block lg:px-6 xl:px-8"
           />
 
-          <section className="mx-auto mt-2 max-w-2xl px-3 lg:mt-3 lg:max-w-7xl lg:px-6 xl:px-8">
-            <PropertyFeed
-              properties={feedItems}
-              isDemo={isDemo}
-              midFeedAd={feedAd}
-              feedAdInsertAfter={5}
-              adPlacementKey="search_feed_mid"
-              emptyMessage={
-                hasQuery
-                  ? "No homes match your filters. Try a nearby area or wider budget."
-                  : "No homes in this view yet — pick a location below or refine filters."
-              }
-              emptyCity={params.city ?? preloadParams.city}
-              emptyArea={params.area ?? preloadParams.area}
-            />
+          <section className="mt-2 w-full px-3 lg:px-6 xl:px-8">
+            {showingNearby ? (
+              <div className="mb-4 rounded-2xl border border-navy/8 bg-white px-4 py-4 shadow-sm">
+                <p className="text-base font-bold text-navy">{emptyCopy.title}</p>
+                <p className="mt-1 text-sm text-muted">{emptyCopy.message}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href={stateBrowseHref}
+                    className="pressable rounded-full bg-gold px-4 py-2 text-xs font-bold text-navy"
+                  >
+                    Browse in {preloadParams.state ?? preloadParams.city ?? "this area"}
+                  </Link>
+                  <Link
+                    href="/search"
+                    className="pressable rounded-full bg-surface px-4 py-2 text-xs font-bold text-navy"
+                  >
+                    Clear filters
+                  </Link>
+                  {currentHref && label ? (
+                    <Link
+                      href={currentHref}
+                      className="pressable rounded-full border border-navy/10 px-4 py-2 text-xs font-bold text-navy"
+                    >
+                      Save this search
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {feedItems.length > 0 ? (
+              <PropertyFeed
+                properties={feedItems}
+                isDemo={isDemo}
+                midFeedAd={feedAd}
+                feedAdInsertAfter={5}
+                adPlacementKey="search_feed_mid"
+              />
+            ) : showingNearby ? (
+              <div className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted">
+                  Nearby matches in {preloadParams.state ?? preloadParams.city ?? "your area"}
+                </p>
+                <PropertyFeed
+                  properties={nearbyItems}
+                  isDemo={isDemo}
+                  midFeedAd={feedAd}
+                  feedAdInsertAfter={5}
+                  adPlacementKey="search_feed_mid"
+                />
+              </div>
+            ) : (
+              <PropertyFeed
+                properties={[]}
+                emptyMessage={emptyCopy.message}
+                emptyCity={params.city ?? preloadParams.city}
+                emptyArea={params.area ?? preloadParams.area}
+                emptyListingType={params.listing_type ?? preloadParams.listing_type}
+                emptyPropertyType={params.property_type ?? preloadParams.property_type}
+                emptyTitle={emptyCopy.title}
+                stateBrowseHref={hasQuery ? stateBrowseHref : undefined}
+                clearFiltersHref={hasQuery ? "/search" : undefined}
+              />
+            )}
           </section>
         </SearchResultsChrome>
       </Suspense>

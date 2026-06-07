@@ -11,10 +11,18 @@ export function propertySearchRelevance(
   params: PropertySearchParams
 ): number {
   let score = 0;
+  const state = norm(params.state);
   const city = norm(params.city);
   const area = norm(params.area);
+  const propState = norm(property.state);
   const propCity = norm(property.city);
   const propArea = norm(property.area);
+
+  if (state) {
+    if (propState === state) score += 10_000;
+    else if (propState.includes(state) || state.includes(propState)) score += 6_000;
+    else score -= 12_000;
+  }
 
   if (city) {
     if (propCity === city) score += 8_000;

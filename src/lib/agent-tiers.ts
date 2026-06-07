@@ -157,7 +157,14 @@ export function sortPropertiesByMarketRank(
   searchParams?: PropertySearchParams
 ): Property[] {
   return [...properties].sort((a, b) => {
-    if (searchParams && (searchParams.city || searchParams.area || searchParams.q)) {
+    if (
+      searchParams &&
+      (searchParams.state ||
+        searchParams.city ||
+        searchParams.area ||
+        searchParams.property_type ||
+        searchParams.q)
+    ) {
       const rel =
         propertySearchRelevance(b, searchParams) -
         propertySearchRelevance(a, searchParams);

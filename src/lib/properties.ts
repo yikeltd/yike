@@ -34,11 +34,15 @@ const PUBLIC_SELECT = `
   )
 `;
 
-export async function getPublicProperties(
+function mergeSearchParams(params: PropertySearchParams): PropertySearchParams {
+  return params.q ? mergeQueryIntoParams(params, params.q) : params;
+}
+
+async function queryPublicPropertiesRows(
   params: PropertySearchParams = {},
   limit = 24
 ): Promise<Property[]> {
-  const merged = params.q ? mergeQueryIntoParams(params, params.q) : params;
+  const merged = mergeSearchParams(params);
 
   if (!isSupabaseConfigured()) {
     return filterMockListings(merged, limit);
@@ -51,10 +55,8 @@ export async function getPublicProperties(
     .select(PUBLIC_SELECT)
     .eq("status", "approved")
     .gt("expires_at", new Date().toISOString())
-    .order("is_featured", { ascending: false })
-    .order("is_verified_listing", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .limit(Math.max(limit * 2, 48));
 
   if (params.featured) query = query.eq("is_featured", true);
   if (merged.listing_type) query = query.eq("listing_type", merged.listing_type);
@@ -92,10 +94,24 @@ export async function getPublicProperties(
   if (merged.property_type === "hotel") {
     rows = rows.filter((p) => isHotelPropertyType(p.property_type));
   }
-  if (rows.length > 0) {
-    return sortPropertiesByMarketRank(rows, merged).slice(0, limit);
-  }
-  return filterMockListings(merged, limit);
+  return sortPropertiesByMarketRank(rows, merged).slice(0, limit);
+}
+
+/** Strict query — never injects unrelated demo listings when filters are active. */
+export async function getPublicPropertiesStrict(
+  params: PropertySearchParams = {},
+  limit = 24
+): Promise<Property[]> {
+  return queryPublicPropertiesRows(params, limit);
+}
+
+export async function getPublicProperties(
+  params: PropertySearchParams = {},
+  limit = 24
+): Promise<Property[]> {
+  const rows = await queryPublicPropertiesRows(params, limit);
+  if (rows.length > 0) return rows;
+  return filterMockListings(mergeSearchParams(params), limit);
 }
 
 export async function getApprovedPropertyIds(limit = 200): Promise<string[]> {
@@ -441,7 +457,7 @@ export function parseSearchParams(
     return typeof v === "string" ? v : undefined;
   };
   return {
-    listing_type: get("type"),
+    listing_type: get("type") ?? get("listingType"),
     state: get("state"),
     city: get("city"),
     area: get("area"),
@@ -449,7 +465,7 @@ export function parseSearchParams(
     max_price: get("max") ? Number(get("max")) : undefined,
     bedrooms: get("beds") ? Number(get("beds")) : undefined,
     bathrooms: get("baths") ? Number(get("baths")) : undefined,
-    property_type: get("property_type"),
+    property_type: get("property_type") ?? get("propertyType"),
     q: get("q"),
     featured: get("featured") === "1",
     verified_only: get("verified") === "1",
