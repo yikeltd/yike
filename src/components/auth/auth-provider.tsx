@@ -26,6 +26,7 @@ import { executeAuthIntent } from "@/lib/execute-auth-intent";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { AuthModal } from "./auth-modal";
+import { SessionGuard } from "./session-guard";
 
 interface AuthContextValue {
   user: User | null;
@@ -177,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      <SessionGuard>{children}</SessionGuard>
       <AuthModal
         open={modalOpen}
         intent={modalIntent}

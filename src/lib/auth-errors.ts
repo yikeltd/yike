@@ -1,7 +1,7 @@
 export function friendlyAuthError(message: string): string {
   const lower = message.toLowerCase();
   if (lower.includes("invalid login") || lower.includes("invalid credentials")) {
-    return "Email or password doesn't match. Try again.";
+    return "Invalid login details. Please check and try again.";
   }
   if (lower.includes("email not confirmed")) {
     return "Verify your email with the 6-digit code we sent you.";

@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
 import { cn } from "@/lib/utils";
+import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
+import { saveQuickLoginUser } from "@/lib/auth/quick-login";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"] as const;
 
@@ -101,13 +103,25 @@ export function PinLoginPanel({
       const res = await fetch("/api/auth/pin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: user.email, pin: code }),
+        body: JSON.stringify({
+          identifier: user.username ?? user.email,
+          pin: code,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Could not sign in");
+        setError(data.error ?? AUTH_USER_MESSAGES.pinIncorrect);
         setPin("");
         return;
+      }
+      if (data.profile) {
+        saveQuickLoginUser({
+          userId: data.profile.id,
+          email: data.profile.email,
+          fullName: data.profile.full_name,
+          username: data.profile.username,
+          avatarUrl: data.profile.avatar_url,
+        });
       }
       const resumed = await resumePendingAuthIntent(router, {
         fallbackPath: nextPath || "/profile",
@@ -144,12 +158,14 @@ export function PinLoginPanel({
             )}
           </div>
         </div>
-        <p className="text-xs font-bold uppercase tracking-wider text-gold-dark">Welcome back</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-gold-dark">
+          {AUTH_USER_MESSAGES.welcomeBack(displayName)}
+        </p>
         <h2 className="mt-1 text-xl font-bold text-navy">{displayName}</h2>
         {user.username && (
           <p className="text-sm text-muted">@{user.username}</p>
         )}
-        <p className="mt-2 text-sm text-muted">Enter your PIN</p>
+        <p className="mt-2 text-sm text-muted">{AUTH_USER_MESSAGES.pinPrompt}</p>
       </div>
 
       <PinPad
@@ -169,14 +185,14 @@ export function PinLoginPanel({
           onClick={onUsePassword}
           className="font-semibold text-gold-dark hover:underline"
         >
-          Use email & password instead
+          {AUTH_USER_MESSAGES.usePasswordInstead}
         </button>
         <button
           type="button"
           onClick={onSwitchAccount}
           className="text-muted hover:text-foreground"
         >
-          Not you? Switch account
+          {AUTH_USER_MESSAGES.switchAccount}
         </button>
       </div>
     </div>

@@ -120,7 +120,14 @@ export async function finalizeSignupAfterOtp(
 
   await admin
     .from("profiles")
-    .update({ email: pending.email, email_verified: true })
+    .update({
+      email: pending.email,
+      email_verified: true,
+      has_pin_set: Boolean(pending.pin_hash),
+      session_started_at: new Date().toISOString(),
+      last_unlocked_at: new Date().toISOString(),
+      last_active_at: new Date().toISOString(),
+    })
     .eq("id", userId);
 
   if (referralCode) {

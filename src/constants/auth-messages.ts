@@ -1,0 +1,15 @@
+export const AUTH_USER_MESSAGES = {
+  invalidLogin: "Invalid login details. Please check and try again.",
+  pinPrompt: "Enter your PIN to continue",
+  welcomeBack: (name: string) => `Welcome back, ${name}`,
+  usePasswordInstead: "Use password instead",
+  switchAccount: "Switch account",
+  newDevice: "For your security, please sign in again.",
+  sensitiveConfirm: "Confirm it's you to continue.",
+  pinIncorrect: "Incorrect PIN. Try again or use your password.",
+  pinLocked: "Too many PIN attempts. Use your password instead.",
+  pinSetupTitle: "Create your PIN",
+  pinSetupBody: "Set a 6-digit PIN for quick unlock on this device.",
+  sessionLocked: "Your session was locked for security.",
+  fullLoginRequired: "Please sign in again to continue.",
+} as const;

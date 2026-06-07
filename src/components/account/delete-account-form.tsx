@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSensitiveConfirm } from "@/components/auth/sensitive-confirm-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function DeleteAccountForm() {
   const router = useRouter();
+  const { confirmSensitiveAction, sensitiveConfirmModal } = useSensitiveConfirm();
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -14,6 +16,10 @@ export function DeleteAccountForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    const verified = await confirmSensitiveAction("delete_account");
+    if (!verified.ok) return;
+
     setLoading(true);
 
     const res = await fetch("/api/account/delete", {
@@ -35,7 +41,9 @@ export function DeleteAccountForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <>
+      {sensitiveConfirmModal}
+      <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-sm text-muted">
         This permanently removes your profile, saved homes, and listings. Type{" "}
         <strong className="text-foreground">DELETE</strong> to confirm.
@@ -59,5 +67,6 @@ export function DeleteAccountForm() {
         {loading ? "Deleting…" : "Delete my account permanently"}
       </Button>
     </form>
+    </>
   );
 }

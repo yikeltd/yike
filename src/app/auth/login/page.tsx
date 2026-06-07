@@ -8,16 +8,17 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { EmailOtpModal } from "@/components/auth/email-otp-modal";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PinLoginPanel } from "@/components/auth/pin-login-panel";
+import { PinSetupModal } from "@/components/auth/pin-setup-modal";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import {
   clearQuickLoginUser,
   getQuickLoginUser,
   saveQuickLoginUser,
 } from "@/lib/auth/quick-login";
-import { friendlyAuthError } from "@/lib/auth-errors";
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
 import { peekAuthIntent } from "@/lib/auth-intent";
 import { getDefaultConsolePath, isStaffRole } from "@/lib/admin/roles";
+import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
 import type { UserRole } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,64 +27,58 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
+  const forcePassword = searchParams.get("mode") === "password" || searchParams.get("switch") === "1";
+  const sessionReason = searchParams.get("reason");
   const next = nextParam ?? (peekAuthIntent() ? "/" : "/profile");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [quickUser, setQuickUser] = useState<ReturnType<typeof getQuickLoginUser>>(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
+  const [resolvedEmail, setResolvedEmail] = useState("");
+  const [pinSetupOpen, setPinSetupOpen] = useState(false);
 
   useEffect(() => {
-    setQuickUser(getQuickLoginUser());
-  }, []);
-
-  async function completeLogin(signedInEmail: string, signedInPassword: string) {
-    const supabase = createClient();
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email: signedInEmail,
-      password: signedInPassword,
-    });
-
-    if (authError) {
-      setError(friendlyAuthError(authError.message));
-      return false;
+    if (forcePassword) {
+      clearQuickLoginUser();
+      setQuickUser(null);
+      setShowPasswordForm(true);
+    } else {
+      setQuickUser(getQuickLoginUser());
     }
+  }, [forcePassword]);
 
-    const reviewerAccount = isReviewerAccountEmail(signedInEmail);
-    if (!data.user?.email_confirmed_at && !reviewerAccount) {
-      setEmailVerifyOpen(true);
-      return false;
+  useEffect(() => {
+    if (sessionReason === "session") {
+      setInfo(AUTH_USER_MESSAGES.fullLoginRequired);
+    } else if (sessionReason === "device") {
+      setInfo(AUTH_USER_MESSAGES.newDevice);
     }
+  }, [sessionReason]);
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, full_name, username, avatar_url, email, role, is_banned")
-      .eq("id", data.user!.id)
-      .maybeSingle();
-
-    if (
-      profile &&
-      !profile.is_banned &&
-      isStaffRole(profile.role as UserRole)
-    ) {
-      router.replace(getDefaultConsolePath(profile.role as UserRole));
+  async function finishLogin(profile: {
+    id: string;
+    email?: string | null;
+    full_name?: string | null;
+    username?: string | null;
+    avatar_url?: string | null;
+    role?: UserRole;
+  }) {
+    if (profile.role && isStaffRole(profile.role)) {
+      router.replace(getDefaultConsolePath(profile.role));
       return true;
     }
 
-    await supabase
-      .from("profiles")
-      .update({ email_verified: true })
-      .eq("id", data.user!.id);
-
-    if (profile && data.user?.email) {
+    if (profile.email) {
       saveQuickLoginUser({
         userId: profile.id,
-        email: data.user.email,
-        fullName: profile.full_name,
-        username: profile.username,
-        avatarUrl: profile.avatar_url,
+        email: profile.email,
+        fullName: profile.full_name ?? null,
+        username: profile.username ?? null,
+        avatarUrl: profile.avatar_url ?? null,
       });
     }
 
@@ -96,21 +91,59 @@ export default function LoginPage() {
     return true;
   }
 
+  async function completeLogin(signedInIdentifier: string, signedInPassword: string) {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier: signedInIdentifier, password: signedInPassword }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setError(data.error ?? AUTH_USER_MESSAGES.invalidLogin);
+      return false;
+    }
+
+    const email = data.profile?.email ?? signedInIdentifier;
+    setResolvedEmail(email);
+
+    if (data.needsEmailVerify && !isReviewerAccountEmail(email)) {
+      setEmailVerifyOpen(true);
+      return false;
+    }
+
+    const supabase = createClient();
+    if (data.profile?.id) {
+      await supabase
+        .from("profiles")
+        .update({ email_verified: true })
+        .eq("id", data.profile.id);
+    }
+
+    if (data.requiresPinSetup) {
+      setPinSetupOpen(true);
+      return false;
+    }
+
+    return finishLogin(data.profile ?? { id: "", email });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const ok = await completeLogin(email, password);
+    setInfo("");
+    const ok = await completeLogin(identifier, password);
     setLoading(false);
-    if (!ok && !emailVerifyOpen) return;
+    if (!ok && !emailVerifyOpen && !pinSetupOpen) return;
   }
 
-  const usePin = quickUser && !showPasswordForm;
+  const usePin = quickUser && !showPasswordForm && !forcePassword;
 
   return (
     <>
       <AuthShell
-        title="Welcome back"
+        title={usePin ? undefined : "Welcome back"}
         compact={Boolean(usePin)}
         footer={
           !usePin ? (
@@ -139,18 +172,23 @@ export default function LoginPage() {
           />
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {info ? (
+              <p className="rounded-xl bg-gold/10 px-3 py-2 text-sm text-navy dark:text-gold">
+                {info}
+              </p>
+            ) : null}
             <div>
               <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted">
-                Email
+                Email or username
               </label>
               <Input
-                type="email"
-                placeholder="you@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                placeholder="you@email.com or @username"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
                 className="h-12 rounded-xl"
-                autoComplete="email"
+                autoComplete="username"
               />
             </div>
             <div>
@@ -175,7 +213,7 @@ export default function LoginPage() {
             <Button type="submit" fullWidth size="lg" disabled={loading}>
               {loading ? "Signing in…" : "Sign in"}
             </Button>
-            {quickUser && (
+            {quickUser && !forcePassword && (
               <button
                 type="button"
                 onClick={() => setShowPasswordForm(false)}
@@ -190,12 +228,36 @@ export default function LoginPage() {
 
       <EmailOtpModal
         open={emailVerifyOpen}
-        email={email}
+        email={resolvedEmail || identifier}
         purpose="email_verify"
         onVerified={async () => {
-          await completeLogin(email, password);
+          await finishLogin({
+            id: quickUser?.userId ?? "",
+            email: resolvedEmail || identifier,
+            full_name: quickUser?.fullName,
+            username: quickUser?.username,
+            avatar_url: quickUser?.avatarUrl,
+          });
         }}
         autoSend
+      />
+
+      <PinSetupModal
+        open={pinSetupOpen}
+        onClose={() => {
+          setPinSetupOpen(false);
+          void finishLogin({
+            id: quickUser?.userId ?? "",
+            email: resolvedEmail || identifier,
+          });
+        }}
+        onComplete={() => {
+          setPinSetupOpen(false);
+          void finishLogin({
+            id: quickUser?.userId ?? "",
+            email: resolvedEmail || identifier,
+          });
+        }}
       />
     </>
   );

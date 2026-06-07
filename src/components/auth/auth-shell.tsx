@@ -15,7 +15,7 @@ export function AuthShell({
   children,
   footer,
 }: {
-  title: string;
+  title?: string;
   subtitle?: string;
   compact?: boolean;
   children: React.ReactNode;
@@ -36,9 +36,13 @@ export function AuthShell({
           <div className="flex justify-center">
             <Logo href="/" showText className="text-white [&_span]:text-white" />
           </div>
-          <h1 className="mt-8 text-[1.65rem] font-bold leading-tight tracking-tight text-white sm:text-3xl">
-            {title}
-          </h1>
+          {title ? (
+            <h1 className="mt-8 text-[1.65rem] font-bold leading-tight tracking-tight text-white sm:text-3xl">
+              {title}
+            </h1>
+          ) : compact ? (
+            <div className="mt-6" aria-hidden />
+          ) : null}
           {subtitle ? (
             <p className="mt-2.5 text-base leading-relaxed text-white/85">
               {subtitle}

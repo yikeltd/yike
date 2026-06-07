@@ -261,6 +261,12 @@ export interface Profile {
   whatsapp: string | null;
   avatar_url: string | null;
   pin_hash?: string | null;
+  has_pin_set?: boolean;
+  last_unlocked_at?: string | null;
+  session_started_at?: string | null;
+  session_locked_at?: string | null;
+  pin_failed_attempts?: number;
+  pin_locked_until?: string | null;
   role: UserRole;
   verification_status: VerificationStatus;
   agent_type: "independent" | "agency" | "landlord" | null;
