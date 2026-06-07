@@ -17,6 +17,8 @@ export async function VerificationPromoSlot({
   className,
 }: Props) {
   const banner = await getActiveBannerForPlacement(placement);
+  if (!banner) return null;
+
   return (
     <VerificationPromoBanner banner={banner} variant={variant} className={className} />
   );

@@ -2,11 +2,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { SiteBanner } from "@/types/database";
-import {
-  DEFAULT_VERIFICATION_BANNER,
-  MOBILE_HEADER_PLACEMENT,
-  type SiteBannerPlacement,
-} from "@/constants/siteBanners";
+import { MOBILE_HEADER_PLACEMENT, type SiteBannerPlacement } from "@/constants/siteBanners";
 
 export { MOBILE_HEADER_PLACEMENT } from "@/constants/siteBanners";
 export type { SiteBannerPlacement } from "@/constants/siteBanners";
@@ -51,29 +47,8 @@ export const getActiveBannerForPlacement = cache(
   }
 );
 
-function verificationMobileHeaderFallback(): SiteBanner {
-  const now = new Date().toISOString();
-  return {
-    id: "default-verification-mobile-header",
-    placement: MOBILE_HEADER_PLACEMENT,
-    title: DEFAULT_VERIFICATION_BANNER.title,
-    subtitle: DEFAULT_VERIFICATION_BANNER.subtitle,
-    message: DEFAULT_VERIFICATION_BANNER.subtitle,
-    cta_text: DEFAULT_VERIFICATION_BANNER.ctaText,
-    link_url: DEFAULT_VERIFICATION_BANNER.linkUrl,
-    image_url: null,
-    is_active: true,
-    priority: 0,
-    starts_at: null,
-    ends_at: null,
-    created_at: now,
-    updated_at: now,
-  };
-}
-
 export const getActiveMobileHeaderBanner = cache(async (): Promise<SiteBanner | null> => {
-  const banner = await getActiveBannerForPlacement(MOBILE_HEADER_PLACEMENT);
-  return banner ?? verificationMobileHeaderFallback();
+  return getActiveBannerForPlacement(MOBILE_HEADER_PLACEMENT);
 });
 
 export async function getAllSiteBanners(

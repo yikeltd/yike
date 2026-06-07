@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import type { SiteBanner } from "@/types/database";
-import { DEFAULT_VERIFICATION_BANNER } from "@/constants/siteBanners";
 import { cn } from "@/lib/utils";
 
 export type VerificationPromoVariant = "inline" | "card" | "sticky" | "hero";
@@ -13,11 +12,12 @@ type Props = {
 };
 
 export function VerificationPromoBanner({ banner, variant = "inline", className }: Props) {
-  const title = banner?.title?.trim() || DEFAULT_VERIFICATION_BANNER.title;
-  const subtitle =
-    banner?.subtitle?.trim() || banner?.message?.trim() || DEFAULT_VERIFICATION_BANNER.subtitle;
-  const cta = banner?.cta_text?.trim() || DEFAULT_VERIFICATION_BANNER.ctaText;
-  const href = banner?.link_url?.trim() || DEFAULT_VERIFICATION_BANNER.linkUrl;
+  if (!banner) return null;
+
+  const title = banner.title?.trim() || "Learn more";
+  const subtitle = banner.subtitle?.trim() || banner.message?.trim() || "";
+  const cta = banner.cta_text?.trim() || "Continue";
+  const href = banner.link_url?.trim() || "/";
 
   if (variant === "sticky") {
     return (
@@ -53,7 +53,9 @@ export function VerificationPromoBanner({ banner, variant = "inline", className 
           <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-gold" />
           <div>
             <h2 className="text-base font-bold leading-snug lg:text-lg">{title}</h2>
-            <p className="mt-2 text-sm text-white/85 leading-relaxed">{subtitle}</p>
+            {subtitle ? (
+              <p className="mt-2 text-sm text-white/85 leading-relaxed">{subtitle}</p>
+            ) : null}
             <Link
               href={href}
               className="mt-4 inline-flex rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-navy"
@@ -78,7 +80,9 @@ export function VerificationPromoBanner({ banner, variant = "inline", className 
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-bold text-navy lg:text-base">{title}</h2>
-          <p className="mt-1 text-sm text-muted leading-relaxed">{subtitle}</p>
+          {subtitle ? (
+            <p className="mt-1 text-sm text-muted leading-relaxed">{subtitle}</p>
+          ) : null}
           <Link
             href={href}
             className="mt-3 inline-flex rounded-xl bg-navy px-3 py-2 text-xs font-bold text-gold lg:text-sm"

@@ -13,6 +13,7 @@ export const BANNER_PLACEMENTS = [
 
 export type SiteBannerPlacement = (typeof BANNER_PLACEMENTS)[number]["id"];
 
+/** Admin form defaults only — never rendered unless saved as an active banner. */
 export const DEFAULT_VERIFICATION_BANNER = {
   title: "Let Yike Help You Verify That Property Before You Pay",
   subtitle:

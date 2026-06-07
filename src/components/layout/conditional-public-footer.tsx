@@ -2,15 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { isAppShellRoute, isStandaloneApp } from "@/lib/app-environment";
+import { isStandaloneApp } from "@/lib/app-environment";
 
 function shouldHideFooter(pathname: string) {
-  return (
-    pathname.startsWith("/auth") ||
-    pathname.startsWith("/lex") ||
-    pathname === "/browse" ||
-    pathname.startsWith("/browse/")
-  );
+  return pathname.startsWith("/auth") || pathname.startsWith("/lex");
 }
 
 export function ConditionalPublicFooter({
@@ -20,8 +15,10 @@ export function ConditionalPublicFooter({
 }) {
   const pathname = usePathname();
   const [standalone, setStandalone] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     setStandalone(isStandaloneApp());
     const mq = window.matchMedia("(display-mode: standalone)");
     const onChange = () => setStandalone(isStandaloneApp());
@@ -30,8 +27,9 @@ export function ConditionalPublicFooter({
   }, []);
 
   if (shouldHideFooter(pathname)) return null;
-  if (isAppShellRoute(pathname)) return null;
-  if (standalone) return null;
 
-  return <div className="hidden md:block">{children}</div>;
+  // SSR + first paint: show footer in browser (SEO/trust). Hide after standalone detected.
+  if (mounted && standalone) return null;
+
+  return <>{children}</>;
 }

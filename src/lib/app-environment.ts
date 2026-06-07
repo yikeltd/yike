@@ -9,22 +9,3 @@ export function isStandaloneApp(): boolean {
   return false;
 }
 
-/** Core product routes — no marketing footer even on desktop. */
-export function isAppShellRoute(pathname: string): boolean {
-  if (pathname === "/") return true;
-  const prefixes = [
-    "/search",
-    "/saved",
-    "/profile",
-    "/agent",
-    "/browse",
-    "/properties/",
-    "/explore",
-    "/rent",
-    "/buy",
-    "/shortlet",
-    "/land",
-    "/post-property",
-  ];
-  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-}
