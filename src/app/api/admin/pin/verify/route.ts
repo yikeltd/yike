@@ -52,5 +52,8 @@ export async function GET() {
 
   const { hasValidPinSession } = await import("@/lib/admin/pin");
   const valid = await hasValidPinSession(auth.user.id);
-  return NextResponse.json({ valid });
+  return NextResponse.json({
+    valid,
+    hasAdminPin: Boolean(auth.profile.admin_pin_hash),
+  });
 }

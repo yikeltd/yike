@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminPageHeader, StatusBadge } from "@/components/admin/dashboard/admin-ui";
 import { PinConfirmModal } from "@/components/admin/pin-confirm-modal";
+import { AdminPinResetPanel } from "@/components/admin/admin-pin-reset-panel";
 import type { StaffProfile, StaffRole } from "@/types/database";
 
 const ROLES: StaffRole[] = [
@@ -116,8 +117,14 @@ export default function StaffManagementPage() {
                   {s.role.replace("_", " ")} · {s.department ?? "General"}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge status={s.status} />
+                <AdminPinResetPanel
+                  profileId={s.id}
+                  pinType="admin"
+                  label="Reset admin PIN"
+                  compact
+                />
                 <button
                   type="button"
                   onClick={() => void toggleStatus(s.id, s.status === "active")}

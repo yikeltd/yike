@@ -1,4 +1,5 @@
 import { AdminPageHeader } from "@/components/admin/dashboard/admin-ui";
+import { AdminPinSetupCard } from "@/components/admin/admin-pin-setup-card";
 import { ReviewPublishingSettings } from "@/components/admin/review-publishing-settings";
 import { getReviewPublishingMode } from "@/lib/platform-settings";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
@@ -29,10 +30,14 @@ export default async function PlatformSettingsPage() {
           </dl>
         </SettingsCard>
 
+        <AdminPinSetupCard />
+
         <SettingsCard title="Security">
           <p className="text-sm text-muted">
             Admin PIN sessions expire after 10 minutes. Review deletions, agent
-            suspension, and settings changes are audit-logged.
+            suspension, and settings changes are audit-logged. Super admins can
+            reset login PINs for users and agents, and admin PINs for staff, from
+            their respective admin pages.
           </p>
         </SettingsCard>
 

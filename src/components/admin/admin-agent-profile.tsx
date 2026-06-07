@@ -12,6 +12,7 @@ import {
   AgentVerificationActions,
 } from "@/components/admin/agent-verification-actions";
 import { AgentLeadRoutingPanel } from "@/components/admin/agent-lead-routing-panel";
+import { AdminPinResetPanel } from "@/components/admin/admin-pin-reset-panel";
 import { StatusBadge, VerifiedBadge } from "@/components/ui/badge";
 import { isVerifiedAgentProfile, UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
 
@@ -133,6 +134,12 @@ export function AdminAgentProfile({
       </section>
 
       <AgentLeadRoutingPanel agentId={agent.id} />
+
+      <AdminPinResetPanel
+        profileId={agent.id}
+        pinType="login"
+        label="Reset agent login PIN"
+      />
 
       <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm space-y-4">
         <h2 className="font-bold text-navy">Listing limit control</h2>
