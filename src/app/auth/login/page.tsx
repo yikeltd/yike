@@ -183,7 +183,6 @@ export default function LoginPage() {
               </label>
               <Input
                 type="text"
-                placeholder="you@email.com or @username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
