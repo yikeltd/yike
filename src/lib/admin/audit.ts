@@ -27,6 +27,8 @@ export type AuditAction =
   | "agent.suspend"
   | "agent.reinstate"
   | "agent.delete"
+  | "agent.on_hold"
+  | "agent.verification_request"
   | "review.approve"
   | "review.reject"
   | "review.hide"

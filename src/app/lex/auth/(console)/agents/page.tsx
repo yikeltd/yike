@@ -1,9 +1,6 @@
-import { requireServerClient } from "@/lib/supabase/require-client";
-import { AgentActions } from "@/components/admin/agent-actions";
-import {
-  AgentVerificationActions,
-  AgentStatusActions,
-} from "@/components/admin/agent-verification-actions";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { AgentVerificationActions } from "@/components/admin/agent-verification-actions";
+import { normalizeAccountStatus } from "@/lib/account-control";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { StatusBadge, VerifiedBadge } from "@/components/ui/badge";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
@@ -18,7 +15,8 @@ export default async function AdminAgentsPage({
 }) {
   const sp = await searchParams;
   const { page, from, to } = parseAdminPage(sp);
-  const supabase = await requireServerClient();
+  const supabase = createAdminClient();
+  if (!supabase) return null;
 
   const { data: verifications } = await supabase
     .from("agent_verifications")
@@ -89,13 +87,12 @@ export default async function AdminAgentsPage({
                     agentId={row.agent_id}
                     verification={row}
                   />
-                  <div className="mt-2">
-                    <AgentActions
-                      agentId={row.agent_id}
-                      verificationId={row.id}
-                      listingLimit={row.agent?.listing_limit}
-                    />
-                  </div>
+                  <Link
+                    href={`/lex/auth/agents/${row.agent_id}`}
+                    className="mt-2 inline-block text-xs font-bold text-gold-dark"
+                  >
+                    Open full profile →
+                  </Link>
                 </div>
               </li>
             );
@@ -136,12 +133,14 @@ export default async function AdminAgentsPage({
                     )}
                   </div>
                 </div>
-                <AgentStatusActions agentId={agent.id} />
-                <div className="mt-2">
-                  <AgentActions
-                    agentId={agent.id}
-                    listingLimit={agent.listing_limit}
-                  />
+                <div className="flex flex-col items-end gap-1">
+                  <StatusBadge status={normalizeAccountStatus(agent)} />
+                  <Link
+                    href={`/lex/auth/agents/${agent.id}`}
+                    className="text-xs font-bold text-gold-dark hover:underline"
+                  >
+                    Manage
+                  </Link>
                 </div>
               </li>
             );

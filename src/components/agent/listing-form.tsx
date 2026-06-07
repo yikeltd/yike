@@ -38,6 +38,7 @@ import {
   sortMediaItemsForStory,
   type PropertyMediaItem,
 } from "@/lib/media/items";
+import { LISTING_LIMIT_REACHED_MESSAGE } from "@/lib/account-control";
 import {
   BLOCKING_QUALITY_FLAGS,
   moderateListingDraft,
@@ -217,7 +218,7 @@ export function ListingForm({
         activeCount >= listingLimit
       ) {
         setError(
-          `Listing limit reached (${listingLimit}). Get verified for unlimited listings.`
+          LISTING_LIMIT_REACHED_MESSAGE
         );
         setLoading(false);
         return;

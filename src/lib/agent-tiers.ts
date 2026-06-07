@@ -63,8 +63,11 @@ export function getListingLimit(
   profile: AgentProfileSlice | null | undefined
 ): number | null {
   if (!profile) return UNVERIFIED_AGENT_LISTING_LIMIT;
+  if (profile.listing_limit !== null && profile.listing_limit !== undefined) {
+    return profile.listing_limit;
+  }
   if (isVerifiedAgentProfile(profile)) return null;
-  return profile.listing_limit ?? UNVERIFIED_AGENT_LISTING_LIMIT;
+  return UNVERIFIED_AGENT_LISTING_LIMIT;
 }
 
 export function countAsActiveListing(

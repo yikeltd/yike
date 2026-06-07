@@ -239,6 +239,12 @@ export function StatusBadge({
     rejected: "bg-red-500/15 text-red-600",
     rented: "bg-surface text-muted",
     hidden: "bg-surface text-muted",
+    on_hold: "bg-amber-500/15 text-amber-800",
+    pending_verification: "bg-gold/20 text-gold-dark",
+    suspended: "bg-red-500/15 text-red-600",
+    deleted: "bg-surface text-muted line-through",
+    active: "bg-emerald-500/10 text-emerald-700",
+    reinstated: "bg-emerald-500/10 text-emerald-700",
   };
   return (
     <span

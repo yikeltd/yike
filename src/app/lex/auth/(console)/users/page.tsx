@@ -1,5 +1,5 @@
 import { requireSuperAdmin } from "@/lib/auth";
-import { requireServerClient } from "@/lib/supabase/require-client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminPageHeader } from "@/components/admin/dashboard/admin-ui";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
 import { AdminPagination } from "@/components/admin/admin-pagination";
@@ -13,14 +13,15 @@ export default async function AdminUsersPage({
   await requireSuperAdmin();
   const sp = await searchParams;
   const { page, from, to } = parseAdminPage(sp);
-  const supabase = await requireServerClient();
+  const supabase = createAdminClient();
 
-  const { data: users, count } = await supabase
+  const { data: users, count } = await supabase!
     .from("profiles")
-    .select("id, full_name, email, role, created_at, is_banned", {
-      count: "exact",
-    })
-    .eq("role", "user")
+    .select(
+      "id, full_name, email, role, account_status, profile_status, is_banned, created_at",
+      { count: "exact" }
+    )
+    .in("role", ["user", "agent_unverified", "agent_verified", "agent"])
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -29,8 +30,8 @@ export default async function AdminUsersPage({
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Users"
-        description={`Consumer accounts — ${total} total`}
+        title="Users & agents"
+        description={`Consumer and agent accounts — ${total} total`}
       />
 
       <AdminUsersTable users={users ?? []} />

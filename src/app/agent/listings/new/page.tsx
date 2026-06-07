@@ -2,10 +2,11 @@ import { requireAgentLister } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { ListingForm } from "@/components/agent/listing-form";
 import {
-  countAsActiveListing,
-  getListingLimit,
-  isVerifiedAgentProfile,
-} from "@/lib/agent-tiers";
+  accountStatusMessage,
+  canPublishListings,
+  LISTING_LIMIT_REACHED_MESSAGE,
+} from "@/lib/account-control";
+import { countAsActiveListing, getListingLimit } from "@/lib/agent-tiers";
 import Link from "next/link";
 import type { Property } from "@/types/database";
 
@@ -24,6 +25,8 @@ export default async function NewListingPage() {
 
   const limit = getListingLimit(profile);
   const atLimit = limit !== null && activeCount >= limit;
+  const statusMessage = accountStatusMessage(profile);
+  const canPublish = canPublishListings(profile);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">
@@ -35,31 +38,26 @@ export default async function NewListingPage() {
         {limit !== null && (
           <p className="mt-2 text-xs text-muted">
             Active listings: {activeCount}/{limit}
-            {!isVerifiedAgentProfile(profile) && (
-              <>
-                {" "}
-                ·{" "}
-                <Link href="/agent/verification" className="font-semibold text-gold-dark">
-                  Get verified
-                </Link>{" "}
-                for unlimited listings
-              </>
-            )}
           </p>
         )}
       </div>
-      {atLimit ? (
+      {!canPublish && statusMessage ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
+          <p className="font-semibold">Posting paused</p>
+          <p className="mt-2">{statusMessage}</p>
+          <Link href="/contact" className="mt-4 inline-flex font-semibold text-navy underline">
+            Contact Yike support
+          </Link>
+        </div>
+      ) : atLimit ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
           <p className="font-semibold">Listing limit reached</p>
-          <p className="mt-2">
-            Unverified agents can have up to {limit} active listings. Apply for verified
-            agent status to list without limits and rank higher in search.
-          </p>
+          <p className="mt-2">{LISTING_LIMIT_REACHED_MESSAGE}</p>
           <Link
             href="/agent/verification"
             className="mt-4 inline-flex font-semibold text-navy underline"
           >
-            Apply for verified badge →
+            Verify your account →
           </Link>
         </div>
       ) : (

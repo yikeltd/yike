@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { profileStatusFromAccountAction } from "@/lib/account-control";
 import { requireSuperAdminApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentProfileStatus } from "@/types/database";
+
+type StatusAction =
+  | "suspend"
+  | "reinstate"
+  | "delete"
+  | "on_hold"
+  | "pending_verification";
 
 export async function PATCH(req: Request) {
   const auth = await requireSuperAdminApi();
@@ -19,9 +27,10 @@ export async function PATCH(req: Request) {
 
   const body = (await req.json()) as {
     agent_id: string;
-    action: "suspend" | "reinstate" | "delete";
+    action: StatusAction;
     reason?: string;
     hide_listings?: boolean;
+    verification_required?: boolean;
   };
 
   const supabase = createAdminClient();
@@ -33,17 +42,19 @@ export async function PATCH(req: Request) {
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim();
 
-  if (body.action === "suspend") {
-    await supabase
-      .from("profiles")
-      .update({
-        profile_status: "suspended" as AgentProfileStatus,
-        profile_status_reason: body.reason ?? "Suspended by admin",
-        suspended_at: now,
-        is_banned: true,
-      })
-      .eq("id", body.agent_id);
+  const profileStatus = profileStatusFromAccountAction(
+    body.action === "reinstate" ? "reinstate" : body.action
+  );
 
+  const patch: Record<string, unknown> = {
+    profile_status: profileStatus,
+    profile_status_reason: body.reason ?? null,
+  };
+
+  if (body.action === "suspend") {
+    patch.suspended_at = now;
+    patch.is_banned = true;
+    patch.profile_status_reason = body.reason ?? "Suspended by admin";
     if (body.hide_listings !== false) {
       await supabase
         .from("properties")
@@ -51,33 +62,31 @@ export async function PATCH(req: Request) {
         .eq("agent_id", body.agent_id)
         .eq("status", "approved");
     }
+  } else if (body.action === "on_hold") {
+    patch.is_banned = false;
+    patch.suspended_at = null;
+    patch.profile_status_reason = body.reason ?? "On hold — under review";
+  } else if (body.action === "pending_verification") {
+    patch.is_banned = false;
+    patch.verification_required = body.verification_required !== false;
+    patch.profile_status_reason = body.reason ?? "Verification requested by Yike";
   } else if (body.action === "reinstate") {
-    await supabase
-      .from("profiles")
-      .update({
-        profile_status: "reinstated" as AgentProfileStatus,
-        profile_status_reason: body.reason ?? null,
-        suspended_at: null,
-        deleted_at: null,
-        is_banned: false,
-      })
-      .eq("id", body.agent_id);
+    patch.suspended_at = null;
+    patch.deleted_at = null;
+    patch.is_banned = false;
+    patch.verification_required = false;
+    patch.profile_status_reason = body.reason ?? null;
   } else if (body.action === "delete") {
-    await supabase
-      .from("profiles")
-      .update({
-        profile_status: "deleted" as AgentProfileStatus,
-        profile_status_reason: body.reason ?? "Removed by admin",
-        deleted_at: now,
-        is_banned: true,
-      })
-      .eq("id", body.agent_id);
-
+    patch.deleted_at = now;
+    patch.is_banned = true;
+    patch.profile_status_reason = body.reason ?? "Removed by admin";
     await supabase
       .from("properties")
       .update({ status: "hidden" })
       .eq("agent_id", body.agent_id);
   }
+
+  await supabase.from("profiles").update(patch).eq("id", body.agent_id);
 
   await supabase.from("agent_status_logs").insert({
     agent_id: body.agent_id,
@@ -87,15 +96,24 @@ export async function PATCH(req: Request) {
     metadata: { hide_listings: body.hide_listings },
   });
 
+  const auditAction =
+    body.action === "on_hold"
+      ? "agent.on_hold"
+      : body.action === "pending_verification"
+        ? "agent.verification_request"
+        : `agent.${body.action}`;
+
   await writeAuditLog({
     actor_id: auth.user.id,
     actor_role: auth.profile.role,
-    action: `agent.${body.action}`,
-    target_type: "agent",
+    action: auditAction,
+    target_type: "profile",
     target_id: body.agent_id,
-    metadata: { reason: body.reason },
+    metadata: { reason: body.reason, patch },
     ip,
   });
+
+  await supabase.rpc("yike_refresh_abuse_review_flag", { p_user_id: body.agent_id });
 
   return NextResponse.json({ ok: true });
 }

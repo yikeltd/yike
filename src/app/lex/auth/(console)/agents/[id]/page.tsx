@@ -1,7 +1,8 @@
-import { requireServerClient } from "@/lib/supabase/require-client";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAdminProfileStats } from "@/lib/admin/profile-stats";
 import { notFound } from "next/navigation";
-import { AdminAgentProfile } from "@/components/admin/admin-agent-profile";
-import { countAsActiveListing } from "@/lib/agent-tiers";
+import { AdminUserDetail } from "@/components/admin/admin-user-detail";
+import { AdminAgentVerificationSection } from "@/components/admin/admin-agent-verification-section";
 import type { Profile } from "@/types/database";
 
 export default async function AdminAgentDetailPage({
@@ -10,32 +11,14 @@ export default async function AdminAgentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await requireServerClient();
+  const supabase = createAdminClient();
+  if (!supabase) notFound();
 
-  const { data: agent } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const { data: agent } = await supabase.from("profiles").select("*").eq("id", id).single();
 
   if (!agent) notFound();
 
-  const [{ data: listings }, { count: leadCount }, { count: reviewCount }] =
-    await Promise.all([
-      supabase.from("properties").select("id, status, expires_at").eq("agent_id", id),
-      supabase
-        .from("leads")
-        .select("id", { count: "exact", head: true })
-        .eq("agent_id", id),
-      supabase
-        .from("agent_reviews")
-        .select("id", { count: "exact", head: true })
-        .or(`agent_id.eq.${id},company_id.eq.${id}`),
-    ]);
-
-  const activeListingCount = (listings ?? []).filter((p) =>
-    countAsActiveListing(p.status, p.expires_at)
-  ).length;
+  const stats = await fetchAdminProfileStats(supabase, id);
 
   const { data: verification } = await supabase
     .from("agent_verifications")
@@ -46,16 +29,22 @@ export default async function AdminAgentDetailPage({
     .maybeSingle();
 
   return (
-    <AdminAgentProfile
-      agent={agent as Profile}
-      stats={{
-        active_listing_count: activeListingCount,
-        total_listings: listings?.length ?? 0,
-        leads: leadCount ?? 0,
-        reviews: reviewCount ?? 0,
-        reports: 0,
-      }}
-      verification={verification}
-    />
+    <>
+      <AdminUserDetail
+        profile={agent as Profile}
+        stats={stats}
+        backHref="/lex/auth/agents"
+        backLabel="All agents"
+        showListingLimit
+      />
+      {verification && (
+        <div className="-mt-4">
+          <AdminAgentVerificationSection
+            agentId={id}
+            verificationId={verification.id}
+          />
+        </div>
+      )}
+    </>
   );
 }

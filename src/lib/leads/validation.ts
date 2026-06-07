@@ -124,7 +124,11 @@ export async function validateLeadRequest(
     return { ok: false, code: "agent_blocked", useFallback: true };
   }
 
-  if (agent.profile_status === "suspended") {
+  if (
+    agent.profile_status === "suspended" ||
+    agent.profile_status === "on_hold" ||
+    agent.profile_status === "pending_verification"
+  ) {
     return { ok: false, code: "agent_suspended", useFallback: true };
   }
 

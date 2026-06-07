@@ -23,7 +23,20 @@ export type StaffRole =
 
 export type ReviewStatus = "pending" | "approved" | "rejected" | "hidden" | "flagged";
 export type ReplyStatus = "pending" | "approved" | "rejected" | "hidden";
-export type AgentProfileStatus = "active" | "suspended" | "deleted" | "reinstated";
+export type AgentProfileStatus =
+  | "active"
+  | "suspended"
+  | "deleted"
+  | "reinstated"
+  | "on_hold"
+  | "pending_verification";
+
+export type AccountStatus =
+  | "active"
+  | "on_hold"
+  | "suspended"
+  | "deleted"
+  | "pending_verification";
 export type VerificationCallStatus =
   | "not_scheduled"
   | "scheduled"
@@ -229,6 +242,14 @@ export interface Profile {
   last_login_at?: string | null;
   profile_status?: AgentProfileStatus;
   profile_status_reason?: string | null;
+  account_status?: AccountStatus | null;
+  listing_limit_reason?: string | null;
+  listing_limit_updated_at?: string | null;
+  listing_limit_updated_by?: string | null;
+  verification_required?: boolean;
+  abuse_review_flag?: boolean;
+  abuse_review_reason?: string | null;
+  last_active_at?: string | null;
   suspended_at?: string | null;
   deleted_at?: string | null;
   public_slug?: string | null;

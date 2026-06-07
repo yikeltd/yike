@@ -4,7 +4,7 @@ import { requireAdminApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { countAsActiveListing } from "@/lib/agent-tiers";
+import { fetchAdminProfileStats } from "@/lib/admin/profile-stats";
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
@@ -30,40 +30,11 @@ export async function GET(_req: Request, ctx: RouteCtx) {
     return NextResponse.json({ error: "Agent not found" }, { status: 404 });
   }
 
-  const { data: listings } = await supabase
-    .from("properties")
-    .select("id, status, expires_at")
-    .eq("agent_id", id);
-
-  const activeListingCount = (listings ?? []).filter((p) =>
-    countAsActiveListing(p.status, p.expires_at)
-  ).length;
-
-  const [{ count: leadCount }, { count: reviewCount }, { count: reportCount }] =
-    await Promise.all([
-      supabase
-        .from("leads")
-        .select("id", { count: "exact", head: true })
-        .eq("agent_id", id),
-      supabase
-        .from("agent_reviews")
-        .select("id", { count: "exact", head: true })
-        .or(`agent_id.eq.${id},company_id.eq.${id}`),
-      supabase
-        .from("listing_reports")
-        .select("id", { count: "exact", head: true })
-        .eq("property_id", id),
-    ]);
+  const stats = await fetchAdminProfileStats(supabase, id);
 
   return NextResponse.json({
     agent,
-    stats: {
-      active_listing_count: activeListingCount,
-      total_listings: listings?.length ?? 0,
-      leads: leadCount ?? 0,
-      reviews: reviewCount ?? 0,
-      reports: reportCount ?? 0,
-    },
+    stats,
   });
 }
 
@@ -81,6 +52,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   const { id } = await ctx.params;
   const body = (await req.json()) as {
     listing_limit?: number | null;
+    listing_limit_reason?: string | null;
     full_name?: string;
     phone?: string;
     whatsapp?: string;
@@ -96,7 +68,14 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   }
 
   const patch: Record<string, unknown> = {};
-  if (body.listing_limit !== undefined) patch.listing_limit = body.listing_limit;
+  if (body.listing_limit !== undefined) {
+    patch.listing_limit = body.listing_limit;
+    patch.listing_limit_updated_at = new Date().toISOString();
+    patch.listing_limit_updated_by = auth.user.id;
+    if (body.listing_limit_reason !== undefined) {
+      patch.listing_limit_reason = body.listing_limit_reason;
+    }
+  }
   if (body.full_name !== undefined) patch.full_name = body.full_name;
   if (body.phone !== undefined) patch.phone = body.phone;
   if (body.whatsapp !== undefined) patch.whatsapp = body.whatsapp;

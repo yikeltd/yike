@@ -155,69 +155,96 @@ export function AgentVerificationActions({
 export function AgentStatusActions({ agentId }: { agentId: string }) {
   const router = useRouter();
   const [showPin, setShowPin] = useState(false);
-  const [action, setAction] = useState<"suspend" | "reinstate" | "delete" | null>(null);
+  const [action, setAction] = useState<
+    "suspend" | "reinstate" | "delete" | "on_hold" | "pending_verification" | null
+  >(null);
   const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  function open(next: NonNullable<typeof action>) {
+    setAction(next);
+    setShowPin(true);
+  }
 
   async function execute() {
     if (!action) return;
+    setBusy(true);
     await fetch("/api/admin/agents/status", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ agent_id: agentId, action, reason }),
     });
+    setBusy(false);
     setShowPin(false);
     setAction(null);
     router.refresh();
   }
 
+  async function requestVerification() {
+    setBusy(true);
+    await fetch(`/api/admin/profiles/${agentId}/request-verification`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
+    setBusy(false);
+    router.refresh();
+  }
+
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        size="sm"
-        variant="danger"
-        onClick={() => {
-          setAction("suspend");
-          setShowPin(true);
-        }}
-      >
-        Suspend
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => {
-          setAction("reinstate");
-          setShowPin(true);
-        }}
-      >
-        Reinstate
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => {
-          setAction("delete");
-          setShowPin(true);
-        }}
-      >
-        Delete profile
-      </Button>
-      {showPin && (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => open("on_hold")}>
+          Put on hold
+        </Button>
+        <Button size="sm" variant="danger" disabled={busy} onClick={() => open("suspend")}>
+          Suspend
+        </Button>
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => open("reinstate")}>
+          Reinstate
+        </Button>
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => open("delete")}>
+          Deactivate
+        </Button>
+        <Button
+          size="sm"
+          disabled={busy}
+          onClick={() => {
+            setAction("pending_verification");
+            setShowPin(true);
+          }}
+        >
+          Request verification
+        </Button>
+      </div>
+      <input
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        placeholder="Reason for audit log (recommended)"
+        className="w-full max-w-md rounded-lg border border-navy/10 px-2 py-1.5 text-xs"
+      />
+      {showPin && action === "pending_verification" && (
+        <PinConfirmModal
+          onVerified={async () => {
+            await requestVerification();
+            setShowPin(false);
+            setAction(null);
+          }}
+          onCancel={() => {
+            setShowPin(false);
+            setAction(null);
+          }}
+          title="Confirm verification request"
+        />
+      )}
+      {showPin && action && action !== "pending_verification" && (
         <PinConfirmModal
           onVerified={execute}
           onCancel={() => {
             setShowPin(false);
             setAction(null);
           }}
-          title={`Confirm ${action} agent`}
-        />
-      )}
-      {action && (
-        <input
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          placeholder="Reason (required for audit)"
-          className="w-full rounded-lg border border-navy/10 px-2 py-1 text-xs"
+          title={`Confirm ${action.replace("_", " ")}`}
         />
       )}
     </div>

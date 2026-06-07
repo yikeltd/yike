@@ -30,7 +30,12 @@ export function isAgentReachable(
 ): boolean {
   if (!profile) return false;
   if (profile.is_banned) return false;
-  if (profile.profile_status === "suspended" || profile.profile_status === "deleted") {
+  if (
+    profile.profile_status === "suspended" ||
+    profile.profile_status === "deleted" ||
+    profile.profile_status === "on_hold" ||
+    (profile as Profile & { account_status?: string }).account_status === "on_hold"
+  ) {
     return false;
   }
   const status = (profile as Profile & { availability_status?: string })
