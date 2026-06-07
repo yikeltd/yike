@@ -60,11 +60,19 @@ export function listingAvailability(
 }
 
 export function isListingDiscoverable(
-  property: Pick<Property, "availability_status" | "status">
+  property: Pick<Property, "availability_status" | "status"> & {
+    expires_at?: string | null;
+  }
 ): boolean {
   const avail = listingAvailability(property);
   if (avail === "hidden") return false;
-  if (property.status !== "approved") return false;
+  if (!["approved"].includes(property.status)) return false;
+  if (["rented", "archived", "hidden", "rejected", "flagged"].includes(property.status)) {
+    return false;
+  }
+  if (property.expires_at && new Date(property.expires_at) <= new Date()) {
+    return false;
+  }
   return !REDUCED_VISIBILITY.includes(avail);
 }
 

@@ -4,14 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageUploader } from "./image-uploader";
 import { MediaTagEditor } from "./media-tag-editor";
-import {
-  getAreasForSearchCity,
-  getCitiesForState,
-  LISTING_TYPES,
-  MIN_LISTING_IMAGES,
-  NIGERIAN_STATES,
-  PAYMENT_PERIODS,
-} from "@/lib/constants";
+import { LISTING_TYPES, MIN_LISTING_IMAGES, PAYMENT_PERIODS } from "@/lib/constants";
+import { ListingLocationFields } from "@/components/agent/listing-location-fields";
+import { computeExpiresAt } from "@/lib/listing-lifecycle";
 import {
   defaultPaymentPeriodForListingType,
   propertyTypesForListingType,
@@ -64,6 +59,7 @@ export function ListingForm({
   const [error, setError] = useState("");
   const [state, setState] = useState(initial?.state ?? "Abia");
   const [city, setCity] = useState(initial?.city ?? "");
+  const [area, setArea] = useState(initial?.area ?? "");
   const [mediaItems, setMediaItems] = useState<PropertyMediaItem[]>(() =>
     initial ? normalizePropertyMedia(initial) : []
   );
@@ -74,9 +70,8 @@ export function ListingForm({
     (initial?.listing_type as ListingTypeValue) ?? "rent"
   );
   const [verifyOk, setVerifyOk] = useState(false);
-  const cityOptions = getCitiesForState(state);
-  const areas = city ? getAreasForSearchCity(city) : [];
   const propertyTypeOptions = propertyTypesForListingType(listingType);
+  const listingPlan = initial?.listing_plan ?? "free";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -193,9 +188,15 @@ export function ListingForm({
       video_url: (form.get("video_url") as string) || null,
       extras,
       status: initial?.status === "approved" ? "approved" : "pending",
-      expires_at: new Date(
-        Date.now() + 14 * 24 * 60 * 60 * 1000
-      ).toISOString(),
+      listing_plan: listingPlan,
+      ...(() => {
+        const { expiresAt, durationDays } = computeExpiresAt(listingPlan);
+        return {
+          expires_at: expiresAt,
+          listing_duration_days: durationDays,
+          published_at: initial?.published_at ?? new Date().toISOString(),
+        };
+      })(),
     };
 
     setLoading(true);
@@ -364,56 +365,20 @@ export function ListingForm({
           </div>
         </FormSection>
 
-        <FormSection step={3} title="Location">
-          <Select
-            name="state"
-            value={state}
-            onChange={(e) => {
-              setState(e.target.value);
+        <FormSection step={3} title="Location" hint="Type any city or LGA — not limited to the map">
+          <ListingLocationFields
+            state={state}
+            city={city}
+            area={area}
+            initialLandmark={initial?.landmark}
+            initialAddressHint={initial?.address_hint}
+            onStateChange={(v) => {
+              setState(v);
               setCity("");
+              setArea("");
             }}
-            required
-          >
-            {NIGERIAN_STATES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
-          <Select
-            name="city"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            required
-          >
-            <option value="">Select city</option>
-            {cityOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </Select>
-          {areas.length > 0 ? (
-            <Select name="area" defaultValue={initial?.area} required>
-              <option value="">Select area</option>
-              {areas.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </Select>
-          ) : (
-            <Input
-              name="area"
-              placeholder="Area / neighbourhood"
-              defaultValue={initial?.area}
-              required
-            />
-          )}
-          <Input
-            name="landmark"
-            placeholder="Landmark (optional)"
-            defaultValue={initial?.landmark ?? ""}
+            onCityChange={setCity}
+            onAreaChange={setArea}
           />
         </FormSection>
 

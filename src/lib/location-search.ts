@@ -1,5 +1,7 @@
 import type { PropertySearchParams } from "@/lib/properties";
-import { nigeriaLocations } from "@/constants/nigeriaLocations";
+import { nigeriaLocations, NIGERIAN_STATES } from "@/constants/nigeriaLocations";
+import { getLgasForState } from "@/constants/nigeriaLgas";
+import { STATE_CAPITALS } from "@/constants/nigeriaAllCities";
 import { toSlug } from "@/lib/location-slugs";
 
 export type LocationMatch = {
@@ -34,6 +36,7 @@ const QUERY_ALIASES: Record<string, string> = {
   futo: "nekede owerri",
   abj: "abuja",
   lag: "lagos",
+  "orumba east": "orumba north",
 };
 
 export function normalizeLocationQuery(raw: string): string {
@@ -150,7 +153,34 @@ function buildLocationIndex(): LocationIndexEntry[] {
     }
   }
 
+  for (const state of NIGERIAN_STATES) {
+    const capital = STATE_CAPITALS[state] ?? state;
+    for (const lga of getLgasForState(state)) {
+      const lgaLower = lga.toLowerCase();
+      if (entries.some((e) => e.terms.includes(lgaLower) && e.state === state)) {
+        continue;
+      }
+      entries.push({
+        state,
+        city: capital,
+        area: lga,
+        label: `${lga}, ${state}`,
+        type: "area",
+        terms: [
+          lgaLower,
+          toSlug(lga),
+          `${lga} ${state}`.toLowerCase(),
+          `${lga} ${capital}`.toLowerCase(),
+        ],
+      });
+    }
+  }
+
   return entries;
+}
+
+export function invalidateLocationIndex() {
+  locationIndex = null;
 }
 
 function getIndex() {

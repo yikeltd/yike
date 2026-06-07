@@ -54,6 +54,11 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     label: "People",
     items: [
       { href: adminPath("agents"), label: "Agents", segment: "agents" },
+      {
+        href: adminPath("company-verification"),
+        label: "Company Verification",
+        segment: "company-verification",
+      },
       { href: adminPath("trust-metrics"), label: "Trust Metrics", segment: "trust-metrics" },
       { href: adminPath("users"), label: "Users", segment: "users" },
       { href: adminPath("staff"), label: "Staff", segment: "staff" },

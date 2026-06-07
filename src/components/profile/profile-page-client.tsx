@@ -175,8 +175,18 @@ export function ProfilePageClient({
               href="/agent/listings"
               icon={List}
               title="My listings"
-              subtitle="Edit, renew, or track performance"
+              subtitle="Active, expired, rented — manage lifecycle"
             />
+            {(profile.account_type === "agency" ||
+              profile.account_type === "developer" ||
+              profile.company_name) && (
+              <ActionLink
+                href="/agent/company"
+                icon={ShieldCheck}
+                title="Company profile"
+                subtitle="Verification, branding, and business details"
+              />
+            )}
             {!verified && (
               <ActionLink
                 href="/agent/verification"

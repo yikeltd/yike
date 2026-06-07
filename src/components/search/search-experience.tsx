@@ -2,11 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  BUDGET_RANGES,
-  getAreasForSearchCity,
-  POPULAR_CITIES,
-} from "@/lib/constants";
+import { BUDGET_RANGES, getAreasForSearchCity } from "@/lib/constants";
+import { getAllCitiesForState } from "@/constants/nigeriaAllCities";
+import { NIGERIAN_STATES } from "@/lib/constants";
 import { SEARCH_DEAL_TYPES, findDealChip } from "@/constants/listingTypes";
 import {
   addRecentSearch,
@@ -31,6 +29,7 @@ export function SearchExperience({
 }) {
   const router = useRouter();
   const [listingType, setListingType] = useState(initialType ?? "");
+  const [searchState, setSearchState] = useState("");
   const [city, setCity] = useState(initialCity ?? "");
   const [area, setArea] = useState(initialArea ?? "");
   const [budget, setBudget] = useState("0");
@@ -40,6 +39,7 @@ export function SearchExperience({
     !initialCity && !initialArea
   );
 
+  const cityOptions = searchState ? getAllCitiesForState(searchState) : [];
   const areas = city ? getAreasForSearchCity(city) : [];
 
   useEffect(() => {
@@ -65,6 +65,7 @@ export function SearchExperience({
     );
     if (chip?.hub) params.set("hub", chip.hub);
     else if (listingType) params.set("type", listingType);
+    if (searchState) params.set("state", searchState);
     if (searchCity) params.set("city", searchCity);
     if (searchArea) params.set("area", searchArea);
     const range = BUDGET_RANGES[Number(budget)];
@@ -194,42 +195,54 @@ export function SearchExperience({
 
           <div className="mt-4 space-y-3">
             <select
+              value={searchState}
+              onChange={(e) => {
+                setSearchState(e.target.value);
+                setCity("");
+                setArea("");
+              }}
+              className="h-12 w-full rounded-xl bg-surface px-4 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-gold/40"
+            >
+              <option value="">All states</option>
+              {NIGERIAN_STATES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            <input
+              list="search-city-options"
               value={city}
               onChange={(e) => {
                 setCity(e.target.value);
                 setArea("");
               }}
-              className="h-12 w-full rounded-xl bg-surface px-4 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-gold/40"
-            >
-              <option value="">All cities</option>
-              {POPULAR_CITIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-
-            {areas.length > 0 ? (
-              <select
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-                className="h-12 w-full rounded-xl bg-surface px-4 text-sm text-foreground outline-none focus:ring-2 focus:ring-gold/40"
-              >
-                <option value="">All areas</option>
-                {areas.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
+              placeholder="City, town, or LGA (type freely)"
+              className="h-12 w-full rounded-xl bg-surface px-4 text-sm font-medium text-foreground outline-none placeholder:text-muted focus:ring-2 focus:ring-gold/40"
+            />
+            {cityOptions.length > 0 ? (
+              <datalist id="search-city-options">
+                {cityOptions.map((c) => (
+                  <option key={c} value={c} />
                 ))}
-              </select>
-            ) : (
-              <input
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-                placeholder="Area or neighbourhood"
-                className="h-12 w-full rounded-xl bg-surface px-4 text-sm text-foreground outline-none placeholder:text-muted focus:ring-2 focus:ring-gold/40"
-              />
-            )}
+              </datalist>
+            ) : null}
+
+            <input
+              list={areas.length > 0 ? "search-area-options" : undefined}
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              placeholder="Area or neighbourhood (optional)"
+              className="h-12 w-full rounded-xl bg-surface px-4 text-sm text-foreground outline-none placeholder:text-muted focus:ring-2 focus:ring-gold/40"
+            />
+            {areas.length > 0 ? (
+              <datalist id="search-area-options">
+                {areas.map((a) => (
+                  <option key={a} value={a} />
+                ))}
+              </datalist>
+            ) : null}
 
             <select
               value={budget}

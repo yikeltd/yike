@@ -104,6 +104,15 @@ export type PropertyStatus =
   | "hidden"
   | "archived";
 
+export type ListingPlan = "free" | "premium_30" | "premium_60" | "admin_extended";
+
+export type CompanyVerificationStatus =
+  | "pending"
+  | "under_review"
+  | "approved"
+  | "rejected"
+  | "needs_more_info";
+
 export type ListingActivityStatus = "active" | "stale" | "inactive" | "archived";
 
 export type InquiryStatus =
@@ -257,6 +266,15 @@ export interface Profile {
   developer_verified?: boolean;
   agency_verified?: boolean;
   company_name?: string | null;
+  company_logo_url?: string | null;
+  company_cover_url?: string | null;
+  company_bio?: string | null;
+  company_slug?: string | null;
+  office_address?: string | null;
+  cac_number?: string | null;
+  company_verified?: boolean;
+  company_verified_at?: string | null;
+  company_verified_by?: string | null;
   estate_project_name?: string | null;
   is_responsive?: boolean;
   reputation_score?: number | null;
@@ -394,6 +412,13 @@ export interface Property {
   views_count: number;
   contact_clicks: number;
   expires_at: string;
+  listing_plan?: ListingPlan;
+  listing_duration_days?: number;
+  published_at?: string | null;
+  expired_at?: string | null;
+  reactivated_at?: string | null;
+  last_reactivated_by?: string | null;
+  unavailable_at?: string | null;
   last_refreshed_at?: string | null;
   stale_score?: number;
   freshness_score?: number | null;

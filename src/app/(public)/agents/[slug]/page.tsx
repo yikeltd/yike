@@ -17,6 +17,7 @@ import { isVerifiedAgent } from "@/lib/utils";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { AlertTriangle } from "lucide-react";
 import { AgentReviewsSection } from "@/components/reviews/agent-reviews-section";
+import { CompanyProfileHero } from "@/components/agent/company-profile-hero";
 import { getReviewStats, formatReviewSummary } from "@/lib/reviews/queries";
 import { isResponsiveAgent } from "@/lib/agent-response";
 
@@ -79,7 +80,18 @@ export default async function AgentProfilePage({
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         <div className="space-y-6">
-          <header className="rounded-2xl bg-white p-5 shadow-float ring-1 ring-black/[0.04] lg:hidden">
+          {(isAgency || isDeveloper) && (
+            <CompanyProfileHero
+              agent={agent}
+              listingCount={listings.length}
+              joinedLabel={joinedLabel}
+            />
+          )}
+          <header
+            className={`rounded-2xl bg-white p-5 shadow-float ring-1 ring-black/[0.04] lg:hidden ${
+              isAgency || isDeveloper ? "hidden" : ""
+            }`}
+          >
             <p className="text-xs font-bold uppercase tracking-wider text-muted">
               {isAgency
                 ? "Agency profile"
