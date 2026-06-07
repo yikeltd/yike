@@ -71,9 +71,30 @@ export async function signupPendingUpsert(
     expiresAt: string;
   }
 ): Promise<boolean> {
+  const email = params.email.trim().toLowerCase();
+  const row = {
+    email,
+    username: params.username.trim().toLowerCase(),
+    full_name: params.fullName.trim(),
+    phone: params.phone.trim() || null,
+    pin_hash: params.pinHash,
+    phone_verified: params.phoneVerified,
+    expires_at: params.expiresAt,
+    created_at: new Date().toISOString(),
+  };
+
+  const admin = createAdminClient();
+  if (admin) {
+    const { error: directError } = await admin
+      .from("auth_signup_pending")
+      .upsert(row, { onConflict: "email" });
+    if (!directError) return true;
+    console.error("[auth-email-otp] pending direct upsert failed", directError.message);
+  }
+
   const { error } = await client.rpc("yike_signup_pending_upsert", {
     p_token: token(),
-    p_email: params.email.trim().toLowerCase(),
+    p_email: email,
     p_username: params.username,
     p_full_name: params.fullName,
     p_phone: params.phone,
@@ -82,7 +103,7 @@ export async function signupPendingUpsert(
     p_expires_at: params.expiresAt,
   });
   if (error) {
-    console.error("[auth-email-otp] pending upsert failed", error.message);
+    console.error("[auth-email-otp] pending upsert RPC failed", error.message);
     return false;
   }
   return true;
