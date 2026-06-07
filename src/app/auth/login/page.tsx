@@ -28,12 +28,13 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
   const forcePassword = searchParams.get("mode") === "password" || searchParams.get("switch") === "1";
+  const resetPin = searchParams.get("resetPin") === "1";
   const sessionReason = searchParams.get("reason");
   const next = nextParam ?? (peekAuthIntent() ? "/" : "/profile");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
+  const [info, setInfo] = useState(resetPin ? "Sign in with your password to reset your PIN." : "");
   const [loading, setLoading] = useState(false);
   const [quickUser, setQuickUser] = useState<ReturnType<typeof getQuickLoginUser>>(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -121,6 +122,11 @@ export default function LoginPage() {
     }
 
     if (data.requiresPinSetup) {
+      setPinSetupOpen(true);
+      return false;
+    }
+
+    if (resetPin) {
       setPinSetupOpen(true);
       return false;
     }
@@ -264,6 +270,8 @@ export default function LoginPage() {
 
       <PinSetupModal
         open={pinSetupOpen}
+        resetMode={resetPin}
+        loginPassword={resetPin ? password : undefined}
         onClose={() => {
           setPinSetupOpen(false);
           void finishLogin({

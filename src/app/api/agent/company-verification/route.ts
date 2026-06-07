@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import {
-  parseSensitiveConfirmationToken,
-  requireSensitiveConfirmation,
-} from "@/lib/auth/require-sensitive-confirmation";
+import { enforceActiveSession } from "@/lib/auth/require-active-session";
+import { requireSensitiveGate } from "@/lib/auth/sensitive-gate";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/admin/audit";
 
 export async function POST(req: Request) {
+  const session = await enforceActiveSession(req);
+  if (!session.ok) return session.response;
+
   const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
@@ -35,11 +36,7 @@ export async function POST(req: Request) {
     confirmationToken?: string;
   };
 
-  const gate = requireSensitiveConfirmation(
-    parseSensitiveConfirmationToken(body),
-    user.id,
-    "change_identity"
-  );
+  const gate = await requireSensitiveGate(body, user.id, "change_identity");
   if (!gate.ok) {
     return NextResponse.json({ error: gate.error }, { status: 401 });
   }

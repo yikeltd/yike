@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { lookupPinLoginUser } from "@/lib/auth/pin-login-rpc";
 import {
-  isPinLocked,
-  recordPinFailure,
-  resetPinFailures,
+  hashDeviceLockKey,
+  isPinLockedForDevice,
+  recordPinFailureForDevice,
+  resetPinFailuresForUser,
 } from "@/lib/auth/pin-lockout";
 import { logAuthSecurityEvent } from "@/lib/auth/security-events";
 import { beginUserSession, getRequestMeta, markSessionUnlocked } from "@/lib/auth/session-state";
-import { getDeviceTokenFromCookies, registerTrustedDevice, touchTrustedDevice } from "@/lib/auth/trusted-device";
+import {
+  getDeviceTokenFromCookies,
+  registerTrustedDevice,
+  touchTrustedDevice,
+} from "@/lib/auth/trusted-device";
 import { verifyPin } from "@/lib/pin";
 import { createVerifiedAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -19,32 +24,48 @@ export async function POST(request: Request) {
   const identifier = String(body.identifier ?? body.email ?? "").trim();
   const pin = String(body.pin ?? "");
   const { ip, userAgent } = await getRequestMeta(request);
+  const deviceToken = await getDeviceTokenFromCookies();
+  const deviceKey = hashDeviceLockKey({ deviceToken, ip, userAgent });
 
   if (!identifier || !/^\d{6}$/.test(pin)) {
     return NextResponse.json({ error: "Enter your 6-digit PIN" }, { status: 400 });
   }
 
   const row = await lookupPinLoginUser(identifier);
-  if (!row || !verifyPin(pin, row.pin_hash)) {
-    if (row?.user_id) {
-      const failure = await recordPinFailure(row.user_id);
-      await logAuthSecurityEvent({
-        userId: row.user_id,
-        eventType: failure.locked ? "pin.locked" : "pin.failed",
-        ip,
-        userAgent,
-      });
-    }
+  if (!row) {
     return NextResponse.json(
       { error: "Incorrect PIN. Try again or use your password." },
       { status: 401 }
     );
   }
 
-  if (await isPinLocked(row.user_id)) {
+  if (await isPinLockedForDevice(row.user_id, deviceKey)) {
     return NextResponse.json(
-      { error: "Too many PIN attempts. Use your password instead.", pinLocked: true },
+      {
+        error: "Too many PIN attempts on this device. Use your password instead.",
+        pinLocked: true,
+      },
       { status: 429 }
+    );
+  }
+
+  if (!verifyPin(pin, row.pin_hash)) {
+    const failure = await recordPinFailureForDevice(row.user_id, deviceKey);
+    await logAuthSecurityEvent({
+      userId: row.user_id,
+      eventType: failure.locked ? "pin.locked" : "pin.failed",
+      metadata: { scope: "pin_login", deviceScoped: true },
+      ip,
+      userAgent,
+    });
+    return NextResponse.json(
+      {
+        error: failure.locked
+          ? "Too many PIN attempts on this device. Use your password instead."
+          : "Incorrect PIN. Try again or use your password.",
+        pinLocked: failure.locked,
+      },
+      { status: failure.locked ? 429 : 401 }
     );
   }
 
@@ -86,11 +107,10 @@ export async function POST(request: Request) {
     );
   }
 
-  await resetPinFailures(row.user_id);
+  await resetPinFailuresForUser(row.user_id);
   await beginUserSession(row.user_id);
   await markSessionUnlocked(row.user_id);
 
-  const deviceToken = await getDeviceTokenFromCookies();
   if (deviceToken) {
     await registerTrustedDevice({
       userId: row.user_id,
@@ -98,7 +118,7 @@ export async function POST(request: Request) {
       userAgent,
       ip,
     });
-    await touchTrustedDevice(row.user_id, deviceToken);
+    await touchTrustedDevice(row.user_id, deviceToken, { userAgent, ip });
   }
 
   await logAuthSecurityEvent({

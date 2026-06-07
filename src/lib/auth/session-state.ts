@@ -60,6 +60,8 @@ export async function loadSessionProfile(userId: string) {
 export async function evaluateSessionStatus(params: {
   userId: string;
   deviceToken?: string | null;
+  userAgent?: string | null;
+  ip?: string | null;
 }): Promise<SessionStatus> {
   const profile = await loadSessionProfile(params.userId);
   if (!profile || profile.is_banned) {
@@ -84,7 +86,10 @@ export async function evaluateSessionStatus(params: {
   const lastActive = parseMs(profile.last_active_at) ?? parseMs(profile.last_unlocked_at);
   const lastUnlocked = parseMs(profile.last_unlocked_at);
 
-  const deviceTrusted = await isDeviceTrusted(params.userId, params.deviceToken ?? null);
+  const deviceTrusted = await isDeviceTrusted(params.userId, params.deviceToken ?? null, {
+    userAgent: params.userAgent,
+    ip: params.ip,
+  });
 
   if (
     lastActive &&
@@ -111,6 +116,22 @@ export async function evaluateSessionStatus(params: {
   } else if (policy.idleLockMs && lastActive) {
     if (now - lastActive > policy.idleLockMs) {
       locked = true;
+    }
+  }
+
+  if (policy.accountClass === "staff" && policy.idleLockMs) {
+    const idleRef = lastUnlocked ?? lastActive;
+    if (idleRef && now - idleRef > policy.idleLockMs) {
+      return {
+        authenticated: true,
+        locked: false,
+        requiresFullLogin: true,
+        requiresPinSetup: false,
+        hasPinSet,
+        deviceTrusted,
+        policy,
+        profile,
+      };
     }
   }
 

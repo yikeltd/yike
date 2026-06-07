@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/api-auth";
-import { isEmailOtpEnabled } from "@/lib/feature-flags";
+import { isEmailOtpEnabled, isWebAuthnEnabled } from "@/lib/feature-flags";
+import { getPinPepper } from "@/lib/pin";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
 import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
 import { probeSupabaseAdmin } from "@/lib/supabase/admin";
@@ -25,6 +26,8 @@ export async function GET() {
     NEXT_PUBLIC_SUPABASE_URL: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()),
     CRON_SECRET: Boolean(process.env.CRON_SECRET?.trim()),
+    YIKE_PIN_PEPPER: Boolean(getPinPepper()),
+    ENABLE_WEBAUTHN: isWebAuthnEnabled(),
   };
 
   const emailSenderConfigured = envChecks.AUTH_EMAIL_FROM && isResendConfigured();
@@ -47,5 +50,7 @@ export async function GET() {
       process.env.AUTH_EMAIL_FROM?.split("@")[1]?.replace(/>.*$/, "") ??
       process.env.RESEND_FROM_EMAIL?.split("@")[1]?.replace(/>.*$/, "") ??
       null,
+    pinPepperConfigured: envChecks.YIKE_PIN_PEPPER,
+    webAuthnEnabled: envChecks.ENABLE_WEBAUTHN,
   });
 }

@@ -25,7 +25,9 @@
     "store:capture:1440": "SCREENSHOT_WIDTH=1440 SCREENSHOT_HEIGHT=3200 node scripts/capture-play-screenshots.mjs",
     "store:capture:tablet-7": "TABLET_SIZE=7 node scripts/capture-play-tablet-screenshots.mjs",
     "store:capture:tablet-10": "TABLET_SIZE=10 node scripts/capture-play-tablet-screenshots.mjs",
-    "store:capture:tablet": "TABLET_SIZE=both node scripts/capture-play-tablet-screenshots.mjs"
+    "store:capture:tablet": "TABLET_SIZE=both node scripts/capture-play-tablet-screenshots.mjs",
+    "test:auth": "tsx scripts/test-auth-security.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -42,6 +44,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
+import { enforceActiveSession } from "@/lib/auth/require-active-session";
+import { requireSensitiveGate } from "@/lib/auth/sensitive-gate";
 import { sendAccountDeletedEmail } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
+  const session = await enforceActiveSession(request);
+  if (!session.ok) return session.response;
+
   const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Service unavailable." }, { status: 503 });
@@ -17,11 +22,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sign in to delete your account." }, { status: 401 });
   }
 
-  let body: { confirm?: string } = {};
+  let body: { confirm?: string; sensitiveConfirmationToken?: string; confirmationToken?: string } = {};
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  const gate = await requireSensitiveGate(body, user.id, "delete_account");
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: 401 });
   }
 
   if (body.confirm !== "DELETE") {

@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { logAuthSecurityEvent } from "@/lib/auth/security-events";
-import {
-  parseSensitiveConfirmationToken,
-  requireSensitiveConfirmation,
-} from "@/lib/auth/require-sensitive-confirmation";
+import { enforceActiveSession } from "@/lib/auth/require-active-session";
+import { requireSensitiveGate } from "@/lib/auth/sensitive-gate";
 import { getRequestMeta } from "@/lib/auth/session-state";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -25,6 +23,9 @@ async function getVerifier(userId: string) {
 }
 
 export async function POST(request: Request) {
+  const session = await enforceActiveSession(request);
+  if (!session.ok) return session.response;
+
   const supabase = await createClient();
   if (!supabase) return NextResponse.json({ error: "Unavailable" }, { status: 503 });
 
@@ -37,11 +38,7 @@ export async function POST(request: Request) {
   if (!verifier) return NextResponse.json({ error: "Not a field verifier" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));
-  const gate = requireSensitiveConfirmation(
-    parseSensitiveConfirmationToken(body),
-    user.id,
-    "change_payout_bank"
-  );
+  const gate = await requireSensitiveGate(body as Record<string, unknown>, user.id, "change_payout_bank");
   if (!gate.ok) {
     return NextResponse.json({ error: gate.error }, { status: 401 });
   }

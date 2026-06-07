@@ -82,6 +82,21 @@ export function isHomeServicesEnabled(): boolean {
   return envFlag("ENABLE_HOME_SERVICES", false);
 }
 
+/** Future passkey auth — not implemented. */
+export function isWebAuthnEnabled(): boolean {
+  return envFlag("ENABLE_WEBAUTHN", false);
+}
+
+/** Step-up confirmation for payout/bank changes (launch: on). */
+export function isStepUpPayoutsEnabled(): boolean {
+  return envFlag("ENABLE_STEP_UP_PAYOUTS", true);
+}
+
+/** Strict UA binding for trusted devices (launch: on). */
+export function isStrictDeviceBindingEnabled(): boolean {
+  return envFlag("ENABLE_STRICT_DEVICE_BINDING", true);
+}
+
 /** Client bundle — mirrors ENABLE_HOME_SERVICES for any future public UI. */
 export function isHomeServicesEnabledClient(): boolean {
   const raw = process.env.NEXT_PUBLIC_ENABLE_HOME_SERVICES?.trim().toLowerCase();

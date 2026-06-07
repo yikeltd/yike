@@ -25,8 +25,10 @@ const EVENT_TYPES = [
   "pin.success",
   "pin.failed",
   "pin.locked",
+  "pin.reset",
   "device.trusted",
   "device.new",
+  "device.suspicious",
   "session.timeout",
   "session.unlock",
   "sensitive.confirmed",
@@ -46,7 +48,8 @@ function isSuspicious(type: string): boolean {
     type === "pin.failed" ||
     type === "pin.locked" ||
     type === "sensitive.failed" ||
-    type === "device.new"
+    type === "device.new" ||
+    type === "device.suspicious"
   );
 }
 

@@ -29,7 +29,9 @@ export type AuthSecurityEventType =
   | "sensitive.failed"
   | "bank_change.confirmed"
   | "email_change.confirmed"
-  | "password_change.confirmed";
+  | "password_change.confirmed"
+  | "pin.reset"
+  | "device.suspicious";
 
 export async function logAuthSecurityEvent(params: {
   userId?: string | null;

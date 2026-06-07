@@ -185,7 +185,7 @@ export function PinLoginPanel({
           onClick={onUsePassword}
           className="font-semibold text-gold-dark hover:underline"
         >
-          {AUTH_USER_MESSAGES.usePasswordInstead}
+          {AUTH_USER_MESSAGES.forgotPin}
         </button>
         <button
           type="button"

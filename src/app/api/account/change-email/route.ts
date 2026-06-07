@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
 import { authOtpConsume, authOtpLatestActive, authOtpIncrementAttempts } from "@/lib/auth-email-otp/rpc";
 import { logAuthSecurityEvent } from "@/lib/auth/security-events";
-import {
-  parseSensitiveConfirmationToken,
-  requireSensitiveConfirmation,
-} from "@/lib/auth/require-sensitive-confirmation";
+import { enforceActiveSession } from "@/lib/auth/require-active-session";
+import { requireSensitiveGate } from "@/lib/auth/sensitive-gate";
 import { getRequestMeta } from "@/lib/auth/session-state";
 import { verifyOtpHash } from "@/lib/otp/crypto";
 import { OTP_MAX_ATTEMPTS } from "@/lib/otp/constants";
@@ -15,6 +13,9 @@ import { createVerifiedAdminClient } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const session = await enforceActiveSession(request);
+  if (!session.ok) return session.response;
+
   const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
@@ -29,11 +30,7 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  const gate = requireSensitiveConfirmation(
-    parseSensitiveConfirmationToken(body),
-    user.id,
-    "change_email"
-  );
+  const gate = await requireSensitiveGate(body, user.id, "change_email");
   if (!gate.ok) {
     return NextResponse.json({ error: gate.error }, { status: 401 });
   }

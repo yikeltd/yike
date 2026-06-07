@@ -25,7 +25,10 @@ export function DeleteAccountForm({ email }: { email: string }) {
     const res = await fetch("/api/account/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ confirm }),
+      body: JSON.stringify({
+        confirm,
+        sensitiveConfirmationToken: verified.confirmationToken,
+      }),
     });
 
     const data = await res.json().catch(() => ({}));

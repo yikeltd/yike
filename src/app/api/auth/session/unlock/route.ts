@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import {
-  isPinLocked,
-  recordPinFailure,
-  resetPinFailures,
+  hashDeviceLockKey,
+  isPinLockedForDevice,
+  recordPinFailureForDevice,
+  resetPinFailuresForUser,
 } from "@/lib/auth/pin-lockout";
 import { logAuthSecurityEvent } from "@/lib/auth/security-events";
 import {
@@ -22,11 +23,13 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const pin = String(body.pin ?? "");
   const { ip, userAgent } = await getRequestMeta(request);
+  const deviceToken = await getDeviceTokenFromCookies();
+  const deviceKey = hashDeviceLockKey({ deviceToken, ip, userAgent });
 
   if (!userId) {
     return NextResponse.json(
       { error: "Please sign in again.", requiresFullLogin: true },
-      { status: 401 }
+      { status: 401, headers: { "X-Reauth": "full" } }
     );
   }
 
@@ -34,9 +37,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Enter your 6-digit PIN" }, { status: 400 });
   }
 
-  if (await isPinLocked(userId)) {
+  if (await isPinLockedForDevice(userId, deviceKey)) {
     return NextResponse.json(
-      { error: "Too many PIN attempts. Use your password instead.", pinLocked: true },
+      {
+        error: "Too many PIN attempts on this device. Use your password instead.",
+        pinLocked: true,
+      },
       { status: 429 }
     );
   }
@@ -53,30 +59,30 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (!profile?.pin_hash || !verifyPin(pin, profile.pin_hash)) {
-    const failure = await recordPinFailure(userId);
+    const failure = await recordPinFailureForDevice(userId, deviceKey);
     await logAuthSecurityEvent({
       userId,
       eventType: failure.locked ? "pin.locked" : "pin.failed",
+      metadata: { scope: "session_unlock", deviceScoped: true },
       ip,
       userAgent,
     });
     return NextResponse.json(
       {
         error: failure.locked
-          ? "Too many PIN attempts. Use your password instead."
+          ? "Too many PIN attempts on this device. Use your password instead."
           : "Incorrect PIN. Try again or use your password.",
         pinLocked: failure.locked,
       },
-      { status: 401 }
+      { status: failure.locked ? 429 : 401 }
     );
   }
 
-  await resetPinFailures(userId);
+  await resetPinFailuresForUser(userId);
   await markSessionUnlocked(userId);
 
-  const deviceToken = await getDeviceTokenFromCookies();
   if (deviceToken) {
-    await touchTrustedDevice(userId, deviceToken);
+    await touchTrustedDevice(userId, deviceToken, { userAgent, ip });
   }
 
   await logAuthSecurityEvent({

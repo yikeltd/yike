@@ -102,10 +102,10 @@ export function SessionLockOverlay({
 
         <div className="mt-6 flex flex-col gap-2 text-center text-sm">
           <Link
-            href="/auth/login?mode=password"
+            href="/auth/login?mode=password&resetPin=1"
             className={cn("font-semibold text-gold-dark hover:underline")}
           >
-            {AUTH_USER_MESSAGES.usePasswordInstead}
+            {AUTH_USER_MESSAGES.forgotPin}
           </Link>
           <button
             type="button"

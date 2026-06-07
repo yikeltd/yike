@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   evaluateSessionStatus,
   getAuthenticatedUserId,
+  getRequestMeta,
   markSessionLocked,
   touchSessionActivity,
 } from "@/lib/auth/session-state";
@@ -21,7 +22,13 @@ export async function GET(request: Request) {
   }
 
   const deviceToken = await getDeviceTokenFromCookies();
-  const status = await evaluateSessionStatus({ userId, deviceToken });
+  const { ip, userAgent } = await getRequestMeta(request);
+  const status = await evaluateSessionStatus({
+    userId,
+    deviceToken,
+    userAgent,
+    ip,
+  });
 
   if (status.requiresFullLogin) {
     return NextResponse.json({
@@ -49,7 +56,13 @@ export async function POST(request: Request) {
 
   await touchSessionActivity(userId);
   const deviceToken = await getDeviceTokenFromCookies();
-  const status = await evaluateSessionStatus({ userId, deviceToken });
+  const { ip, userAgent } = await getRequestMeta(request);
+  const status = await evaluateSessionStatus({
+    userId,
+    deviceToken,
+    userAgent,
+    ip,
+  });
 
   return NextResponse.json({ ok: true, ...status });
 }

@@ -10,10 +10,14 @@ export function PinSetupModal({
   open,
   onClose,
   onComplete,
+  resetMode = false,
+  loginPassword,
 }: {
   open: boolean;
   onClose: () => void;
   onComplete: () => void;
+  resetMode?: boolean;
+  loginPassword?: string;
 }) {
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -34,10 +38,16 @@ export function PinSetupModal({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/pin/setup", {
+      const endpoint = resetMode ? "/api/auth/pin/reset" : "/api/auth/pin/setup";
+      const payload =
+        resetMode && loginPassword
+          ? { pin: code, password: loginPassword }
+          : { pin: code };
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: code }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -78,9 +88,13 @@ export function PinSetupModal({
         </button>
 
         <h2 className="pr-8 text-xl font-bold text-foreground">
-          {AUTH_USER_MESSAGES.pinSetupTitle}
+          {resetMode ? "Reset your PIN" : AUTH_USER_MESSAGES.pinSetupTitle}
         </h2>
-        <p className="mt-1 text-sm text-muted">{AUTH_USER_MESSAGES.pinSetupBody}</p>
+        <p className="mt-1 text-sm text-muted">
+          {resetMode
+            ? "Choose a new 6-digit PIN for quick unlock on this device."
+            : AUTH_USER_MESSAGES.pinSetupBody}
+        </p>
         <p className="mt-2 text-xs text-muted">
           {step === "enter" ? "Choose your PIN" : "Confirm your PIN"}
         </p>

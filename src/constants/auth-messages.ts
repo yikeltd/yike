@@ -3,6 +3,7 @@ export const AUTH_USER_MESSAGES = {
   pinPrompt: "Enter your PIN to continue",
   welcomeBack: (name: string) => `Welcome back, ${name}`,
   usePasswordInstead: "Use password instead",
+  forgotPin: "Forgot PIN? Use password instead",
   switchAccount: "Switch account",
   newDevice: "For your security, please sign in again.",
   sensitiveConfirm: "Confirm it's you to continue.",

@@ -12,9 +12,10 @@ export function parseSensitiveConfirmationToken(
 export function requireSensitiveConfirmation(
   token: string | null,
   userId: string,
-  action: string
+  action: string,
+  deviceId?: string | null
 ): { ok: true } | { ok: false; error: string } {
-  if (!token || !verifySensitiveConfirmationToken(token, userId, action)) {
+  if (!token || !verifySensitiveConfirmationToken(token, userId, action, deviceId)) {
     return { ok: false, error: "Confirm it's you to continue." };
   }
   return { ok: true };
