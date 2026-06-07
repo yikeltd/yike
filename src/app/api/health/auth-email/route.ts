@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
+import { transactionalFromAddress } from "@/lib/email/from-address";
+import { COMPANY_EMAIL } from "@/lib/constants";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { probeSupabaseAdmin } from "@/lib/supabase/admin";
 
@@ -23,10 +25,9 @@ export async function GET(request: Request) {
 
   const supabaseProbe = await probeSupabaseAdmin();
   const otpDb = createAuthEmailOtpDbClient();
+  const resolvedFrom = transactionalFromAddress();
+  const fromUsesHello = resolvedFrom.toLowerCase().includes(COMPANY_EMAIL);
   const resendKey = Boolean(process.env.RESEND_API_KEY?.trim());
-  const authFrom = Boolean(
-    process.env.AUTH_EMAIL_FROM?.trim() || process.env.RESEND_FROM_EMAIL?.trim()
-  );
   const otpToken = Boolean(process.env.YIKE_OTP_SERVER_TOKEN?.trim());
   const serviceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "";
@@ -38,18 +39,15 @@ export async function GET(request: Request) {
       isEmailOtpEnabled() &&
       otpDbReady &&
       resendKey &&
-      authFrom &&
+      fromUsesHello &&
       supabaseProbe.ok,
     emailOtpEnabled: isEmailOtpEnabled(),
     otpRpcClient: Boolean(otpDb),
     supabaseServiceRole: serviceRole,
     yikeOtpServerToken: otpToken,
     resendApiKey: resendKey,
-    authEmailFrom: authFrom,
-    authEmailFromValue:
-      process.env.AUTH_EMAIL_FROM?.trim() ||
-      process.env.RESEND_FROM_EMAIL?.trim() ||
-      null,
+    authEmailFrom: fromUsesHello,
+    transactionalFrom: resolvedFrom,
     siteUrl: siteUrl || null,
     siteUrlIsProduction: siteUrl.includes("yike.ng"),
     supabaseAdmin: supabaseProbe,

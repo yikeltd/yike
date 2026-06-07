@@ -4,6 +4,7 @@ import {
   buildVerificationEmailHtml,
   buildWelcomeEmailHtml,
 } from "@/lib/email/templates";
+import { transactionalFromAddress } from "@/lib/email/from-address";
 import type { EmailType, ProviderResult } from "../types";
 
 export {
@@ -19,11 +20,7 @@ function getClient(): Resend | null {
 }
 
 function fromAddress(): string {
-  return (
-    process.env.AUTH_EMAIL_FROM?.trim() ||
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    "Yike <no-reply@yike.ng>"
-  );
+  return transactionalFromAddress();
 }
 
 export function authOtpSubject(): string {

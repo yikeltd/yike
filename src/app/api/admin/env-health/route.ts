@@ -3,6 +3,11 @@ import { requireAdminApi } from "@/lib/admin/api-auth";
 import { isEmailOtpEnabled, isWebAuthnEnabled } from "@/lib/feature-flags";
 import { getPinPepper } from "@/lib/pin";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
+import {
+  transactionalFromAddress,
+  transactionalFromDomain,
+} from "@/lib/email/from-address";
+import { COMPANY_EMAIL } from "@/lib/constants";
 import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
 import { probeSupabaseAdmin } from "@/lib/supabase/admin";
 
@@ -17,11 +22,12 @@ export async function GET() {
   const supabaseProbe = await probeSupabaseAdmin();
   const otpDb = createAuthEmailOtpDbClient();
 
+  const resolvedFrom = transactionalFromAddress();
+  const fromUsesHello = resolvedFrom.toLowerCase().includes(COMPANY_EMAIL);
+
   const envChecks = {
     RESEND_API_KEY: Boolean(process.env.RESEND_API_KEY?.trim()),
-    AUTH_EMAIL_FROM: Boolean(
-      process.env.AUTH_EMAIL_FROM?.trim() || process.env.RESEND_FROM_EMAIL?.trim()
-    ),
+    AUTH_EMAIL_FROM: fromUsesHello,
     SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
     NEXT_PUBLIC_SUPABASE_URL: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()),
@@ -30,7 +36,7 @@ export async function GET() {
     ENABLE_WEBAUTHN: isWebAuthnEnabled(),
   };
 
-  const emailSenderConfigured = envChecks.AUTH_EMAIL_FROM && isResendConfigured();
+  const emailSenderConfigured = isResendConfigured() && fromUsesHello;
   const otpRouteReady =
     isEmailOtpEnabled() && Boolean(otpDb) && envChecks.RESEND_API_KEY && emailSenderConfigured;
 
@@ -46,10 +52,10 @@ export async function GET() {
     emailOtpEnabled: isEmailOtpEnabled(),
     resendConfigured: isResendConfigured(),
     supabaseServiceRole: supabaseProbe,
-    authEmailFromDomain:
-      process.env.AUTH_EMAIL_FROM?.split("@")[1]?.replace(/>.*$/, "") ??
-      process.env.RESEND_FROM_EMAIL?.split("@")[1]?.replace(/>.*$/, "") ??
-      null,
+    supabaseAdminAuth: supabaseProbe.authAdminReachable ? "OK" : "Failed",
+    profilesQuery: supabaseProbe.profilesReachable ? "OK" : "Failed",
+    authEmailFromDomain: transactionalFromDomain(),
+    transactionalFrom: resolvedFrom,
     pinPepperConfigured: envChecks.YIKE_PIN_PEPPER,
     webAuthnEnabled: envChecks.ENABLE_WEBAUTHN,
   });

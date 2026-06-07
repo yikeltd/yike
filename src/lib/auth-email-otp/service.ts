@@ -183,7 +183,7 @@ export async function sendAuthEmailOtp(
     console.error(
       "[auth-email-otp] Resend retry failed:",
       retry.error,
-      "— check AUTH_EMAIL_FROM domain verification and RESEND_API_KEY"
+      "— check Resend domain verification for hello@yike.ng and RESEND_API_KEY"
     );
     if (!isProductionEnv()) {
       console.info(`[Yike auth email OTP dev fallback] ${email}: ${code}`);
