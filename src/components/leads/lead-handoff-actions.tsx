@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { buildHandoffSummary } from "@/lib/leads/message";
+import { SAFETY_HANDOFF_LINE } from "@/lib/leads/safety";
 import type { HandoffPayload } from "@/lib/leads/handoff";
 
 export function LeadHandoffActions({ data }: { data: HandoffPayload }) {
@@ -50,10 +51,8 @@ export function LeadHandoffActions({ data }: { data: HandoffPayload }) {
       </div>
 
       <div className="rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900">
-        <p className="font-semibold">⚠️ Safety Tip</p>
-        <p className="mt-1">
-          Always inspect properties physically before making payment.
-        </p>
+        <p className="font-semibold">Safety tip</p>
+        <p className="mt-1">{SAFETY_HANDOFF_LINE}</p>
       </div>
 
       <p className="text-center text-xs text-muted">

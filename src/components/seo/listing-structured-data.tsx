@@ -4,6 +4,7 @@ import { ORG_ID } from "@/lib/seo/schema-ids";
 import { formatPrice, isVerifiedAgent } from "@/lib/utils";
 import { optimizeListingImageUrl } from "@/lib/image-url";
 import { propertyAbsoluteUrl } from "@/lib/property-url";
+import { agentPublicPath } from "@/lib/agent-slugs";
 
 function absoluteImage(url: string): string {
   if (url.startsWith("http")) return optimizeListingImageUrl(url, 1200);
@@ -59,7 +60,7 @@ export function ListingStructuredData({ property }: { property: Property }) {
     schema.seller = {
       "@type": "RealEstateAgent",
       name: agent.full_name ?? "Yike Agent",
-      url: `${SITE_URL}/agents/${agent.id}`,
+      url: `${SITE_URL}${agentPublicPath(agent)}`,
       telephone: agent.phone ?? agent.whatsapp ?? undefined,
       ...(isVerifiedAgent(agent) ? { jobTitle: "Verified Agent" } : {}),
     };

@@ -1,6 +1,16 @@
 import type { Profile, Property } from "@/types/database";
 import { computeListingQualityScore } from "@/lib/listing-quality";
+import {
+  isAgentReachable,
+  listingAvailabilityRankPenalty,
+} from "@/lib/leads/availability";
 import type { PropertySearchParams } from "@/lib/property-search";
+import {
+  listingFreshnessRankAdjustment,
+  listingHealthRankAdjustment,
+} from "@/lib/trust/quality";
+import { listingConfidenceRankAdjustment } from "@/lib/trust/confidence";
+import { imageQualityRankAdjustment } from "@/lib/trust/image-quality";
 import { propertySearchRelevance } from "@/lib/search-relevance";
 
 export const UNVERIFIED_AGENT_LISTING_LIMIT = 5;
@@ -95,6 +105,7 @@ export function propertyMarketRank(property: Property): number {
   if (property.sponsored_status === "boosted") score += 1_000;
 
   if (property.is_verified_listing) score += 500;
+  if (property.yike_verified) score += 800;
 
   const ageDays =
     (Date.now() - new Date(property.created_at).getTime()) / 86_400_000;
@@ -102,6 +113,38 @@ export function propertyMarketRank(property: Property): number {
 
   score += computeListingQualityScore(property) * 15;
   score += Math.min(property.contact_clicks ?? 0, 30) * 3;
+
+  score -= listingAvailabilityRankPenalty(property);
+
+  if (agent && !isAgentReachable(agent)) score -= 2_500;
+  if (agent?.performance_score != null) {
+    score += Math.min(Math.max(agent.performance_score, 0), 100) * 8;
+  }
+  if (agent?.last_activity_at) {
+    const inactiveDays =
+      (Date.now() - new Date(agent.last_activity_at).getTime()) / 86_400_000;
+    if (inactiveDays > 14) score -= Math.min(400, inactiveDays * 8);
+  }
+
+  if (agent?.is_responsive || (agent?.response_rate ?? 0) >= 0.6) {
+    score += 600;
+  }
+  if (agent?.reputation_score != null) {
+    score += Math.min(500, Math.round(Number(agent.reputation_score) * 5));
+  }
+  if (agent?.complaint_score != null && agent.complaint_score > 0) {
+    score -= Math.min(800, Math.round(Number(agent.complaint_score) * 8));
+  }
+  if (agent?.last_activity_at) {
+    const activeDays =
+      (Date.now() - new Date(agent.last_activity_at).getTime()) / 86_400_000;
+    if (activeDays <= 3) score += 250;
+  }
+
+  score += listingFreshnessRankAdjustment(property);
+  score += listingHealthRankAdjustment(property);
+  score += listingConfidenceRankAdjustment(property);
+  score += imageQualityRankAdjustment(property);
 
   return score;
 }

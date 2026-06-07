@@ -1,11 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Profile, PaymentPeriod, ListingType } from "@/types/database";
-import { VerifiedBadge, TrustPill } from "@/components/ui/badge";
+import { VerifiedBadge, TrustPill, ResponsiveBadge, DeveloperBadge, AgencyBadge } from "@/components/ui/badge";
 import { ContactButtons } from "./contact-buttons";
 import { isVerifiedAgent, cn } from "@/lib/utils";
-import { getAgentActiveStatus, getAgentResponseLabel } from "@/lib/agent-response";
-import { MessageCircle, Shield } from "lucide-react";
+import {
+  getAgentActiveStatus,
+  getAgentMicroLabel,
+  getAgentResponseLabel,
+  isResponsiveAgent,
+} from "@/lib/agent-response";
+import { agentPublicPath } from "@/lib/agent-slugs";
+import { MessageCircle } from "lucide-react";
 
 export function AgentTrustCard({
   agent,
@@ -42,8 +48,13 @@ export function AgentTrustCard({
   hideContact?: boolean;
 }) {
   const verified = verifiedProp ?? isVerifiedAgent(agent);
+  const responsive = isResponsiveAgent(agent);
+  const isDeveloper = agent.account_type === "developer";
+  const isAgency =
+    agent.account_type === "agency" || agent.agent_type === "agency";
   const signals = { contactClicks, recentLeads };
   const responseLabel = getAgentResponseLabel(agent, signals);
+  const microLabel = getAgentMicroLabel(agent, signals);
   const activeStatus = getAgentActiveStatus(signals);
 
   return (
@@ -58,7 +69,7 @@ export function AgentTrustCard({
         Listed by
       </p>
       <Link
-        href={`/agents/${agent.id}`}
+        href={agentPublicPath(agent)}
         className="mt-3 flex items-center gap-3 pressable"
       >
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface">
@@ -87,15 +98,12 @@ export function AgentTrustCard({
       </Link>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {verified ? <VerifiedBadge /> : <TrustPill />}
-        {agent.trust_score > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs font-bold text-navy">
-            <Shield className="h-3 w-3 text-gold" />
-            {agent.trust_score}% trust
-          </span>
-        )}
-        {activeStatus === "active" && (
+        {responsive ? <ResponsiveBadge size="sm" /> : null}
+        {isDeveloper && agent.developer_verified ? <DeveloperBadge /> : null}
+        {isAgency && agent.agency_verified ? <AgencyBadge /> : null}
+        {microLabel && (
           <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-bold text-emerald-700">
-            Active on Yike
+            {microLabel}
           </span>
         )}
         {activeStatus === "popular" && (

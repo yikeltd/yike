@@ -23,6 +23,8 @@ import { popularLocalSearches } from "@/lib/seo/popular-searches";
 import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
 import { PopularLocalSearches } from "./popular-local-searches";
 import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
+import { partitionAreaListings } from "@/lib/seo/area-listings";
+import { SeoAreaRails } from "./seo-area-rails";
 
 export function SeoLandingPage({
   level,
@@ -95,6 +97,8 @@ export function SeoLandingPage({
   );
   const helpUrl = buildSeoHelpWhatsAppUrl(city, neighborhood);
   const helpLabel = seoHelpLabel(city, neighborhood);
+  const sections = partitionAreaListings(listings);
+  const searchHref = `/search?${searchParams.toString()}`;
 
   return (
     <div className="pb-28 lg:pb-16">
@@ -125,27 +129,38 @@ export function SeoLandingPage({
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-navy lg:text-xl">
             {listings.length > 0
-              ? `${listings.length} listing${listings.length === 1 ? "" : "s"} available`
-              : "Listings in this area"}
+              ? `${listings.length} home${listings.length === 1 ? "" : "s"} in this area`
+              : "Homes in this area"}
           </h2>
           <Link
-            href={`/search?${searchParams.toString()}`}
+            href={searchHref}
             className="text-sm font-bold text-gold-dark hover:underline"
           >
             View all in search →
           </Link>
         </div>
-        <PropertyFeed
-          properties={listings}
+
+        <SeoAreaRails
+          featured={sections.featured}
+          verified={sections.verified}
+          recentlyAdded={sections.recentlyAdded}
+          searchHref={searchHref}
           isDemo={isDemo}
-          emptyCity={city}
-          emptyArea={neighborhood}
-          emptyMessage={
-            neighborhood
-              ? `Listings are being added in ${neighborhood}. Explore nearby areas or tell us what you need.`
-              : `Listings are being added in ${city}. Browse related neighborhoods below.`
-          }
         />
+
+        <div className="mt-8">
+          <PropertyFeed
+            properties={sections.all}
+            isDemo={isDemo}
+            emptyCity={city}
+            emptyArea={neighborhood}
+            emptyMessage={
+              neighborhood
+                ? `Listings are being added in ${neighborhood}. Explore nearby areas or tell us what you need.`
+                : `Listings are being added in ${city}. Browse related neighborhoods below.`
+            }
+          />
+        </div>
       </section>
 
       <RentPriceGuide city={city} neighborhood={neighborhood} />

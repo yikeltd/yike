@@ -18,6 +18,9 @@ import {
 } from "@/lib/password-policy";
 import { createMathChallenge } from "@/lib/signup-math-challenge";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
+import { saveQuickLoginUser } from "@/lib/auth/quick-login";
+import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
+import { isPhoneOtpEnabledClient } from "@/lib/feature-flags";
 import { CheckCircle2, Loader2, MessageSquareText, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +36,8 @@ export function SignupForm({
   nextPath?: string;
 }) {
   const router = useRouter();
+  const phoneOtpEnabled = isPhoneOtpEnabledClient();
+
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
@@ -62,7 +67,9 @@ export function SignupForm({
     () => isReviewerAccountEmail(email),
     [email]
   );
-  const showVerifyPhone = canRequestPhoneOtp(normalizedPhone) && !reviewerBypass;
+  const phoneOtpRequired = phoneOtpEnabled && !reviewerBypass;
+  const showVerifyPhone =
+    phoneOtpRequired && canRequestPhoneOtp(normalizedPhone);
   const passwordRules = useMemo(() => passwordChecks(password), [password]);
   const mathOk =
     mathAnswer.trim() !== "" &&
@@ -99,14 +106,17 @@ export function SignupForm({
     const data = await res.json();
     setSendingOtp(false);
     if (!res.ok) {
+      if (data.code === "phone_otp_disabled") {
+        setError("Continue with email to access Yike.");
+        setChannelModalOpen(false);
+        return;
+      }
       if (data.code === "whatsapp_failed") {
         setWhatsappFailedHint(true);
         setError("");
         return;
       }
-      const message =
-        data.error ?? "We could not send the code right now. Please try SMS or try again shortly.";
-      setError(message);
+      setError("Continue with email to access Yike.");
       setChannelModalOpen(false);
       return;
     }
@@ -147,7 +157,7 @@ export function SignupForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!reviewerBypass && (!phoneVerified || !phoneVerificationToken)) {
+    if (phoneOtpRequired && (!phoneVerified || !phoneVerificationToken)) {
       setError("Verify your phone number before creating an account");
       return;
     }
@@ -178,11 +188,15 @@ export function SignupForm({
         fullName,
         username,
         email,
-        phone: normalizedPhone,
+        phone: normalizedPhone || undefined,
         password,
         confirmPassword,
         pin,
-        phoneVerificationToken: reviewerBypass ? "reviewer-bypass" : phoneVerificationToken,
+        phoneVerificationToken: reviewerBypass
+          ? "reviewer-bypass"
+          : phoneOtpRequired
+            ? phoneVerificationToken
+            : undefined,
         mathA: mathChallenge.a,
         mathB: mathChallenge.b,
         mathAnswer: Number(mathAnswer),
@@ -197,7 +211,7 @@ export function SignupForm({
     }
 
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -208,12 +222,37 @@ export function SignupForm({
       return;
     }
 
+    if (signInData.user) {
+      saveQuickLoginUser({
+        userId: signInData.user.id,
+        email,
+        fullName,
+        username,
+        avatarUrl: null,
+      });
+    }
+
+    if (reviewerBypass) {
+      const resumed = await resumePendingAuthIntent(router, {
+        fallbackPath: nextPath ?? "/",
+        emailVerified: true,
+      });
+      if (!resumed) router.refresh();
+      return;
+    }
+
     const verifyUrl = nextPath
       ? `/auth/verify-email?next=${encodeURIComponent(nextPath)}`
       : "/auth/verify-email";
     router.push(verifyUrl);
     router.refresh();
   }
+
+  const canSubmit =
+    !loading &&
+    mathOk &&
+    isStrongPassword(password) &&
+    (!phoneOtpRequired || phoneVerified);
 
   return (
     <AuthShell
@@ -234,33 +273,13 @@ export function SignupForm({
         </p>
       )}
 
+      {!phoneOtpEnabled && (
+        <p className="mb-4 rounded-xl border border-navy/10 bg-surface px-3 py-2.5 text-sm text-muted">
+          Sign up with email — verify your inbox to get started. WhatsApp number is optional.
+        </p>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Full name">
-          <Input
-            placeholder="Obinna Adebayo Aliyu"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-            className="h-12 rounded-xl"
-            autoComplete="name"
-          />
-        </Field>
-
-        <Field label="Username">
-          <Input
-            placeholder="obinna_adebayo_aliyu"
-            value={username}
-            onChange={(e) =>
-              setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
-            }
-            required
-            minLength={3}
-            maxLength={24}
-            className="h-12 rounded-xl"
-            autoComplete="username"
-          />
-        </Field>
-
         <Field label="Email">
           <Input
             type="email"
@@ -273,74 +292,114 @@ export function SignupForm({
           />
         </Field>
 
-        <Field label="Phone number">
-          <div className="flex items-center gap-2">
+        <Field label="Full name">
+          <Input
+            placeholder="Your full name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+            className="h-12 rounded-xl"
+            autoComplete="name"
+          />
+        </Field>
+
+        <Field label="Username">
+          <Input
+            placeholder="your_username"
+            value={username}
+            onChange={(e) =>
+              setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
+            }
+            required
+            minLength={3}
+            maxLength={24}
+            className="h-12 rounded-xl"
+            autoComplete="username"
+          />
+        </Field>
+
+        {phoneOtpEnabled ? (
+          <Field label="Phone number">
+            <div className="flex items-center gap-2">
+              <Input
+                type="tel"
+                inputMode="numeric"
+                placeholder="08012345678"
+                value={phone}
+                onChange={(e) => {
+                  setPhone(normalizeNigerianPhone(e.target.value));
+                  setPhoneVerified(false);
+                  setOtpSent(false);
+                  setOtp("");
+                }}
+                required
+                maxLength={11}
+                className="h-12 min-w-0 flex-1 rounded-xl"
+                autoComplete="tel"
+              />
+              {phoneVerified ? (
+                <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-5 w-5" />
+                  Verified
+                </span>
+              ) : showVerifyPhone ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-12 shrink-0 px-4"
+                  onClick={openChannelModal}
+                  disabled={sendingOtp}
+                >
+                  Verify phone
+                </Button>
+              ) : null}
+            </div>
+            {otpSent && !phoneVerified && (
+              <div className="mt-2 flex items-center gap-2">
+                <Input
+                  inputMode="numeric"
+                  placeholder="Code"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  maxLength={6}
+                  className="h-12 min-w-0 flex-1 rounded-xl tracking-widest"
+                />
+                {otp.length === 6 && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-12 shrink-0 px-4"
+                    onClick={verifyOtp}
+                    disabled={verifyingOtp}
+                  >
+                    {verifyingOtp ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Verify"
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
+          </Field>
+        ) : (
+          <Field label="WhatsApp number (optional)">
             <Input
               type="tel"
               inputMode="numeric"
-              placeholder="08012345678"
+              placeholder="08012345678 — add later if you prefer"
               value={phone}
-              onChange={(e) => {
-                setPhone(normalizeNigerianPhone(e.target.value));
-                setPhoneVerified(false);
-                setOtpSent(false);
-                setOtp("");
-              }}
-              required
+              onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
               maxLength={11}
-              className="h-12 min-w-0 flex-1 rounded-xl"
+              className="h-12 rounded-xl"
               autoComplete="tel"
             />
-            {reviewerBypass ? (
-              <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-gold-dark">
-                Review account — no OTP
-              </span>
-            ) : phoneVerified ? (
-              <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="h-5 w-5" />
-                Verified
-              </span>
-            ) : showVerifyPhone ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-12 shrink-0 px-4"
-                onClick={openChannelModal}
-                disabled={sendingOtp}
-              >
-                Verify phone
-              </Button>
-            ) : null}
-          </div>
-          {otpSent && !phoneVerified && (
-            <div className="mt-2 flex items-center gap-2">
-              <Input
-                inputMode="numeric"
-                placeholder="Code"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                maxLength={6}
-                className="h-12 min-w-0 flex-1 rounded-xl tracking-widest"
-              />
-              {otp.length === 6 && (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-12 shrink-0 px-4"
-                  onClick={verifyOtp}
-                  disabled={verifyingOtp}
-                >
-                  {verifyingOtp ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Verify"
-                  )}
-                </Button>
-              )}
-            </div>
-          )}
-        </Field>
+            <p className="mt-1.5 text-xs text-muted">
+              Optional contact number — helps agents reach you faster on WhatsApp.
+            </p>
+          </Field>
+        )}
 
         <Field label="Password">
           <Input
@@ -419,30 +478,27 @@ export function SignupForm({
           </p>
         )}
 
-        <Button
-          type="submit"
-          fullWidth
-          size="lg"
-          disabled={loading || (!reviewerBypass && !phoneVerified) || !mathOk || !isStrongPassword(password)}
-        >
+        <Button type="submit" fullWidth size="lg" disabled={!canSubmit}>
           {loading ? "Creating account…" : "Create account"}
         </Button>
       </form>
 
-      <PhoneChannelModal
-        open={channelModalOpen}
-        sending={sendingOtp}
-        codeSent={codeSentFlash}
-        codeSentMessage={codeSentMessage}
-        whatsappFailedHint={whatsappFailedHint}
-        onClose={() => {
-          if (sendingOtp) return;
-          setCodeSentFlash(false);
-          setWhatsappFailedHint(false);
-          setChannelModalOpen(false);
-        }}
-        onSelect={sendOtp}
-      />
+      {phoneOtpEnabled && (
+        <PhoneChannelModal
+          open={channelModalOpen}
+          sending={sendingOtp}
+          codeSent={codeSentFlash}
+          codeSentMessage={codeSentMessage}
+          whatsappFailedHint={whatsappFailedHint}
+          onClose={() => {
+            if (sendingOtp) return;
+            setCodeSentFlash(false);
+            setWhatsappFailedHint(false);
+            setChannelModalOpen(false);
+          }}
+          onSelect={sendOtp}
+        />
+      )}
     </AuthShell>
   );
 }
@@ -530,7 +586,7 @@ function PhoneChannelModal({
               Receive code via
             </p>
             <p className="mb-5 mt-2 text-center text-sm font-medium leading-relaxed text-navy/70">
-              Choose how we send your 6-digit verification code
+              SMS is the most reliable option right now. WhatsApp may be unavailable.
             </p>
             {whatsappFailedHint && (
               <p className="mb-3 rounded-xl bg-amber-500/10 px-3 py-2 text-center text-sm font-medium text-amber-800 dark:text-amber-200">
@@ -538,21 +594,6 @@ function PhoneChannelModal({
               </p>
             )}
             <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => onSelect("whatsapp")}
-                disabled={sending}
-                className="pressable flex min-h-[52px] w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] text-base font-bold text-white shadow-[0_4px_14px_rgba(37,211,102,0.35)] transition-colors hover:bg-[#1fb855] disabled:opacity-60"
-              >
-                {sending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <>
-                    <WhatsAppIcon className="h-6 w-6 shrink-0" />
-                    WhatsApp
-                  </>
-                )}
-              </button>
               <button
                 type="button"
                 onClick={() => onSelect("sms")}
@@ -565,6 +606,21 @@ function PhoneChannelModal({
                   <>
                     <MessageSquareText className="h-6 w-6 shrink-0 stroke-[2.25px]" />
                     SMS
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => onSelect("whatsapp")}
+                disabled={sending}
+                className="pressable flex min-h-[52px] w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] text-base font-bold text-white shadow-[0_4px_14px_rgba(37,211,102,0.35)] transition-colors hover:bg-[#1fb855] disabled:opacity-60"
+              >
+                {sending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <WhatsAppIcon className="h-6 w-6 shrink-0" />
+                    WhatsApp
                   </>
                 )}
               </button>

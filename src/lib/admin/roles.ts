@@ -91,7 +91,7 @@ export function authNavAllowlist(role: UserRole): string[] | null {
   if (role === "moderator")
     return ["overview", "listings", "agents", "reports", "reviews"];
   if (role === "content")
-    return ["overview", "listings", "featured", "hot-picks", "ads", "banners"];
+    return ["overview", "listings", "featured", "premium-deals", "hot-picks", "ads", "banners"];
   return [];
 }
 

@@ -9,11 +9,19 @@ regexp {TWA_KEYSTORE_PASSWORD=(.+)} $storepass -> pass
 
 spawn npx --yes @bubblewrap/cli@latest build
 
-expect "Password for the Key Store:"
-send "$pass\r"
-
-expect "Password for the Key:"
-send "$pass\r"
-
-expect eof
+expect {
+    "Do you want Bubblewrap to install the JDK" {
+        send "y\r"
+        exp_continue
+    }
+    "Password for the Key Store:" {
+        send "$pass\r"
+        exp_continue
+    }
+    "Password for the Key:" {
+        send "$pass\r"
+        exp_continue
+    }
+    eof
+}
 wait

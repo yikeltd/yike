@@ -20,7 +20,12 @@
     "domain:dns": "bash scripts/setup-yike-domain-dns.sh",
     "domain:verify": "bash scripts/verify-yike-domain.sh",
     "email:assets": "node scripts/generate-email-assets.mjs && npx tsx scripts/render-email-previews.ts",
-    "notifications:test": "node scripts/test-sendchamp.mjs"
+    "notifications:test": "node scripts/test-sendchamp.mjs",
+    "store:capture": "node scripts/capture-play-screenshots.mjs",
+    "store:capture:1440": "SCREENSHOT_WIDTH=1440 SCREENSHOT_HEIGHT=3200 node scripts/capture-play-screenshots.mjs",
+    "store:capture:tablet-7": "TABLET_SIZE=7 node scripts/capture-play-tablet-screenshots.mjs",
+    "store:capture:tablet-10": "TABLET_SIZE=10 node scripts/capture-play-tablet-screenshots.mjs",
+    "store:capture:tablet": "TABLET_SIZE=both node scripts/capture-play-tablet-screenshots.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -43,6 +48,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "playwright": "^1.52.0",
     "png-to-ico": "^3.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"

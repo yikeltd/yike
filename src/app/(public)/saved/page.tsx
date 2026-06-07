@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { PropertyFeed } from "@/components/property/property-feed";
+import { SavedEmptyLoggedIn } from "@/components/property/saved-empty-logged-in";
 import { SavedGuestView } from "@/components/auth/saved-guest-view";
 import type { Property } from "@/types/database";
 
@@ -58,10 +59,11 @@ export default async function SavedPage() {
   return (
     <div className="space-y-4 px-3 pt-2">
       <h1 className="text-xl font-bold text-foreground">Saved homes</h1>
-      <PropertyFeed
-        properties={properties}
-        emptyMessage="No saved listings yet. Tap the heart on any home."
-      />
+      {properties.length === 0 ? (
+        <SavedEmptyLoggedIn />
+      ) : (
+        <PropertyFeed properties={properties} />
+      )}
     </div>
   );
 }

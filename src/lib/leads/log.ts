@@ -35,7 +35,10 @@ export async function logLead(input: {
   city: string;
   area?: string;
   yikeReference?: string;
-}): Promise<{ ok: true; yikeReference: string } | { ok: false; error: string }> {
+}): Promise<
+  | { ok: true; yikeReference: string; leadId: string }
+  | { ok: false; error: string; cooldown?: boolean }
+> {
   const token = serverToken();
   const client = anonClient();
   if (!token || !client) {
@@ -60,16 +63,21 @@ export async function logLead(input: {
     });
 
     if (!error && data) {
-      return { ok: true, yikeReference: reference };
+      return { ok: true, yikeReference: reference, leadId: String(data) };
     }
 
-    if (error?.message?.includes("unique") || error?.code === "23505") {
+    const msg = error?.message ?? "";
+    if (msg.includes("lead_cooldown")) {
+      return { ok: false, error: "cooldown", cooldown: true };
+    }
+
+    if (msg.includes("unique") || error?.code === "23505") {
       reference = generateLeadReference(input.city, input.area);
       continue;
     }
 
-    console.error("[leads] log failed", error?.message);
-    return { ok: false, error: error?.message ?? "log_failed" };
+    console.error("[leads] log failed", msg);
+    return { ok: false, error: msg || "log_failed" };
   }
 
   return { ok: false, error: "reference_collision" };

@@ -1,39 +1,79 @@
-import { getAgentById, getAgentListings } from "@/lib/agents";
+import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import {
+  resolveAgentRoute,
+  getAgentListings,
+} from "@/lib/agents";
 import { AgentUnavailable } from "@/components/agent/agent-unavailable";
 import { PropertyFeed } from "@/components/property/property-feed";
 import { AgentTrustCard } from "@/components/property/agent-trust-card";
-import { VerifiedBadge } from "@/components/ui/badge";
+import {
+  VerifiedBadge,
+  ResponsiveBadge,
+  DeveloperBadge,
+  AgencyBadge,
+} from "@/components/ui/badge";
 import { isVerifiedAgent } from "@/lib/utils";
 import { isDemoProperty } from "@/lib/mock-listings";
-import { Shield, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { AgentReviewsSection } from "@/components/reviews/agent-reviews-section";
 import { getReviewStats, formatReviewSummary } from "@/lib/reviews/queries";
+import { isResponsiveAgent } from "@/lib/agent-response";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const { agent, redirectTo } = await resolveAgentRoute(slug);
+  if (redirectTo || !agent) return { title: "Agent | Yike" };
+  const name = agent.company_name?.trim() || agent.full_name?.trim() || "Agent";
+  return {
+    title: `${name} | Yike`,
+    description: `Browse verified property listings from ${name} on Yike.ng`,
+  };
+}
 
 export default async function AgentProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const agent = await getAgentById(id);
+  const { slug } = await params;
+  const { agent, redirectTo } = await resolveAgentRoute(slug);
+  if (redirectTo) redirect(redirectTo);
   if (!agent) return <AgentUnavailable />;
 
+  const agentId = agent.id;
   const [listings, reviewStats] = await Promise.all([
-    getAgentListings(id),
-    getReviewStats(id),
+    getAgentListings(agentId),
+    getReviewStats(agentId),
   ]);
   const verified = isVerifiedAgent(agent);
+  const responsive = isResponsiveAgent(agent);
   const isDemo = listings.every((p) => isDemoProperty(p.id));
-  const isAgency = agent.agent_type === "agency";
+  const isAgency =
+    agent.account_type === "agency" || agent.agent_type === "agency";
+  const isDeveloper = agent.account_type === "developer";
+  const displayName =
+    agent.company_name?.trim() || agent.full_name?.trim() || "Agent";
   const suspended = agent.profile_status === "suspended";
   const showListings = !suspended && agent.profile_status !== "deleted";
+  const joinedLabel = agent.created_at
+    ? new Date(agent.created_at).toLocaleDateString("en-NG", {
+        month: "short",
+        year: "numeric",
+      })
+    : null;
 
   return (
     <div className="space-y-6 px-3 pt-2 pb-8 lg:px-0 lg:pt-8">
       {suspended && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          This profile is temporarily suspended. Listings and contact may be unavailable.
+          This profile is temporarily suspended. Listings and contact may be
+          unavailable.
         </div>
       )}
 
@@ -41,36 +81,39 @@ export default async function AgentProfilePage({
         <div className="space-y-6">
           <header className="rounded-2xl bg-white p-5 shadow-float ring-1 ring-black/[0.04] lg:hidden">
             <p className="text-xs font-bold uppercase tracking-wider text-muted">
-              {isAgency ? "Agency profile" : "Agent profile"}
+              {isAgency
+                ? "Agency profile"
+                : isDeveloper
+                  ? "Developer profile"
+                  : "Agent profile"}
             </p>
-            <h1 className="mt-2 text-2xl font-bold text-navy">
-              {agent.full_name ?? "Agent"}
-            </h1>
-            {agent.agent_type && (
+            <h1 className="mt-2 text-2xl font-bold text-navy">{displayName}</h1>
+            {agent.agent_type && agent.account_type === "individual" && (
               <p className="mt-1 text-sm capitalize text-muted">
                 {agent.agent_type.replace("_", " ")}
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {verified ? <VerifiedBadge /> : null}
+              {responsive ? <ResponsiveBadge size="sm" /> : null}
+              {isDeveloper && agent.developer_verified ? (
+                <DeveloperBadge />
+              ) : null}
+              {isAgency && agent.agency_verified ? <AgencyBadge /> : null}
               {reviewStats.total > 0 && (
                 <span className="text-xs font-semibold text-navy">
                   {formatReviewSummary(reviewStats)}
                 </span>
               )}
-              {agent.trust_score > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs font-bold text-navy">
-                  <Shield className="h-3 w-3 text-gold" />
-                  {agent.trust_score}% trust
-                </span>
-              )}
             </div>
             <p className="mt-3 text-sm text-muted">
-              {listings.length} active {listings.length === 1 ? "listing" : "listings"}
+              {listings.length} active{" "}
+              {listings.length === 1 ? "listing" : "listings"}
+              {joinedLabel ? ` · Joined ${joinedLabel}` : ""}
             </p>
           </header>
 
-          <AgentReviewsSection agentId={id} isAgency={isAgency} />
+          <AgentReviewsSection agentId={agentId} isAgency={isAgency} />
 
           {showListings && (
             <section>

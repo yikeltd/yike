@@ -70,3 +70,16 @@ export function buildStoragePaths(
     large: `${base}-lg.webp`,
   };
 }
+
+export function buildAvatarStoragePaths(userId: string): {
+  thumbnail: string;
+  medium: string;
+  large: string;
+} {
+  const base = `avatars/${userId}`;
+  return {
+    thumbnail: `${base}/thumb.webp`,
+    medium: `${base}/md.webp`,
+    large: `${base}/lg.webp`,
+  };
+}

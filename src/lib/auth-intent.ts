@@ -5,13 +5,21 @@ export type AuthIntentType =
   | "profile"
   | "saved"
   | "list_property"
-  | "review_agent";
+  | "review_agent"
+  | "verification_request";
+
+/** Future OAuth (Google / Apple) — extend provider wiring here; email OTP stays primary. */
+export type AuthProviderId = "email" | "google" | "apple";
 
 /** No sign-in required — required for Play Store / SEO browsing. */
 export const AUTH_PUBLIC_INTENTS = new Set<AuthIntentType>(["whatsapp", "call"]);
 
 /** Sign-in only — email verification not required. */
-export const AUTH_LOGIN_ONLY_INTENTS = new Set<AuthIntentType>(["review_agent"]);
+export const AUTH_LOGIN_ONLY_INTENTS = new Set<AuthIntentType>([
+  "review_agent",
+  "save",
+  "verification_request",
+]);
 
 export interface AuthIntent {
   type: AuthIntentType;
@@ -20,6 +28,8 @@ export interface AuthIntent {
   redirectPath?: string;
   /** WhatsApp / call payload */
   contactUrl?: string;
+  sourceSurface?: string;
+  metadata?: Record<string, string | number | boolean>;
 }
 
 const STORAGE_KEY = "yike_auth_intent";

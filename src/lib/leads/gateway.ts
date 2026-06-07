@@ -1,9 +1,10 @@
 /** WhatsApp lead gateway — Yike owns first touch, agent gets handoff. */
 
 import { SITE_URL, YIKE_SUPPORT_WHATSAPP } from "@/lib/constants";
+import { isLeadGatewayEnabled as gatewayFlag } from "@/lib/feature-flags";
 
 export function isLeadGatewayEnabled(): boolean {
-  return process.env.YIKE_LEAD_GATEWAY_ENABLED?.trim() !== "false";
+  return gatewayFlag();
 }
 
 /** Official Yike WhatsApp line for lead gateway and support. */

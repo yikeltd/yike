@@ -25,7 +25,6 @@ export const SOCIAL_LINKS = {
   x: "https://x.com/real_yike",
   youtube: "https://www.youtube.com/@real_yike",
   tiktok: "https://www.tiktok.com/@real_yike",
-  linkedin: "https://www.linkedin.com/company/yike-ng/",
 } as const;
 
 export { LISTING_TYPES } from "@/constants/listingTypes";

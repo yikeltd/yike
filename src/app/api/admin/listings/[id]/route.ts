@@ -75,7 +75,15 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     seo_description?: string | null;
     is_featured?: boolean;
     featured_until?: string | null;
+    featured_tier?: string | null;
+    featured_reason?: string | null;
     is_verified_listing?: boolean;
+    yike_verified?: boolean;
+    yike_verification_level?: string | null;
+    is_premium_deal?: boolean;
+    closing_tracking_enabled?: boolean;
+    expected_commission_rate?: number | null;
+    developer_partner_id?: string | null;
     is_boosted?: boolean;
     boosted_until?: string | null;
     sponsored_status?: string;
@@ -123,7 +131,15 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     "seo_description",
     "is_featured",
     "featured_until",
+    "featured_tier",
+    "featured_reason",
     "is_verified_listing",
+    "yike_verified",
+    "yike_verification_level",
+    "is_premium_deal",
+    "closing_tracking_enabled",
+    "expected_commission_rate",
+    "developer_partner_id",
     "is_boosted",
     "boosted_until",
     "sponsored_status",
@@ -173,6 +189,13 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   if (body.slug !== undefined || body.regenerate_slug) action = "listing.slug";
   if (body.status === "hidden") action = "listing.reject";
   if (body.agent_id && body.agent_id !== existing.agent_id) action = "listing.reassign";
+  if (
+    body.is_premium_deal !== undefined ||
+    body.closing_tracking_enabled !== undefined ||
+    body.expected_commission_rate !== undefined
+  ) {
+    action = "listing.premium_deal";
+  }
 
   await writeAuditLog({
     actor_id: auth.user.id,

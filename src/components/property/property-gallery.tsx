@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ListingImage } from "./listing-image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import { VerifiedBadge, FeaturedBadge } from "@/components/ui/badge";
+import { VerifiedBadge, FeaturedBadge, YikeVerifiedBadge } from "@/components/ui/badge";
 import { ShareButton } from "./listing-share-menu";
 import type { Property } from "@/types/database";
 import { listingImageAlt } from "@/lib/image-seo";
@@ -16,6 +16,7 @@ export function PropertyGallery({
   images,
   title,
   featured,
+  yikeVerified,
   verified,
   shareUrl,
   imageSeo,
@@ -27,6 +28,7 @@ export function PropertyGallery({
   images: string[];
   title: string;
   featured?: boolean;
+  yikeVerified?: boolean;
   verified?: boolean;
   shareUrl?: string;
   imageSeo?: Pick<
@@ -97,6 +99,7 @@ export function PropertyGallery({
   const badges = (
     <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 lg:left-4 lg:top-4">
       {verified && <VerifiedBadge size="sm" />}
+      {yikeVerified && <YikeVerifiedBadge size="sm" />}
       {featured && <FeaturedBadge />}
     </div>
   );

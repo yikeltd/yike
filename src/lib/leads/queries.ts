@@ -2,8 +2,26 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Lead, LeadType } from "./types";
 
 export type LeadWithListing = Lead & {
-  listing?: { title: string; city: string; area: string } | null;
-  agent?: { full_name: string | null } | null;
+  listing?: {
+    id?: string;
+    title: string;
+    city: string;
+    area: string;
+    slug?: string | null;
+    availability_status?: string | null;
+    price?: number;
+    payment_period?: string;
+    listing_type?: string;
+    bedrooms?: number | null;
+    property_type?: string | null;
+  } | null;
+  agent?: {
+    id?: string;
+    full_name: string | null;
+    whatsapp?: string | null;
+    phone?: string | null;
+    availability_status?: string | null;
+  } | null;
 };
 
 export async function getAgentLeadStats(
@@ -72,8 +90,10 @@ export async function getAdminLeads(
   admin: SupabaseClient,
   filters: {
     leadType?: LeadType;
+    leadStatus?: string;
     city?: string;
     agentId?: string;
+    listingId?: string;
     from?: string;
     limit?: number;
     offset?: number;
@@ -91,7 +111,9 @@ export async function getAdminLeads(
     .range(offset, offset + limit - 1);
 
   if (filters.leadType) query = query.eq("lead_type", filters.leadType);
+  if (filters.leadStatus) query = query.eq("lead_status", filters.leadStatus);
   if (filters.agentId) query = query.eq("agent_id", filters.agentId);
+  if (filters.listingId) query = query.eq("listing_id", filters.listingId);
   if (filters.from) query = query.gte("clicked_at", filters.from);
 
   const { data } = await query;

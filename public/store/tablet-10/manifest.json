@@ -1,0 +1,50 @@
+[
+  {
+    "file": "01-homepage.png",
+    "caption": "Discover verified homes",
+    "path": "/",
+    "width": 1600,
+    "height": 2560,
+    "sizeMb": 2.22
+  },
+  {
+    "file": "02-swipe-discovery.png",
+    "caption": "Swipe through beautiful properties",
+    "path": "/browse",
+    "width": 1600,
+    "height": 2560,
+    "sizeMb": 3.03
+  },
+  {
+    "file": "03-property-details.png",
+    "caption": "Premium listing presentation",
+    "path": "/properties/2-bedroom-flat-for-rent-ogbor-hill-aba",
+    "width": 1600,
+    "height": 2560,
+    "sizeMb": 2.2
+  },
+  {
+    "file": "04-search-filters.png",
+    "caption": "Search smarter across Nigeria",
+    "path": "/search?city=Enugu",
+    "width": 1600,
+    "height": 2560,
+    "sizeMb": 1.57
+  },
+  {
+    "file": "05-whatsapp-inquiry.png",
+    "caption": "Chat instantly on WhatsApp",
+    "path": "/saved",
+    "width": 1600,
+    "height": 2560,
+    "sizeMb": 2.17
+  },
+  {
+    "file": "06-saved-collection.png",
+    "caption": "Save properties you love",
+    "path": "/saved",
+    "width": 1600,
+    "height": 2560,
+    "sizeMb": 2.37
+  }
+]

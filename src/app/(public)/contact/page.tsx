@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { FaqSection } from "@/components/pages/faq-section";
 import { PageHero } from "@/components/pages/page-hero";
-import { ContactForm, ContactSidebar } from "@/components/forms/contact-form";
-import { FollowYike } from "@/components/social/follow-yike";
+import {
+  ContactForm,
+  ContactSidebar,
+  WhatsAppSupportCard,
+} from "@/components/forms/contact-form";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { CONTACT_FAQS } from "@/constants/pageContent";
 import { SITE_NAME } from "@/lib/constants";
@@ -25,13 +28,17 @@ export default function ContactPage() {
       />
 
       <div className="mx-auto grid max-w-6xl gap-10 px-3 py-12 lg:grid-cols-[1fr_340px] lg:px-8">
-        <div className="rounded-2xl bg-white p-6 shadow-float ring-1 ring-black/[0.04] lg:p-8">
-          <h2 className="text-lg font-bold text-navy">Send a message</h2>
-          <p className="mt-1 text-sm text-muted">
-            Fill the form — we respond within 1–2 business days.
-          </p>
-          <div className="mt-6">
-            <ContactForm />
+        <div className="space-y-6">
+          <WhatsAppSupportCard />
+
+          <div className="rounded-2xl bg-white p-6 shadow-float ring-1 ring-black/[0.04] lg:p-8">
+            <h2 className="text-lg font-bold text-navy">Send a message</h2>
+            <p className="mt-1 text-sm text-muted">
+              Fill the form — we aim to reply within a few hours.
+            </p>
+            <div className="mt-6">
+              <ContactForm />
+            </div>
           </div>
         </div>
         <ContactSidebar />
@@ -55,10 +62,6 @@ export default function ContactPage() {
             </Link>
           ))}
         </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-3 py-10 lg:px-8">
-        <FollowYike variant="icons" />
       </section>
 
       <FaqSection title="Contact FAQs" faqs={CONTACT_FAQS} />

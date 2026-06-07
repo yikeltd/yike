@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, probeSupabaseAdmin } from "@/lib/supabase/admin";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
 import { getSendchampConfigSummary } from "@/lib/notifications/providers/sendchamp";
 
@@ -22,8 +22,9 @@ export async function GET(request: Request) {
   }
 
   const admin = createAdminClient();
-  let supabaseAdminConfigured = false;
-  if (admin) {
+  const supabaseProbe = await probeSupabaseAdmin();
+  let supabaseAdminConfigured = supabaseProbe.ok;
+  if (admin && !supabaseAdminConfigured) {
     const { error } = await admin.from("phone_otp_requests").select("id").limit(1);
     supabaseAdminConfigured = !error;
     if (error) {

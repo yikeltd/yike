@@ -12,4 +12,5 @@ build-run.log
 build.log
 init.log
 init2.log
+.jdk17/
 store_icon.png

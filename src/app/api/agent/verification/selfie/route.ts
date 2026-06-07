@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { optimizeUploadedImage } from "@/lib/media/image";
 import { ALLOWED_IMAGE_TYPES } from "@/lib/media/constants";
+import { isPhoneVerificationRequired } from "@/lib/feature-flags";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,7 +34,11 @@ export async function POST(request: Request) {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.phone_verified) {
+  if (!profile) {
+    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+  }
+
+  if (isPhoneVerificationRequired() && !profile.phone_verified) {
     return NextResponse.json({ error: "Verify your phone first" }, { status: 400 });
   }
 

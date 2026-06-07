@@ -360,3 +360,21 @@ export async function sendReportReceivedEmail(
     idempotencyKey: `report-received/${params.reportId}`,
   });
 }
+
+export async function sendInspectionRequestAlert(
+  admin: SupabaseClient,
+  params: {
+    listingTitle: string;
+    listingCity: string;
+    listingArea: string;
+    requesterName: string;
+    requesterEmail: string;
+    requestId: string;
+  }
+): Promise<EmailResult> {
+  return sendAdminAlert(admin, {
+    to: getAdminAlertInbox(),
+    subject: "New Yike verification request",
+    body: `${params.requesterName} (${params.requesterEmail}) requested Yike verification for "${params.listingTitle}" in ${params.listingArea}, ${params.listingCity}.\n\nReview: /lex/support/inspections?id=${params.requestId}`,
+  });
+}

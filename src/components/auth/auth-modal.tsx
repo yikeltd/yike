@@ -8,20 +8,11 @@ import { createClient } from "@/lib/supabase/client";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { AuthIntent } from "@/lib/auth-intent";
-import { peekAuthIntent, clearAuthIntent } from "@/lib/auth-intent";
-import { executeAuthIntent } from "@/lib/execute-auth-intent";
+import { clearAuthIntent } from "@/lib/auth-intent";
+import { friendlyAuthError } from "@/lib/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-const INTENT_COPY: Record<string, string> = {
-  whatsapp: "Sign in to chat with the agent on WhatsApp",
-  call: "Sign in to call the agent",
-  save: "Sign in to save this listing",
-  profile: "Sign in to view your profile",
-  saved: "Sign in to see your saved homes",
-  list_property: "Sign in to list your property on Yike",
-};
 
 export function AuthModal({
   open,
@@ -56,6 +47,11 @@ export function AuthModal({
 
   if (!open) return null;
 
+  function handleContinueAsGuest() {
+    clearAuthIntent();
+    onClose();
+  }
+
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     if (!isSupabaseConfigured()) return;
@@ -68,27 +64,21 @@ export function AuthModal({
     });
     setLoading(false);
     if (authError) {
-      setError(authError.message);
+      setError(friendlyAuthError(authError.message));
       return;
     }
     await onSuccess();
     onClose();
-    if (!data.user?.email_confirmed_at) {
+    if (!data.user?.email_confirmed_at && !isReviewerAccountEmail(email)) {
       router.push("/auth/verify-email");
       return;
     }
-    const pending = peekAuthIntent();
-    if (pending) {
-      clearAuthIntent();
-      await executeAuthIntent(pending, router);
-    } else {
-      router.refresh();
-    }
+    router.refresh();
   }
 
-  const subtitle = intent?.type
-    ? INTENT_COPY[intent.type] ?? "Sign in to continue"
-    : "Sign in to save homes, contact agents, and list property";
+  const signupHref = intent?.redirectPath
+    ? `/auth/signup?next=${encodeURIComponent(intent.redirectPath)}`
+    : "/auth/signup";
 
   return (
     <div
@@ -113,13 +103,12 @@ export function AuthModal({
           <X className="h-4 w-4" />
         </button>
 
-        <p className="text-xs font-bold uppercase tracking-widest text-gold">
-          Yike account
-        </p>
-        <h2 id="auth-modal-title" className="mt-1 pr-8 text-xl font-bold text-foreground">
-          {tab === "signin" ? "Welcome back" : "Create account"}
+        <h2 id="auth-modal-title" className="pr-8 text-xl font-bold text-foreground">
+          Sign in to continue
         </h2>
-        <p className="mt-1 text-sm text-muted">{subtitle}</p>
+        <p className="mt-1 text-sm text-muted">
+          Save homes and contact agents faster.
+        </p>
 
         <div className="mt-5 flex rounded-xl bg-surface p-1">
           {(["signin", "signup"] as const).map((t) => (
@@ -134,7 +123,7 @@ export function AuthModal({
                   : "text-muted"
               )}
             >
-              {t === "signin" ? "Sign in" : "Sign up"}
+              {t === "signin" ? "Sign In" : "Create Account"}
             </button>
           ))}
         </div>
@@ -142,18 +131,14 @@ export function AuthModal({
         {tab === "signup" ? (
           <div className="mt-5 space-y-4">
             <p className="text-sm text-muted">
-              Create your Yike account once — verify as an agent only when you want to list property.
+              One free account — list property only when you&apos;re ready.
             </p>
             <Link
-              href={
-                intent?.redirectPath
-                  ? `/auth/signup?next=${encodeURIComponent(intent.redirectPath)}`
-                  : "/auth/signup"
-              }
+              href={signupHref}
               onClick={onClose}
               className="pressable flex h-12 w-full items-center justify-center rounded-xl bg-gold text-sm font-bold text-navy"
             >
-              Create free account
+              Create Account
             </Link>
             <p className="text-center text-xs text-muted">
               Already registered?{" "}
@@ -162,7 +147,7 @@ export function AuthModal({
                 className="font-semibold text-gold-dark dark:text-gold"
                 onClick={() => setTab("signin")}
               >
-                Sign in
+                Sign In
               </button>
             </p>
           </div>
@@ -175,6 +160,7 @@ export function AuthModal({
               onChange={(e) => setEmail(e.target.value)}
               required
               className="h-12"
+              autoComplete="email"
             />
             <Input
               type="password"
@@ -183,6 +169,7 @@ export function AuthModal({
               onChange={(e) => setPassword(e.target.value)}
               required
               className="h-12"
+              autoComplete="current-password"
             />
             {error && (
               <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger">
@@ -190,10 +177,18 @@ export function AuthModal({
               </p>
             )}
             <Button type="submit" fullWidth size="lg" disabled={loading}>
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? "Signing in…" : "Sign In"}
             </Button>
           </form>
         )}
+
+        <button
+          type="button"
+          onClick={handleContinueAsGuest}
+          className="mt-4 w-full py-2 text-center text-sm font-medium text-muted transition-colors hover:text-foreground"
+        >
+          Continue as Guest
+        </button>
       </div>
     </div>
   );

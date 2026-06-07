@@ -1,50 +1,43 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import {
-  buildAgentHandoffMessage,
-  buildGatewayInquiryMessage,
-} from "@/lib/leads/message";
-import {
-  handoffPath,
-  resolveLeadGatewayMode,
-  yikeWhatsAppNumber,
-} from "@/lib/leads/gateway";
 import { hashClientIp, logLead } from "@/lib/leads/log";
 import { generateLeadReference } from "@/lib/leads/reference";
+import { COOLDOWN_USER_MESSAGE } from "@/lib/leads/operations-types";
+import { listingAvailabilityNotice } from "@/lib/leads/availability";
+import { finalizeLeadRouting } from "@/lib/leads/pipeline";
+import { buildSupportFallbackResult } from "@/lib/leads/fallback";
+import { validateLeadRequest } from "@/lib/leads/validation";
+import { buildLeadAttribution } from "@/lib/leads/attribution";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { AgentRoutingProfile, ListingRoutingContext } from "@/lib/leads/routing-types";
 import type { LeadType } from "@/lib/leads/types";
-import { whatsAppDeepLink } from "@/lib/whatsapp";
-import { formatPhoneForTel } from "@/lib/utils";
-import type { ListingType, PaymentPeriod } from "@/types/database";
+import { decideCallRouting, buildTelUrl } from "@/lib/leads/call-routing";
+import { logLeadEvent } from "@/lib/leads/events";
+import { buildDedupeKey } from "@/lib/leads/dedupe";
+import {
+  agentToCallProfile,
+  persistCallLeadMetadata,
+} from "@/lib/leads/call-metadata";
+import { isDirectAgentCallsEnabled } from "@/lib/feature-flags";
+import type {
+  ListingAvailabilityStatus,
+  ListingType,
+  PaymentPeriod,
+} from "@/types/database";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
 
-  const listingId = String(body.listingId ?? "");
-  const agentId = String(body.agentId ?? "");
+  const listingId = String(body.listingId ?? "").trim();
+  const agentId = String(body.agentId ?? "").trim();
   const leadType = body.leadType as LeadType;
   const sourcePage = String(body.sourcePage ?? "");
   const guestId = String(body.guestId ?? "") || null;
 
   if (!listingId || !agentId || (leadType !== "whatsapp" && leadType !== "call")) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-
-  const supabase = await createClient();
-  if (supabase) {
-    const { data: agentProfile } = await supabase
-      .from("profiles")
-      .select("profile_status, is_banned")
-      .eq("id", agentId)
-      .maybeSingle();
-    if (
-      agentProfile?.is_banned ||
-      agentProfile?.profile_status === "suspended" ||
-      agentProfile?.profile_status === "deleted"
-    ) {
-      return NextResponse.json({ error: "Agent unavailable" }, { status: 403 });
-    }
   }
 
   const agentName = String(body.agentName ?? "there");
@@ -64,11 +57,76 @@ export async function POST(request: Request) {
     request.headers.get("x-real-ip");
   const userAgent = request.headers.get("user-agent");
 
+  const supabase = await createClient();
   let userId: string | null = null;
   if (supabase) {
     const { data } = await supabase.auth.getUser();
     userId = data.user?.id ?? null;
   }
+
+  const validation = supabase
+    ? await validateLeadRequest(supabase, listingId, agentId)
+    : null;
+
+  if (validation && !validation.ok) {
+    if (validation.code === "invalid_ids" || validation.code === "missing_ids") {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    if (validation.code === "agent_listing_mismatch") {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    // Business failures → Yike support fallback (no scary errors)
+    if (validation.useFallback) {
+      const ref = generateLeadReference(city, area);
+      const fb = buildSupportFallbackResult({
+        yikeReference: ref,
+        listingId,
+        agentId,
+        title: title || "Property inquiry",
+        area,
+        city,
+        price,
+        paymentPeriod,
+        listingType,
+        bedrooms,
+        propertyType,
+      });
+      return NextResponse.json({
+        ok: true,
+        yikeReference: ref,
+        redirectUrl: fb.redirectUrl,
+        handoffUrl: fb.handoffUrl,
+        gateway: true,
+        fallback: true,
+      });
+    }
+  }
+
+  const listingRow: ListingRoutingContext | null = validation?.ok
+    ? {
+        id: validation.listing.id,
+        slug: validation.listing.slug,
+        title: validation.listing.title,
+        availability_status: validation.listing.availability_status,
+        status: validation.listing.status,
+        lead_price_override: validation.listing.lead_price_override,
+        premium_lead: validation.listing.premium_lead,
+        requires_manual_review: validation.listing.requires_manual_review,
+      }
+    : null;
+
+  const agentRow: AgentRoutingProfile | null = validation?.ok
+    ? (validation.agent as unknown as AgentRoutingProfile)
+    : null;
+
+  const listingNotice =
+    listingRow != null
+      ? listingAvailabilityNotice({
+          availability_status:
+            (listingRow.availability_status as ListingAvailabilityStatus | null) ??
+            undefined,
+        })
+      : null;
 
   const logResult = await logLead({
     userId,
@@ -83,61 +141,281 @@ export async function POST(request: Request) {
     area,
   });
 
+  if (!logResult.ok && logResult.cooldown) {
+    return NextResponse.json(
+      { error: COOLDOWN_USER_MESSAGE, cooldown: true },
+      { status: 429 }
+    );
+  }
+
   const yikeReference = logResult.ok
     ? logResult.yikeReference
     : generateLeadReference(city, area);
 
   if (!logResult.ok) {
     console.warn("[leads/track] logging skipped:", logResult.error);
+  } else {
+    const admin = createAdminClient();
+    if (admin) {
+      const attribution = buildLeadAttribution({
+        sourcePage,
+        sourceSurface: body.sourceSurface ? String(body.sourceSurface) : null,
+        sourceListingPosition:
+          body.sourceListingPosition != null
+            ? Number(body.sourceListingPosition)
+            : null,
+        sourceCampaign: body.sourceCampaign ? String(body.sourceCampaign) : null,
+        placement: body.placement ? String(body.placement) : undefined,
+      });
+      void admin
+        .from("leads")
+        .update(attribution)
+        .eq("id", logResult.leadId)
+        .then(({ error }) => {
+          if (error) console.warn("[leads/track] attribution update failed", error.message);
+        });
+    }
   }
 
-  if (leadType === "whatsapp") {
-    const wa = whatsapp || phone;
-    if (!wa) {
-      return NextResponse.json({ error: "No WhatsApp number" }, { status: 400 });
+  if (leadType === "call") {
+    const agentForCall = validation?.ok
+      ? agentToCallProfile(validation.agent)
+      : {
+          id: agentId,
+          allow_direct_calls: false,
+          call_routing_mode: "whatsapp_only" as const,
+          phone: phone,
+          whatsapp: whatsapp,
+          direct_routing_health_status: "healthy",
+        };
+
+    let isDuplicateCall = false;
+    if (logResult.ok && supabase) {
+      const dedupeKey = buildDedupeKey({
+        listingId,
+        agentId,
+        visitor: { userId, guestId, ipHash: hashClientIp(ip) },
+      });
+      const adminForDup = createAdminClient();
+      if (adminForDup) {
+        const { data: dupId } = await adminForDup.rpc("yike_find_duplicate_lead", {
+          p_listing_id: listingId,
+          p_agent_id: agentId,
+          p_dedupe_key: dedupeKey,
+          p_exclude_id: logResult.leadId,
+        });
+        isDuplicateCall = !!dupId;
+      }
     }
 
-    const messageInput = {
-      agentName,
-      price,
-      paymentPeriod,
-      listingType,
-      propertyTitle: title,
-      area,
-      city,
-      bedrooms,
-      propertyType,
-      yikeReference,
-    };
+    const callDecision = decideCallRouting({
+      agent: agentForCall,
+      listing: listingRow ?? { id: listingId, title },
+      globalEnabled: isDirectAgentCallsEnabled(),
+      isDuplicate: isDuplicateCall,
+    });
 
-    if (resolveLeadGatewayMode() === "gateway") {
-      const gatewayMessage = buildGatewayInquiryMessage(messageInput);
-      return NextResponse.json({
-        ok: true,
-        yikeReference,
-        redirectUrl: whatsAppDeepLink(yikeWhatsAppNumber(), gatewayMessage),
-        handoffUrl: handoffPath(yikeReference),
-        gateway: true,
+    if (logResult.ok) {
+      await persistCallLeadMetadata(logResult.leadId, callDecision);
+      void logLeadEvent({
+        leadId: logResult.leadId,
+        type: "call_clicked",
+        metadata: { reason: callDecision.reason },
+      });
+      void logLeadEvent({
+        leadId: logResult.leadId,
+        type: callDecision.allow_direct_call ? "call_allowed" : "call_blocked",
+        metadata: {
+          route_type: callDecision.route_type,
+          reason: callDecision.reason,
+        },
       });
     }
 
-    const message = buildAgentHandoffMessage(messageInput);
+    const defaultAgent: AgentRoutingProfile = {
+      id: agentId,
+      routing_mode: "yike_concierge",
+      allow_direct_whatsapp: false,
+      billing_mode: "free",
+      lead_billing_enabled: false,
+      direct_routing_health_status: "healthy",
+      whatsapp: validation?.ok ? validation.agent.whatsapp : whatsapp,
+      phone: validation?.ok ? validation.agent.phone : phone,
+    };
+
+    const defaultListing: ListingRoutingContext = {
+      id: listingId,
+      title,
+      slug: listingRow?.slug ?? null,
+    };
+
+    try {
+      const pipeline = await finalizeLeadRouting({
+        leadId: logResult.ok ? logResult.leadId : "",
+        yikeReference,
+        listingId,
+        agentId,
+        agent: agentRow ?? defaultAgent,
+        listing: listingRow ?? defaultListing,
+        visitor: {
+          userId,
+          guestId,
+          ipHash: hashClientIp(ip),
+          requesterWhatsapp: whatsapp,
+        },
+        leadType: "whatsapp",
+        sourcePage,
+        agentName,
+        agentWhatsapp: validation?.ok ? validation.agent.whatsapp : whatsapp,
+        agentPhone: validation?.ok ? validation.agent.phone : phone,
+        title,
+        area,
+        city,
+        price,
+        paymentPeriod,
+        listingType,
+        bedrooms,
+        propertyType,
+      });
+
+      if (callDecision.allow_direct_call && callDecision.phone_number) {
+        return NextResponse.json({
+          ok: true,
+          yikeReference,
+          callAllowed: true,
+          routeType: "direct_call",
+          redirectUrl: buildTelUrl(callDecision.phone_number),
+          handoffUrl: pipeline.handoffUrl,
+          listingNotice,
+        });
+      }
+
+      if (!pipeline.redirectUrl) {
+        throw new Error("empty_whatsapp_redirect");
+      }
+
+      return NextResponse.json({
+        ok: true,
+        yikeReference,
+        callAllowed: false,
+        routeType: "whatsapp_fallback",
+        redirectUrl: pipeline.redirectUrl,
+        handoffUrl: pipeline.handoffUrl,
+        gateway: pipeline.gateway,
+        listingNotice,
+      });
+    } catch (err) {
+      console.error("[leads/track] call routing error:", err);
+      const fb = buildSupportFallbackResult({
+        yikeReference,
+        listingId,
+        agentId,
+        title,
+        area,
+        city,
+        slug: listingRow?.slug,
+        price,
+        paymentPeriod,
+        listingType,
+        bedrooms,
+        propertyType,
+      });
+      return NextResponse.json({
+        ok: true,
+        yikeReference,
+        callAllowed: false,
+        routeType: "whatsapp_fallback",
+        redirectUrl: fb.redirectUrl,
+        handoffUrl: fb.handoffUrl,
+        gateway: true,
+        fallback: true,
+        listingNotice,
+      });
+    }
+  }
+
+  const defaultAgent: AgentRoutingProfile = {
+    id: agentId,
+    routing_mode: "yike_concierge",
+    allow_direct_whatsapp: false,
+    billing_mode: "free",
+    lead_billing_enabled: false,
+    direct_routing_health_status: "healthy",
+    whatsapp,
+    phone,
+  };
+
+  const defaultListing: ListingRoutingContext = {
+    id: listingId,
+    title,
+    slug: null,
+  };
+
+  try {
+    const pipeline = await finalizeLeadRouting({
+      leadId: logResult.ok ? logResult.leadId : "",
+      yikeReference,
+      listingId,
+      agentId,
+      agent: agentRow ?? defaultAgent,
+      listing: listingRow ?? defaultListing,
+      visitor: {
+        userId,
+        guestId,
+        ipHash: hashClientIp(ip),
+        requesterWhatsapp: whatsapp,
+      },
+      leadType,
+      sourcePage,
+      agentName,
+      agentWhatsapp: whatsapp,
+      agentPhone: phone,
+      title,
+      area,
+      city,
+      price,
+      paymentPeriod,
+      listingType,
+      bedrooms,
+      propertyType,
+    });
+
+    if (!pipeline.redirectUrl) {
+      throw new Error("empty_redirect");
+    }
+
     return NextResponse.json({
       ok: true,
       yikeReference,
-      redirectUrl: whatsAppDeepLink(wa, message),
-      gateway: false,
+      redirectUrl: pipeline.redirectUrl,
+      handoffUrl: pipeline.handoffUrl,
+      gateway: pipeline.gateway,
+      listingNotice,
+    });
+  } catch (err) {
+    console.error("[leads/track] pipeline error:", err);
+    const fb = buildSupportFallbackResult({
+      yikeReference,
+      listingId,
+      agentId,
+      title,
+      area,
+      city,
+      slug: listingRow?.slug,
+      price,
+      paymentPeriod,
+      listingType,
+      bedrooms,
+      propertyType,
+    });
+    return NextResponse.json({
+      ok: true,
+      yikeReference,
+      redirectUrl: fb.redirectUrl,
+      handoffUrl: fb.handoffUrl,
+      gateway: true,
+      fallback: true,
+      listingNotice,
     });
   }
-
-  const tel = phone || whatsapp;
-  if (!tel) {
-    return NextResponse.json({ error: "No phone number" }, { status: 400 });
-  }
-
-  return NextResponse.json({
-    ok: true,
-    yikeReference,
-    redirectUrl: `tel:${formatPhoneForTel(tel)}`,
-  });
 }

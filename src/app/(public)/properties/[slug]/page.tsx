@@ -11,6 +11,7 @@ import {
   isVerifiedAgent,
 } from "@/lib/utils";
 import { propertyAbsoluteUrl } from "@/lib/property-url";
+import { optimizeListingImageUrl } from "@/lib/image-url";
 import { AgentTrustCard } from "@/components/property/agent-trust-card";
 import { ReportListingForm } from "@/components/property/report-form";
 import { ReportRentedButton } from "@/components/property/report-rented-button";
@@ -23,14 +24,16 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { RentTransparencyCard } from "@/components/property/rent-transparency-card";
 import { AmenityChips } from "@/components/property/amenity-chips";
 import { ListingStructuredData } from "@/components/seo/listing-structured-data";
-import { VerifiedBadge } from "@/components/ui/badge";
+import { getSession } from "@/lib/auth";
+import { isFeaturedActive } from "@/lib/agent-tiers";
 import { ListingFreshness } from "@/components/property/listing-freshness";
 import { BedDouble, Bath, MapPin, Navigation } from "lucide-react";
 import { PropertyViewTracker } from "./view-tracker";
 import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
 import { ListingUnavailable } from "@/components/property/listing-unavailable";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
-import { optimizeListingImageUrl } from "@/lib/image-url";
+import { VerifiedBadge, YikeVerifiedBadge } from "@/components/ui/badge";
+import { RequestVerificationCard } from "@/components/property/request-verification-card";
 
 export async function generateMetadata({
   params,
@@ -102,12 +105,14 @@ export default async function PropertyDetailPage({
   }
 
   const agent = property.agent;
+  const sessionUser = await getSession();
   const admin = createAdminClient();
   const recentLeads =
     agent && admin ? await getAgentRecentLeadsCount(admin, agent.id) : 0;
   const verified =
     property.is_verified_listing ||
     (agent ? isVerifiedAgent(agent) : false);
+  const featuredActive = isFeaturedActive(property);
   const images =
     property.media_urls.length > 0
       ? property.media_urls
@@ -139,7 +144,8 @@ export default async function PropertyDetailPage({
           <ListingGallery
             images={images}
             title={property.title}
-            featured={property.is_featured}
+            featured={featuredActive}
+            yikeVerified={!!property.yike_verified}
             verified={!!verified}
             shareUrl={shareUrl}
             imageSeo={property}
@@ -168,13 +174,19 @@ export default async function PropertyDetailPage({
                 {price}
               </p>
               {verified && (
-                <div className="mt-3">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <VerifiedBadge />
+                </div>
+              )}
+              {property.yike_verified && (
+                <div className="mt-2">
+                  <YikeVerifiedBadge />
                 </div>
               )}
               <ListingFreshness
                 updatedAt={property.updated_at}
                 createdAt={property.created_at}
+                lastRefreshedAt={property.last_refreshed_at}
                 viewsCount={property.views_count}
                 verified={!!verified}
                 contactClicks={property.contact_clicks}
@@ -200,6 +212,13 @@ export default async function PropertyDetailPage({
             )}
 
             <RentTransparencyCard property={property} />
+
+            <RequestVerificationCard
+              listingId={property.id}
+              listingTitle={property.title}
+              loginNext={propertyAbsoluteUrl(property)}
+              className="lg:mt-2"
+            />
 
             <div className="flex flex-wrap gap-2">
               {property.bedrooms > 0 && (

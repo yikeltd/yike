@@ -3,6 +3,7 @@ import { sendAgentVerificationSubmittedEmail } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encryptSensitive } from "@/lib/encryption";
+import { isPhoneVerificationRequired } from "@/lib/feature-flags";
 import { validateNinFormat } from "@/lib/verification/nin-provider";
 
 export const runtime = "nodejs";
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!profile?.phone_verified) {
+  if (isPhoneVerificationRequired() && !profile?.phone_verified) {
     return NextResponse.json({ error: "Verify your phone first" }, { status: 400 });
   }
   if (!user.email_confirmed_at && !profile.email_verified) {

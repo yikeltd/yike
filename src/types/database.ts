@@ -35,6 +35,43 @@ export type ReviewPublishingMode = "manual_review" | "auto_publish";
 export type StaffStatus = "active" | "disabled";
 
 export type SponsoredStatus = "none" | "sponsored" | "boosted";
+export type FeaturedTier = "basic" | "premium" | "launch" | "developer";
+export type YikeVerificationLevel =
+  | "basic"
+  | "physical"
+  | "document_review"
+  | "developer_partner";
+export type InspectionRequestStatus =
+  | "pending"
+  | "contacted"
+  | "assigned"
+  | "scheduled"
+  | "completed"
+  | "rejected"
+  | "cancelled";
+export type InspectionPaymentStatus =
+  | "not_requested"
+  | "requested"
+  | "paid"
+  | "waived"
+  | "refunded";
+export type LeadDealStatus =
+  | "new"
+  | "contacted"
+  | "qualified"
+  | "inspection_requested"
+  | "negotiation"
+  | "closed_won"
+  | "closed_lost"
+  | "spam";
+export type TransactionStage =
+  | "inquiry"
+  | "inspection"
+  | "offer"
+  | "due_diligence"
+  | "agreement"
+  | "payment"
+  | "closed";
 export type VerificationStatus =
   | "not_started"
   | "pending"
@@ -48,10 +85,61 @@ export type ListingType = "rent" | "lease" | "sale" | "shortlet";
 export type PropertyStatus =
   | "pending"
   | "approved"
+  | "flagged"
   | "rejected"
   | "rented"
   | "hidden"
   | "archived";
+
+export type ListingActivityStatus = "active" | "stale" | "inactive" | "archived";
+
+export type InquiryStatus =
+  | "new"
+  | "responded"
+  | "resolved"
+  | "ignored"
+  | "spam";
+
+export type AccountType = "individual" | "agency" | "developer" | "landlord";
+
+export type ListingAvailabilityStatus =
+  | "available"
+  | "reserved"
+  | "rented"
+  | "sold"
+  | "unavailable"
+  | "hidden"
+  | "under_review";
+
+export type AgentAvailabilityStatus =
+  | "active"
+  | "offline"
+  | "unavailable"
+  | "suspended";
+
+export type AgentVerificationLevel =
+  | "basic"
+  | "identity_verified"
+  | "business_verified"
+  | "yike_verified"
+  | "yike_partner"
+  | "premium_partner";
+
+export type ImageQualityFlag =
+  | "few_images"
+  | "low_resolution_hint"
+  | "duplicate_url"
+  | "watermark_hint"
+  | "suspicious_pattern";
+
+export type FunnelEventType =
+  | "whatsapp_button_clicked"
+  | "whatsapp_opened"
+  | "lead_created"
+  | "handoff_shared"
+  | "direct_whatsapp_used"
+  | "direct_call_used"
+  | "call_button_clicked";
 export type PaymentPeriod = "yearly" | "monthly" | "weekly" | "daily" | "total";
 
 /** Nigerian rent transparency + amenities — stored as JSONB */
@@ -101,6 +189,7 @@ export interface Profile {
   email_verified: boolean;
   whatsapp: string | null;
   avatar_url: string | null;
+  pin_hash?: string | null;
   role: UserRole;
   verification_status: VerificationStatus;
   agent_type: "independent" | "agency" | "landlord" | null;
@@ -111,12 +200,47 @@ export interface Profile {
   is_banned: boolean;
   plan: "free" | "pro" | "agency";
   plan_expires_at: string | null;
+  availability_status?: AgentAvailabilityStatus;
+  availability_updated_at?: string | null;
+  is_verified_agent?: boolean;
+  verified_agent_at?: string | null;
+  verified_agent_by?: string | null;
+  verification_level?: AgentVerificationLevel | null;
+  inquiry_count?: number;
+  avg_response_time_minutes?: number | null;
+  response_rate?: number | null;
+  successful_handoffs?: number;
+  complaint_count?: number;
+  spam_lead_ratio?: number | null;
+  stale_listing_ratio?: number | null;
+  performance_score?: number | null;
+  last_activity_at?: string | null;
+  routing_mode?: "yike_concierge" | "direct_whatsapp" | "hybrid";
+  allow_direct_whatsapp?: boolean;
+  direct_whatsapp_enabled_at?: string | null;
+  direct_whatsapp_enabled_by?: string | null;
+  direct_whatsapp_disabled_reason?: string | null;
+  billing_mode?: "free" | "pay_per_lead" | "subscription" | "manual_invoice" | "waived";
+  default_lead_price?: number | null;
+  premium_lead_price?: number | null;
+  lead_billing_enabled?: boolean;
+  direct_routing_health_status?: "healthy" | "warning" | "disabled";
   admin_pin_hash?: string | null;
   last_login_at?: string | null;
   profile_status?: AgentProfileStatus;
   profile_status_reason?: string | null;
   suspended_at?: string | null;
   deleted_at?: string | null;
+  public_slug?: string | null;
+  account_type?: AccountType;
+  developer_verified?: boolean;
+  agency_verified?: boolean;
+  company_name?: string | null;
+  estate_project_name?: string | null;
+  is_responsive?: boolean;
+  reputation_score?: number | null;
+  complaint_score?: number | null;
+  public_agent_code?: string | null;
   created_at: string;
 }
 
@@ -225,8 +349,22 @@ export interface Property {
   media_items?: PropertyMediaItem[] | null;
   video_url: string | null;
   status: PropertyStatus;
+  availability_status?: ListingAvailabilityStatus;
+  availability_updated_at?: string | null;
   is_featured: boolean;
   featured_until: string | null;
+  featured_tier?: FeaturedTier | null;
+  featured_reason?: string | null;
+  featured_by?: string | null;
+  featured_created_at?: string | null;
+  yike_verified?: boolean;
+  yike_verified_at?: string | null;
+  yike_verified_by?: string | null;
+  yike_verification_level?: YikeVerificationLevel | null;
+  is_premium_deal?: boolean;
+  developer_partner_id?: string | null;
+  expected_commission_rate?: number | null;
+  closing_tracking_enabled?: boolean;
   is_boosted: boolean;
   boosted_until: string | null;
   boost_score: number;
@@ -235,10 +373,54 @@ export interface Property {
   views_count: number;
   contact_clicks: number;
   expires_at: string;
+  last_refreshed_at?: string | null;
+  stale_score?: number;
+  freshness_score?: number | null;
+  stale_at?: string | null;
+  auto_expire_at?: string | null;
+  auto_archive_at?: string | null;
+  listing_activity_status?: ListingActivityStatus;
+  confidence_score?: number | null;
+  image_quality_score?: number | null;
+  image_quality_flags?: ImageQualityFlag[];
+  inspection_available?: boolean;
+  inspection_requested_count?: number;
+  yike_inspection_eligible?: boolean;
+  hot_listing?: boolean;
+  possible_duplicate?: boolean;
+  duplicate_group_id?: string | null;
+  duplicate_confidence_score?: number | null;
+  listing_health_score?: number | null;
+  listing_quality_flags?: string[];
+  moderation_note?: string | null;
+  public_listing_code?: string | null;
   created_at: string;
   updated_at: string;
   extras?: ListingExtras | null;
   agent?: Profile | null;
+}
+
+export interface InspectionRequest {
+  id: string;
+  listing_id: string;
+  user_id: string | null;
+  requester_name: string | null;
+  requester_email: string | null;
+  requester_phone: string | null;
+  requester_whatsapp: string | null;
+  status: InspectionRequestStatus;
+  priority: "low" | "normal" | "high" | "urgent";
+  assigned_to: string | null;
+  inspection_fee_amount: number | null;
+  payment_status: InspectionPaymentStatus;
+  scheduled_at: string | null;
+  completed_at: string | null;
+  admin_notes: string | null;
+  user_note: string | null;
+  scout_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  listing?: Pick<Property, "id" | "title" | "city" | "area" | "slug"> | null;
 }
 
 export interface ListingReport {

@@ -14,7 +14,10 @@ export default async function AdminListingEditPage({
   const { data } = await supabase
     .from("properties")
     .select(
-      `*, agent:profiles!properties_agent_id_fkey (id, full_name, email, phone, role, verification_status, listing_limit)`
+      `*, agent:profiles!properties_agent_id_fkey (
+        id, full_name, email, phone, whatsapp, role, verification_status, listing_limit,
+        public_agent_code, public_slug
+      )`
     )
     .eq("id", id)
     .single();

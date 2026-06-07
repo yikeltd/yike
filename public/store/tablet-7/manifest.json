@@ -1,0 +1,42 @@
+[
+  {
+    "file": "01-home-hero-featured.png",
+    "caption": "Discover verified homes",
+    "path": "/",
+    "width": 1200,
+    "height": 1920,
+    "sizeMb": 1.54
+  },
+  {
+    "file": "02-swipe-experience.png",
+    "caption": "Swipe through beautiful properties",
+    "path": "/browse",
+    "width": 1200,
+    "height": 1920,
+    "sizeMb": 1.9
+  },
+  {
+    "file": "03-search-results.png",
+    "caption": "Search smarter across Nigeria",
+    "path": "/search?city=Aba",
+    "width": 1200,
+    "height": 1920,
+    "sizeMb": 1.23
+  },
+  {
+    "file": "04-property-detail.png",
+    "caption": "Full listing details you can trust",
+    "path": "/properties/2-bedroom-flat-for-rent-ogbor-hill-aba",
+    "width": 1200,
+    "height": 1920,
+    "sizeMb": 1.52
+  },
+  {
+    "file": "05-saved-listings.png",
+    "caption": "Save properties you love",
+    "path": "/saved",
+    "width": 1200,
+    "height": 1920,
+    "sizeMb": 1.31
+  }
+]

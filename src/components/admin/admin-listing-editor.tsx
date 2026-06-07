@@ -12,6 +12,7 @@ import { propertyPath } from "@/lib/property-url";
 import { formatPrice } from "@/lib/utils";
 import { normalizePropertyMedia } from "@/lib/media/items";
 import { ListingActions } from "@/components/admin/listing-actions";
+import { ListingLeadRoutingBox } from "@/components/admin/listing-lead-routing-box";
 
 type ListingRow = Property & { agent?: Profile | null };
 
@@ -36,6 +37,12 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
     status: listing.status,
     is_featured: listing.is_featured,
     is_verified_listing: listing.is_verified_listing,
+    is_premium_deal: listing.is_premium_deal ?? false,
+    closing_tracking_enabled: listing.closing_tracking_enabled ?? false,
+    expected_commission_rate:
+      listing.expected_commission_rate != null
+        ? String(listing.expected_commission_rate)
+        : "",
     agent_id: listing.agent_id,
   });
   const [mediaItems, setMediaItems] = useState<PropertyMediaItem[]>(
@@ -68,6 +75,11 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
         status: form.status,
         is_featured: form.is_featured,
         is_verified_listing: form.is_verified_listing,
+        is_premium_deal: form.is_premium_deal,
+        closing_tracking_enabled: form.closing_tracking_enabled,
+        expected_commission_rate: form.expected_commission_rate
+          ? Number(form.expected_commission_rate)
+          : null,
         agent_id: form.agent_id,
         ...extra,
       }),
@@ -138,6 +150,17 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
   return (
     <div className="space-y-8 pb-12">
       {pinModal}
+      <ListingLeadRoutingBox
+        listingId={listing.id}
+        listingTitle={listing.title}
+        listingSlug={listing.slug}
+        publicListingCode={listing.public_listing_code}
+        agentName={listing.agent?.full_name}
+        publicAgentCode={listing.agent?.public_agent_code}
+        agentWhatsapp={listing.agent?.whatsapp}
+        agentPhone={listing.agent?.phone}
+      />
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-muted">
@@ -316,6 +339,43 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
               }
             />
             Verified listing
+          </label>
+        </div>
+
+        <div className="rounded-xl border border-dashed border-navy/15 bg-surface/50 p-4 space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted">
+            Internal — premium deal tracking
+          </p>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.is_premium_deal}
+              onChange={(e) =>
+                setForm({ ...form, is_premium_deal: e.target.checked })
+              }
+            />
+            Premium deal
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.closing_tracking_enabled}
+              onChange={(e) =>
+                setForm({ ...form, closing_tracking_enabled: e.target.checked })
+              }
+            />
+            Enable closing tracking
+          </label>
+          <label className="block text-sm">
+            <span className="font-semibold text-navy">Expected commission rate (0–1)</span>
+            <Input
+              value={form.expected_commission_rate}
+              onChange={(e) =>
+                setForm({ ...form, expected_commission_rate: e.target.value })
+              }
+              placeholder="e.g. 0.02 for 2%"
+              className="mt-1"
+            />
           </label>
         </div>
 

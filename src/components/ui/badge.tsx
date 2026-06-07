@@ -1,7 +1,109 @@
+"use client";
+
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { BadgeCheck, Shield, Star, Sparkles } from "lucide-react";
+import { BadgeCheck, Shield, ShieldCheck, Star, Sparkles } from "lucide-react";
+
+const VERIFIED_TIP = "Verified identity or business information.";
+
+function VerifiedTip({ open }: { open: boolean }) {
+  return (
+    <span
+      role="tooltip"
+      className={cn(
+        "pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-navy px-2.5 py-1.5 text-[10px] font-medium leading-snug text-white shadow-lg",
+        open ? "block" : "hidden md:group-hover:block"
+      )}
+    >
+      {VERIFIED_TIP}
+    </span>
+  );
+}
 
 export function VerifiedBadge({
+  className,
+  size = "md",
+}: {
+  className?: string;
+  size?: "sm" | "md";
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full bg-gold font-bold text-navy shadow-glow-gold",
+          size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+          className
+        )}
+        aria-label={`Verified. ${VERIFIED_TIP}`}
+      >
+        <BadgeCheck className={cn(size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} strokeWidth={2.5} />
+        Verified
+      </button>
+      <VerifiedTip open={open} />
+    </span>
+  );
+}
+
+export function FeaturedBadge({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/15 px-2 py-0.5 text-[10px] font-bold text-navy backdrop-blur-sm",
+        className
+      )}
+    >
+      <Star className="h-3 w-3 fill-gold text-gold" />
+      Featured
+    </span>
+  );
+}
+
+export function YikeVerifiedBadge({
+  className,
+  size = "md",
+}: {
+  className?: string;
+  size?: "sm" | "md";
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full border border-gold/50 bg-navy/90 font-bold text-gold backdrop-blur-sm",
+          size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+          className
+        )}
+        aria-label={`Yike Verified. ${VERIFIED_TIP}`}
+      >
+        <ShieldCheck
+          className={cn(size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")}
+          strokeWidth={2.5}
+        />
+        Yike Verified
+      </button>
+      <VerifiedTip open={open} />
+    </span>
+  );
+}
+
+export function ResponsiveBadge({
   className,
   size = "md",
 }: {
@@ -11,27 +113,39 @@ export function VerifiedBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full bg-gold font-bold text-navy shadow-glow-gold",
+        "inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-800 dark:text-emerald-300",
         size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
         className
       )}
     >
-      <BadgeCheck className={cn(size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} strokeWidth={2.5} />
-      Verified
+      <Sparkles className={cn(size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} />
+      Responsive
     </span>
   );
 }
 
-export function FeaturedBadge({ className }: { className?: string }) {
+export function DeveloperBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full bg-navy/90 px-2 py-0.5 text-[10px] font-bold text-gold backdrop-blur-sm",
+        "inline-flex items-center gap-1 rounded-full border border-navy/20 bg-navy/5 px-2 py-0.5 text-[10px] font-semibold text-navy dark:text-white",
         className
       )}
     >
-      <Star className="h-3 w-3 fill-gold" />
-      Featured
+      Developer
+    </span>
+  );
+}
+
+export function AgencyBadge({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-navy/20 bg-navy/5 px-2 py-0.5 text-[10px] font-semibold text-navy dark:text-white",
+        className
+      )}
+    >
+      Agency
     </span>
   );
 }

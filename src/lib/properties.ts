@@ -12,7 +12,8 @@ import {
 } from "@/lib/mock-listings";
 import { mergeQueryIntoParams } from "@/lib/location-search";
 import { propertyTypeLabel } from "@/lib/utils";
-import { sortPropertiesByMarketRank } from "@/lib/agent-tiers";
+import { sortPropertiesByMarketRank, isFeaturedActive } from "@/lib/agent-tiers";
+import { isListingDiscoverable } from "@/lib/leads/availability";
 import { isUuidParam, buildPropertySlugBase } from "@/lib/property-slugs";
 
 import type { DiscoverHub } from "@/types/database";
@@ -27,7 +28,9 @@ const PUBLIC_SELECT = `
   agent:profiles!properties_agent_id_fkey (
     id, full_name, phone, whatsapp, avatar_url,
     verification_status, agent_type, role,
-    verified_badge, ranking_score, listing_limit
+    verified_badge, ranking_score, listing_limit,
+    availability_status, performance_score, last_activity_at,
+    is_verified_agent, verification_level, is_responsive, response_rate
   )
 `;
 
@@ -73,6 +76,10 @@ export async function getPublicProperties(
 
   const { data } = await query;
   let rows = (data ?? []) as Property[];
+  rows = rows.filter((p) => isListingDiscoverable(p));
+  if (params.featured) {
+    rows = rows.filter((p) => isFeaturedActive(p));
+  }
   if (merged.verified_only) {
     rows = rows.filter((p) => isTrustVerified(p));
   }

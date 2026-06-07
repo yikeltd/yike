@@ -1,7 +1,7 @@
 import { notifyActivityChanged } from "@/lib/activity-events";
 
 const KEY = "yike_recently_viewed";
-const MAX = 12;
+const MAX = 20;
 
 export type RecentlyViewedItem = {
   id: string;

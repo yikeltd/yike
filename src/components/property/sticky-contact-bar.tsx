@@ -32,7 +32,7 @@ export function StickyContactBar({
   phone?: string | null;
   whatsapp?: string | null;
 }) {
-  if (!phone && !whatsapp) return null;
+  if (!agentId) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-lg px-3 lg:hidden">

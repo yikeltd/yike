@@ -5,6 +5,7 @@ import {
   AdminPageHeader,
   MetricCard,
 } from "@/components/admin/dashboard/admin-ui";
+import { LeadSummaryPanel } from "@/components/admin/lead-summary-panel";
 
 export default async function SupportDashboardPage() {
   const supabase = await requireServerClient();
@@ -32,6 +33,8 @@ export default async function SupportDashboardPage() {
         title="Support dashboard"
         description="Open tickets, reports, and customer messages"
       />
+
+      <LeadSummaryPanel />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard

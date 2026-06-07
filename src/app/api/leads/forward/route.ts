@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
-import { buildAgentHandoffMessage } from "@/lib/leads/message";
+import {
+  buildAgentHandoffUrl,
+  buildAgentHandoffMessage,
+  listingPublicUrl,
+} from "@/lib/leads/whatsapp-urls";
 import { getHandoffByReference, markLeadForwarded } from "@/lib/leads/handoff";
-import { whatsAppDeepLink } from "@/lib/whatsapp";
+import { logLeadEvent } from "@/lib/leads/events";
+import { logFunnelEvent } from "@/lib/analytics/whatsapp-funnel";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -17,28 +23,83 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Lead not found" }, { status: 404 });
   }
 
-  const wa = handoff.agentWhatsapp || handoff.agentPhone;
-  if (!wa) {
-    return NextResponse.json({ error: "No agent WhatsApp" }, { status: 400 });
-  }
+  const listingUrl =
+    handoff.listingUrl ??
+    listingPublicUrl(handoff.listingSlug, handoff.listingId);
+  const publicListingCode =
+    handoff.publicListingCode ?? yikeReference;
+
+  const redirectUrl =
+    handoff.agentHandoffUrl ??
+    buildAgentHandoffUrl({
+      agentWhatsapp: handoff.agentWhatsapp,
+      agentPhone: handoff.agentPhone,
+      agentName: handoff.agentName,
+      listingTitle: handoff.title,
+      publicListingCode,
+      listingUrl,
+    });
 
   await markLeadForwarded(yikeReference);
-
-  const message = buildAgentHandoffMessage({
-    agentName: handoff.agentName,
-    price: handoff.price,
-    paymentPeriod: handoff.paymentPeriod,
-    listingType: handoff.listingType,
-    propertyTitle: handoff.title,
-    area: handoff.area,
-    city: handoff.city,
-    bedrooms: handoff.bedrooms ?? undefined,
-    propertyType: handoff.propertyType,
-    yikeReference,
+  void logLeadEvent({
+    leadId: handoff.leadId,
+    type: "user_opened_whatsapp",
+    metadata: { channel: "agent_forward" },
   });
+  void logLeadEvent({
+    leadId: handoff.leadId,
+    type: "handoff_shared",
+    metadata: { channel: "agent_forward" },
+  });
+  logFunnelEvent({
+    eventType: "handoff_shared",
+    listingId: handoff.listingId,
+    agentId: handoff.agentId,
+    leadId: handoff.leadId,
+    metadata: { channel: "agent_forward" },
+  });
+  logFunnelEvent({
+    eventType: "whatsapp_opened",
+    listingId: handoff.listingId,
+    agentId: handoff.agentId,
+    leadId: handoff.leadId,
+    metadata: { channel: "agent_forward" },
+  });
+
+  const admin = createAdminClient();
+  if (admin) {
+    const { data: agentRow } = await admin
+      .from("profiles")
+      .select("successful_handoffs")
+      .eq("id", handoff.agentId)
+      .maybeSingle();
+    if (agentRow) {
+      await admin
+        .from("profiles")
+        .update({
+          successful_handoffs: (agentRow.successful_handoffs ?? 0) + 1,
+          last_activity_at: new Date().toISOString(),
+        })
+        .eq("id", handoff.agentId);
+    }
+    await admin
+      .from("leads")
+      .update({
+        concierge_status: "handoff_shared",
+        handoff_shared_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", handoff.leadId);
+  }
 
   return NextResponse.json({
     ok: true,
-    redirectUrl: whatsAppDeepLink(wa, message),
+    redirectUrl,
+    prefilledMessage: buildAgentHandoffMessage({
+      agentName: handoff.agentName,
+      listingTitle: handoff.title,
+      publicListingCode,
+      listingUrl,
+    }),
   });
 }

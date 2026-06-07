@@ -1,5 +1,10 @@
 import type { OtpChannel, ProviderResult } from "../types";
 import {
+  auditSendchampEnv,
+  looksLikeSupabaseKey,
+  resolveSmsSender,
+} from "./sendchamp-keys";
+import {
   isSendchampSuccess,
   pickSendchampReference,
   sendchampErrorMessage,
@@ -25,7 +30,10 @@ function getSendchampApiKeys(): string[] {
   const keys = [
     process.env.SENDCHAMP_PUBLIC_KEY?.trim(),
     process.env.SENDCHAMP_API_KEY?.trim(),
-  ].filter((key): key is string => Boolean(key));
+  ].filter((key): key is string => {
+    if (!key) return false;
+    return !looksLikeSupabaseKey(key);
+  });
   return [...new Set(keys)];
 }
 
@@ -46,7 +54,7 @@ function getConfig(): SendchampConfig | null {
   const apiKeys = getSendchampApiKeys();
   if (apiKeys.length === 0) return null;
 
-  const smsSender = process.env.SENDCHAMP_SMS_SENDER?.trim() || "Yike";
+  const smsSender = resolveSmsSender(process.env.SENDCHAMP_SMS_SENDER);
   const whatsappSender =
     resolveWhatsAppSender(process.env.SENDCHAMP_WHATSAPP_SENDER?.trim()) || "";
 
@@ -61,16 +69,28 @@ export function getSendchampConfigSummary() {
       configured: false as const,
       baseUrlConfigured: Boolean(process.env.SENDCHAMP_LIVE_BASE_URL?.trim()),
       publicKeyConfigured: Boolean(process.env.SENDCHAMP_PUBLIC_KEY?.trim()),
+      supabaseKeyRejected: [
+        process.env.SENDCHAMP_PUBLIC_KEY,
+        process.env.SENDCHAMP_API_KEY,
+      ].some((key) => key?.trim() && looksLikeSupabaseKey(key.trim())),
+      envWarnings: auditSendchampEnv(),
     };
   }
+  const envWarnings = auditSendchampEnv();
   return {
     configured: true as const,
     baseUrlConfigured: Boolean(baseUrl),
     publicKeyConfigured: Boolean(process.env.SENDCHAMP_PUBLIC_KEY?.trim()),
     smsSender: config.smsSender,
+    smsSenderRaw: process.env.SENDCHAMP_SMS_SENDER?.trim() || null,
     whatsappSender: config.whatsappSender || null,
     smsSenderConfigured: Boolean(config.smsSender),
     whatsappSenderConfigured: Boolean(config.whatsappSender),
+    envWarnings,
+    supabaseKeyRejected: [
+      process.env.SENDCHAMP_PUBLIC_KEY,
+      process.env.SENDCHAMP_API_KEY,
+    ].some((key) => key?.trim() && looksLikeSupabaseKey(key.trim())),
   };
 }
 
@@ -116,10 +136,11 @@ async function sendchampPost<T extends Record<string, unknown>>(
         );
         break;
       } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
         lastError =
-          err instanceof Error && err.name === "TimeoutError"
+          err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")
             ? "Sendchamp request timed out"
-            : "Sendchamp network error";
+            : `Sendchamp network error: ${detail.slice(0, 120)}`;
         console.error("[sendchamp]", path, lastError, `attempt ${attempt + 1}`);
         if (attempt + 1 < FETCH_RETRIES) continue;
       }
@@ -141,8 +162,8 @@ export function isSendchampConfigured(): boolean {
   return getSendchampApiKeys().length > 0;
 }
 
-/** Sendchamp expects uppercase channel + token_type per API docs. */
-type VerificationChannel = "SMS" | "WHATSAPP";
+/** Sendchamp verification API accepts SMS/WHATSAPP or lowercase variants. */
+type VerificationChannel = "SMS" | "WHATSAPP" | "sms" | "whatsapp";
 
 async function sendVerificationOtp(
   channel: VerificationChannel,
@@ -231,8 +252,10 @@ export async function sendOtpSms(
     if (direct.ok) return direct;
   }
 
-  const verification = await sendVerificationOtp("SMS", config.smsSender, mobile, code);
-  if (verification.ok) return verification;
+  for (const channel of ["SMS", "sms"] as const) {
+    const verification = await sendVerificationOtp(channel, config.smsSender, mobile, code);
+    if (verification.ok) return verification;
+  }
 
   return { ok: false, error: "SMS delivery failed" };
 }
@@ -245,6 +268,7 @@ export async function sendOtpWhatsApp(
   if (!config) return { ok: false, error: "Sendchamp not configured" };
 
   const mobile = toSendchampPhone(phone);
+  const message = `Your Yike verification code is ${code}. Valid for 10 minutes. Do not share this code.`;
 
   if (!config.whatsappSender) {
     return { ok: false, error: "WhatsApp sender not configured" };
@@ -257,19 +281,11 @@ export async function sendOtpWhatsApp(
     };
   }
 
-  const verification = await sendVerificationOtp(
-    "WHATSAPP",
-    config.whatsappSender,
-    mobile,
-    code
-  );
-  if (verification.ok) return verification;
+  // Direct WhatsApp text is more reliable than /verification/create (often times out).
+  const text = await sendWhatsAppText(phone, message, config.whatsappSender);
+  if (text.ok) return text;
 
-  return sendWhatsAppText(
-    phone,
-    `Your Yike verification code is ${code}. Valid for 10 minutes. Do not share this code.`,
-    config.whatsappSender
-  );
+  return sendVerificationOtp("WHATSAPP", config.whatsappSender, mobile, code);
 }
 
 export async function deliverOtp(

@@ -11,6 +11,10 @@ import { createOtpDbClient, otpFindVerified } from "@/lib/otp/rpc";
 import { normalizeNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
 import { passwordPolicyError } from "@/lib/password-policy";
+import {
+  isEmailOtpEnabled,
+  isPhoneOtpEnabled,
+} from "@/lib/feature-flags";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { validateMathChallenge } from "@/lib/signup-math-challenge";
 import { createVerifiedAdminClient } from "@/lib/supabase/admin";
@@ -30,17 +34,25 @@ export async function POST(request: Request) {
   const fullName = String(body.fullName ?? "").trim();
   const username = String(body.username ?? "").trim().toLowerCase();
   const email = String(body.email ?? "").trim().toLowerCase();
-  const phone = normalizeNigerianPhone(String(body.phone ?? ""));
+  const phoneRaw = String(body.phone ?? "").trim();
+  const phone = phoneRaw ? normalizeNigerianPhone(phoneRaw) : "";
   const password = String(body.password ?? "");
   const confirmPassword = String(body.confirmPassword ?? "");
   const pin = String(body.pin ?? "");
-  const phoneVerificationToken = String(body.phoneVerificationToken ?? "");
+  const phoneVerificationToken = String(body.phoneVerificationToken ?? "").trim();
   const mathA = Number(body.mathA);
   const mathB = Number(body.mathB);
   const mathAnswer = Number(body.mathAnswer);
 
-  if (!fullName || !username || !email || !phone || !password || !pin) {
-    return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+  if (!fullName || !username || !email || !password || !pin) {
+    return NextResponse.json({ error: "All required fields must be filled in" }, { status: 400 });
+  }
+
+  if (!isEmailOtpEnabled()) {
+    return NextResponse.json(
+      { error: "Email sign-up is temporarily unavailable" },
+      { status: 503 }
+    );
   }
 
   if (!validateMathChallenge(mathA, mathB, mathAnswer)) {
@@ -69,8 +81,12 @@ export async function POST(request: Request) {
 
   const otpDb = createOtpDbClient();
   const reviewerBypass = isReviewerAccountEmail(email);
+  const phoneOtpRequired = isPhoneOtpEnabled() && !reviewerBypass;
 
-  if (!reviewerBypass) {
+  if (phoneOtpRequired) {
+    if (!phone) {
+      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
+    }
     const otpRow = otpDb
       ? await otpFindVerified(otpDb, phone, phoneVerificationToken)
       : null;
@@ -128,7 +144,7 @@ export async function POST(request: Request) {
     pinHash,
     phone,
     fullName,
-    phoneVerified: true,
+    phoneVerified: reviewerBypass || phoneOtpRequired,
   });
 
   if (!profileOk) {

@@ -15,6 +15,7 @@ import {
 } from "@/lib/admin/roles";
 import type { Profile, UserRole } from "@/types/database";
 import { canListProperties } from "@/lib/agent-tiers";
+import { isPhoneVerificationRequired } from "@/lib/feature-flags";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 
@@ -75,7 +76,7 @@ export async function requireAgentLister(redirectTo = "/agent/become") {
   const profile = await getProfile(user.id);
   if (!profile || profile.is_banned) redirect("/");
 
-  if (!profile.phone_verified) {
+  if (isPhoneVerificationRequired() && !profile.phone_verified) {
     redirect("/auth/verify-phone?next=/agent/become");
   }
   if (!isEmailVerified(user, profile)) {

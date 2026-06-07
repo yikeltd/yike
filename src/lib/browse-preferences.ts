@@ -3,6 +3,7 @@ import { parseSmartSearchQuery } from "@/lib/smart-search";
 import { propertyMarketRank } from "@/lib/agent-tiers";
 import { syncSearchPrefCookies } from "@/lib/search-pref-cookies";
 import { notifyActivityChanged } from "@/lib/activity-events";
+import { isListingDiscoverable } from "@/lib/leads/availability";
 import {
   swipeQualityBoost,
   swipeQualityPenalty,
@@ -263,17 +264,18 @@ export function filterPropertiesForBrowse(
   properties: Property[],
   prefs: BrowsePreferences
 ): Property[] {
+  const available = properties.filter((p) => isListingDiscoverable(p));
   const hasStrongPrefs =
     prefs.cities.length > 0 ||
     prefs.areas.length > 0 ||
     prefs.propertyTypes.length > 0;
 
-  if (!hasStrongPrefs) return properties;
+  if (!hasStrongPrefs) return available;
 
-  const filtered = properties.filter((p) => matchesBrowsePrefs(p, prefs));
+  const filtered = available.filter((p) => matchesBrowsePrefs(p, prefs));
 
   if (prefs.cities.length > 0) {
-    return filtered.length > 0 ? filtered : properties;
+    return filtered.length > 0 ? filtered : available;
   }
 
   return filtered.length >= 3 ? filtered : properties;

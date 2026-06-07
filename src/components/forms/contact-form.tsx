@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { MessageCircle, Mail, MapPin } from "lucide-react";
-import { FollowYike } from "@/components/social/follow-yike";
 import { YIKE_SUPPORT_WHATSAPP } from "@/lib/constants";
 import { whatsAppDeepLink } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,25 @@ import {
   HumanVerifyField,
   readHumanVerifyFromForm,
 } from "@/components/forms/human-verify-field";
+
+export function WhatsAppSupportCard() {
+  return (
+    <a
+      href={whatsAppDeepLink(YIKE_SUPPORT_WHATSAPP, "Hi Yike, I need support.")}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="pressable flex items-center gap-3 rounded-2xl bg-[#25D366]/10 p-4 text-sm font-semibold text-navy ring-1 ring-[#25D366]/20"
+    >
+      <MessageCircle className="h-5 w-5 shrink-0 text-[#25D366]" />
+      <div>
+        <p>WhatsApp support (business hours)</p>
+        <p className="mt-0.5 text-xs font-normal text-muted">
+          Fastest way to reach us — we aim to reply within a few hours.
+        </p>
+      </div>
+    </a>
+  );
+}
 
 export function ContactForm() {
   const [error, setError] = useState("");
@@ -100,15 +118,6 @@ export function ContactForm() {
 export function ContactSidebar() {
   return (
     <div className="space-y-4">
-      <a
-        href={whatsAppDeepLink(YIKE_SUPPORT_WHATSAPP, "Hi Yike, I need support.")}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="pressable flex items-center gap-3 rounded-2xl bg-[#25D366]/10 p-4 text-sm font-semibold text-navy"
-      >
-        <MessageCircle className="h-5 w-5 text-[#25D366]" />
-        WhatsApp support (business hours)
-      </a>
       <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-float">
         <Mail className="mt-0.5 h-5 w-5 text-gold-dark" />
         <div>
@@ -116,6 +125,7 @@ export function ContactSidebar() {
           <a href="mailto:hello@yike.ng" className="text-sm text-gold-dark">
             hello@yike.ng
           </a>
+          <p className="mt-1 text-xs text-muted">We aim to reply within a few hours.</p>
         </div>
       </div>
       <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-float">
@@ -123,12 +133,9 @@ export function ContactSidebar() {
         <div>
           <p className="text-sm font-bold text-navy">Office</p>
           <p className="text-sm text-muted">
-            Lagos, Nigeria — remote-first team serving all states
+            Nigeria — remote-first team serving all states
           </p>
         </div>
-      </div>
-      <div className="rounded-2xl bg-surface p-4">
-        <FollowYike variant="icons" />
       </div>
     </div>
   );

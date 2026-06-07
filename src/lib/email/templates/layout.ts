@@ -11,7 +11,7 @@ const WHITE = "#ffffff";
 
 const LOGO_URL = `${SITE_URL}${brand.logo}`;
 
-type EmailSocialKey = Exclude<keyof typeof SOCIAL_LINKS, "linkedin">;
+type EmailSocialKey = keyof typeof SOCIAL_LINKS;
 
 const SOCIAL_ORDER: EmailSocialKey[] = [
   "tiktok",

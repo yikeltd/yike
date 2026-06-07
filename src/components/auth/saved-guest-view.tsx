@@ -66,15 +66,22 @@ export function SavedGuestView() {
         <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/15">
           <Heart className="h-7 w-7 text-gold-dark dark:text-gold" />
         </span>
-        <h2 className="mt-4 text-lg font-bold">Save homes you love</h2>
+        <h2 className="mt-4 text-lg font-bold text-foreground">Save homes you love</h2>
         <p className="mt-2 max-w-xs text-sm text-muted">
-          Tap the heart on any listing. Sign in later to sync across devices.
+          Sign in to keep your favorite listings across devices.
         </p>
+        <Button
+          type="button"
+          className="mt-6 rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy hover:bg-gold/90"
+          onClick={() => openAuth({ type: "saved", redirectPath: "/saved" })}
+        >
+          Sign In
+        </Button>
         <Link
           href="/browse"
-          className="pressable mt-6 rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy"
+          className="mt-3 text-sm font-semibold text-gold-dark hover:underline dark:text-gold"
         >
-          Swipe homes
+          Browse Homes
         </Link>
       </div>
     );

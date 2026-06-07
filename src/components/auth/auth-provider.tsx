@@ -6,8 +6,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -16,8 +18,13 @@ import {
   type AuthIntent,
   AUTH_PUBLIC_INTENTS,
   AUTH_LOGIN_ONLY_INTENTS,
+  peekAuthIntent,
+  clearAuthIntent,
   saveAuthIntent,
 } from "@/lib/auth-intent";
+import { executeAuthIntent } from "@/lib/execute-auth-intent";
+import { saveQuickLoginUser } from "@/lib/auth/quick-login";
+import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { AuthModal } from "./auth-modal";
 
 interface AuthContextValue {
@@ -34,11 +41,13 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalIntent, setModalIntent] = useState<AuthIntent | undefined>();
+  const intentResumeRef = useRef<string | null>(null);
 
   const refreshAuth = useCallback(async () => {
     if (!isSupabaseConfigured()) {
@@ -58,7 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select("*")
         .eq("id", u.id)
         .single();
-      setProfile(data as Profile | null);
+      const p = data as Profile | null;
+      setProfile(p);
+      if (p && u.email) {
+        saveQuickLoginUser({
+          userId: p.id,
+          email: u.email,
+          fullName: p.full_name,
+          username: p.username,
+          avatarUrl: p.avatar_url,
+        });
+      }
     } else {
       setProfile(null);
     }
@@ -80,8 +99,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const emailVerified = useMemo(() => {
     if (!user) return false;
     if (user.email_confirmed_at) return true;
+    if (user.email && isReviewerAccountEmail(user.email)) return true;
     return profile?.email_verified === true;
   }, [user, profile]);
+
+  useEffect(() => {
+    if (loading || !user) return;
+    const pending = peekAuthIntent();
+    if (!pending) return;
+
+    const loginOnly = AUTH_LOGIN_ONLY_INTENTS.has(pending.type);
+    if (!emailVerified && !loginOnly) return;
+
+    const key = JSON.stringify(pending);
+    if (intentResumeRef.current === key) return;
+    intentResumeRef.current = key;
+
+    clearAuthIntent();
+    void executeAuthIntent(pending, router).then(() => router.refresh());
+  }, [loading, user, emailVerified, router]);
 
   const openAuth = useCallback((intent?: AuthIntent) => {
     if (intent) saveAuthIntent(intent);
@@ -101,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         onAuthorized();
         return;
       }
-      if (AUTH_LOGIN_ONLY_INTENTS.has(intent.type) && user) {
+      if (user && AUTH_LOGIN_ONLY_INTENTS.has(intent.type)) {
         onAuthorized();
         return;
       }

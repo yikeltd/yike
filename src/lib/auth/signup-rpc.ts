@@ -41,7 +41,7 @@ export async function completeSignupProfile(params: {
     p_pin_hash: params.pinHash,
     p_phone: params.phone,
     p_full_name: params.fullName,
-    p_phone_verified: params.phoneVerified ?? true,
+    p_phone_verified: params.phoneVerified ?? false,
   });
 
   if (error) {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BadgeCheck, ShieldCheck, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
+import { isPhoneOtpEnabledClient } from "@/lib/feature-flags";
 import type { Profile } from "@/types/database";
 
 export function BecomeAgentCard({
@@ -34,7 +35,8 @@ export function BecomeAgentCard({
     router.refresh();
   }
 
-  const ready = phoneVerified && emailVerified;
+  const phoneRequired = isPhoneOtpEnabledClient();
+  const ready = emailVerified && (!phoneRequired || phoneVerified);
 
   return (
     <div className="space-y-6">
@@ -76,7 +78,7 @@ export function BecomeAgentCard({
         </li>
       </ul>
 
-      {!phoneVerified && (
+      {phoneRequired && !phoneVerified && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Verify your phone first.{" "}
           <a href="/auth/verify-phone?next=/agent/become" className="font-semibold underline">
@@ -84,7 +86,7 @@ export function BecomeAgentCard({
           </a>
         </p>
       )}
-      {phoneVerified && !emailVerified && (
+      {(!phoneRequired || phoneVerified) && !emailVerified && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Verify your email first.{" "}
           <a href="/auth/verify-email?next=/agent/become" className="font-semibold underline">

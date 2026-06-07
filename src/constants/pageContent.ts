@@ -115,7 +115,7 @@ export const VERIFY_FAQS = [
 export const CONTACT_FAQS = [
   {
     q: "How fast do you respond to messages?",
-    a: "We aim to reply within 1–3 business days by email. Urgent scam reports with a listing URL are prioritised when possible — we do not guarantee same-day resolution.",
+    a: "We aim to reply within a few hours by email or WhatsApp. Urgent scam reports with a listing URL are prioritised when possible.",
   },
   {
     q: "How do I report a scam or fake listing?",

@@ -18,6 +18,14 @@ export type HandoffPayload = {
   bedrooms: number | null;
   propertyType: string | null;
   status: string;
+  leadCode?: string | null;
+  publicListingCode?: string | null;
+  publicAgentCode?: string | null;
+  listingSlug?: string | null;
+  listingUrl?: string | null;
+  agentHandoffUrl?: string | null;
+  supportReply?: string | null;
+  conciergeStatus?: string | null;
 };
 
 export async function getHandoffByReference(
@@ -30,11 +38,14 @@ export async function getHandoffByReference(
     .from("leads")
     .select(
       `id, yike_reference, status, listing_id, agent_id,
+       lead_code, public_listing_code, public_agent_code, listing_slug, listing_url,
+       listing_title, agent_name, agent_whatsapp, handoff_url, handoff_message,
+       concierge_status, source_surface, source_page,
        listing:properties!leads_listing_id_fkey (
-         title, area, city, price, payment_period, listing_type, bedrooms, property_type
+         title, area, city, price, payment_period, listing_type, bedrooms, property_type, slug, public_listing_code
        ),
        agent:profiles!leads_agent_id_fkey (
-         full_name, whatsapp, phone
+         full_name, whatsapp, phone, public_agent_code, public_slug
        )`
     )
     .eq("yike_reference", ref)
@@ -53,11 +64,14 @@ export async function getHandoffByReference(
     listing_type: ListingType;
     bedrooms: number | null;
     property_type: string | null;
+    slug?: string | null;
+    public_listing_code?: string | null;
   } | null;
   const agent = (Array.isArray(agentRaw) ? agentRaw[0] : agentRaw) as {
     full_name: string | null;
     whatsapp: string | null;
     phone: string | null;
+    public_agent_code?: string | null;
   } | null;
 
   if (!listing || !agent) return null;
@@ -67,7 +81,7 @@ export async function getHandoffByReference(
     leadId: data.id,
     listingId: data.listing_id,
     agentId: data.agent_id,
-    agentName: agent.full_name ?? "Agent",
+    agentName: agent.full_name ?? data.agent_name ?? "Agent",
     agentWhatsapp: agent.whatsapp,
     agentPhone: agent.phone,
     title: listing.title,
@@ -79,6 +93,18 @@ export async function getHandoffByReference(
     bedrooms: listing.bedrooms,
     propertyType: listing.property_type,
     status: data.status,
+    leadCode: data.lead_code,
+    publicListingCode:
+      data.public_listing_code ??
+      (listing as { public_listing_code?: string }).public_listing_code ??
+      null,
+    publicAgentCode:
+      data.public_agent_code ?? agent.public_agent_code ?? null,
+    listingSlug: data.listing_slug ?? listing.slug ?? null,
+    listingUrl: data.listing_url ?? null,
+    agentHandoffUrl: data.handoff_url ?? null,
+    supportReply: data.handoff_message ?? null,
+    conciergeStatus: data.concierge_status ?? null,
   };
 }
 

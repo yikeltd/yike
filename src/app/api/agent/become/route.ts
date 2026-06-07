@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
+import { isPhoneVerificationRequired } from "@/lib/feature-flags";
 import { isEmailVerified } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -43,7 +44,7 @@ export async function POST() {
     return NextResponse.json({ ok: true, alreadyAgent: true });
   }
 
-  if (!profile.phone_verified) {
+  if (isPhoneVerificationRequired() && !profile.phone_verified) {
     return NextResponse.json(
       { error: "Verify your phone number first" },
       { status: 400 }

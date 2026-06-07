@@ -27,19 +27,22 @@ export function isSendchampSuccess(
   if (!httpOk) return false;
 
   const status = String(body.status ?? "").toLowerCase();
-  if (status === "success" || status === "sent" || status === "queued") return true;
   if (["failed", "error", "failure"].includes(status)) return false;
+  if (status === "success" || status === "sent" || status === "queued") return true;
 
   const code = typeof body.code === "number" ? body.code : Number(body.code);
+  if (Number.isFinite(code) && code >= 400) return false;
   if (code === 200 || code === 201) return true;
 
   const message = String(body.message ?? "").toLowerCase();
+  if (message.includes("invalid") || message.includes("unauthorized")) return false;
   if (message.includes("success") || message.includes("sent")) return true;
 
   const data = body.data;
   if (data && typeof data === "object" && !Array.isArray(data)) {
     const record = data as Record<string, unknown>;
     const dataStatus = String(record.status ?? "").toLowerCase();
+    if (["failed", "error", "failure"].includes(dataStatus)) return false;
     if (dataStatus === "success" || dataStatus === "sent" || dataStatus === "queued") {
       return true;
     }
@@ -49,12 +52,6 @@ export function isSendchampSuccess(
   }
 
   if (body.errors != null && body.errors !== "") {
-    if (Array.isArray(body.errors) && body.errors.length === 0) {
-      return false;
-    }
-    if (body.errors === null) {
-      return false;
-    }
     return false;
   }
 

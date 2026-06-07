@@ -1,0 +1,66 @@
+[
+  {
+    "file": "01-home-feed.png",
+    "caption": "Discover verified homes across Nigeria",
+    "path": "/",
+    "width": 1440,
+    "height": 3200,
+    "sizeMb": 1.9
+  },
+  {
+    "file": "02-swipe-experience.png",
+    "caption": "Swipe through beautiful properties effortlessly",
+    "path": "/browse",
+    "width": 1440,
+    "height": 3200,
+    "sizeMb": 2.85
+  },
+  {
+    "file": "03-search-filters.png",
+    "caption": "Search by city, budget, and property type",
+    "path": "/search?city=Enugu",
+    "width": 1440,
+    "height": 3200,
+    "sizeMb": 0.99
+  },
+  {
+    "file": "04-saved-whatsapp.png",
+    "caption": "Save favorites and chat instantly",
+    "path": "/saved",
+    "width": 1440,
+    "height": 3200,
+    "sizeMb": 1.76
+  },
+  {
+    "file": "05-listing-detail.png",
+    "caption": "Full listing details with verified agents",
+    "path": "/properties/2-bedroom-flat-for-rent-ogbor-hill-aba",
+    "width": 1440,
+    "height": 3200,
+    "sizeMb": 2.22
+  },
+  {
+    "file": "06-nearby-homes.png",
+    "caption": "Browse homes in cities across Nigeria",
+    "path": "/search?city=Aba",
+    "width": 1440,
+    "height": 3200,
+    "sizeMb": 1.63
+  },
+  {
+    "file": "07-agent-trust.png",
+    "caption": "Verified agents you can trust",
+    "path": "/why-verified",
+    "width": 1440,
+    "height": 3200,
+    "sizeMb": 0.28
+  },
+  {
+    "file": "08-dark-mode.png",
+    "caption": "Premium dark mode for evening browsing",
+    "path": "/",
+    "width": 1440,
+    "height": 3200,
+    "sizeMb": 1.84
+  }
+]

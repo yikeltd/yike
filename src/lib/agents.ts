@@ -6,6 +6,8 @@ import {
   getMockListingsByAgent,
   MOCK_LISTINGS,
 } from "@/lib/mock-listings";
+import { isUuidParam } from "@/lib/agent-slugs";
+import { agentPublicPath } from "@/lib/agent-slugs";
 
 const AGENT_SELECT = `
   *,
@@ -32,6 +34,43 @@ export async function getAgentById(id: string): Promise<Profile | null> {
   const profile = data as Profile;
   if (profile.profile_status === "deleted") return null;
   return profile;
+}
+
+export async function getAgentBySlug(slug: string): Promise<Profile | null> {
+  if (!isSupabaseConfigured()) {
+    const agents = getUniqueMockAgents();
+    return agents.find((a) => a.public_slug === slug || a.id === slug) ?? null;
+  }
+
+  const supabase = await createClient();
+  if (!supabase) return null;
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("public_slug", slug)
+    .maybeSingle();
+
+  if (!data) return null;
+  const profile = data as Profile;
+  if (profile.profile_status === "deleted") return null;
+  return profile;
+}
+
+export async function resolveAgentRoute(slugOrId: string): Promise<{
+  agent: Profile | null;
+  redirectTo?: string;
+}> {
+  if (isUuidParam(slugOrId)) {
+    const agent = await getAgentById(slugOrId);
+    if (!agent) return { agent: null };
+    if (agent.public_slug && agent.public_slug !== slugOrId) {
+      return { agent, redirectTo: agentPublicPath(agent) };
+    }
+    return { agent };
+  }
+  const agent = await getAgentBySlug(slugOrId);
+  return { agent };
 }
 
 export async function getAgentListings(

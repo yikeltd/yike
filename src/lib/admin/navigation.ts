@@ -23,7 +23,6 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     label: "Overview",
     items: [
       { href: adminPath("overview"), label: "Dashboard", segment: "overview" },
-      { href: adminPath("audit-logs"), label: "Audit Logs", segment: "audit-logs" },
     ],
   },
   {
@@ -31,10 +30,11 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     label: "Marketplace",
     items: [
       { href: adminPath("listings"), label: "Listings", segment: "listings" },
-      { href: adminPath("agents"), label: "Agents", segment: "agents" },
+      { href: adminPath("leads"), label: "Leads", segment: "leads" },
+      { href: adminPath("duplicates"), label: "Duplicate Flags", segment: "duplicates" },
+      { href: adminPath("listing-health"), label: "Listing Health", segment: "listing-health" },
       { href: adminPath("reviews"), label: "Reviews", segment: "reviews" },
       { href: adminPath("reports"), label: "Reports", segment: "reports" },
-      { href: adminPath("leads"), label: "Leads", segment: "leads" },
       { href: adminPath("requests"), label: "Requests", segment: "requests" },
     ],
   },
@@ -42,7 +42,8 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     id: "promotion",
     label: "Promotion",
     items: [
-      { href: adminPath("featured"), label: "Featured", segment: "featured" },
+      { href: adminPath("featured"), label: "Featured Listings", segment: "featured" },
+      { href: adminPath("premium-deals"), label: "Premium Placements", segment: "premium-deals" },
       { href: adminPath("hot-picks"), label: "Hot Picks", segment: "hot-picks" },
       { href: adminPath("ads"), label: "Ads", segment: "ads" },
       { href: adminPath("banners"), label: "Banners", segment: "banners" },
@@ -52,6 +53,8 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     id: "people",
     label: "People",
     items: [
+      { href: adminPath("agents"), label: "Agents", segment: "agents" },
+      { href: adminPath("trust-metrics"), label: "Trust Metrics", segment: "trust-metrics" },
       { href: adminPath("users"), label: "Users", segment: "users" },
       { href: adminPath("staff"), label: "Staff", segment: "staff" },
       { href: adminPath("careers"), label: "Careers", segment: "careers" },
@@ -66,6 +69,8 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     id: "system",
     label: "System",
     items: [
+      { href: adminPath("seo-pages"), label: "SEO Pages", segment: "seo-pages" },
+      { href: adminPath("audit-logs"), label: "Audit Logs", segment: "audit-logs" },
       { href: adminPath("settings"), label: "Settings", segment: "settings" },
       { href: adminPath("health"), label: "Health", segment: "health" },
     ],
@@ -85,6 +90,9 @@ export const SUPPORT_NAV_GROUPS: NavGroup[] = [
       { href: supportPath("reports"), label: "Listing Reports", segment: "reports" },
       { href: supportPath("requests"), label: "Contact Messages", segment: "requests" },
       { href: supportPath("leads"), label: "WhatsApp Leads", segment: "leads" },
+      { href: supportPath("inspections"), label: "Inspection Requests", segment: "inspections" },
+      { href: supportPath("moderation"), label: "Moderation Queue", segment: "moderation" },
+      { href: supportPath("quick-replies"), label: "Quick Replies", segment: "quick-replies" },
       { href: supportPath("accounts"), label: "Account Support", segment: "accounts" },
     ],
   },

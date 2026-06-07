@@ -9,15 +9,21 @@ import {
   listingTypeLabel,
   cn,
 } from "@/lib/utils";
-import { VerifiedBadge, FeaturedBadge, TrendingBadge, NewListingBadge } from "@/components/ui/badge";
+import { VerifiedBadge, FeaturedBadge, YikeVerifiedBadge, TrendingBadge, NewListingBadge } from "@/components/ui/badge";
+import { isFeaturedActive } from "@/lib/agent-tiers";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { useAuth } from "@/components/auth/auth-provider";
-import { trackLeadAndRedirect } from "@/lib/leads/client";
 import {
-  CallSafetyModal,
-} from "./contact-safety-modal";
+  openWhatsAppLead,
+  trackLeadAndRedirect,
+  type TrackLeadResult,
+} from "@/lib/leads/client";
+import {
+  CallConfirmSheet,
+  CallWhatsAppFallbackSheet,
+} from "./call-routing-sheets";
 import { trackEvent } from "@/lib/analytics";
 import { recordEngagementSave } from "@/lib/engagement";
 import { trackSavedListing } from "@/lib/browse-preferences";
@@ -28,6 +34,7 @@ import { ListingFreshness, getListingFreshness } from "./listing-freshness";
 import { AmenityChips } from "./amenity-chips";
 import { formatMoveInHint } from "@/lib/rent-breakdown";
 import { propertyPath } from "@/lib/property-url";
+import { AgentListingChip } from "./agent-listing-chip";
 import {
   isGuestFavorite,
   toggleGuestFavorite,
@@ -49,7 +56,9 @@ export function PropertyCard({
   const { guardAction, user } = useAuth();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [callModalOpen, setCallModalOpen] = useState(false);
+  const [fallbackOpen, setFallbackOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [callResult, setCallResult] = useState<TrackLeadResult | null>(null);
   const [contactLoading, setContactLoading] = useState<"whatsapp" | "call" | null>(
     null
   );
@@ -57,8 +66,7 @@ export function PropertyCard({
   const agent = property.agent;
   const verified =
     property.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
-  const wa = agent?.whatsapp || agent?.phone;
-  const tel = agent?.phone || agent?.whatsapp;
+  const hasAgent = !!agent?.id;
   const isDemo = isDemoProperty(property.id);
   const href = propertyPath(property);
 
@@ -193,16 +201,16 @@ export function PropertyCard({
       phone: agent.phone,
     });
     setContactLoading(null);
-    if (result.ok && result.redirectUrl) {
-      if (leadType === "whatsapp") {
-        window.open(result.redirectUrl, "_blank", "noopener,noreferrer");
-        if (result.handoffUrl) {
-          window.setTimeout(() => {
-            window.location.href = result.handoffUrl!;
-          }, 400);
-        }
-      } else {
-        window.location.href = result.redirectUrl;
+    if (leadType === "whatsapp" && result.ok && result.redirectUrl) {
+      openWhatsAppLead(result);
+      return;
+    }
+    if (leadType === "call" && result.ok) {
+      setCallResult(result);
+      if (result.callAllowed && result.redirectUrl) {
+        setConfirmOpen(true);
+      } else if (result.redirectUrl) {
+        setFallbackOpen(true);
       }
     }
   }
@@ -210,7 +218,6 @@ export function PropertyCard({
   function onWhatsAppClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!wa) return;
     guardAction(
       {
         type: "whatsapp",
@@ -224,24 +231,23 @@ export function PropertyCard({
   function onCallClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!tel) return;
     guardAction(
       {
         type: "call",
         listingId: property.id,
         redirectPath: href,
       },
-      () => setCallModalOpen(true)
+      () => void runLead("call")
     );
   }
 
-  const freshness = getListingFreshness(
-    property.updated_at,
-    property.created_at,
-    property.views_count,
+  const freshness = getListingFreshness(property.updated_at, {
+    createdAt: property.created_at,
+    lastRefreshedAt: property.last_refreshed_at,
+    viewsCount: property.views_count,
     verified,
-    property.contact_clicks
-  );
+    contactClicks: property.contact_clicks,
+  });
 
   const badges = (
     <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 lg:left-4 lg:top-4">
@@ -249,10 +255,15 @@ export function PropertyCard({
         {listingTypeLabel(property.listing_type)}
       </span>
       {verified && <VerifiedBadge size="sm" />}
-      {property.is_featured && <FeaturedBadge />}
-      {freshness.tone === "trending" && <TrendingBadge />}
-      {freshness.tone === "hot" && <TrendingBadge label="Hot this week" />}
-      {freshness.tone === "new" && !property.is_featured && <NewListingBadge />}
+      {property.yike_verified && <YikeVerifiedBadge size="sm" />}
+      {isFeaturedActive(property) && <FeaturedBadge />}
+      {freshness.showPublicly && freshness.tone === "trending" && <TrendingBadge />}
+      {freshness.showPublicly && freshness.tone === "hot" && (
+        <TrendingBadge label="Popular this week" />
+      )}
+      {freshness.showPublicly && freshness.tone === "new" && !isFeaturedActive(property) && (
+        <NewListingBadge />
+      )}
     </div>
   );
 
@@ -296,7 +307,7 @@ export function PropertyCard({
 
   const imageAlt = listingImageAlt(property);
 
-  const contactRow = wa && (
+  const contactRow = hasAgent && (
     <>
       <div className="flex gap-2.5">
         <button
@@ -308,24 +319,45 @@ export function PropertyCard({
           <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
           {contactLoading === "whatsapp" ? "Opening…" : "Chat on WhatsApp"}
         </button>
-        {tel && (
-          <button
-            type="button"
-            onClick={onCallClick}
-            disabled={contactLoading === "call"}
-            className="pressable flex h-12 min-w-[48px] items-center justify-center rounded-xl bg-surface text-navy disabled:opacity-70 lg:h-11 lg:min-w-[44px]"
-          >
-            <Phone className="h-4 w-4" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onCallClick}
+          disabled={contactLoading === "call"}
+          className="pressable flex h-12 min-w-[48px] items-center justify-center rounded-xl bg-surface text-navy disabled:opacity-70 lg:h-11 lg:min-w-[44px]"
+          aria-label="Call agent"
+        >
+          <Phone className="h-4 w-4" />
+        </button>
       </div>
-      <CallSafetyModal
-        open={callModalOpen}
-        onClose={() => setCallModalOpen(false)}
-        onConfirm={() => {
-          setCallModalOpen(false);
-          void runLead("call");
+      <CallWhatsAppFallbackSheet
+        open={fallbackOpen}
+        onClose={() => setFallbackOpen(false)}
+        onContinueWhatsApp={() => {
+          if (callResult) openWhatsAppLead(callResult);
+          setFallbackOpen(false);
         }}
+        loading={contactLoading === "whatsapp"}
+      />
+      <CallConfirmSheet
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onCallNow={() => {
+          if (!callResult?.redirectUrl) return;
+          void fetch("/api/leads/call-opened", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ yikeReference: callResult.yikeReference }),
+          }).catch(() => undefined);
+          window.location.href = callResult.redirectUrl;
+          setConfirmOpen(false);
+        }}
+        onContinueWhatsApp={() => {
+          if (callResult) openWhatsAppLead(callResult);
+          setConfirmOpen(false);
+        }}
+        propertyTitle={property.title}
+        agentName={agent?.full_name ?? "Agent"}
+        loading={contactLoading === "whatsapp"}
       />
     </>
   );
@@ -367,6 +399,7 @@ export function PropertyCard({
             <ListingFreshness
               updatedAt={property.updated_at}
               createdAt={property.created_at}
+              lastRefreshedAt={property.last_refreshed_at}
               viewsCount={property.views_count}
               verified={verified}
               contactClicks={property.contact_clicks}
@@ -396,6 +429,7 @@ export function PropertyCard({
               )}
             </div>
           )}
+          {agent && <AgentListingChip agent={agent} />}
           {contactRow}
         </div>
       </article>
@@ -447,6 +481,7 @@ export function PropertyCard({
               <ListingFreshness
                 updatedAt={property.updated_at}
                 createdAt={property.created_at}
+                lastRefreshedAt={property.last_refreshed_at}
                 viewsCount={property.views_count}
                 verified={verified}
                 contactClicks={property.contact_clicks}
@@ -457,7 +492,10 @@ export function PropertyCard({
           </div>
         </div>
       </Link>
-      {contactRow && <div className="p-4 pt-3">{contactRow}</div>}
+      <div className="space-y-3 p-4 pt-3">
+        {agent && <AgentListingChip agent={agent} />}
+        {contactRow}
+      </div>
     </article>
   );
 }

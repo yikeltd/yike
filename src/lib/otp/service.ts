@@ -1,11 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   deliverOtp,
+  getSendchampConfigSummary,
   isSendchampConfigured,
 } from "@/lib/notifications/providers/sendchamp";
 import { otpSentMessage, OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import type { OtpChannel } from "@/lib/notifications/types";
 import { isProductionEnv } from "@/lib/env";
+import {
+  isPhoneOtpEnabled,
+  phoneOtpDisabledPublicMessage,
+} from "@/lib/feature-flags";
 import {
   OTP_EXPIRY_MS,
   OTP_MAX_ATTEMPTS,
@@ -32,7 +37,7 @@ export type SendOtpResult =
       ok: false;
       error: string;
       status: number;
-      code?: "whatsapp_failed";
+      code?: "whatsapp_failed" | "phone_otp_disabled";
     };
 
 export type VerifyOtpResult =
@@ -107,6 +112,15 @@ export async function sendPhoneOtp(
   phone: string,
   preferredChannel?: OtpChannel
 ): Promise<SendOtpResult> {
+  if (!isPhoneOtpEnabled()) {
+    return {
+      ok: false,
+      error: phoneOtpDisabledPublicMessage(),
+      status: 403,
+      code: "phone_otp_disabled",
+    };
+  }
+
   const db = otpDb();
   if (!db) {
     console.error("[otp] OTP database client unavailable");
@@ -123,16 +137,22 @@ export async function sendPhoneOtp(
   if (cooldown) return cooldown;
 
   if (!isSendchampConfigured()) {
+    const sendchamp = getSendchampConfigSummary();
+    const envHint =
+      sendchamp.configured === false && sendchamp.supabaseKeyRejected
+        ? "Sendchamp API key looks like a Supabase key — fix SENDCHAMP_PUBLIC_KEY in Vercel"
+        : "Sendchamp not configured";
+
     if (!isProductionEnv()) {
-      return devFallbackSend(db, phone, channel, "Sendchamp not configured");
+      return devFallbackSend(db, phone, channel, envHint);
     }
 
-    console.error("[otp] Sendchamp not configured");
+    console.error("[otp]", envHint);
     await otpLogEvent(db, {
       phone,
       channel,
       status: "failed",
-      providerError: "Sendchamp not configured",
+      providerError: envHint,
     });
     return {
       ok: false,
@@ -233,6 +253,14 @@ export async function verifyPhoneOtp(
   phone: string,
   code: string
 ): Promise<VerifyOtpResult> {
+  if (!isPhoneOtpEnabled()) {
+    return {
+      ok: false,
+      error: phoneOtpDisabledPublicMessage(),
+      status: 403,
+    };
+  }
+
   const db = otpDb();
   if (!db) {
     return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 503 };

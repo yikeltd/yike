@@ -43,6 +43,16 @@ export async function executeAuthIntent(
     case "review_agent":
       if (intent.redirectPath) router.push(intent.redirectPath);
       break;
+    case "verification_request":
+      if (intent.listingId) {
+        try {
+          sessionStorage.setItem("yike_resume_verification", intent.listingId);
+        } catch {
+          /* ignore */
+        }
+      }
+      if (intent.redirectPath) router.push(intent.redirectPath);
+      break;
     case "list_property": {
       const {
         data: { user },

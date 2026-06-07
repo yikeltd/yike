@@ -1,7 +1,8 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
-import { ListingActions } from "@/components/admin/listing-actions";
 import { AdminPagination } from "@/components/admin/admin-pagination";
-import { FeaturedBadge } from "@/components/ui/badge";
+import { FeaturedListingControls } from "@/components/admin/featured-listing-controls";
+import { YikeVerifiedControls } from "@/components/admin/yike-verified-controls";
+import { isFeaturedActive } from "@/lib/agent-tiers";
 import { formatPrice } from "@/lib/utils";
 import { parseAdminPage } from "@/lib/admin/pagination";
 import type { Property } from "@/types/database";
@@ -20,6 +21,7 @@ export default async function AdminFeaturedPage({
     .from("properties")
     .select("*", { count: "exact" })
     .eq("is_featured", true)
+    .order("featured_created_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -37,33 +39,43 @@ export default async function AdminFeaturedPage({
     <div className="space-y-8">
       <section>
         <h1 className="text-2xl font-bold">Featured listings</h1>
-        <p className="text-sm text-muted">{total} featured</p>
-        <ul className="mt-4 space-y-3">
+        <p className="text-sm text-muted">
+          {total} promoted · active featured rank first in search and browse
+        </p>
+        <ul className="mt-4 space-y-4">
           {(data ?? []).map((p) => {
             const property = p as Property;
+            const active = isFeaturedActive(property);
             return (
               <li
                 key={property.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3"
+                className="rounded-xl border border-border bg-white px-4 py-4"
               >
-                <div>
-                  <Link
-                    href={`/lex/auth/listings/${property.id}`}
-                    className="font-semibold text-navy hover:text-gold-dark"
-                  >
-                    {property.title}
-                  </Link>
-                  <p className="text-sm text-muted">
-                    {formatPrice(
-                      Number(property.price),
-                      property.payment_period,
-                      property.listing_type
-                    )}{" "}
-                    · {property.area}
-                  </p>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <Link
+                      href={`/lex/auth/listings/${property.id}`}
+                      className="font-semibold text-navy hover:text-gold-dark"
+                    >
+                      {property.title}
+                    </Link>
+                    <p className="text-sm text-muted">
+                      {formatPrice(
+                        Number(property.price),
+                        property.payment_period,
+                        property.listing_type
+                      )}{" "}
+                      · {property.area}
+                    </p>
+                    {!active && (
+                      <p className="mt-1 text-xs font-medium text-amber-700">
+                        Expired — not ranking as featured
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <FeaturedBadge />
-                <ListingActions propertyId={property.id} compact />
+                <FeaturedListingControls property={property} />
+                <YikeVerifiedControls property={property} />
               </li>
             );
           })}
@@ -78,16 +90,19 @@ export default async function AdminFeaturedPage({
 
       <section>
         <h2 className="text-lg font-semibold">Candidates (top views)</h2>
-        <ul className="mt-4 space-y-2">
+        <p className="text-sm text-muted">
+          Manual promotion only — payment handled offline for launch.
+        </p>
+        <ul className="mt-4 space-y-4">
           {(candidates ?? []).map((p) => {
             const property = p as Property;
             return (
               <li
                 key={property.id}
-                className="flex items-center justify-between rounded-lg border border-border px-4 py-2"
+                className="rounded-lg border border-border px-4 py-3"
               >
-                <span className="text-sm">{property.title}</span>
-                <ListingActions propertyId={property.id} compact />
+                <p className="text-sm font-medium">{property.title}</p>
+                <FeaturedListingControls property={property} compact />
               </li>
             );
           })}

@@ -4,6 +4,12 @@ import { AdminPagination } from "@/components/admin/admin-pagination";
 import { parseAdminPage } from "@/lib/admin/pagination";
 import { getSendchampConfigSummary } from "@/lib/notifications/providers/sendchamp";
 import { createOtpDbClient } from "@/lib/otp/rpc";
+import {
+  isEmailOtpEnabled,
+  isPhoneOtpEnabled,
+  isSmsOtpEnabled,
+  isWhatsappOtpEnabled,
+} from "@/lib/feature-flags";
 
 export default async function OtpFailuresPage({
   searchParams,
@@ -17,6 +23,8 @@ export default async function OtpFailuresPage({
 
   const sendchamp = getSendchampConfigSummary();
   const otpDbConfigured = Boolean(createOtpDbClient());
+  const phoneOtpLive = isPhoneOtpEnabled();
+  const emailOtpLive = isEmailOtpEnabled();
 
   const [
     { data, count },
@@ -74,6 +82,34 @@ export default async function OtpFailuresPage({
         description="Sendchamp delivery health — last 24 hours"
       />
 
+      <div className="rounded-2xl border border-navy/10 bg-white p-4 text-sm shadow-sm">
+        <h2 className="font-bold text-navy">Launch auth mode</h2>
+        <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Email OTP</dt>
+            <dd className="font-medium text-navy">{emailOtpLive ? "Active" : "Disabled"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Phone OTP (SMS / WhatsApp)</dt>
+            <dd className="font-medium text-navy">
+              {phoneOtpLive ? "Active" : "Temporarily disabled for launch"}
+            </dd>
+          </div>
+        </dl>
+        {!phoneOtpLive && (
+          <p className="mt-3 text-muted">
+            Launch authentication currently uses email OTP. Provider adapters, logs, and cooldown
+            infrastructure remain in place — re-enable with{" "}
+            <code className="rounded bg-black/5 px-1">ENABLE_PHONE_OTP=true</code> when ready.
+          </p>
+        )}
+        {phoneOtpLive && (
+          <p className="mt-3 text-xs text-muted">
+            SMS: {isSmsOtpEnabled() ? "on" : "off"} · WhatsApp: {isWhatsappOtpEnabled() ? "on" : "off"}
+          </p>
+        )}
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <DiagCard
           label="Sendchamp configured"
@@ -105,7 +141,14 @@ export default async function OtpFailuresPage({
           <ConfigRow
             label="SMS sender"
             ok={sendchamp.configured ? sendchamp.smsSenderConfigured : false}
-            detail={sendchamp.configured ? sendchamp.smsSender : undefined}
+            detail={
+              sendchamp.configured
+                ? sendchamp.smsSenderRaw &&
+                  sendchamp.smsSenderRaw !== sendchamp.smsSender
+                  ? `${sendchamp.smsSenderRaw} → ${sendchamp.smsSender}`
+                  : sendchamp.smsSender
+                : undefined
+            }
           />
           <ConfigRow
             label="WhatsApp sender"
@@ -117,6 +160,13 @@ export default async function OtpFailuresPage({
             }
           />
         </dl>
+        {sendchamp.configured && (sendchamp.envWarnings?.length ?? 0) > 0 && (
+          <ul className="mt-4 space-y-1 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            {sendchamp.envWarnings!.map((warning) => (
+              <li key={warning}>⚠ {warning}</li>
+            ))}
+          </ul>
+        )}
         {lastFailed && (
           <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-800">
             <strong>Last error:</strong>{" "}

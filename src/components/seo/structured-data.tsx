@@ -40,14 +40,7 @@ export function StructuredData() {
           "Shortlets",
           "Property verification",
         ],
-        sameAs: [
-          SOCIAL_LINKS.linkedin,
-          SOCIAL_LINKS.x,
-          SOCIAL_LINKS.tiktok,
-          SOCIAL_LINKS.instagram,
-          SOCIAL_LINKS.facebook,
-          SOCIAL_LINKS.youtube,
-        ].filter(Boolean),
+        sameAs: Object.values(SOCIAL_LINKS),
         contactPoint: {
           "@type": "ContactPoint",
           contactType: "customer support",
