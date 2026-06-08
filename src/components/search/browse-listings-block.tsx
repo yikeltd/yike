@@ -129,7 +129,7 @@ export function BrowseListingsBlock({
   }
 
   const shellClass = isPremium
-    ? "rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgb(228_181_71_/_12%),0_8px_32px_rgb(2_20_51_/_28%)] ring-1 ring-white/[0.05] lg:p-3.5"
+    ? "rounded-2xl border border-white/18 bg-white/[0.07] p-4 shadow-[inset_0_1px_0_rgb(255_255_255_/_14%),0_10px_36px_rgb(2_20_51_/_32%)] ring-1 ring-white/[0.08] lg:p-3.5"
     : "rounded-2xl border border-navy/10 bg-white/95 p-3.5 shadow-sm ring-1 ring-navy/[0.06] dark:border-white/10 dark:bg-elevated dark:ring-white/[0.05]";
 
   const titleClass = isPremium
@@ -188,7 +188,7 @@ export function BrowseListingsBlock({
         })}
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <ThemedSelect
           value={state}
           onChange={(value) => {
