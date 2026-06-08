@@ -1,21 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ImageUploader } from "./image-uploader";
 import { MediaTagEditor } from "./media-tag-editor";
+import { ListingPropertyTypePicker } from "./listing-property-type-picker";
+import { ListingLocationSearch } from "./listing-location-search";
+import { ListingAmenitiesPicker } from "./listing-amenities-picker";
+import {
+  ListingTransparencyFields,
+  transparencyToExtras,
+} from "./listing-transparency-fields";
 import { LISTING_TYPES, MIN_LISTING_IMAGES, PAYMENT_PERIODS } from "@/lib/constants";
-import { ListingLocationFields } from "@/components/agent/listing-location-fields";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
 import {
   defaultPaymentPeriodForListingType,
   propertyTypesForListingType,
   type ListingTypeValue,
 } from "@/constants/listingTypes";
-import { PROPERTY_CATEGORY_GROUPS } from "@/constants/propertyCategories";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { FormSection } from "@/components/ui/form-section";
 import { SubmitOverlay } from "@/components/ui/submit-overlay";
 import {
   HumanVerifyField,
@@ -23,8 +28,7 @@ import {
 } from "@/components/forms/human-verify-field";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { NIGERIAN_AMENITIES } from "@/constants/amenities";
-import type { ListingExtras, Property } from "@/types/database";
+import type { FeeTransparencyMode, ListingExtras, Property } from "@/types/database";
 import {
   createMediaItemFromUpload,
   dedupeMediaItems,
@@ -43,6 +47,27 @@ import { PriceConfirmDialog } from "@/components/agent/price-confirm-dialog";
 import { ValueDriverPicker } from "@/components/agent/value-driver-picker";
 import { softenListingTitle } from "@/lib/title-normalize";
 import type { PriceAnalysisResult } from "@/lib/pricing/types";
+import {
+  clearListingDraft,
+  loadListingDraft,
+  saveListingDraft,
+  type ListingDraft,
+} from "@/lib/listing-draft";
+import {
+  isCommercialProperty,
+  isLandProperty,
+  showRoomFields,
+} from "@/lib/listing-field-rules";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const STEPS = [
+  { n: 1, title: "Basics" },
+  { n: 2, title: "Price" },
+  { n: 3, title: "Location" },
+  { n: 4, title: "Photos" },
+  { n: 5, title: "Finish" },
+] as const;
 
 type ListingFormProps = {
   agentId: string;
@@ -60,6 +85,29 @@ async function syncValueDrivers(listingId: string, driverKeys: string[]) {
   });
 }
 
+function extrasToTransparency(initial?: Property | null) {
+  const e = initial?.extras;
+  const values: Record<string, string> = {};
+  const modes: Record<string, FeeTransparencyMode> = {};
+  if (!e) return { values, modes };
+  if (e.agency_fee_percent != null) values.agency_fee = String(e.agency_fee_percent);
+  if (e.caution_months != null) values.caution_fee = String(e.caution_months);
+  if (e.agreement_fee != null) values.agreement_fee = String(e.agreement_fee);
+  if (e.service_charge != null) values.service_charge = String(e.service_charge);
+  if (e.legal_fee != null) values.legal_fee = String(e.legal_fee);
+  if (e.cleaning_fee != null) values.cleaning_fee = String(e.cleaning_fee);
+  if (e.caution_deposit != null) values.caution_deposit = String(e.caution_deposit);
+  if (e.agency_fee_mode) modes.agency_fee = e.agency_fee_mode;
+  if (e.caution_fee_mode) modes.caution_fee = e.caution_fee_mode;
+  if (e.agreement_fee_mode) modes.agreement_fee = e.agreement_fee_mode;
+  if (e.service_charge_mode) modes.service_charge = e.service_charge_mode;
+  if (e.legal_fee_mode) modes.legal_fee = e.legal_fee_mode;
+  if (e.commission_mode) modes.commission = e.commission_mode;
+  if (e.cleaning_fee_mode) modes.cleaning_fee = e.cleaning_fee_mode;
+  if (e.caution_deposit_mode) modes.caution_deposit = e.caution_deposit_mode;
+  return { values, modes };
+}
+
 export function ListingForm({
   agentId,
   initial,
@@ -68,12 +116,36 @@ export function ListingForm({
   listingLimit = null,
 }: ListingFormProps) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const isEdit = Boolean(initial);
+
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [state, setState] = useState(initial?.state ?? "Abia");
+  const [draftPrompt, setDraftPrompt] = useState(false);
+
+  const [listingType, setListingType] = useState<ListingTypeValue>(
+    (initial?.listing_type as ListingTypeValue) ?? "rent"
+  );
+  const [propertyType, setPropertyType] = useState(
+    initial?.property_type ??
+      propertyTypesForListingType("rent")[0]?.value ??
+      "flat"
+  );
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [price, setPrice] = useState(initial?.price ? String(initial.price) : "");
+  const [paymentPeriod, setPaymentPeriod] = useState<string>(
+    initial?.payment_period ?? defaultPaymentPeriodForListingType("rent")
+  );
+  const [bedrooms, setBedrooms] = useState(String(initial?.bedrooms ?? 1));
+  const [bathrooms, setBathrooms] = useState(String(initial?.bathrooms ?? 1));
+  const [toilets, setToilets] = useState(String(initial?.toilets ?? 1));
+
+  const [state, setState] = useState(initial?.state ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
   const [area, setArea] = useState(initial?.area ?? "");
+
   const [mediaItems, setMediaItems] = useState<PropertyMediaItem[]>(() =>
     initial ? normalizePropertyMedia(initial) : []
   );
@@ -83,9 +155,13 @@ export function ListingForm({
   const [valueDriverKeys, setValueDriverKeys] = useState<string[]>(
     initialValueDriverKeys
   );
-  const [listingType, setListingType] = useState<ListingTypeValue>(
-    (initial?.listing_type as ListingTypeValue) ?? "rent"
-  );
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [videoUrl, setVideoUrl] = useState(initial?.video_url ?? "");
+
+  const initTransparency = extrasToTransparency(initial);
+  const [feeValues, setFeeValues] = useState(initTransparency.values);
+  const [feeModes, setFeeModes] = useState(initTransparency.modes);
+
   const [verifyOk, setVerifyOk] = useState(false);
   const [priceDialog, setPriceDialog] = useState<{
     analysis: PriceAnalysisResult;
@@ -95,8 +171,143 @@ export function ListingForm({
     isEdit: boolean;
     propertyId?: string;
   } | null>(null);
-  const propertyTypeOptions = propertyTypesForListingType(listingType);
+
   const listingPlan = initial?.listing_plan ?? "free";
+  const showRooms = showRoomFields(propertyType, listingType);
+  const land = isLandProperty(propertyType);
+  const commercial = isCommercialProperty(propertyType);
+
+  useEffect(() => {
+    if (isEdit) return;
+    const draft = loadListingDraft(agentId);
+    if (draft) setDraftPrompt(true);
+  }, [agentId, isEdit]);
+
+  useEffect(() => {
+    setPropertyType((prev) => {
+      const options = propertyTypesForListingType(listingType);
+      if (options.some((o) => o.value === prev)) return prev;
+      return options[0]?.value ?? prev;
+    });
+    setPaymentPeriod((prev) => {
+      const def = defaultPaymentPeriodForListingType(listingType);
+      return prev || def;
+    });
+  }, [listingType]);
+
+  const buildDraft = useCallback((): ListingDraft => {
+    return {
+      version: 1,
+      agentId,
+      updatedAt: Date.now(),
+      step,
+      listingType,
+      propertyType,
+      title,
+      price,
+      paymentPeriod,
+      bedrooms,
+      bathrooms,
+      toilets,
+      state,
+      city,
+      area,
+      landmark: "",
+      addressHint: "",
+      description,
+      videoUrl,
+      amenities,
+      valueDriverKeys,
+      mediaItems,
+      transparency: feeValues,
+      feeModes,
+    };
+  }, [
+    agentId,
+    step,
+    listingType,
+    propertyType,
+    title,
+    price,
+    paymentPeriod,
+    bedrooms,
+    bathrooms,
+    toilets,
+    state,
+    city,
+    area,
+    description,
+    videoUrl,
+    amenities,
+    valueDriverKeys,
+    mediaItems,
+    feeValues,
+    feeModes,
+  ]);
+
+  useEffect(() => {
+    if (isEdit || draftPrompt) return;
+    const t = window.setTimeout(() => saveListingDraft(buildDraft()), 1200);
+    return () => window.clearTimeout(t);
+  }, [buildDraft, isEdit, draftPrompt]);
+
+  function applyDraft(draft: ListingDraft) {
+    setStep(draft.step);
+    setListingType(draft.listingType);
+    setPropertyType(draft.propertyType);
+    setTitle(draft.title);
+    setPrice(draft.price);
+    setPaymentPeriod(draft.paymentPeriod);
+    setBedrooms(draft.bedrooms);
+    setBathrooms(draft.bathrooms);
+    setToilets(draft.toilets);
+    setState(draft.state);
+    setCity(draft.city);
+    setArea(draft.area);
+    setDescription(draft.description);
+    setVideoUrl(draft.videoUrl);
+    setAmenities(draft.amenities);
+    setValueDriverKeys(draft.valueDriverKeys);
+    setMediaItems(draft.mediaItems);
+    setFeeValues(draft.transparency);
+    setFeeModes(draft.feeModes as Record<string, FeeTransparencyMode>);
+    setDraftPrompt(false);
+  }
+
+  function validateStep(n: number): string | null {
+    if (n === 1) {
+      if (!title.trim()) return "Add a short title for your listing.";
+      if (!propertyType) return "Choose a property type.";
+    }
+    if (n === 2) {
+      const p = Number(price);
+      if (!p || p <= 0) return "Enter a real price in ₦.";
+    }
+    if (n === 3) {
+      if (!city.trim()) return "Pick a city or area from search.";
+    }
+    if (n === 4) {
+      if (mediaItemsToUrls(mediaItems).length < MIN_LISTING_IMAGES) {
+        return `Add at least ${MIN_LISTING_IMAGES} clear photos.`;
+      }
+    }
+    return null;
+  }
+
+  function goNext() {
+    const err = validateStep(step);
+    if (err) {
+      setError(err);
+      return;
+    }
+    setError("");
+    setStep((s) => Math.min(5, s + 1));
+  }
+
+  function goBack() {
+    setError("");
+    setStep((s) => Math.max(1, s - 1));
+  }
 
   async function persistListing(
     payload: Record<string, unknown>,
@@ -180,11 +391,8 @@ export function ListingForm({
         });
       }
     }
+    clearListingDraft();
     setSuccess(true);
-    setTimeout(() => {
-      router.push("/agent/listings");
-      router.refresh();
-    }, 1200);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -195,50 +403,32 @@ export function ListingForm({
       return;
     }
 
+    for (let s = 1; s <= 4; s++) {
+      const err = validateStep(s);
+      if (err) {
+        setStep(s);
+        setError(err);
+        return;
+      }
+    }
+
     const form = new FormData(e.currentTarget);
     const verify = readHumanVerifyFromForm(form);
     if (!verify.ok) {
-      setError(verify.error ?? "Please solve the math check.");
+      setError(verify.error ?? "Complete quick verification.");
       return;
     }
-    const price = Number(form.get("price"));
-    const mediaRaw = (form.get("media_urls") as string) || "";
-    const fromText = mediaRaw
-      .split("\n")
-      .map((u) => u.trim())
-      .filter(Boolean);
-    const mergedItems = dedupeMediaItems([
-      ...mediaItems,
-      ...fromText.map((url, i) =>
-        createMediaItemFromUpload({
-          url,
-          medium: url,
-          thumbnail: url,
-          index: mediaItems.length + i,
-        })
-      ),
-    ]);
-    const media_items = sortMediaItemsForStory(mergedItems);
+
+    const priceNum = Number(price);
+    const media_items = sortMediaItemsForStory(dedupeMediaItems(mediaItems));
     const media_urls = mediaItemsToUrls(media_items);
 
-    if (!price || price <= 0) {
-      setError("Enter a real numeric price. Call for price is not allowed.");
-      return;
-    }
-    if (media_urls.length < MIN_LISTING_IMAGES) {
-      setError(`Add at least ${MIN_LISTING_IMAGES} photos.`);
-      return;
-    }
-
-    const rawTitle = form.get("title") as string;
-    const title = softenListingTitle(rawTitle);
-    const description = (form.get("description") as string) || "";
-    const draftCity = form.get("city") as string;
+    const softened = softenListingTitle(title);
     const qualityFlags = moderateListingDraft({
-      title,
+      title: softened,
       description,
-      price,
-      city: draftCity,
+      price: priceNum,
+      city,
       listing_type: listingType,
       media_urls,
     });
@@ -252,59 +442,35 @@ export function ListingForm({
       return;
     }
 
-    const dealType = listingType;
+    const transparencyExtras = transparencyToExtras(
+      listingType,
+      feeValues,
+      feeModes
+    );
     const extras: ListingExtras = {
+      ...transparencyExtras,
       amenities: amenities.length > 0 ? amenities : undefined,
     };
 
-    if (dealType === "rent" || dealType === "lease") {
-      const agency = Number(form.get("agency_fee_percent"));
-      const caution = Number(form.get("caution_months"));
-      const agreement = Number(form.get("agreement_fee"));
-      const service = Number(form.get("service_charge"));
-      const legal = Number(form.get("legal_fee"));
-      if (agency > 0) extras.agency_fee_percent = agency;
-      if (caution > 0) extras.caution_months = caution;
-      if (agreement > 0) extras.agreement_fee = agreement;
-      if (service > 0) extras.service_charge = service;
-      if (legal > 0) extras.legal_fee = legal;
-    }
-
-    if (dealType === "shortlet") {
-      const cleaning = Number(form.get("cleaning_fee"));
-      const caution = Number(form.get("caution_deposit"));
-      if (cleaning > 0) extras.cleaning_fee = cleaning;
-      if (caution > 0) extras.caution_deposit = caution;
-    }
-
-    if (dealType === "sale") {
-      const legal = Number(form.get("legal_fee"));
-      if (legal > 0) extras.legal_fee = legal;
-    }
-
-    const property_type = form.get("property_type") as string;
-    const payment_period = form.get("payment_period") as string;
-    const bedrooms = Number(form.get("bedrooms") || 0);
-
     const payload = {
       agent_id: agentId,
-      title,
-      description: (form.get("description") as string) || null,
-      listing_type: dealType,
-      property_type,
-      bedrooms,
-      bathrooms: Number(form.get("bathrooms") || 0),
-      toilets: Number(form.get("toilets") || 0),
-      price,
-      payment_period,
-      state: form.get("state") as string,
-      city: form.get("city") as string,
-      area: form.get("area") as string,
+      title: softened,
+      description: description || null,
+      listing_type: listingType,
+      property_type: propertyType,
+      bedrooms: land ? 0 : Number(bedrooms || 0),
+      bathrooms: land ? 0 : Number(bathrooms || 0),
+      toilets: land ? 0 : Number(toilets || 0),
+      price: priceNum,
+      payment_period: paymentPeriod,
+      state,
+      city,
+      area,
       address_hint: (form.get("address_hint") as string) || null,
       landmark: (form.get("landmark") as string) || null,
       media_urls,
       media_items,
-      video_url: (form.get("video_url") as string) || null,
+      video_url: videoUrl || null,
       extras,
       status: initial?.status === "approved" ? "approved" : "pending",
       listing_plan: listingPlan,
@@ -323,13 +489,13 @@ export function ListingForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          state: form.get("state"),
-          city: draftCity,
-          area: form.get("area"),
-          property_type,
-          listing_type: dealType,
-          price,
-          bedrooms,
+          state,
+          city,
+          area,
+          property_type: propertyType,
+          listing_type: listingType,
+          price: priceNum,
+          bedrooms: land ? 0 : Number(bedrooms || 0),
         }),
       });
       if (analyzeRes.ok) {
@@ -339,8 +505,8 @@ export function ListingForm({
         if (analysis.requires_agent_confirmation) {
           setPriceDialog({
             analysis,
-            price,
-            paymentPeriod: payment_period,
+            price: priceNum,
+            paymentPeriod,
             payload,
             isEdit: Boolean(initial),
             propertyId: initial?.id,
@@ -360,13 +526,57 @@ export function ListingForm({
   if (success) {
     return (
       <div className="flex flex-col items-center rounded-2xl bg-elevated px-6 py-12 text-center shadow-float">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold/20 text-2xl">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold/20 text-2xl text-navy">
           ✓
         </div>
-        <p className="mt-4 text-lg font-bold text-foreground">Submitted!</p>
-        <p className="mt-2 text-sm text-muted">
-          We&apos;ll review your listing shortly.
+        <p className="mt-4 text-lg font-bold text-navy">
+          Your listing has been submitted for review.
         </p>
+        <p className="mt-2 max-w-sm text-sm text-muted">
+          We&apos;ll notify you once it goes live — usually within 24 hours.
+        </p>
+        <div className="mt-6 flex w-full max-w-xs flex-col gap-2">
+          <Link
+            href="/agent/listings"
+            className="flex h-12 w-full items-center justify-center rounded-xl bg-gold text-sm font-semibold text-navy shadow-sm"
+          >
+            View my listings
+          </Link>
+          <Link
+            href="/agent/listings/new"
+            className="flex h-12 w-full items-center justify-center rounded-xl text-sm font-semibold text-navy hover:bg-surface"
+          >
+            Add another listing
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (draftPrompt && !isEdit) {
+    const draft = loadListingDraft(agentId);
+    return (
+      <div className="rounded-2xl border border-gold/30 bg-gold/10 p-5">
+        <p className="font-semibold text-navy">Continue your unfinished listing?</p>
+        <p className="mt-1 text-xs text-muted">Your progress is saved automatically.</p>
+        <div className="mt-4 flex gap-2">
+          <Button
+            type="button"
+            onClick={() => draft && applyDraft(draft)}
+          >
+            Continue draft
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              clearListingDraft();
+              setDraftPrompt(false);
+            }}
+          >
+            Start new
+          </Button>
+        </div>
       </div>
     );
   }
@@ -394,307 +604,257 @@ export function ListingForm({
         show={loading}
         message={initial ? "Updating…" : "Submitting for review…"}
       />
-      <form onSubmit={handleSubmit} className="space-y-4 pb-8">
-        <FormSection step={1} title="Basics" hint="Rent, lease, buy, or shortlet">
-          <Input
-            name="title"
-            placeholder="e.g. 2-bed flat in Ogbor Hill or 500sqm land in Lekki"
-            defaultValue={initial?.title}
-            required
-          />
-          <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
-            {LISTING_TYPES.map((t) => (
-              <label key={t.value} className="shrink-0">
-                <input
-                  type="radio"
-                  name="listing_type"
-                  value={t.value}
-                  checked={listingType === t.value}
-                  onChange={() => setListingType(t.value as ListingTypeValue)}
-                  className="peer sr-only"
-                />
-                <span className="pressable flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl px-4 text-sm font-semibold peer-checked:bg-gold peer-checked:text-navy peer-checked:shadow-glow-gold bg-surface">
-                  {t.label}
-                </span>
-              </label>
-            ))}
-          </div>
-          <Select
-            name="property_type"
-            defaultValue={initial?.property_type ?? propertyTypeOptions[0]?.value ?? "flat"}
-            required
-          >
-            {PROPERTY_CATEGORY_GROUPS.filter((g) =>
-              propertyTypeOptions.some((p) => p.group === g.id)
-            ).map((group) => (
-              <optgroup key={group.id} label={group.label}>
-                {propertyTypeOptions
-                  .filter((p) => p.group === group.id)
-                  .map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-          </Select>
-        </FormSection>
 
-        <FormSection step={2} title="Price & rooms">
-          <Input
-            name="price"
-            type="number"
-            min={1}
-            inputMode="numeric"
-            placeholder="Price in ₦"
-            defaultValue={initial?.price}
-            required
+      <div className="mb-3 flex items-center gap-1">
+        {STEPS.map((s) => (
+          <div
+            key={s.n}
+            className={cn(
+              "h-1 flex-1 rounded-full transition-colors",
+              s.n <= step ? "bg-gold" : "bg-navy/10"
+            )}
+            aria-hidden
           />
-          <p className="text-xs text-muted">
-            Listings with clearer photos and accurate prices perform better on Yike.
-          </p>
-          <Select
-            name="payment_period"
-            defaultValue={
-              initial?.payment_period ??
-              defaultPaymentPeriodForListingType(listingType)
-            }
-            key={listingType}
-          >
-            {PAYMENT_PERIODS.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </Select>
-          <div className="grid grid-cols-3 gap-2">
+        ))}
+      </div>
+      <p className="mb-4 text-xs font-semibold text-muted">
+        Step {step} of 5 · {STEPS[step - 1].title}
+        {!isEdit ? (
+          <span className="text-gold-dark"> · Progress saved automatically</span>
+        ) : null}
+      </p>
+
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-5 pb-28">
+        {step === 1 && (
+          <section className="space-y-4">
             <Input
-              name="bedrooms"
-              type="number"
-              min={0}
-              placeholder="Beds"
-              defaultValue={initial?.bedrooms ?? 1}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. 2-bed flat in Ogbor Hill"
+              required
             />
-            <Input
-              name="bathrooms"
-              type="number"
-              min={0}
-              placeholder="Baths"
-              defaultValue={initial?.bathrooms ?? 1}
-            />
-            <Input
-              name="toilets"
-              type="number"
-              min={0}
-              placeholder="Toilets"
-              defaultValue={initial?.toilets ?? 1}
-            />
-          </div>
-        </FormSection>
-
-        <FormSection step={3} title="Location" hint="Type any city or LGA — not limited to the map">
-          <ListingLocationFields
-            state={state}
-            city={city}
-            area={area}
-            initialLandmark={initial?.landmark}
-            initialAddressHint={initial?.address_hint}
-            onStateChange={(v) => {
-              setState(v);
-              setCity("");
-              setArea("");
-            }}
-            onCityChange={setCity}
-            onAreaChange={setArea}
-          />
-        </FormSection>
-
-        <FormSection step={4} title="Photos" hint="Min 3 · auto-compressed · label rooms">
-          <ImageUploader
-            onUploaded={(u) =>
-              setMediaItems((prev) =>
-                dedupeMediaItems([
-                  ...prev,
-                  createMediaItemFromUpload({
-                    url: u.url,
-                    medium: u.medium || u.url,
-                    thumbnail: u.thumbnail,
-                    index: prev.length,
-                  }),
-                ])
-              )
-            }
-          />
-          <MediaTagEditor items={mediaItems} onChange={setMediaItems} />
-          <details className="text-xs text-muted">
-            <summary className="cursor-pointer font-semibold text-foreground">
-              Paste image URLs instead
-            </summary>
-            <Textarea
-              name="media_urls"
-              className="mt-2"
-              placeholder="One URL per line"
-              rows={3}
-            />
-          </details>
-        </FormSection>
-
-        <FormSection
-          title="Amenities"
-          hint="What renters look for in Nigeria"
-        >
-          <div className="flex flex-wrap gap-2">
-            {NIGERIAN_AMENITIES.map((a) => {
-              const on = amenities.includes(a.id);
-              return (
+            <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
+              {LISTING_TYPES.map((t) => (
                 <button
-                  key={a.id}
+                  key={t.value}
                   type="button"
-                  onClick={() =>
-                    setAmenities((prev) =>
-                      on
-                        ? prev.filter((x) => x !== a.id)
-                        : [...prev, a.id]
-                    )
-                  }
-                  className={`pressable rounded-full px-3 py-2 text-xs font-bold ${
-                    on
+                  onClick={() => setListingType(t.value as ListingTypeValue)}
+                  className={cn(
+                    "pressable shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold",
+                    listingType === t.value
                       ? "bg-gold text-navy shadow-glow-gold"
                       : "bg-surface text-muted"
-                  }`}
+                  )}
                 >
-                  {a.label}
+                  {t.label}
                 </button>
-              );
-            })}
-          </div>
-        </FormSection>
+              ))}
+            </div>
+            <ListingPropertyTypePicker
+              listingType={listingType}
+              value={propertyType}
+              onChange={setPropertyType}
+            />
+          </section>
+        )}
 
-        <FormSection
-          title={
-            listingType === "lease"
-              ? "Lease transparency"
-              : listingType === "rent"
-                ? "Rent transparency"
-                : "Fees (optional)"
-          }
-          hint={
-            listingType === "sale"
-              ? "Optional — legal and documentation fees"
-              : "Helps renters trust your listing"
-          }
-        >
-          <div className="grid grid-cols-2 gap-2">
-            {(listingType === "rent" || listingType === "lease") && (
-              <>
+        {step === 2 && (
+          <section className="space-y-4">
+            <Input
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              type="number"
+              min={1}
+              inputMode="numeric"
+              placeholder="Price in ₦"
+              required
+            />
+            <Select
+              value={paymentPeriod}
+              onChange={(e) => setPaymentPeriod(e.target.value)}
+            >
+              {PAYMENT_PERIODS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </Select>
+            {showRooms ? (
+              <div className="grid grid-cols-3 gap-2">
                 <Input
-                  name="agency_fee_percent"
+                  value={bedrooms}
+                  onChange={(e) => setBedrooms(e.target.value)}
                   type="number"
                   min={0}
-                  max={20}
-                  placeholder="Agency fee %"
-                  defaultValue={initial?.extras?.agency_fee_percent ?? 10}
+                  placeholder="Beds"
                 />
                 <Input
-                  name="caution_months"
+                  value={bathrooms}
+                  onChange={(e) => setBathrooms(e.target.value)}
                   type="number"
                   min={0}
-                  max={24}
-                  placeholder="Caution (months)"
-                  defaultValue={initial?.extras?.caution_months ?? 12}
+                  placeholder="Baths"
                 />
                 <Input
-                  name="agreement_fee"
+                  value={toilets}
+                  onChange={(e) => setToilets(e.target.value)}
                   type="number"
                   min={0}
-                  placeholder="Agreement fee ₦"
-                  defaultValue={initial?.extras?.agreement_fee ?? 50000}
+                  placeholder="Toilets"
                 />
-                <Input
-                  name="service_charge"
-                  type="number"
-                  min={0}
-                  placeholder="Service charge ₦"
-                  defaultValue={initial?.extras?.service_charge ?? 0}
-                />
-                <Input
-                  name="legal_fee"
-                  type="number"
-                  min={0}
-                  placeholder="Legal / survey fee ₦"
-                  defaultValue={initial?.extras?.legal_fee ?? 0}
-                />
-              </>
-            )}
-            {listingType === "shortlet" && (
-              <>
-                <Input
-                  name="cleaning_fee"
-                  type="number"
-                  min={0}
-                  placeholder="Cleaning fee (shortlet)"
-                  defaultValue={initial?.extras?.cleaning_fee ?? 0}
-                />
-                <Input
-                  name="caution_deposit"
-                  type="number"
-                  min={0}
-                  placeholder="Caution deposit (shortlet)"
-                  defaultValue={initial?.extras?.caution_deposit ?? 0}
-                />
-              </>
-            )}
-            {listingType === "sale" && (
-              <Input
-                name="legal_fee"
-                type="number"
-                min={0}
-                placeholder="Legal / documentation fee ₦"
-                defaultValue={initial?.extras?.legal_fee ?? 0}
+              </div>
+            ) : land ? (
+              <p className="text-xs text-muted">
+                Room counts hidden for land — add plot size in description if helpful.
+              </p>
+            ) : null}
+            {commercial && !land ? (
+              <p className="text-xs text-muted">
+                Tip: mention parking, frontage, or warehouse access in description.
+              </p>
+            ) : null}
+          </section>
+        )}
+
+        {step === 3 && (
+          <section>
+            <ListingLocationSearch
+              state={state}
+              city={city}
+              area={area}
+              onStateChange={setState}
+              onCityChange={setCity}
+              onAreaChange={setArea}
+              initialLandmark={initial?.landmark}
+              initialAddressHint={initial?.address_hint}
+            />
+          </section>
+        )}
+
+        {step === 4 && (
+          <section className="space-y-4">
+            <ImageUploader
+              uploadedCount={mediaItems.length}
+              onUploaded={(u) =>
+                setMediaItems((prev) =>
+                  dedupeMediaItems([
+                    ...prev,
+                    createMediaItemFromUpload({
+                      url: u.url,
+                      medium: u.medium || u.url,
+                      thumbnail: u.thumbnail,
+                      index: prev.length,
+                    }),
+                  ])
+                )
+              }
+            />
+            {mediaItems.length > 0 ? (
+              <MediaTagEditor items={mediaItems} onChange={setMediaItems} />
+            ) : null}
+          </section>
+        )}
+
+        {step === 5 && (
+          <section className="space-y-6">
+            <div>
+              <p className="mb-2 text-xs font-bold text-navy">Amenities</p>
+              <ListingAmenitiesPicker
+                listingType={listingType}
+                propertyType={propertyType}
+                selected={amenities}
+                onChange={setAmenities}
               />
+            </div>
+
+            <details className="rounded-xl border border-navy/10 bg-surface/40">
+              <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
+                {listingType === "rent" || listingType === "lease"
+                  ? "Rent transparency (optional)"
+                  : "Fees (optional)"}
+              </summary>
+              <div className="border-t border-navy/8 px-3 pb-3 pt-2">
+                <ListingTransparencyFields
+                  listingType={listingType}
+                  values={feeValues}
+                  modes={feeModes}
+                  initial={initial?.extras}
+                  onValueChange={(k, v) =>
+                    setFeeValues((prev) => ({ ...prev, [k]: v }))
+                  }
+                  onModeChange={(k, m) =>
+                    setFeeModes((prev) => ({ ...prev, [k]: m }))
+                  }
+                />
+              </div>
+            </details>
+
+            <details className="rounded-xl border border-navy/10 bg-surface/40">
+              <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
+                Why this property stands out (optional)
+              </summary>
+              <div className="border-t border-navy/8 px-3 pb-3 pt-2">
+                <ValueDriverPicker
+                  selected={valueDriverKeys}
+                  onChange={setValueDriverKeys}
+                  disabled={loading}
+                />
+              </div>
+            </details>
+
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Short description (optional)"
+              rows={3}
+            />
+            <Input
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="Video link (optional)"
+            />
+
+            {error && (
+              <p className="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-danger">
+                {error}
+              </p>
             )}
-          </div>
-        </FormSection>
 
-        <FormSection
-          title="Why this property stands out"
-          hint="Select only what truly applies"
-        >
-          <ValueDriverPicker
-            selected={valueDriverKeys}
-            onChange={setValueDriverKeys}
-            disabled={loading}
-          />
-        </FormSection>
+            <HumanVerifyField onValidChange={setVerifyOk} />
+          </section>
+        )}
 
-        <FormSection title="Details (optional)">
-          <Textarea
-            name="description"
-            placeholder="What makes this home special?"
-            rows={4}
-            defaultValue={initial?.description ?? ""}
-          />
-          <Input
-            name="video_url"
-            placeholder="Video link (optional)"
-            defaultValue={initial?.video_url ?? ""}
-          />
-        </FormSection>
-
-        {error && (
+        {step < 5 && error && (
           <p className="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-danger">
             {error}
           </p>
         )}
 
-        <HumanVerifyField onValidChange={setVerifyOk} />
-
-        <Button type="submit" fullWidth size="lg" disabled={loading || !verifyOk}>
-          {initial ? "Save changes" : "Submit for review"}
-        </Button>
-        <p className="text-center text-xs text-muted">
-          Listings go live after Yike review · usually within 24h
-        </p>
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-navy/10 bg-white/95 px-3 py-3 backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="mx-auto flex max-w-2xl gap-2">
+            {step > 1 ? (
+              <Button type="button" variant="ghost" onClick={goBack} className="shrink-0">
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Back
+              </Button>
+            ) : (
+              <div className="w-20 shrink-0" />
+            )}
+            {step < 5 ? (
+              <Button type="button" fullWidth onClick={goNext}>
+                Continue
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button type="submit" fullWidth size="lg" disabled={loading || !verifyOk}>
+                {initial ? "Save changes" : "Submit for review"}
+              </Button>
+            )}
+          </div>
+          <p className="mt-2 text-center text-[10px] text-muted">
+            Listings are reviewed before publication to keep Yike trusted.
+          </p>
+        </div>
       </form>
     </>
   );

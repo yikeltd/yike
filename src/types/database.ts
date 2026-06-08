@@ -213,16 +213,32 @@ export type FunnelEventType =
   | "call_button_clicked";
 export type PaymentPeriod = "yearly" | "monthly" | "weekly" | "daily" | "total";
 
+export type FeeTransparencyMode =
+  | "exact"
+  | "percent"
+  | "negotiable"
+  | "landlord"
+  | "not_fixed";
+
 /** Nigerian rent transparency + amenities — stored as JSONB */
 export interface ListingExtras {
   amenities?: string[];
   agency_fee_percent?: number;
+  agency_fee_mode?: FeeTransparencyMode;
   caution_months?: number;
+  caution_fee_mode?: FeeTransparencyMode;
   agreement_fee?: number;
+  agreement_fee_mode?: FeeTransparencyMode;
   service_charge?: number;
+  service_charge_mode?: FeeTransparencyMode;
   legal_fee?: number;
+  legal_fee_mode?: FeeTransparencyMode;
+  commission_mode?: FeeTransparencyMode;
   cleaning_fee?: number;
+  cleaning_fee_mode?: FeeTransparencyMode;
   caution_deposit?: number;
+  caution_deposit_mode?: FeeTransparencyMode;
+  fees_flexible_note?: string;
 }
 
 /** Structured listing photo — stored in properties.media_items JSONB. */

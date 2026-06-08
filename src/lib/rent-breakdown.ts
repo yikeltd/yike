@@ -1,9 +1,10 @@
-import type { ListingExtras, Property } from "@/types/database";
+import type { FeeTransparencyMode, ListingExtras, Property } from "@/types/database";
 
 export type RentLineItem = {
   label: string;
   amount: number;
   note?: string;
+  flexible?: boolean;
 };
 
 export type MoveInBreakdown = {
@@ -37,6 +38,19 @@ const DEFAULT_EXTRAS: Required<
   legal_fee: 0,
 };
 
+const FLEX_LABEL: Record<FeeTransparencyMode, string> = {
+  exact: "",
+  percent: "",
+  negotiable: "Negotiable",
+  landlord: "Discuss with landlord",
+  not_fixed: "Not fixed yet",
+};
+
+function flexLabel(mode?: FeeTransparencyMode): string | null {
+  if (!mode || mode === "exact" || mode === "percent") return null;
+  return FLEX_LABEL[mode];
+}
+
 export function getListingExtras(property: Property): ListingExtras {
   return property.extras ?? {};
 }
@@ -52,8 +66,6 @@ export function calculateMoveInBreakdown(
 
   if (property.listing_type === "shortlet") {
     const extras = getListingExtras(property);
-    const cleaning = extras.cleaning_fee ?? 0;
-    const caution = extras.caution_deposit ?? 0;
     const items: RentLineItem[] = [
       {
         label: `Nightly rate`,
@@ -61,14 +73,28 @@ export function calculateMoveInBreakdown(
         note: property.payment_period,
       },
     ];
-    if (cleaning > 0) items.push({ label: "Cleaning fee", amount: cleaning });
-    if (caution > 0)
-      items.push({ label: "Refundable caution", amount: caution });
-    const total = price + cleaning + caution;
+    const cleaningFlex = flexLabel(extras.cleaning_fee_mode);
+    const cautionFlex = flexLabel(extras.caution_deposit_mode);
+    if (cleaningFlex) {
+      items.push({ label: "Cleaning fee", amount: 0, note: cleaningFlex, flexible: true });
+    } else if ((extras.cleaning_fee ?? 0) > 0) {
+      items.push({ label: "Cleaning fee", amount: extras.cleaning_fee! });
+    }
+    if (cautionFlex) {
+      items.push({ label: "Refundable caution", amount: 0, note: cautionFlex, flexible: true });
+    } else if ((extras.caution_deposit ?? 0) > 0) {
+      items.push({ label: "Refundable caution", amount: extras.caution_deposit! });
+    }
+    const total =
+      price +
+      (extras.cleaning_fee_mode ? 0 : extras.cleaning_fee ?? 0) +
+      (extras.caution_deposit_mode ? 0 : extras.caution_deposit ?? 0);
     return {
       items,
       total,
-      headline: formatNaira(total),
+      headline: extras.fees_flexible_note
+        ? `From ${formatNaira(price)}`
+        : formatNaira(total),
     };
   }
 
@@ -77,53 +103,67 @@ export function calculateMoveInBreakdown(
   }
 
   const isLease = property.listing_type === "lease";
-  const extras = { ...DEFAULT_EXTRAS, ...getListingExtras(property) };
+  const raw = getListingExtras(property);
+  const extras = { ...DEFAULT_EXTRAS, ...raw };
   const rent = price;
-  const agencyFee = Math.round(rent * (extras.agency_fee_percent / 100));
-  const cautionDeposit = Math.round(rent * (extras.caution_months / 12));
   const rentLabel =
     property.payment_period === "monthly"
       ? "Monthly lease"
       : isLease
         ? "Annual lease"
         : "Annual rent";
-  const items: RentLineItem[] = [
-    { label: rentLabel, amount: rent },
-    {
-      label: `Agency fee (${extras.agency_fee_percent}%)`,
-      amount: agencyFee,
-      note: "One-time",
-    },
-    {
-      label: `Caution deposit (${extras.caution_months} mo)`,
-      amount: cautionDeposit,
-      note: "Refundable",
-    },
-  ];
+  const items: RentLineItem[] = [{ label: rentLabel, amount: rent }];
 
-  if (extras.agreement_fee > 0) {
-    items.push({
-      label: "Agreement fee",
-      amount: extras.agreement_fee,
-      note: "One-time",
-    });
-  }
-  if (extras.service_charge > 0) {
-    items.push({
-      label: "Service charge",
-      amount: extras.service_charge,
-      note: "Annual",
-    });
-  }
-  if (extras.legal_fee > 0) {
-    items.push({ label: "Legal fee", amount: extras.legal_fee });
+  function pushFee(
+    label: string,
+    amount: number,
+    mode?: FeeTransparencyMode,
+    note?: string
+  ) {
+    const flex = flexLabel(mode);
+    if (flex) {
+      items.push({ label, amount: 0, note: flex, flexible: true });
+      return;
+    }
+    if (amount > 0) items.push({ label, amount, note });
   }
 
-  const total = items.reduce((sum, i) => sum + i.amount, 0);
+  const agencyPct = extras.agency_fee_percent ?? 10;
+  pushFee(
+    `Agency fee (${agencyPct}%)`,
+    Math.round(rent * (agencyPct / 100)),
+    raw.agency_fee_mode,
+    "One-time"
+  );
+  const cautionMo = extras.caution_months ?? 12;
+  pushFee(
+    `Caution deposit (${cautionMo} mo)`,
+    Math.round(rent * (cautionMo / 12)),
+    raw.caution_fee_mode,
+    "Refundable"
+  );
+  pushFee(
+    "Agreement fee",
+    extras.agreement_fee ?? 0,
+    raw.agreement_fee_mode,
+    "One-time"
+  );
+  pushFee(
+    "Service charge",
+    extras.service_charge ?? 0,
+    raw.service_charge_mode,
+    "Annual"
+  );
+  pushFee("Legal fee", extras.legal_fee ?? 0, raw.legal_fee_mode);
+
+  const total = items.reduce((sum, i) => sum + (i.flexible ? 0 : i.amount), 0);
+  const hasFlex =
+    Boolean(raw.fees_flexible_note) ||
+    items.some((i) => i.flexible);
   return {
     items,
     total,
-    headline: formatNaira(total),
+    headline: hasFlex ? `~${formatNaira(total)}` : formatNaira(total),
   };
 }
 

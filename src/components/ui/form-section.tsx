@@ -19,7 +19,7 @@ export function FormSection({
         )}
         <div>
           <h2 className="text-sm font-bold text-foreground">{title}</h2>
-          {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
+          {hint ? <p className="mt-0.5 text-xs text-muted">{hint}</p> : null}
         </div>
       </div>
       <div className="space-y-3">{children}</div>

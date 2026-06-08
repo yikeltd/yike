@@ -25,15 +25,13 @@ export function HumanVerifyField({
 
   return (
     <label className={className}>
-      <span className="text-xs font-semibold text-muted">
-        Human check — what is {challenge.a} + {challenge.b}? *
-      </span>
+      <span className="text-xs font-semibold text-navy">Quick verification</span>
       <Input
         name="human_verify"
         type="number"
         inputMode="numeric"
         autoComplete="off"
-        placeholder="Your answer"
+        placeholder={`${challenge.a} + ${challenge.b} = ?`}
         value={answer}
         onChange={(e) => handleChange(e.target.value)}
         onBlur={() => setTouched(true)}

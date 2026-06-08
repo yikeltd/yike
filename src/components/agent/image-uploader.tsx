@@ -1,18 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, Check } from "lucide-react";
 import { MEDIA_LIMITS } from "@/lib/media/constants";
 import { cn } from "@/lib/utils";
 
 type Props = {
   propertyId?: string;
   onUploaded: (urls: { url: string; medium: string; thumbnail: string }) => void;
+  uploadedCount?: number;
 };
 
-export function ImageUploader({ propertyId = "draft", onUploaded }: Props) {
+export function ImageUploader({
+  propertyId = "draft",
+  onUploaded,
+  uploadedCount = 0,
+}: Props) {
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState("");
+  const [done, setDone] = useState(0);
   const [error, setError] = useState("");
 
   async function handleFiles(files: FileList | null) {
@@ -20,14 +25,13 @@ export function ImageUploader({ propertyId = "draft", onUploaded }: Props) {
     setError("");
     setLoading(true);
     const total = files.length;
+    let uploaded = 0;
 
     for (let i = 0; i < total; i++) {
-      setProgress(`Uploading ${i + 1} of ${total}…`);
       const file = files[i];
       if (file.size > MEDIA_LIMITS.maxUploadBytes) {
-        setError("Each image must be under 15MB.");
+        setError("One photo was too large. Try a smaller image.");
         setLoading(false);
-        setProgress("");
         return;
       }
       const form = new FormData();
@@ -42,11 +46,12 @@ export function ImageUploader({ propertyId = "draft", onUploaded }: Props) {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? "Upload failed");
+        setError(json.error ?? "Upload failed — try again");
         setLoading(false);
-        setProgress("");
         return;
       }
+      uploaded += 1;
+      setDone(uploaded);
       onUploaded({
         url: json.url,
         medium: json.medium,
@@ -54,14 +59,16 @@ export function ImageUploader({ propertyId = "draft", onUploaded }: Props) {
       });
     }
     setLoading(false);
-    setProgress("");
+    setTimeout(() => setDone(0), 1500);
   }
+
+  const totalShown = uploadedCount + (loading ? done : 0);
 
   return (
     <div
       className={cn(
-        "rounded-xl bg-gold/5 p-4 transition-all",
-        loading && "ring-2 ring-gold/40"
+        "rounded-xl border border-dashed border-gold/35 bg-gold/5 p-4 transition-all",
+        loading && "ring-2 ring-gold/30"
       )}
     >
       <label className="flex cursor-pointer flex-col items-center gap-2 touch-feedback">
@@ -79,11 +86,14 @@ export function ImageUploader({ propertyId = "draft", onUploaded }: Props) {
           <Upload className="h-8 w-8 text-navy" />
         )}
         <span className="text-sm font-bold text-navy">
-          {loading ? progress || "Processing…" : "Add photos"}
+          {loading ? `Adding photos…` : "Add clear photos of the property"}
         </span>
-        <span className="text-xs text-muted">
-          Tap to upload · WebP optimized · max 15MB
-        </span>
+        {totalShown > 0 && (
+          <span className="flex items-center gap-1 text-xs font-semibold text-gold-dark">
+            <Check className="h-3.5 w-3.5" />
+            {uploadedCount} photo{uploadedCount === 1 ? "" : "s"} added
+          </span>
+        )}
       </label>
       {error && (
         <p className="mt-2 text-center text-sm font-medium text-danger">{error}</p>

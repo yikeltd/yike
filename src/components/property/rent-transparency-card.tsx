@@ -55,10 +55,17 @@ export function RentTransparencyCard({ property }: { property: Property }) {
             >
               <span className="text-muted">{item.label}</span>
               <span className="font-semibold tabular-nums text-foreground">
-                {formatAmount(item.amount)}
+                {item.flexible && item.note
+                  ? item.note
+                  : formatAmount(item.amount)}
               </span>
             </li>
           ))}
+          {property.extras?.fees_flexible_note ? (
+            <li className="text-[11px] text-muted">
+              {property.extras.fees_flexible_note}
+            </li>
+          ) : null}
           {breakdown.items.length > 4 && (
             <li className="text-xs font-medium text-gold-dark">
               +{breakdown.items.length - 4} more — tap to view all
