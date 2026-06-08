@@ -16,7 +16,7 @@ import {
   ListingTransparencyFields,
   transparencyToExtras,
 } from "./listing-transparency-fields";
-import { LISTING_TYPES, MIN_LISTING_IMAGES, PAYMENT_PERIODS } from "@/lib/constants";
+import { MIN_LISTING_IMAGES, PAYMENT_PERIODS } from "@/lib/constants";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
 import {
   defaultPaymentPeriodForListingType,
@@ -56,7 +56,6 @@ import {
   type ListingDraft,
 } from "@/lib/listing-draft";
 import {
-  isCommercialProperty,
   isLandProperty,
   showRoomFields,
 } from "@/lib/listing-field-rules";
@@ -64,11 +63,34 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const STEPS = [
-  { n: 1, title: "Basics" },
-  { n: 2, title: "Price" },
-  { n: 3, title: "Location" },
-  { n: 4, title: "Photos" },
-  { n: 5, title: "Finish" },
+  { n: 1, title: "Listing type" },
+  { n: 2, title: "Property" },
+  { n: 3, title: "Price" },
+  { n: 4, title: "Location" },
+  { n: 5, title: "Photos" },
+  { n: 6, title: "Review" },
+] as const;
+
+const PRIMARY_DEAL_OPTIONS = [
+  { id: "rent", label: "Rent", listingType: "rent" as ListingTypeValue },
+  { id: "buy", label: "Buy", listingType: "sale" as ListingTypeValue },
+  {
+    id: "land",
+    label: "Land",
+    listingType: "sale" as ListingTypeValue,
+    propertyType: "land",
+  },
+  {
+    id: "commercial",
+    label: "Shop / Office",
+    listingType: "rent" as ListingTypeValue,
+    propertyType: "shop",
+  },
+] as const;
+
+const MORE_DEAL_OPTIONS = [
+  { id: "lease", label: "Lease", listingType: "lease" as ListingTypeValue },
+  { id: "shortlet", label: "Shortlet", listingType: "shortlet" as ListingTypeValue },
 ] as const;
 
 type ListingFormProps = {
@@ -164,6 +186,7 @@ export function ListingForm({
   const [feeValues, setFeeValues] = useState(initTransparency.values);
   const [feeModes, setFeeModes] = useState(initTransparency.modes);
 
+  const [moreDealsOpen, setMoreDealsOpen] = useState(false);
   const [verifyOk, setVerifyOk] = useState(false);
   const [priceDialog, setPriceDialog] = useState<{
     analysis: PriceAnalysisResult;
@@ -177,7 +200,6 @@ export function ListingForm({
   const listingPlan = initial?.listing_plan ?? "free";
   const showRooms = showRoomFields(propertyType, listingType);
   const land = isLandProperty(propertyType);
-  const commercial = isCommercialProperty(propertyType);
 
   useEffect(() => {
     if (isEdit) return;
@@ -276,19 +298,35 @@ export function ListingForm({
     setDraftPrompt(false);
   }
 
+  function applyDealOption(
+    listingTypeValue: ListingTypeValue,
+    nextPropertyType?: string
+  ) {
+    setListingType(listingTypeValue);
+    if (nextPropertyType) {
+      setPropertyType(nextPropertyType);
+      return;
+    }
+    const options = propertyTypesForListingType(listingTypeValue);
+    setPropertyType(options[0]?.value ?? propertyType);
+  }
+
   function validateStep(n: number): string | null {
     if (n === 1) {
+      if (!listingType) return "Choose what you are listing.";
+    }
+    if (n === 2) {
       if (!title.trim()) return "Add a short title for your listing.";
       if (!propertyType) return "Choose a property type.";
     }
-    if (n === 2) {
+    if (n === 3) {
       const p = Number(price);
       if (!p || p <= 0) return "Enter a real price in ₦.";
     }
-    if (n === 3) {
+    if (n === 4) {
       if (!city.trim()) return "Pick a city or area from search.";
     }
-    if (n === 4) {
+    if (n === 5) {
       const ready = readyPhotoItems(mediaItems);
       if (mediaItems.some((i) => i.upload_status === "uploading")) {
         return "Wait for photos to finish uploading.";
@@ -310,7 +348,7 @@ export function ListingForm({
       return;
     }
     setError("");
-    setStep((s) => Math.min(5, s + 1));
+    setStep((s) => Math.min(6, s + 1));
   }
 
   function goBack() {
@@ -412,7 +450,7 @@ export function ListingForm({
       return;
     }
 
-    for (let s = 1; s <= 4; s++) {
+    for (let s = 1; s <= 5; s++) {
       const err = validateStep(s);
       if (err) {
         setStep(s);
@@ -627,15 +665,74 @@ export function ListingForm({
           />
         ))}
       </div>
-      <p className="mb-4 text-xs font-semibold text-muted">
-        Step {step} of 5 · {STEPS[step - 1].title}
-        {!isEdit ? (
-          <span className="text-gold-dark"> · Progress saved automatically</span>
-        ) : null}
+      <p className="mb-2 text-xs font-semibold text-muted">
+        Step {step} of 6 · {STEPS[step - 1].title}
       </p>
+      {!isEdit ? (
+        <p className="mb-4 rounded-xl bg-surface/70 px-3 py-2 text-xs text-muted">
+          Add what you know now — you can update later. Optional sections can be
+          skipped.
+        </p>
+      ) : null}
 
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-5 pb-28">
+      <form ref={formRef} onSubmit={handleSubmit} className="listing-form-pad space-y-5">
         {step === 1 && (
+          <section className="space-y-3">
+            <p className="text-sm font-bold text-navy">What are you listing?</p>
+            <div className="grid grid-cols-2 gap-2">
+              {PRIMARY_DEAL_OPTIONS.map((option) => {
+                const presetType =
+                  "propertyType" in option ? option.propertyType : undefined;
+                const active =
+                  listingType === option.listingType &&
+                  (!presetType || propertyType === presetType);
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => applyDealOption(option.listingType, presetType)}
+                    className={cn(
+                      "pressable rounded-xl px-3 py-4 text-sm font-bold",
+                      active
+                        ? "bg-gold text-navy shadow-glow-gold"
+                        : "bg-surface text-navy/75 ring-1 ring-navy/10"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => setMoreDealsOpen((v) => !v)}
+              className="text-xs font-bold text-gold-dark"
+            >
+              {moreDealsOpen ? "Fewer types" : "More types (lease, shortlet)"}
+            </button>
+            {moreDealsOpen ? (
+              <div className="flex flex-wrap gap-2">
+                {MORE_DEAL_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => applyDealOption(option.listingType)}
+                    className={cn(
+                      "pressable rounded-full px-4 py-2 text-xs font-bold",
+                      listingType === option.listingType
+                        ? "bg-gold text-navy shadow-glow-gold"
+                        : "bg-surface text-navy/70 ring-1 ring-navy/10"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        )}
+
+        {step === 2 && (
           <section className="space-y-4">
             <Input
               value={title}
@@ -643,32 +740,19 @@ export function ListingForm({
               placeholder="e.g. 2-bed flat in Ogbor Hill"
               required
             />
-            <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
-              {LISTING_TYPES.map((t) => (
-                <button
-                  key={t.value}
-                  type="button"
-                  onClick={() => setListingType(t.value as ListingTypeValue)}
-                  className={cn(
-                    "pressable shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold",
-                    listingType === t.value
-                      ? "bg-gold text-navy shadow-glow-gold"
-                      : "bg-surface text-muted"
-                  )}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-            <ListingPropertyTypePicker
-              listingType={listingType}
-              value={propertyType}
-              onChange={setPropertyType}
-            />
+            {!land ? (
+              <ListingPropertyTypePicker
+                listingType={listingType}
+                value={propertyType}
+                onChange={setPropertyType}
+              />
+            ) : (
+              <p className="text-xs text-muted">Land listing — add plot details in review if helpful.</p>
+            )}
           </section>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <section className="space-y-4">
             <Input
               value={price}
@@ -713,20 +797,11 @@ export function ListingForm({
                   placeholder="Toilets"
                 />
               </div>
-            ) : land ? (
-              <p className="text-xs text-muted">
-                Room counts hidden for land — add plot size in description if helpful.
-              </p>
-            ) : null}
-            {commercial && !land ? (
-              <p className="text-xs text-muted">
-                Tip: mention parking, frontage, or warehouse access in description.
-              </p>
             ) : null}
           </section>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <section>
             <ListingLocationSearch
               state={state}
@@ -741,28 +816,32 @@ export function ListingForm({
           </section>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <section>
             <ListingPhotoManager items={mediaItems} onChange={setMediaItems} />
           </section>
         )}
 
-        {step === 5 && (
-          <section className="space-y-6">
-            <div>
-              <p className="mb-2 text-xs font-bold text-navy">Amenities</p>
-              <ListingAmenitiesPicker
-                listingType={listingType}
-                propertyType={propertyType}
-                selected={amenities}
-                onChange={setAmenities}
-              />
-            </div>
+        {step === 6 && (
+          <section className="space-y-4">
+            <details className="rounded-xl border border-navy/10 bg-surface/40">
+              <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
+                Amenities (optional)
+              </summary>
+              <div className="border-t border-navy/8 px-3 pb-3 pt-2">
+                <ListingAmenitiesPicker
+                  listingType={listingType}
+                  propertyType={propertyType}
+                  selected={amenities}
+                  onChange={setAmenities}
+                />
+              </div>
+            </details>
 
             <details className="rounded-xl border border-navy/10 bg-surface/40">
               <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
                 {listingType === "rent" || listingType === "lease"
-                  ? "Rent transparency (optional)"
+                  ? "Rent fees (optional)"
                   : "Fees (optional)"}
               </summary>
               <div className="border-t border-navy/8 px-3 pb-3 pt-2">
@@ -816,13 +895,13 @@ export function ListingForm({
           </section>
         )}
 
-        {step < 5 && error && (
+        {step < 6 && error && (
           <p className="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-danger">
             {error}
           </p>
         )}
 
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-navy/10 bg-white/95 px-3 py-3 backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="listing-form-action-bar fixed inset-x-0 z-40 border-t border-navy/10 bg-white/98 px-3 py-3 shadow-[0_-8px_24px_rgb(2_20_51_/10%)] backdrop-blur-md lg:z-30">
           <div className="mx-auto flex max-w-2xl gap-2">
             {step > 1 ? (
               <Button type="button" variant="ghost" onClick={goBack} className="shrink-0">
@@ -832,20 +911,22 @@ export function ListingForm({
             ) : (
               <div className="w-20 shrink-0" />
             )}
-            {step < 5 ? (
+            {step < 6 ? (
               <Button type="button" fullWidth onClick={goNext}>
                 Continue
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             ) : (
               <Button type="submit" fullWidth size="lg" disabled={loading || !verifyOk}>
-                {initial ? "Save changes" : "Submit for review"}
+                {initial ? "Save changes" : "Submit listing"}
               </Button>
             )}
           </div>
-          <p className="mt-2 text-center text-[10px] text-muted">
-            Listings are reviewed before publication to keep Yike trusted.
-          </p>
+          {step === 6 ? (
+            <p className="mt-2 text-center text-[10px] text-muted">
+              Quick review before your listing goes live.
+            </p>
+          ) : null}
         </div>
       </form>
     </>

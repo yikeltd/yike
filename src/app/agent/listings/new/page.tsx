@@ -38,7 +38,8 @@ export default async function NewListingPage() {
       <div>
         <h1 className="text-xl font-bold text-navy lg:text-2xl">New listing</h1>
         <p className="mt-1 text-sm text-muted">
-          Listings are reviewed before publication to keep Yike trusted.
+          Add what you know now — optional details can wait. Your progress saves
+          automatically.
         </p>
         {limit !== null && (
           <p className="mt-2 text-xs text-muted">

@@ -19,7 +19,7 @@ const MODES: { id: FeeTransparencyMode; label: string }[] = [
   { id: "exact", label: "Exact" },
   { id: "percent", label: "%" },
   { id: "negotiable", label: "Negotiable" },
-  { id: "landlord", label: "With landlord" },
+  { id: "landlord", label: "Discuss with landlord" },
 ];
 
 type FieldDef = {
@@ -91,9 +91,7 @@ export function ListingTransparencyFields({
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-muted">
-        Transparent listings perform better. Skip or mark negotiable when fees vary.
-      </p>
+      <p className="text-xs text-muted">Skip any fee you don&apos;t know yet.</p>
       {RENT_FIELDS.map((field) => (
         <FeeRow
           key={field.key}

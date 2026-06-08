@@ -239,10 +239,8 @@ export function ListingPhotoManager({
           ) : (
             <Upload className="h-8 w-8 text-navy" />
           )}
-          <span className="text-sm font-bold text-navy">
-            Add clear photos of the property
-          </span>
-          <span className="text-xs text-muted">Yike will optimize them automatically.</span>
+          <span className="text-sm font-bold text-navy">Add photos from your phone</span>
+          <span className="text-xs text-muted">At least {MIN_LISTING_IMAGES} clear photos</span>
         </label>
         {error ? (
           <p className="mt-2 text-center text-sm font-medium text-danger">{error}</p>
@@ -252,9 +250,7 @@ export function ListingPhotoManager({
       {items.length > 0 ? (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-muted">
-              Drag order with arrows · star sets cover
-            </p>
+            <p className="text-xs text-muted">Star marks the cover photo</p>
             <div className="flex items-center gap-2">
               <span
                 className={cn(

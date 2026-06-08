@@ -209,6 +209,25 @@ body {
 :root {
   --bottom-nav-stack: calc(4.75rem + env(safe-area-inset-bottom));
   --bottom-edge-stack: max(0.75rem, env(safe-area-inset-bottom));
+  --listing-form-action-h: 5.25rem;
+}
+
+.listing-form-action-bar {
+  bottom: var(--bottom-nav-stack);
+}
+
+.listing-form-pad {
+  padding-bottom: calc(var(--bottom-nav-stack) + var(--listing-form-action-h));
+}
+
+@media (min-width: 1024px) {
+  .listing-form-action-bar {
+    bottom: 0;
+  }
+
+  .listing-form-pad {
+    padding-bottom: 6rem;
+  }
 }
 
 .safe-bottom {

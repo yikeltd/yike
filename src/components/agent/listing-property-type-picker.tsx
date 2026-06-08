@@ -17,11 +17,7 @@ export function ListingPropertyTypePicker({
   onChange: (value: string) => void;
 }) {
   const groups = groupsForListingType(listingType);
-  const activeGroup =
-    PROPERTY_CATEGORY_GROUPS.find((g) =>
-      propertyTypesForGroup(g.id).some((p) => p.value === value)
-    )?.id ?? groups[0];
-  const [openGroup, setOpenGroup] = useState<string | null>(activeGroup);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   return (
     <div className="space-y-2">
