@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { legacyLocationRedirect } from "@/lib/legacy-location-redirect";
+import { logMiddlewareFailure } from "@/lib/middleware/log-failure";
 import { seoHubRedirect } from "@/lib/seo/hub-redirect";
 import {
   staticPathRedirect,
@@ -14,7 +15,7 @@ import {
 } from "@/lib/ambassador/constants";
 import { STAFF_APP_COOKIE } from "@/lib/admin/staff-app";
 
-export async function middleware(request: NextRequest) {
+async function handleMiddleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   const slashTarget = trailingSlashRedirect(pathname);
@@ -53,7 +54,13 @@ export async function middleware(request: NextRequest) {
   }
 
   const refRaw = request.nextUrl.searchParams.get("ref");
-  const response = await updateSession(request);
+  let response: NextResponse;
+  try {
+    response = await updateSession(request);
+  } catch (error) {
+    logMiddlewareFailure("session", pathname, error);
+    response = NextResponse.next({ request });
+  }
 
   if (pathname === "/staff" || pathname.startsWith("/staff/")) {
     response.cookies.set(STAFF_APP_COOKIE, "1", {
@@ -77,6 +84,15 @@ export async function middleware(request: NextRequest) {
   }
 
   return response;
+}
+
+export async function middleware(request: NextRequest) {
+  try {
+    return await handleMiddleware(request);
+  } catch (error) {
+    logMiddlewareFailure("handler", request.nextUrl.pathname, error);
+    return NextResponse.next({ request });
+  }
 }
 
 export const config = {
