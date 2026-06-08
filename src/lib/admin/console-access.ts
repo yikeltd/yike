@@ -19,7 +19,17 @@ const SUPER_ADMIN_ONLY_SEGMENTS = new Set([
   "settings",
   "audit-logs",
   "health",
+  "deal-matching",
 ]);
+
+export const DEAL_MATCHING_BASE_PATH = "/lex/auth/deal-matching";
+
+export function isDealMatchingPath(pathname: string): boolean {
+  return (
+    pathname === DEAL_MATCHING_BASE_PATH ||
+    pathname.startsWith(`${DEAL_MATCHING_BASE_PATH}/`)
+  );
+}
 
 export function consoleFromPath(pathname: string): AdminConsole | null {
   if (pathname === ADMIN_BASE_PATH || pathname.startsWith(`${ADMIN_BASE_PATH}/`)) {
@@ -41,7 +51,19 @@ export function roleHomeConsole(role: UserRole): AdminConsole | null {
   return null;
 }
 
-export function isRoleAllowedInConsole(role: UserRole, console: AdminConsole): boolean {
+export function isRoleAllowedInConsole(
+  role: UserRole,
+  console: AdminConsole,
+  pathname?: string
+): boolean {
+  if (
+    console === "auth" &&
+    role === "support" &&
+    pathname &&
+    isDealMatchingPath(pathname)
+  ) {
+    return true;
+  }
   return roleHomeConsole(role) === console;
 }
 
@@ -73,12 +95,16 @@ export function staffConsoleRedirect(
   const console = consoleFromPath(pathname);
   if (!console) return null;
 
-  if (!isRoleAllowedInConsole(role, console)) {
+  if (!isRoleAllowedInConsole(role, console, pathname)) {
+    if (console === "auth" && isDealMatchingPath(pathname) && role === "support") {
+      return null;
+    }
     return getDefaultConsolePath(role);
   }
 
   if (console === "auth") {
     const segment = authSegmentFromPath(pathname);
+    if (segment === "deal-matching") return null;
     if (!isAuthSegmentAllowed(role, segment)) {
       const allowed = authNavAllowlist(role);
       const fallback = allowed?.[0] ?? "overview";

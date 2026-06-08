@@ -24,6 +24,7 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: adminPath("overview"), label: "Dashboard", segment: "overview" },
       { href: adminPath("operations"), label: "Operations", segment: "operations" },
+      { href: adminPath("deal-matching"), label: "Deal Matching", segment: "deal-matching" },
       { href: adminPath("trust"), label: "Trust Command Center", segment: "trust" },
     ],
   },
@@ -180,7 +181,14 @@ export function getNavGroups(console: AdminConsole): NavGroup[] {
 export function filterNavForRole(
   groups: NavGroup[],
   allowlist: string[] | null,
-  superAdminOnlySegments: string[] = ["staff", "audit-logs", "settings", "users", "auth-sync"]
+  superAdminOnlySegments: string[] = [
+    "staff",
+    "audit-logs",
+    "settings",
+    "users",
+    "auth-sync",
+    "deal-matching",
+  ]
 ): NavGroup[] {
   if (!allowlist) return groups;
   return groups

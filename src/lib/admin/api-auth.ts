@@ -68,6 +68,24 @@ export async function requireSessionApi() {
   return { ok: true as const, user };
 }
 
+export async function requireDealMatchingApi() {
+  const user = await getSession();
+  if (!user) return { ok: false as const, status: 401, error: "Sign in required" };
+
+  const profile = await getProfile(user.id);
+  if (!profile || profile.is_banned) {
+    return { ok: false as const, status: 403, error: "Access denied" };
+  }
+
+  const { canManageDealMatching } = await import("@/lib/deal-matching/permissions");
+  const allowed = await canManageDealMatching(user.id, profile.role);
+  if (!allowed) {
+    return { ok: false as const, status: 403, error: "Deal matching access required" };
+  }
+
+  return { ok: true as const, user, profile };
+}
+
 export function roleAllowsAction(role: UserRole, action: string): boolean {
   if (isSuperAdmin(role)) return true;
   const supportActions = ["ticket.update", "report.view", "contact.view"];

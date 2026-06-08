@@ -169,7 +169,14 @@ export type AuditAction =
   | "trust.watchlist.add"
   | "trust.dispute.create"
   | "trust.risk.recalculate"
-  | "trust.reinspection.request";
+  | "trust.reinspection.request"
+  | "deal_matching.request.create"
+  | "deal_matching.request.update"
+  | "deal_matching.outreach.send"
+  | "deal_matching.status.update"
+  | "deal_matching.commission.update"
+  | "deal_matching.permission.grant"
+  | "deal_matching.permission.revoke";
 
 export type AuditLogEntry = {
   actor_id: string;

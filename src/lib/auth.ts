@@ -172,3 +172,15 @@ export async function requireAuthConsoleSegment(segment: string) {
   }
   return { user, profile };
 }
+
+export async function requireDealMatchingAccess() {
+  const user = await requireAuth(STAFF_LOGIN_PATH);
+  const profile = await getProfile(user.id);
+  if (!profile || profile.is_banned) redirect(STAFF_LOGIN_PATH);
+
+  const { canManageDealMatching } = await import("@/lib/deal-matching/permissions");
+  const allowed = await canManageDealMatching(user.id, profile.role);
+  if (!allowed) redirect(STAFF_LOGIN_PATH);
+
+  return { user, profile };
+}
