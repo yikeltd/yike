@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Property } from "@/types/database";
 import {
-  filterMockListings,
   getMockPropertyById,
   getMockFeatured,
   getMockVerified,
@@ -46,10 +45,10 @@ async function queryPublicPropertiesRows(
   const merged = mergeSearchParams(params);
 
   if (!isSupabaseConfigured()) {
-    return filterMockListings(merged, limit);
+    return [];
   }
   const supabase = await createClient();
-  if (!supabase) return filterMockListings(merged, limit);
+  if (!supabase) return [];
 
   let query = supabase
     .from("properties")
@@ -113,9 +112,7 @@ export async function getPublicProperties(
   params: PropertySearchParams = {},
   limit = 24
 ): Promise<Property[]> {
-  const rows = await queryPublicPropertiesRows(params, limit);
-  if (rows.length > 0) return rows;
-  return filterMockListings(mergeSearchParams(params), limit);
+  return queryPublicPropertiesRows(params, limit);
 }
 
 export async function getApprovedPropertyIds(limit = 200): Promise<string[]> {

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { hashClientIp, hashUserAgent } from "@/lib/auth-email-otp/request-meta";
 import { createConfirmedAuthUser } from "@/lib/auth-email-otp/create-user";
-import { createAuthEmailOtpDbClient, signupPendingUpsert } from "@/lib/auth-email-otp/rpc";
-import { resolveSignupEmailState } from "@/lib/auth/signup-email-state";
+import {
+  createAuthEmailOtpDbClient,
+  emailIsRegistered,
+  signupPendingGet,
+  signupPendingUpsert,
+} from "@/lib/auth-email-otp/rpc";
 import { sendAuthEmailOtp, SIGNUP_PENDING_MS } from "@/lib/auth-email-otp/service";
 import {
   completeSignupProfile,
@@ -24,7 +28,7 @@ import { EMAIL_OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
 import { parseAmbassadorRefFromCookieHeader } from "@/lib/ambassador/cookie";
 import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
-import { getTrustedAdminClient } from "@/lib/supabase/admin";
+import { createVerifiedAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -113,16 +117,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Username already taken" }, { status: 409 });
   }
 
-  const adminForState = await getTrustedAdminClient();
-  if (!adminForState) {
+  const pendingSignup = await signupPendingGet(db, email);
+  const registeredEmail = await emailIsRegistered(db, email);
+  if (registeredEmail === null) {
+    console.error("[auth/signup] email registration check failed");
     return NextResponse.json(
       { error: AUTH_USER_MESSAGES.signupUnavailable },
       { status: 503 }
     );
   }
 
-  const emailState = await resolveSignupEmailState(adminForState, db, email);
-  if (emailState.status === "complete") {
+  if (registeredEmail && !pendingSignup) {
     return NextResponse.json(
       {
         error: "An account already exists with this email. Please sign in.",
@@ -131,18 +136,8 @@ export async function POST(request: Request) {
       { status: 409 }
     );
   }
-  if (emailState.status === "deleted") {
-    return NextResponse.json(
-      {
-        error: "This account needs support review. Please contact Yike support.",
-        code: "account_deleted",
-      },
-      { status: 409 }
-    );
-  }
 
-  const resumeSignup =
-    emailState.status === "incomplete" || emailState.status === "pending_signup";
+  const resumeSignup = Boolean(pendingSignup);
 
   let pinHash: string;
   try {
@@ -152,8 +147,9 @@ export async function POST(request: Request) {
   }
 
   if (reviewerBypass) {
-    const admin = await getTrustedAdminClient();
+    const admin = await createVerifiedAdminClient();
     if (!admin) {
+      console.error("[auth/signup] verified Supabase admin client unavailable");
       return NextResponse.json(
         { error: AUTH_USER_MESSAGES.signupUnavailable },
         { status: 503 }

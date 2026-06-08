@@ -24,6 +24,15 @@ function otpServerToken(): string | null {
   return process.env.YIKE_OTP_SERVER_TOKEN?.trim() || null;
 }
 
+function createOptionalAdminClient(): SupabaseClient | null {
+  try {
+    return createAdminClient();
+  } catch (error) {
+    console.error("[auth-email-otp] admin fallback unavailable", (error as Error).message);
+    return null;
+  }
+}
+
 export function createAuthEmailOtpDbClient(): SupabaseClient | null {
   const url =
     process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
@@ -38,11 +47,7 @@ export function createAuthEmailOtpDbClient(): SupabaseClient | null {
     });
   }
 
-  try {
-    return createAdminClient();
-  } catch {
-    return null;
-  }
+  return createOptionalAdminClient();
 }
 
 function token(): string {
@@ -91,7 +96,7 @@ export async function signupPendingUpsert(
 
   console.error("[auth-email-otp] pending upsert RPC failed", error.message);
 
-  const admin = createAdminClient();
+  const admin = createOptionalAdminClient();
   if (!admin) return false;
 
   const { error: directError } = await admin.from("auth_signup_pending").upsert(
@@ -149,7 +154,7 @@ export async function authOtpInvalidateActive(
   });
   if (!error) return;
 
-  const admin = createAdminClient();
+  const admin = createOptionalAdminClient();
   if (!admin) return;
   await admin
     .from("auth_email_otps")
@@ -226,7 +231,7 @@ export async function authOtpInsert(
     console.error("[auth-email-otp] RPC insert failed", error.message);
   }
 
-  const admin = createAdminClient();
+  const admin = createOptionalAdminClient();
   if (!admin) return null;
 
   const { data: row, error: insertError } = await admin
@@ -265,7 +270,7 @@ export async function authOtpLatestActive(
     return (row as AuthOtpRow | undefined) ?? null;
   }
 
-  const admin = createAdminClient();
+  const admin = createOptionalAdminClient();
   if (!admin) return null;
   const { data: rows } = await admin
     .from("auth_email_otps")
@@ -290,7 +295,7 @@ export async function authOtpIncrementAttempts(
   });
   if (typeof data === "number") return data;
 
-  const admin = createAdminClient();
+  const admin = createOptionalAdminClient();
   if (!admin) return 0;
   const { data: row } = await admin
     .from("auth_email_otps")
@@ -312,7 +317,7 @@ export async function authOtpConsume(
   });
   if (!error) return;
 
-  const admin = createAdminClient();
+  const admin = createOptionalAdminClient();
   if (!admin) return;
   await admin
     .from("auth_email_otps")

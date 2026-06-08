@@ -142,9 +142,9 @@ export function BrowseListingsBlock({
 
   return (
     <div className={shellClass}>
-      <p className={titleClass}>{title}</p>
+      <p className={cn(titleClass, "text-center")}>{title}</p>
 
-      <div className="hide-scrollbar -mx-0.5 mb-3.5 flex gap-2 overflow-x-auto pb-0.5 lg:mb-3">
+      <div className="hide-scrollbar -mx-0.5 mb-3.5 flex justify-center gap-2 overflow-x-auto pb-0.5 lg:mb-3">
         {HOME_DEAL_TYPES.map((t) => {
           const key = chipKey(t);
           const active = dealKey === key;
