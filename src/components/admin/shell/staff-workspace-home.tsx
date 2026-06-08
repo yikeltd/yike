@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { adminPath, SUPPORT_BASE_PATH } from "@/lib/admin-paths";
 import { isSuperAdmin } from "@/lib/admin/roles";
+import { crewBrand } from "@/lib/design/tokens";
 import type { UserRole } from "@/types/database";
 
 type LandingPayload = {
@@ -50,13 +52,24 @@ export function StaffWorkspaceHome({ role, displayName }: Props) {
 
   return (
     <section className="mb-6 rounded-2xl border border-navy/10 bg-white p-4 shadow-sm lg:hidden">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Your workspace
-      </p>
-      <h2 className="mt-1 text-lg font-bold text-navy">Hi {firstName}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {data?.landing?.label ?? "Operations"} · tap a shortcut to jump in
-      </p>
+      <div className="flex items-start gap-3">
+        <Image
+          src={crewBrand.logoSm}
+          alt=""
+          width={48}
+          height={48}
+          className="shrink-0 rounded-xl"
+        />
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {crewBrand.name}
+          </p>
+          <h2 className="mt-1 text-lg font-bold text-navy">Hi {firstName}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {data?.landing?.label ?? "Operations"} · tap a shortcut to jump in
+          </p>
+        </div>
+      </div>
 
       {areas.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">

@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { brand } from "@/lib/design/tokens";
+import { brand, crewBrand } from "@/lib/design/tokens";
+import { detectStaffStandaloneApp } from "@/lib/admin/staff-app";
 import { staffRoleLabel, type AdminConsole } from "@/lib/admin/roles";
 import { consoleTitle } from "@/lib/admin/navigation";
 import type { AdminNavBadges, NavGroup } from "@/lib/admin/navigation";
@@ -39,6 +40,14 @@ export function AdminShell({
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [crewApp, setCrewApp] = useState(false);
+
+  useEffect(() => {
+    setCrewApp(
+      detectStaffStandaloneApp() ||
+        document.cookie.includes("yike_staff_app=1")
+    );
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -102,10 +111,16 @@ export function AdminShell({
                   <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <Image src={brand.logoSm} alt="" width={32} height={32} className="rounded-lg" />
+              <Image
+                src={crewApp ? crewBrand.logoSm : brand.logoSm}
+                alt=""
+                width={32}
+                height={32}
+                className={crewApp ? "rounded-lg bg-white/95 p-0.5" : "rounded-lg"}
+              />
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-gold">
-                  {consoleTitle(consoleType)}
+                  {crewApp ? crewBrand.name : consoleTitle(consoleType)}
                 </p>
                 <p className="truncate text-xs text-white/50">{displayName}</p>
               </div>

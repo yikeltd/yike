@@ -1,8 +1,8 @@
 {
   "packageId": "ng.yike.staff",
   "host": "yike.ng",
-  "name": "Yike Staff",
-  "launcherName": "Staff",
+  "name": "Yike Crew",
+  "launcherName": "Crew",
   "display": "standalone",
   "themeColor": "#031B4E",
   "themeColorDark": "#031B4E",
@@ -13,8 +13,8 @@
   "backgroundColor": "#031B4E",
   "enableNotifications": false,
   "startUrl": "/staff",
-  "iconUrl": "https://yike.ng/icons/android-chrome-512.png",
-  "maskableIconUrl": "https://yike.ng/icons/android-chrome-512.png",
+  "iconUrl": "https://yike.ng/staff/icons/crew-512.png",
+  "maskableIconUrl": "https://yike.ng/staff/icons/crew-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./android.keystore",

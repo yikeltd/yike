@@ -6,6 +6,7 @@
   "homepage": "https://yike.ng",
   "scripts": {
     "optimize:brand": "node scripts/optimize-brand-assets.mjs",
+    "optimize:crew": "node scripts/optimize-crew-app-icon.mjs",
     "store:assets": "node scripts/generate-store-assets.mjs",
     "twa:init": "cd twa && npx @bubblewrap/cli init --manifest=https://yike.ng/manifest.json",
     "twa-staff:init": "cd twa-staff && npx @bubblewrap/cli init --manifest=https://yike.ng/staff/manifest.json",

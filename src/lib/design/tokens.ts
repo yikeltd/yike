@@ -21,3 +21,15 @@ export const brand = {
   logoSm: "/images/logo-sm.webp",
   logoFallback: "/images/logo.png",
 } as const;
+
+/** Yike Crew — internal ops app (light-background mark from app-icon.webp) */
+export const crewBrand = {
+  name: "Yike Crew",
+  shortName: "Crew",
+  logo: "/images/crew-icon.webp",
+  logoSm: "/images/crew-icon-sm.webp",
+  icon192: "/staff/icons/crew-192.webp",
+  icon512: "/staff/icons/crew-512.webp",
+  icon192Png: "/staff/icons/crew-192.png",
+  icon512Png: "/staff/icons/crew-512.png",
+} as const;
