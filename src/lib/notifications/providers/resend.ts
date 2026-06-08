@@ -35,6 +35,7 @@ export function isResendConfigured(): boolean {
 
 export async function sendTransactionalEmail(params: {
   to: string;
+  cc?: string[];
   subject: string;
   html: string;
   idempotencyKey?: string;
@@ -48,6 +49,7 @@ export async function sendTransactionalEmail(params: {
     {
       from: fromAddress(),
       to: [params.to],
+      cc: params.cc?.length ? params.cc : undefined,
       subject: params.subject,
       html: params.html,
     },
@@ -91,6 +93,8 @@ export function emailSubjectForType(type: EmailType): string {
       return "Application received — Yike Careers";
     case "career_follow_up_requested":
       return "Yike Application Follow-up";
+    case "staff_onboarding":
+      return "Welcome to Yike Crew";
     default:
       return "Yike notification";
   }

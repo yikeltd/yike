@@ -16,6 +16,8 @@ import {
   buildWelcomeEmailHtml,
   buildCareerApplicationReceivedEmailHtml,
   buildCareerFollowUpEmailHtml,
+  buildStaffOnboardingEmailHtml,
+  staffOnboardingEmailSubject,
 } from "@/lib/email/templates";
 import {
   emailSubjectForType,
@@ -37,6 +39,7 @@ async function sendEmail(
     subject: string;
     html: string;
     idempotencyKey?: string;
+    cc?: string[];
     /** Consumer emails only — admin alerts skip the sponsor slot. */
     includeEmailAd?: boolean;
   }
@@ -57,6 +60,7 @@ async function sendEmail(
 
   const result = await sendTransactionalEmail({
     to: params.email,
+    cc: params.cc,
     subject: params.subject,
     html,
     idempotencyKey: params.idempotencyKey,
@@ -336,6 +340,50 @@ export async function sendCareerFollowUpEmail(
       expiresDays: params.expiresDays,
     }),
     idempotencyKey: `career-follow-up/${params.requestId}`,
+  });
+}
+
+export async function sendStaffOnboardingEmail(
+  admin: SupabaseClient,
+  params: {
+    staffId: string;
+    toEmail: string;
+    ccEmail?: string;
+    fullName: string;
+    roleLabel: string;
+    department: string;
+    welcomeNote?: string;
+    yikeLoginEmail: string;
+    yikeTempPassword: string;
+    yikeLoginUrl: string;
+    workEmail: string;
+    zohoTempPassword: string;
+    zohoLoginUrl: string;
+    instructions?: string;
+  }
+): Promise<EmailResult> {
+  const html = buildStaffOnboardingEmailHtml({
+    fullName: params.fullName,
+    roleLabel: params.roleLabel,
+    department: params.department,
+    welcomeNote: params.welcomeNote,
+    yikeLoginEmail: params.yikeLoginEmail,
+    yikeTempPassword: params.yikeTempPassword,
+    yikeLoginUrl: params.yikeLoginUrl,
+    workEmail: params.workEmail,
+    zohoTempPassword: params.zohoTempPassword,
+    zohoLoginUrl: params.zohoLoginUrl,
+    instructions: params.instructions,
+  });
+
+  return sendEmail(admin, {
+    email: params.toEmail,
+    cc: params.ccEmail ? [params.ccEmail] : undefined,
+    type: "staff_onboarding",
+    subject: staffOnboardingEmailSubject(),
+    html,
+    idempotencyKey: `staff-onboarding/${params.staffId}`,
+    includeEmailAd: false,
   });
 }
 
