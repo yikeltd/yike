@@ -13,6 +13,9 @@ export function legacyLocationRedirect(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
   if (parts.length === 0) return null;
 
+  // Static assets (sw.js, boot-splash.js, fonts, etc.) must never become city slugs.
+  if (parts.some((part) => part.includes("."))) return null;
+
   if (parts.length === 1) {
     const slug = parts[0]!;
     if (RESERVED_PATH_PREFIXES.has(slug)) return null;

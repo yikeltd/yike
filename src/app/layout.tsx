@@ -18,6 +18,9 @@ import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
 
 const themeInitScript = `(function(){try{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');localStorage.setItem('yike-theme','light');}catch(e){}})();`;
 
+/** Inline only — /boot-splash.js was redirected to /search by middleware and never ran. */
+const bootSplashHideScript = `(function(){function hide(){var s=document.getElementById('yike-boot-splash');if(!s)return;s.classList.add('yike-boot-splash--out');setTimeout(function(){s.remove()},400);}var n=0,t=setInterval(function(){hide();if(++n>60)clearInterval(t);},100);document.addEventListener('DOMContentLoaded',hide,{once:true});window.addEventListener('load',function(){hide();clearInterval(t);},{once:true});setTimeout(function(){hide();clearInterval(t);},2500);})();`;
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -147,7 +150,7 @@ export default function RootLayout({
         />
         <link rel="apple-touch-startup-image" href="/splash/splash-1080x1920.png" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        <script src="/boot-splash.js?v=1" />
+        <script dangerouslySetInnerHTML={{ __html: bootSplashHideScript }} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
         <ThemeProvider>

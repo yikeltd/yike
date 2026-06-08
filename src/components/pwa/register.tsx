@@ -14,7 +14,7 @@ export function PwaRegister() {
     });
 
     navigator.serviceWorker
-      .register("/sw.js?v=16")
+      .register("/sw.js?v=17")
       .then((reg) => {
         reg.addEventListener("updatefound", () => {
           const worker = reg.installing;

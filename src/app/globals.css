@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* Legacy splash from cached HTML — auto-hide even if dismiss script is delayed. */
 #yike-boot-splash {
   position: fixed;
   inset: 0;
@@ -8,19 +9,18 @@
   align-items: center;
   justify-content: center;
   background: #031b4e;
-  transition: opacity 0.4s ease;
-  animation: yike-boot-splash-fallback 3.5s ease forwards;
+  pointer-events: none;
+  animation: yike-boot-splash-fallback 2.5s ease forwards;
 }
 
 @keyframes yike-boot-splash-fallback {
   0%,
-  80% {
+  70% {
     opacity: 1;
   }
 
   100% {
     opacity: 0;
-    pointer-events: none;
     visibility: hidden;
   }
 }
@@ -32,10 +32,7 @@
 }
 
 #yike-boot-splash.yike-boot-splash--out {
-  opacity: 0;
-  pointer-events: none;
-  animation: none;
-  visibility: hidden;
+  display: none !important;
 }
 
 :root {
