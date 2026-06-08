@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { AdminSectionTabs } from "@/components/admin/shell/admin-section-tabs";
+import { TRUST_SECTION_TABS } from "@/lib/admin/navigation";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { TrustQualityBatchButton } from "@/components/admin/trust-quality-controls";
 import { parseAdminPage, ADMIN_PAGE_SIZE } from "@/lib/admin/pagination";
@@ -55,6 +57,7 @@ export default async function AdminTrustMetricsPage({
 
   return (
     <div className="space-y-6">
+      <AdminSectionTabs tabs={TRUST_SECTION_TABS} />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-navy">Trust Metrics</h1>

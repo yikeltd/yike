@@ -31,7 +31,7 @@ function dealMatchingNavGroups(role: string, isSupport: boolean): NavGroup[] {
 
   const groups = filterNavForRole(AUTH_NAV_GROUPS, authNavAllowlist(role as Parameters<typeof authNavAllowlist>[0]));
   return groups.map((g) =>
-    g.id === "overview"
+    g.id === "operations"
       ? { ...g, items: [dealItem, ...g.items.filter((i) => i.segment !== "deal-matching")] }
       : g
   );

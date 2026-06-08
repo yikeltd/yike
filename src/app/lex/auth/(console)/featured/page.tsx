@@ -7,6 +7,8 @@ import { formatPrice } from "@/lib/utils";
 import { parseAdminPage } from "@/lib/admin/pagination";
 import type { Property } from "@/types/database";
 import Link from "next/link";
+import { AdminSectionTabs } from "@/components/admin/shell/admin-section-tabs";
+import { PROMOTIONS_SECTION_TABS } from "@/lib/admin/navigation";
 
 export default async function AdminFeaturedPage({
   searchParams,
@@ -37,6 +39,7 @@ export default async function AdminFeaturedPage({
 
   return (
     <div className="space-y-8">
+      <AdminSectionTabs tabs={PROMOTIONS_SECTION_TABS} />
       <section>
         <h1 className="text-2xl font-bold">Featured listings</h1>
         <p className="text-sm text-muted">

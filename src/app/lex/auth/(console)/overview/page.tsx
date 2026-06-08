@@ -5,8 +5,10 @@ import {
   AdminPageHeader,
   MetricCard,
 } from "@/components/admin/dashboard/admin-ui";
+import { AdminActionQueue } from "@/components/admin/dashboard/admin-action-queue";
 import { getSession, getProfile } from "@/lib/auth";
 import { isSuperAdmin } from "@/lib/admin/roles";
+import { fetchAdminNavBadges } from "@/lib/admin/nav-badges";
 import { LeadSummaryPanel } from "@/components/admin/lead-summary-panel";
 
 export default async function AdminOverviewPage() {
@@ -14,6 +16,7 @@ export default async function AdminOverviewPage() {
   const user = await getSession();
   const profile = user ? await getProfile(user.id) : null;
   const isOwner = profile ? isSuperAdmin(profile.role) : false;
+  const badges = isOwner ? await fetchAdminNavBadges() : {};
 
   const [
     activeListings,
@@ -104,26 +107,18 @@ export default async function AdminOverviewPage() {
     <div className="space-y-8">
       <AdminPageHeader
         title="Command Center"
-        description="Platform overview and quick actions"
+        description="Operational HQ — act on queues first, drill into systems when needed"
         actions={
-          <>
-            <Link
-              href={adminPath("listings")}
-              className="pressable rounded-xl bg-gold px-4 py-2 text-sm font-bold text-navy"
-            >
-              Review listings
-            </Link>
-            {isOwner && (
-              <Link
-                href={adminPath("staff")}
-                className="pressable rounded-xl border border-navy/10 bg-white px-4 py-2 text-sm font-semibold text-navy"
-              >
-                Manage staff
-              </Link>
-            )}
-          </>
+          <Link
+            href={adminPath("listings/review")}
+            className="pressable rounded-xl bg-gold px-4 py-2 text-sm font-bold text-navy"
+          >
+            Bulk review
+          </Link>
         }
       />
+
+      {isOwner ? <AdminActionQueue badges={badges} /> : null}
 
       <LeadSummaryPanel />
 

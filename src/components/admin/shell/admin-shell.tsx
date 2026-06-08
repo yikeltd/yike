@@ -1,20 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { brand } from "@/lib/design/tokens";
 import { staffRoleLabel, type AdminConsole } from "@/lib/admin/roles";
 import { consoleTitle } from "@/lib/admin/navigation";
+import type { AdminNavBadges, NavGroup } from "@/lib/admin/navigation";
 import { STAFF_LOGIN_PATH } from "@/lib/admin-paths";
 import type { UserRole } from "@/types/database";
 import { AdminSidebar } from "./admin-sidebar";
-import type { NavGroup } from "@/lib/admin/navigation";
+import {
+  AdminCommandPalette,
+  AdminCommandTrigger,
+} from "./admin-command-palette";
 
 type Props = {
   console: AdminConsole;
   groups: NavGroup[];
+  badges?: AdminNavBadges;
   role: UserRole;
   displayName: string;
   lastLoginAt?: string | null;
@@ -24,6 +29,7 @@ type Props = {
 export function AdminShell({
   console: consoleType,
   groups,
+  badges,
   role,
   displayName,
   lastLoginAt,
@@ -31,6 +37,18 @@ export function AdminShell({
 }: Props) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen(true);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   async function logout() {
     const supabase = createClient();
@@ -42,7 +60,7 @@ export function AdminShell({
   return (
     <div className="flex min-h-[100dvh] bg-surface">
       <div className="hidden lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:shrink-0">
-        <AdminSidebar groups={groups} />
+        <AdminSidebar groups={groups} badges={badges} />
       </div>
 
       {drawerOpen && (
@@ -56,11 +74,18 @@ export function AdminShell({
           <div className="absolute left-0 top-0 h-full w-72 shadow-2xl">
             <AdminSidebar
               groups={groups}
+              badges={badges}
               onNavigate={() => setDrawerOpen(false)}
             />
           </div>
         </div>
       )}
+
+      <AdminCommandPalette
+        groups={groups}
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40 border-b border-navy/10 bg-navy text-white">
@@ -86,6 +111,17 @@ export function AdminShell({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
+              <AdminCommandTrigger onClick={() => setPaletteOpen(true)} />
+              <button
+                type="button"
+                onClick={() => setPaletteOpen(true)}
+                className="rounded-lg p-2 text-white/80 hover:bg-white/10 sm:hidden"
+                aria-label="Search admin tools"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+                </svg>
+              </button>
               <span className="hidden rounded-full bg-gold/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold sm:inline">
                 {staffRoleLabel(role)}
               </span>
@@ -110,4 +146,3 @@ export function AdminShell({
     </div>
   );
 }
-
