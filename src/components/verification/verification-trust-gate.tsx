@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { ChevronRight, ShieldCheck } from "lucide-react";
 import {
-  VERIFICATION_REQUIRED_MESSAGE,
-  VERIFICATION_REQUIRED_SUBTEXT,
-} from "@/lib/verification/constants";
+  VERIFICATION_GATE_SUBTEXT,
+  VERIFICATION_GATE_TITLE,
+} from "@/lib/copy/user-messages";
 import type { VerificationTask } from "@/lib/verification/tasks";
 
 type Props = {
@@ -13,6 +13,7 @@ type Props = {
   hideActions?: boolean;
 };
 
+/** Compact trust gate — next step only, no repeated walls. */
 export function VerificationTrustGate({
   className = "",
   tasks = [],
@@ -20,46 +21,32 @@ export function VerificationTrustGate({
   hideActions = false,
 }: Props) {
   const pending = tasks.filter((t) => t.required && !t.complete);
+  const next = pending[0];
 
   return (
     <div
-      className={`rounded-2xl border border-navy/10 bg-white p-5 shadow-sm ${className}`}
+      className={`rounded-2xl border border-border bg-elevated px-4 py-3.5 shadow-float ${className}`}
       role="status"
     >
-      <div className="flex gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold">
-          <ShieldCheck className="h-5 w-5" aria-hidden />
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold-dark">
+          <ShieldCheck className="h-4 w-4" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-base font-semibold text-navy">{VERIFICATION_REQUIRED_MESSAGE}</p>
-          <p className="mt-1 text-sm text-muted">{VERIFICATION_REQUIRED_SUBTEXT}</p>
-
-          {pending.length > 0 ? (
-            <ul className="mt-3 space-y-1.5 text-sm text-navy">
-              {pending.slice(0, 5).map((task) => (
-                <li key={task.id} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-gold" aria-hidden />
-                  {task.label}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
+          <p className="text-sm font-semibold text-navy">{VERIFICATION_GATE_TITLE}</p>
+          {next ? (
+            <p className="mt-0.5 text-xs text-muted">Next: {next.label}</p>
+          ) : (
+            <p className="mt-0.5 text-xs text-muted">{VERIFICATION_GATE_SUBTEXT}</p>
+          )}
           {!hideActions ? (
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Link
-                href={verificationHref}
-                className="inline-flex h-10 items-center rounded-xl bg-gold px-4 text-sm font-semibold text-navy"
-              >
-                Start verification
-              </Link>
-              <Link
-                href="/contact"
-                className="inline-flex h-10 items-center rounded-xl border border-navy/15 px-4 text-sm font-semibold text-navy"
-              >
-                Contact support
-              </Link>
-            </div>
+            <Link
+              href={verificationHref}
+              className="pressable mt-2 inline-flex items-center gap-1 text-xs font-semibold text-gold-dark"
+            >
+              Open trust center
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
           ) : null}
         </div>
       </div>

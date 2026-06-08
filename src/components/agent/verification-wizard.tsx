@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
+import { friendlyPublicError, PUBLIC_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 import { cn } from "@/lib/utils";
 import { yikeVerificationWhatsAppLink } from "@/lib/agent-verification";
 import type { AgentVerification, Profile } from "@/types/database";
@@ -86,7 +87,7 @@ export function VerificationWizard({
     const data = await res.json().catch(() => ({}));
     setUploading(false);
     if (!res.ok) {
-      setMessage(data.error ?? "Upload failed");
+      setMessage(friendlyPublicError(data.error as string, "Upload failed. Try again."));
       return;
     }
     set("selfieUrl", data.url);
@@ -115,7 +116,7 @@ export function VerificationWizard({
     const data = await res.json().catch(() => ({}));
     setSubmitting(false);
     if (!res.ok) {
-      setMessage(data.error ?? "Submission failed");
+      setMessage(friendlyPublicError(data.error as string, PUBLIC_ERROR_FALLBACK));
       return;
     }
     setMessage(data.message ?? "Submitted!");
@@ -285,8 +286,7 @@ export function VerificationWizard({
       {step === 2 && (
         <div className="space-y-3 animate-in fade-in duration-200">
           <p className="text-sm text-muted">
-            Enter your 11-digit National Identification Number. We verify through a trusted
-            KYC partner when configured (Dojah / Prembly).
+            Enter your 11-digit NIN. Name must match your legal name above.
           </p>
           <Input
             placeholder="NIN (11 digits)"

@@ -3,8 +3,10 @@ export const LEGAL_REQUEST_PREFIX = "YLR";
 export const DEFAULT_PARTNER_FEE = 15000;
 export const EARNINGS_HOLD_DAYS = 7;
 
-export const LEGAL_DISCLAIMER =
-  "Yike coordinates independent legal review assistance through external legal partners. Reviews do not constitute ownership guarantees, legal certification, or protection against future disputes. Conduct your own due diligence before paying or committing.";
+export {
+  LEGAL_REVIEW_DISCLAIMER as LEGAL_DISCLAIMER,
+  LEGAL_REVIEW_DISCLAIMER_SHORT,
+} from "@/lib/copy/user-messages";
 
 export type LegalPartnerStatus =
   | "pending"

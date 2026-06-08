@@ -5,6 +5,7 @@ import { Camera, Loader2 } from "lucide-react";
 import { UserAvatar } from "@/components/profile/user-avatar";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
 import { prepareAvatarUpload } from "@/lib/media/prepare-avatar-upload";
+import { friendlyPublicError, UPLOAD_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 import { friendlyStorageError } from "@/lib/media/storage-errors";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +59,7 @@ export function AvatarUpload({
       });
       onUpdated?.(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? friendlyPublicError(err.message, UPLOAD_ERROR_FALLBACK) : UPLOAD_ERROR_FALLBACK);
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

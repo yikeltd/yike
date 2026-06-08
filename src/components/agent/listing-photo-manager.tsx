@@ -30,6 +30,7 @@ import {
   isUploadingItem,
   photoThumbSrc,
 } from "@/components/agent/listing-photo-types";
+import { friendlyPublicError, UPLOAD_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 import { friendlyStorageError } from "@/lib/media/storage-errors";
 import { cn } from "@/lib/utils";
 
@@ -173,7 +174,7 @@ export function ListingPhotoManager({
           index: Date.now() + startIndex + i,
         });
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not add photo");
+        setError(friendlyPublicError(e instanceof Error ? e.message : undefined, UPLOAD_ERROR_FALLBACK));
       }
     }
 

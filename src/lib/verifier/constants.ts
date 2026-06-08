@@ -23,8 +23,10 @@ export type VerificationRequestStatus =
   | "cancelled"
   | "fraud_review";
 
-export const LEGAL_DISCLAIMER =
-  "This is an independent physical inspection assistance report — not legal title verification, ownership guarantee, or purchase advice. Conduct your own legal due diligence before paying or committing.";
+export {
+  FIELD_VERIFIER_DISCLAIMER as LEGAL_DISCLAIMER,
+  FIELD_VERIFIER_DISCLAIMER_SHORT,
+} from "@/lib/copy/user-messages";
 
 export function lagosYearMonth(d = new Date()): string {
   const fmt = new Intl.DateTimeFormat("en-CA", {

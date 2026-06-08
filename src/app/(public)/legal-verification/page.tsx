@@ -2,7 +2,7 @@ import { PageHero } from "@/components/pages/page-hero";
 import { LegalVerificationForm } from "@/components/verification/legal-verification-form";
 import { SITE_NAME } from "@/lib/constants";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
-import { LEGAL_DISCLAIMER } from "@/lib/legal-partner/constants";
+import { LEGAL_REVIEW_DISCLAIMER_SHORT } from "@/lib/copy/user-messages";
 
 export const metadata = {
   title: `Legal Review Assistance — ${SITE_NAME}`,
@@ -23,14 +23,14 @@ export default async function LegalVerificationPage({ searchParams }: Props) {
     <div className="pb-12">
       <PageHero
         title="Legal review assistance for property documents"
-        subtitle="Yike coordinates independent legal review through external partners — professional, careful, and operationally controlled."
+        subtitle="Independent document review through trusted partners."
         image={PAGE_IMAGERY.premium}
         badge="Document review"
         variant="premium"
       />
 
       <div className="mx-auto max-w-2xl px-3 py-8 lg:px-0">
-        <p className="mb-6 text-sm text-muted leading-relaxed">{LEGAL_DISCLAIMER}</p>
+        <p className="mb-6 text-xs text-muted">{LEGAL_REVIEW_DISCLAIMER_SHORT}</p>
         <LegalVerificationForm defaultPropertyTitle={propertyTitle} propertyId={propertyId} />
       </div>
     </div>

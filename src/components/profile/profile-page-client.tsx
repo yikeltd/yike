@@ -101,7 +101,8 @@ export function ProfilePageClient({
             </span>
             {profile.verification_status !== "not_started" &&
               !verified &&
-              isLister && (
+              isLister &&
+              !showTrust && (
                 <StatusBadge status={profile.verification_status} />
               )}
           </div>
@@ -110,10 +111,13 @@ export function ProfilePageClient({
 
       {statusMessage ? (
         <div
-          className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950"
+          className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-2.5 text-sm text-amber-950"
           role="status"
         >
-          {statusMessage}
+          <p className="font-medium">{statusMessage}</p>
+          <Link href="/agent/verification" className="mt-1 inline-block text-xs font-semibold text-navy">
+            Open trust center →
+          </Link>
         </div>
       ) : null}
 

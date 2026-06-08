@@ -147,20 +147,20 @@ export function getNextStepMessage(
   if (!next) return null;
   switch (next.id) {
     case "email":
-      return "Verify your email to secure your account.";
+      return "Verify your email to continue.";
     case "whatsapp":
-      return "Add WhatsApp so agents and buyers can reach you faster.";
+      return "Add WhatsApp so buyers can reach you.";
     case "profile_photo":
-      return "Add a profile photo to build trust on your listings.";
+      return "Add a profile photo.";
     case "bank":
-      return "Add bank details to unlock payouts and stronger trust.";
+      return "Add bank details to unlock payouts.";
     case "company":
-      return "Complete company verification for stronger business trust.";
+      return "Complete company verification.";
     case "agent_badge":
       if (next.status === "under_review") {
-        return "Your verified badge application is under review.";
+        return "Badge application under review.";
       }
-      return "Apply for the verified badge to unlock higher visibility.";
+      return "Apply for verified badge for higher visibility.";
     default:
       return null;
   }

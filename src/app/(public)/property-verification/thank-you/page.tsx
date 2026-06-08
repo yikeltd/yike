@@ -22,8 +22,7 @@ export default async function PropertyVerificationThankYouPage({ searchParams }:
         </p>
       ) : null}
       <p className="mt-4 text-xs text-muted">
-        Keep this reference handy when Yike reaches out. We do not guarantee legal title — only physical
-        verification assistance.
+        Save your reference for when we contact you on WhatsApp.
       </p>
       <Link href="/" className="mt-8 inline-block rounded-xl bg-navy px-5 py-2.5 text-sm font-bold text-gold">
         Back to home

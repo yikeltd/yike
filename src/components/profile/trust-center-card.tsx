@@ -144,7 +144,7 @@ export function TrustCenterCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-navy">Trust & Verification</p>
+            <p className="text-sm font-bold text-navy">Trust setup</p>
             <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
               {chip.label}
             </span>
@@ -152,7 +152,7 @@ export function TrustCenterCard({
           {nextMessage && !allDone ? (
             <p className="mt-0.5 line-clamp-2 text-xs text-muted">{nextMessage}</p>
           ) : allDone ? (
-            <p className="mt-0.5 text-xs text-muted">Your trust profile is up to date.</p>
+            <p className="mt-0.5 text-xs text-muted">All set.</p>
           ) : null}
         </div>
         <ChevronDown

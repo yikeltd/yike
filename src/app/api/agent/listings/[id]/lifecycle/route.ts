@@ -9,6 +9,8 @@ import {
   type AgentListingAction,
 } from "@/lib/listing-lifecycle";
 import { writeAuditLog } from "@/lib/admin/audit";
+import { ACCOUNT_REVIEW_BLOCKS_MESSAGE } from "@/lib/copy/user-messages";
+import { friendlyPublicError, PUBLIC_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 import type { ListingPlan, Property } from "@/types/database";
 
 type RouteCtx = { params: Promise<{ id: string }> };
@@ -68,7 +70,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
 
     if (!canPublishListings(profile)) {
       return NextResponse.json(
-        { error: "Your account is under review. Please contact Yike support." },
+        { error: ACCOUNT_REVIEW_BLOCKS_MESSAGE },
         { status: 403 }
       );
     }
@@ -94,7 +96,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
       .eq("id", id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: friendlyPublicError(error.message, PUBLIC_ERROR_FALLBACK) }, { status: 500 });
     }
 
     const hdrs = await headers();
@@ -125,7 +127,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
 
   const { error } = await supabase.from("properties").update(patch).eq("id", id);
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: friendlyPublicError(error.message, PUBLIC_ERROR_FALLBACK) }, { status: 500 });
   }
 
   const hdrs = await headers();

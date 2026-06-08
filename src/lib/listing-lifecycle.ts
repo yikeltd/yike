@@ -12,8 +12,9 @@ export const LISTING_EXPIRED_MESSAGE =
 
 export const LISTING_REACTIVATED_MESSAGE = "Your listing is active again.";
 
-export const ACCOUNT_REVIEW_BLOCKS_REACTIVATION =
-  "Your account is under review. Please contact Yike support.";
+import { ACCOUNT_REVIEW_BLOCKS_MESSAGE } from "@/lib/copy/user-messages";
+
+export const ACCOUNT_REVIEW_BLOCKS_REACTIVATION = ACCOUNT_REVIEW_BLOCKS_MESSAGE;
 
 export function isListingExpired(
   property: Pick<Property, "expires_at" | "status">

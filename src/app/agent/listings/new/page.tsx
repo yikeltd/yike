@@ -50,22 +50,22 @@ export default async function NewListingPage() {
       {!canPublish && trustCaps.calmMessage ? (
         <TrustGateCompact tasks={verificationTasks} />
       ) : !canPublish && statusMessage ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
-          <p className="font-semibold">Posting paused</p>
-          <p className="mt-2">{statusMessage}</p>
-          <Link href="/contact" className="mt-4 inline-flex font-semibold text-navy underline">
-            Contact Yike support
+        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
+          <p className="font-medium">Posting paused</p>
+          <p className="mt-1 text-xs">{statusMessage}</p>
+          <Link href="/agent/verification" className="mt-2 inline-flex text-xs font-semibold text-navy">
+            Open trust center →
           </Link>
         </div>
       ) : atLimit ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
-          <p className="font-semibold">Listing limit reached</p>
-          <p className="mt-2">{LISTING_LIMIT_REACHED_MESSAGE}</p>
+        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
+          <p className="font-medium">Listing limit reached</p>
+          <p className="mt-1 text-xs">{LISTING_LIMIT_REACHED_MESSAGE}</p>
           <Link
             href="/agent/verification"
-            className="mt-4 inline-flex font-semibold text-navy underline"
+            className="mt-2 inline-flex text-xs font-semibold text-navy"
           >
-            Verify your account →
+            Complete trust setup →
           </Link>
         </div>
       ) : (

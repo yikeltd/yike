@@ -20,8 +20,9 @@ export type TrustCapabilities = {
   calmMessage: string | null;
 };
 
-const CALM_MESSAGE =
-  "To continue listing or receiving leads, additional verification is required.";
+import { VERIFICATION_LISTING_GATE_MESSAGE } from "@/lib/copy/user-messages";
+
+const CALM_MESSAGE = VERIFICATION_LISTING_GATE_MESSAGE;
 
 export function getTrustCapabilities(
   profile: (Partial<TrustProfileSlice> & Pick<TrustProfileSlice, "role" | "is_banned">) | null | undefined,

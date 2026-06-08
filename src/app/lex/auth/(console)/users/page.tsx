@@ -46,11 +46,10 @@ async function DatabaseUnavailable({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Users" description="Database unavailable" />
+      <AdminPageHeader title="Users" description="Could not load directory" />
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
         <p className="font-semibold">
-          {message ??
-            "Supabase service role cannot access auth admin. Check service role key/project match."}
+          {message ?? "Check Supabase service role and project configuration."}
         </p>
         <dl className="mt-4 grid gap-2 sm:grid-cols-2">
           {checks.map(([label, ok]) => (

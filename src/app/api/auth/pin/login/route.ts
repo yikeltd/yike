@@ -15,6 +15,7 @@ import {
 } from "@/lib/auth/trusted-device";
 import { verifyPin } from "@/lib/pin";
 import { createVerifiedAdminClient } from "@/lib/supabase/admin";
+import { AUTH_UNAVAILABLE_MESSAGE } from "@/lib/copy/user-messages";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
 
   const supabase = await createClient();
   if (!supabase) {
-    return NextResponse.json({ error: "Auth unavailable" }, { status: 503 });
+    return NextResponse.json({ error: AUTH_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
   const { error: otpError } = await supabase.auth.verifyOtp({

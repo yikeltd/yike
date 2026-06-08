@@ -2,7 +2,7 @@ import dynamic from "next/dynamic";
 import { PageHero } from "@/components/pages/page-hero";
 import { SITE_NAME } from "@/lib/constants";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
-import { VERIFICATION_LEGAL_DISCLAIMER } from "@/lib/verification/constants";
+import { VERIFICATION_LEGAL_DISCLAIMER_SHORT } from "@/lib/verification/constants";
 
 const PropertyVerificationForm = dynamic(
   () =>
@@ -39,14 +39,14 @@ export default async function PropertyVerificationPage({ searchParams }: Props) 
     <div className="pb-12">
       <PageHero
         title="Verify a property before you pay or travel"
-        subtitle="Yike coordinates independent physical inspections — calm, professional, and operationally serious."
+        subtitle="Independent physical checks before you pay or travel."
         image={PAGE_IMAGERY.premium}
         badge="Trust assistance"
         variant="premium"
       />
 
       <div className="mx-auto max-w-2xl px-3 py-8 lg:px-0">
-        <p className="mb-6 text-sm text-muted leading-relaxed">{VERIFICATION_LEGAL_DISCLAIMER}</p>
+        <p className="mb-6 text-xs text-muted">{VERIFICATION_LEGAL_DISCLAIMER_SHORT}</p>
         <PropertyVerificationForm
           defaultPropertyLink={propertyLink}
           defaultPropertyTitle={propertyTitle}

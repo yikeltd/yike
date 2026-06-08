@@ -13,6 +13,7 @@ import {
 } from "@/lib/auth/session-state";
 import { getDeviceTokenFromCookies, touchTrustedDevice } from "@/lib/auth/trusted-device";
 import { verifyPin } from "@/lib/pin";
+import { AUTH_UNAVAILABLE_MESSAGE } from "@/lib/copy/user-messages";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
   const supabase = await createClient();
   if (!supabase) {
-    return NextResponse.json({ error: "Auth unavailable" }, { status: 503 });
+    return NextResponse.json({ error: AUTH_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
   const { data: profile } = await supabase

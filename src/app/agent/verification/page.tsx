@@ -61,7 +61,7 @@ export default function AgentVerificationPage() {
       <div>
         <h1 className="text-xl font-bold text-navy">Verification center</h1>
         <p className="mt-1 text-sm text-muted">
-          Build trust progressively — unlock stronger visibility and platform access.
+          Build trust step by step — unlock visibility and platform access.
         </p>
       </div>
 

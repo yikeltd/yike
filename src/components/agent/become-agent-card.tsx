@@ -12,6 +12,7 @@ import {
   canRequestPhoneOtp,
   normalizeNigerianPhone,
 } from "@/lib/phone";
+import { PUBLIC_ERROR_FALLBACK, friendlyPublicError } from "@/lib/copy/public-errors";
 import { cn } from "@/lib/utils";
 
 const ACCOUNT_TYPES: { id: AccountType; label: string; hint: string }[] = [
@@ -70,7 +71,7 @@ export function BecomeAgentCard({
     const data = await res.json().catch(() => ({}));
     setLoading(false);
     if (!res.ok) {
-      setError(data.error ?? "Something went wrong");
+      setError(friendlyPublicError(data.error as string, PUBLIC_ERROR_FALLBACK));
       return;
     }
     router.push("/agent/listings/new");
@@ -81,9 +82,8 @@ export function BecomeAgentCard({
     <div className="space-y-6">
       <div className="rounded-2xl border border-gold/25 bg-gold/10 p-5">
         <h1 className="text-xl font-bold text-navy">List on Yike</h1>
-        <p className="mt-2 text-sm leading-relaxed text-foreground">
-          A short verification keeps scams off the platform. Browse stays free — listing
-          is gated for trust.
+        <p className="mt-2 text-sm text-foreground">
+          Quick setup keeps listings trusted. Browse stays free.
         </p>
       </div>
 
@@ -128,7 +128,7 @@ export function BecomeAgentCard({
         <section className="space-y-3">
           <p className="text-sm font-bold text-navy">2. WhatsApp contact</p>
           <p className="text-xs text-muted">
-            Renters reach you on WhatsApp. We use this for trust and anti-scam checks.
+            Renters reach you on WhatsApp. We use this for trust checks.
           </p>
           <Input
             value={whatsapp}

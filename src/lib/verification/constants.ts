@@ -1,7 +1,9 @@
 export const YVR_PREFIX = "YVR";
 
-export const VERIFICATION_LEGAL_DISCLAIMER =
-  "Yike provides independent property verification assistance based on physical inspection observations. This does not constitute legal ownership confirmation or legal advice.";
+export {
+  VERIFICATION_LEGAL_DISCLAIMER,
+  VERIFICATION_LEGAL_DISCLAIMER_SHORT,
+} from "@/lib/copy/user-messages";
 
 export type VerificationPriority = "low" | "normal" | "high" | "urgent";
 
@@ -111,15 +113,11 @@ export const PREMIUM_TRUST_TIERS = [
 
 export type PremiumTrustTier = (typeof PREMIUM_TRUST_TIERS)[number];
 
-export const VERIFICATION_REQUIRED_MESSAGE =
-  "Verify your account to continue working with Yike.";
-
-export const VERIFICATION_REQUIRED_SUBTEXT =
-  "To help keep Yike trusted and secure, additional verification is required for your account.";
-
-/** Legacy copy for listing-specific gates */
-export const VERIFICATION_LISTING_GATE_MESSAGE =
-  "To continue listing or receiving leads, additional verification is required.";
+export {
+  TRUST_SETUP_TITLE as VERIFICATION_REQUIRED_MESSAGE,
+  TRUST_SETUP_SUBTEXT as VERIFICATION_REQUIRED_SUBTEXT,
+  VERIFICATION_LISTING_GATE_MESSAGE,
+} from "@/lib/copy/user-messages";
 
 export type TrustReviewCaseType =
   | "escalated_user"

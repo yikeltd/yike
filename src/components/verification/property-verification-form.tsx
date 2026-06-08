@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   CONCERN_FLAG_OPTIONS,
   VERIFICATION_LEGAL_DISCLAIMER,
+  VERIFICATION_LEGAL_DISCLAIMER_SHORT,
   VERIFICATION_NEED_OPTIONS,
 } from "@/lib/verification/constants";
 
@@ -219,12 +220,12 @@ export function PropertyVerificationForm({
         </label>
         <label className="flex items-start gap-2 text-sm">
           <input name="termsAccepted" type="checkbox" required className="mt-1" />
-          <span>
-            I understand Yike provides physical verification assistance only — not legal title or ownership
-            guarantees.
-          </span>
+          <span>{VERIFICATION_LEGAL_DISCLAIMER_SHORT}</span>
         </label>
-        <p className="text-xs text-muted leading-relaxed">{VERIFICATION_LEGAL_DISCLAIMER}</p>
+        <details className="text-xs text-muted">
+          <summary className="cursor-pointer font-semibold text-navy">View details</summary>
+          <p className="mt-2 leading-relaxed">{VERIFICATION_LEGAL_DISCLAIMER}</p>
+        </details>
       </section>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}

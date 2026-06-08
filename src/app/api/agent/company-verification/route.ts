@@ -4,6 +4,7 @@ import { enforceActiveSession } from "@/lib/auth/require-active-session";
 import { requireSensitiveGate } from "@/lib/auth/sensitive-gate";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/admin/audit";
+import { friendlyPublicError, PUBLIC_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 
 export async function POST(req: Request) {
   const session = await enforceActiveSession(req);
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: friendlyPublicError(error.message, PUBLIC_ERROR_FALLBACK) }, { status: 500 });
   }
 
   const hdrs = await headers();

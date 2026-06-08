@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LEGAL_DISCLAIMER, REVIEW_TYPE_OPTIONS } from "@/lib/legal-partner/constants";
+import { REVIEW_TYPE_OPTIONS } from "@/lib/legal-partner/constants";
+import { LEGAL_REVIEW_DISCLAIMER, LEGAL_REVIEW_DISCLAIMER_SHORT } from "@/lib/copy/user-messages";
 
 type Props = {
   defaultPropertyTitle?: string;
@@ -51,7 +52,11 @@ export function LegalVerificationForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
-      <p className="text-sm text-muted leading-relaxed">{LEGAL_DISCLAIMER}</p>
+      <details className="text-sm text-muted">
+        <summary className="cursor-pointer font-semibold text-navy">View details</summary>
+        <p className="mt-2 leading-relaxed">{LEGAL_REVIEW_DISCLAIMER}</p>
+      </details>
+      <p className="text-xs text-muted">{LEGAL_REVIEW_DISCLAIMER_SHORT}</p>
 
       <section className="space-y-4 rounded-2xl border bg-white p-5">
         <h2 className="text-sm font-bold uppercase tracking-wide text-navy">Your details</h2>
@@ -108,13 +113,9 @@ export function LegalVerificationForm({
       </section>
 
       <section className="rounded-2xl border bg-white p-5">
-        <label className="flex gap-3 text-xs text-muted leading-relaxed">
+        <label className="flex gap-3 text-xs text-muted">
           <input name="termsAccepted" type="checkbox" required className="mt-1" />
-          <span>
-            I understand Yike coordinates independent legal review assistance and does not guarantee
-            ownership, title, or protection from future disputes. I will submit documents when Yike
-            contacts me on WhatsApp.
-          </span>
+          <span>{LEGAL_REVIEW_DISCLAIMER_SHORT} I will submit documents when Yike contacts me.</span>
         </label>
       </section>
 
