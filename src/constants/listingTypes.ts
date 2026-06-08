@@ -68,15 +68,18 @@ export function isHotelPropertyType(value: string | null | undefined): boolean {
   return (HOTEL_PROPERTY_TYPES as readonly string[]).includes(value);
 }
 
+/** Home hero chips — four fit cleanly on narrow phones (e.g. Galaxy S21). Shops live on search. */
 export const HOME_DEAL_TYPES: SearchDealChip[] = [
   { value: "", label: "All" },
   { value: "rent", label: "Rent" },
   { value: "sale", label: "Buy" },
   { value: "land", label: "Land", hub: "land_sale" },
-  { value: "shops", label: "Shops", propertyType: "shop" },
 ];
 
-export const SEARCH_DEAL_TYPES: SearchDealChip[] = [...HOME_DEAL_TYPES];
+export const SEARCH_DEAL_TYPES: SearchDealChip[] = [
+  ...HOME_DEAL_TYPES,
+  { value: "shops", label: "Shops", propertyType: "shop" },
+];
 
 export type SearchDealType = (typeof SEARCH_DEAL_TYPES)[number]["value"];
 

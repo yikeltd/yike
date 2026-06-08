@@ -114,6 +114,14 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Installed PWA / TWA — reduce browser chrome feel on navigation */
+@media (display-mode: standalone) {
+  html,
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

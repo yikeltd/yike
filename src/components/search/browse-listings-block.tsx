@@ -144,7 +144,7 @@ export function BrowseListingsBlock({
     <div className={shellClass}>
       <p className={cn(titleClass, "text-center text-balance")}>{title}</p>
 
-      <div className="mb-3.5 flex flex-wrap justify-center gap-2 pb-0.5 lg:mb-3">
+      <div className="mb-3.5 grid grid-cols-4 gap-1.5 pb-0.5 lg:mb-3 lg:flex lg:justify-center lg:gap-2">
         {HOME_DEAL_TYPES.map((t) => {
           const key = chipKey(t);
           const active = dealKey === key;
@@ -154,7 +154,7 @@ export function BrowseListingsBlock({
               type="button"
               onClick={() => setDealKey(key)}
               className={cn(
-                "pressable shrink-0 rounded-full px-4 py-2.5 text-sm font-bold transition-all duration-200",
+                "pressable min-w-0 rounded-full px-2 py-2 text-center text-[11px] font-bold leading-tight transition-all duration-200 sm:text-xs lg:shrink-0 lg:px-4 lg:py-2.5 lg:text-sm",
                 active
                   ? "bg-gold text-navy shadow-glow-gold"
                   : chipIdle
