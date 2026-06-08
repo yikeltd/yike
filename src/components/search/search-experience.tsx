@@ -2,7 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BUDGET_RANGES, getAreasForSearchCity } from "@/lib/constants";
+import { getAreasForSearchCity } from "@/lib/constants";
+import {
+  BUDGET_RANGES,
+  budgetParamsFromIndex,
+  budgetSelectOptions,
+} from "@/lib/budget-ranges";
 import { getAllCitiesForState } from "@/constants/nigeriaAllCities";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { SEARCH_DEAL_TYPES, findDealChip } from "@/constants/listingTypes";
@@ -14,6 +19,7 @@ import {
 } from "@/lib/search-recent";
 import { parseLocationQuery } from "@/lib/location-search";
 import { LocationCombobox } from "./location-combobox";
+import { ThemedSelect } from "@/components/ui/themed-select";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
 import { TrendingUp, Clock, ChevronDown, SlidersHorizontal } from "lucide-react";
@@ -68,9 +74,9 @@ export function SearchExperience({
     if (searchState) params.set("state", searchState);
     if (searchCity) params.set("city", searchCity);
     if (searchArea) params.set("area", searchArea);
-    const range = BUDGET_RANGES[Number(budget)];
-    if (range?.min) params.set("min", String(range.min));
-    if (range?.max) params.set("max", String(range.max));
+    const { min: budgetMin, max: budgetMax } = budgetParamsFromIndex(Number(budget));
+    if (budgetMin) params.set("min", budgetMin);
+    if (budgetMax) params.set("max", budgetMax);
     return params;
   }
 
@@ -111,9 +117,9 @@ export function SearchExperience({
     if (parsed.area) params.set("area", parsed.area);
     if (parsed.bedrooms) params.set("beds", String(parsed.bedrooms));
     if (!parsed.city && !parsed.area && !parsed.state) params.set("q", smartQuery);
-    const range = BUDGET_RANGES[Number(budget)];
-    if (range?.min) params.set("min", String(range.min));
-    if (range?.max) params.set("max", String(range.max));
+    const { min: budgetMin, max: budgetMax } = budgetParamsFromIndex(Number(budget));
+    if (budgetMin) params.set("min", budgetMin);
+    if (budgetMax) params.set("max", budgetMax);
     const href = `/search?${params.toString()}`;
     addRecentSearch({
       label: parsed.resolvedLabel ?? smartQuery,
@@ -244,17 +250,13 @@ export function SearchExperience({
               </datalist>
             ) : null}
 
-            <select
+            <ThemedSelect
               value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-              className="h-12 w-full rounded-xl bg-surface px-4 text-sm text-foreground outline-none focus:ring-2 focus:ring-gold/40"
-            >
-              {BUDGET_RANGES.map((b, i) => (
-                <option key={b.label} value={i}>
-                  {b.label}
-                </option>
-              ))}
-            </select>
+              onChange={setBudget}
+              options={budgetSelectOptions()}
+              placeholder="Any budget"
+              ariaLabel="Budget"
+            />
           </div>
 
           <button

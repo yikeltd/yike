@@ -1,17 +1,11 @@
-import { BUDGET_RANGES } from "@/lib/constants";
 import { PROPERTY_TYPES } from "@/constants/propertyCategories";
 import { hubLabel } from "@/constants/listingTypes";
+import { budgetLabelFromSearchParams } from "@/lib/budget-ranges";
 
 export function budgetLabelFromParams(min: string | null, max: string | null): string | null {
-  if (!min && !max) return null;
-  const range = BUDGET_RANGES.find(
-    (b) =>
-      (min ? String(b.min) === min : b.min === 0 && !min) &&
-      (max ? String(b.max) === max : !b.max)
-  );
-  if (range && range.min === 0 && range.max == null) return null;
-  if (range) return range.label;
-  if (min && max) return `₦${Number(min).toLocaleString()} – ₦${Number(max).toLocaleString()}`;
+  const label = budgetLabelFromSearchParams(min, max);
+  if (label) return label;
+  if (min && max) return `₦${Number(min).toLocaleString()} - ₦${Number(max).toLocaleString()}`;
   if (min) return `From ₦${Number(min).toLocaleString()}`;
   if (max) return `Under ₦${Number(max).toLocaleString()}`;
   return null;

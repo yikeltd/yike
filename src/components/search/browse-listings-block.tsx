@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from "react";
 import {
-  BUDGET_RANGES,
   getAllCitiesComplete,
   getAllCitiesForState,
   getStateDisplayLabel,
   getStateForCity,
   getStates,
 } from "@/lib/constants";
+import { budgetParamsFromIndex, budgetSelectOptions } from "@/lib/budget-ranges";
 import { PROPERTY_TYPES } from "@/constants/propertyCategories";
 import {
   HOME_DEAL_TYPES,
@@ -106,9 +106,11 @@ export function BrowseListingsBlock({
     if (searchCity) params.set("city", searchCity);
     if (searchArea) params.set("area", searchArea);
 
-    const range = BUDGET_RANGES[Number(budgetIndex)];
-    if (range?.min) params.set("min", String(range.min));
-    if (range?.max) params.set("max", String(range.max));
+    const { min: budgetMin, max: budgetMax } = budgetParamsFromIndex(
+      Number(budgetIndex)
+    );
+    if (budgetMin) params.set("min", budgetMin);
+    if (budgetMax) params.set("max", budgetMax);
 
     const label =
       [searchCity, searchArea].filter(Boolean).join(" · ") ||
@@ -154,10 +156,7 @@ export function BrowseListingsBlock({
     ...PROPERTY_TYPES.slice(0, 14).map((t) => ({ value: t.value, label: t.label })),
   ];
 
-  const budgetOptions = BUDGET_RANGES.map((b, i) => ({
-    value: String(i),
-    label: b.label,
-  }));
+  const budgetOptions = budgetSelectOptions();
 
   return (
     <div className={shellClass}>

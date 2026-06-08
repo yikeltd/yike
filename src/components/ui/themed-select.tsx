@@ -25,7 +25,9 @@ export function ThemedSelect({
 }) {
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
-  const display = selected && selected.value !== "" ? selected.label : placeholder;
+  const isPlaceholder =
+    !selected || (selected.value === "" && selected.label === placeholder);
+  const display = isPlaceholder ? placeholder : (selected?.label ?? placeholder);
 
   useEffect(() => {
     if (!open) return;

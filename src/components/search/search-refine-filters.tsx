@@ -3,18 +3,21 @@
 import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  BUDGET_RANGES,
   getAllCitiesComplete,
   getAllCitiesForState,
+  getStateDisplayLabel,
   getStateForCity,
   getStates,
 } from "@/lib/constants";
 import { PROPERTY_TYPES } from "@/constants/propertyCategories";
+import {
+  budgetIndexFromSearchParams,
+  budgetParamsFromIndex,
+  budgetSelectOptions,
+} from "@/lib/budget-ranges";
+import { ThemedSelect } from "@/components/ui/themed-select";
 import { cn } from "@/lib/utils";
 import { ShieldCheck, Star } from "lucide-react";
-
-const selectClass =
-  "h-10 w-full rounded-xl border border-navy/10 bg-white px-3 text-xs font-medium text-foreground outline-none focus:border-gold/40 focus:ring-2 focus:ring-gold/25 lg:text-sm";
 
 export function SearchRefineFilters({ className }: { className?: string }) {
   const router = useRouter();
@@ -26,22 +29,47 @@ export function SearchRefineFilters({ className }: { className?: string }) {
   const verified = sp.get("verified") === "1";
   const featured = sp.get("featured") === "1";
 
-  const budgetIndex = useMemo(() => {
-    const min = sp.get("min");
-    const max = sp.get("max");
-    if (!min && !max) return 0;
-    const idx = BUDGET_RANGES.findIndex(
-      (b) =>
-        (min ? String(b.min) === min : !b.min) &&
-        (max ? String(b.max) === max : !b.max)
-    );
-    return idx === -1 ? 0 : idx;
-  }, [sp]);
+  const budgetIndex = useMemo(
+    () => String(budgetIndexFromSearchParams(sp.get("min"), sp.get("max"))),
+    [sp]
+  );
 
   const cityOptions = useMemo(
     () => (state ? getAllCitiesForState(state) : getAllCitiesComplete()),
     [state]
   );
+
+  const stateOptions = useMemo(
+    () => [
+      { value: "", label: "Any state" },
+      ...getStates().map((s) => ({
+        value: s,
+        label: getStateDisplayLabel(s),
+      })),
+    ],
+    []
+  );
+
+  const cityOptionsList = useMemo(
+    () => [
+      { value: "", label: "Any city" },
+      ...cityOptions.map((c) => ({ value: c, label: c })),
+    ],
+    [cityOptions]
+  );
+
+  const propertyTypeOptions = useMemo(
+    () => [
+      { value: "", label: "Any property type" },
+      ...PROPERTY_TYPES.slice(0, 16).map((t) => ({
+        value: t.value,
+        label: t.label,
+      })),
+    ],
+    []
+  );
+
+  const budgetOptions = useMemo(() => budgetSelectOptions(), []);
 
   function push(updates: Record<string, string | null>) {
     const params = new URLSearchParams(sp.toString());
@@ -63,27 +91,18 @@ export function SearchRefineFilters({ className }: { className?: string }) {
 
   return (
     <div className={cn("grid grid-cols-2 gap-2.5 px-3 pb-3 pt-1", className)}>
-      <select
+      <ThemedSelect
         value={state}
-        onChange={(e) => {
-          const value = e.target.value;
+        onChange={(value) => {
           push({ state: value || null, city: null, area: null });
         }}
-        aria-label="State"
-        className={selectClass}
-      >
-        <option value="">Any state</option>
-        {getStates().map((s) => (
-          <option key={s} value={s}>
-            {s}
-          </option>
-        ))}
-      </select>
-
-      <select
+        options={stateOptions}
+        placeholder="Any state"
+        ariaLabel="State"
+      />
+      <ThemedSelect
         value={city}
-        onChange={(e) => {
-          const value = e.target.value;
+        onChange={(value) => {
           const inferred = value ? getStateForCity(value) : "";
           push({
             city: value || null,
@@ -91,55 +110,34 @@ export function SearchRefineFilters({ className }: { className?: string }) {
             ...(inferred ? { state: inferred } : {}),
           });
         }}
-        aria-label="City"
-        className={selectClass}
-      >
-        <option value="">Any city</option>
-        {cityOptions.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={propertyType}
-        onChange={(e) => {
-          const value = e.target.value;
-          push({
-            property_type: value || null,
-            hub: value === "land" ? "land_sale" : null,
-          });
-        }}
-        aria-label="Property type"
-        className={cn(selectClass, "col-span-2 sm:col-span-1")}
-      >
-        <option value="">Any Property Type</option>
-        {PROPERTY_TYPES.slice(0, 16).map((t) => (
-          <option key={t.value} value={t.value}>
-            {t.label}
-          </option>
-        ))}
-      </select>
-
-      <select
+        options={cityOptionsList}
+        placeholder="Any city"
+        ariaLabel="City"
+      />
+      <div className="col-span-2 sm:col-span-1">
+        <ThemedSelect
+          value={propertyType}
+          onChange={(value) => {
+            push({
+              property_type: value || null,
+              hub: value === "land" ? "land_sale" : null,
+            });
+          }}
+          options={propertyTypeOptions}
+          placeholder="Any property type"
+          ariaLabel="Property type"
+        />
+      </div>
+      <ThemedSelect
         value={budgetIndex}
-        onChange={(e) => {
-          const range = BUDGET_RANGES[Number(e.target.value)];
-          push({
-            min: range?.min ? String(range.min) : null,
-            max: range?.max ? String(range.max) : null,
-          });
+        onChange={(value) => {
+          const { min, max } = budgetParamsFromIndex(Number(value));
+          push({ min, max });
         }}
-        aria-label="Budget"
-        className={selectClass}
-      >
-        {BUDGET_RANGES.map((b, i) => (
-          <option key={b.label} value={i}>
-            {b.label}
-          </option>
-        ))}
-      </select>
+        options={budgetOptions}
+        placeholder="Any budget"
+        ariaLabel="Budget"
+      />
 
       <div className="col-span-2 flex gap-2">
         <button

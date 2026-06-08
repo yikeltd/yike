@@ -2,6 +2,7 @@ import type { PropertySearchParams } from "@/lib/properties";
 import type { DiscoverHub } from "@/types/database";
 import { PROPERTY_CATEGORIES } from "@/constants/propertyCategories";
 import { BUDGET_RANGES } from "@/lib/constants";
+import { budgetIndexFromSearchParams } from "@/lib/budget-ranges";
 import {
   normalizeLocationQuery,
   parseLocationQuery,
@@ -208,10 +209,8 @@ export function buildSearchHref(
 }
 
 export function budgetIndexFromPrices(min?: number, max?: number): number {
-  const idx = BUDGET_RANGES.findIndex((b) => {
-    const minOk = min != null ? b.min === min : b.min === 0;
-    const maxOk = max != null ? b.max === max : b.max == null;
-    return minOk && maxOk;
-  });
-  return idx >= 0 ? idx : 0;
+  return budgetIndexFromSearchParams(
+    min != null ? String(min) : null,
+    max != null ? String(max) : null
+  );
 }

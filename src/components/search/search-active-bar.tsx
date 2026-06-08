@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { hubLabel } from "@/constants/listingTypes";
-import { formatSearchFilterSummary } from "@/lib/search-summary";
+import { budgetLabelFromParams, formatSearchFilterSummary } from "@/lib/search-summary";
 import { SaveSearchButton } from "./save-search-button";
 import { cn } from "@/lib/utils";
 
@@ -64,14 +64,9 @@ export function SearchActiveBar({
   if (sp.get("verified") === "1") pills.push({ key: "verified", text: "Verified" });
   if (sp.get("featured") === "1") pills.push({ key: "featured", text: "Featured" });
   if (sp.get("min") || sp.get("max")) {
-    const min = sp.get("min");
-    const max = sp.get("max");
-    pills.push({
-      key: "budget",
-      text: [min && `₦${Number(min).toLocaleString()}+`, max && `≤₦${Number(max).toLocaleString()}`]
-        .filter(Boolean)
-        .join(" "),
-    });
+    const label =
+      budgetLabelFromParams(sp.get("min"), sp.get("max")) ?? "Budget";
+    pills.push({ key: "budget", text: label });
   }
 
   const hasFilters = pills.length > 0;
