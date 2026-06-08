@@ -10,7 +10,6 @@ export function PropertyGrid({
   properties,
   emptyMessage = "No homes match yet — try a nearby area or wider budget.",
   showCount,
-  isDemo,
   midFeedAd,
   feedAdInsertAfter = 4,
   adPlacementKey = "home_feed_mid",
@@ -54,19 +53,12 @@ export function PropertyGrid({
 
   return (
     <div>
-      {(showCount || isDemo) && (
+      {showCount && (
         <div className="mb-4 flex flex-wrap items-center gap-2 px-0 lg:px-0">
-          {showCount && (
-            <p className="text-sm text-muted">
-              <span className="font-bold text-foreground">{properties.length}</span>{" "}
-              homes
-            </p>
-          )}
-          {isDemo && (
-            <span className="rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold-dark">
-              Sample listings — connect Supabase for live data
-            </span>
-          )}
+          <p className="text-sm text-muted">
+            <span className="font-bold text-foreground">{properties.length}</span>{" "}
+            homes
+          </p>
         </div>
       )}
       <div className="hidden lg:grid lg:grid-cols-3 lg:gap-7 xl:gap-9">

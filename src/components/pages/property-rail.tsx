@@ -24,7 +24,7 @@ export async function PropertyRail({
 }) {
   const merged = hub ? { ...params, hub } : params;
   const rows = await getPublicProperties(merged, limit);
-  const { items, isDemo } = withDemoFallback(rows);
+  const { items } = withDemoFallback(rows);
   if (items.length === 0) return null;
 
   return (
@@ -44,11 +44,6 @@ export async function PropertyRail({
           </div>
         ))}
       </div>
-      {isDemo && (
-        <p className="mt-2 px-3 text-[11px] text-muted lg:px-0">
-          Live inventory updates daily across Nigeria.
-        </p>
-      )}
     </PageSection>
   );
 }

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getRelatedSections } from "@/lib/properties";
 import type { Property } from "@/types/database";
 import { PropertyCard } from "./property-card";
-import { isDemoProperty } from "@/lib/mock-listings";
 import { NearbyPrefetch } from "./nearby-prefetch";
 
 function PropertyRail({ properties }: { properties: Property[] }) {
@@ -57,11 +56,6 @@ export async function RelatedListings({ property }: { property: Property }) {
           <PropertyRail properties={section.properties} />
         </section>
       ))}
-      {isDemoProperty(property.id) && (
-        <p className="px-4 text-xs text-muted lg:px-0">
-          Sample listings — connect Supabase for live inventory
-        </p>
-      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { mergeQueryIntoParams } from "@/lib/location-search";
 import { buildMockListings } from "@/lib/mock-listings-seed";
 import { buildPropertySlugBase } from "@/lib/property-slugs";
 import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const MOCK_LISTINGS: Property[] = buildMockListings().map((p) => ({
   ...p,
@@ -160,7 +161,7 @@ export function withDemoFallback(
       isDemo: properties.every((p) => isDemoProperty(p.id)),
     };
   }
-  if (options?.allowEmpty) {
+  if (options?.allowEmpty || isSupabaseConfigured()) {
     return { items: [], isDemo: false };
   }
   return { items: MOCK_LISTINGS.slice(0, 24), isDemo: true };

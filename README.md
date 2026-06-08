@@ -88,7 +88,7 @@ Push to `main` → Vercel production deploys automatically (Git integration). Ot
 | `SENDCHAMP_API_KEY` | Production, Preview (secret) |
 | `RESEND_API_KEY` | Production, Preview (secret) |
 
-See `.env.example` for all keys. Supabase: [API settings](https://supabase.com/dashboard/project/gyxemepnrkwxocgzfbeo/settings/api).
+See `.env.example` for all keys. Supabase: [API settings](https://supabase.com/dashboard/project/hlpojfurfldvcxfxhveg/settings/api).
 
 ### Local deploy (optional)
 

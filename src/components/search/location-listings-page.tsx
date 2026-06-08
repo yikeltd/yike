@@ -5,7 +5,6 @@ import { SearchPanel } from "@/components/search/search-panel";
 import { AreaGuidePanel } from "@/components/search/area-guide-panel";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { countListingsForArea, countListingsForCity } from "@/lib/listing-counts";
-import { isDemoProperty } from "@/lib/mock-listings";
 
 export async function LocationListingsPage({
   title,
@@ -31,8 +30,6 @@ export async function LocationListingsPage({
     listing_type: searchParams.type,
   };
   const properties = await getPublicProperties(params, 48);
-  const isDemo =
-    properties.length > 0 && properties.every((p) => isDemoProperty(p.id));
   const count = area
     ? await countListingsForArea(city, area)
     : await countListingsForCity(city);
@@ -62,11 +59,6 @@ export async function LocationListingsPage({
         </p>
         <p className="mt-2 text-sm">
           <span className="font-bold text-navy">{count}</span> homes available
-          {isDemo && (
-            <span className="ml-2 rounded-full bg-gold/15 px-2 py-0.5 text-xs font-bold text-gold-dark">
-              Sample data
-            </span>
-          )}
         </p>
       </header>
 
@@ -80,7 +72,7 @@ export async function LocationListingsPage({
 
       <AdSlot placement="location_top" className="mb-6" />
 
-      <PropertyFeed properties={properties} isDemo={isDemo} showCount />
+      <PropertyFeed properties={properties} showCount />
     </div>
   );
 }

@@ -121,7 +121,7 @@ export async function getApprovedPropertyIds(limit = 200): Promise<string[]> {
   }
   const supabase = await createClient();
   if (!supabase) {
-    return MOCK_LISTINGS.map((p) => p.id).slice(0, limit);
+    return [];
   }
   const { data } = await supabase
     .from("properties")
@@ -132,19 +132,19 @@ export async function getApprovedPropertyIds(limit = 200): Promise<string[]> {
     .limit(limit);
   const ids = (data ?? []).map((r) => r.id as string);
   if (ids.length > 0) return ids;
-  return MOCK_LISTINGS.map((p) => p.id).slice(0, limit);
+  return [];
 }
 
 export async function getFeaturedProperties(limit = 8): Promise<Property[]> {
   if (!isSupabaseConfigured()) return getMockFeatured(limit);
   const rows = await getPublicProperties({ featured: true }, limit);
-  return rows.length > 0 ? rows : getMockFeatured(limit);
+  return rows;
 }
 
 export async function getVerifiedListings(limit = 8): Promise<Property[]> {
   if (!isSupabaseConfigured()) return getMockVerified(limit);
   const supabase = await createClient();
-  if (!supabase) return getMockVerified(limit);
+  if (!supabase) return [];
   const { data } = await supabase
     .from("properties")
     .select(PUBLIC_SELECT)
@@ -154,8 +154,7 @@ export async function getVerifiedListings(limit = 8): Promise<Property[]> {
     .order("created_at", { ascending: false })
     .limit(limit);
   const rows = ((data ?? []) as Property[]).filter((p) => isTrustVerified(p));
-  if (rows.length > 0) return rows.slice(0, limit);
-  return getMockVerified(limit);
+  return rows.slice(0, limit);
 }
 
 export async function getHubListings(
@@ -165,7 +164,7 @@ export async function getHubListings(
   const { getMockByHub } = await import("@/lib/mock-listings");
   if (!isSupabaseConfigured()) return getMockByHub(hub, limit);
   const rows = await getPublicProperties({ hub }, limit);
-  return rows.length > 0 ? rows : getMockByHub(hub, limit);
+  return rows;
 }
 
 export async function getPropertyById(id: string): Promise<Property | null> {
@@ -183,7 +182,7 @@ export async function getPropertyById(id: string): Promise<Property | null> {
     }
   }
 
-  return getMockPropertyById(id);
+  return isSupabaseConfigured() ? null : getMockPropertyById(id);
 }
 
 export async function getPropertyBySlug(slug: string): Promise<Property | null> {
@@ -200,6 +199,8 @@ export async function getPropertyBySlug(slug: string): Promise<Property | null> 
       if (data) return data as Property;
     }
   }
+
+  if (isSupabaseConfigured()) return null;
 
   const mock = MOCK_LISTINGS.find(
     (p) =>
@@ -255,10 +256,7 @@ export async function getApprovedPropertySlugs(
   }
   const supabase = await createClient();
   if (!supabase) {
-    return MOCK_LISTINGS.slice(0, limit).map((p) => ({
-      id: p.id,
-      slug: p.slug,
-    }));
+    return [];
   }
   const { data } = await supabase
     .from("properties")
@@ -289,7 +287,7 @@ export async function getRelatedProperties(
   }
 
   const supabase = await createClient();
-  if (!supabase) return getRelatedMockListings(property, limit);
+  if (!supabase) return [];
 
   const { data: areaData } = await supabase
     .from("properties")
@@ -324,8 +322,7 @@ export async function getRelatedProperties(
     if (out.length >= limit) break;
   }
 
-  if (out.length > 0) return out;
-  return getRelatedMockListings(property, limit);
+  return out;
 }
 
 async function fetchRelatedPool(
@@ -336,7 +333,7 @@ async function fetchRelatedPool(
     return getRelatedMockListings(property, limit * 3);
   }
   const supabase = await createClient();
-  if (!supabase) return getRelatedMockListings(property, limit * 3);
+  if (!supabase) return [];
 
   const { data } = await supabase
     .from("properties")
@@ -348,8 +345,7 @@ async function fetchRelatedPool(
     .limit(limit * 4);
 
   const rows = (data ?? []) as Property[];
-  if (rows.length > 0) return rows;
-  return getRelatedMockListings(property, limit * 3);
+  return rows;
 }
 
 function priceBand(price: number, pct = 0.35) {
