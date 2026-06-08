@@ -12,6 +12,7 @@ export function ListingImage({
   sizes,
   className,
   width = 1200,
+  blurDataUrl,
 }: {
   src: string;
   alt: string;
@@ -19,6 +20,7 @@ export function ListingImage({
   sizes?: string;
   className?: string;
   width?: number;
+  blurDataUrl?: string | null;
 }) {
   const [loaded, setLoaded] = useState(false);
   const optimized = optimizeListingImageUrl(src, width);
@@ -29,6 +31,15 @@ export function ListingImage({
       {!loaded && (
         <div
           className="absolute inset-0 skeleton animate-pulse-soft"
+          style={
+            blurDataUrl
+              ? {
+                  backgroundImage: `url(${blurDataUrl})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }
+              : undefined
+          }
           aria-hidden
         />
       )}
@@ -37,6 +48,8 @@ export function ListingImage({
         alt={alt}
         fill
         priority={priority}
+        placeholder={blurDataUrl ? "blur" : undefined}
+        blurDataURL={blurDataUrl ?? undefined}
         sizes={sizes ?? "(max-width: 640px) 94vw, 420px"}
         className={cn(
           "object-cover object-center transition-[opacity,transform] duration-500 ease-out",

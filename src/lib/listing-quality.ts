@@ -1,5 +1,7 @@
-import type { Property } from "@/types/database";
+import type { Property, PropertyMediaItem } from "@/types/database";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
+import { normalizePropertyMedia } from "@/lib/media/items";
+import { PREFERRED_COVER_LABELS } from "@/lib/media/labels";
 
 export type ListingQualityFlag =
   | "call_for_price"
@@ -148,11 +150,29 @@ export function qualityFlagLabel(flag: ListingQualityFlag): string {
   }
 }
 
+function photoQualityBonus(items: PropertyMediaItem[]): number {
+  if (items.length === 0) return 0;
+  let bonus = 0;
+  bonus += Math.min(items.length, 8) * 4;
+  const labeled = items.filter((i) => i.room_label && i.room_label !== "Other");
+  bonus += Math.min(labeled.length, 6) * 2;
+  const sharp = items.filter(
+    (i) => !i.width || Math.max(i.width, i.height ?? 0) >= 480
+  );
+  bonus += Math.min(sharp.length, 6) * 2;
+  if (items.some((i) => PREFERRED_COVER_LABELS.has(i.room_label ?? ""))) {
+    bonus += 6;
+  }
+  return bonus;
+}
+
 /** Internal 0–100 score for feed ranking — not shown to users. */
 export function computeListingQualityScore(property: Property): number {
   let score = 0;
 
-  score += Math.min(property.media_urls.length, 8) * 8;
+  const mediaItems = normalizePropertyMedia(property);
+  score += photoQualityBonus(mediaItems);
+  score += Math.min(property.media_urls.length, 8) * 4;
   const descLen = (property.description ?? "").trim().length;
   if (descLen >= 120) score += 24;
   else if (descLen >= 60) score += 14;

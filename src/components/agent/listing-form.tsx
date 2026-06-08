@@ -3,8 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ImageUploader } from "./image-uploader";
-import { MediaTagEditor } from "./media-tag-editor";
+import { ListingPhotoManager } from "./listing-photo-manager";
+import {
+  readyPhotoItems,
+  stripListingPhotoForPersist,
+  type ListingPhotoItem,
+} from "./listing-photo-types";
 import { ListingPropertyTypePicker } from "./listing-property-type-picker";
 import { ListingLocationSearch } from "./listing-location-search";
 import { ListingAmenitiesPicker } from "./listing-amenities-picker";
@@ -30,12 +34,10 @@ import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { FeeTransparencyMode, ListingExtras, Property } from "@/types/database";
 import {
-  createMediaItemFromUpload,
   dedupeMediaItems,
   mediaItemsToUrls,
   normalizePropertyMedia,
   sortMediaItemsForStory,
-  type PropertyMediaItem,
 } from "@/lib/media/items";
 import { LISTING_LIMIT_REACHED_MESSAGE } from "@/lib/account-control";
 import {
@@ -146,7 +148,7 @@ export function ListingForm({
   const [city, setCity] = useState(initial?.city ?? "");
   const [area, setArea] = useState(initial?.area ?? "");
 
-  const [mediaItems, setMediaItems] = useState<PropertyMediaItem[]>(() =>
+  const [mediaItems, setMediaItems] = useState<ListingPhotoItem[]>(() =>
     initial ? normalizePropertyMedia(initial) : []
   );
   const [amenities, setAmenities] = useState<string[]>(
@@ -287,7 +289,14 @@ export function ListingForm({
       if (!city.trim()) return "Pick a city or area from search.";
     }
     if (n === 4) {
-      if (mediaItemsToUrls(mediaItems).length < MIN_LISTING_IMAGES) {
+      const ready = readyPhotoItems(mediaItems);
+      if (mediaItems.some((i) => i.upload_status === "uploading")) {
+        return "Wait for photos to finish uploading.";
+      }
+      if (mediaItems.some((i) => i.upload_status === "error")) {
+        return "Remove or re-add failed photos before continuing.";
+      }
+      if (mediaItemsToUrls(ready).length < MIN_LISTING_IMAGES) {
         return `Add at least ${MIN_LISTING_IMAGES} clear photos.`;
       }
     }
@@ -420,7 +429,8 @@ export function ListingForm({
     }
 
     const priceNum = Number(price);
-    const media_items = sortMediaItemsForStory(dedupeMediaItems(mediaItems));
+    const persisted = readyPhotoItems(mediaItems).map(stripListingPhotoForPersist);
+    const media_items = sortMediaItemsForStory(dedupeMediaItems(persisted));
     const media_urls = mediaItemsToUrls(media_items);
 
     const softened = softenListingTitle(title);
@@ -732,26 +742,8 @@ export function ListingForm({
         )}
 
         {step === 4 && (
-          <section className="space-y-4">
-            <ImageUploader
-              uploadedCount={mediaItems.length}
-              onUploaded={(u) =>
-                setMediaItems((prev) =>
-                  dedupeMediaItems([
-                    ...prev,
-                    createMediaItemFromUpload({
-                      url: u.url,
-                      medium: u.medium || u.url,
-                      thumbnail: u.thumbnail,
-                      index: prev.length,
-                    }),
-                  ])
-                )
-              }
-            />
-            {mediaItems.length > 0 ? (
-              <MediaTagEditor items={mediaItems} onChange={setMediaItems} />
-            ) : null}
+          <section>
+            <ListingPhotoManager items={mediaItems} onChange={setMediaItems} />
           </section>
         )}
 

@@ -86,7 +86,10 @@ export async function POST(request: Request) {
       file.type as (typeof ALLOWED_IMAGE_TYPES)[number]
     )
   ) {
-    return NextResponse.json({ error: "Invalid image type" }, { status: 400 });
+    return NextResponse.json(
+      { error: "This photo format is not supported. Please upload JPEG or PNG." },
+      { status: 400 }
+    );
   }
 
   try {
@@ -128,11 +131,15 @@ export async function POST(request: Request) {
       url: largeUrl.publicUrl,
       medium: mediumUrl.publicUrl,
       thumbnail: thumbUrl.publicUrl,
+      blur_data_url: optimized.blurDataUrl,
+      width: optimized.originalWidth,
+      height: optimized.originalHeight,
+      small_warning: optimized.smallSource,
       optimized: true,
       format: "webp",
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Optimization failed";
+    const message = e instanceof Error ? e.message : "Upload failed — try again";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

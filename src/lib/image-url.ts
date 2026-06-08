@@ -26,7 +26,7 @@ export function optimizeListingImageUrl(src: string, width = 720): string {
 
 function variantSuffix(width: number): "-thumb.webp" | "-md.webp" | "-lg.webp" {
   if (width <= 420) return "-thumb.webp";
-  if (width <= 900) return "-md.webp";
+  if (width <= 820) return "-md.webp";
   return "-lg.webp";
 }
 
@@ -50,7 +50,7 @@ function optimizeSupabaseStorageUrl(url: URL, width: number): string {
   if (renderPath !== path) {
     url.pathname = renderPath;
     url.searchParams.set("width", String(width));
-    url.searchParams.set("quality", width <= 420 ? "72" : width <= 900 ? "78" : "82");
+    url.searchParams.set("quality", width <= 420 ? "82" : width <= 820 ? "84" : "86");
     url.searchParams.set("format", "webp");
     return url.toString();
   }

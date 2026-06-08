@@ -4,6 +4,10 @@ export const MEDIA_LIMITS = {
   maxVideoUploadBytes: 15 * 1024 * 1024,
   maxVideoDurationSec: 30,
   maxVideoOptimizedBytes: 8 * 1024 * 1024,
+  /** Warn agents when source long edge is below this — still allow upload. */
+  minSharpLongEdge: 480,
+  /** Client pre-upload resize cap — server also caps at gallery_large. */
+  clientMaxLongEdge: 2000,
   targets: {
     thumbnailKb: 80,
     listingKb: 200,
@@ -11,10 +15,12 @@ export const MEDIA_LIMITS = {
   },
 } as const;
 
+/** Quality-preserving WebP variants — do not go below quality 75. */
 export const IMAGE_SIZES = {
-  thumbnail: { width: 320, quality: 72 },
-  medium: { width: 720, quality: 78 },
-  large: { width: 1200, quality: 82 },
+  thumbnail: { width: 320, quality: 82 },
+  medium: { width: 768, quality: 84 },
+  large: { width: 1600, quality: 86 },
+  blur: { width: 24, quality: 40 },
 } as const;
 
 export const ALLOWED_IMAGE_TYPES = [

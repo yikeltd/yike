@@ -108,7 +108,19 @@ export function MotionSlide({ property, isActive, priority }: Props) {
             aria-hidden={!active}
           >
             {!isLoaded && (
-              <div className="absolute inset-0 skeleton animate-pulse-soft" aria-hidden />
+              <div
+                className="absolute inset-0 skeleton animate-pulse-soft"
+                style={
+                  frame.blurDataUrl
+                    ? {
+                        backgroundImage: `url(${frame.blurDataUrl})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }
+                    : undefined
+                }
+                aria-hidden
+              />
             )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

@@ -1,7 +1,7 @@
 import type { PropertyMediaItem } from "@/types/database";
 
 const SPAM_URL = /screenshot|whatsapp|watermark|imgur|fbcdn|telegram|status\.jpg|chat\s?photo/i;
-const TINY_IMAGE = 320;
+const TINY_IMAGE = 480;
 
 /** Heuristic URL / metadata checks — no server CV. */
 export function mediaUrlQualityPenalty(url: string): number {

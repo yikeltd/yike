@@ -19,6 +19,7 @@ export type MotionSlideFrame = {
   label: string;
   subLabel?: string;
   alt: string;
+  blurDataUrl?: string;
 };
 
 function newMediaId(): string {
@@ -120,12 +121,14 @@ export function createMediaItemFromUpload(input: {
   index: number;
   width?: number;
   height?: number;
+  blur_data_url?: string;
 }): PropertyMediaItem {
   return {
     id: newMediaId(),
     image_url: input.url,
     webp_url: input.medium || input.url,
     thumbnail_url: input.thumbnail,
+    blur_data_url: input.blur_data_url,
     room_label: suggestLabelForIndex(input.index),
     sort_order: input.index,
     width: input.width,
@@ -160,6 +163,8 @@ export function buildMotionSlides(property: Property): MotionSlideFrame[] {
         ? String(item.room_label)
         : fallbackPhotoLabel(i);
 
+    const blurDataUrl = item.blur_data_url ?? undefined;
+
     if (i === 0 || item.is_cover) {
       return {
         key: item.id,
@@ -167,6 +172,7 @@ export function buildMotionSlides(property: Property): MotionSlideFrame[] {
         label: property.title,
         subLabel: `${property.area}, ${property.city}`,
         alt: item.alt_text || property.title,
+        blurDataUrl,
       };
     }
 
@@ -175,6 +181,7 @@ export function buildMotionSlides(property: Property): MotionSlideFrame[] {
       url,
       label,
       alt: item.alt_text || `${label} — ${property.title}`,
+      blurDataUrl,
     };
   });
 }
