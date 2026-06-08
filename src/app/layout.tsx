@@ -5,6 +5,7 @@ import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
 import { brand, colors } from "@/lib/design/tokens";
 import { StructuredData } from "@/components/seo/structured-data";
 import { PwaRegister } from "@/components/pwa/register";
+import { PullToRefresh } from "@/components/pwa/pull-to-refresh";
 import { Analytics } from "@vercel/analytics/react";
 import { Suspense } from "react";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
@@ -162,6 +163,7 @@ export default function RootLayout({
           </AuthProvider>
           <Analytics />
           <PwaRegister />
+          <PullToRefresh />
         </ThemeProvider>
       </body>
     </html>

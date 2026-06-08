@@ -46,14 +46,17 @@ export const PAYMENT_PERIODS = [
 ] as const;
 
 export const BUDGET_RANGES = [
-  { label: "Any Budget", min: 0, max: null },
-  { label: "Under ₦200k/yr", min: 0, max: 200000 },
-  { label: "₦200k – ₦500k", min: 200000, max: 500000 },
-  { label: "₦500k – ₦1M", min: 500000, max: 1000000 },
-  { label: "₦1M – ₦2M", min: 1000000, max: 2000000 },
-  { label: "₦2M – ₦5M", min: 2000000, max: 5000000 },
-  { label: "₦5M – ₦10M", min: 5000000, max: 10000000 },
-  { label: "₦10M+", min: 10000000, max: null },
+  { label: "Any budget", min: 0, max: null },
+  { label: "Under 500k/yr", min: 0, max: 500_000 },
+  { label: "500k – 1m", min: 500_000, max: 1_000_000 },
+  { label: "1m – 3m", min: 1_000_000, max: 3_000_000 },
+  { label: "3m – 5m", min: 3_000_000, max: 5_000_000 },
+  { label: "5m – 10m", min: 5_000_000, max: 10_000_000 },
+  { label: "10m – 20m", min: 10_000_000, max: 20_000_000 },
+  { label: "20m – 50m", min: 20_000_000, max: 50_000_000 },
+  { label: "50m – 100m", min: 50_000_000, max: 100_000_000 },
+  { label: "100m – 500m", min: 100_000_000, max: 500_000_000 },
+  { label: "500m+", min: 500_000_000, max: null },
 ] as const;
 
 export const NIGERIAN_STATES = [
@@ -95,6 +98,12 @@ export const NIGERIAN_STATES = [
   "Yobe",
   "Zamfara",
 ] as const;
+
+/** User-facing state label — keeps API/DB value as `FCT`. */
+export function getStateDisplayLabel(state: string): string {
+  if (state === "FCT") return "FCT Abuja";
+  return state;
+}
 
 export {
   nigeriaLocations,

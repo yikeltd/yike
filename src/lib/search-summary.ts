@@ -9,7 +9,8 @@ export function budgetLabelFromParams(min: string | null, max: string | null): s
       (min ? String(b.min) === min : b.min === 0 && !min) &&
       (max ? String(b.max) === max : !b.max)
   );
-  if (range && range.label !== "Any Budget") return range.label;
+  if (range && range.min === 0 && range.max == null) return null;
+  if (range) return range.label;
   if (min && max) return `₦${Number(min).toLocaleString()} – ₦${Number(max).toLocaleString()}`;
   if (min) return `From ₦${Number(min).toLocaleString()}`;
   if (max) return `Under ₦${Number(max).toLocaleString()}`;

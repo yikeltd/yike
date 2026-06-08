@@ -114,7 +114,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Installed PWA / TWA — reduce browser chrome feel on navigation */
+/* Installed PWA / TWA — block native browser pull-to-refresh chrome; use PullToRefresh */
 @media (display-mode: standalone) {
   html,
   body {

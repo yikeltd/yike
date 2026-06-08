@@ -5,6 +5,7 @@ import {
   BUDGET_RANGES,
   getAllCitiesComplete,
   getAllCitiesForState,
+  getStateDisplayLabel,
   getStateForCity,
   getStates,
 } from "@/lib/constants";
@@ -16,9 +17,7 @@ import {
 } from "@/constants/listingTypes";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const selectClass =
-  "h-10 w-full rounded-xl border border-navy/10 bg-white px-3 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-gold/35 dark:border-white/10 dark:bg-elevated lg:text-sm";
+import { ThemedSelect } from "@/components/ui/themed-select";
 
 function resolveChip(key: string): SearchDealChip {
   return (
@@ -135,10 +134,30 @@ export function BrowseListingsBlock({
     ? "border border-white/12 bg-white/[0.07] text-white/85 hover:bg-white/10 lg:border-navy/10 lg:bg-navy/[0.04] lg:text-muted lg:hover:text-foreground"
     : "bg-navy/[0.04] text-muted ring-1 ring-navy/10 hover:text-foreground dark:bg-white/5 dark:ring-white/[0.08]";
 
-  const selectPremium =
-    "home-hero-select h-10 w-full appearance-none rounded-xl border border-white/12 bg-[#021433]/90 px-3 pr-8 text-xs font-medium text-white outline-none focus:border-gold/40 focus:ring-2 focus:ring-gold/25 [&>option]:bg-[#031B4E] [&>option]:text-white lg:border-navy/10 lg:bg-white lg:pr-3 lg:text-foreground lg:focus:ring-gold/35 lg:[&>option]:bg-white lg:[&>option]:text-foreground lg:text-sm lg:[background-image:none]";
+  const selectVariant = isPremium ? "hero" : "default";
 
-  const selectMerged = isPremium ? selectPremium : selectClass;
+  const stateOptions = [
+    { value: "", label: "Any state" },
+    ...getStates().map((s) => ({
+      value: s,
+      label: getStateDisplayLabel(s),
+    })),
+  ];
+
+  const cityOptionsList = [
+    { value: "", label: "Any city" },
+    ...cityOptions.map((c) => ({ value: c, label: c })),
+  ];
+
+  const propertyTypeOptions = [
+    { value: "", label: "Any property type" },
+    ...PROPERTY_TYPES.slice(0, 14).map((t) => ({ value: t.value, label: t.label })),
+  ];
+
+  const budgetOptions = BUDGET_RANGES.map((b, i) => ({
+    value: String(i),
+    label: b.label,
+  }));
 
   return (
     <div className={shellClass}>
@@ -167,66 +186,45 @@ export function BrowseListingsBlock({
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
-        <select
+        <ThemedSelect
           value={state}
-          onChange={(e) => {
-            const value = e.target.value;
+          onChange={(value) => {
             setState(value);
             setCity("");
           }}
-          aria-label="State"
-          className={selectMerged}
-        >
-          <option value="">Any state</option>
-          {getStates().map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <select
+          options={stateOptions}
+          placeholder="Any state"
+          ariaLabel="State"
+          variant={selectVariant}
+        />
+        <ThemedSelect
           value={city}
-          onChange={(e) => {
-            const value = e.target.value;
+          onChange={(value) => {
             setCity(value);
             const inferred = value ? getStateForCity(value) : "";
             if (inferred) setState(inferred);
           }}
-          aria-label="City"
-          className={selectMerged}
-        >
-          <option value="">Any city</option>
-          {cityOptions.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <select
+          options={cityOptionsList}
+          placeholder="Any city"
+          ariaLabel="City"
+          variant={selectVariant}
+        />
+        <ThemedSelect
           value={propertyType}
-          onChange={(e) => setPropertyType(e.target.value)}
-          aria-label="Property type"
-          className={selectMerged}
-        >
-          <option value="">Any Property Type</option>
-          {PROPERTY_TYPES.slice(0, 14).map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={setPropertyType}
+          options={propertyTypeOptions}
+          placeholder="Any property type"
+          ariaLabel="Property type"
+          variant={selectVariant}
+        />
+        <ThemedSelect
           value={budget}
-          onChange={(e) => setBudget(e.target.value)}
-          aria-label="Budget"
-          className={selectMerged}
-        >
-          {BUDGET_RANGES.map((b, i) => (
-            <option key={b.label} value={i}>
-              {b.label}
-            </option>
-          ))}
-        </select>
+          onChange={setBudget}
+          options={budgetOptions}
+          placeholder="Any budget"
+          ariaLabel="Budget"
+          variant={selectVariant}
+        />
       </div>
 
       <div
