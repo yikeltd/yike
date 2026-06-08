@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { optimizeUploadedImage, buildStoragePaths } from "@/lib/media/image";
 import { validateVideoUpload } from "@/lib/media/video";
 import { ALLOWED_IMAGE_TYPES } from "@/lib/media/constants";
+import { friendlyStorageError } from "@/lib/media/storage-errors";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+const BUCKET = "property-media";
 
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
@@ -16,6 +20,11 @@ export async function POST(request: Request) {
   if (!supabase) {
     return NextResponse.json({ error: "Supabase unavailable" }, { status: 503 });
   }
+  const admin = createAdminClient();
+  if (!admin) {
+    return NextResponse.json({ error: "Supabase unavailable" }, { status: 503 });
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -55,6 +64,7 @@ export async function POST(request: Request) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+  const storage = admin.storage;
 
   if (kind === "video") {
     const check = validateVideoUpload(buffer, file.type, durationSec);
@@ -62,18 +72,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: check.error }, { status: 400 });
     }
     const path = `properties/${propertyId}/video-${index}.mp4`;
-    const { error } = await supabase.storage
-      .from("property-media")
-      .upload(path, buffer, {
-        contentType: file.type,
-        upsert: true,
-      });
+    const { error } = await storage.from(BUCKET).upload(path, buffer, {
+      contentType: file.type,
+      upsert: true,
+    });
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: friendlyStorageError(error.message) },
+        { status: 500 }
+      );
     }
-    const { data: urlData } = supabase.storage
-      .from("property-media")
-      .getPublicUrl(path);
+    const { data: urlData } = storage.from(BUCKET).getPublicUrl(path);
     return NextResponse.json({
       url: urlData.publicUrl,
       optimized: false,
@@ -95,18 +104,17 @@ export async function POST(request: Request) {
   try {
     const optimized = await optimizeUploadedImage(buffer);
     const paths = buildStoragePaths(propertyId, index);
-    const bucket = "property-media";
 
     const uploads = await Promise.all([
-      supabase.storage.from(bucket).upload(paths.thumbnail, optimized.thumbnail, {
+      storage.from(BUCKET).upload(paths.thumbnail, optimized.thumbnail, {
         contentType: "image/webp",
         upsert: true,
       }),
-      supabase.storage.from(bucket).upload(paths.medium, optimized.medium, {
+      storage.from(BUCKET).upload(paths.medium, optimized.medium, {
         contentType: "image/webp",
         upsert: true,
       }),
-      supabase.storage.from(bucket).upload(paths.large, optimized.large, {
+      storage.from(BUCKET).upload(paths.large, optimized.large, {
         contentType: "image/webp",
         upsert: true,
       }),
@@ -114,18 +122,15 @@ export async function POST(request: Request) {
 
     const failed = uploads.find((u) => u.error);
     if (failed?.error) {
-      return NextResponse.json({ error: failed.error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: friendlyStorageError(failed.error.message) },
+        { status: 500 }
+      );
     }
 
-    const { data: largeUrl } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(paths.large);
-    const { data: mediumUrl } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(paths.medium);
-    const { data: thumbUrl } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(paths.thumbnail);
+    const { data: largeUrl } = storage.from(BUCKET).getPublicUrl(paths.large);
+    const { data: mediumUrl } = storage.from(BUCKET).getPublicUrl(paths.medium);
+    const { data: thumbUrl } = storage.from(BUCKET).getPublicUrl(paths.thumbnail);
 
     return NextResponse.json({
       url: largeUrl.publicUrl,
@@ -140,6 +145,6 @@ export async function POST(request: Request) {
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Upload failed — try again";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: friendlyStorageError(message) }, { status: 400 });
   }
 }

@@ -84,9 +84,18 @@ export async function requireAgentLister(redirectTo = "/agent/become") {
     redirect("/auth/verify-email?next=/agent/become");
   }
 
-  if (isAdmin(profile.role) || canListProperties(profile)) {
+  if (isAdmin(profile.role)) {
     return { user, profile };
   }
+
+  if (canListProperties(profile)) {
+    const hasContact = Boolean(profile.whatsapp?.trim() || profile.phone?.trim());
+    if (!hasContact) {
+      redirect("/agent/become");
+    }
+    return { user, profile };
+  }
+
   redirect(redirectTo);
 }
 

@@ -30,6 +30,7 @@ import {
   isUploadingItem,
   photoThumbSrc,
 } from "@/components/agent/listing-photo-types";
+import { friendlyStorageError } from "@/lib/media/storage-errors";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -86,7 +87,9 @@ export function ListingPhotoManager({
                 ? {
                     ...item,
                     upload_status: "error" as const,
-                    upload_error: json.error ?? "Upload failed",
+                    upload_error: friendlyStorageError(
+                      json.error ?? "Upload failed"
+                    ),
                   }
                 : item
             )

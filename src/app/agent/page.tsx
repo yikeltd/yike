@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireAuth, getProfile } from "@/lib/auth";
 import {
   canListProperties,
@@ -35,7 +34,7 @@ export default async function ProfilePage() {
   const canList = canListProperties(profile);
   const limit = getListingLimit(profile);
 
-  const [{ data: listings }, { count: savedCount }, { count: leadsCount }] =
+  const [{ data: listings }, { count: savedCount }, { count: leadsCount }, { count: verificationCount }] =
     await Promise.all([
       supabase
         .from("properties")
@@ -45,11 +44,17 @@ export default async function ProfilePage() {
         .from("favorites")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id),
+      canList
+        ? supabase
+            .from("leads")
+            .select("*", { count: "exact", head: true })
+            .eq("agent_id", user.id)
+            .gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString())
+        : Promise.resolve({ count: 0 }),
       supabase
-        .from("leads")
+        .from("property_verification_requests")
         .select("*", { count: "exact", head: true })
-        .eq("agent_id", user.id)
-        .gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString()),
+        .eq("requester_user_id", user.id),
     ]);
 
   const rows = (listings ?? []) as Pick<Property, "status" | "expires_at">[];
@@ -77,6 +82,7 @@ export default async function ProfilePage() {
       expiringSoon={expiringSoon}
       expiredCount={expiredCount}
       leadsCount={leadsCount ?? 0}
+      verificationRequestsCount={verificationCount ?? 0}
       memberSince={formatMemberSince(profile.created_at)}
     />
   );

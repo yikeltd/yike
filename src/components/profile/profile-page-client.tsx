@@ -3,11 +3,11 @@
 import Link from "next/link";
 import {
   BadgeCheck,
+  Bell,
   Bookmark,
   ChevronRight,
   Heart,
   List,
-  Bell,
   MessageCircle,
   PlusCircle,
   Search,
@@ -19,9 +19,17 @@ import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { VerifiedBadge, StatusBadge } from "@/components/ui/badge";
 import { ProfileAccountActions } from "@/components/profile/profile-account-actions";
 import { OptionalWhatsAppCard } from "@/components/profile/optional-whatsapp-card";
+import { ProfileUserActivityStats } from "@/components/profile/profile-user-activity-stats";
+import { ProfileVerificationJourney } from "@/components/profile/profile-verification-journey";
 import { isPhoneOtpEnabledClient } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import { accountStatusMessage } from "@/lib/account-control";
+import {
+  formatListingSlots,
+  getProfilePersona,
+  profileRoleLabel,
+  showAgentBadge,
+} from "@/lib/profile-display";
 
 export function ProfilePageClient({
   profile,
@@ -35,6 +43,7 @@ export function ProfilePageClient({
   expiringSoon = 0,
   expiredCount = 0,
   leadsCount = 0,
+  verificationRequestsCount = 0,
   memberSince,
 }: {
   profile: Profile;
@@ -48,10 +57,15 @@ export function ProfilePageClient({
   expiringSoon?: number;
   expiredCount?: number;
   leadsCount?: number;
+  verificationRequestsCount?: number;
   memberSince: string;
 }) {
   const displayName = profile.full_name ?? profile.username ?? "Your profile";
   const phoneOtpOn = isPhoneOtpEnabledClient();
+  const persona = getProfilePersona(profile);
+  const isLister = canList;
+  const roleLabel = profileRoleLabel(profile, verified);
+
   const completionSteps = [
     Boolean(profile.avatar_url),
     Boolean(profile.full_name),
@@ -64,6 +78,7 @@ export function ProfilePageClient({
     (completionSteps.filter(Boolean).length / completionSteps.length) * 100
   );
   const statusMessage = accountStatusMessage(profile);
+  const slotsLabel = formatListingSlots(activeCount, limit, verified);
 
   return (
     <div className="space-y-5 pb-4">
@@ -95,49 +110,46 @@ export function ProfilePageClient({
           )}
           <p className="mt-2 text-xs text-white/60">Member since {memberSince}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {verified ? (
-              <VerifiedBadge />
-            ) : canList ? (
+            {showAgentBadge(profile, verified) ? <VerifiedBadge /> : null}
+            {roleLabel ? (
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
-                Listing agent
+                {roleLabel}
               </span>
             ) : null}
-            {profile.verification_status !== "not_started" && !verified && (
-              <StatusBadge status={profile.verification_status} />
-            )}
-            {profile.phone_verified && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
-                Phone ✓
-              </span>
-            )}
-            {profile.email_verified && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
-                Email ✓
-              </span>
-            )}
+            {profile.verification_status !== "not_started" &&
+              !verified &&
+              isLister && (
+                <StatusBadge status={profile.verification_status} />
+              )}
           </div>
         </div>
       </section>
 
-      {!canList && (
-        <Link
-          href="/agent/become"
-          className="pressable block overflow-hidden rounded-2xl bg-gold shadow-glow-gold ring-1 ring-gold-dark/20"
-        >
-          <div className="flex items-center gap-3 px-4 py-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-navy">
-              <PlusCircle className="h-6 w-6 text-gold" strokeWidth={2.25} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-base font-bold text-navy">List properties on Yike</p>
-              <p className="text-xs font-medium text-navy/75">Free · reach renters on WhatsApp</p>
-            </div>
-            <ChevronRight className="h-5 w-5 shrink-0 text-navy/60" />
+      <Link
+        href={isLister ? "/agent/listings/new" : "/agent/become"}
+        className="pressable block overflow-hidden rounded-2xl bg-gold shadow-glow-gold ring-1 ring-gold-dark/20"
+      >
+        <div className="flex items-center gap-3 px-4 py-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-navy">
+            <PlusCircle className="h-6 w-6 text-gold" strokeWidth={2.25} />
           </div>
-        </Link>
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-bold text-navy">List a property</p>
+            <p className="text-xs font-medium text-navy/75">
+              {isLister
+                ? "Post a new home on Yike"
+                : "Verify your profile to start listing"}
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-navy/60" />
+        </div>
+      </Link>
+
+      {isLister && (
+        <ProfileVerificationJourney profile={profile} verified={verified} />
       )}
 
-      {completionPct < 100 && (
+      {completionPct < 100 && persona === "user" && (
         <section className="rounded-2xl border border-gold/25 bg-gold/8 p-3.5">
           <div className="flex items-center gap-3">
             <Sparkles className="h-4 w-4 shrink-0 text-gold-dark" />
@@ -161,51 +173,50 @@ export function ProfilePageClient({
         phoneVerified={profile.phone_verified}
       />
 
-      <section className="grid grid-cols-2 gap-3">
-        <StatCard icon={Heart} label="Saved homes" value={String(savedCount)} href="/saved" />
-        {canList ? (
-          <>
+      {isLister ? (
+        <section className="grid grid-cols-2 gap-3">
+          <StatCard icon={Heart} label="Saved homes" value={String(savedCount)} href="/saved" />
+          <StatCard
+            icon={List}
+            label="Listing slots"
+            value={slotsLabel}
+            href="/agent/listings"
+            smallValue
+          />
+          <StatCard icon={ShieldCheck} label="Pending review" value={String(pending)} href="/agent/listings" />
+          <StatCard
+            icon={MessageCircle}
+            label="Inquiries"
+            value={leadsCount > 0 ? String(leadsCount) : "0"}
+            href="/agent/leads"
+          />
+          {expiringSoon > 0 && (
             <StatCard
               icon={List}
-              label="Active listings"
-              value={limit !== null ? `${activeCount}/${limit}` : String(activeCount)}
+              label="Expiring soon"
+              value={String(expiringSoon)}
               href="/agent/listings"
             />
-            <StatCard icon={ShieldCheck} label="Pending review" value={String(pending)} href="/agent/listings" />
+          )}
+          {expiredCount > 0 && (
             <StatCard
-              icon={MessageCircle}
-              label="Leads (30d)"
-              value={leadsCount > 0 ? String(leadsCount) : "View"}
-              href="/agent/leads"
+              icon={List}
+              label="Expired"
+              value={String(expiredCount)}
+              href="/agent/listings"
             />
-            {expiringSoon > 0 && (
-              <StatCard
-                icon={List}
-                label="Expiring soon"
-                value={String(expiringSoon)}
-                href="/agent/listings"
-              />
-            )}
-            {expiredCount > 0 && (
-              <StatCard
-                icon={List}
-                label="Expired"
-                value={String(expiredCount)}
-                href="/agent/listings"
-              />
-            )}
-          </>
-        ) : (
-          <>
-            <StatCard icon={Search} label="Browse homes" value="Explore" href="/search" />
-            <StatCard icon={Heart} label="Request a home" value="Ask" href="/request-property" />
-          </>
-        )}
-      </section>
+          )}
+        </section>
+      ) : (
+        <ProfileUserActivityStats
+          savedCount={savedCount}
+          verificationRequestsCount={verificationRequestsCount}
+        />
+      )}
 
       <section className="space-y-2">
         <p className="px-1 text-xs font-bold uppercase tracking-wider text-muted">Quick actions</p>
-        {canList ? (
+        {isLister ? (
           <>
             <ActionLink
               href="/agent/listings/new"
@@ -229,23 +240,26 @@ export function ProfilePageClient({
               profile.company_name) && (
               <ActionLink href="/agent/company" icon={ShieldCheck} title="Company profile" />
             )}
-            {!verified && (
-              <ActionLink
-                href="/agent/verification"
-                icon={ShieldCheck}
-                title="Get verified badge"
-                accent
-              />
-            )}
+            <ActionLink
+              href="/agent/verification"
+              icon={verified ? BadgeCheck : ShieldCheck}
+              title={verified ? "Manage verification" : "Get verified"}
+              accent={!verified}
+            />
           </>
         ) : (
           <>
             <ActionLink href="/saved" icon={Bookmark} title="Saved homes" />
             <ActionLink href="/search" icon={Search} title="Find a home" />
             <ActionLink
+              href="/property-verification"
+              icon={ShieldCheck}
+              title="Verify a property"
+            />
+            <ActionLink
               href="/agent/become"
               icon={BadgeCheck}
-              title="Become a listing agent"
+              title="List a property"
               accent
             />
           </>
@@ -262,11 +276,13 @@ function StatCard({
   label,
   value,
   href,
+  smallValue,
 }: {
   icon: typeof Heart;
   label: string;
   value: string;
   href: string;
+  smallValue?: boolean;
 }) {
   return (
     <Link
@@ -274,7 +290,14 @@ function StatCard({
       className="pressable rounded-2xl border border-border bg-elevated p-4 shadow-float"
     >
       <Icon className="h-4 w-4 text-gold-dark" />
-      <p className="mt-3 text-xl font-bold text-navy">{value}</p>
+      <p
+        className={cn(
+          "mt-3 font-bold text-navy",
+          smallValue ? "text-sm leading-snug" : "text-xl"
+        )}
+      >
+        {value}
+      </p>
       <p className="text-xs text-muted">{label}</p>
     </Link>
   );

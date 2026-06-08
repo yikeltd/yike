@@ -6,10 +6,19 @@ import { isPhoneVerificationRequired } from "@/lib/feature-flags";
 import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
 import { getAmbassadorRefFromCookies } from "@/lib/ambassador/cookie";
 import { isEmailVerified } from "@/lib/auth";
+import { canRequestPhoneOtp, normalizeNigerianPhone } from "@/lib/phone";
+import type { AccountType } from "@/types/database";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+const ALLOWED_ACCOUNT_TYPES = new Set<AccountType>([
+  "individual",
+  "agency",
+  "landlord",
+  "developer",
+]);
+
+export async function POST(request: Request) {
   const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
@@ -27,9 +36,37 @@ export async function POST() {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
   }
 
+  const body = (await request.json().catch(() => ({}))) as {
+    accountType?: AccountType;
+    whatsapp?: string;
+    acceptRules?: boolean;
+  };
+
+  if (!body.acceptRules) {
+    return NextResponse.json(
+      { error: "Accept listing rules to continue" },
+      { status: 400 }
+    );
+  }
+
+  const whatsapp = body.whatsapp
+    ? normalizeNigerianPhone(body.whatsapp)
+    : "";
+  if (!canRequestPhoneOtp(whatsapp)) {
+    return NextResponse.json(
+      { error: "Add a valid Nigerian WhatsApp number" },
+      { status: 400 }
+    );
+  }
+
+  const accountType =
+    body.accountType && ALLOWED_ACCOUNT_TYPES.has(body.accountType)
+      ? body.accountType
+      : "individual";
+
   const { data: profile } = await admin
     .from("profiles")
-    .select("role, phone_verified, email_verified, is_banned")
+    .select("role, phone_verified, email_verified, is_banned, full_name")
     .eq("id", user.id)
     .single();
 
@@ -43,6 +80,14 @@ export async function POST() {
     profile.role === "admin" ||
     profile.role === "super_admin"
   ) {
+    await admin
+      .from("profiles")
+      .update({
+        whatsapp,
+        phone: whatsapp,
+        account_type: accountType,
+      })
+      .eq("id", user.id);
     return NextResponse.json({ ok: true, alreadyAgent: true });
   }
 
@@ -66,6 +111,10 @@ export async function POST() {
       role: "agent_unverified",
       listing_limit: UNVERIFIED_AGENT_LISTING_LIMIT,
       verified_badge: false,
+      account_type: accountType,
+      whatsapp,
+      phone: whatsapp,
+      verification_status: "pending",
     })
     .eq("id", user.id);
 

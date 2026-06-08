@@ -15,7 +15,7 @@ export default async function BecomeAgentPage() {
   }
 
   if (canListProperties(profile)) {
-    redirect("/agent/listings/new");
+    redirect("/agent");
   }
 
   return (
