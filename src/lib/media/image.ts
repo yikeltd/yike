@@ -215,10 +215,10 @@ export function buildAvatarStoragePaths(userId: string): {
   medium: string;
   large: string;
 } {
-  const base = `avatars/${userId}`;
+  const base = `${userId}`;
   return {
-    thumbnail: `${base}/thumb.webp`,
-    medium: `${base}/md.webp`,
-    large: `${base}/lg.webp`,
+    thumbnail: `${base}/avatar-thumb.webp`,
+    medium: `${base}/avatar.webp`,
+    large: `${base}/avatar-lg.webp`,
   };
 }

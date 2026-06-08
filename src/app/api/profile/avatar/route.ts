@@ -8,6 +8,9 @@ import { friendlyStorageError } from "@/lib/media/storage-errors";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+const PROFILE_IMAGES_BUCKET = "profile-images";
+const PROFILE_SAVE_ERROR = "We couldn't save this photo right now. Please try again.";
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -51,7 +54,6 @@ export async function POST(request: Request) {
     }
 
     const paths = buildAvatarStoragePaths(user.id);
-    const bucket = "property-media";
 
     for (const [key, path] of Object.entries(paths) as [
       keyof typeof paths,
@@ -63,11 +65,18 @@ export async function POST(request: Request) {
           : key === "medium"
             ? optimized.medium
             : optimized.large;
-      const { error } = await admin.storage.from(bucket).upload(path, body, {
-        contentType: WEBP_CONTENT_TYPE,
-        upsert: true,
-      });
+      const { error } = await admin.storage
+        .from(PROFILE_IMAGES_BUCKET)
+        .upload(path, body, {
+          contentType: WEBP_CONTENT_TYPE,
+          upsert: true,
+        });
       if (error) {
+        console.error("[profile/avatar] storage upload failed:", {
+          bucket: PROFILE_IMAGES_BUCKET,
+          path,
+          message: error.message,
+        });
         return NextResponse.json(
           { error: friendlyStorageError(error.message) },
           { status: 500 }
@@ -75,7 +84,9 @@ export async function POST(request: Request) {
       }
     }
 
-    const { data: urlData } = admin.storage.from(bucket).getPublicUrl(paths.medium);
+    const { data: urlData } = admin.storage
+      .from(PROFILE_IMAGES_BUCKET)
+      .getPublicUrl(paths.medium);
     const avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
     const { error: profileError } = await supabase
@@ -84,10 +95,8 @@ export async function POST(request: Request) {
       .eq("id", user.id);
 
     if (profileError) {
-      return NextResponse.json(
-        { error: profileError.message || "Could not save profile photo" },
-        { status: 500 }
-      );
+      console.error("[profile/avatar] profile update failed:", profileError.message);
+      return NextResponse.json({ error: PROFILE_SAVE_ERROR }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true, avatarUrl });

@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { isStandaloneApp } from "@/lib/app-environment";
@@ -28,6 +28,8 @@ function sheetOpen(): boolean {
 /** Native-style pull-to-refresh for installed PWA / Android TWA (no browser chrome). */
 export function PullToRefresh() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [standalone, setStandalone] = useState(false);
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const startY = useRef(0);
@@ -35,7 +37,14 @@ export function PullToRefresh() {
   const pullPx = useRef(0);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !isStandaloneApp()) return;
+    const frame = window.requestAnimationFrame(() => {
+      setStandalone(isStandaloneApp());
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !standalone) return;
     if (ptrDisabled(pathname)) return;
 
     const onTouchStart = (e: TouchEvent) => {
@@ -66,7 +75,14 @@ export function PullToRefresh() {
       if (amount >= TRIGGER_PX && !refreshing) {
         setRefreshing(true);
         setPull(TRIGGER_PX * 0.55);
-        window.setTimeout(() => window.location.reload(), 120);
+        window.setTimeout(() => {
+          router.refresh();
+          window.setTimeout(() => {
+            pullPx.current = 0;
+            setPull(0);
+            setRefreshing(false);
+          }, 450);
+        }, 120);
         return;
       }
       pullPx.current = 0;
@@ -84,9 +100,9 @@ export function PullToRefresh() {
       document.removeEventListener("touchend", endPull);
       document.removeEventListener("touchcancel", endPull);
     };
-  }, [pathname, refreshing]);
+  }, [pathname, refreshing, router, standalone]);
 
-  if (!isStandaloneApp() || ptrDisabled(pathname)) return null;
+  if (!standalone || ptrDisabled(pathname)) return null;
   if (pull <= 0 && !refreshing) return null;
 
   const progress = Math.min(1, pull / TRIGGER_PX);
