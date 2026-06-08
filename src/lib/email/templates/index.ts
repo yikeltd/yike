@@ -17,6 +17,7 @@ import { buildReportReceivedEmailHtml } from "./report-received";
 import { buildVerificationEmailHtml } from "./verification";
 import { buildWelcomeEmailHtml } from "./welcome";
 import { buildCareerApplicationReceivedEmailHtml } from "./career-application";
+import { buildCareerFollowUpEmailHtml } from "./career-follow-up";
 import { buildEmailOtpHtml } from "./email-otp";
 import { applyEmailAd } from "@/lib/email/ad-marker";
 import { buildSampleEmailAdHtml } from "@/lib/email/components/email-ad-block";
@@ -45,6 +46,7 @@ export {
 export { buildAccountDeletedEmailHtml } from "./account-deleted";
 export { buildReportReceivedEmailHtml } from "./report-received";
 export { buildCareerApplicationReceivedEmailHtml } from "./career-application";
+export { buildCareerFollowUpEmailHtml } from "./career-follow-up";
 export { escapeHtml, withEmailAssetOrigin } from "./utils";
 export * from "../components";
 

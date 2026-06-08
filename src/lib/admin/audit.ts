@@ -211,7 +211,12 @@ export type AuditAction =
   | "ad_creative.upload"
   | "support_view.start"
   | "support_view.end"
-  | "support_view.action";
+  | "support_view.action"
+  | "career.follow_up.generated"
+  | "career.follow_up.sent"
+  | "career.follow_up.submitted"
+  | "career.application.status"
+  | "career.follow_up.review";
 
 export type AuditLogEntry = {
   actor_id: string;

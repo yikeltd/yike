@@ -3,11 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ApplicationActions } from "@/components/admin/application-actions";
 import { CreateStaffFromApplication } from "@/components/admin/create-staff-from-application";
+import { FollowUpReviewPanel } from "@/components/admin/follow-up-review";
+import { SendFollowUpButton } from "@/components/admin/send-follow-up-button";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { adminPath } from "@/lib/admin-paths";
 import { parseAdminPage } from "@/lib/admin/pagination";
 import type { ApplicationRow } from "@/lib/careers/constants";
 import { statusLabel } from "@/lib/careers/constants";
+import type { CareerFollowUpRow } from "@/lib/careers/follow-up/types";
 
 type Props = {
   searchParams: Promise<{
@@ -77,6 +80,23 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
     .from("jobs")
     .select("id, title")
     .order("title");
+
+  const applicationIds = applications.map((a) => a.id);
+  const followUpByApp = new Map<string, CareerFollowUpRow>();
+
+  if (applicationIds.length > 0) {
+    const { data: followUps } = await supabase
+      .from("career_follow_up_requests")
+      .select("*")
+      .in("application_id", applicationIds)
+      .order("created_at", { ascending: false });
+
+    for (const row of (followUps ?? []) as CareerFollowUpRow[]) {
+      if (!followUpByApp.has(row.application_id)) {
+        followUpByApp.set(row.application_id, row);
+      }
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -159,7 +179,9 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
         </p>
       ) : (
         <div className="space-y-4">
-          {applications.map((app) => (
+          {applications.map((app) => {
+            const followUp = followUpByApp.get(app.id) ?? null;
+            return (
             <article
               key={app.id}
               className="rounded-2xl bg-white p-5 shadow-float"
@@ -260,16 +282,28 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
               </details>
 
               <div className="mt-4 border-t border-surface pt-4 flex flex-wrap items-center gap-3">
+                <SendFollowUpButton
+                  applicationId={app.id}
+                  applicantName={app.full_name}
+                  jobTitle={app.jobs?.title ?? "Role"}
+                  applicationStatus={app.status}
+                  latestFollowUp={followUp}
+                />
                 <ApplicationActions applicationId={app.id} compact />
                 <CreateStaffFromApplication application={app} />
               </div>
+
+              {followUp && (
+                <FollowUpReviewPanel followUp={followUp} applicationId={app.id} />
+              )}
 
               <p className="mt-2 text-[11px] text-muted">
                 {new Date(app.created_at).toLocaleString("en-NG")}
                 {app.viewed_at ? " · viewed" : " · new"}
               </p>
             </article>
-          ))}
+          );
+          })}
         </div>
       )}
       <AdminPagination

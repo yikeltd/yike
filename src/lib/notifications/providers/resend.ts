@@ -89,6 +89,8 @@ export function emailSubjectForType(type: EmailType): string {
       return "Yike admin alert";
     case "career_application_received":
       return "Application received — Yike Careers";
+    case "career_follow_up_requested":
+      return "Yike Application Follow-up";
     default:
       return "Yike notification";
   }

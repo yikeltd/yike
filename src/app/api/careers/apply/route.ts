@@ -6,6 +6,7 @@ import { scoreApplication, type ApplicationPayload } from "@/lib/careers/scoring
 import type { JobRow } from "@/lib/careers/constants";
 import { sendCareerApplicationEmails } from "@/lib/email/service";
 import { createOtpDbClient } from "@/lib/otp/rpc";
+import { validateMathChallenge } from "@/lib/signup-math-challenge";
 
 export const runtime = "nodejs";
 
@@ -52,6 +53,20 @@ export async function POST(request: Request) {
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+  }
+
+  if (String(body.website ?? "").trim()) {
+    return NextResponse.json({ error: "Could not submit application" }, { status: 400 });
+  }
+
+  const mathA = Number(body.mathA);
+  const mathB = Number(body.mathB);
+  const mathAnswer = Number(body.mathAnswer);
+  if (!validateMathChallenge(mathA, mathB, mathAnswer)) {
+    return NextResponse.json(
+      { error: "Please solve the quick math check correctly" },
+      { status: 400 }
+    );
   }
 
   const job = await loadPublishedJob(jobId, jobSlug);

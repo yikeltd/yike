@@ -15,6 +15,7 @@ import {
   buildVerificationEmailHtml,
   buildWelcomeEmailHtml,
   buildCareerApplicationReceivedEmailHtml,
+  buildCareerFollowUpEmailHtml,
 } from "@/lib/email/templates";
 import {
   emailSubjectForType,
@@ -310,6 +311,31 @@ export async function sendListingRejectedEmail(
       reason: params.reason,
     }),
     idempotencyKey: `listing-rejected/${params.propertyId}/${Date.now()}`,
+  });
+}
+
+export async function sendCareerFollowUpEmail(
+  admin: SupabaseClient,
+  params: {
+    requestId: string;
+    applicantEmail: string;
+    applicantName: string;
+    jobTitle: string;
+    followUpUrl: string;
+    expiresDays: number;
+  }
+): Promise<EmailResult> {
+  return sendEmail(admin, {
+    email: params.applicantEmail,
+    type: "career_follow_up_requested",
+    subject: emailSubjectForType("career_follow_up_requested"),
+    html: buildCareerFollowUpEmailHtml({
+      fullName: params.applicantName,
+      jobTitle: params.jobTitle,
+      followUpUrl: params.followUpUrl,
+      expiresDays: params.expiresDays,
+    }),
+    idempotencyKey: `career-follow-up/${params.requestId}`,
   });
 }
 

@@ -16,7 +16,8 @@ export type EmailType =
   | "report_received"
   | "admin_alert"
   | "account_notification"
-  | "career_application_received";
+  | "career_application_received"
+  | "career_follow_up_requested";
 
 export type ProviderResult<T = void> =
   | { ok: true; data?: T }

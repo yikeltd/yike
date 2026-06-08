@@ -49,8 +49,8 @@ function socialScore(app: ApplicationPayload, isTech: boolean): number {
     app.facebook,
     app.instagram,
     app.tiktok,
+    app.linkedin,
     isTech ? app.github : null,
-    isTech ? app.linkedin : null,
     isTech ? app.portfolio : null,
   ].filter((v) => v && v.trim().length > 3);
   if (links.length === 0) return 30;

@@ -9,6 +9,7 @@ import {
   EDUCATION_LEVELS,
 } from "@/lib/careers/constants";
 import { cn } from "@/lib/utils";
+import { createMathChallenge } from "@/lib/signup-math-challenge";
 
 type FormState = {
   fullName: string;
@@ -50,7 +51,14 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
   const [cvName, setCvName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [mathChallenge] = useState(createMathChallenge);
+  const [mathAnswer, setMathAnswer] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const cvInputRef = useRef<HTMLInputElement>(null);
+
+  const mathOk =
+    mathAnswer.trim() !== "" &&
+    Number(mathAnswer) === mathChallenge.a + mathChallenge.b;
 
   const [form, setForm] = useState<FormState>({
     fullName: "",
@@ -154,6 +162,9 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
       }
       if (isTech && !form.stackExperience.trim()) return "Share your stack experience";
     }
+    if (step === 3) {
+      if (!mathOk) return "Please solve the quick math check correctly";
+    }
     return null;
   }
 
@@ -174,6 +185,10 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
         ...form,
         cvUrl,
         yearsExperience: Number(form.yearsExperience) || 0,
+        mathA: mathChallenge.a,
+        mathB: mathChallenge.b,
+        mathAnswer: Number(mathAnswer),
+        website: honeypot,
       }),
     });
     const data = await res.json();
@@ -471,7 +486,7 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
       {step === 3 && (
         <div className="space-y-4">
           <p className="text-sm text-muted">
-            Share social profiles so we can understand your work — optional but helpful.
+            Share social profiles so we can understand your work and online presence.
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Facebook">
@@ -487,13 +502,23 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
                 value={form.instagram}
                 onChange={(e) => update({ instagram: e.target.value })}
                 className={inputClass}
+                placeholder="Profile URL or username"
               />
             </Field>
-            <Field label="TikTok">
+            <Field label="TikTok (optional)">
               <input
                 value={form.tiktok}
                 onChange={(e) => update({ tiktok: e.target.value })}
                 className={inputClass}
+                placeholder="Profile URL or username"
+              />
+            </Field>
+            <Field label="LinkedIn (optional)">
+              <input
+                value={form.linkedin}
+                onChange={(e) => update({ linkedin: e.target.value })}
+                className={inputClass}
+                placeholder="Profile URL or username"
               />
             </Field>
           </div>
@@ -504,13 +529,7 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
                   value={form.github}
                   onChange={(e) => update({ github: e.target.value })}
                   className={inputClass}
-                />
-              </Field>
-              <Field label="LinkedIn">
-                <input
-                  value={form.linkedin}
-                  onChange={(e) => update({ linkedin: e.target.value })}
-                  className={inputClass}
+                  placeholder="github.com/username"
                 />
               </Field>
               <Field label="Portfolio" className="sm:col-span-2">
@@ -523,6 +542,42 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
               </Field>
             </div>
           )}
+          <div className="rounded-xl bg-surface/80 p-4 ring-1 ring-navy/5">
+            <Field label="Quick check *">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <p className="text-sm text-muted sm:shrink-0">
+                  What is {mathChallenge.a} + {mathChallenge.b}?
+                </p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={mathAnswer}
+                  onChange={(e) =>
+                    setMathAnswer(e.target.value.replace(/\D/g, "").slice(0, 3))
+                  }
+                  className={cn(
+                    inputClass,
+                    "sm:max-w-[9.5rem]",
+                    mathAnswer && !mathOk && "ring-2 ring-red-400/50"
+                  )}
+                  placeholder="Your answer"
+                  aria-label={`Answer: ${mathChallenge.a} plus ${mathChallenge.b}`}
+                  autoComplete="off"
+                  required
+                />
+              </div>
+            </Field>
+          </div>
+          <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+            <label htmlFor={`career-hp-${job.slug}`}>Company website</label>
+            <input
+              id={`career-hp-${job.slug}`}
+              tabIndex={-1}
+              autoComplete="off"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+            />
+          </div>
         </div>
       )}
 
@@ -538,7 +593,7 @@ export function CareerApplicationForm({ job }: { job: JobRow }) {
         )}
         <button
           type="submit"
-          disabled={busy || cvUploading}
+          disabled={busy || cvUploading || (step === STEPS.length - 1 && !mathOk)}
           className="pressable inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-gold px-6 py-2.5 text-sm font-bold text-navy shadow-sm disabled:opacity-60 sm:flex-none"
         >
           {busy ? "Submitting…" : step < STEPS.length - 1 ? "Continue" : "Submit application"}
