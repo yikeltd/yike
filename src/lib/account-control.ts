@@ -1,5 +1,8 @@
 import type { AgentProfileStatus, Profile } from "@/types/database";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
+import { getTrustCapabilities } from "@/lib/verification/permissions";
+import type { TrustProfileSlice } from "@/lib/verification/levels";
+import { VERIFICATION_REQUIRED_MESSAGE } from "@/lib/verification/constants";
 
 export type AccountStatus =
   | "active"
@@ -50,42 +53,43 @@ export function accountStatusMessage(
 ): string | null {
   if (!profile) return null;
   const status = normalizeAccountStatus(profile);
+  const caps = getTrustCapabilities(profile as TrustProfileSlice);
+  if (caps.calmMessage && status === "active") {
+    return caps.calmMessage;
+  }
   if (profile.verification_required && status === "active") {
-    return ACCOUNT_STATUS_MESSAGES.pending_verification;
+    return VERIFICATION_REQUIRED_MESSAGE;
   }
   return ACCOUNT_STATUS_MESSAGES[status];
 }
 
+type TrustGateProfile = Pick<
+  Profile,
+  "is_banned" | "account_status" | "profile_status" | "verification_required" | "role"
+> &
+  Partial<TrustProfileSlice>;
+
 export function canPublishListings(
-  profile: Pick<
-    Profile,
-    | "is_banned"
-    | "account_status"
-    | "profile_status"
-    | "verification_required"
-    | "role"
-  > | null | undefined
+  profile: TrustGateProfile | null | undefined
 ): boolean {
   if (!profile || profile.is_banned) return false;
   const status = normalizeAccountStatus(profile);
   if (status === "suspended" || status === "deleted") return false;
   if (status === "on_hold" || status === "pending_verification") return false;
-  if (profile.verification_required) return false;
-  return true;
+  const caps = getTrustCapabilities(profile as TrustProfileSlice);
+  return caps.canList;
 }
 
 export function canReceiveDirectLeads(
-  profile: Pick<
-    Profile,
-    "is_banned" | "account_status" | "profile_status"
-  > | null | undefined
+  profile: TrustGateProfile | null | undefined
 ): boolean {
   if (!profile || profile.is_banned) return false;
   const status = normalizeAccountStatus(profile);
   if (status === "suspended" || status === "deleted" || status === "on_hold") {
     return false;
   }
-  return true;
+  const caps = getTrustCapabilities(profile as TrustProfileSlice);
+  return caps.canReceiveLeads;
 }
 
 export function isAccountRestricted(

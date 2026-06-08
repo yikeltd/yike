@@ -176,7 +176,15 @@ export type AuditAction =
   | "deal_matching.status.update"
   | "deal_matching.commission.update"
   | "deal_matching.permission.grant"
-  | "deal_matching.permission.revoke";
+  | "deal_matching.permission.revoke"
+  | "trust.verification.config.update"
+  | "trust.verification.escalate"
+  | "trust.verification.restore"
+  | "trust.verification.override"
+  | "trust.review.resolve"
+  | "trust.review.dismiss"
+  | "trust.bank.submit"
+  | "trust.bank.verify";
 
 export type AuditLogEntry = {
   actor_id: string;

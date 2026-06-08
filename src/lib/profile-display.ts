@@ -4,6 +4,7 @@ import {
   isAgentRole,
   isVerifiedAgentProfile,
 } from "@/lib/agent-tiers";
+import { canShowPublicVerifiedBadge } from "@/lib/verification/permissions";
 
 export type ProfilePersona =
   | "user"
@@ -41,7 +42,7 @@ export function getProfilePersona(profile: Profile): ProfilePersona {
 
 export function showAgentBadge(profile: Profile, verified: boolean): boolean {
   if (!isAgentRole(profile.role)) return false;
-  return verified;
+  return canShowPublicVerifiedBadge(profile) || verified;
 }
 
 export function profileRoleLabel(profile: Profile, verified: boolean): string | null {

@@ -77,3 +77,84 @@ export const ADMIN_QUEUE_TABS = [
   { id: "closed", label: "Closed", statuses: ["closed", "rejected", "cancelled"] },
   { id: "fraud", label: "Fraud Review", statuses: ["fraud_review"] },
 ] as const;
+
+/** Phased adaptive trust levels — 0 (lowest friction) through 5 (restricted). */
+
+export type AdaptiveTrustLevel = 0 | 1 | 2 | 3 | 4 | 5;
+
+export const TRUST_LEVEL_LABELS: Record<AdaptiveTrustLevel, string> = {
+  0: "Basic account",
+  1: "Verified contact",
+  2: "Listing account",
+  3: "Verified agent / company",
+  4: "Enhanced review",
+  5: "Restricted operations",
+};
+
+export const TRUST_LEVEL_SHORT: Record<AdaptiveTrustLevel, string> = {
+  0: "L0",
+  1: "L1",
+  2: "L2",
+  3: "L3",
+  4: "L4",
+  5: "L5",
+};
+
+/** Future-ready public trust tiers mapped from level 3+. */
+export const PREMIUM_TRUST_TIERS = [
+  "basic",
+  "verified",
+  "trusted",
+  "premium_verified",
+  "enterprise_verified",
+] as const;
+
+export type PremiumTrustTier = (typeof PREMIUM_TRUST_TIERS)[number];
+
+export const VERIFICATION_REQUIRED_MESSAGE =
+  "Verify your account to continue working with Yike.";
+
+export const VERIFICATION_REQUIRED_SUBTEXT =
+  "To help keep Yike trusted and secure, additional verification is required for your account.";
+
+/** Legacy copy for listing-specific gates */
+export const VERIFICATION_LISTING_GATE_MESSAGE =
+  "To continue listing or receiving leads, additional verification is required.";
+
+export type TrustReviewCaseType =
+  | "escalated_user"
+  | "suspicious_listing"
+  | "complaint_pattern"
+  | "multi_account"
+  | "failed_verification"
+  | "suspicious_pricing"
+  | "duplicate_media"
+  | "device_anomaly"
+  | "manual";
+
+export type TrustReviewAction =
+  | "approve"
+  | "request_verification"
+  | "reduce_restrictions"
+  | "escalate"
+  | "require_whatsapp_review"
+  | "require_bank_verification"
+  | "pause_listings"
+  | "restore_trust"
+  | "suspend_temporary"
+  | "ban_permanent"
+  | "dismiss";
+
+export const TRUST_REVIEW_ACTION_LABELS: Record<TrustReviewAction, string> = {
+  approve: "Approve",
+  request_verification: "Request additional verification",
+  reduce_restrictions: "Reduce restrictions",
+  escalate: "Escalate restrictions",
+  require_whatsapp_review: "Require WhatsApp review",
+  require_bank_verification: "Require bank verification",
+  pause_listings: "Pause listings",
+  restore_trust: "Restore account trust",
+  suspend_temporary: "Suspend temporarily",
+  ban_permanent: "Ban permanently",
+  dismiss: "Dismiss case",
+};

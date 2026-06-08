@@ -86,6 +86,8 @@ export async function POST(request: Request) {
         whatsapp,
         phone: whatsapp,
         account_type: accountType,
+        listing_rules_accepted_at: new Date().toISOString(),
+        adaptive_trust_level: 2,
       })
       .eq("id", user.id);
     return NextResponse.json({ ok: true, alreadyAgent: true });
@@ -115,6 +117,8 @@ export async function POST(request: Request) {
       whatsapp,
       phone: whatsapp,
       verification_status: "pending",
+      listing_rules_accepted_at: new Date().toISOString(),
+      adaptive_trust_level: 2,
     })
     .eq("id", user.id);
 

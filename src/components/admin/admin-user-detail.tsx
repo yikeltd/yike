@@ -8,6 +8,7 @@ import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
 import { AdminListingLimitControl } from "@/components/admin/admin-listing-limit-control";
 import { AdminUserNotes } from "@/components/admin/admin-user-notes";
 import { AgentStatusActions } from "@/components/admin/agent-verification-actions";
+import { AdminUserTrustActions } from "@/components/admin/admin-user-trust-actions";
 import { AdminPinResetPanel } from "@/components/admin/admin-pin-reset-panel";
 import { StatusBadge, VerifiedBadge } from "@/components/ui/badge";
 import type { AdminProfileStats } from "@/lib/admin/profile-stats";
@@ -94,6 +95,8 @@ export function AdminUserDetail({
         </div>
         <AgentStatusActions agentId={profile.id} />
       </div>
+
+      <AdminUserTrustActions userId={profile.id} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[

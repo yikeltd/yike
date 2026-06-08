@@ -24,6 +24,9 @@ import { ProfileVerificationJourney } from "@/components/profile/profile-verific
 import { isPhoneOtpEnabledClient } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import { accountStatusMessage } from "@/lib/account-control";
+import { getTrustCapabilities } from "@/lib/verification/permissions";
+import { getRequiredVerificationTasks } from "@/lib/verification/tasks";
+import { VerificationTrustGate } from "@/components/verification/verification-trust-gate";
 import {
   formatListingSlots,
   getProfilePersona,
@@ -78,18 +81,23 @@ export function ProfilePageClient({
     (completionSteps.filter(Boolean).length / completionSteps.length) * 100
   );
   const statusMessage = accountStatusMessage(profile);
+  const trustCaps = getTrustCapabilities(profile);
+  const verificationTasks = getRequiredVerificationTasks(profile);
+  const showTrustGate = trustCaps.verificationRequired && isLister;
   const slotsLabel = formatListingSlots(activeCount, limit, verified);
 
   return (
     <div className="space-y-5 pb-4">
-      {statusMessage && (
+      {showTrustGate ? (
+        <VerificationTrustGate tasks={verificationTasks} />
+      ) : statusMessage ? (
         <div
           className="rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950"
           role="status"
         >
           {statusMessage}
         </div>
-      )}
+      ) : null}
 
       <section className="relative overflow-hidden rounded-[1.75rem] bg-navy px-5 pb-6 pt-8 text-white shadow-float-lg">
         <div

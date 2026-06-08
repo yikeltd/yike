@@ -86,6 +86,42 @@ export async function requireDealMatchingApi() {
   return { ok: true as const, user, profile };
 }
 
+export async function requireVerificationControlApi() {
+  const user = await getSession();
+  if (!user) return { ok: false as const, status: 401, error: "Sign in required" };
+
+  const profile = await getProfile(user.id);
+  if (!profile || profile.is_banned) {
+    return { ok: false as const, status: 403, error: "Access denied" };
+  }
+
+  const { canManageVerificationControl } = await import("@/lib/verification/admin-permissions");
+  const allowed = await canManageVerificationControl(user.id, profile.role);
+  if (!allowed) {
+    return { ok: false as const, status: 403, error: "Verification control access required" };
+  }
+
+  return { ok: true as const, user, profile, isSuperAdmin: isSuperAdmin(profile.role) };
+}
+
+export async function requireTrustEnforcementApi() {
+  const user = await getSession();
+  if (!user) return { ok: false as const, status: 401, error: "Sign in required" };
+
+  const profile = await getProfile(user.id);
+  if (!profile || profile.is_banned) {
+    return { ok: false as const, status: 403, error: "Access denied" };
+  }
+
+  const { canEnforceTrust } = await import("@/lib/verification/admin-permissions");
+  const allowed = await canEnforceTrust(user.id, profile.role);
+  if (!allowed) {
+    return { ok: false as const, status: 403, error: "Trust enforcement access required" };
+  }
+
+  return { ok: true as const, user, profile, isSuperAdmin: isSuperAdmin(profile.role) };
+}
+
 export function roleAllowsAction(role: UserRole, action: string): boolean {
   if (isSuperAdmin(role)) return true;
   const supportActions = ["ticket.update", "report.view", "contact.view"];

@@ -6,6 +6,9 @@ import {
   canPublishListings,
   LISTING_LIMIT_REACHED_MESSAGE,
 } from "@/lib/account-control";
+import { VerificationTrustGate } from "@/components/verification/verification-trust-gate";
+import { getRequiredVerificationTasks } from "@/lib/verification/tasks";
+import { getTrustCapabilities } from "@/lib/verification/permissions";
 import { countAsActiveListing, getListingLimit } from "@/lib/agent-tiers";
 import Link from "next/link";
 import type { Property } from "@/types/database";
@@ -27,6 +30,8 @@ export default async function NewListingPage() {
   const atLimit = limit !== null && activeCount >= limit;
   const statusMessage = accountStatusMessage(profile);
   const canPublish = canPublishListings(profile);
+  const trustCaps = getTrustCapabilities(profile);
+  const verificationTasks = getRequiredVerificationTasks(profile);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">
@@ -41,7 +46,9 @@ export default async function NewListingPage() {
           </p>
         )}
       </div>
-      {!canPublish && statusMessage ? (
+      {!canPublish && trustCaps.calmMessage ? (
+        <VerificationTrustGate tasks={verificationTasks} />
+      ) : !canPublish && statusMessage ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
           <p className="font-semibold">Posting paused</p>
           <p className="mt-2">{statusMessage}</p>
