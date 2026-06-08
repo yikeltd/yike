@@ -1,4 +1,4 @@
-const SHELL_CACHE = "yike-shell-v21";
+const SHELL_CACHE = "yike-shell-v22";
 const IMAGE_CACHE = "yike-images-v4";
 const LISTING_CACHE = "yike-listings-v2";
 const CACHE_PREFIX = "yike-";
@@ -97,8 +97,17 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (event.request.mode === "navigate") {
-    const dynamicPaths = ["/search", "/browse", "/agent", "/properties/"];
-    const preferNetwork = dynamicPaths.some((p) => url.pathname.startsWith(p));
+    const networkOnlyPrefixes = [
+      "/search",
+      "/browse",
+      "/agent",
+      "/properties/",
+      "/lex",
+      "/staff",
+      "/auth",
+      "/dev",
+    ];
+    const preferNetwork = networkOnlyPrefixes.some((p) => url.pathname.startsWith(p));
     event.respondWith(
       fetch(event.request, preferNetwork ? { cache: "no-store" } : undefined)
         .then((res) => {

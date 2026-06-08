@@ -1,18 +1,24 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { requireAdmin } from "@/lib/auth";
 import { buildEmailPreviewCategories } from "@/lib/email/templates";
 import {
   buildSampleEmailAdHtml,
 } from "@/lib/email/components/email-ad-block";
 import { resolveEmailAdHtml } from "@/lib/email/email-ad";
+import { isProductionEnv } from "@/lib/env";
 import { createVerifiedAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-/** Local design review — not available in production. */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
+/** Staff email template preview — open locally, auth-gated in production. */
 export default async function DevEmailsPage() {
-  if (process.env.NODE_ENV === "production") {
-    notFound();
+  if (isProductionEnv()) {
+    await requireAdmin();
   }
 
   const h = await headers();

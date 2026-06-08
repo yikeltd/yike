@@ -5,7 +5,6 @@ import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
 import { brand, colors } from "@/lib/design/tokens";
 import { StructuredData } from "@/components/seo/structured-data";
 import { PwaRegister } from "@/components/pwa/register";
-import { AppBootSplash } from "@/components/pwa/app-boot-splash";
 import { PullToRefresh } from "@/components/pwa/pull-to-refresh";
 import { Analytics } from "@vercel/analytics/react";
 import { Suspense } from "react";
@@ -148,9 +147,9 @@ export default function RootLayout({
         />
         <link rel="apple-touch-startup-image" href="/splash/splash-1080x1920.png" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script src="/boot-splash.js?v=1" />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
-        <AppBootSplash />
         <ThemeProvider>
           <AuthProvider>
             <StructuredData />

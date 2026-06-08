@@ -202,8 +202,8 @@ export function EmailTransactionalAdPanel({
             Also preview full templates at{" "}
             <a href="/dev/emails" className="font-semibold text-navy underline">
               /dev/emails
-            </a>{" "}
-            (development only).
+            </a>
+            .
           </p>
         </div>
       </div>
