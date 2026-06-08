@@ -1,25 +1,3 @@
-import { getActiveBannerForPlacement } from "@/lib/site-banners";
-import type { SiteBannerPlacement } from "@/constants/siteBanners";
-import {
-  VerificationPromoBanner,
-  type VerificationPromoVariant,
-} from "@/components/verification/verification-promo-banner";
-
-type Props = {
-  placement: SiteBannerPlacement;
-  variant?: VerificationPromoVariant;
-  className?: string;
-};
-
-export async function VerificationPromoSlot({
-  placement,
-  variant = "inline",
-  className,
-}: Props) {
-  const banner = await getActiveBannerForPlacement(placement);
-  if (!banner) return null;
-
-  return (
-    <VerificationPromoBanner banner={banner} variant={variant} className={className} />
-  );
-}
+/** @deprecated Use AdminPromoSlot from @/components/promo/admin-promo-slot */
+export { AdminPromoSlot as VerificationPromoSlot } from "@/components/promo/admin-promo-slot";
+export type { AdminPromoVariant as VerificationPromoVariant } from "@/components/promo/admin-promo-slot";

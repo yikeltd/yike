@@ -10,7 +10,7 @@ import {
   type PropertySearchParams,
 } from "@/lib/properties";
 import { SearchResultsChrome } from "@/components/search/search-results-chrome";
-import { withDemoFallback, isDemoProperty } from "@/lib/mock-listings";
+import { isDemoProperty } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
 import { hubLabel } from "@/constants/listingTypes";
 import { propertyTypeLabel } from "@/lib/utils";
@@ -20,7 +20,7 @@ import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
 import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
-import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
+import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 import {
   buildSearchEmptyCopy,
   buildStateBrowseHref,
@@ -73,11 +73,10 @@ export default async function SearchPage({
     isDemo =
       feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   } else {
-    const properties = await getPublicProperties(preloadParams, 24);
-    const demo = withDemoFallback(properties);
-    feedItems = demo.items;
-    exactCount = properties.length;
-    isDemo = demo.isDemo;
+    feedItems = await getPublicProperties(preloadParams, 24);
+    exactCount = feedItems.length;
+    isDemo =
+      feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   }
 
   const feedAd = await getActiveAd("search_feed_mid");
@@ -128,7 +127,7 @@ export default async function SearchPage({
           />
 
           <section className="mt-2 w-full px-3 lg:px-6 xl:px-8">
-            <VerificationPromoSlot placement="search_page" variant="inline" className="mb-4" />
+            <AdminPromoSlot placement="search_page" variant="inline" className="mb-4" />
             {showingNearby ? (
               <div className="mb-4 rounded-2xl border border-navy/8 bg-white px-4 py-4 shadow-sm">
                 <p className="text-base font-bold text-navy">{emptyCopy.title}</p>

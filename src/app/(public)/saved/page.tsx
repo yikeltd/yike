@@ -6,7 +6,7 @@ import { PropertyFeed } from "@/components/property/property-feed";
 import { SavedEmptyLoggedIn } from "@/components/property/saved-empty-logged-in";
 import { SavedGuestView } from "@/components/auth/saved-guest-view";
 import type { Property } from "@/types/database";
-import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
+import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 
 export default async function SavedPage() {
   const user = await getSession();
@@ -60,7 +60,7 @@ export default async function SavedPage() {
   return (
     <div className="space-y-4 px-3 pt-2">
       <h1 className="text-xl font-bold text-foreground">Saved homes</h1>
-      <VerificationPromoSlot placement="saved_page" variant="inline" />
+      <AdminPromoSlot placement="saved_page" variant="inline" />
       {properties.length === 0 ? (
         <SavedEmptyLoggedIn />
       ) : (

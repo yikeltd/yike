@@ -3,7 +3,17 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { BANNER_PLACEMENTS, DEFAULT_VERIFICATION_BANNER } from "@/constants/siteBanners";
+import {
+  BANNER_CAMPAIGN_LABELS,
+  BANNER_PLACEMENTS,
+  DEFAULT_PREMIUM_TRUST_BANNER,
+} from "@/constants/siteBanners";
+import {
+  BANNER_CAMPAIGN_TYPES,
+  CAMPAIGN_AUDIENCE_TAGS,
+  type BannerCampaignType,
+  parseAudienceTargeting,
+} from "@/lib/verification/campaign-targeting";
 import type { SiteBanner } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -13,17 +23,50 @@ function toLocalDatetime(iso: string | null) {
   return iso.slice(0, 16);
 }
 
+function presetForCampaign(type: BannerCampaignType) {
+  if (type === "verification_promo" || type === "premium_trust_assistance") {
+    return DEFAULT_PREMIUM_TRUST_BANNER;
+  }
+  if (type === "legal_review_promo") {
+    return {
+      title: "Considering a major purchase?",
+      subtitle: "Yike can help coordinate legal document review for selected transactions.",
+      ctaText: "Learn more",
+      linkUrl: "/legal-verification",
+    };
+  }
+  if (type === "relocation_assistance") {
+    return {
+      title: "Relocating to a new city?",
+      subtitle: "Yike may assist with property checks when you're searching from afar.",
+      ctaText: "Learn more",
+      linkUrl: "/property-verification",
+    };
+  }
+  return {
+    title: "",
+    subtitle: "",
+    ctaText: "Learn more",
+    linkUrl: "/",
+  };
+}
+
 export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [campaignType, setCampaignType] = useState<BannerCampaignType>(
+    DEFAULT_PREMIUM_TRUST_BANNER.campaignType
+  );
   const [placement, setPlacement] = useState("homepage_inline");
-  const [title, setTitle] = useState<string>(DEFAULT_VERIFICATION_BANNER.title);
-  const [subtitle, setSubtitle] = useState<string>(DEFAULT_VERIFICATION_BANNER.subtitle);
-  const [ctaText, setCtaText] = useState<string>(DEFAULT_VERIFICATION_BANNER.ctaText);
-  const [linkUrl, setLinkUrl] = useState<string>(DEFAULT_VERIFICATION_BANNER.linkUrl);
+  const [title, setTitle] = useState<string>(DEFAULT_PREMIUM_TRUST_BANNER.title);
+  const [subtitle, setSubtitle] = useState<string>(DEFAULT_PREMIUM_TRUST_BANNER.subtitle);
+  const [ctaText, setCtaText] = useState<string>(DEFAULT_PREMIUM_TRUST_BANNER.ctaText);
+  const [linkUrl, setLinkUrl] = useState<string>(DEFAULT_PREMIUM_TRUST_BANNER.linkUrl);
+  const [audienceNotes, setAudienceNotes] = useState("");
+  const [audienceTags, setAudienceTags] = useState<string[]>([]);
   const [priority, setPriority] = useState("10");
   const [isActive, setIsActive] = useState(false);
   const [startsAt, setStartsAt] = useState("");
@@ -31,11 +74,14 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
 
   function resetForm() {
     setEditingId(null);
-    setPlacement("homepage_inline");
-    setTitle(DEFAULT_VERIFICATION_BANNER.title);
-    setSubtitle(DEFAULT_VERIFICATION_BANNER.subtitle);
-    setCtaText(DEFAULT_VERIFICATION_BANNER.ctaText);
-    setLinkUrl(DEFAULT_VERIFICATION_BANNER.linkUrl);
+    setCampaignType(DEFAULT_PREMIUM_TRUST_BANNER.campaignType);
+    setPlacement("mobile_header");
+    setTitle(DEFAULT_PREMIUM_TRUST_BANNER.title);
+    setSubtitle(DEFAULT_PREMIUM_TRUST_BANNER.subtitle);
+    setCtaText(DEFAULT_PREMIUM_TRUST_BANNER.ctaText);
+    setLinkUrl(DEFAULT_PREMIUM_TRUST_BANNER.linkUrl);
+    setAudienceNotes("");
+    setAudienceTags([]);
     setPriority("10");
     setIsActive(false);
     setStartsAt("");
@@ -44,17 +90,32 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
   }
 
   function loadForEdit(banner: SiteBanner) {
+    const targeting = parseAudienceTargeting(banner.audience_targeting);
     setEditingId(banner.id);
+    setCampaignType(
+      (banner.campaign_type as BannerCampaignType) || DEFAULT_PREMIUM_TRUST_BANNER.campaignType
+    );
     setPlacement(banner.placement);
     setTitle(banner.title ?? "");
     setSubtitle(banner.subtitle ?? banner.message ?? "");
-    setCtaText(banner.cta_text ?? DEFAULT_VERIFICATION_BANNER.ctaText);
-    setLinkUrl(banner.link_url ?? DEFAULT_VERIFICATION_BANNER.linkUrl);
+    setCtaText(banner.cta_text ?? DEFAULT_PREMIUM_TRUST_BANNER.ctaText);
+    setLinkUrl(banner.link_url ?? DEFAULT_PREMIUM_TRUST_BANNER.linkUrl);
+    setAudienceNotes(targeting.notes ?? "");
+    setAudienceTags(targeting.audience ?? []);
     setPriority(String(banner.priority));
     setIsActive(banner.is_active);
     setStartsAt(toLocalDatetime(banner.starts_at));
     setEndsAt(toLocalDatetime(banner.ends_at));
     setError("");
+  }
+
+  function applyCampaignPreset(type: BannerCampaignType) {
+    setCampaignType(type);
+    const preset = presetForCampaign(type);
+    setTitle(preset.title);
+    setSubtitle(preset.subtitle);
+    setCtaText(preset.ctaText);
+    setLinkUrl(preset.linkUrl);
   }
 
   async function saveBanner() {
@@ -70,12 +131,17 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
       title: title.trim() || null,
       subtitle: subtitle.trim() || null,
       message: subtitle.trim(),
-      cta_text: ctaText.trim() || DEFAULT_VERIFICATION_BANNER.ctaText,
-      link_url: linkUrl.trim() || DEFAULT_VERIFICATION_BANNER.linkUrl,
+      cta_text: ctaText.trim() || DEFAULT_PREMIUM_TRUST_BANNER.ctaText,
+      link_url: linkUrl.trim() || DEFAULT_PREMIUM_TRUST_BANNER.linkUrl,
       image_url: null,
       priority: Number(priority) || 0,
       is_active: isActive,
       placement,
+      campaign_type: campaignType,
+      audience_targeting: {
+        audience: audienceTags,
+        notes: audienceNotes.trim() || undefined,
+      },
       starts_at: startsAt ? new Date(startsAt).toISOString() : null,
       ends_at: endsAt ? new Date(endsAt).toISOString() : null,
     };
@@ -111,6 +177,11 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
 
   return (
     <div className="space-y-6">
+      <p className="text-sm text-muted">
+        Promos are off by default. Nothing appears on the app until you create a banner and mark it
+        active. Use calm, premium copy for verification and trust assistance — not fear marketing.
+      </p>
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -121,6 +192,20 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
         <h2 className="text-lg font-bold text-navy">{editingId ? "Edit promo" : "Create promo banner"}</h2>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="block sm:col-span-2">
+            <span className="text-xs font-semibold text-navy">Campaign type</span>
+            <select
+              value={campaignType}
+              onChange={(e) => applyCampaignPreset(e.target.value as BannerCampaignType)}
+              className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+            >
+              {BANNER_CAMPAIGN_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {BANNER_CAMPAIGN_LABELS[type]}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="block sm:col-span-2">
             <span className="text-xs font-semibold text-navy">Placement</span>
             <select
@@ -146,6 +231,38 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
             onChange={(e) => setLinkUrl(e.target.value)}
             className="sm:col-span-2"
           />
+          <div className="sm:col-span-2">
+            <span className="text-xs font-semibold text-navy">Audience tags (optional, for future targeting)</span>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {CAMPAIGN_AUDIENCE_TAGS.map((tag) => {
+                const on = audienceTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() =>
+                      setAudienceTags((prev) =>
+                        on ? prev.filter((t) => t !== tag) : [...prev, tag]
+                      )
+                    }
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      on ? "bg-navy text-gold" : "bg-surface text-muted"
+                    }`}
+                  >
+                    {tag.replace(/_/g, " ")}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="sm:col-span-2">
+            <Textarea
+              placeholder="Internal audience notes (staff only)"
+              rows={2}
+              value={audienceNotes}
+              onChange={(e) => setAudienceNotes(e.target.value)}
+            />
+          </div>
           <Input type="number" placeholder="Priority" value={priority} onChange={(e) => setPriority(e.target.value)} />
           <Input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
           <Input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
@@ -176,7 +293,10 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
             <div>
               <p className="font-bold text-navy">{banner.title ?? "Untitled"}</p>
               <p className="text-xs text-muted">
-                {banner.placement} · priority {banner.priority} · {banner.is_active ? "active" : "inactive"}
+                {BANNER_CAMPAIGN_LABELS[banner.campaign_type as BannerCampaignType] ??
+                  banner.campaign_type}{" "}
+                · {banner.placement} · priority {banner.priority} ·{" "}
+                {banner.is_active ? "active" : "inactive"}
               </p>
               <p className="mt-1 text-sm text-muted line-clamp-2">{banner.subtitle ?? banner.message}</p>
             </div>

@@ -34,7 +34,7 @@ import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs"
 import { PropertyBackButton } from "@/components/property/property-back-button";
 import { ListingUnavailable } from "@/components/property/listing-unavailable";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
-import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
+import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 import { ListingInsightsSection } from "@/components/property/listing-insights-section";
 import { ListingValueDriversSection } from "@/components/property/listing-value-drivers-section";
 
@@ -46,13 +46,6 @@ const ReportListingForm = dynamic(
   { loading: () => null }
 );
 
-const RequestVerificationCardLazy = dynamic(
-  () =>
-    import("@/components/property/request-verification-card").then((m) => ({
-      default: m.RequestVerificationCard,
-    })),
-  { loading: () => null }
-);
 
 function DetailSectionFallback() {
   return <div className="skeleton h-24 w-full rounded-2xl" aria-hidden />;
@@ -267,13 +260,8 @@ export default async function PropertyDetailPage({
             )}
 
             <Suspense fallback={null}>
-              <VerificationPromoSlot placement="listing_page" variant="card" />
+              <AdminPromoSlot placement="listing_page" variant="card" />
             </Suspense>
-            <RequestVerificationCardLazy
-              listingId={property.id}
-              listingTitle={property.title}
-              loginNext={propertyAbsoluteUrl(property)}
-            />
 
             {agent && (
               <section className="lg:hidden">

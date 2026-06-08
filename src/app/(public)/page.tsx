@@ -8,7 +8,7 @@ import { getMarketplaceStats } from "@/lib/marketplace-stats";
 import { parseSearchParams } from "@/lib/properties";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { PrefSync } from "@/components/personalization/pref-sync";
-import { VerificationPromoSlot } from "@/components/verification/verification-promo-slot";
+import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 
 const BrowseRail = dynamic(
   () =>
@@ -52,25 +52,17 @@ export default async function HomePage({
         <HomeSearchHero initial={initial} />
       </Suspense>
 
-      <VerificationPromoSlot
-        placement="homepage_hero"
-        variant="hero"
-        className="mx-auto max-w-7xl px-3 pt-3 lg:px-6 xl:px-8"
-      />
-
       <Suspense fallback={<SectionFallback />}>
         <HomeHotPicksSections />
       </Suspense>
 
       <Suspense fallback={null}>
-        <VerificationPromoSlot
+        <AdminPromoSlot
           placement="homepage_inline"
           variant="card"
           className="mx-auto max-w-7xl px-3 pt-3 lg:px-6 xl:px-8"
         />
       </Suspense>
-
-      <VerificationPromoSlot placement="mobile_sticky_cta" variant="sticky" />
 
       <Suspense fallback={null}>
         <div className="mt-3">
