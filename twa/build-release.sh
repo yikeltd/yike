@@ -34,6 +34,31 @@ fi
 
 export TWA_KEYSTORE_PASSWORD
 
+node <<'NODE'
+const fs = require("fs");
+
+const manifest = JSON.parse(fs.readFileSync("twa-manifest.json", "utf8"));
+const gradlePath = "app/build.gradle";
+let gradle = fs.readFileSync(gradlePath, "utf8");
+
+const replacements = [
+  [/splashScreenFadeOutDuration: \d+/, `splashScreenFadeOutDuration: ${manifest.splashScreenFadeOutDuration}`],
+  [/fallbackType: '[^']+'/, `fallbackType: '${manifest.fallbackType}'`],
+  [/enableSiteSettingsShortcut: '[^']+'/, `enableSiteSettingsShortcut: '${String(manifest.enableSiteSettingsShortcut)}'`],
+  [/versionCode \d+/, `versionCode ${manifest.appVersionCode}`],
+  [/versionName "[^"]+"/, `versionName "${manifest.appVersionName}"`],
+];
+
+for (const [pattern, value] of replacements) {
+  if (!pattern.test(gradle)) {
+    throw new Error(`Could not sync ${pattern} in ${gradlePath}`);
+  }
+  gradle = gradle.replace(pattern, value);
+}
+
+fs.writeFileSync(gradlePath, gradle);
+NODE
+
 echo "Building signed release APK + AAB (com.yike.app)..."
 ./gradlew --no-daemon clean bundleRelease assembleRelease
 
@@ -41,6 +66,7 @@ APK_SRC="app/build/outputs/apk/release/app-release.apk"
 AAB_SRC="app/build/outputs/bundle/release/app-release.aab"
 APK_OUT="app-release-signed.apk"
 AAB_OUT="app-release-bundle.aab"
+PUBLIC_APK="../public/downloads/yike.apk"
 
 if [[ ! -f "$APK_SRC" ]]; then
   echo "APK not found at $APK_SRC" >&2
@@ -53,10 +79,13 @@ fi
 
 cp "$APK_SRC" "$APK_OUT"
 cp "$AAB_SRC" "$AAB_OUT"
+mkdir -p "$(dirname "$PUBLIC_APK")"
+cp "$APK_SRC" "$PUBLIC_APK"
 
 echo ""
 echo "Build complete."
 echo "  APK: $(pwd)/$APK_OUT"
 echo "  AAB: $(pwd)/$AAB_OUT"
+echo "  Hosted APK: public/downloads/yike.apk (deploy for https://yike.ng/downloads/yike.apk)"
 echo "  Gradle APK: $(pwd)/$APK_SRC"
 echo "  Gradle AAB: $(pwd)/$AAB_SRC"
