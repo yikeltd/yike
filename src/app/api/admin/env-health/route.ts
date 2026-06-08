@@ -25,7 +25,7 @@ export async function GET() {
   const resolvedFrom = transactionalFromAddress();
   const fromUsesHello = resolvedFrom.toLowerCase().includes(COMPANY_EMAIL);
 
-  const envChecks = {
+  const requiredEnvChecks = {
     RESEND_API_KEY: Boolean(process.env.RESEND_API_KEY?.trim()),
     AUTH_EMAIL_FROM: fromUsesHello,
     SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
@@ -33,19 +33,33 @@ export async function GET() {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()),
     CRON_SECRET: Boolean(process.env.CRON_SECRET?.trim()),
     YIKE_PIN_PEPPER: Boolean(getPinPepper()),
+  };
+  const optionalFeatureChecks = {
     ENABLE_WEBAUTHN: isWebAuthnEnabled(),
   };
 
   const emailSenderConfigured = isResendConfigured() && fromUsesHello;
   const otpRouteReady =
-    isEmailOtpEnabled() && Boolean(otpDb) && envChecks.RESEND_API_KEY && emailSenderConfigured;
+    isEmailOtpEnabled() &&
+    Boolean(otpDb) &&
+    requiredEnvChecks.RESEND_API_KEY &&
+    emailSenderConfigured;
 
-  const allRequiredPresent = Object.values(envChecks).every(Boolean);
+  const allRequiredPresent = Object.values(requiredEnvChecks).every(Boolean);
 
   return NextResponse.json({
     ok: allRequiredPresent && supabaseProbe.ok && otpRouteReady,
     env: Object.fromEntries(
-      Object.entries(envChecks).map(([key, present]) => [key, present ? "present" : "missing"])
+      Object.entries(requiredEnvChecks).map(([key, present]) => [
+        key,
+        present ? "present" : "missing",
+      ])
+    ),
+    optionalFeatures: Object.fromEntries(
+      Object.entries(optionalFeatureChecks).map(([key, enabled]) => [
+        key,
+        enabled ? "enabled" : "disabled",
+      ])
     ),
     emailSenderConfigured,
     otpRouteReady,
@@ -56,7 +70,7 @@ export async function GET() {
     profilesQuery: supabaseProbe.profilesReachable ? "OK" : "Failed",
     authEmailFromDomain: transactionalFromDomain(),
     transactionalFrom: resolvedFrom,
-    pinPepperConfigured: envChecks.YIKE_PIN_PEPPER,
-    webAuthnEnabled: envChecks.ENABLE_WEBAUTHN,
+    pinPepperConfigured: requiredEnvChecks.YIKE_PIN_PEPPER,
+    webAuthnEnabled: optionalFeatureChecks.ENABLE_WEBAUTHN,
   });
 }
