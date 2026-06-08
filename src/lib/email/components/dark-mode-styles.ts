@@ -30,6 +30,25 @@ export function buildDarkModeStyles(): string {
       .email-cta a { color: ${t.navy} !important; }
       .email-support { border-color: #334155 !important; }
       .email-ad { background: #111827 !important; border-color: #334155 !important; }
+      /* Footer is always navy — keep bg + high-contrast text (body .email-muted must not apply here). */
+      .email-footer-dark {
+        background-color: ${t.navyDark} !important;
+        background-image: linear-gradient(180deg, ${t.navyDark} 0%, #010d1f 100%) !important;
+      }
+      .email-footer-dark .email-footer-label,
+      .email-footer-dark .email-muted {
+        color: ${t.gold} !important;
+      }
+      .email-footer-dark .email-footer-legal {
+        color: #94a3b8 !important;
+      }
+      .email-footer-dark .email-footer-links,
+      .email-footer-dark .email-footer-links .email-link {
+        color: ${t.gold} !important;
+      }
+      .email-footer-dark .email-footer-note {
+        color: #64748b !important;
+      }
     }
 
     [data-ogsc] .email-bg { background-color: ${t.navyDark} !important; }
@@ -37,5 +56,19 @@ export function buildDarkModeStyles(): string {
     [data-ogsc] .email-text { color: #e2e8f0 !important; }
     [data-ogsc] .email-headline { color: #f8fafc !important; }
     [data-ogsc] .email-otp-code { color: #f8fafc !important; }
+    [data-ogsc] .email-footer-dark {
+      background-color: ${t.navyDark} !important;
+      background-image: linear-gradient(180deg, ${t.navyDark} 0%, #010d1f 100%) !important;
+    }
+    [data-ogsc] .email-footer-dark .email-footer-label,
+    [data-ogsc] .email-footer-dark .email-muted {
+      color: ${t.gold} !important;
+    }
+    [data-ogsc] .email-footer-dark .email-footer-legal { color: #94a3b8 !important; }
+    [data-ogsc] .email-footer-dark .email-footer-links,
+    [data-ogsc] .email-footer-dark .email-footer-links .email-link {
+      color: ${t.gold} !important;
+    }
+    [data-ogsc] .email-footer-dark .email-footer-note { color: #64748b !important; }
   `.trim();
 }

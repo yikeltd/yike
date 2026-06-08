@@ -53,11 +53,11 @@ export function buildSocialLinksWithLabel(options?: {
   variant?: "light" | "dark";
 }): string {
   const variant = options?.variant ?? "light";
-  const labelColor =
-    variant === "dark" ? "rgba(228,181,71,0.9)" : t.muted;
+  const labelClass = variant === "dark" ? "email-footer-label" : "email-muted";
+  const labelColor = variant === "dark" ? t.gold : t.muted;
 
   return `
-    <p class="email-muted" style="margin:0 0 12px;font-family:${t.fontFamily};font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${labelColor};">
+    <p class="${labelClass}" style="margin:0 0 12px;font-family:${t.fontFamily};font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${labelColor};">
       Follow ${variant === "dark" ? "Yike" : "us"}
     </p>
     ${buildSocialLinks(options)}
