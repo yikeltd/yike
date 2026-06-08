@@ -1,10 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { optimizeUploadedImage, buildAvatarStoragePaths } from "@/lib/media/image";
 import { ALLOWED_IMAGE_TYPES } from "@/lib/media/constants";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+function resolveImageType(file: File): string | null {
+  if (file.type && (ALLOWED_IMAGE_TYPES as readonly string[]).includes(file.type)) {
+    return file.type;
+  }
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  const map: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+  };
+  return ext ? map[ext] ?? null : null;
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -21,7 +36,8 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const file = form.get("file") as File | null;
-  if (!file || !(ALLOWED_IMAGE_TYPES as readonly string[]).includes(file.type)) {
+  const mime = file ? resolveImageType(file) : null;
+  if (!file || !mime) {
     return NextResponse.json({ error: "Upload a JPG, PNG, or WebP photo" }, { status: 400 });
   }
 
@@ -36,6 +52,7 @@ export async function POST(request: Request) {
 
   const paths = buildAvatarStoragePaths(user.id);
   const bucket = "property-media";
+  const admin = createAdminClient();
 
   for (const [key, path] of Object.entries(paths) as [
     keyof typeof paths,
@@ -47,16 +64,19 @@ export async function POST(request: Request) {
         : key === "medium"
           ? optimized.medium
           : optimized.large;
-    const { error } = await supabase.storage.from(bucket).upload(path, body, {
+    const { error } = await admin.storage.from(bucket).upload(path, body, {
       contentType: "image/webp",
       upsert: true,
     });
     if (error) {
-      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+      return NextResponse.json(
+        { error: error.message || "Upload failed" },
+        { status: 500 }
+      );
     }
   }
 
-  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(paths.medium);
+  const { data: urlData } = admin.storage.from(bucket).getPublicUrl(paths.medium);
   const avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
   const { error: profileError } = await supabase
@@ -65,7 +85,10 @@ export async function POST(request: Request) {
     .eq("id", user.id);
 
   if (profileError) {
-    return NextResponse.json({ error: "Could not save profile photo" }, { status: 500 });
+    return NextResponse.json(
+      { error: profileError.message || "Could not save profile photo" },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ ok: true, avatarUrl });

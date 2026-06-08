@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { UserAvatar } from "@/components/profile/user-avatar";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
+import { prepareAvatarUpload } from "@/lib/media/prepare-avatar-upload";
 import { cn } from "@/lib/utils";
 
 export function AvatarUpload({
@@ -34,10 +35,11 @@ export function AvatarUpload({
     setError("");
     setUploading(true);
 
-    const form = new FormData();
-    form.append("file", file);
-
     try {
+      const prepared = await prepareAvatarUpload(file);
+      const form = new FormData();
+      form.append("file", prepared);
+
       const res = await fetch("/api/profile/avatar", { method: "POST", body: form });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -54,6 +56,8 @@ export function AvatarUpload({
         avatarUrl: url,
       });
       onUpdated?.(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

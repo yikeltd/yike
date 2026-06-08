@@ -17,10 +17,11 @@ export function HeaderMobile({
 }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const isProfile = pathname === "/agent";
   const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
   const isDetail = pathname.startsWith("/properties/");
 
-  if (isDetail) return null;
+  if (isDetail || isProfile) return null;
 
   return (
     <header

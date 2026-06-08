@@ -17,6 +17,7 @@ export function ConsumerShell({
 }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const isProfile = pathname === "/agent";
   const isDetail = pathname.startsWith("/properties/");
   const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
   const hideChrome =
@@ -39,6 +40,7 @@ export function ConsumerShell({
             !isDetail &&
             "px-3 lg:max-w-7xl lg:px-6 xl:px-8",
           isDetail && "lg:max-w-7xl lg:px-6 xl:px-8",
+          isProfile && "pt-[max(0.75rem,env(safe-area-inset-top))]",
           isDetail
             ? "safe-bottom-detail lg:safe-bottom-detail lg:pb-12"
             : "safe-bottom lg:pb-16",

@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   BadgeCheck,
   Bookmark,
+  ChevronRight,
   Heart,
   List,
   Bell,
@@ -16,9 +17,7 @@ import {
 import type { Profile } from "@/types/database";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { VerifiedBadge, StatusBadge } from "@/components/ui/badge";
-import { AgentSignOut } from "@/app/agent/sign-out-button";
-import { DeleteAccountLink } from "@/components/account/delete-account-link";
-import { AccountSecurityCard } from "@/components/profile/account-security-card";
+import { ProfileAccountActions } from "@/components/profile/profile-account-actions";
 import { OptionalWhatsAppCard } from "@/components/profile/optional-whatsapp-card";
 import { isPhoneOtpEnabledClient } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
@@ -67,7 +66,7 @@ export function ProfilePageClient({
   const statusMessage = accountStatusMessage(profile);
 
   return (
-    <div className="space-y-6 pb-4 pt-2">
+    <div className="space-y-5 pb-4">
       {statusMessage && (
         <div
           className="rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950"
@@ -76,6 +75,7 @@ export function ProfilePageClient({
           {statusMessage}
         </div>
       )}
+
       <section className="relative overflow-hidden rounded-[1.75rem] bg-navy px-5 pb-6 pt-8 text-white shadow-float-lg">
         <div
           className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/25 blur-3xl"
@@ -119,22 +119,36 @@ export function ProfilePageClient({
         </div>
       </section>
 
-      {completionPct < 100 && (
-        <section className="rounded-2xl border border-gold/25 bg-gold/8 p-4">
-          <div className="flex items-start gap-3">
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-gold-dark" />
+      {!canList && (
+        <Link
+          href="/agent/become"
+          className="pressable block overflow-hidden rounded-2xl bg-gold shadow-glow-gold ring-1 ring-gold-dark/20"
+        >
+          <div className="flex items-center gap-3 px-4 py-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-navy">
+              <PlusCircle className="h-6 w-6 text-gold" strokeWidth={2.25} />
+            </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-navy">Make your profile stand out</p>
-              <p className="mt-1 text-sm text-muted">
-                A photo and verified contact details help agents and renters trust you faster.
-              </p>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/5">
+              <p className="text-base font-bold text-navy">List properties on Yike</p>
+              <p className="text-xs font-medium text-navy/75">Free · reach renters on WhatsApp</p>
+            </div>
+            <ChevronRight className="h-5 w-5 shrink-0 text-navy/60" />
+          </div>
+        </Link>
+      )}
+
+      {completionPct < 100 && (
+        <section className="rounded-2xl border border-gold/25 bg-gold/8 p-3.5">
+          <div className="flex items-center gap-3">
+            <Sparkles className="h-4 w-4 shrink-0 text-gold-dark" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-navy">Profile {completionPct}% complete</p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/5">
                 <div
                   className="h-full rounded-full bg-gold transition-all"
                   style={{ width: `${completionPct}%` }}
                 />
               </div>
-              <p className="mt-1 text-xs font-medium text-muted">{completionPct}% complete</p>
             </div>
           </div>
         </section>
@@ -197,117 +211,48 @@ export function ProfilePageClient({
               href="/agent/listings/new"
               icon={PlusCircle}
               title="Post new listing"
-              subtitle="Reach buyers and renters on Yike"
               primary
             />
-            <ActionLink
-              href="/agent/listings"
-              icon={List}
-              title="My listings"
-              subtitle={
-                expiredCount > 0
-                  ? `${expiredCount} expired — reactivate when still available`
-                  : "Active, expired, rented — manage lifecycle"
-              }
-            />
+            <ActionLink href="/agent/listings" icon={List} title="My listings" />
             {expiringSoon > 0 && (
               <ActionLink
                 href="/agent/listings"
                 icon={Sparkles}
-                title="Renew expiring listings"
-                subtitle={`${expiringSoon} listing${expiringSoon === 1 ? "" : "s"} expiring within 3 days`}
+                title={`Renew ${expiringSoon} expiring`}
                 accent
               />
             )}
-            <ActionLink
-              href="/agent/leads"
-              icon={MessageCircle}
-              title="Inquiries & leads"
-              subtitle="WhatsApp and call leads from your listings"
-            />
-            <ActionLink
-              href="/agent/notifications"
-              icon={Bell}
-              title="Notifications"
-              subtitle="Updates from Yike about your account and listings"
-            />
+            <ActionLink href="/agent/leads" icon={MessageCircle} title="Inquiries & leads" />
+            <ActionLink href="/agent/notifications" icon={Bell} title="Notifications" />
             {(profile.account_type === "agency" ||
               profile.account_type === "developer" ||
               profile.company_name) && (
-              <ActionLink
-                href="/agent/company"
-                icon={ShieldCheck}
-                title="Company profile"
-                subtitle="Verification, branding, and business details"
-              />
+              <ActionLink href="/agent/company" icon={ShieldCheck} title="Company profile" />
             )}
             {!verified && (
               <ActionLink
                 href="/agent/verification"
                 icon={ShieldCheck}
                 title="Get verified badge"
-                subtitle="Build trust — optional, apply when ready"
                 accent
               />
             )}
           </>
         ) : (
           <>
-            <ActionLink
-              href="/saved"
-              icon={Bookmark}
-              title="Saved homes"
-              subtitle="Pick up where you left off"
-            />
-            <ActionLink
-              href="/search"
-              icon={Search}
-              title="Find a home"
-              subtitle="Rent, buy, shortlet & land across Nigeria"
-            />
+            <ActionLink href="/saved" icon={Bookmark} title="Saved homes" />
+            <ActionLink href="/search" icon={Search} title="Find a home" />
             <ActionLink
               href="/agent/become"
               icon={BadgeCheck}
-              title="List properties on Yike"
-              subtitle="Start posting when you're ready — we'll guide you"
+              title="Become a listing agent"
               accent
             />
           </>
         )}
       </section>
 
-      {canList && (
-        <section className="rounded-2xl border border-dashed border-gold/30 bg-gold/5 p-4">
-          <p className="text-sm font-semibold text-navy">Premium tools</p>
-          <p className="mt-1 text-xs text-muted">
-            Featured listings and boost placement — coming soon. Admin can assign boosts manually for now.
-          </p>
-        </section>
-      )}
-
-      <section className="rounded-2xl border border-border bg-elevated p-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-muted">Account</p>
-        <dl className="mt-3 space-y-3 text-sm">
-          <div>
-            <dt className="text-muted">Email</dt>
-            <dd className="font-medium text-navy">{email}</dd>
-          </div>
-          {profile.phone && (
-            <div>
-              <dt className="text-muted">Phone</dt>
-              <dd className="font-medium text-navy">{profile.phone}</dd>
-            </div>
-          )}
-        </dl>
-      </section>
-
-      <AccountSecurityCard email={email} />
-
-      <AgentSignOut />
-
-      <div className="border-t border-border pt-4">
-        <DeleteAccountLink />
-      </div>
+      <ProfileAccountActions email={email} />
     </div>
   );
 }
@@ -339,14 +284,12 @@ function ActionLink({
   href,
   icon: Icon,
   title,
-  subtitle,
   primary,
   accent,
 }: {
   href: string;
   icon: typeof PlusCircle;
   title: string;
-  subtitle: string;
   primary?: boolean;
   accent?: boolean;
 }) {
@@ -361,12 +304,7 @@ function ActionLink({
       )}
     >
       <Icon className={cn("h-5 w-5 shrink-0", primary ? "text-white" : "text-gold-dark")} />
-      <span className="min-w-0">
-        <span className="block font-semibold">{title}</span>
-        <span className={cn("block text-xs", primary ? "text-white/80" : "text-muted")}>
-          {subtitle}
-        </span>
-      </span>
+      <span className="font-semibold">{title}</span>
     </Link>
   );
 }
