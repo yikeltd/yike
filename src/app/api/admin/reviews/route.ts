@@ -6,6 +6,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ReviewStatus, ReplyStatus } from "@/types/database";
 
+export const runtime = "nodejs";
+
 export async function GET(req: Request) {
   const auth = await requireAdminApi();
   if (!auth.ok) {

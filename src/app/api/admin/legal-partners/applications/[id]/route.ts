@@ -6,6 +6,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generatePartnerCode } from "@/lib/legal-partner/code";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: RouteCtx) {

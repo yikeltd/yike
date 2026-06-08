@@ -7,6 +7,8 @@ import {
   listingHistoryEventLabel,
 } from "@/lib/listing-history/labels";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, ctx: RouteCtx) {

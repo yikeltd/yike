@@ -16,6 +16,8 @@ import { recordListingHistoryEvent } from "@/lib/listing-history/record";
 import { suggestVerifiersForRequest } from "@/lib/verification/suggestions";
 import { formatReportValidityNotice } from "@/lib/verification/report-expiry";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: RouteCtx) {

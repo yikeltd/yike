@@ -6,6 +6,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { refreshAmbassadorEarnings } from "@/lib/ambassador/commission";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: RouteCtx) {

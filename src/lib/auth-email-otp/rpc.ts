@@ -38,7 +38,11 @@ export function createAuthEmailOtpDbClient(): SupabaseClient | null {
     });
   }
 
-  return createAdminClient();
+  try {
+    return createAdminClient();
+  } catch {
+    return null;
+  }
 }
 
 function token(): string {

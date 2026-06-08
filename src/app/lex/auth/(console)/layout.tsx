@@ -6,6 +6,8 @@ import {
 } from "@/lib/admin/navigation";
 import { AdminShell } from "@/components/admin/shell/admin-shell";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminConsoleLayout({
   children,
 }: {

@@ -28,8 +28,14 @@ const RESPONSIBILITIES = [
 ];
 
 async function getOpenCities() {
-  const admin = createAdminClient();
-  if (!admin) return [];
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (error) {
+    console.warn("[ambassadors] open cities unavailable:", (error as Error).message);
+    return [];
+  }
+
   const { data } = await admin
     .from("city_ambassador_slots")
     .select("city, state, max_slots, active_slots, recruitment_paused, active")

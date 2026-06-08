@@ -10,6 +10,8 @@ import {
 } from "@/lib/agent-verification";
 import type { VerificationCallStatus } from "@/types/database";
 
+export const runtime = "nodejs";
+
 export async function PATCH(req: Request) {
   const auth = await requireSuperAdminApi();
   if (!auth.ok) {

@@ -10,6 +10,8 @@ import {
 } from "@/lib/trust/score-engine/recalculate";
 import type { TrustEntityType } from "@/lib/trust/score-engine/constants";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ entityType: string; entityId: string }> };
 
 const VALID_TYPES = new Set([

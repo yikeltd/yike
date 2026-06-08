@@ -11,6 +11,8 @@ import {
 import { cityHasCapacity, getCitySlot, incrementCityActiveSlots } from "@/lib/ambassador/slots";
 import { getProgramConfig } from "@/lib/ambassador/commission";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: RouteCtx) {

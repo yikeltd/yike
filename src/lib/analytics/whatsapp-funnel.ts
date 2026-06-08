@@ -1,5 +1,3 @@
-import { createAdminClient } from "@/lib/supabase/admin";
-
 export type FunnelEventType =
   | "whatsapp_button_clicked"
   | "whatsapp_opened"
@@ -21,25 +19,28 @@ export type FunnelEventInput = {
   metadata?: Record<string, unknown>;
 };
 
-/** Fire-and-forget internal funnel logging — never shown to users. */
-export function logFunnelEvent(input: FunnelEventInput): void {
-  const admin = createAdminClient();
-  if (!admin) return;
+const FUNNEL_EVENT_TYPES: FunnelEventType[] = [
+  "whatsapp_button_clicked",
+  "whatsapp_opened",
+  "lead_created",
+  "handoff_shared",
+  "direct_whatsapp_used",
+  "direct_call_used",
+  "call_button_clicked",
+];
 
-  void admin
-    .from("funnel_events")
-    .insert({
-      event_type: input.eventType,
-      listing_id: input.listingId ?? null,
-      agent_id: input.agentId ?? null,
-      lead_id: input.leadId ?? null,
-      user_id: input.userId ?? null,
-      guest_id: input.guestId ?? null,
-      source_page: input.sourcePage ?? null,
-      source_surface: input.sourceSurface ?? null,
-      metadata: input.metadata ?? {},
-    })
-    .then(({ error }) => {
-      if (error) console.warn("[funnel]", error.message);
-    });
+export function isFunnelEventType(value: string): value is FunnelEventType {
+  return FUNNEL_EVENT_TYPES.includes(value as FunnelEventType);
+}
+
+/** Fire-and-forget browser funnel logging — server route handles privileged writes. */
+export function logFunnelEvent(input: FunnelEventInput): void {
+  if (typeof window === "undefined") return;
+
+  void fetch("/api/analytics/funnel", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+    keepalive: true,
+  }).catch(() => {});
 }

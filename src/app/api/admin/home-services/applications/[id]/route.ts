@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { approveServiceProviderApplication, updateProviderStatus } from "@/lib/home-services/providers";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: Request, ctx: RouteCtx) {

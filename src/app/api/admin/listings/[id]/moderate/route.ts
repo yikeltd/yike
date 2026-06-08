@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { recordListingHistoryEvent } from "@/lib/listing-history/record";
 import type { PropertyStatus } from "@/types/database";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 const ACTIONS = [

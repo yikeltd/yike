@@ -6,6 +6,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAdminProfileStats } from "@/lib/admin/profile-stats";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: RouteCtx) {

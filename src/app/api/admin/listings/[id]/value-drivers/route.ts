@@ -9,6 +9,8 @@ import {
   moderateListingValueDrivers,
 } from "@/lib/value-drivers/service";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: RouteCtx) {

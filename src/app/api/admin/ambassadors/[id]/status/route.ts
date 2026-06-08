@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { incrementCityActiveSlots } from "@/lib/ambassador/slots";
 import type { AmbassadorStatus } from "@/lib/ambassador/constants";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 const PIN_STATUSES: AmbassadorStatus[] = ["disabled"];

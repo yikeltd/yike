@@ -7,6 +7,8 @@ import { hashPin } from "@/lib/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import type { StaffRole } from "@/types/database";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   const auth = await requireSuperAdminApi();
   if (!auth.ok) {

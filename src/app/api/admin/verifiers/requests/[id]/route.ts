@@ -11,6 +11,8 @@ import {
   getAssignmentExpireHours,
 } from "@/lib/verification/assignments";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: RouteCtx) {

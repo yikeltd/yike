@@ -6,6 +6,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { VerifierStatus } from "@/lib/verifier/constants";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 const PIN_STATUSES: VerifierStatus[] = ["suspended", "fraud_review"];

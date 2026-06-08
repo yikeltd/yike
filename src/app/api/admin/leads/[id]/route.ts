@@ -5,6 +5,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { LeadDealStatus, TransactionStage } from "@/types/database";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 const LEAD_STATUSES: LeadDealStatus[] = [

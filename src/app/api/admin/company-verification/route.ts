@@ -5,6 +5,8 @@ import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const runtime = "nodejs";
+
 export async function GET() {
   const auth = await requireSuperAdminApi();
   if (!auth.ok) {

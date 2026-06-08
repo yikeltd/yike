@@ -10,6 +10,8 @@ import {
 } from "@/lib/property-slugs";
 import type { PropertyStatus, ListingType } from "@/types/database";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: RouteCtx) {

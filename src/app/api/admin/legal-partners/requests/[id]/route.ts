@@ -10,6 +10,8 @@ import { suggestLegalPartners } from "@/lib/legal-partner/suggestions";
 import { appendTrustTimeline } from "@/lib/trust/operations/timeline";
 import { recordListingHistoryEvent } from "@/lib/listing-history/record";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: RouteCtx) {

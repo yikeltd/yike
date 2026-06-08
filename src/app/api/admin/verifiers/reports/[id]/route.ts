@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createVerifierEarning } from "@/lib/verifier/earnings";
 import { getReportValidUntil } from "@/lib/verification/assignments";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: RouteCtx) {

@@ -6,6 +6,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { LegalPartnerStatus } from "@/lib/legal-partner/constants";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 const PIN_STATUSES: LegalPartnerStatus[] = ["suspended", "fraud_review"];

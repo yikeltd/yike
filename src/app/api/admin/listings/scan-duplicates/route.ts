@@ -6,6 +6,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { scanListingDuplicates } from "@/lib/trust/recalculate";
 
+export const runtime = "nodejs";
+
 export async function POST() {
   const auth = await requireAdminApi();
   if (!auth.ok) {

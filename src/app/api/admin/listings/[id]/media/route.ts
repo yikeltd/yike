@@ -10,6 +10,8 @@ import {
 } from "@/lib/media/items";
 import type { PropertyMediaItem } from "@/types/database";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: Request, ctx: RouteCtx) {

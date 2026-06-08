@@ -7,6 +7,8 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentProfileStatus } from "@/types/database";
 
+export const runtime = "nodejs";
+
 type StatusAction =
   | "suspend"
   | "reinstate"

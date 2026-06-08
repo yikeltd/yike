@@ -13,8 +13,12 @@ type EnvHealth = {
     configured: boolean;
     ok: boolean;
     keyFormat: string;
+    authAdminReachable: boolean;
+    profilesReachable: boolean;
     error?: string;
   };
+  supabaseAdminAuth: "OK" | "Failed";
+  profilesQuery: "OK" | "Failed";
   authEmailFromDomain: string | null;
 };
 
@@ -51,7 +55,8 @@ export function EnvHealthPanel() {
   }, []);
 
   useEffect(() => {
-    void load();
+    const id = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(id);
   }, [load]);
 
   if (loading && !data) {
@@ -108,6 +113,14 @@ export function EnvHealthPanel() {
               </span>
             ) : null}
           </dd>
+        </div>
+        <div className="rounded-xl bg-surface/60 px-3 py-2">
+          <dt className="text-xs text-muted">Supabase Admin Auth</dt>
+          <dd className="mt-1 font-medium text-navy">{data.supabaseAdminAuth}</dd>
+        </div>
+        <div className="rounded-xl bg-surface/60 px-3 py-2">
+          <dt className="text-xs text-muted">Profiles Query</dt>
+          <dd className="mt-1 font-medium text-navy">{data.profilesQuery}</dd>
         </div>
       </dl>
 

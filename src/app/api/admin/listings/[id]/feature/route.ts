@@ -8,6 +8,8 @@ import { recordAmbassadorCommission } from "@/lib/ambassador/commission";
 import type { FeaturedTier } from "@/types/database";
 import type { RevenueSourceType } from "@/lib/ambassador/constants";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 const TIERS: FeaturedTier[] = ["basic", "premium", "launch", "developer"];

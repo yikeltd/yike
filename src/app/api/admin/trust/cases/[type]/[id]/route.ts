@@ -17,6 +17,8 @@ import {
 import { generateUniqueYvrReference } from "@/lib/verification/reference";
 import type { TrustCaseType } from "@/lib/trust/operations/constants";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ type: string; id: string }> };
 
 const CASE_MAP: Record<string, { table: string; caseType: TrustCaseType; refField: string }> = {

@@ -6,7 +6,7 @@ import {
 } from "@/lib/leads/whatsapp-urls";
 import { getHandoffByReference, markLeadForwarded } from "@/lib/leads/handoff";
 import { logLeadEvent } from "@/lib/leads/events";
-import { logFunnelEvent } from "@/lib/analytics/whatsapp-funnel";
+import { logFunnelEvent } from "@/lib/analytics/whatsapp-funnel-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";

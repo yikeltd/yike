@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { findAuthUserByEmail } from "@/lib/auth/find-auth-user";
 
 export type AdminUserFilter =
@@ -36,6 +36,13 @@ const STAFF_ROLES = [
   "careers",
   "moderator",
 ] as const;
+
+export class AdminUsersDirectoryError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AdminUsersDirectoryError";
+  }
+}
 
 function isCompanyProfile(row: {
   account_type?: string | null;
@@ -104,47 +111,109 @@ function profileToRow(p: Record<string, unknown>): AdminDirectoryRow {
   };
 }
 
-export async function fetchMissingProfileRows(
-  admin: SupabaseClient,
-  limit = 50
-): Promise<AdminDirectoryRow[]> {
-  const { data: profiles } = await admin.from("profiles").select("id");
-  const profileIdSet = new Set((profiles ?? []).map((p) => p.id as string));
+function authUserToMissingProfileRow(u: User): AdminDirectoryRow {
+  return {
+    id: u.id,
+    full_name:
+      (u.user_metadata?.full_name as string | undefined) ??
+      (u.user_metadata?.name as string | undefined) ??
+      null,
+    email: u.email ?? null,
+    role: "—",
+    account_status: null,
+    profile_status: null,
+    is_banned: false,
+    created_at: u.created_at,
+    profile_missing: true,
+    account_kind: "ghost",
+    email_verified: Boolean(u.email_confirmed_at),
+    company_name: null,
+  };
+}
 
-  const ghosts: AdminDirectoryRow[] = [];
+function mergeAuthUserWithProfile(
+  authUser: User,
+  profile: Record<string, unknown> | undefined
+): AdminDirectoryRow {
+  if (!profile) return authUserToMissingProfileRow(authUser);
+  const row = profileToRow(profile);
+  return {
+    ...row,
+    created_at: row.created_at || authUser.created_at,
+    email: row.email ?? authUser.email ?? null,
+    full_name:
+      row.full_name ??
+      ((authUser.user_metadata?.full_name as string | undefined) ||
+        (authUser.user_metadata?.name as string | undefined) ||
+        null),
+    email_verified: row.email_verified ?? Boolean(authUser.email_confirmed_at),
+  };
+}
+
+async function listAllAuthUsers(admin: SupabaseClient): Promise<User[]> {
+  const users: User[] = [];
   let page = 1;
 
-  while (ghosts.length < limit && page <= 50) {
+  while (page <= 50) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
-    if (error || !data) break;
-
-    for (const u of data.users) {
-      if (profileIdSet.has(u.id)) continue;
-      ghosts.push({
-        id: u.id,
-        full_name:
-          (u.user_metadata?.full_name as string | undefined) ??
-          (u.user_metadata?.name as string | undefined) ??
-          null,
-        email: u.email ?? null,
-        role: "—",
-        account_status: null,
-        profile_status: null,
-        is_banned: false,
-        created_at: u.created_at,
-        profile_missing: true,
-        account_kind: "ghost",
-        email_verified: Boolean(u.email_confirmed_at),
-        company_name: null,
-      });
-      if (ghosts.length >= limit) break;
+    if (error) {
+      console.error("[users-directory] auth admin listUsers failed:", error.message);
+      throw new AdminUsersDirectoryError(
+        "Supabase service role cannot access auth admin. Check service role key/project match."
+      );
     }
 
+    users.push(...data.users);
     if (data.users.length < 200) break;
     page += 1;
   }
 
-  return ghosts;
+  return users;
+}
+
+async function fetchProfilesByIds(
+  admin: SupabaseClient,
+  ids: string[]
+): Promise<Map<string, Record<string, unknown>>> {
+  const profiles = new Map<string, Record<string, unknown>>();
+
+  for (let i = 0; i < ids.length; i += 200) {
+    const chunk = ids.slice(i, i + 200);
+    const { data, error } = await admin
+      .from("profiles")
+      .select(
+        "id, full_name, email, role, account_status, profile_status, is_banned, created_at, email_verified, account_type, company_name"
+      )
+      .in("id", chunk);
+
+    if (error) {
+      console.error("[users-directory] profiles query failed:", error.message);
+      throw new AdminUsersDirectoryError("Supabase service role cannot query profiles.");
+    }
+
+    for (const p of data ?? []) {
+      profiles.set(String(p.id), p as Record<string, unknown>);
+    }
+  }
+
+  return profiles;
+}
+
+export async function fetchMissingProfileRows(
+  admin: SupabaseClient,
+  limit = 50
+): Promise<AdminDirectoryRow[]> {
+  const authUsers = await listAllAuthUsers(admin);
+  const profiles = await fetchProfilesByIds(
+    admin,
+    authUsers.map((u) => u.id)
+  );
+
+  return authUsers
+    .filter((u) => !profiles.has(u.id))
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+    .slice(0, limit)
+    .map((u) => authUserToMissingProfileRow(u));
 }
 
 export async function fetchAdminUsersDirectory(
@@ -157,63 +226,31 @@ export async function fetchAdminUsersDirectory(
   }
 ): Promise<{ rows: AdminDirectoryRow[]; total: number }> {
   const filter = options.filter ?? "all";
-
-  if (filter === "missing_profile") {
-    const ghosts = await fetchMissingProfileRows(admin, 500);
-    const q = options.q?.trim().toLowerCase();
-    const filtered = q
-      ? ghosts.filter(
-          (g) =>
-            g.email?.toLowerCase().includes(q) ||
-            g.full_name?.toLowerCase().includes(q)
-        )
-      : ghosts;
-    return {
-      rows: filtered.slice(options.from, options.to + 1),
-      total: filtered.length,
-    };
-  }
-
-  let query = admin
-    .from("profiles")
-    .select(
-      "id, full_name, email, role, account_status, profile_status, is_banned, created_at, email_verified, account_type, company_name",
-      { count: "exact" }
-    )
-    .order("created_at", { ascending: false });
-
-  if (filter === "users") {
-    query = query.eq("role", "user");
-  } else if (filter === "agents") {
-    query = query.in("role", [...AGENT_ROLES]);
-  } else if (filter === "companies") {
-    query = query.or(
-      "account_type.eq.agency,account_type.eq.developer,company_name.not.is.null"
-    );
-  } else if (filter === "staff") {
-    query = query.in("role", [...STAFF_ROLES]);
-  } else if (filter === "suspended") {
-    query = query.or("is_banned.eq.true,account_status.eq.suspended");
-  } else if (filter === "on_hold") {
-    query = query.eq("account_status", "on_hold");
-  }
-
+  const authUsers = await listAllAuthUsers(admin);
+  const profiles = await fetchProfilesByIds(
+    admin,
+    authUsers.map((u) => u.id)
+  );
+  let rows = authUsers.map((u) => mergeAuthUserWithProfile(u, profiles.get(u.id)));
   const q = options.q?.trim();
   if (q) {
-    const pattern = `%${q.replace(/[%_]/g, "")}%`;
-    query = query.or(
-      `full_name.ilike.${pattern},email.ilike.${pattern},username.ilike.${pattern},company_name.ilike.${pattern}`
+    const needle = q.toLowerCase();
+    rows = rows.filter(
+      (row) =>
+        row.full_name?.toLowerCase().includes(needle) ||
+        row.email?.toLowerCase().includes(needle) ||
+        row.company_name?.toLowerCase().includes(needle)
     );
   }
 
-  const { data, count, error } = await query.range(options.from, options.to);
-  if (error) {
-    console.error("[users-directory] query failed:", error.message);
-    return { rows: [], total: 0 };
-  }
+  rows = rows
+    .filter((row) => matchesFilter(row, filter))
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
 
-  const rows = (data ?? []).map((p) => profileToRow(p as Record<string, unknown>));
-  return { rows: rows.filter((r) => matchesFilter(r, filter)), total: count ?? 0 };
+  return {
+    rows: rows.slice(options.from, options.to + 1),
+    total: rows.length,
+  };
 }
 
 export async function lookupDirectoryUserByEmail(

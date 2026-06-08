@@ -11,6 +11,8 @@ import type {
   LeadRoutingMode,
 } from "@/lib/leads/routing-types";
 
+export const runtime = "nodejs";
+
 type RouteCtx = { params: Promise<{ id: string }> };
 
 const PIN_ACTIONS = new Set([
