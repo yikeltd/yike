@@ -1,8 +1,8 @@
 {
-  "packageId": "ng.yike.staff",
+  "packageId": "com.yike.app",
   "host": "yike.ng",
-  "name": "Yike Crew",
-  "launcherName": "Crew",
+  "name": "Yike",
+  "launcherName": "Yike",
   "display": "standalone",
   "themeColor": "#031B4E",
   "themeColorDark": "#031B4E",
@@ -12,36 +12,54 @@
   "navigationDividerColorDark": "#031B4E",
   "backgroundColor": "#031B4E",
   "enableNotifications": false,
-  "startUrl": "/staff",
-  "iconUrl": "https://yike.ng/staff/icons/crew-512.png",
-  "maskableIconUrl": "https://yike.ng/staff/icons/crew-512.png",
-  "splashScreenFadeOutDuration": 300,
+  "startUrl": "/",
+  "iconUrl": "https://yike.ng/icons/android-chrome-512.png",
+  "maskableIconUrl": "https://yike.ng/icons/android-chrome-512.png",
+  "splashScreenFadeOutDuration": 500,
+  "splashScreenImage": "https://yike.ng/splash/splash-1080x1920.png",
   "signingKey": {
     "path": "./android.keystore",
-    "alias": "yike-staff"
+    "alias": "yike"
   },
-  "appVersionName": "1.0.0",
-  "appVersionCode": 1,
-  "shortcuts": [],
+  "appVersionName": "1.0.2",
+  "appVersionCode": 3,
+  "shortcuts": [
+    {
+      "name": "Swipe homes",
+      "shortName": "Swipe",
+      "url": "https://yike.ng/browse",
+      "chosenIconUrl": "https://yike.ng/icons/android-chrome-192.png"
+    },
+    {
+      "name": "Search",
+      "shortName": "Search",
+      "url": "https://yike.ng/search",
+      "chosenIconUrl": "https://yike.ng/icons/android-chrome-192.png"
+    }
+  ],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://yike.ng/staff/manifest.json",
+  "webManifestUrl": "https://yike.ng/manifest.json",
   "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": {
     "enabled": false
   },
-  "enableSiteSettingsShortcut": false,
+  "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://yike.ng/",
   "minSdkVersion": 21,
   "orientation": "portrait-primary",
-  "fingerprints": [],
+  "fingerprints": [
+    {
+      "sha256Fingerprint": "14:8A:2F:01:09:4B:9B:71:DC:3B:D8:7B:2F:28:84:2F:16:56:98:B3:B9:1D:69:8E:1A:F4:74:E3:0C:FC:33:EB"
+    }
+  ],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
   "protocolHandlers": [],
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1.0.0"
+  "appVersion": "1.0.2"
 }

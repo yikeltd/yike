@@ -1,63 +1,73 @@
 # Yike Crew — Trusted Web Activity (TWA)
 
-Separate installable APK for internal operations. Does **not** replace the public `com.yike.app` customer build.
+Package: `ng.yike.staff`  
+Launcher name: **Crew**  
+Host: `https://yike.ng`  
+Start URL: `https://yike.ng/staff`  
+Manifest: `https://yike.ng/staff/manifest.json`
 
-| Field | Value |
-|-------|--------|
-| App name | Yike Crew |
-| Package | `ng.yike.staff` |
-| Start URL | `https://yike.ng/staff` |
-| Manifest | `https://yike.ng/staff/manifest.json` |
-| Icon | `https://yike.ng/staff/icons/crew-512.png` |
+Separate from the public customer app (`com.yike.app`).
 
-Regenerate compressed icons from `public/images/app-icon.webp`:
+## Quick links (production)
 
-```bash
-npm run optimize:crew
-```
+| What | URL |
+|------|-----|
+| Crew entry | https://yike.ng/staff |
+| Staff login | https://yike.ng/lex?app=staff |
+| Install / APK download | https://yike.ng/staff/download |
+| Direct APK | https://yike.ng/downloads/yike-crew.apk |
+| Asset links | https://yike.ng/.well-known/assetlinks.json |
 
-## Prerequisites
+## Build release APK
 
-- Production deploy serving `/staff` and `/staff/manifest.json`
-- JDK 17+ for Android build
-- `@bubblewrap/cli` via `npx`
-
-## 1. Create signing key (one-time)
-
-```bash
-keytool -genkeypair -v \
-  -keystore twa-staff/android.keystore \
-  -alias yike-staff \
-  -keyalg RSA -keysize 2048 -validity 10000 \
-  -dname "CN=Yike Ltd, OU=Crew, O=Yike Ltd, L=Lagos, ST=Lagos, C=NG"
-```
-
-## 2. SHA-256 fingerprint → Digital Asset Links
-
-```bash
-keytool -list -v -keystore twa-staff/android.keystore -alias yike-staff | grep SHA256
-```
-
-Copy the SHA-256 into `public/.well-known/assetlinks.json` for package `ng.yike.staff`, then redeploy.
-
-## 3. Initialize Bubblewrap project
-
-```bash
-npm run twa-staff:init
-```
-
-## 4. Build signed APK
+From repo root:
 
 ```bash
 npm run twa-staff:build
 ```
 
-Output: `twa-staff/yike-staff-release.apk`
+Requires:
 
-## Testing checklist
+- JDK 17 at `twa/.jdk17` (or `JAVA_HOME`)
+- `twa-staff/signing.env` (copy from `signing.env.example`)
+- `twa-staff/android.keystore` (same key as customer TWA — alias `yike`)
 
-1. APK opens `/staff` (not public homepage)
-2. Crew login → role-based workspace
-3. App icon shows Yike Crew mark on launcher
-4. Non-staff account blocked
-5. Public customer APK unchanged (`com.yike.app`)
+Output:
+
+- `twa-staff/yike-crew-release.apk` — share via WhatsApp
+- `public/downloads/yike-crew.apk` — hosted download after deploy
+
+## Initialize / refresh Bubblewrap project
+
+After production manifest changes:
+
+```bash
+npm run twa-staff:init
+# or update existing project:
+cd twa-staff && npx @bubblewrap/cli update --manifest=https://yike.ng/staff/manifest.json
+```
+
+If Bubblewrap init hangs, copy `twa/` Android project into `twa-staff/` and adjust package name + icons (see git history).
+
+## Digital Asset Links
+
+`public/.well-known/assetlinks.json` must include **both**:
+
+- `com.yike.app` (customer)
+- `ng.yike.staff` (crew)
+
+Same SHA-256 fingerprint as `twa/android.keystore`.
+
+Verify:
+
+```bash
+curl "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://yike.ng&relation=delegate_permission/common.handle_all_urls"
+```
+
+## Install for staff
+
+1. Share https://yike.ng/staff/download or the APK file directly.
+2. Staff installs, opens **Yike Crew**, signs in at `/lex?app=staff`.
+3. App routes to role workspace (support, listings review, trust, etc.).
+
+**Never commit:** `android.keystore`, `signing.env`, `*.apk`, `.jdk17/`.

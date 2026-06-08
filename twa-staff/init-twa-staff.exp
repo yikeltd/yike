@@ -1,0 +1,47 @@
+#!/usr/bin/expect -f
+set timeout 900
+cd [file dirname [info script]]
+
+set fp [open "signing.env" r]
+gets $fp storepass
+close $fp
+regexp {TWA_KEYSTORE_PASSWORD=(.+)} $storepass -> pass
+
+spawn npx --yes @bubblewrap/cli@latest init --manifest=https://yike.ng/staff/manifest.json
+
+expect {
+  "Key store location" {
+    send "./android.keystore\r"
+    exp_continue
+  }
+  "Key store password" {
+    send "$pass\r"
+    exp_continue
+  }
+  "Key alias" {
+    send "yike\r"
+    exp_continue
+  }
+  "Key password" {
+    send "$pass\r"
+    exp_continue
+  }
+  "Overwrite" {
+    send "y\r"
+    exp_continue
+  }
+  "Family Policy" {
+    send "\r"
+    exp_continue
+  }
+  "? " {
+    send "\r"
+    exp_continue
+  }
+  "project generated" {
+    exp_continue
+  }
+  eof
+}
+
+wait

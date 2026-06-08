@@ -1,0 +1,28 @@
+#!/usr/bin/expect -f
+set timeout 1800
+cd [file dirname [info script]]
+
+set fp [open "signing.env" r]
+gets $fp storepass
+close $fp
+regexp {TWA_KEYSTORE_PASSWORD=(.+)} $storepass -> pass
+
+spawn npx --yes @bubblewrap/cli@latest build
+
+expect {
+  "Do you want Bubblewrap to install the JDK" {
+    send "y\r"
+    exp_continue
+  }
+  "Password for the Key Store:" {
+    send "$pass\r"
+    exp_continue
+  }
+  "Password for the Key:" {
+    send "$pass\r"
+    exp_continue
+  }
+  eof
+}
+
+wait
