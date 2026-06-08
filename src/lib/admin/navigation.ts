@@ -203,6 +203,7 @@ export function filterNavForRole(
     "users",
     "auth-sync",
     "deal-matching",
+    "verification-control",
   ]
 ): NavGroup[] {
   if (!allowlist) return groups;

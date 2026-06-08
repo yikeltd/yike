@@ -124,7 +124,7 @@ export async function applyEnforcementAction(
   return { ok: Boolean(result), ...result ?? {} };
 }
 
-async function syncProfileVerificationMeta(
+export async function syncProfileVerificationMeta(
   client: SupabaseClient,
   userId: string,
   config?: VerificationControlConfig,

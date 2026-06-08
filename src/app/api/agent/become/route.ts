@@ -6,6 +6,7 @@ import { isPhoneVerificationRequired } from "@/lib/feature-flags";
 import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
 import { getAmbassadorRefFromCookies } from "@/lib/ambassador/cookie";
 import { isEmailVerified } from "@/lib/auth";
+import { syncProfileVerificationMeta } from "@/lib/verification/enforcement";
 import { canRequestPhoneOtp, normalizeNigerianPhone } from "@/lib/phone";
 import type { AccountType } from "@/types/database";
 
@@ -90,6 +91,7 @@ export async function POST(request: Request) {
         adaptive_trust_level: 2,
       })
       .eq("id", user.id);
+    await syncProfileVerificationMeta(admin, user.id);
     return NextResponse.json({ ok: true, alreadyAgent: true });
   }
 
@@ -125,6 +127,8 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ error: "Could not upgrade account" }, { status: 500 });
   }
+
+  await syncProfileVerificationMeta(admin, user.id);
 
   const referralCode = await getAmbassadorRefFromCookies();
   if (referralCode) {

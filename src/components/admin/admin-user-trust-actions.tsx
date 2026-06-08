@@ -19,6 +19,7 @@ const TRUST_ACTIONS: EnforcementAction[] = [
   "escalate_trust",
   "restore_trust",
   "remove_escalation",
+  "revoke_verification",
 ];
 
 const DESTRUCTIVE_ACTIONS = ["suspend", "delete"] as const;

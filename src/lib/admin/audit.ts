@@ -181,6 +181,8 @@ export type AuditAction =
   | "trust.verification.escalate"
   | "trust.verification.restore"
   | "trust.verification.override"
+  | "trust.verification.permission.grant"
+  | "trust.verification.permission.revoke"
   | "trust.review.resolve"
   | "trust.review.dismiss"
   | "trust.bank.submit"

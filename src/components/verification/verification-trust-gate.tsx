@@ -10,12 +10,14 @@ type Props = {
   className?: string;
   tasks?: VerificationTask[];
   verificationHref?: string;
+  hideActions?: boolean;
 };
 
 export function VerificationTrustGate({
   className = "",
   tasks = [],
   verificationHref = "/agent/verification",
+  hideActions = false,
 }: Props) {
   const pending = tasks.filter((t) => t.required && !t.complete);
 
@@ -43,20 +45,22 @@ export function VerificationTrustGate({
             </ul>
           ) : null}
 
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Link
-              href={verificationHref}
-              className="inline-flex h-10 items-center rounded-xl bg-gold px-4 text-sm font-semibold text-navy"
-            >
-              Start verification
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex h-10 items-center rounded-xl border border-navy/15 px-4 text-sm font-semibold text-navy"
-            >
-              Contact support
-            </Link>
-          </div>
+          {!hideActions ? (
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href={verificationHref}
+                className="inline-flex h-10 items-center rounded-xl bg-gold px-4 text-sm font-semibold text-navy"
+              >
+                Start verification
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex h-10 items-center rounded-xl border border-navy/15 px-4 text-sm font-semibold text-navy"
+              >
+                Contact support
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

@@ -47,6 +47,7 @@ const ENFORCEMENT_OPTIONS: EnforcementAction[] = [
   "escalate_trust",
   "restore_trust",
   "remove_escalation",
+  "revoke_verification",
 ];
 
 function ToggleCard({
@@ -109,6 +110,10 @@ export function AdminVerificationControlPanel() {
   const [enforceReason, setEnforceReason] = useState("");
   const [enforcing, setEnforcing] = useState(false);
 
+  const [staffOptions, setStaffOptions] = useState<{ id: string; full_name: string; email: string }[]>([]);
+  const [grantStaffId, setGrantStaffId] = useState("");
+  const [granting, setGranting] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -125,11 +130,37 @@ export function AdminVerificationControlPanel() {
     }
     setConfig(json.config ?? null);
     setCanEditToggles(Boolean(json.canEditToggles));
+
+    if (json.canEditToggles) {
+      const permRes = await fetch("/api/admin/verification-control/permissions");
+      const permJson = (await permRes.json().catch(() => ({}))) as {
+        staff?: { id: string; full_name: string; email: string }[];
+      };
+      setStaffOptions(permJson.staff ?? []);
+    }
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function grantStaffAccess() {
+    if (!grantStaffId) return;
+    setGranting(true);
+    const res = await fetch("/api/admin/verification-control/permissions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ staff_id: grantStaffId }),
+    });
+    setGranting(false);
+    if (res.ok) {
+      setGrantStaffId("");
+      setError("");
+    } else {
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      setError(json.error ?? "Could not grant access");
+    }
+  }
 
   async function toggleKey(key: keyof VerificationControlConfig, value: boolean) {
     if (!config || !canEditToggles) return;
@@ -321,6 +352,32 @@ export function AdminVerificationControlPanel() {
           </Button>
         </div>
       </div>
+
+      {canEditToggles && staffOptions.length > 0 ? (
+        <div className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-navy">Authorize support staff</h2>
+          <p className="mt-1 text-xs text-muted">
+            Grant support or moderators access to verification control and trust enforcement.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Select
+              className="min-w-[200px] flex-1"
+              value={grantStaffId}
+              onChange={(e) => setGrantStaffId(e.target.value)}
+            >
+              <option value="">Select staff member</option>
+              {staffOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.full_name} ({s.email})
+                </option>
+              ))}
+            </Select>
+            <Button variant="outline" disabled={granting || !grantStaffId} onClick={() => void grantStaffAccess()}>
+              Grant access
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {error ? (
         <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger">{error}</p>

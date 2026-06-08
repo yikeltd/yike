@@ -80,14 +80,18 @@ export async function restoreUserTrust(
     note?: string;
   }
 ): Promise<boolean> {
+  const restored = params.targetLevel < 4;
   const { error: profileError } = await client
     .from("profiles")
     .update({
       adaptive_trust_level: params.targetLevel,
       adaptive_trust_override: null,
-      verification_required: params.targetLevel >= 4,
-      verification_escalation_reason: params.targetLevel >= 4 ? params.note ?? null : null,
+      verification_required: !restored,
+      verification_escalation_reason: restored ? null : params.note ?? null,
+      verification_escalated_at: restored ? null : undefined,
+      verification_escalated_by: restored ? null : undefined,
       account_status: params.targetLevel >= 5 ? "on_hold" : "active",
+      ...(restored ? { profile_status: "active" as const } : {}),
     })
     .eq("id", params.userId);
 
