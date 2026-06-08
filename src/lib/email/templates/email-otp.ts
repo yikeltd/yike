@@ -1,7 +1,6 @@
 import {
   buildAlertBlock,
   buildOtpBlock,
-  emailDisclaimer,
   emailGreeting,
   emailParagraph,
 } from "@/lib/email/components";
@@ -45,17 +44,16 @@ export function buildEmailOtpHtml(params: {
     preheader: `${code} is your Yike verification code`,
     headline,
     headlineAlign: "center",
+    contentAlign: "center",
     bodyHtml: `
-      ${emailGreeting(name)}
-      ${emailParagraph("Enter this code to continue. It expires in 10 minutes.")}
+      ${emailGreeting(name, { align: "center" })}
+      ${emailParagraph("Copy and paste this code into Yike to continue.", { align: "center" })}
       ${buildOtpBlock(code)}
       ${buildAlertBlock({
         title: "Keep this code private",
         body: "Yike will never ask for your code by phone or WhatsApp. If you didn&apos;t request this, ignore this email.",
         tone: "info",
       })}
-      ${emailDisclaimer("Sent securely from Yike — Nigeria&apos;s trust-first housing marketplace.")}
     `,
-    showSupport: true,
   });
 }

@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import {
   BANNER_CAMPAIGN_LABELS,
   BANNER_PLACEMENTS,
@@ -126,7 +125,6 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
     }
 
     setBusy(editingId ?? "new");
-    const supabase = createClient();
     const payload = {
       title: title.trim() || null,
       subtitle: subtitle.trim() || null,
@@ -146,20 +144,21 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
       ends_at: endsAt ? new Date(endsAt).toISOString() : null,
     };
 
-    if (editingId) {
-      const { error: updateError } = await supabase.from("site_banners").update(payload).eq("id", editingId);
-      if (updateError) {
-        setError(updateError.message);
-        setBusy(null);
-        return;
-      }
-    } else {
-      const { error: insertError } = await supabase.from("site_banners").insert(payload);
-      if (insertError) {
-        setError(insertError.message);
-        setBusy(null);
-        return;
-      }
+    const res = await fetch("/api/admin/site-banners", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        editingId
+          ? { action: "update", id: editingId, payload }
+          : { action: "create", payload }
+      ),
+    });
+
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      setError(data.error ?? "Could not save banner.");
+      setBusy(null);
+      return;
     }
 
     setBusy(null);
@@ -169,8 +168,15 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
 
   async function toggleActive(banner: SiteBanner) {
     setBusy(banner.id);
-    const supabase = createClient();
-    await supabase.from("site_banners").update({ is_active: !banner.is_active }).eq("id", banner.id);
+    await fetch("/api/admin/site-banners", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "toggle",
+        id: banner.id,
+        is_active: !banner.is_active,
+      }),
+    });
     setBusy(null);
     router.refresh();
   }

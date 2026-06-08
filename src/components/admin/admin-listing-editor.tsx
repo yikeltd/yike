@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,6 +17,8 @@ import { AdminPriceHint } from "@/components/admin/admin-price-hint";
 import { AdminListingHistoryTimeline } from "@/components/admin/admin-listing-history-timeline";
 import { AdminValueDriversPanel } from "@/components/admin/admin-value-drivers-panel";
 import { AdminListingReviewPanel } from "@/components/admin/admin-listing-review-panel";
+import { AdminEntitySelector } from "@/components/admin/selection";
+import type { AdminEntityItem } from "@/components/admin/selection/types";
 
 type ListingRow = Property & { agent?: Profile | null };
 
@@ -54,6 +56,33 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
   );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [selectedAgent, setSelectedAgent] = useState<AdminEntityItem[]>([]);
+
+  useEffect(() => {
+    if (listing.agent) {
+      setSelectedAgent([
+        {
+          id: listing.agent.id,
+          display_name:
+            listing.agent.company_name?.trim() ||
+            listing.agent.full_name?.trim() ||
+            "Agent",
+          subtitle: listing.agent.email ?? "",
+          image_url: listing.agent.avatar_url,
+        },
+      ]);
+      return;
+    }
+    if (listing.agent_id) {
+      void (async () => {
+        const res = await fetch(
+          `/api/admin/entity-search?type=agent&ids=${encodeURIComponent(listing.agent_id)}`
+        );
+        const data = (await res.json()) as { results?: AdminEntityItem[] };
+        if (data.results?.[0]) setSelectedAgent([data.results[0]]);
+      })();
+    }
+  }, [listing.agent, listing.agent_id]);
 
   async function saveListing(extra: Record<string, unknown> = {}) {
     setBusy(true);
@@ -312,19 +341,22 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
               className="mt-1"
             />
           </label>
-          <label className="block text-sm sm:col-span-2">
-            <span className="font-semibold text-navy">Agent ID (reassign)</span>
-            <Input
-              value={form.agent_id}
-              onChange={(e) => setForm({ ...form, agent_id: e.target.value })}
-              className="mt-1 font-mono text-xs"
-            />
-            {listing.agent?.full_name && (
-              <span className="mt-1 block text-xs text-muted">
-                Current: {listing.agent.full_name}
-              </span>
-            )}
-          </label>
+          <div className="block text-sm sm:col-span-2">
+            <span className="font-semibold text-navy">Reassign agent</span>
+            <div className="mt-2">
+              <AdminEntitySelector
+                entityType="agent"
+                mode="single"
+                selected={selectedAgent}
+                onChange={(next) => {
+                  setSelectedAgent(next);
+                  setForm({ ...form, agent_id: next[0]?.id ?? form.agent_id });
+                }}
+                disabled={busy}
+                showPreview
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-4 text-sm">

@@ -1,0 +1,7 @@
+android.keystore
+signing.env
+.gradle/
+app/build/
+build/
+local.properties
+.jdk17/

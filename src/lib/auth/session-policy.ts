@@ -57,9 +57,9 @@ export function getSessionPolicy(
   if (isStaffRole(role)) {
     return {
       accountClass: "staff",
-      idleLockMs: 15 * MINUTE_MS,
+      idleLockMs: 20 * MINUTE_MS,
       fullLoginExpiryMs: 3 * DAY_MS,
-      pinUnlockEnabled: false,
+      pinUnlockEnabled: true,
       pinForSensitiveActions: true,
       otpForSensitiveActions: TRUST_SENSITIVE_OTP,
       accountTypeLabel: "Staff",

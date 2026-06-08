@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { optimizeUploadedImage } from "@/lib/media/image";
 import { ALLOWED_IMAGE_TYPES } from "@/lib/media/constants";
+import { friendlyStorageError } from "@/lib/media/storage-errors";
 import { isPhoneVerificationRequired } from "@/lib/feature-flags";
 
 export const runtime = "nodejs";
@@ -89,7 +90,10 @@ export async function POST(request: Request) {
     });
 
   if (uploadError) {
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: friendlyStorageError(uploadError.message) },
+      { status: 500 }
+    );
   }
 
   const { data: urlData } = admin.storage

@@ -18,6 +18,8 @@ import { buildVerificationEmailHtml } from "./verification";
 import { buildWelcomeEmailHtml } from "./welcome";
 import { buildCareerApplicationReceivedEmailHtml } from "./career-application";
 import { buildEmailOtpHtml } from "./email-otp";
+import { applyEmailAd } from "@/lib/email/ad-marker";
+import { buildSampleEmailAdHtml } from "@/lib/email/components/email-ad-block";
 
 export { buildEmailLayout } from "./layout";
 export {
@@ -99,19 +101,33 @@ export const EMAIL_PREVIEW_SAMPLES = {
   },
 } as const;
 
+const ADMIN_PREVIEW_IDS = new Set([
+  "admin_alert_report",
+  "admin_alert_listing",
+  "admin_alert_agent",
+]);
+
+function withPreviewAd(html: string, templateId: string, adHtml: string): string {
+  if (ADMIN_PREVIEW_IDS.has(templateId)) {
+    return applyEmailAd(html, "");
+  }
+  return applyEmailAd(html, adHtml);
+}
+
 export type EmailPreviewCategory = {
   id: string;
   label: string;
   templates: Array<{ id: string; name: string; subject: string; html: string }>;
 };
 
-export function buildAllEmailPreviews(): Array<{
+export function buildAllEmailPreviews(adHtml?: string): Array<{
   id: string;
   name: string;
   subject: string;
   html: string;
   category: string;
 }> {
+  const sampleAd = adHtml ?? buildSampleEmailAdHtml();
   const s = EMAIL_PREVIEW_SAMPLES;
 
   const categories: EmailPreviewCategory[] = [
@@ -238,14 +254,19 @@ export function buildAllEmailPreviews(): Array<{
   ];
 
   return categories.flatMap((cat) =>
-    cat.templates.map((t) => ({ ...t, category: cat.label }))
+    cat.templates.map((t) => ({
+      ...t,
+      category: cat.label,
+      html: withPreviewAd(t.html, t.id, sampleAd),
+    }))
   );
 }
 
 export function buildEmailPreviewCategories(options?: {
   assetOrigin?: string;
+  adHtml?: string;
 }): EmailPreviewCategory[] {
-  const flat = buildAllEmailPreviews();
+  const flat = buildAllEmailPreviews(options?.adHtml);
   const byCategory = new Map<string, typeof flat>();
   const assetOrigin = options?.assetOrigin;
 

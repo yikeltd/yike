@@ -1,6 +1,11 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { buildEmailPreviewCategories } from "@/lib/email/templates";
+import {
+  buildSampleEmailAdHtml,
+} from "@/lib/email/components/email-ad-block";
+import { resolveEmailAdHtml } from "@/lib/email/email-ad";
+import { createVerifiedAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +22,14 @@ export default async function DevEmailsPage() {
     (host.startsWith("localhost") ? "http" : "https");
   const assetOrigin = `${proto}://${host}`;
 
-  const categories = buildEmailPreviewCategories({ assetOrigin });
+  const admin = await createVerifiedAdminClient();
+  const liveAd = admin ? await resolveEmailAdHtml(admin) : "";
+  const adHtml = liveAd || buildSampleEmailAdHtml();
+  const adSource = liveAd
+    ? "live ad from /lex/auth/email-ads"
+    : "sample preview ad (set SUPABASE_SERVICE_ROLE_KEY to load live)";
+
+  const categories = buildEmailPreviewCategories({ assetOrigin, adHtml });
   const total = categories.reduce((n, c) => n + c.templates.length, 0);
 
   return (
@@ -28,6 +40,14 @@ export default async function DevEmailsPage() {
           <p className="mt-2 text-sm text-muted">
             Development preview — {total} transactional emails across{" "}
             {categories.length} categories
+          </p>
+          <p className="mt-2 text-xs text-muted">
+            Email sponsor chip: <span className="font-semibold text-navy">{adSource}</span>
+            {" · "}
+            Manage at{" "}
+            <a href="/lex/auth/email-ads" className="font-semibold text-navy underline">
+              /lex/auth/email-ads
+            </a>
           </p>
           <nav className="mt-4 flex flex-wrap justify-center gap-2">
             {categories.map((cat) => (
@@ -61,7 +81,7 @@ export default async function DevEmailsPage() {
                   <iframe
                     title={`${template.name} preview`}
                     srcDoc={template.html}
-                    className="h-[820px] w-full border-0 bg-white"
+                    className="h-[920px] w-full border-0 bg-white"
                     sandbox="allow-popups allow-popups-to-escape-sandbox"
                   />
                 </section>

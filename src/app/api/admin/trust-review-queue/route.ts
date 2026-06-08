@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { requireAdminApi } from "@/lib/admin/api-auth";
+import { requireTrustEnforcementApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { escalateUserTrust } from "@/lib/verification/escalate";
+import { syncProfileVerificationMeta } from "@/lib/verification/sync-meta";
 import { fetchTrustReviewQueue } from "@/lib/verification/review-queue";
 import type { AdaptiveTrustLevel, TrustReviewAction } from "@/lib/verification/constants";
 
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
-  const auth = await requireAdminApi();
+  const auth = await requireTrustEnforcementApi();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAdminApi();
+  const auth = await requireTrustEnforcementApi();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -71,6 +72,8 @@ export async function POST(req: Request) {
   if (!result) {
     return NextResponse.json({ error: "Escalation failed" }, { status: 500 });
   }
+
+  await syncProfileVerificationMeta(admin, body.userId);
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim();

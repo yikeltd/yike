@@ -1,6 +1,8 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { HotPickManager } from "@/components/admin/hot-pick-manager";
 import { AdminPagination } from "@/components/admin/admin-pagination";
+import { AdminSectionTabs } from "@/components/admin/shell/admin-section-tabs";
+import { PROMOTIONS_SECTION_TABS } from "@/lib/admin/navigation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { parseAdminPage } from "@/lib/admin/pagination";
 import type { Property } from "@/types/database";
@@ -34,17 +36,11 @@ export default async function AdminHotPicksPage({
     .order("sort_order", { ascending: true })
     .range(from, to);
 
-  const { data: candidates } = await supabase
-    .from("properties")
-    .select("*")
-    .eq("status", "approved")
-    .order("views_count", { ascending: false })
-    .limit(20);
-
   const total = count ?? 0;
 
   return (
     <div className="space-y-6">
+      <AdminSectionTabs tabs={PROMOTIONS_SECTION_TABS} />
       <div>
         <h1 className="text-2xl font-bold text-navy">Hot picks</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted">
@@ -57,10 +53,7 @@ export default async function AdminHotPicksPage({
         )}
       </div>
 
-      <HotPickManager
-        picks={(picks ?? []) as unknown as HotPickRow[]}
-        candidates={(candidates ?? []) as Property[]}
-      />
+      <HotPickManager picks={(picks ?? []) as unknown as HotPickRow[]} />
 
       <AdminPagination basePath="/lex/auth/hot-picks" total={total} page={page} />
     </div>

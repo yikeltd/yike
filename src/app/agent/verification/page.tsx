@@ -4,9 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { VerificationWizard } from "@/components/agent/verification-wizard";
 import { BankVerificationCard } from "@/components/verification/bank-verification-card";
-import { VerificationTrustGate } from "@/components/verification/verification-trust-gate";
-import { getRequiredVerificationTasks } from "@/lib/verification/tasks";
-import { getTrustCapabilities } from "@/lib/verification/permissions";
+import { TrustCenterCard } from "@/components/profile/trust-center-card";
+import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
 import type { AgentVerification, Profile } from "@/types/database";
 
 export default function AgentVerificationPage() {
@@ -50,24 +49,31 @@ export default function AgentVerificationPage() {
     return <p className="pt-8 text-sm text-muted">Profile not found.</p>;
   }
 
-  const trustCaps = getTrustCapabilities(profile);
-  const tasks = getRequiredVerificationTasks(profile);
+  const verified = isVerifiedAgentProfile({
+    role: profile.role,
+    verification_status: profile.verification_status,
+    verified_badge: profile.verified_badge,
+    listing_limit: null,
+  });
 
   return (
     <div className="mx-auto max-w-lg space-y-4 pt-4 pb-8">
-      {trustCaps.verificationRequired ? (
-        <VerificationTrustGate tasks={tasks} hideActions />
-      ) : null}
+      <div>
+        <h1 className="text-xl font-bold text-navy">Verification center</h1>
+        <p className="mt-1 text-sm text-muted">
+          Build trust progressively — unlock stronger visibility and platform access.
+        </p>
+      </div>
+
+      <TrustCenterCard profile={profile} verified={verified} defaultExpanded />
+
       <BankVerificationCard
         bankName={profile.bank_name}
         resolvedName={profile.bank_account_resolved_name}
         verified={profile.bank_verified}
+        defaultOpen={!profile.bank_verified}
       />
-      <h1 className="text-xl font-bold text-navy">Verified agent application</h1>
-      <p className="text-sm text-muted">
-        Optional — get the trust badge, higher search ranking, and unlimited listings.
-        You can already list as an unverified agent. Phone and email must be confirmed.
-      </p>
+
       <VerificationWizard
         profile={profile}
         verification={verification}

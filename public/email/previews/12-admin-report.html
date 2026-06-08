@@ -18,37 +18,38 @@
   <style>
     @media only screen and (max-width: 620px) {
       .email-shell { width: 100% !important; }
-      .email-body-pad { padding: 24px 20px !important; }
-      .email-footer { padding: 20px 20px 28px !important; }
-      .email-header { padding: 24px 20px 20px !important; }
-      .email-otp-digit { font-size: 28px !important; min-width: 34px !important; }
+      .email-body-pad { padding: 28px 20px 24px !important; }
+      .email-footer-dark { padding: 28px 20px 24px !important; }
+      .email-header { padding: 28px 20px 24px !important; }
+      .email-otp-code { font-size: 34px !important; letter-spacing: 0.04em !important; }
     }
 
     @media (prefers-color-scheme: dark) {
       .email-bg { background-color: #021428 !important; }
       .email-shell { background-color: #0c1424 !important; border-color: #1e293b !important; }
-      .email-header { background-color: #0c1424 !important; }
       .email-body-pad { background-color: #0c1424 !important; }
-      .email-footer { background-color: #081018 !important; border-color: #1e293b !important; }
-      .email-brand { color: #f8fafc !important; }
       .email-headline { color: #f8fafc !important; }
+      .email-tagline { color: #E4B547 !important; }
       .email-text { color: #e2e8f0 !important; }
       .email-secondary { color: #94a3b8 !important; }
       .email-muted { color: #64748b !important; }
       .email-link { color: #E4B547 !important; }
-      .email-otp-shell { background-color: #111827 !important; border-color: #334155 !important; }
-      .email-otp-digit { color: #f8fafc !important; }
+      .email-otp-shell { background: #0c1424 !important; border-color: #334155 !important; }
+      .email-otp-field { background: #111827 !important; border-color: #334155 !important; }
+      .email-otp-code { color: #f8fafc !important; }
       .email-card { background-color: #111827 !important; border-color: #334155 !important; }
-      .email-alert { border-color: #334155 !important; }
+      .email-alert { background: #111827 !important; border-color: #334155 !important; }
       .email-cta { background-color: #E4B547 !important; }
       .email-cta a { color: #031B4E !important; }
       .email-support { border-color: #334155 !important; }
+      .email-ad { background: #111827 !important; border-color: #334155 !important; }
     }
 
     [data-ogsc] .email-bg { background-color: #021428 !important; }
     [data-ogsc] .email-shell { background-color: #0c1424 !important; }
     [data-ogsc] .email-text { color: #e2e8f0 !important; }
     [data-ogsc] .email-headline { color: #f8fafc !important; }
+    [data-ogsc] .email-otp-code { color: #f8fafc !important; }
   </style>
 </head>
 <body class="email-bg" style="margin:0;padding:0;background:#f4f6f9;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
@@ -59,25 +60,24 @@
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-bg" style="background:#f4f6f9;padding:20px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" class="email-shell" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+        <table role="presentation" class="email-shell" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 8px 32px rgba(3,27,78,0.08);">
 
           <tr>
             <td class="email-header-cell">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
-        <td class="email-header" style="padding:32px 28px 24px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+        <td class="email-header" style="background:linear-gradient(145deg, #031B4E 0%, #021428 100%);padding:32px 28px 28px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;text-align:center;">
           <a href="https://yike.ng" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td valign="middle" style="padding-right:12px;">
-                  <img src="../../images/logo.png" width="36" height="36" alt="Yike" class="email-logo" style="display:block;border:0;border-radius:8px;" />
-                </td>
-                <td valign="middle">
-                  <span class="email-brand" style="font-size:20px;font-weight:800;color:#031B4E;letter-spacing:-0.3px;line-height:1;">Yike</span>
-                </td>
-              </tr>
-            </table>
+            <img src="../../images/logo.png" width="56" height="56" alt="Yike" class="email-logo" style="display:block;margin:0 auto;border:0;border-radius:14px;" />
           </a>
+          <p class="email-tagline" style="margin:16px 0 0;font-size:14px;font-weight:700;line-height:1.5;color:#E4B547;max-width:340px;margin-left:auto;margin-right:auto;">
+            Find real homes in Nigeria — swipe verified listings and chat agents on WhatsApp.
+          </p>
+          <table role="presentation" width="52" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:18px auto 0;">
+            <tr>
+              <td style="height:3px;background:#E4B547;border-radius:2px;font-size:0;line-height:0;">&nbsp;</td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
@@ -85,11 +85,12 @@
           </tr>
 
           <tr>
-            <td class="email-body-pad" style="padding:0 28px 32px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-              <h1 class="email-headline" style="margin:0 0 20px;font-size:26px;font-weight:800;color:#031B4E;letter-spacing:-0.5px;line-height:1.2;text-align:left;">
+            <td class="email-body-pad" style="padding:36px 36px 32px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+              <h1 class="email-headline" style="margin:0 0 16px;font-size:26px;font-weight:800;color:#031B4E;letter-spacing:-0.5px;line-height:1.25;text-align:left;">
                 Listing reported — possible scam
               </h1>
-              <div class="email-content" style="font-size:17px;line-height:1.65;color:#1e293b;">
+              
+              <div class="email-content" style="font-size:17px;line-height:1.65;color:#1e293b;text-align:left;">
                 
       <p class="email-secondary" style="margin:0 0 16px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;color:#475569;">Internal admin notification from Yike.</p>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-card" style="margin:4px 0 20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;border-left:3px solid #E4B547;">
@@ -112,53 +113,78 @@
             <td>
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
-        <td class="email-footer" style="padding:24px 28px 32px;border-top:1px solid #e2e8f0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;text-align:center;background:#f8fafc;">
-          <div style="margin-bottom:16px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+        <td class="email-footer email-footer-dark" style="background:linear-gradient(180deg, #021428 0%, #010d1f 100%);padding:32px 28px 28px;border-top:1px solid rgba(228,181,71,0.15);font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;text-align:center;">
+          <div><p class="email-muted" style="margin:0 0 12px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(228,181,71,0.9);">
+      Follow Yike
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
       <tr>
-      <td align="center" style="padding:0 5px;">
-        <a href="https://www.instagram.com/real_yike/" target="_blank" rel="noopener noreferrer" title="Instagram" style="text-decoration:none;display:inline-block;opacity:0.7;">
-          <img src="../social/instagram.png" width="22" height="22" alt="Instagram" style="display:block;border:0;border-radius:50%;" />
+      <td align="center" style="padding:0 6px;">
+        <a href="https://www.instagram.com/real_yike/" target="_blank" rel="noopener noreferrer" title="Instagram" style="text-decoration:none;display:inline-block;opacity:1;">
+          <img src="../social/instagram.png" width="28" height="28" alt="Instagram" style="display:block;border:0;border-radius:50%;" />
         </a>
       </td>
     
-      <td align="center" style="padding:0 5px;">
-        <a href="https://x.com/real_yike" target="_blank" rel="noopener noreferrer" title="X" style="text-decoration:none;display:inline-block;opacity:0.7;">
-          <img src="../social/x.png" width="22" height="22" alt="X" style="display:block;border:0;border-radius:50%;" />
+      <td align="center" style="padding:0 6px;">
+        <a href="https://x.com/real_yike" target="_blank" rel="noopener noreferrer" title="X" style="text-decoration:none;display:inline-block;opacity:1;">
+          <img src="../social/x.png" width="28" height="28" alt="X" style="display:block;border:0;border-radius:50%;" />
         </a>
       </td>
     
-      <td align="center" style="padding:0 5px;">
-        <a href="https://www.tiktok.com/@real_yike" target="_blank" rel="noopener noreferrer" title="TikTok" style="text-decoration:none;display:inline-block;opacity:0.7;">
-          <img src="../social/tiktok.png" width="22" height="22" alt="TikTok" style="display:block;border:0;border-radius:50%;" />
+      <td align="center" style="padding:0 6px;">
+        <a href="https://www.tiktok.com/@real_yike" target="_blank" rel="noopener noreferrer" title="TikTok" style="text-decoration:none;display:inline-block;opacity:1;">
+          <img src="../social/tiktok.png" width="28" height="28" alt="TikTok" style="display:block;border:0;border-radius:50%;" />
         </a>
       </td>
     
-      <td align="center" style="padding:0 5px;">
-        <a href="https://www.youtube.com/@real_yike" target="_blank" rel="noopener noreferrer" title="YouTube" style="text-decoration:none;display:inline-block;opacity:0.7;">
-          <img src="../social/youtube.png" width="22" height="22" alt="YouTube" style="display:block;border:0;border-radius:50%;" />
+      <td align="center" style="padding:0 6px;">
+        <a href="https://www.youtube.com/@real_yike" target="_blank" rel="noopener noreferrer" title="YouTube" style="text-decoration:none;display:inline-block;opacity:1;">
+          <img src="../social/youtube.png" width="28" height="28" alt="YouTube" style="display:block;border:0;border-radius:50%;" />
         </a>
       </td>
     
-      <td align="center" style="padding:0 5px;">
-        <a href="https://www.facebook.com/realyike/" target="_blank" rel="noopener noreferrer" title="Facebook" style="text-decoration:none;display:inline-block;opacity:0.7;">
-          <img src="../social/facebook.png" width="22" height="22" alt="Facebook" style="display:block;border:0;border-radius:50%;" />
+      <td align="center" style="padding:0 6px;">
+        <a href="https://www.facebook.com/realyike/" target="_blank" rel="noopener noreferrer" title="Facebook" style="text-decoration:none;display:inline-block;opacity:1;">
+          <img src="../social/facebook.png" width="28" height="28" alt="Facebook" style="display:block;border:0;border-radius:50%;" />
         </a>
       </td>
     </tr>
     </table></div>
 
-          <p class="email-muted" style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#64748b;">
-            <a href="mailto:hello@yike.ng" class="email-link" style="color:#475569;text-decoration:underline;">hello@yike.ng</a>
+          <p class="email-footer-label" style="margin:22px 0 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(228,181,71,0.9);">
+            Get the app
+          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:14px auto 0;">
+      <tr>
+        <td align="center">
+          <a href="https://play.google.com/store/apps/details?id=com.yike.app" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;">
+            <img src="../badges/google-play.png" width="155" height="60" alt="Get it on Google Play" style="display:block;border:0;height:auto;max-width:155px;" />
+          </a>
+        </td>
+      </tr>
+    </table>
+
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 0;">
+            <tr>
+              <td style="border-top:1px solid rgba(255,255,255,0.1);font-size:0;line-height:0;height:1px;">&nbsp;</td>
+            </tr>
+          </table>
+
+          <p class="email-footer-legal" style="margin:16px 0 0;font-size:11px;line-height:1.65;color:rgba(255,255,255,0.48);">
+            &copy; 2026 Yike. All rights reserved.<br />
+            Yike Ltd. &middot; RC-9552998
           </p>
 
-          <p class="email-muted" style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#64748b;">
-            <a href="https://yike.ng/privacy" class="email-link" style="color:#64748b;text-decoration:underline;">Privacy</a>
+          <p class="email-footer-links" style="margin:10px 0 0;font-size:11px;line-height:1.6;">
+            <a href="https://yike.ng/privacy" class="email-link" style="color:rgba(228,181,71,0.88);text-decoration:underline;">Privacy</a>
             &nbsp;&middot;&nbsp;
-            <a href="https://yike.ng/terms" class="email-link" style="color:#64748b;text-decoration:underline;">Terms</a>
+            <a href="https://yike.ng/terms" class="email-link" style="color:rgba(228,181,71,0.88);text-decoration:underline;">Terms</a>
+            &nbsp;&middot;&nbsp;
+            <a href="mailto:hello@yike.ng" class="email-link" style="color:rgba(228,181,71,0.88);text-decoration:underline;">hello@yike.ng</a>
           </p>
 
-          <p class="email-muted" style="margin:0;font-size:12px;line-height:1.5;color:#64748b;">
-            &copy; 2026 Yike
+          <p class="email-footer-note" style="margin:10px 0 0;font-size:10px;line-height:1.5;color:rgba(255,255,255,0.35);">
+            You received this because you have a Yike account or requested a notification.
           </p>
         </td>
       </tr>

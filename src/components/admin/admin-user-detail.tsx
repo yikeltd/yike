@@ -10,6 +10,8 @@ import { AdminUserNotes } from "@/components/admin/admin-user-notes";
 import { AgentStatusActions } from "@/components/admin/agent-verification-actions";
 import { AdminUserTrustActions } from "@/components/admin/admin-user-trust-actions";
 import { AdminPinResetPanel } from "@/components/admin/admin-pin-reset-panel";
+import { SupportViewPanel } from "@/components/admin/support-view-panel";
+import type { SupportViewSession } from "@/lib/admin/support-view";
 import { StatusBadge, VerifiedBadge } from "@/components/ui/badge";
 import type { AdminProfileStats } from "@/lib/admin/profile-stats";
 import type { UserAuditEntry } from "@/lib/admin/user-audit";
@@ -43,6 +45,8 @@ export function AdminUserDetail({
   auditLogs = [],
   listings = [],
   verificationSection,
+  canViewAccounts = false,
+  supportViewSession = null,
 }: {
   profile: Profile;
   stats: AdminProfileStats;
@@ -52,6 +56,8 @@ export function AdminUserDetail({
   auditLogs?: UserAuditEntry[];
   listings?: ListingPreview[];
   verificationSection?: ReactNode;
+  canViewAccounts?: boolean;
+  supportViewSession?: SupportViewSession | null;
 }) {
   const [tab, setTab] = useState<TabId>("overview");
   const accountStatus = normalizeAccountStatus(profile);
@@ -68,6 +74,13 @@ export function AdminUserDetail({
 
   return (
     <div className="space-y-6 pb-12">
+      <SupportViewPanel
+        userId={profile.id}
+        userName={profile.full_name ?? profile.username ?? "User"}
+        canView={canViewAccounts}
+        activeSession={supportViewSession}
+      />
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link href={backHref} className="text-xs font-bold text-gold-dark">
@@ -305,17 +318,17 @@ export function AdminUserDetail({
               {auditLogs.map((log) => (
                 <li key={log.id} className="py-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-semibold text-navy">{log.action}</span>
+                    <span className="font-semibold text-navy">
+                      {log.summary ?? log.action}
+                    </span>
                     <time className="text-xs text-muted">
                       {new Date(log.created_at).toLocaleString("en-NG")}
                     </time>
                   </div>
-                  {log.metadata && Object.keys(log.metadata).length > 0 && (
-                    <p className="mt-1 text-xs text-muted">
-                      {JSON.stringify(log.metadata).slice(0, 200)}
-                      {JSON.stringify(log.metadata).length > 200 ? "…" : ""}
-                    </p>
-                  )}
+                  <p className="mt-0.5 font-mono text-[10px] text-muted">{log.action}</p>
+                  {log.reason ? (
+                    <p className="mt-1 text-xs text-muted">Reason: {log.reason}</p>
+                  ) : null}
                 </li>
               ))}
             </ul>

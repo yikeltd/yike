@@ -10,6 +10,13 @@ import { getSession, getProfile } from "@/lib/auth";
 import { isSuperAdmin } from "@/lib/admin/roles";
 import { fetchAdminNavBadges } from "@/lib/admin/nav-badges";
 import { LeadSummaryPanel } from "@/components/admin/lead-summary-panel";
+import { AdminStaffActivityPanel } from "@/components/admin/admin-staff-activity-panel";
+import {
+  fetchRecentHighRiskActivity,
+  fetchRecentStaffActivity,
+} from "@/lib/admin/audit-query";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { StaffWorkspaceHome } from "@/components/admin/shell/staff-workspace-home";
 
 export default async function AdminOverviewPage() {
   const supabase = await requireServerClient();
@@ -17,6 +24,13 @@ export default async function AdminOverviewPage() {
   const profile = user ? await getProfile(user.id) : null;
   const isOwner = profile ? isSuperAdmin(profile.role) : false;
   const badges = isOwner ? await fetchAdminNavBadges() : {};
+  const adminClient = isOwner ? createAdminClient() : null;
+  const [recentStaffActivity, highRiskActivity] = adminClient
+    ? await Promise.all([
+        fetchRecentStaffActivity(adminClient, 10),
+        fetchRecentHighRiskActivity(adminClient, 8),
+      ])
+    : [[], []];
 
   const [
     activeListings,
@@ -118,7 +132,21 @@ export default async function AdminOverviewPage() {
         }
       />
 
+      {profile ? (
+        <StaffWorkspaceHome
+          role={profile.role}
+          displayName={profile.full_name ?? profile.email ?? "Staff"}
+        />
+      ) : null}
+
       {isOwner ? <AdminActionQueue badges={badges} /> : null}
+
+      {isOwner ? (
+        <AdminStaffActivityPanel
+          recentActivity={recentStaffActivity}
+          highRiskActivity={highRiskActivity}
+        />
+      ) : null}
 
       <LeadSummaryPanel />
 

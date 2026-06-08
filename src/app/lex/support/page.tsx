@@ -6,6 +6,7 @@ import {
   AdminPageHeader,
   MetricCard,
 } from "@/components/admin/dashboard/admin-ui";
+import { StaffWorkspaceHome } from "@/components/admin/shell/staff-workspace-home";
 
 export default async function SupportDashboardPage() {
   const { profile, user } = await requireSupportConsole();
@@ -43,6 +44,11 @@ export default async function SupportDashboardPage() {
             ? "Your assigned leads and open customer items — one worker, one queue"
             : "Open tickets, reports, and customer messages"
         }
+      />
+
+      <StaffWorkspaceHome
+        role={profile.role}
+        displayName={profile.full_name ?? profile.email ?? "Support"}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

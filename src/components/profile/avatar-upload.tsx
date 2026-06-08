@@ -5,6 +5,7 @@ import { Camera, Loader2 } from "lucide-react";
 import { UserAvatar } from "@/components/profile/user-avatar";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
 import { prepareAvatarUpload } from "@/lib/media/prepare-avatar-upload";
+import { friendlyStorageError } from "@/lib/media/storage-errors";
 import { cn } from "@/lib/utils";
 
 export function AvatarUpload({
@@ -43,7 +44,7 @@ export function AvatarUpload({
       const res = await fetch("/api/profile/avatar", { method: "POST", body: form });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Upload failed");
+        setError(friendlyStorageError((data.error as string) ?? "Upload failed"));
         return;
       }
       const url = data.avatarUrl as string;

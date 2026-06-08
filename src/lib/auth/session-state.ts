@@ -122,16 +122,19 @@ export async function evaluateSessionStatus(params: {
   if (policy.accountClass === "staff" && policy.idleLockMs) {
     const idleRef = lastUnlocked ?? lastActive;
     if (idleRef && now - idleRef > policy.idleLockMs) {
-      return {
-        authenticated: true,
-        locked: false,
-        requiresFullLogin: true,
-        requiresPinSetup: false,
-        hasPinSet,
-        deviceTrusted,
-        policy,
-        profile,
-      };
+      locked = true;
+      if (!hasPinSet) {
+        return {
+          authenticated: true,
+          locked: false,
+          requiresFullLogin: true,
+          requiresPinSetup: false,
+          hasPinSet,
+          deviceTrusted,
+          policy,
+          profile,
+        };
+      }
     }
   }
 

@@ -19,17 +19,23 @@ const SOCIAL_LABELS: Record<EmailSocialKey, string> = {
   facebook: "Facebook",
 };
 
-/** Minimal monochrome social row — compact, not cluttered. */
-export function buildSocialLinks(): string {
+export function buildSocialLinks(options?: {
+  iconSize?: number;
+  variant?: "light" | "dark";
+}): string {
+  const iconSize = options?.iconSize ?? 22;
+  const variant = options?.variant ?? "light";
+  const opacity = variant === "dark" ? "1" : "0.7";
+
   const cells = SOCIAL_ORDER.map((key) => {
     const href = SOCIAL_LINKS[key];
     const label = SOCIAL_LABELS[key];
     const iconUrl = `${SITE_URL}/email/social/${key}.png`;
 
     return `
-      <td align="center" style="padding:0 5px;">
-        <a href="${href}" target="_blank" rel="noopener noreferrer" title="${label}" style="text-decoration:none;display:inline-block;opacity:0.7;">
-          <img src="${iconUrl}" width="22" height="22" alt="${label}" style="display:block;border:0;border-radius:50%;" />
+      <td align="center" style="padding:0 ${variant === "dark" ? "6" : "5"}px;">
+        <a href="${href}" target="_blank" rel="noopener noreferrer" title="${label}" style="text-decoration:none;display:inline-block;opacity:${opacity};">
+          <img src="${iconUrl}" width="${iconSize}" height="${iconSize}" alt="${label}" style="display:block;border:0;border-radius:50%;" />
         </a>
       </td>
     `;
@@ -42,11 +48,18 @@ export function buildSocialLinks(): string {
   `.trim();
 }
 
-export function buildSocialLinksWithLabel(): string {
+export function buildSocialLinksWithLabel(options?: {
+  iconSize?: number;
+  variant?: "light" | "dark";
+}): string {
+  const variant = options?.variant ?? "light";
+  const labelColor =
+    variant === "dark" ? "rgba(228,181,71,0.9)" : t.muted;
+
   return `
-    <p class="email-muted" style="margin:0 0 10px;font-family:${t.fontFamily};font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${t.muted};">
-      Follow Yike
+    <p class="email-muted" style="margin:0 0 12px;font-family:${t.fontFamily};font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${labelColor};">
+      Follow ${variant === "dark" ? "Yike" : "us"}
     </p>
-    ${buildSocialLinks()}
+    ${buildSocialLinks(options)}
   `.trim();
 }

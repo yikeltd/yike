@@ -15,6 +15,7 @@ import {
   AdminCommandPalette,
   AdminCommandTrigger,
 } from "./admin-command-palette";
+import { StaffBottomNav } from "./staff-bottom-nav";
 
 type Props = {
   console: AdminConsole;
@@ -141,8 +142,10 @@ export function AdminShell({
           )}
         </header>
 
-        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="flex-1 px-4 py-6 pb-24 lg:px-8 lg:py-8 lg:pb-8">{children}</main>
       </div>
+
+      <StaffBottomNav role={role} console={consoleType} />
     </div>
   );
 }

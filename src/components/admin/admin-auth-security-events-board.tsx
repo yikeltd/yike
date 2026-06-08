@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
+import { AdminEntitySelector } from "@/components/admin/selection";
+import type { AdminEntityItem } from "@/components/admin/selection/types";
 
 type SecurityEvent = {
   id: string;
@@ -58,7 +60,7 @@ export function AdminAuthSecurityEventsBoard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [eventType, setEventType] = useState("");
-  const [userQuery, setUserQuery] = useState("");
+  const [selectedUser, setSelectedUser] = useState<AdminEntityItem[]>([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [suspiciousOnly, setSuspiciousOnly] = useState(false);
@@ -68,7 +70,7 @@ export function AdminAuthSecurityEventsBoard() {
     setError("");
     const params = new URLSearchParams({ limit: "100" });
     if (eventType) params.set("type", eventType);
-    if (userQuery.trim()) params.set("user", userQuery.trim());
+    if (selectedUser[0]?.id) params.set("user", selectedUser[0].id);
     if (from) params.set("from", new Date(from).toISOString());
     if (to) params.set("to", new Date(`${to}T23:59:59`).toISOString());
     if (suspiciousOnly) params.set("suspicious", "1");
@@ -84,7 +86,7 @@ export function AdminAuthSecurityEventsBoard() {
       return;
     }
     setEvents(json.events ?? []);
-  }, [eventType, from, suspiciousOnly, to, userQuery]);
+  }, [eventType, from, suspiciousOnly, to, selectedUser]);
 
   useEffect(() => {
     void load();
@@ -104,11 +106,13 @@ export function AdminAuthSecurityEventsBoard() {
           </Select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-bold uppercase text-muted">User ID</label>
-          <Input
-            value={userQuery}
-            onChange={(e) => setUserQuery(e.target.value)}
-            placeholder="UUID"
+          <label className="mb-1 block text-xs font-bold uppercase text-muted">User</label>
+          <AdminEntitySelector
+            entityType="user"
+            mode="single"
+            selected={selectedUser}
+            onChange={setSelectedUser}
+            showPreview
           />
         </div>
         <div>

@@ -18,6 +18,7 @@ import {
 } from "@/lib/otp/constants";
 import { generateOtp, hashOtp, verifyOtpHash } from "@/lib/otp/crypto";
 import { createVerifiedAdminClient } from "@/lib/supabase/admin";
+import { finalizeTransactionalEmailHtml } from "@/lib/email/finalize-html";
 import { finalizeSignupAfterOtp } from "./create-user";
 import {
   authOtpConsume,
@@ -157,15 +158,20 @@ export async function sendAuthEmailOtp(
   }
 
   const otpPurpose = mapAuthOtpPurpose(params.purpose);
-
-  const result = await sendTransactionalEmail({
-    to: email,
-    subject: authOtpSubject(otpPurpose),
-    html: buildEmailOtpHtml({
+  const admin = (await createVerifiedAdminClient()) ?? db;
+  const html = await finalizeTransactionalEmailHtml(
+    buildEmailOtpHtml({
       fullName: params.fullName ?? "",
       code,
       purpose: otpPurpose,
     }),
+    { admin }
+  );
+
+  const result = await sendTransactionalEmail({
+    to: email,
+    subject: authOtpSubject(otpPurpose),
+    html,
     idempotencyKey: `auth-email-otp/${params.purpose}/${email}/${now.getTime()}`,
   });
 
@@ -178,11 +184,7 @@ export async function sendAuthEmailOtp(
     const retry = await sendTransactionalEmail({
       to: email,
       subject: authOtpSubject(otpPurpose),
-      html: buildEmailOtpHtml({
-        fullName: params.fullName ?? "",
-        code,
-        purpose: otpPurpose,
-      }),
+      html,
     });
     if (retry.ok) {
       return { ok: true, message: EMAIL_OTP_USER_MESSAGES.sent };

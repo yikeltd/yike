@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PinConfirmModal } from "@/components/admin/pin-confirm-modal";
+import { useDestructiveAction } from "@/components/admin/destructive-action-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +35,7 @@ type TrustSummary = {
 
 export function AdminUserTrustActions({ userId }: { userId: string }) {
   const router = useRouter();
+  const { confirm, destructiveModal } = useDestructiveAction();
   const [summary, setSummary] = useState<TrustSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [reason, setReason] = useState("");
@@ -54,12 +56,16 @@ export function AdminUserTrustActions({ userId }: { userId: string }) {
     void load();
   }, [load]);
 
-  async function runAction(action: string) {
+  async function runAction(action: string, actionReason?: string) {
     setBusy(true);
     const res = await fetch(`/api/admin/users/${userId}/trust`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, reason, note: note.trim() || undefined }),
+      body: JSON.stringify({
+        action,
+        reason: actionReason ?? reason,
+        note: note.trim() || undefined,
+      }),
     });
     setBusy(false);
     if (res.ok) {
@@ -71,6 +77,25 @@ export function AdminUserTrustActions({ userId }: { userId: string }) {
   }
 
   function requestAction(action: string) {
+    if ((DESTRUCTIVE_ACTIONS as readonly string[]).includes(action)) {
+      confirm({
+        title:
+          action === "suspend"
+            ? "Suspend this account?"
+            : "Delete this account?",
+        description:
+          action === "suspend"
+            ? "This will pause listings and lead access. The account can be restored later."
+            : "This soft-deletes the account. Restoration requires chief admin review.",
+        actionType: action === "suspend" ? "agent.suspend" : "user.delete",
+        requireReason: true,
+        requirePin: true,
+        onConfirm: async (actionReason) => {
+          await runAction(action, actionReason);
+        },
+      });
+      return;
+    }
     setPendingAction(action);
     setShowPin(true);
   }
@@ -84,7 +109,7 @@ export function AdminUserTrustActions({ userId }: { userId: string }) {
       <div>
         <h2 className="text-sm font-bold text-navy">Trust enforcement</h2>
         <p className="mt-1 text-xs text-muted">
-          Escalate to verification instead of banning when possible. Suspicion score guides review only.
+          Escalate to verification instead of banning when possible. All actions are logged.
         </p>
       </div>
 
@@ -107,7 +132,9 @@ export function AdminUserTrustActions({ userId }: { userId: string }) {
 
       {summary && summary.linkedAccountIds.length > 0 ? (
         <div className="rounded-xl border border-amber-200/80 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-          <p className="font-semibold">Linked account indicators ({summary.linkedAccountIds.length})</p>
+          <p className="font-semibold">
+            Linked account indicators ({summary.linkedAccountIds.length})
+          </p>
           <p className="mt-1 font-mono break-all">{summary.linkedAccountIds.join(", ")}</p>
         </div>
       ) : null}
@@ -128,7 +155,9 @@ export function AdminUserTrustActions({ userId }: { userId: string }) {
           <Button
             key={action}
             size="sm"
-            variant={action.includes("restore") || action.includes("remove") ? "outline" : "secondary"}
+            variant={
+              action.includes("restore") || action.includes("remove") ? "outline" : "secondary"
+            }
             disabled={busy}
             onClick={() => requestAction(action)}
           >
@@ -176,6 +205,8 @@ export function AdminUserTrustActions({ userId }: { userId: string }) {
           }}
         />
       ) : null}
+
+      {destructiveModal}
     </div>
   );
 }

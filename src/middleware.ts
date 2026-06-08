@@ -12,6 +12,7 @@ import {
   isValidAmbassadorCode,
   normalizeAmbassadorCode,
 } from "@/lib/ambassador/constants";
+import { STAFF_APP_COOKIE } from "@/lib/admin/staff-app";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -54,6 +55,15 @@ export async function middleware(request: NextRequest) {
   const refRaw = request.nextUrl.searchParams.get("ref");
   const response = await updateSession(request);
 
+  if (pathname === "/staff" || pathname.startsWith("/staff/")) {
+    response.cookies.set(STAFF_APP_COOKIE, "1", {
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 365 * 24 * 60 * 60,
+    });
+  }
+
   if (refRaw) {
     const code = normalizeAmbassadorCode(refRaw);
     if (isValidAmbassadorCode(code)) {
@@ -71,6 +81,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|gif|webp|html)$).*)",
   ],
 };

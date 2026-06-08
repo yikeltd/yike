@@ -448,13 +448,40 @@ export interface StaffProfile {
 export interface AuditLog {
   id: string;
   actor_id: string | null;
+  actor_name: string | null;
   actor_role: string;
   action: string;
+  summary: string | null;
   target_type: string | null;
   target_id: string | null;
+  target_user_id: string | null;
+  target_user_name: string | null;
+  reason: string | null;
   metadata: Record<string, unknown>;
+  route: string | null;
   ip_hash: string | null;
+  user_agent_hash: string | null;
+  risk_level: "low" | "medium" | "high" | "critical";
   created_at: string;
+}
+
+export interface AccountViewPermission {
+  profile_id: string;
+  can_view_accounts: boolean;
+  granted_by: string | null;
+  granted_at: string;
+  notes: string | null;
+}
+
+export interface SupportViewSessionRow {
+  id: string;
+  admin_id: string;
+  target_user_id: string;
+  read_only: boolean;
+  route: string | null;
+  started_at: string;
+  ended_at: string | null;
+  end_reason: string | null;
 }
 
 export interface Property {

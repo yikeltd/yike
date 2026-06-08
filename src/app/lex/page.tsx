@@ -9,7 +9,14 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function StaffLoginPage() {
+export default async function StaffLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ app?: string; denied?: string; reason?: string }>;
+}) {
+  const params = await searchParams;
+  const staffApp = params.app === "staff";
+
   const user = await getSession();
   if (user) {
     const profile = await getProfile(user.id);
@@ -18,5 +25,5 @@ export default async function StaffLoginPage() {
     }
   }
 
-  return <StaffLoginForm />;
+  return <StaffLoginForm staffApp={staffApp} />;
 }

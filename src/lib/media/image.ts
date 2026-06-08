@@ -1,5 +1,44 @@
 import sharp from "sharp";
-import { IMAGE_SIZES, MEDIA_LIMITS } from "./constants";
+import {
+  ALLOWED_IMAGE_TYPES,
+  IMAGE_PRESET_SIZES,
+  IMAGE_SIZES,
+  MEDIA_LIMITS,
+  WEBP_CONTENT_TYPE,
+  type ImagePreset,
+} from "./constants";
+
+export type { ImagePreset };
+export { WEBP_CONTENT_TYPE };
+
+const EXT_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  heic: "image/heic",
+  heif: "image/heif",
+};
+
+/** Resolve MIME from File.type or extension — HEIC included for server-side decode. */
+export function resolveImageMime(file: File): string | null {
+  if (file.type && (ALLOWED_IMAGE_TYPES as readonly string[]).includes(file.type)) {
+    return file.type;
+  }
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  return ext ? EXT_MIME[ext] ?? null : null;
+}
+
+export async function readImageUploadBuffer(file: File): Promise<Buffer> {
+  const mime = resolveImageMime(file);
+  if (!mime) {
+    throw new Error("Upload a JPG, PNG, WebP, or HEIC image.");
+  }
+  if (file.size > MEDIA_LIMITS.maxUploadBytes) {
+    throw new Error("Image is too large. Try a smaller photo.");
+  }
+  return Buffer.from(await file.arrayBuffer());
+}
 
 export type OptimizedImageSet = {
   thumbnail: Buffer;
@@ -51,6 +90,64 @@ export async function optimizeUploadedImage(
   };
 }
 
+export type ProcessedWebpImage = {
+  buffer: Buffer;
+  width: number;
+  height: number;
+  format: "webp";
+  contentType: typeof WEBP_CONTENT_TYPE;
+};
+
+function stripMetadata(pipeline: sharp.Sharp): sharp.Sharp {
+  return pipeline.withMetadata({ exif: undefined, icc: undefined });
+}
+
+function webpOptions(quality: number): sharp.WebpOptions {
+  return {
+    quality,
+    effort: 6,
+    smartSubsample: true,
+    nearLossless: false,
+  };
+}
+
+/** Single WebP output for ads, banners, chips — always strips EXIF and compresses. */
+export async function optimizeImagePreset(
+  input: Buffer,
+  preset: ImagePreset
+): Promise<ProcessedWebpImage> {
+  if (input.length > MEDIA_LIMITS.maxUploadBytes) {
+    throw new Error("Image is too large. Try a smaller photo.");
+  }
+
+  const cfg = IMAGE_PRESET_SIZES[preset];
+  let pipeline = stripMetadata(sharp(input, { failOn: "none" }).rotate());
+
+  if ("height" in cfg && cfg.fit === "cover") {
+    pipeline = pipeline.resize(cfg.width, cfg.height, {
+      fit: "cover",
+      position: "centre",
+    });
+  } else {
+    pipeline = pipeline.resize(cfg.width, null, {
+      withoutEnlargement: true,
+      fit: cfg.fit,
+      kernel: sharp.kernel.lanczos3,
+    });
+  }
+
+  const buffer = await pipeline.webp(webpOptions(cfg.quality)).toBuffer();
+  const meta = await sharp(buffer).metadata();
+
+  return {
+    buffer,
+    width: meta.width ?? cfg.width,
+    height: meta.height ?? ("height" in cfg ? cfg.height : 0),
+    format: "webp",
+    contentType: WEBP_CONTENT_TYPE,
+  };
+}
+
 async function toWebp(
   pipeline: sharp.Sharp,
   width: number,
@@ -63,12 +160,7 @@ async function toWebp(
       fit: "inside",
       kernel: sharp.kernel.lanczos3,
     })
-    .webp({
-      quality,
-      effort: 6,
-      smartSubsample: true,
-      nearLossless: false,
-    })
+    .webp(webpOptions(quality))
     .toBuffer();
 }
 

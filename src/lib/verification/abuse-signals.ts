@@ -49,20 +49,42 @@ export async function computeAbuseSuspicionSignals(
     signals.adaptive_trust_level = level;
   }
 
-  const contact = (profile.whatsapp || profile.phone || "").trim();
-  if (contact) {
-    const { data: sameContact } = await client
-      .from("profiles")
-      .select("id")
-      .neq("id", userId)
-      .or(`whatsapp.eq.${contact},phone.eq.${contact}`)
-      .limit(8);
-    if ((sameContact?.length ?? 0) > 0) {
-      score += 20;
-      signals.shared_whatsapp_accounts = sameContact?.length ?? 0;
-      for (const row of sameContact ?? []) {
-        linkedAccountIds.add(row.id as string);
+  const whatsapp = (profile.whatsapp || "").trim();
+  const phone = (profile.phone || "").trim();
+  if (whatsapp || phone) {
+    const seenContact = new Set<string>();
+    const queries = [];
+    if (whatsapp) {
+      queries.push(
+        client.from("profiles").select("id").neq("id", userId).eq("whatsapp", whatsapp).limit(8)
+      );
+      if (phone !== whatsapp) {
+        queries.push(
+          client.from("profiles").select("id").neq("id", userId).eq("phone", whatsapp).limit(8)
+        );
       }
+    }
+    if (phone && phone !== whatsapp) {
+      queries.push(
+        client.from("profiles").select("id").neq("id", userId).eq("phone", phone).limit(8)
+      );
+      queries.push(
+        client.from("profiles").select("id").neq("id", userId).eq("whatsapp", phone).limit(8)
+      );
+    }
+    const results = await Promise.all(queries);
+    for (const { data } of results) {
+      for (const row of data ?? []) {
+        const id = row.id as string;
+        if (!seenContact.has(id)) {
+          seenContact.add(id);
+          linkedAccountIds.add(id);
+        }
+      }
+    }
+    if (seenContact.size > 0) {
+      score += 20;
+      signals.shared_whatsapp_accounts = seenContact.size;
     }
   }
 

@@ -23,6 +23,7 @@ import {
 } from "@/lib/notifications/providers/resend";
 import type { EmailType } from "@/lib/notifications/types";
 import { getAdminAlertInbox } from "./admin-inbox";
+import { finalizeTransactionalEmailHtml } from "./finalize-html";
 import { hasSentEmail, logEmailEvent } from "./logs";
 
 type EmailResult = { ok: true; message: string } | { ok: false; error: string };
@@ -35,8 +36,14 @@ async function sendEmail(
     subject: string;
     html: string;
     idempotencyKey?: string;
+    /** Consumer emails only — admin alerts skip the sponsor slot. */
+    includeEmailAd?: boolean;
   }
 ): Promise<EmailResult> {
+  const html = await finalizeTransactionalEmailHtml(params.html, {
+    includeAd: params.includeEmailAd !== false && params.type !== "admin_alert",
+    admin,
+  });
   if (!isResendConfigured()) {
     if (process.env.NODE_ENV === "development") {
       console.info(`[Yike email dev] ${params.type} → ${params.email}`);
@@ -50,7 +57,7 @@ async function sendEmail(
   const result = await sendTransactionalEmail({
     to: params.email,
     subject: params.subject,
-    html: params.html,
+    html,
     idempotencyKey: params.idempotencyKey,
   });
 
@@ -139,6 +146,7 @@ export async function sendAdminAlert(
     type: "admin_alert",
     subject: params.subject,
     html,
+    includeEmailAd: false,
   });
 }
 

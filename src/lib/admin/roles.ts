@@ -1,4 +1,5 @@
 import type { UserRole } from "@/types/database";
+import { getStaffLandingPathForRole } from "@/lib/admin/staff-landing-sync";
 
 export type StaffRole =
   | "super_admin"
@@ -55,23 +56,7 @@ export function canSwitchConsoles(_role: UserRole) {
 }
 
 export function getDefaultConsolePath(role: UserRole): string {
-  switch (role) {
-    case "super_admin":
-    case "admin":
-      return "/lex/auth/overview";
-    case "support":
-      return "/lex/support";
-    case "tech":
-      return "/lex/tech";
-    case "careers":
-      return "/lex/auth/careers";
-    case "moderator":
-      return "/lex/auth/reports";
-    case "content":
-      return "/lex/auth/listings";
-    default:
-      return "/lex";
-  }
+  return getStaffLandingPathForRole(role);
 }
 
 export function staffRoleLabel(role: UserRole): string {
@@ -94,7 +79,16 @@ export function authNavAllowlist(role: UserRole): string[] | null {
   if (role === "moderator")
     return ["overview", "listings", "agents", "reports", "reviews"];
   if (role === "content")
-    return ["overview", "listings", "featured", "premium-deals", "hot-picks", "ads", "banners"];
+    return [
+      "overview",
+      "listings",
+      "featured",
+      "premium-deals",
+      "hot-picks",
+      "email-ads",
+      "ads",
+      "banners",
+    ];
   return [];
 }
 
@@ -104,4 +98,9 @@ export function canManageStaff(role: UserRole) {
 
 export function requiresAdminPin(role: UserRole) {
   return role === "super_admin" || role === "admin";
+}
+
+/** Chief admin by default; support staff need explicit grant via account_view_permissions. */
+export function canViewAccountsByRole(role: UserRole) {
+  return isSuperAdmin(role);
 }

@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { WEBP_CONTENT_TYPE } from "@/lib/media/constants";
+import { optimizeImagePreset, resolveImageMime } from "@/lib/media/image";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-const ALLOWED = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -33,7 +28,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "File and requestId required" }, { status: 400 });
   }
 
-  if (!ALLOWED.has(file.type)) {
+  const isPdf = file.type === "application/pdf";
+  const imageMime = resolveImageMime(file);
+  if (!isPdf && !imageMime) {
     return NextResponse.json({ error: "PDF or image files only" }, { status: 400 });
   }
 
@@ -68,13 +65,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authorized for this request" }, { status: 403 });
   }
 
-  const ext = file.type === "application/pdf" ? "pdf" : "img";
-  const path = `${requestId}/${Date.now()}-${label.replace(/[^a-z0-9-_]/gi, "_")}.${ext}`;
+  const safeLabel = label.replace(/[^a-z0-9-_]/gi, "_");
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  let uploadBody: Buffer;
+  let path: string;
+  let storedMime: string;
+
+  if (isPdf) {
+    uploadBody = buffer;
+    path = `${requestId}/${Date.now()}-${safeLabel}.pdf`;
+    storedMime = "application/pdf";
+  } else {
+    try {
+      const processed = await optimizeImagePreset(buffer, "card");
+      uploadBody = processed.buffer;
+      path = `${requestId}/${Date.now()}-${safeLabel}.webp`;
+      storedMime = WEBP_CONTENT_TYPE;
+    } catch {
+      return NextResponse.json({ error: "Could not process image" }, { status: 400 });
+    }
+  }
 
   const { error: uploadError } = await admin.storage
     .from("legal-verification-docs")
-    .upload(path, buffer, { contentType: file.type, upsert: false });
+    .upload(path, uploadBody, { contentType: storedMime, upsert: false });
 
   if (uploadError) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
@@ -83,7 +98,7 @@ export async function POST(request: Request) {
   const entry = {
     path,
     label,
-    mime: file.type,
+    mime: storedMime,
     uploadedBy: user.id,
     uploadedAt: new Date().toISOString(),
   };

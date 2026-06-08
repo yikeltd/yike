@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
+import { useDestructiveAction } from "@/components/admin/destructive-action-modal";
 import { MOBILE_HEADER_PLACEMENT } from "@/constants/siteBanners";
 import type { SiteBanner } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
+import { AdminImageUploadField } from "@/components/admin/admin-image-upload-field";
 import { Trash2, Pencil } from "lucide-react";
 
 function toLocalDatetime(iso: string | null) {
@@ -17,6 +18,7 @@ function toLocalDatetime(iso: string | null) {
 
 export function SiteBannerManager({ banners }: { banners: SiteBanner[] }) {
   const router = useRouter();
+  const { confirm, destructiveModal } = useDestructiveAction();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -71,7 +73,6 @@ export function SiteBannerManager({ banners }: { banners: SiteBanner[] }) {
     }
 
     setBusy(editingId ?? "new");
-    const supabase = createClient();
     const payload = {
       title: ttl || null,
       message: msg,
@@ -84,25 +85,21 @@ export function SiteBannerManager({ banners }: { banners: SiteBanner[] }) {
       ends_at: endsAt ? new Date(endsAt).toISOString() : null,
     };
 
-    if (editingId) {
-      const { error: updateError } = await supabase
-        .from("site_banners")
-        .update(payload)
-        .eq("id", editingId);
-      if (updateError) {
-        setError(updateError.message);
-        setBusy(null);
-        return;
-      }
-    } else {
-      const { error: insertError } = await supabase
-        .from("site_banners")
-        .insert(payload);
-      if (insertError) {
-        setError(insertError.message);
-        setBusy(null);
-        return;
-      }
+    const res = await fetch("/api/admin/site-banners", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        editingId
+          ? { action: "update", id: editingId, payload }
+          : { action: "create", payload }
+      ),
+    });
+
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      setError(data.error ?? "Could not save banner.");
+      setBusy(null);
+      return;
     }
 
     setBusy(null);
@@ -110,23 +107,38 @@ export function SiteBannerManager({ banners }: { banners: SiteBanner[] }) {
     router.refresh();
   }
 
-  async function removeBanner(id: string) {
-    if (!confirm("Delete this banner?")) return;
-    setBusy(`del-${id}`);
-    const supabase = createClient();
-    await supabase.from("site_banners").delete().eq("id", id);
-    setBusy(null);
-    if (editingId === id) resetForm();
-    router.refresh();
+  function removeBanner(id: string) {
+    confirm({
+      title: "Archive this banner?",
+      description:
+        "The banner will be hidden and archived. Chief admin can restore it from audit logs.",
+      actionType: "site_banner.delete",
+      requirePin: true,
+      onConfirm: async (reason) => {
+        setBusy(`del-${id}`);
+        await fetch("/api/admin/site-banners", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete", id, reason }),
+        });
+        setBusy(null);
+        if (editingId === id) resetForm();
+        router.refresh();
+      },
+    });
   }
 
   async function toggleActive(banner: SiteBanner) {
     setBusy(banner.id);
-    const supabase = createClient();
-    await supabase
-      .from("site_banners")
-      .update({ is_active: !banner.is_active })
-      .eq("id", banner.id);
+    await fetch("/api/admin/site-banners", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "toggle",
+        id: banner.id,
+        is_active: !banner.is_active,
+      }),
+    });
     setBusy(null);
     router.refresh();
   }
@@ -168,11 +180,17 @@ export function SiteBannerManager({ banners }: { banners: SiteBanner[] }) {
               onChange={(e) => setMessage(e.target.value)}
             />
           </div>
-          <Input
-            placeholder="Image URL (optional)"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-          />
+          <div className="sm:col-span-2">
+            <AdminImageUploadField
+              label="Banner image (optional)"
+              hint="Compressed to WebP on upload — or use title/message only."
+              value={imageUrl}
+              onChange={setImageUrl}
+              preset="banner"
+              folder="site-banners"
+              disabled={!!busy}
+            />
+          </div>
           <Input
             placeholder="Link URL (optional)"
             value={linkUrl}
@@ -287,6 +305,7 @@ export function SiteBannerManager({ banners }: { banners: SiteBanner[] }) {
           ))
         )}
       </div>
+      {destructiveModal}
     </div>
   );
 }

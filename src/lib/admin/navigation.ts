@@ -169,6 +169,12 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
         segment: "hot-picks",
         keywords: ["trending", "hot"],
       },
+      {
+        href: adminPath("email-ads"),
+        label: "Email ads",
+        segment: "email-ads",
+        keywords: ["email", "transactional", "sponsor"],
+      },
       { href: adminPath("ads"), label: "Ads", segment: "ads", keywords: ["advertising"] },
       { href: adminPath("banners"), label: "Banners", segment: "banners" },
       {

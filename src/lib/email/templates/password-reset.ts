@@ -17,9 +17,10 @@ export function buildPasswordResetEmailHtml(params: {
     preheader: "Reset your Yike password securely.",
     headline: "Reset your password",
     headlineAlign: "center",
+    contentAlign: "center",
     bodyHtml: `
-      ${emailGreeting(name)}
-      ${emailParagraph("We received a request to reset your Yike password. Tap below to choose a new one.")}
+      ${emailGreeting(name, { align: "center" })}
+      ${emailParagraph("We received a request to reset your Yike password. Tap below to choose a new one.", { align: "center" })}
       ${buildAlertBlock({
         title: "Didn&apos;t request this?",
         body: "Your password stays the same. You can ignore this email.",

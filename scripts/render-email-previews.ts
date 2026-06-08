@@ -5,6 +5,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { buildAllEmailPreviews } from "../src/lib/email/templates";
+import { buildSampleEmailAdHtml } from "../src/lib/email/components/email-ad-block";
 
 const root = process.cwd();
 const previewDir = path.join(root, "public/email/previews");
@@ -77,7 +78,7 @@ async function writePreviewIndex(
 
 async function main() {
   await fs.mkdir(previewDir, { recursive: true });
-  const templates = buildAllEmailPreviews();
+  const templates = buildAllEmailPreviews(buildSampleEmailAdHtml());
 
   for (const template of templates) {
     const filename = FILE_MAP[template.id] ?? `${template.id}.html`;

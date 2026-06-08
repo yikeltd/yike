@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AdminPageHeader, StatusBadge } from "@/components/admin/dashboard/admin-ui";
 import { PinConfirmModal } from "@/components/admin/pin-confirm-modal";
 import { AdminPinResetPanel } from "@/components/admin/admin-pin-reset-panel";
+import { StaffAssignmentPanel } from "@/components/admin/staff-assignment-panel";
 import type { StaffProfile, StaffRole } from "@/types/database";
 
 const ROLES: StaffRole[] = [
@@ -96,6 +97,8 @@ export default function StaffManagementPage() {
           </button>
         }
       />
+
+      <StaffAssignmentPanel />
 
       {loading ? (
         <p className="text-sm text-muted">Loading staff…</p>

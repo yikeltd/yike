@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { profileStatusFromAccountAction } from "@/lib/account-control";
 import { requireSuperAdminApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
-import { writeAuditLog } from "@/lib/admin/audit";
+import { writeAuditLogAsync } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentProfileStatus } from "@/types/database";
 
@@ -105,12 +105,21 @@ export async function PATCH(req: Request) {
         ? "agent.verification_request"
         : `agent.${body.action}`;
 
-  await writeAuditLog({
+  const { data: agentProfile } = await supabase
+    .from("profiles")
+    .select("full_name, username")
+    .eq("id", body.agent_id)
+    .maybeSingle();
+
+  writeAuditLogAsync({
     actor_id: auth.user.id,
     actor_role: auth.profile.role,
     action: auditAction,
     target_type: "profile",
     target_id: body.agent_id,
+    target_user_id: body.agent_id,
+    target_user_name: agentProfile?.full_name ?? agentProfile?.username ?? null,
+    reason: body.reason,
     metadata: { reason: body.reason, patch },
     ip,
   });

@@ -6,7 +6,7 @@ import {
   canPublishListings,
   LISTING_LIMIT_REACHED_MESSAGE,
 } from "@/lib/account-control";
-import { VerificationTrustGate } from "@/components/verification/verification-trust-gate";
+import { TrustGateCompact } from "@/components/verification/trust-gate-compact";
 import { getRequiredVerificationTasks } from "@/lib/verification/tasks";
 import { getTrustCapabilities } from "@/lib/verification/permissions";
 import { countAsActiveListing, getListingLimit } from "@/lib/agent-tiers";
@@ -48,7 +48,7 @@ export default async function NewListingPage() {
         )}
       </div>
       {!canPublish && trustCaps.calmMessage ? (
-        <VerificationTrustGate tasks={verificationTasks} />
+        <TrustGateCompact tasks={verificationTasks} />
       ) : !canPublish && statusMessage ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
           <p className="font-semibold">Posting paused</p>

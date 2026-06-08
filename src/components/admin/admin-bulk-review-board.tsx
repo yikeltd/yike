@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { usePinGate } from "@/components/admin/pin-confirm-modal";
+import { useDestructiveAction } from "@/components/admin/destructive-action-modal";
 import {
   REVIEW_QUEUE_LABELS,
   type ReviewQueueGroup,
@@ -28,6 +29,7 @@ type QueueResponse = {
 export function AdminBulkReviewBoard() {
   const router = useRouter();
   const { requirePin, pinModal } = usePinGate();
+  const { confirm, destructiveModal } = useDestructiveAction();
   const [group, setGroup] = useState<ReviewQueueGroup | "">("");
   const [data, setData] = useState<QueueResponse | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -139,7 +141,17 @@ export function AdminBulkReviewBoard() {
         <button
           type="button"
           disabled={!selected.size || !!busy}
-          onClick={() => requirePin(() => bulk("lower_visibility"))}
+          onClick={() =>
+            confirm({
+              title: "Lower visibility for selected listings?",
+              description: "Selected listings will be deprioritized in search and feeds.",
+              actionType: "listing.review_bulk",
+              bulkCount: selected.size,
+              onConfirm: async () => {
+                requirePin(() => bulk("lower_visibility"));
+              },
+            })
+          }
           className="pressable rounded-xl bg-surface px-3 py-2 text-xs font-bold text-muted"
         >
           Lower visibility
@@ -147,7 +159,18 @@ export function AdminBulkReviewBoard() {
         <button
           type="button"
           disabled={!selected.size || !!busy}
-          onClick={() => requirePin(() => bulk("hold"))}
+          onClick={() =>
+            confirm({
+              title: "Hold selected listings?",
+              description: "Held listings stay off the marketplace until reviewed again.",
+              actionType: "listing.review_bulk",
+              requireReason: true,
+              bulkCount: selected.size,
+              onConfirm: async () => {
+                requirePin(() => bulk("hold"));
+              },
+            })
+          }
           className="pressable rounded-xl bg-surface px-3 py-2 text-xs font-bold text-muted"
         >
           Hold selected
@@ -213,6 +236,7 @@ export function AdminBulkReviewBoard() {
       </div>
 
       {pinModal}
+      {destructiveModal}
     </div>
   );
 }

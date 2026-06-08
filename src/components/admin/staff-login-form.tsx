@@ -1,22 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { brand } from "@/lib/design/tokens";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { STAFF_APP_COOKIE, STAFF_APP_START_PATH } from "@/lib/admin/staff-app";
 import { getDefaultConsolePath } from "@/lib/admin/roles";
 import { isStaffRole } from "@/lib/admin/roles";
 import type { UserRole } from "@/types/database";
 
-export function StaffLoginForm() {
+type Props = {
+  staffApp?: boolean;
+};
+
+export function StaffLoginForm({ staffApp = false }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (staffApp && typeof document !== "undefined") {
+      document.cookie = `${STAFF_APP_COOKIE}=1; path=/; max-age=${365 * 24 * 60 * 60}; samesite=lax`;
+    }
+  }, [staffApp]);
+
+  async function resolveLanding(): Promise<string> {
+    try {
+      const res = await fetch("/api/staff/landing", { cache: "no-store" });
+      if (res.ok) {
+        const data = (await res.json()) as { landing?: { path: string } };
+        if (data.landing?.path) return data.landing.path;
+      }
+    } catch {
+      /* fallback below */
+    }
+    return STAFF_APP_START_PATH;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,7 +87,15 @@ export function StaffLoginForm() {
       .update({ last_login_at: new Date().toISOString() })
       .eq("id", user.id);
 
-    const dest = getDefaultConsolePath(profile.role as UserRole);
+    await fetch("/api/auth/session/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "heartbeat" }),
+    }).catch(() => null);
+
+    const dest = staffApp
+      ? await resolveLanding()
+      : getDefaultConsolePath(profile.role as UserRole);
     router.replace(dest);
     router.refresh();
   }
@@ -76,9 +108,13 @@ export function StaffLoginForm() {
             <Image src={brand.logoSm} alt="" width={48} height={48} className="rounded-xl" />
             <span className="text-xl font-bold text-white">{brand.name}</span>
           </div>
-          <h1 className="text-lg font-semibold text-gold">Yike Ops</h1>
+          <h1 className="text-lg font-semibold text-gold">
+            {staffApp ? "Yike Staff" : "Yike Ops"}
+          </h1>
           <p className="mt-1 text-sm text-white/50">
-            One login for all teams — you&apos;ll land in your workspace automatically
+            {staffApp
+              ? "Secure staff sign-in — you'll land in your assigned workspace"
+              : "One login for all teams — you'll land in your workspace automatically"}
           </p>
         </div>
 
@@ -110,13 +146,15 @@ export function StaffLoginForm() {
               <p className="rounded-lg bg-danger/15 px-3 py-2 text-sm text-red-200">{error}</p>
             )}
             <Button type="submit" fullWidth disabled={loading}>
-              {loading ? "Signing in…" : "Sign in to console"}
+              {loading ? "Signing in…" : staffApp ? "Unlock staff workspace" : "Sign in to console"}
             </Button>
           </form>
         </div>
 
         <p className="mt-6 text-center text-xs text-white/30">
-          Unauthorized access is logged and monitored.
+          {staffApp
+            ? "Staff APK · no guest access · actions are audited"
+            : "Unauthorized access is logged and monitored."}
         </p>
       </div>
     </div>

@@ -38,6 +38,12 @@ export function staticPathRedirect(pathname: string): string | null {
 
   if (exact[normalized]) return exact[normalized];
 
+  const staffAliases: Record<string, string> = {
+    "/lex/auth/dashboard": "/lex/auth/overview",
+    "/lex/auth/listings/bulk-review": "/lex/auth/listings/review",
+  };
+  if (staffAliases[normalized]) return staffAliases[normalized];
+
   if (normalized.startsWith("/admin")) {
     const rest = normalized.slice("/admin".length);
     return rest ? `/lex${rest}` : "/lex";

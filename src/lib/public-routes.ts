@@ -57,7 +57,9 @@ export const PUBLIC_STATIC_SEGMENTS = new Set([
   "auth",
   "agent",
   "lex",
+  "staff",
   "dev",
+  "email",
   "api",
   "well-known",
 ]);

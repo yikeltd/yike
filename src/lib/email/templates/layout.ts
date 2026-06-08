@@ -7,6 +7,7 @@ import {
   buildSupportSection,
   emailTokens as t,
 } from "@/lib/email/components";
+import { EMAIL_AD_MARKER } from "@/lib/email/ad-marker";
 
 export type EmailLayoutParams = {
   /** Shown in inbox preview (hidden in body). */
@@ -21,6 +22,8 @@ export type EmailLayoutParams = {
   fallbackLink?: { label: string; href: string };
   /** Center the headline (verification + welcome emails). */
   headlineAlign?: "left" | "center";
+  /** Center body copy (OTP / verification). */
+  contentAlign?: "left" | "center";
   /** Show support contact block above footer. */
   showSupport?: boolean;
 };
@@ -29,7 +32,8 @@ export type EmailLayoutParams = {
 export function buildEmailLayout(params: EmailLayoutParams): string {
   const preheader = params.preheader ?? "";
   const headlineAlign = params.headlineAlign ?? "left";
-  const showSupport = params.showSupport ?? true;
+  const contentAlign = params.contentAlign ?? headlineAlign;
+  const showSupport = params.showSupport ?? false;
 
   const ctaBlock = params.cta
     ? buildCtaButton({
@@ -79,7 +83,7 @@ export function buildEmailLayout(params: EmailLayoutParams): string {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="email-bg" style="background:${t.surface};padding:20px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" class="email-shell" width="${t.maxWidth}" cellpadding="0" cellspacing="0" border="0" style="max-width:${t.maxWidth}px;width:100%;background:${t.white};border-radius:16px;overflow:hidden;border:1px solid ${t.border};">
+        <table role="presentation" class="email-shell" width="${t.maxWidth}" cellpadding="0" cellspacing="0" border="0" style="max-width:${t.maxWidth}px;width:100%;background:${t.white};border-radius:18px;overflow:hidden;border:1px solid ${t.border};box-shadow:0 8px 32px rgba(3,27,78,0.08);">
 
           <tr>
             <td class="email-header-cell">
@@ -88,11 +92,12 @@ export function buildEmailLayout(params: EmailLayoutParams): string {
           </tr>
 
           <tr>
-            <td class="email-body-pad" style="padding:0 28px 32px;font-family:${t.fontFamily};">
-              <h1 class="email-headline" style="margin:0 0 20px;font-size:26px;font-weight:800;color:${t.navy};letter-spacing:-0.5px;line-height:1.2;text-align:${headlineAlign};">
+            <td class="email-body-pad" style="padding:36px 36px 32px;font-family:${t.fontFamily};">
+              <h1 class="email-headline" style="margin:0 0 ${contentAlign === "center" ? "10" : "16"}px;font-size:${contentAlign === "center" ? "24" : "26"}px;font-weight:800;color:${t.navy};letter-spacing:-0.5px;line-height:1.25;text-align:${headlineAlign};">
                 ${params.headline}
               </h1>
-              <div class="email-content" style="font-size:17px;line-height:1.65;color:${t.textBody};">
+              ${EMAIL_AD_MARKER}
+              <div class="email-content" style="font-size:17px;line-height:1.65;color:${t.textBody};text-align:${contentAlign};">
                 ${params.bodyHtml}
               </div>
               ${ctaBlock}

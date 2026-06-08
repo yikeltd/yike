@@ -8,6 +8,7 @@ export const AD_PLACEMENT_KEYS = [
   "location_top",
   "property_detail",
   "footer_strip",
+  "email_transactional",
   "home_hotspot_1",
   "home_hotspot_2",
 ] as const;
@@ -52,6 +53,11 @@ export const AD_PLACEMENT_META: Record<
     label: "Footer sponsor strip",
     hint: "Wide strip above site footer on all public pages.",
     aspect: "strip",
+  },
+  email_transactional: {
+    label: "Transactional email — under headline",
+    hint: "Compact promo chip directly under the email headline (in the fold). Use a square thumb ~80×80px. Shown on OTP, welcome, listing updates — not admin alerts.",
+    aspect: "card",
   },
   home_hotspot_1: {
     label: "Home — Hottest pick slot 1",

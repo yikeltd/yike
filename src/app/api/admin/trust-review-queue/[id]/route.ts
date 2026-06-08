@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { requireAdminApi } from "@/lib/admin/api-auth";
+import { requireTrustEnforcementApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -11,13 +11,14 @@ import {
 } from "@/lib/verification/escalate";
 import type { AdaptiveTrustLevel, TrustReviewAction } from "@/lib/verification/constants";
 import { profileStatusFromAccountAction } from "@/lib/account-control";
+import { syncProfileVerificationMeta } from "@/lib/verification/sync-meta";
 
 export const runtime = "nodejs";
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: Request, ctx: RouteCtx) {
-  const auth = await requireAdminApi();
+  const auth = await requireTrustEnforcementApi();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -224,6 +225,10 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
 
   if (!ok) {
     return NextResponse.json({ error: "Action failed" }, { status: 500 });
+  }
+
+  if (userId && ok) {
+    await syncProfileVerificationMeta(admin, userId);
   }
 
   await writeAuditLog({

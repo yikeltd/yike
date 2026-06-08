@@ -1,13 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AdaptiveTrustLevel } from "./constants";
 import { escalateUserTrust, restoreUserTrust } from "./escalate";
-import { deriveVerificationState, levelForEnforcementAction } from "./status-states";
-import {
-  getRequiredVerificationTasks,
-  serializeRequiredTasks,
-} from "./tasks";
+import { levelForEnforcementAction } from "./status-states";
 import type { VerificationControlConfig } from "./config";
-import type { TrustProfileSlice } from "./levels";
+import { syncProfileVerificationMeta } from "./sync-meta";
 
 export type EnforcementAction =
   | "require_whatsapp"
@@ -66,9 +62,7 @@ export async function applyEnforcementAction(
   ];
 
   if (restoreActions.includes(params.action)) {
-    const target = (params.action === "revoke_verification"
-      ? 1
-      : levelForEnforcementAction(params.action) ?? 2) as AdaptiveTrustLevel;
+    const target = (levelForEnforcementAction(params.action) ?? 2) as AdaptiveTrustLevel;
 
     const ok = await restoreUserTrust(client, {
       userId: params.userId,
@@ -79,7 +73,7 @@ export async function applyEnforcementAction(
     });
 
     if (ok) {
-      await syncProfileVerificationMeta(client, params.userId, params.config);
+      await syncProfileVerificationMeta(client, params.userId);
     }
     return { ok };
   }
@@ -94,7 +88,7 @@ export async function applyEnforcementAction(
         verification_required: true,
       })
       .eq("id", params.userId);
-    await syncProfileVerificationMeta(client, params.userId, params.config);
+    await syncProfileVerificationMeta(client, params.userId);
     return { ok: true };
   }
 
@@ -118,33 +112,13 @@ export async function applyEnforcementAction(
   });
 
   if (result) {
-    await syncProfileVerificationMeta(client, params.userId, params.config, requiredActions);
+    await syncProfileVerificationMeta(client, params.userId);
   }
 
   return { ok: Boolean(result), ...result ?? {} };
 }
 
-export async function syncProfileVerificationMeta(
-  client: SupabaseClient,
-  userId: string,
-  config?: VerificationControlConfig,
-  escalationActions: string[] = []
-): Promise<void> {
-  const { data: profile } = await client.from("profiles").select("*").eq("id", userId).single();
-  if (!profile) return;
-
-  const slice = profile as TrustProfileSlice;
-  const state = deriveVerificationState(slice);
-  const tasks = getRequiredVerificationTasks(slice, config, escalationActions);
-
-  await client
-    .from("profiles")
-    .update({
-      verification_state: state,
-      required_verification_tasks: serializeRequiredTasks(tasks),
-    })
-    .eq("id", userId);
-}
+export { syncProfileVerificationMeta } from "./sync-meta";
 
 export async function applyBulkEnforcement(
   client: SupabaseClient,

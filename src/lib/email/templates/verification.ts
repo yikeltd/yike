@@ -17,10 +17,12 @@ export function buildVerificationEmailHtml(params: {
     preheader: "Verify your email to finish setting up your Yike account.",
     headline: "Verify your Yike account",
     headlineAlign: "center",
+    contentAlign: "center",
     bodyHtml: `
-      ${emailGreeting(name)}
+      ${emailGreeting(name, { align: "center" })}
       ${emailParagraph(
-        "Thanks for joining Yike. Tap the button below to verify your email and start browsing real homes across Nigeria."
+        "Thanks for joining Yike. Tap the button below to verify your email and start browsing real homes across Nigeria.",
+        { align: "center" }
       )}
       ${buildAlertBlock({
         title: "Secure link",

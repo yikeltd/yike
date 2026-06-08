@@ -13,8 +13,9 @@ import {
   ShieldCheck,
   User,
 } from "lucide-react";
-import { VerificationWhatsAppCallBanner } from "@/components/agent/verification-whatsapp-call-banner";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { yikeVerificationWhatsAppLink } from "@/lib/agent-verification";
 import type { AgentVerification, Profile } from "@/types/database";
 
 const STEPS = [
@@ -51,6 +52,7 @@ export function VerificationWizard({
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<FormState>({
@@ -128,11 +130,11 @@ export function VerificationWizard({
 
   if (isVerified) {
     return (
-      <div className="space-y-4 rounded-2xl border border-gold/30 bg-gold/10 p-6 text-center">
+      <div className="rounded-2xl border border-border bg-elevated px-4 py-4 text-center">
         <VerifiedBadge />
-        <h1 className="text-xl font-bold text-navy">Verified agent</h1>
-        <p className="text-sm text-muted">
-          You have unlimited listings and priority ranking. Thank you for helping keep Yike trusted.
+        <p className="mt-2 text-sm font-semibold text-navy">Verified agent badge</p>
+        <p className="mt-1 text-xs text-muted">
+          Unlimited listings and priority ranking unlocked.
         </p>
       </div>
     );
@@ -143,14 +145,44 @@ export function VerificationWizard({
     profile.verification_status === "pending"
   ) {
     return (
-      <div className="space-y-4">
-        <VerificationWhatsAppCallBanner verification={verification} />
-        <div className="rounded-2xl border border-surface bg-elevated p-6 text-center">
-          <ShieldCheck className="mx-auto h-10 w-10 text-gold" />
-          <h1 className="mt-3 text-xl font-bold">Under review</h1>
-          <p className="mt-2 text-sm text-muted">
-            We&apos;re reviewing your documents. This usually takes 1–2 business days.
-          </p>
+      <div className="rounded-2xl border border-border bg-elevated shadow-float">
+        <div className="px-4 py-4">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-navy">Verified agent badge</p>
+              <p className="mt-0.5 text-xs text-muted">
+                Higher visibility and stronger trust signals.
+              </p>
+              <span className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+                Under review
+              </span>
+              <p className="mt-2 text-xs text-muted">
+                We&apos;ll contact you on WhatsApp if needed.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDetails((v) => !v)}
+            className="mt-3 text-xs font-semibold text-gold-dark"
+          >
+            {showDetails ? "Hide details" : "What happens next?"}
+          </button>
+          {showDetails ? (
+            <div className="mt-2 space-y-2 rounded-xl bg-surface px-3 py-2 text-xs text-muted">
+              <p>Review usually takes 1–2 business days.</p>
+              <p>Keep your registered WhatsApp available for a short verification call if requested.</p>
+              <Link
+                href={yikeVerificationWhatsAppLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex font-semibold text-navy"
+              >
+                Contact support on WhatsApp →
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -161,21 +193,22 @@ export function VerificationWizard({
     profile.verification_status === "rejected";
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-gold/20 bg-gold/10 p-4">
-        <p className="text-sm leading-relaxed text-foreground">
-          <strong className="text-navy">Optional verified badge.</strong> Your NIN and selfie
-          are encrypted and reviewed manually. Listing does not require this — it unlocks trust,
-          ranking, and unlimited listings.
+    <div className="space-y-4 rounded-2xl border border-border bg-elevated shadow-float">
+      <div className="border-b border-border px-4 py-3">
+        <p className="text-sm font-semibold text-navy">Verified agent badge</p>
+        <p className="mt-0.5 text-xs text-muted">
+          Optional — unlock higher visibility, ranking, and unlimited listings.
         </p>
       </div>
 
       {rejected && (
-        <div className="rounded-xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger">
+        <div className="mx-4 rounded-xl border border-danger/20 bg-danger/5 px-3 py-2 text-xs text-danger">
           <strong>Application rejected.</strong>{" "}
           {verification?.rejection_reason ?? "Please correct your details and resubmit."}
         </div>
       )}
+
+      <div className="space-y-6 px-4 pb-4">
 
       <div className="flex items-center justify-between gap-1">
         {STEPS.map((s) => (
@@ -337,7 +370,7 @@ export function VerificationWizard({
         </p>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 pb-0">
         {step > 1 && (
           <Button
             type="button"
@@ -378,6 +411,7 @@ export function VerificationWizard({
             {submitting ? "Submitting…" : "Submit for review"}
           </Button>
         )}
+      </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
@@ -10,16 +10,39 @@ import type { AdPlacement } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { FormSection } from "@/components/ui/form-section";
+import { AdminImageUploadField } from "@/components/admin/admin-image-upload-field";
+import { AdminEntitySelector } from "@/components/admin/selection";
+import type { AdminEntityItem } from "@/components/admin/selection/types";
+import type { ImagePreset } from "@/lib/media/constants";
+
+function presetForAspect(aspect: "banner" | "card" | "strip" | undefined): ImagePreset {
+  if (aspect === "banner") return "banner";
+  if (aspect === "strip") return "strip";
+  return "card";
+}
 
 export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [imageUrl, setImageUrl] = useState(placement.image_url ?? "");
+  const [selectedListing, setSelectedListing] = useState<AdminEntityItem[]>([]);
   const meta = AD_PLACEMENT_META[
     placement.placement_key as keyof typeof AD_PLACEMENT_META
   ];
 
   const isHotspot = placement.placement_key.startsWith("home_hotspot_");
+
+  useEffect(() => {
+    if (!placement.property_id) return;
+    void (async () => {
+      const res = await fetch(
+        `/api/admin/entity-search?type=listing&ids=${encodeURIComponent(placement.property_id!)}`
+      );
+      const data = (await res.json()) as { results?: AdminEntityItem[] };
+      if (data.results?.[0]) setSelectedListing([data.results[0]]);
+    })();
+  }, [placement.property_id]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,17 +54,16 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
     }
 
     const form = new FormData(e.currentTarget);
-    const imageUrl = (form.get("image_url") as string).trim();
-    const propertyId = ((form.get("property_id") as string) || "").trim() || null;
+    const propertyId = selectedListing[0]?.id ?? null;
     const isActive = form.get("is_active") === "on";
 
-    if (isActive && !isHotspot && !imageUrl) {
-      setError("Add an image URL before activating this ad slot.");
+    if (isActive && !isHotspot && !imageUrl.trim()) {
+      setError("Upload an image before activating this ad slot.");
       return;
     }
 
-    if (isActive && isHotspot && !propertyId && !imageUrl) {
-      setError("Add a listing ID or image URL for this hotspot slot.");
+    if (isActive && isHotspot && !propertyId && !imageUrl.trim()) {
+      setError("Select a listing or add an image URL for this hotspot slot.");
       return;
     }
 
@@ -50,7 +72,7 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
 
     const payload = {
       title: ((form.get("title") as string) || "").trim() || null,
-      image_url: imageUrl || null,
+      image_url: imageUrl.trim() || null,
       link_url: ((form.get("link_url") as string) || "").trim() || null,
       alt_text: ((form.get("alt_text") as string) || "").trim(),
       property_id: propertyId,
@@ -60,21 +82,26 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
     };
 
     setLoading(true);
-    const supabase = createClient();
-    const { error: updateError } = await supabase
-      .from("ad_placements")
-      .update(payload)
-      .eq("id", placement.id);
+    const res = await fetch(
+      `/api/admin/ad-placements/${encodeURIComponent(placement.placement_key)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
 
     setLoading(false);
-    if (updateError) {
-      setError(updateError.message);
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      setError(data.error ?? "Could not save placement.");
       return;
     }
     router.refresh();
   }
 
-  const previewUrl = placement.image_url?.trim();
+  const previewUrl = imageUrl.trim() || placement.image_url?.trim();
+  const imagePreset = presetForAspect(meta?.aspect);
 
   return (
     <form
@@ -110,11 +137,14 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
               placeholder="Headline (optional)"
               defaultValue={placement.title ?? ""}
             />
-            <Input
-              name="image_url"
-              placeholder="Image URL (https://…)"
-              defaultValue={placement.image_url ?? ""}
-              required={false}
+            <AdminImageUploadField
+              label="Creative image"
+              hint="JPG, PNG, or HEIC — saved as compressed WebP."
+              value={imageUrl}
+              onChange={setImageUrl}
+              preset={imagePreset}
+              folder={`website/${placement.placement_key}`}
+              disabled={loading}
             />
             <Input
               name="link_url"
@@ -122,11 +152,19 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
               defaultValue={placement.link_url ?? ""}
             />
             {isHotspot && (
-              <Input
-                name="property_id"
-                placeholder="Listing UUID (pins a property to this slot)"
-                defaultValue={placement.property_id ?? ""}
-              />
+              <div>
+                <p className="mb-2 text-xs font-semibold text-muted">
+                  Pin listing to this hotspot
+                </p>
+                <AdminEntitySelector
+                  entityType="listing"
+                  mode="single"
+                  selected={selectedListing}
+                  onChange={setSelectedListing}
+                  filters={{ status: "approved" }}
+                  disabled={loading}
+                />
+              </div>
             )}
             <Textarea
               name="alt_text"
@@ -171,7 +209,7 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
               className="h-4 w-4 rounded border-surface accent-gold"
             />
             Show on website
-            {isHotspot ? " (listing ID or image)" : " (requires image URL)"}
+            {isHotspot ? " (listing or image)" : " (requires uploaded image)"}
           </label>
 
           {error && (
@@ -202,7 +240,7 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
               </div>
             ) : (
               <p className="py-12 text-center text-sm text-muted">
-                Add an image URL to preview
+                Upload an image to preview
               </p>
             )}
           </div>

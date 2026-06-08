@@ -1,25 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { optimizeUploadedImage, buildAvatarStoragePaths } from "@/lib/media/image";
-import { ALLOWED_IMAGE_TYPES } from "@/lib/media/constants";
+import { optimizeUploadedImage, buildAvatarStoragePaths, resolveImageMime } from "@/lib/media/image";
+import { WEBP_CONTENT_TYPE } from "@/lib/media/constants";
+import { friendlyStorageError } from "@/lib/media/storage-errors";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-function resolveImageType(file: File): string | null {
-  if (file.type && (ALLOWED_IMAGE_TYPES as readonly string[]).includes(file.type)) {
-    return file.type;
-  }
-  const ext = file.name.split(".").pop()?.toLowerCase();
-  const map: Record<string, string> = {
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    png: "image/png",
-    webp: "image/webp",
-  };
-  return ext ? map[ext] ?? null : null;
-}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -36,7 +23,7 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const file = form.get("file") as File | null;
-  const mime = file ? resolveImageType(file) : null;
+  const mime = file ? resolveImageMime(file) : null;
   if (!file || !mime) {
     return NextResponse.json({ error: "Upload a JPG, PNG, or WebP photo" }, { status: 400 });
   }
@@ -65,12 +52,12 @@ export async function POST(request: Request) {
           ? optimized.medium
           : optimized.large;
     const { error } = await admin.storage.from(bucket).upload(path, body, {
-      contentType: "image/webp",
+      contentType: WEBP_CONTENT_TYPE,
       upsert: true,
     });
     if (error) {
       return NextResponse.json(
-        { error: error.message || "Upload failed" },
+        { error: friendlyStorageError(error.message) },
         { status: 500 }
       );
     }

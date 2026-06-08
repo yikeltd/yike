@@ -23,6 +23,18 @@ export const IMAGE_SIZES = {
   blur: { width: 24, quality: 40 },
 } as const;
 
+/** Single-size presets — all uploads must pass through one of these or IMAGE_SIZES responsive set. */
+export const IMAGE_PRESET_SIZES = {
+  square: { width: 80, height: 80, fit: "cover" as const, quality: 82 },
+  card: { width: 768, fit: "inside" as const, quality: 84 },
+  banner: { width: 1200, fit: "inside" as const, quality: 84 },
+  strip: { width: 1600, fit: "inside" as const, quality: 82 },
+} as const;
+
+export type ImagePreset = keyof typeof IMAGE_PRESET_SIZES;
+
+export const WEBP_CONTENT_TYPE = "image/webp" as const;
+
 export const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",

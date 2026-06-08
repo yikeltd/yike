@@ -288,7 +288,7 @@ export function AdminVerificationControlPanel() {
             className="min-w-[200px] flex-1"
             value={searchQ}
             onChange={(e) => setSearchQ(e.target.value)}
-            placeholder="Search name, email, or user ID"
+            placeholder="Search by name or email…"
             onKeyDown={(e) => e.key === "Enter" && void searchUsers()}
           />
           <Button variant="outline" onClick={() => void searchUsers()}>

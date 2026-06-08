@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminLeads } from "@/lib/leads/queries";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { AdminLeadDealControls } from "@/components/admin/admin-lead-deal-controls";
+import { AdminLeadsFilters } from "@/components/admin/admin-leads-filters";
 import { parseAdminPage, ADMIN_PAGE_SIZE } from "@/lib/admin/pagination";
 import type { LeadType } from "@/lib/leads/types";
 
@@ -75,65 +76,14 @@ export default async function AdminLeadsPage({
         </p>
       </div>
 
-      <form method="get" className="flex flex-wrap gap-3 text-sm">
-        <select
-          name="type"
-          defaultValue={params.type ?? ""}
-          className="rounded-lg border border-navy/15 px-3 py-2"
-        >
-          <option value="">All channels</option>
-          <option value="whatsapp">WhatsApp</option>
-          <option value="call">Call</option>
-        </select>
-        <select
-          name="status"
-          defaultValue={params.status ?? ""}
-          className="rounded-lg border border-navy/15 px-3 py-2"
-        >
-          <option value="">All deal statuses</option>
-          <option value="new">New</option>
-          <option value="contacted">Contacted</option>
-          <option value="qualified">Qualified</option>
-          <option value="inspection_requested">Inspection requested</option>
-          <option value="negotiation">Negotiation</option>
-          <option value="closed_won">Closed won</option>
-          <option value="closed_lost">Closed lost</option>
-          <option value="spam">Spam</option>
-        </select>
-        <input
-          name="city"
-          placeholder="City filter"
-          defaultValue={params.city ?? ""}
-          className="rounded-lg border border-navy/15 px-3 py-2"
-        />
-        <input
-          name="agent"
-          placeholder="Agent ID"
-          defaultValue={params.agent ?? ""}
-          className="rounded-lg border border-navy/15 px-3 py-2 font-mono text-xs"
-        />
-        <input
-          name="listing"
-          placeholder="Listing ID"
-          defaultValue={params.listing ?? ""}
-          className="rounded-lg border border-navy/15 px-3 py-2 font-mono text-xs"
-        />
-        <select
-          name="days"
-          defaultValue={String(days)}
-          className="rounded-lg border border-navy/15 px-3 py-2"
-        >
-          <option value="7">7 days</option>
-          <option value="30">30 days</option>
-          <option value="90">90 days</option>
-        </select>
-        <button
-          type="submit"
-          className="rounded-lg bg-navy px-4 py-2 font-semibold text-white"
-        >
-          Filter
-        </button>
-      </form>
+      <AdminLeadsFilters
+        defaultType={params.type}
+        defaultStatus={params.status}
+        defaultCity={params.city}
+        defaultAgentId={params.agent}
+        defaultListingId={params.listing}
+        defaultDays={String(days)}
+      />
 
       <div className="overflow-x-auto rounded-xl border border-navy/10 bg-white">
         <table className="min-w-full text-left text-sm">
