@@ -112,18 +112,16 @@ export function StaffLoginForm({ staffApp = false }: Props) {
               height={staffApp ? 72 : 48}
               className={staffApp ? "rounded-2xl shadow-lg" : "rounded-xl"}
             />
-            <span className="text-xl font-bold text-white">
-              {staffApp ? crewBrand.name : brand.name}
-            </span>
+            <h1 className="text-xl font-bold text-white">{brand.name}</h1>
           </div>
-          <h1 className="text-lg font-semibold text-gold">
-            {staffApp ? crewBrand.shortName : "Yike Ops"}
-          </h1>
-          <p className="mt-1 text-sm text-white/50">
-            {staffApp
-              ? "Secure crew sign-in — you'll land in your assigned workspace"
-              : "One login for all teams — you'll land in your workspace automatically"}
-          </p>
+          {!staffApp && (
+            <>
+              <p className="text-lg font-semibold text-gold">Yike Ops</p>
+              <p className="mt-1 text-sm text-white/50">
+                One login for all teams — you&apos;ll land in your workspace automatically
+              </p>
+            </>
+          )}
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
@@ -154,16 +152,16 @@ export function StaffLoginForm({ staffApp = false }: Props) {
               <p className="rounded-lg bg-danger/15 px-3 py-2 text-sm text-red-200">{error}</p>
             )}
             <Button type="submit" fullWidth disabled={loading}>
-              {loading ? "Signing in…" : staffApp ? "Sign in to Crew" : "Sign in to console"}
+              {loading ? "Signing in…" : staffApp ? "Sign in" : "Sign in to console"}
             </Button>
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-white/30">
-          {staffApp
-            ? "Yike Crew · no guest access · actions are audited"
-            : "Unauthorized access is logged and monitored."}
-        </p>
+        {!staffApp && (
+          <p className="mt-6 text-center text-xs text-white/30">
+            Unauthorized access is logged and monitored.
+          </p>
+        )}
       </div>
     </div>
   );
