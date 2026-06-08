@@ -18,6 +18,7 @@ export function withEmailAssetOrigin(html: string, origin: string): string {
   return html
     .replaceAll(`${SITE_URL}/email/social/`, `${base}/email/social/`)
     .replaceAll(`${SITE_URL}/email/badges/`, `${base}/email/badges/`)
+    .replaceAll(`${SITE_URL}/images/logo.png`, `${base}/images/logo.png`)
     .replaceAll(`${SITE_URL}/images/`, `${base}/images/`)
     .replaceAll(`${SITE_URL}/icons/`, `${base}/icons/`);
 }

@@ -4,6 +4,8 @@ import {
   buildVerificationEmailHtml,
   buildWelcomeEmailHtml,
 } from "@/lib/email/templates";
+import type { EmailOtpPurpose } from "@/lib/email/templates/email-otp";
+import { EMAIL_OTP_SUBJECTS } from "@/lib/email/templates/email-otp";
 import { transactionalFromAddress } from "@/lib/email/from-address";
 import type { EmailType, ProviderResult } from "../types";
 
@@ -23,8 +25,8 @@ function fromAddress(): string {
   return transactionalFromAddress();
 }
 
-export function authOtpSubject(): string {
-  return "Your Yike verification code";
+export function authOtpSubject(purpose: EmailOtpPurpose = "signup"): string {
+  return EMAIL_OTP_SUBJECTS[purpose];
 }
 
 export function isResendConfigured(): boolean {
@@ -62,7 +64,7 @@ export async function sendTransactionalEmail(params: {
 export function emailSubjectForType(type: EmailType): string {
   switch (type) {
     case "email_verification":
-      return "Your Yike verification code";
+      return "Verify your Yike account";
     case "welcome":
       return "Welcome to Yike";
     case "password_reset":

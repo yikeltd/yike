@@ -111,9 +111,13 @@ async function generateSocialIcon({ key, brandColor, slug }) {
 
 async function writePreviewIndex() {
   const templates = [
+    { file: "00-otp-signup.html", title: "OTP signup" },
+    { file: "00-otp-login.html", title: "OTP login" },
     { file: "01-email-verification.html", title: "Email verification" },
     { file: "02-welcome.html", title: "Welcome" },
-    { file: "03-admin-alert.html", title: "Admin alert" },
+    { file: "12-admin-report.html", title: "Admin report alert" },
+    { file: "13-admin-listing.html", title: "Admin listing alert" },
+    { file: "14-admin-agent.html", title: "Admin agent alert" },
   ];
 
   const links = templates

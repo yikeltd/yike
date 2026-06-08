@@ -17,8 +17,15 @@ import { buildReportReceivedEmailHtml } from "./report-received";
 import { buildVerificationEmailHtml } from "./verification";
 import { buildWelcomeEmailHtml } from "./welcome";
 import { buildCareerApplicationReceivedEmailHtml } from "./career-application";
+import { buildEmailOtpHtml } from "./email-otp";
 
 export { buildEmailLayout } from "./layout";
+export {
+  buildEmailOtpHtml,
+  mapAuthOtpPurpose,
+  EMAIL_OTP_SUBJECTS,
+} from "./email-otp";
+export type { EmailOtpPurpose } from "./email-otp";
 export { buildVerificationEmailHtml } from "./verification";
 export { buildWelcomeEmailHtml } from "./welcome";
 export { buildAdminAlertEmailHtml } from "./admin-alert";
@@ -37,6 +44,7 @@ export { buildAccountDeletedEmailHtml } from "./account-deleted";
 export { buildReportReceivedEmailHtml } from "./report-received";
 export { buildCareerApplicationReceivedEmailHtml } from "./career-application";
 export { escapeHtml, withEmailAssetOrigin } from "./utils";
+export * from "../components";
 
 /** Sample data for previews and design QA. */
 export const EMAIL_PREVIEW_SAMPLES = {
@@ -44,6 +52,8 @@ export const EMAIL_PREVIEW_SAMPLES = {
     fullName: "Ada Okafor",
     verifyUrl: `${SITE_URL}/auth/callback?token=sample-verify-link`,
   },
+  otpSignup: { fullName: "Ada Okafor", code: "482916" },
+  otpLogin: { fullName: "Ada Okafor", code: "739104" },
   welcome: { fullName: "Ada Okafor" },
   passwordReset: {
     fullName: "Ada Okafor",
@@ -110,8 +120,20 @@ export function buildAllEmailPreviews(): Array<{
       label: "Account & auth",
       templates: [
         {
+          id: "otp_signup",
+          name: "Signup OTP",
+          subject: "Verify your Yike account",
+          html: buildEmailOtpHtml({ ...s.otpSignup, purpose: "signup" }),
+        },
+        {
+          id: "otp_login",
+          name: "Login OTP",
+          subject: "Your Yike sign-in code",
+          html: buildEmailOtpHtml({ ...s.otpLogin, purpose: "login" }),
+        },
+        {
           id: "email_verification",
-          name: "Email verification",
+          name: "Email verification (link)",
           subject: "Verify your Yike account",
           html: buildVerificationEmailHtml(s.verification),
         },

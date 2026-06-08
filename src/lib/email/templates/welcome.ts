@@ -1,3 +1,4 @@
+import { emailGreeting, emailParagraph } from "@/lib/email/components";
 import { SITE_URL } from "@/lib/constants";
 import { buildEmailLayout } from "./layout";
 import { escapeHtml } from "./utils";
@@ -10,11 +11,10 @@ export function buildWelcomeEmailHtml(params: { fullName: string }): string {
     headline: "Welcome to Yike",
     headlineAlign: "center",
     bodyHtml: `
-      <p style="margin:0 0 16px;">Hi ${name},</p>
-      <p style="margin:0 0 16px;">
-        Your email is verified. You&apos;re all set to explore real listings across Nigeria —
-        swipe homes like a feed, save favourites, and contact verified agents on WhatsApp.
-      </p>
+      ${emailGreeting(name)}
+      ${emailParagraph(
+        "Your email is verified. Explore real listings, save favourites, and contact verified agents on WhatsApp."
+      )}
     `,
     cta: { label: "Explore listings", href: SITE_URL },
   });

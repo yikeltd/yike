@@ -100,6 +100,7 @@ export async function sendEmailOtp(
     html: buildEmailOtpHtml({
       fullName: params.fullName ?? "",
       code,
+      purpose: "signup",
     }),
     idempotencyKey: `email-otp/${email}/${Math.floor(now.getTime() / OTP_RESEND_COOLDOWN_MS)}`,
   });

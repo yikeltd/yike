@@ -10,6 +10,8 @@ const root = process.cwd();
 const previewDir = path.join(root, "public/email/previews");
 
 const FILE_MAP: Record<string, string> = {
+  otp_signup: "00-otp-signup.html",
+  otp_login: "00-otp-login.html",
   email_verification: "01-email-verification.html",
   welcome: "02-welcome.html",
   password_reset: "03-password-reset.html",
@@ -31,6 +33,7 @@ function localizePreviewHtml(html: string): string {
   return html
     .replaceAll("https://yike.ng/email/social/", "../social/")
     .replaceAll("https://yike.ng/email/badges/", "../badges/")
+    .replaceAll("https://yike.ng/images/logo.png", "../../images/logo.png")
     .replaceAll("https://yike.ng/images/", "../../images/")
     .replaceAll("https://yike.ng/icons/", "../../icons/");
 }

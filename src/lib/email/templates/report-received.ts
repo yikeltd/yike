@@ -1,3 +1,4 @@
+import { emailDisclaimer, emailGreeting, emailParagraph } from "@/lib/email/components";
 import { SITE_URL } from "@/lib/constants";
 import { buildEmailLayout } from "./layout";
 import { escapeHtml } from "./utils";
@@ -14,14 +15,11 @@ export function buildReportReceivedEmailHtml(params: {
     headline: "Report received",
     headlineAlign: "center",
     bodyHtml: `
-      <p style="margin:0 0 16px;">Hi ${name},</p>
-      <p style="margin:0 0 16px;">
-        Thanks for reporting <strong>${title}</strong>. Our moderation team will review it and take
-        action if the listing breaks our trust rules.
-      </p>
-      <p style="margin:0;color:#64748b;font-size:14px;">
-        We may not reply to every report, but serious issues are prioritised.
-      </p>
+      ${emailGreeting(name)}
+      ${emailParagraph(
+        `Thanks for reporting <strong>${title}</strong>. Our moderation team will review it and take action if needed.`
+      )}
+      ${emailDisclaimer("We may not reply to every report, but serious issues are prioritised.")}
     `,
     cta: { label: "Browse listings", href: SITE_URL },
   });

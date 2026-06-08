@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { buildEmailOtpHtml } from "@/lib/email/templates/email-otp";
+import {
+  buildEmailOtpHtml,
+  mapAuthOtpPurpose,
+} from "@/lib/email/templates/email-otp";
 import { isProductionEnv } from "@/lib/env";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { EMAIL_OTP_USER_MESSAGES } from "@/lib/notifications/messages";
@@ -153,12 +156,15 @@ export async function sendAuthEmailOtp(
     return { ok: false, error: EMAIL_OTP_USER_MESSAGES.sendFailed, status: 503 };
   }
 
+  const otpPurpose = mapAuthOtpPurpose(params.purpose);
+
   const result = await sendTransactionalEmail({
     to: email,
-    subject: authOtpSubject(),
+    subject: authOtpSubject(otpPurpose),
     html: buildEmailOtpHtml({
       fullName: params.fullName ?? "",
       code,
+      purpose: otpPurpose,
     }),
     idempotencyKey: `auth-email-otp/${params.purpose}/${email}/${now.getTime()}`,
   });
@@ -171,10 +177,11 @@ export async function sendAuthEmailOtp(
     );
     const retry = await sendTransactionalEmail({
       to: email,
-      subject: authOtpSubject(),
+      subject: authOtpSubject(otpPurpose),
       html: buildEmailOtpHtml({
         fullName: params.fullName ?? "",
         code,
+        purpose: otpPurpose,
       }),
     });
     if (retry.ok) {
