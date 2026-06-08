@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireVerifiedLister } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { ListingForm } from "@/components/agent/listing-form";
+import { AgentReviewResponseBox } from "@/components/agent/agent-review-response-box";
 import type { Property } from "@/types/database";
 
 export default async function EditListingPage({
@@ -32,6 +33,7 @@ export default async function EditListingPage({
   return (
     <div className="space-y-4 px-3 pt-2 pb-8">
       <h1 className="text-xl font-bold">Edit listing</h1>
+      <AgentReviewResponseBox listingId={id} />
       <ListingForm
         agentId={user.id}
         initial={data as Property}

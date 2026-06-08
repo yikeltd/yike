@@ -26,6 +26,16 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
       { href: adminPath("operations"), label: "Operations", segment: "operations" },
       { href: adminPath("deal-matching"), label: "Deal Matching", segment: "deal-matching" },
       { href: adminPath("trust"), label: "Trust Command Center", segment: "trust" },
+      {
+        href: adminPath("trust-review-queue"),
+        label: "Trust Review Queue",
+        segment: "trust-review-queue",
+      },
+      {
+        href: adminPath("verification-control"),
+        label: "Verification Control",
+        segment: "verification-control",
+      },
     ],
   },
   {
@@ -33,6 +43,11 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     label: "Marketplace",
     items: [
       { href: adminPath("listings"), label: "Listings", segment: "listings" },
+      {
+        href: adminPath("listings/review"),
+        label: "Bulk Review",
+        segment: "listings/review",
+      },
       { href: adminPath("leads"), label: "Leads", segment: "leads" },
       { href: adminPath("duplicates"), label: "Duplicate Flags", segment: "duplicates" },
       { href: adminPath("expiring-listings"), label: "Expiring Listings", segment: "expiring-listings" },

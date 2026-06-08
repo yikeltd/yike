@@ -120,6 +120,9 @@ export function marketplaceRankAdjustments(
     | "boost_priority"
     | "is_boosted"
     | "boosted_until"
+    | "review_visibility_modifier"
+    | "review_hold_status"
+    | "outcome_evolution_delta"
   >
 ): number {
   let delta = 0;
@@ -145,6 +148,18 @@ export function marketplaceRankAdjustments(
   if (boostActive) {
     delta += 1_500 + (property.boost_level ?? 0) * 400;
     delta += Math.min(property.boost_priority ?? 0, 50) * 20;
+  }
+
+  const visMod = property.review_visibility_modifier ?? 0;
+  if (visMod !== 0) {
+    delta += visMod * 35;
+  }
+  if (property.review_hold_status === "hold") delta -= 800;
+  if (property.review_hold_status === "update_requested") delta -= 400;
+
+  const outcomeDelta = property.outcome_evolution_delta ?? 0;
+  if (outcomeDelta !== 0) {
+    delta += outcomeDelta * 25;
   }
 
   return delta;

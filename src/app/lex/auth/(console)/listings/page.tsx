@@ -47,6 +47,12 @@ export default async function AdminListingsPage({
           Moderate listings
         </h1>
         <p className="text-sm text-muted">{total} in queue</p>
+        <Link
+          href="/lex/auth/listings/review"
+          className="mt-2 inline-block text-sm font-bold text-gold-dark hover:underline"
+        >
+          Open bulk review →
+        </Link>
       </div>
       <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
         {tabs.map((s) => (

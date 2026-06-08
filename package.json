@@ -27,6 +27,8 @@
     "store:capture:tablet-10": "TABLET_SIZE=10 node scripts/capture-play-tablet-screenshots.mjs",
     "store:capture:tablet": "TABLET_SIZE=both node scripts/capture-play-tablet-screenshots.mjs",
     "test:auth": "tsx scripts/test-auth-security.ts",
+    "test:review-memory": "tsx scripts/test-review-memory.ts",
+    "test:outcome-intelligence": "tsx scripts/test-outcome-intelligence.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

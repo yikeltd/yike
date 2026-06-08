@@ -332,6 +332,20 @@ export interface Profile {
   listing_limit_updated_at?: string | null;
   listing_limit_updated_by?: string | null;
   verification_required?: boolean;
+  adaptive_trust_level?: number;
+  adaptive_trust_override?: number | null;
+  verification_escalation_reason?: string | null;
+  verification_escalated_at?: string | null;
+  verification_escalated_by?: string | null;
+  listing_rules_accepted_at?: string | null;
+  bank_name?: string | null;
+  bank_account_number?: string | null;
+  bank_account_resolved_name?: string | null;
+  bank_verified?: boolean;
+  bank_verified_at?: string | null;
+  verification_state?: string;
+  required_verification_tasks?: string[];
+  operational_suspicion_score?: number;
   abuse_review_flag?: boolean;
   abuse_review_reason?: string | null;
   last_active_at?: string | null;
@@ -550,6 +564,18 @@ export interface Property {
   internal_trust_score?: number;
   internal_risk_score?: number;
   internal_trust_status?: string;
+  review_overall_score?: number | null;
+  review_risk_level?: string | null;
+  review_suggested_action?: string | null;
+  review_queue_group?: string | null;
+  review_scores?: Record<string, unknown> | null;
+  review_scores_updated_at?: string | null;
+  review_visibility_modifier?: number;
+  review_hold_status?: string;
+  outcome_score?: number | null;
+  outcome_evolution_delta?: number;
+  outcome_signals?: Record<string, unknown> | null;
+  outcome_updated_at?: string | null;
   value_drivers_status?:
     | "none"
     | "pending_review"
@@ -562,6 +588,71 @@ export interface Property {
   updated_at: string;
   extras?: ListingExtras | null;
   agent?: Profile | null;
+}
+
+export interface AgentOutcomeMemory {
+  agent_id: string;
+  quality_score: number;
+  review_strictness_modifier: number;
+  positive_signal_count: number;
+  negative_signal_count: number;
+  outcome_summary: Record<string, unknown>;
+  last_calculated_at: string | null;
+  updated_at: string;
+}
+
+export interface AreaOutcomeMemory {
+  area_key: string;
+  state: string;
+  city: string | null;
+  area: string | null;
+  fraud_risk_score: number;
+  trust_zone_score: number;
+  pricing_realism_score: number;
+  complaint_rate: number;
+  engagement_rate: number;
+  listing_sample_count: number;
+  outcome_summary: Record<string, unknown>;
+  last_calculated_at: string | null;
+}
+
+export interface ListingReviewMemory {
+  id: string;
+  listing_id: string;
+  agent_id: string | null;
+  decision_type: string;
+  decision_reason: string | null;
+  signals: Record<string, unknown>;
+  property_type: string | null;
+  listing_type: string | null;
+  scores_snapshot: Record<string, unknown> | null;
+  admin_id: string | null;
+  created_at: string;
+}
+
+export interface ListingReviewRequest {
+  id: string;
+  listing_id: string;
+  agent_id: string;
+  request_type: string;
+  message: string;
+  status: "open" | "responded" | "resolved" | "dismissed";
+  requested_by: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  resolution_action: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ListingReviewResponse {
+  id: string;
+  request_id: string;
+  listing_id: string;
+  agent_id: string;
+  response_text: string;
+  evidence_urls: string[];
+  created_at: string;
 }
 
 export interface ListingValueDriver {

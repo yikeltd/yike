@@ -16,6 +16,7 @@ import { ListingLeadRoutingBox } from "@/components/admin/listing-lead-routing-b
 import { AdminPriceHint } from "@/components/admin/admin-price-hint";
 import { AdminListingHistoryTimeline } from "@/components/admin/admin-listing-history-timeline";
 import { AdminValueDriversPanel } from "@/components/admin/admin-value-drivers-panel";
+import { AdminListingReviewPanel } from "@/components/admin/admin-listing-review-panel";
 
 type ListingRow = Property & { agent?: Profile | null };
 
@@ -153,6 +154,7 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
   return (
     <div className="space-y-8 pb-12">
       {pinModal}
+      <AdminListingReviewPanel listingId={listing.id} />
       <AdminPriceHint listing={listing} />
       <ListingLeadRoutingBox
         listingId={listing.id}

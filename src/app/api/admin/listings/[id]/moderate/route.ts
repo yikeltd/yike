@@ -5,7 +5,10 @@ import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recordListingHistoryEvent } from "@/lib/listing-history/record";
-import type { PropertyStatus } from "@/types/database";
+import { saveReviewDecision } from "@/lib/review-memory/memory";
+import { applyReviewTrustImpact } from "@/lib/review-memory/trust-impact";
+import type { ReviewDecisionType } from "@/lib/review-memory/constants";
+import type { Property, PropertyStatus } from "@/types/database";
 
 export const runtime = "nodejs";
 
@@ -58,7 +61,9 @@ export async function POST(req: Request, ctx: RouteCtx) {
 
   const { data: existing } = await admin
     .from("properties")
-    .select("id, title, status, possible_duplicate, moderation_note")
+    .select(
+      "id, title, status, possible_duplicate, moderation_note, agent_id, listing_type, property_type, moderation_flags, price_anomaly_level"
+    )
     .eq("id", id)
     .single();
 
@@ -131,6 +136,32 @@ export async function POST(req: Request, ctx: RouteCtx) {
     publicVisible: false,
     internalNote: body.note?.trim() || null,
   });
+
+  const decisionMap: Partial<Record<ModerateAction, ReviewDecisionType>> = {
+    approve: "approved",
+    reject: "rejected",
+    flag: "held_for_review",
+    hide: "lowered_visibility",
+    request_edits: "requested_update",
+  };
+
+  void saveReviewDecision(admin, {
+    listing: existing as Property,
+    decisionType: decisionMap[body.action] ?? "approved",
+    decisionReason: body.note,
+    adminId: auth.user.id,
+    extraSignals: { moderate_action: body.action },
+  });
+
+  if (existing.agent_id) {
+    void applyReviewTrustImpact(admin, {
+      agentId: existing.agent_id,
+      listingId: id,
+      decisionType: decisionMap[body.action] ?? "approved",
+      adminId: auth.user.id,
+      reason: body.note,
+    });
+  }
 
   return NextResponse.json({ listing: data });
 }

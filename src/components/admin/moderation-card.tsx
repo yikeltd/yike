@@ -69,6 +69,14 @@ export function ModerationCard({
           <p className="mt-0.5 text-xs text-muted">
             {agent?.full_name ?? "Unknown agent"}
           </p>
+          {property.review_overall_score != null && (
+            <p className="mt-1 text-xs font-bold text-navy">
+              Review {property.review_overall_score}/100
+              {property.review_risk_level
+                ? ` · ${property.review_risk_level} risk`
+                : ""}
+            </p>
+          )}
           {flags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {flags.map((flag) => (
