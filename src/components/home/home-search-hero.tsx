@@ -49,7 +49,7 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
   return (
     <div
       id="home-search"
-      className="home-hero-premium full-bleed px-3 pb-6 pt-3 lg:border-b lg:border-navy/10 lg:bg-gradient-to-b lg:from-navy/[0.07] lg:via-navy/[0.03] lg:to-background lg:px-6 lg:py-4 xl:px-8"
+      className="home-hero-premium full-bleed px-3 pb-6 pt-3 lg:px-6 lg:py-4 xl:px-8"
     >
       <div className="mx-auto max-w-7xl">
         <BrowseListingsBlock

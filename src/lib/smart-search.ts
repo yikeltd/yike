@@ -1,7 +1,6 @@
 import type { PropertySearchParams } from "@/lib/properties";
 import type { DiscoverHub } from "@/types/database";
 import { PROPERTY_CATEGORIES } from "@/constants/propertyCategories";
-import { BUDGET_RANGES } from "@/lib/constants";
 import { budgetIndexFromSearchParams } from "@/lib/budget-ranges";
 import {
   normalizeLocationQuery,

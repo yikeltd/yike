@@ -8,7 +8,11 @@ import {
   getStateForCity,
   getStates,
 } from "@/lib/constants";
-import { budgetParamsFromIndex, budgetSelectOptions } from "@/lib/budget-ranges";
+import {
+  budgetHeroSelectOptions,
+  budgetParamsFromIndex,
+  budgetSelectOptions,
+} from "@/lib/budget-ranges";
 import { PROPERTY_TYPES } from "@/constants/propertyCategories";
 import {
   HOME_DEAL_TYPES,
@@ -125,15 +129,15 @@ export function BrowseListingsBlock({
   }
 
   const shellClass = isPremium
-    ? "rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgb(228_181_71_/_12%),0_8px_32px_rgb(2_20_51_/_28%)] ring-1 ring-white/[0.05] lg:border-navy/10 lg:bg-white/95 lg:p-3.5 lg:shadow-sm lg:ring-navy/[0.06] lg:[box-shadow:none]"
+    ? "rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgb(228_181_71_/_12%),0_8px_32px_rgb(2_20_51_/_28%)] ring-1 ring-white/[0.05] lg:p-3.5"
     : "rounded-2xl border border-navy/10 bg-white/95 p-3.5 shadow-sm ring-1 ring-navy/[0.06] dark:border-white/10 dark:bg-elevated dark:ring-white/[0.05]";
 
   const titleClass = isPremium
-    ? "mb-3.5 text-[10px] font-bold uppercase tracking-[0.24em] text-gold lg:mb-3 lg:text-sm lg:normal-case lg:tracking-normal lg:text-navy lg:dark:text-foreground"
+    ? "mb-3.5 text-[10px] font-bold uppercase tracking-[0.24em] text-gold lg:mb-3 lg:text-sm lg:normal-case lg:tracking-normal"
     : "mb-3 text-sm font-bold text-navy dark:text-foreground";
 
   const chipIdle = isPremium
-    ? "border border-white/12 bg-white/[0.07] text-white/85 hover:bg-white/10 lg:border-navy/10 lg:bg-navy/[0.04] lg:text-muted lg:hover:text-foreground"
+    ? "border border-white/12 bg-white/[0.07] text-white/85 hover:bg-white/10"
     : "bg-navy/[0.04] text-muted ring-1 ring-navy/10 hover:text-foreground dark:bg-white/5 dark:ring-white/[0.08]";
 
   const selectVariant = isPremium ? "hero" : "default";
@@ -156,7 +160,7 @@ export function BrowseListingsBlock({
     ...PROPERTY_TYPES.slice(0, 14).map((t) => ({ value: t.value, label: t.label })),
   ];
 
-  const budgetOptions = budgetSelectOptions();
+  const budgetOptions = isPremium ? budgetHeroSelectOptions() : budgetSelectOptions();
 
   return (
     <div className={shellClass}>
@@ -223,6 +227,7 @@ export function BrowseListingsBlock({
           placeholder="Any budget"
           ariaLabel="Budget"
           variant={selectVariant}
+          compactLabel={isPremium}
         />
       </div>
 

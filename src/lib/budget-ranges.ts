@@ -9,6 +9,14 @@ export function budgetSelectOptions() {
   }));
 }
 
+/** Homepage hero — formatted ₦ tiers (trigger placeholder = “Any budget”). */
+export function budgetHeroSelectOptions() {
+  return BUDGET_RANGES.slice(1).map((b, i) => ({
+    value: String(i + 1),
+    label: b.label,
+  }));
+}
+
 /** Map URL min/max query params to a BUDGET_RANGES index. */
 export function budgetIndexFromSearchParams(
   min: string | null | undefined,

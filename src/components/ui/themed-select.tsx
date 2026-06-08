@@ -15,6 +15,7 @@ export function ThemedSelect({
   placeholder,
   ariaLabel,
   variant = "default",
+  compactLabel,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -22,6 +23,8 @@ export function ThemedSelect({
   placeholder: string;
   ariaLabel: string;
   variant?: Variant;
+  /** Tighter typography for currency-style labels (e.g. budget tiers). */
+  compactLabel?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
@@ -41,10 +44,10 @@ export function ThemedSelect({
   const triggerClass =
     variant === "hero"
       ? cn(
-          "flex h-10 w-full items-center justify-between gap-1 rounded-xl border px-3 text-left text-xs font-medium outline-none transition-colors",
+          "flex h-10 w-full items-center justify-between gap-1 rounded-xl border px-3 text-left font-medium outline-none transition-colors",
+          compactLabel ? "text-[11px] sm:text-xs" : "text-xs",
           "border-white/12 bg-[#021433]/90 text-white",
-          "focus-visible:border-gold/40 focus-visible:ring-2 focus-visible:ring-gold/25",
-          "lg:border-navy/10 lg:bg-white lg:text-foreground lg:focus-visible:ring-gold/35"
+          "focus-visible:border-gold/40 focus-visible:ring-2 focus-visible:ring-gold/25"
         )
       : cn(
           "flex h-10 w-full items-center justify-between gap-1 rounded-xl border px-3 text-left text-xs font-medium outline-none transition-colors",
@@ -63,11 +66,13 @@ export function ThemedSelect({
         onClick={() => setOpen(true)}
         className={triggerClass}
       >
-        <span className="min-w-0 truncate">{display}</span>
+        <span className={cn("min-w-0 truncate", compactLabel && "tracking-tight")}>
+          {display}
+        </span>
         <ChevronDown
           className={cn(
             "h-3.5 w-3.5 shrink-0 opacity-70",
-            variant === "hero" && "text-gold lg:text-muted"
+            variant === "hero" && "text-gold"
           )}
           aria-hidden
         />
@@ -118,13 +123,16 @@ export function ThemedSelect({
                         setOpen(false);
                       }}
                       className={cn(
-                        "pressable flex w-full items-center justify-between gap-2 rounded-xl px-3 py-3 text-left text-sm transition-colors",
+                        "pressable flex w-full items-center justify-between gap-2 rounded-xl px-3 text-left transition-colors",
+                        compactLabel ? "py-3.5 text-[13px] sm:text-sm" : "py-3 text-sm",
                         active
                           ? "bg-gold/15 font-bold text-gold"
                           : "text-white/90 hover:bg-white/[0.06]"
                       )}
                     >
-                      <span className="min-w-0">{opt.label}</span>
+                      <span className={cn("min-w-0", compactLabel && "tracking-tight")}>
+                        {opt.label}
+                      </span>
                       {active ? <Check className="h-4 w-4 shrink-0 text-gold" /> : null}
                     </button>
                   </li>
