@@ -20,13 +20,35 @@ const EXT_MIME: Record<string, string> = {
   heif: "image/heif",
 };
 
-/** Resolve MIME from File.type or extension — HEIC included for server-side decode. */
-export function resolveImageMime(file: File): string | null {
-  if (file.type && (ALLOWED_IMAGE_TYPES as readonly string[]).includes(file.type)) {
-    return file.type;
+/** Sniff image format from magic bytes — Android gallery often sends empty MIME. */
+export function sniffImageMime(buffer: Buffer): string | null {
+  if (buffer.length < 12) return null;
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return "image/jpeg";
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e) return "image/png";
+  if (
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45
+  ) {
+    return "image/webp";
+  }
+  return null;
+}
+
+/** Resolve MIME from File.type, extension, or buffer sniff. */
+export function resolveImageMime(file: File, buffer?: Buffer): string | null {
+  const type = file.type?.trim();
+  if (type && type !== "application/octet-stream" && (ALLOWED_IMAGE_TYPES as readonly string[]).includes(type)) {
+    return type;
   }
   const ext = file.name.split(".").pop()?.toLowerCase();
-  return ext ? EXT_MIME[ext] ?? null : null;
+  const fromExt = ext ? EXT_MIME[ext] ?? null : null;
+  if (fromExt) return fromExt;
+  if (buffer) return sniffImageMime(buffer);
+  return type?.startsWith("image/") ? type : null;
 }
 
 export async function readImageUploadBuffer(file: File): Promise<Buffer> {

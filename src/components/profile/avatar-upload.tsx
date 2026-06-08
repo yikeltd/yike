@@ -6,7 +6,6 @@ import { UserAvatar } from "@/components/profile/user-avatar";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
 import { prepareAvatarUpload } from "@/lib/media/prepare-avatar-upload";
 import { friendlyPublicError, UPLOAD_ERROR_FALLBACK } from "@/lib/copy/public-errors";
-import { friendlyStorageError } from "@/lib/media/storage-errors";
 import { cn } from "@/lib/utils";
 
 export function AvatarUpload({
@@ -42,10 +41,15 @@ export function AvatarUpload({
       const form = new FormData();
       form.append("file", prepared);
 
-      const res = await fetch("/api/profile/avatar", { method: "POST", body: form });
+      const res = await fetch("/api/profile/avatar", {
+        method: "POST",
+        body: form,
+        credentials: "same-origin",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(friendlyStorageError((data.error as string) ?? "Upload failed"));
+        const raw = (data.error as string) ?? "Upload failed";
+        setError(friendlyPublicError(raw, UPLOAD_ERROR_FALLBACK));
         return;
       }
       const url = data.avatarUrl as string;
@@ -88,7 +92,7 @@ export function AvatarUpload({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        accept="image/*"
         className="hidden"
         onChange={(e) => void onFileChange(e)}
       />

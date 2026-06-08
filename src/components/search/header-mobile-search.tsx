@@ -144,7 +144,7 @@ export function HeaderMobileSearch({
             }
             if (e.key === "Escape") setOpen(false);
           }}
-          placeholder="2 bed in Aba, self contain Ogbor Hill…"
+          placeholder='Try "Lekki", "Gwarinpa", "2 bed in Yaba"…'
           className={cn(
             "h-9 min-w-0 flex-1 bg-transparent py-0 pr-2 text-sm outline-none",
             isHero

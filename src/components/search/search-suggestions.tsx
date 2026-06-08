@@ -14,24 +14,24 @@ import { cn } from "@/lib/utils";
 
 const PRIMARY_SUGGESTIONS = [
   {
-    label: "Ogbor Hill · Aba",
-    href: "/search?city=Aba&area=Ogbor%20Hill",
+    label: "Lekki · Lagos",
+    href: "/search?city=Lagos&area=Lekki",
+  },
+  {
+    label: "Yaba · Lagos",
+    href: "/search?city=Lagos&area=Yaba",
+  },
+  {
+    label: "Gwarinpa · Abuja",
+    href: "/search?city=Abuja&area=Gwarinpa",
+  },
+  {
+    label: "GRA · Port Harcourt",
+    href: "/search?city=Port%20Harcourt&area=GRA",
   },
   {
     label: "Self contain · Enugu",
     href: "/search?city=Enugu&property_type=self_contain",
-  },
-  {
-    label: "Shops · Ariaria",
-    href: "/search?city=Aba&area=Ariaria&property_type=shop",
-  },
-  {
-    label: "New Haven · Enugu",
-    href: "/search?city=Enugu&area=New%20Haven",
-  },
-  {
-    label: "Lekki · Lagos",
-    href: "/search?city=Lagos&area=Lekki",
   },
 ] as const;
 

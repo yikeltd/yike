@@ -176,16 +176,16 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           <Link
-            href="/search?city=Aba&area=Ogbor%20Hill"
+            href="/search?city=Lagos&area=Lekki"
             className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white"
           >
-            Ogbor Hill
+            Lekki
           </Link>
           <Link
-            href="/search?city=Enugu"
+            href="/search?city=Abuja&area=Gwarinpa"
             className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white"
           >
-            Enugu
+            Gwarinpa
           </Link>
           <Link
             href="/search?listingType=rent"
