@@ -10,6 +10,7 @@
     "generate:crew-twa": "node scripts/generate-crew-twa-assets.mjs",
     "store:assets": "node scripts/generate-store-assets.mjs",
     "twa:init": "cd twa && npx @bubblewrap/cli init --manifest=https://yike.ng/manifest.json",
+    "twa:build": "bash twa/build-release.sh",
     "twa-staff:init": "cd twa-staff && npx @bubblewrap/cli init --manifest=https://yike.ng/staff/manifest.json",
     "twa-staff:build": "npm run generate:crew-twa && bash twa-staff/build-release.sh",
     "heroes:generate": "node scripts/generate-hero-images.mjs",

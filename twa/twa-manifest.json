@@ -3,7 +3,7 @@
   "host": "yike.ng",
   "name": "Yike",
   "launcherName": "Yike",
-  "display": "standalone",
+  "display": "fullscreen",
   "themeColor": "#031B4E",
   "themeColorDark": "#031B4E",
   "navigationColor": "#031B4E",
@@ -21,8 +21,8 @@
     "path": "./android.keystore",
     "alias": "yike"
   },
-  "appVersionName": "1.0.4",
-  "appVersionCode": 5,
+  "appVersionName": "1.0.5",
+  "appVersionCode": 6,
   "shortcuts": [
     {
       "name": "Swipe homes",
@@ -60,6 +60,6 @@
   "protocolHandlers": [],
   "fileHandlers": [],
   "launchHandlerClientMode": "",
-  "displayOverride": [],
-  "appVersion": "1.0.4"
+  "displayOverride": ["fullscreen", "standalone"],
+  "appVersion": "1.0.5"
 }
