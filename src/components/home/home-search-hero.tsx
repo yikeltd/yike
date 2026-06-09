@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { getStateForCity } from "@/lib/constants";
-import { budgetIndexFromSearchParams } from "@/lib/budget-ranges";
+import { budgetValueFromSearchParams } from "@/lib/budget-ranges";
 import { chipKeyFromParams, type Initial } from "@/lib/home-search-params";
 import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { addRecentSearch } from "@/lib/search-recent";
@@ -39,14 +39,14 @@ export function HomeSearchHero({
       (city ? getStateForCity(city) ?? "" : "");
     const min = searchParams.get("min") ?? initial?.min;
     const max = searchParams.get("max") ?? initial?.max;
-    const budgetIndex = String(budgetIndexFromSearchParams(min, max));
+    const budgetValue = budgetValueFromSearchParams(min, max);
     return {
       dealKey: chipKeyFromParams({ type, hub, propertyType: pt }),
       state,
       city,
       area,
       propertyType: pt === "shop" ? "" : pt,
-      budgetIndex,
+      budgetValue,
     };
   }, [searchParams, initial]);
 

@@ -1,13 +1,19 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import {
-  BUDGET_RANGES,
   getAreasForSearchCity,
   LISTING_TYPES,
   POPULAR_CITIES,
 } from "@/lib/constants";
+import {
+  budgetContextFromSearchParams,
+  budgetLabelFromValue,
+  budgetNativeSelectOptions,
+  budgetParamsFromValue,
+  budgetValueMatchesContext,
+} from "@/lib/budget-ranges";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -18,7 +24,13 @@ export function SearchForm({ compact }: { compact?: boolean }) {
   const [listingType, setListingType] = useState("rent");
   const [city, setCity] = useState("");
   const [area, setArea] = useState("");
-  const [budget, setBudget] = useState("0");
+  const [budget, setBudget] = useState("");
+
+  const budgetContext = budgetContextFromSearchParams({ type: listingType });
+  const budgetOptions = useMemo(
+    () => budgetNativeSelectOptions(budgetContext),
+    [budgetContext]
+  );
 
   const areas = city ? getAreasForSearchCity(city) : [];
 
@@ -28,14 +40,14 @@ export function SearchForm({ compact }: { compact?: boolean }) {
     params.set("type", listingType);
     if (city) params.set("city", city);
     if (area) params.set("area", area);
-    const range = BUDGET_RANGES[Number(budget)];
-    if (range?.min) params.set("min", String(range.min));
-    if (range?.max) params.set("max", String(range.max));
+    const { min, max } = budgetParamsFromValue(budget);
+    if (min) params.set("min", min);
+    if (max) params.set("max", max);
     trackEvent("search", {
       city: city || undefined,
       area: area || undefined,
       listing_type: listingType,
-      budget: range?.label,
+      budget: budgetLabelFromValue(budget, budgetContext) ?? undefined,
     });
     router.push(`/search?${params.toString()}`);
   }
@@ -57,7 +69,15 @@ export function SearchForm({ compact }: { compact?: boolean }) {
           <button
             key={t.value}
             type="button"
-            onClick={() => setListingType(t.value)}
+            onClick={() => {
+              const nextContext = budgetContextFromSearchParams({
+                type: t.value,
+              });
+              setListingType(t.value);
+              if (!budgetValueMatchesContext(budget, nextContext)) {
+                setBudget("");
+              }
+            }}
             className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors ${
               listingType === t.value
                 ? "bg-gold text-navy font-semibold shadow-sm"
@@ -106,8 +126,8 @@ export function SearchForm({ compact }: { compact?: boolean }) {
         onChange={(e) => setBudget(e.target.value)}
         aria-label="Budget"
       >
-        {BUDGET_RANGES.map((b, i) => (
-          <option key={b.label} value={i}>
+        {budgetOptions.map((b) => (
+          <option key={b.value || "any"} value={b.value}>
             {b.label}
           </option>
         ))}

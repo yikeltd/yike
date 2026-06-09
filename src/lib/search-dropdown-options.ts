@@ -5,7 +5,6 @@ import {
   getStateDisplayLabel,
   getStates,
 } from "@/lib/constants";
-import { BUDGET_RANGES } from "@/lib/budget-ranges";
 import type { ThemedSelectOption } from "@/components/ui/themed-select";
 
 /** Static ranking — swap for API-driven scores later (trending, recents, geo). */
@@ -41,14 +40,6 @@ const POPULAR_PROPERTY_TYPES: { value: string; label: string }[] = [
   { value: "self_contain", label: "Self Contain" },
   { value: "shop", label: "Shop" },
 ];
-
-/** BUDGET_RANGES indices surfaced first in pickers. */
-const POPULAR_BUDGET_INDICES = [2, 3, 4, 5, 6] as const;
-
-const POPULAR_BUDGET_LABELS: Partial<Record<number, string>> = {
-  2: "Under ₦1M",
-  6: "₦10M+",
-};
 
 function prioritizeStrings(
   popularOrder: readonly string[],
@@ -156,45 +147,4 @@ export function buildPropertyTypeSelectOptions(): ThemedSelectOption[] {
     POPULAR_PROPERTY_TYPES,
     all
   );
-}
-
-function buildBudgetGroupedOptions(
-  includeAny: boolean
-): ThemedSelectOption[] {
-  const ranges = includeAny ? BUDGET_RANGES : BUDGET_RANGES.slice(1);
-  const indexOffset = includeAny ? 0 : 1;
-
-  const all = ranges.map((b, i) => {
-    const idx = i + indexOffset;
-    return {
-      value: String(idx),
-      label: b.label,
-    };
-  });
-
-  const popular = POPULAR_BUDGET_INDICES.filter((idx) =>
-    ranges.some((_, i) => i + indexOffset === idx)
-  ).map((idx) => ({
-    value: String(idx),
-    label: POPULAR_BUDGET_LABELS[idx] ?? BUDGET_RANGES[idx]?.label ?? "",
-  }));
-
-  return buildGroupedOptions(
-    "Any budget",
-    "Popular budgets",
-    "All budgets",
-    popular,
-    all,
-    { includePlaceholder: includeAny }
-  );
-}
-
-/** Search page / refine filters — index 0 = any budget. */
-export function buildBudgetSelectOptions(): ThemedSelectOption[] {
-  return buildBudgetGroupedOptions(true);
-}
-
-/** Homepage hero — no “any budget” row; values still map to BUDGET_RANGES indices. */
-export function buildBudgetHeroSelectOptions(): ThemedSelectOption[] {
-  return buildBudgetGroupedOptions(false);
 }

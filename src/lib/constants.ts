@@ -45,19 +45,7 @@ export const PAYMENT_PERIODS = [
   { value: "total", label: "Total Price" },
 ] as const;
 
-export const BUDGET_RANGES = [
-  { label: "Any budget", min: 0, max: null },
-  { label: "Under ₦500k/yr", min: 0, max: 500_000 },
-  { label: "₦500k – ₦1m", min: 500_000, max: 1_000_000 },
-  { label: "₦1m – ₦3m", min: 1_000_000, max: 3_000_000 },
-  { label: "₦3m – ₦5m", min: 3_000_000, max: 5_000_000 },
-  { label: "₦5m – ₦10m", min: 5_000_000, max: 10_000_000 },
-  { label: "₦10m – ₦20m", min: 10_000_000, max: 20_000_000 },
-  { label: "₦20m – ₦50m", min: 20_000_000, max: 50_000_000 },
-  { label: "₦50m – ₦100m", min: 50_000_000, max: 100_000_000 },
-  { label: "₦100m – ₦500m", min: 100_000_000, max: 500_000_000 },
-  { label: "₦500m+", min: 500_000_000, max: null },
-] as const;
+export { RENT_BUDGET_RANGES as BUDGET_RANGES } from "@/lib/budget-ranges";
 
 export const NIGERIAN_STATES = [
   "Abia",

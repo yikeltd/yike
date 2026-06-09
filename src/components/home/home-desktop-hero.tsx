@@ -49,7 +49,7 @@ type HomeDesktopHeroProps = {
     city: string;
     area: string;
     propertyType: string;
-    budgetIndex: string;
+    budgetValue: string;
   };
   trustedAgents: HeroTrustedAgentsConfig;
   onSearch: (payload: BrowseSearchPayload) => void;
@@ -130,7 +130,7 @@ export function HomeDesktopHero({
                 browseInitial.city +
                 browseInitial.area +
                 browseInitial.propertyType +
-                browseInitial.budgetIndex
+                browseInitial.budgetValue
               }
               variant="home-desktop-panel"
               initial={browseInitial}

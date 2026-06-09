@@ -4,11 +4,12 @@ import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getStateForCity } from "@/lib/constants";
 import {
-  budgetIndexFromSearchParams,
-  budgetParamsFromIndex,
+  budgetContextFromSearchParams,
+  budgetParamsFromValue,
+  budgetValueFromSearchParams,
+  buildBudgetSelectOptions,
 } from "@/lib/budget-ranges";
 import {
-  buildBudgetSelectOptions,
   buildCitySelectOptions,
   buildPropertyTypeSelectOptions,
   buildStateSelectOptions,
@@ -27,8 +28,17 @@ export function SearchRefineFilters({ className }: { className?: string }) {
   const verified = sp.get("verified") === "1";
   const featured = sp.get("featured") === "1";
 
-  const budgetIndex = useMemo(
-    () => String(budgetIndexFromSearchParams(sp.get("min"), sp.get("max"))),
+  const budgetContext = useMemo(
+    () =>
+      budgetContextFromSearchParams({
+        type: sp.get("type"),
+        hub: sp.get("hub"),
+      }),
+    [sp]
+  );
+
+  const budgetValue = useMemo(
+    () => budgetValueFromSearchParams(sp.get("min"), sp.get("max")),
     [sp]
   );
 
@@ -41,7 +51,10 @@ export function SearchRefineFilters({ className }: { className?: string }) {
     () => buildPropertyTypeSelectOptions(),
     []
   );
-  const budgetOptions = useMemo(() => buildBudgetSelectOptions(), []);
+  const budgetOptions = useMemo(
+    () => buildBudgetSelectOptions(budgetContext),
+    [budgetContext]
+  );
 
   function push(updates: Record<string, string | null>) {
     const params = new URLSearchParams(sp.toString());
@@ -101,14 +114,15 @@ export function SearchRefineFilters({ className }: { className?: string }) {
         />
       </div>
       <ThemedSelect
-        value={budgetIndex}
+        value={budgetValue}
         onChange={(value) => {
-          const { min, max } = budgetParamsFromIndex(Number(value));
+          const { min, max } = budgetParamsFromValue(value);
           push({ min, max });
         }}
         options={budgetOptions}
         placeholder="Any budget"
         ariaLabel="Budget"
+        compactLabel
       />
 
       <div className="col-span-2 flex gap-2">

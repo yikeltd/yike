@@ -2,10 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { getStateForCity } from "@/lib/constants";
-import { budgetParamsFromIndex } from "@/lib/budget-ranges";
 import {
+  budgetContextFromDealKey,
+  budgetParamsFromIndex,
+  budgetParamsFromValue,
+  budgetValueMatchesContext,
   buildBudgetHeroSelectOptions,
   buildBudgetSelectOptions,
+  encodeBudgetValue,
+} from "@/lib/budget-ranges";
+import {
   buildCitySelectOptions,
   buildPropertyTypeSelectOptions,
   buildStateSelectOptions,
@@ -47,6 +53,8 @@ export type BrowseListingsInitial = {
   city?: string;
   area?: string;
   propertyType?: string;
+  budgetValue?: string;
+  /** @deprecated use budgetValue */
   budgetIndex?: string;
   locationQuery?: string;
 };
@@ -69,10 +77,22 @@ export function BrowseListingsBlock({
   const [city, setCity] = useState(initial?.city ?? "");
   const [area] = useState(initial?.area ?? "");
   const [propertyType, setPropertyType] = useState(initial?.propertyType ?? "");
-  const [budget, setBudget] = useState(initial?.budgetIndex ?? "0");
+  const [budget, setBudget] = useState(() => {
+    if (initial?.budgetValue) return initial.budgetValue;
+    if (initial?.budgetIndex && initial.budgetIndex !== "0") {
+      const { min, max } = budgetParamsFromIndex(Number(initial.budgetIndex));
+      return encodeBudgetValue(
+        min ? Number(min) : null,
+        max ? Number(max) : null
+      );
+    }
+    return "";
+  });
+
+  const budgetContext = budgetContextFromDealKey(dealKey);
 
   const hasFilterSelection = Boolean(
-    dealKey || state || city || area || propertyType || budget !== "0"
+    dealKey || state || city || area || propertyType || budget
   );
 
   function buildParams(overrides?: {
@@ -81,7 +101,7 @@ export function BrowseListingsBlock({
     city?: string;
     area?: string;
     propertyType?: string;
-    budgetIndex?: string;
+    budgetValue?: string;
   }): BrowseSearchPayload {
     const chip = resolveChip(overrides?.dealKey ?? dealKey);
     const filter = chipToFilterParams(chip);
@@ -90,7 +110,7 @@ export function BrowseListingsBlock({
     const searchArea = (overrides?.area ?? area).trim();
     const searchPropertyType =
       overrides?.propertyType ?? (propertyType || filter.property_type);
-    const budgetIndex = overrides?.budgetIndex ?? budget;
+    const budgetValue = overrides?.budgetValue ?? budget;
 
     const params = new URLSearchParams();
     if (filter.type) params.set("type", filter.type);
@@ -102,9 +122,7 @@ export function BrowseListingsBlock({
     if (searchCity) params.set("city", searchCity);
     if (searchArea) params.set("area", searchArea);
 
-    const { min: budgetMin, max: budgetMax } = budgetParamsFromIndex(
-      Number(budgetIndex)
-    );
+    const { min: budgetMin, max: budgetMax } = budgetParamsFromValue(budgetValue);
     if (budgetMin) params.set("min", budgetMin);
     if (budgetMax) params.set("max", budgetMax);
 
@@ -150,8 +168,10 @@ export function BrowseListingsBlock({
   );
   const budgetOptions = useMemo(
     () =>
-      isPremium ? buildBudgetHeroSelectOptions() : buildBudgetSelectOptions(),
-    [isPremium]
+      isPremium
+        ? buildBudgetHeroSelectOptions(budgetContext)
+        : buildBudgetSelectOptions(budgetContext),
+    [isPremium, budgetContext]
   );
 
   return (
@@ -173,7 +193,13 @@ export function BrowseListingsBlock({
             <button
               key={t.label}
               type="button"
-              onClick={() => setDealKey(key)}
+              onClick={() => {
+                const nextContext = budgetContextFromDealKey(key);
+                setDealKey(key);
+                if (!budgetValueMatchesContext(budget, nextContext)) {
+                  setBudget("");
+                }
+              }}
               className={cn(
                 "pressable min-w-0 rounded-full px-2 py-2 text-center text-[11px] font-bold leading-tight transition-all duration-200 sm:text-xs lg:shrink-0 lg:px-4 lg:py-2.5 lg:text-sm",
                 active

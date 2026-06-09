@@ -11,7 +11,7 @@ type HomeMobileHeroProps = {
     city: string;
     area: string;
     propertyType: string;
-    budgetIndex: string;
+    budgetValue: string;
   };
   onSearch: (payload: BrowseSearchPayload) => void;
 };
@@ -30,7 +30,7 @@ export function HomeMobileHero({ browseInitial, onSearch }: HomeMobileHeroProps)
             browseInitial.city +
             browseInitial.area +
             browseInitial.propertyType +
-            browseInitial.budgetIndex
+            browseInitial.budgetValue
           }
           variant="home-premium"
           initial={browseInitial}

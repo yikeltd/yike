@@ -3,7 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAreasForSearchCity } from "@/lib/constants";
-import { BUDGET_RANGES, budgetParamsFromIndex } from "@/lib/budget-ranges";
+import {
+  budgetContextFromDealKey,
+  budgetLabelFromValue,
+  budgetParamsFromValue,
+  budgetValueMatchesContext,
+  buildBudgetSelectOptions,
+} from "@/lib/budget-ranges";
 import { getAllCitiesForState } from "@/constants/nigeriaAllCities";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { SEARCH_DEAL_TYPES, findDealChip } from "@/constants/listingTypes";
@@ -16,7 +22,6 @@ import {
 import { parseLocationQuery } from "@/lib/location-search";
 import { LocationCombobox } from "./location-combobox";
 import { ThemedSelect } from "@/components/ui/themed-select";
-import { buildBudgetSelectOptions } from "@/lib/search-dropdown-options";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
 import { TrendingUp, Clock, ChevronDown, SlidersHorizontal } from "lucide-react";
@@ -35,7 +40,7 @@ export function SearchExperience({
   const [searchState, setSearchState] = useState("");
   const [city, setCity] = useState(initialCity ?? "");
   const [area, setArea] = useState(initialArea ?? "");
-  const [budget, setBudget] = useState("0");
+  const [budget, setBudget] = useState("");
   const [smartQuery, setSmartQuery] = useState("");
   const [recent, setRecent] = useState<RecentSearch[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(
@@ -44,6 +49,10 @@ export function SearchExperience({
 
   const cityOptions = searchState ? getAllCitiesForState(searchState) : [];
   const areas = city ? getAreasForSearchCity(city) : [];
+  const budgetContext = budgetContextFromDealKey(
+    listingType === "land" ? "land" : listingType || ""
+  );
+  const budgetOptions = buildBudgetSelectOptions(budgetContext);
 
   useEffect(() => {
     setRecent(getRecentSearches());
@@ -71,7 +80,7 @@ export function SearchExperience({
     if (searchState) params.set("state", searchState);
     if (searchCity) params.set("city", searchCity);
     if (searchArea) params.set("area", searchArea);
-    const { min: budgetMin, max: budgetMax } = budgetParamsFromIndex(Number(budget));
+    const { min: budgetMin, max: budgetMax } = budgetParamsFromValue(budget);
     if (budgetMin) params.set("min", budgetMin);
     if (budgetMax) params.set("max", budgetMax);
     return params;
@@ -89,7 +98,7 @@ export function SearchExperience({
       city: (override?.city ?? city) || undefined,
       area: (override?.area ?? area) || undefined,
       listing_type: listingType || undefined,
-      budget: BUDGET_RANGES[Number(budget)]?.label,
+      budget: budgetLabelFromValue(budget, budgetContext) ?? undefined,
     });
     router.push(href);
   }
@@ -114,7 +123,7 @@ export function SearchExperience({
     if (parsed.area) params.set("area", parsed.area);
     if (parsed.bedrooms) params.set("beds", String(parsed.bedrooms));
     if (!parsed.city && !parsed.area && !parsed.state) params.set("q", smartQuery);
-    const { min: budgetMin, max: budgetMax } = budgetParamsFromIndex(Number(budget));
+    const { min: budgetMin, max: budgetMax } = budgetParamsFromValue(budget);
     if (budgetMin) params.set("min", budgetMin);
     if (budgetMax) params.set("max", budgetMax);
     const href = `/search?${params.toString()}`;
@@ -182,7 +191,15 @@ export function SearchExperience({
               <button
                 key={t.label}
                 type="button"
-                onClick={() => setListingType(chipValue)}
+                onClick={() => {
+                  const nextContext = budgetContextFromDealKey(
+                    chipValue === "land" ? "land" : chipValue || ""
+                  );
+                  setListingType(chipValue);
+                  if (!budgetValueMatchesContext(budget, nextContext)) {
+                    setBudget("");
+                  }
+                }}
                 className={cn(
                   "pressable shrink-0 rounded-full px-4 py-2.5 text-sm font-bold transition-all duration-200",
                   listingType === chipValue
@@ -250,7 +267,7 @@ export function SearchExperience({
             <ThemedSelect
               value={budget}
               onChange={setBudget}
-              options={buildBudgetSelectOptions()}
+              options={budgetOptions}
               placeholder="Any budget"
               ariaLabel="Budget"
             />

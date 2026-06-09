@@ -1,13 +1,18 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import {
-  BUDGET_RANGES,
   getAreasForSearchCity,
   getAllCities,
   POPULAR_CITIES,
 } from "@/lib/constants";
+import {
+  budgetContextFromDealKey,
+  budgetNativeSelectOptions,
+  budgetParamsFromValue,
+  budgetValueMatchesContext,
+} from "@/lib/budget-ranges";
 import {
   SEARCH_DEAL_TYPES,
   chipToFilterParams,
@@ -31,9 +36,17 @@ export function SearchPanel({
   const [listingType, setListingType] = useState(defaultListingType);
   const [city, setCity] = useState("");
   const [area, setArea] = useState("");
-  const [budget, setBudget] = useState("0");
+  const [budget, setBudget] = useState("");
   const areas = city ? getAreasForSearchCity(city) : [];
   const cityOptions = variant === "hero" || variant === "inline" ? getAllCities() : [...POPULAR_CITIES];
+
+  const budgetContext = budgetContextFromDealKey(
+    listingType === "land" ? "land" : listingType || ""
+  );
+  const budgetOptions = useMemo(
+    () => budgetNativeSelectOptions(budgetContext),
+    [budgetContext]
+  );
 
   function search() {
     const params = new URLSearchParams();
@@ -53,9 +66,9 @@ export function SearchPanel({
     }
     if (city) params.set("city", city);
     if (area) params.set("area", area);
-    const range = BUDGET_RANGES[Number(budget)];
-    if (range?.min) params.set("min", String(range.min));
-    if (range?.max) params.set("max", String(range.max));
+    const { min, max } = budgetParamsFromValue(budget);
+    if (min) params.set("min", min);
+    if (max) params.set("max", max);
     router.push(`/search?${params.toString()}`);
   }
 
@@ -96,7 +109,15 @@ export function SearchPanel({
           <button
             key={t.label}
             type="button"
-            onClick={() => setListingType(chipValue)}
+            onClick={() => {
+              const nextContext = budgetContextFromDealKey(
+                chipValue === "land" ? "land" : chipValue || ""
+              );
+              setListingType(chipValue);
+              if (!budgetValueMatchesContext(budget, nextContext)) {
+                setBudget("");
+              }
+            }}
             className={cn(
               "pressable shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition-all lg:py-3",
               listingType === chipValue
@@ -158,8 +179,8 @@ export function SearchPanel({
           onChange={(e) => setBudget(e.target.value)}
           className="h-12 rounded-xl bg-surface px-4 text-sm text-foreground outline-none focus:ring-2 focus:ring-gold/40 lg:h-14"
         >
-          {BUDGET_RANGES.map((b, i) => (
-            <option key={b.label} value={i}>
+          {budgetOptions.map((b) => (
+            <option key={b.value || "any"} value={b.value}>
               {b.label}
             </option>
           ))}
