@@ -1,0 +1,86 @@
+"use client";
+
+import type { ListingTypeValue } from "@/constants/listingTypes";
+import { FieldLabel } from "@/components/ui/field-label";
+import { Input } from "@/components/ui/input";
+import { NairaInput } from "@/components/ui/naira-input";
+
+type Props = {
+  listingType: ListingTypeValue;
+  values: Record<string, string>;
+  onValueChange: (key: string, value: string) => void;
+};
+
+export function ListingInlineFees({ listingType, values, onValueChange }: Props) {
+  if (listingType === "shortlet") {
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        <NairaInput
+          label="Cleaning fee"
+          value={values.cleaning_fee ?? ""}
+          onChange={(v) => onValueChange("cleaning_fee", v)}
+        />
+        <NairaInput
+          label="Caution deposit"
+          value={values.caution_deposit ?? ""}
+          onChange={(v) => onValueChange("caution_deposit", v)}
+        />
+      </div>
+    );
+  }
+
+  if (listingType === "sale") {
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        <NairaInput
+          label="Legal fee"
+          value={values.legal_fee ?? ""}
+          onChange={(v) => onValueChange("legal_fee", v)}
+        />
+        <NairaInput
+          label="Agency fee"
+          value={values.agency_fee ?? ""}
+          onChange={(v) => onValueChange("agency_fee", v)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <NairaInput
+        label="Agency fee"
+        value={values.agency_fee ?? ""}
+        onChange={(v) => onValueChange("agency_fee", v)}
+      />
+      <NairaInput
+        label="Legal fee"
+        value={values.legal_fee ?? ""}
+        onChange={(v) => onValueChange("legal_fee", v)}
+      />
+      <NairaInput
+        label="Agreement fee"
+        value={values.agreement_fee ?? ""}
+        onChange={(v) => onValueChange("agreement_fee", v)}
+      />
+      <NairaInput
+        label="Service charge"
+        value={values.service_charge ?? ""}
+        onChange={(v) => onValueChange("service_charge", v)}
+      />
+      <div>
+        <FieldLabel>Caution (months)</FieldLabel>
+        <Input
+          value={values.caution_fee ?? ""}
+          onChange={(e) => onValueChange("caution_fee", e.target.value.replace(/\D/g, ""))}
+          inputMode="numeric"
+        />
+      </div>
+      <NairaInput
+        label="Commission"
+        value={values.commission ?? ""}
+        onChange={(v) => onValueChange("commission", v)}
+      />
+    </div>
+  );
+}

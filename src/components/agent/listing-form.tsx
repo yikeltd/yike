@@ -12,10 +12,8 @@ import {
 import { ListingPropertyTypePicker } from "./listing-property-type-picker";
 import { ListingLocationSearch } from "./listing-location-search";
 import { ListingAmenitiesPicker } from "./listing-amenities-picker";
-import {
-  ListingTransparencyFields,
-  transparencyToExtras,
-} from "./listing-transparency-fields";
+import { transparencyToExtras } from "./listing-transparency-fields";
+import { ListingInlineFees } from "./listing-inline-fees";
 import { MIN_LISTING_IMAGES, PAYMENT_PERIODS } from "@/lib/constants";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
 import {
@@ -24,7 +22,9 @@ import {
   type ListingTypeValue,
 } from "@/constants/listingTypes";
 import { Button } from "@/components/ui/button";
+import { FieldLabel } from "@/components/ui/field-label";
 import { Input, Select, Textarea } from "@/components/ui/input";
+import { NairaInput } from "@/components/ui/naira-input";
 import { SubmitOverlay } from "@/components/ui/submit-overlay";
 import {
   HumanVerifyField,
@@ -60,6 +60,7 @@ import {
   showRoomFields,
 } from "@/lib/listing-field-rules";
 import { cn } from "@/lib/utils";
+import { parseNairaAmount } from "@/lib/naira-input";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const STEPS = [
@@ -320,8 +321,8 @@ export function ListingForm({
       if (!propertyType) return "Choose a property type.";
     }
     if (n === 3) {
-      const p = Number(price);
-      if (!p || p <= 0) return "Enter a real price in ₦.";
+      const p = parseNairaAmount(price);
+      if (!p) return "Enter a real price in ₦.";
     }
     if (n === 4) {
       if (!city.trim()) return "Pick a city or area from search.";
@@ -466,7 +467,7 @@ export function ListingForm({
       return;
     }
 
-    const priceNum = Number(price);
+    const priceNum = parseNairaAmount(price) ?? 0;
     const persisted = readyPhotoItems(mediaItems).map(stripListingPhotoForPersist);
     const media_items = sortMediaItemsForStory(dedupeMediaItems(persisted));
     const media_urls = mediaItemsToUrls(media_items);
@@ -668,12 +669,6 @@ export function ListingForm({
       <p className="mb-2 text-xs font-semibold text-muted">
         Step {step} of 6 · {STEPS[step - 1].title}
       </p>
-      {!isEdit ? (
-        <p className="mb-4 rounded-xl bg-surface/70 px-3 py-2 text-xs text-muted">
-          Add what you know now — you can update later. Optional sections can be
-          skipped.
-        </p>
-      ) : null}
 
       <form ref={formRef} onSubmit={handleSubmit} className="listing-form-pad space-y-5">
         {step === 1 && (
@@ -754,49 +749,65 @@ export function ListingForm({
 
         {step === 3 && (
           <section className="space-y-4">
-            <Input
+            <NairaInput
+              label="Price (₦)"
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              type="number"
-              min={1}
-              inputMode="numeric"
-              placeholder="Price in ₦"
+              onChange={setPrice}
               required
             />
-            <Select
-              value={paymentPeriod}
-              onChange={(e) => setPaymentPeriod(e.target.value)}
-            >
-              {PAYMENT_PERIODS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </Select>
+            <div>
+              <FieldLabel>Payment period</FieldLabel>
+              <Select
+                value={paymentPeriod}
+                onChange={(e) => setPaymentPeriod(e.target.value)}
+              >
+                {PAYMENT_PERIODS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
             {showRooms ? (
               <div className="grid grid-cols-3 gap-2">
-                <Input
-                  value={bedrooms}
-                  onChange={(e) => setBedrooms(e.target.value)}
-                  type="number"
-                  min={0}
-                  placeholder="Beds"
-                />
-                <Input
-                  value={bathrooms}
-                  onChange={(e) => setBathrooms(e.target.value)}
-                  type="number"
-                  min={0}
-                  placeholder="Baths"
-                />
-                <Input
-                  value={toilets}
-                  onChange={(e) => setToilets(e.target.value)}
-                  type="number"
-                  min={0}
-                  placeholder="Toilets"
-                />
+                <div>
+                  <FieldLabel>Beds</FieldLabel>
+                  <Input
+                    value={bedrooms}
+                    onChange={(e) => setBedrooms(e.target.value)}
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Baths</FieldLabel>
+                  <Input
+                    value={bathrooms}
+                    onChange={(e) => setBathrooms(e.target.value)}
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Toilets</FieldLabel>
+                  <Input
+                    value={toilets}
+                    onChange={(e) => setToilets(e.target.value)}
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                  />
+                </div>
               </div>
+            ) : null}
+            {parseNairaAmount(price) ? (
+              <ListingInlineFees
+                listingType={listingType}
+                values={feeValues}
+                onValueChange={(k, v) => setFeeValues((prev) => ({ ...prev, [k]: v }))}
+              />
             ) : null}
           </section>
         )}
@@ -834,28 +845,6 @@ export function ListingForm({
                   propertyType={propertyType}
                   selected={amenities}
                   onChange={setAmenities}
-                />
-              </div>
-            </details>
-
-            <details className="rounded-xl border border-navy/10 bg-surface/40">
-              <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
-                {listingType === "rent" || listingType === "lease"
-                  ? "Rent fees (optional)"
-                  : "Fees (optional)"}
-              </summary>
-              <div className="border-t border-navy/8 px-3 pb-3 pt-2">
-                <ListingTransparencyFields
-                  listingType={listingType}
-                  values={feeValues}
-                  modes={feeModes}
-                  initial={initial?.extras}
-                  onValueChange={(k, v) =>
-                    setFeeValues((prev) => ({ ...prev, [k]: v }))
-                  }
-                  onModeChange={(k, m) =>
-                    setFeeModes((prev) => ({ ...prev, [k]: m }))
-                  }
                 />
               </div>
             </details>

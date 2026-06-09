@@ -37,10 +37,6 @@ export default async function NewListingPage() {
     <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">
       <div>
         <h1 className="text-xl font-bold text-navy lg:text-2xl">New listing</h1>
-        <p className="mt-1 text-sm text-muted">
-          Add what you know now — optional details can wait. Your progress saves
-          automatically.
-        </p>
         {limit !== null && (
           <p className="mt-2 text-xs text-muted">
             {activeCount} of {limit} listing slots used

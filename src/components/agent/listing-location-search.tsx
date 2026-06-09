@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { searchLocations } from "@/lib/location-search";
 import { getStateDisplayLabel } from "@/lib/constants";
+import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 
 export function ListingLocationSearch({
   state,
@@ -25,9 +25,9 @@ export function ListingLocationSearch({
   initialLandmark?: string | null;
   initialAddressHint?: string | null;
 }) {
-  const [query, setQuery] = useState(
-    [area, city].filter(Boolean).join(", ") || city || ""
-  );
+  const hasSelection = Boolean(state && city);
+  const [searchOpen, setSearchOpen] = useState(!hasSelection);
+  const [query, setQuery] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(Boolean(state && !city));
 
   const suggestions = useMemo(
@@ -39,7 +39,16 @@ export function ListingLocationSearch({
     onStateChange(match.state);
     onCityChange(match.city);
     onAreaChange(match.type === "area" ? match.area : match.city);
-    setQuery(match.label);
+    setQuery("");
+    setSearchOpen(false);
+  }
+
+  function clearSelection() {
+    onStateChange("");
+    onCityChange("");
+    onAreaChange("");
+    setQuery("");
+    setSearchOpen(true);
   }
 
   return (
@@ -48,55 +57,61 @@ export function ListingLocationSearch({
       <input type="hidden" name="city" value={city} />
       <input type="hidden" name="area" value={area} />
 
-      <div className="relative">
-        <Input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            if (!e.target.value.trim()) {
-              onCityChange("");
-              onAreaChange("");
-            }
-          }}
-          placeholder="Type city, area, estate, or LGA — e.g. Lekki Phase 1, Wuse 2"
-          autoComplete="off"
-        />
-        {suggestions.length > 0 && query.trim().length >= 2 ? (
-          <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-navy/10 bg-white py-1 shadow-float-lg">
-            {suggestions.map((s) => (
-              <li key={`${s.label}-${s.type}`}>
-                <button
-                  type="button"
-                  className="pressable w-full px-3 py-2.5 text-left text-sm text-navy hover:bg-gold/10"
-                  onClick={() => applyMatch(s)}
-                >
-                  {s.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
-
-      {(state || city) && (
-        <div className="flex flex-wrap gap-1.5">
-          {state ? (
-            <span className="rounded-full bg-navy/8 px-2.5 py-1 text-[11px] font-semibold text-navy">
-              {getStateDisplayLabel(state)}
-            </span>
-          ) : null}
-          {city ? (
-            <span className="rounded-full bg-navy/8 px-2.5 py-1 text-[11px] font-semibold text-navy">
-              {city}
-            </span>
-          ) : null}
-          {area && area !== city ? (
-            <span className="rounded-full bg-gold/15 px-2.5 py-1 text-[11px] font-semibold text-navy">
-              {area}
-            </span>
+      {searchOpen ? (
+        <div className="relative">
+          <FieldLabel>Location</FieldLabel>
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="City, area, estate, or LGA"
+            autoComplete="off"
+          />
+          {suggestions.length > 0 && query.trim().length >= 2 ? (
+            <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-navy/10 bg-white py-1 shadow-float-lg">
+              {suggestions.map((s) => (
+                <li key={`${s.label}-${s.type}`}>
+                  <button
+                    type="button"
+                    className="pressable w-full px-3 py-2.5 text-left text-sm text-navy hover:bg-gold/10"
+                    onClick={() => applyMatch(s)}
+                  >
+                    {s.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
           ) : null}
         </div>
-      )}
+      ) : null}
+
+      {hasSelection ? (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {state ? (
+              <span className="rounded-full bg-navy/8 px-2.5 py-1 text-[11px] font-semibold text-navy">
+                {getStateDisplayLabel(state)}
+              </span>
+            ) : null}
+            {city ? (
+              <span className="rounded-full bg-navy/8 px-2.5 py-1 text-[11px] font-semibold text-navy">
+                {city}
+              </span>
+            ) : null}
+            {area && area !== city ? (
+              <span className="rounded-full bg-gold/15 px-2.5 py-1 text-[11px] font-semibold text-navy">
+                {area}
+              </span>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="text-xs font-semibold text-gold-dark"
+          >
+            Change location
+          </button>
+        </div>
+      ) : null}
 
       <button
         type="button"
@@ -108,34 +123,29 @@ export function ListingLocationSearch({
 
       {showAdvanced ? (
         <div className="grid gap-2 sm:grid-cols-3">
-          <Input
-            value={city}
-            onChange={(e) => onCityChange(e.target.value)}
-            placeholder="City / LGA"
-          />
-          <Input
-            value={area}
-            onChange={(e) => onAreaChange(e.target.value)}
-            placeholder="Area / estate"
-          />
-          <Input
-            value={state}
-            onChange={(e) => onStateChange(e.target.value)}
-            placeholder="State"
-          />
+          <div>
+            <FieldLabel>City / LGA</FieldLabel>
+            <Input value={city} onChange={(e) => onCityChange(e.target.value)} />
+          </div>
+          <div>
+            <FieldLabel>Area / estate</FieldLabel>
+            <Input value={area} onChange={(e) => onAreaChange(e.target.value)} />
+          </div>
+          <div>
+            <FieldLabel>State</FieldLabel>
+            <Input value={state} onChange={(e) => onStateChange(e.target.value)} />
+          </div>
         </div>
       ) : null}
 
-      <Input
-        name="landmark"
-        placeholder="Landmark (optional)"
-        defaultValue={initialLandmark ?? ""}
-      />
-      <Input
-        name="address_hint"
-        placeholder="Private address note (optional)"
-        defaultValue={initialAddressHint ?? ""}
-      />
+      <div>
+        <FieldLabel>Landmark</FieldLabel>
+        <Input name="landmark" defaultValue={initialLandmark ?? ""} />
+      </div>
+      <div>
+        <FieldLabel>Private address note</FieldLabel>
+        <Input name="address_hint" defaultValue={initialAddressHint ?? ""} />
+      </div>
     </div>
   );
 }

@@ -40,7 +40,11 @@ type Props = {
   onChange: (items: ListingPhotoItem[]) => void;
 };
 
-const MAX_CONCURRENT = 2;
+const MAX_CONCURRENT = 3;
+
+function newPendingId(index: number): string {
+  return `pending_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 9)}`;
+}
 
 export function ListingPhotoManager({
   propertyId = "draft",
@@ -58,91 +62,101 @@ export function ListingPhotoManager({
     itemsRef.current = items;
   }, [items]);
 
+  function updateItems(
+    updater: (prev: ListingPhotoItem[]) => ListingPhotoItem[]
+  ) {
+    const next = updater(itemsRef.current);
+    itemsRef.current = next;
+    onChange(next);
+  }
+
   const ready =
     items.filter((i) => i.upload_status !== "uploading" && i.upload_status !== "error")
       .length >= MIN_LISTING_IMAGES;
 
-  async function pumpQueue() {
-    while (
-      runningRef.current < MAX_CONCURRENT &&
-      queueRef.current.length > 0
-    ) {
-      const job = queueRef.current.shift();
-      if (!job) break;
-      runningRef.current += 1;
-      setActiveUploads((n) => n + 1);
+  async function uploadJob(job: { id: string; index: number }) {
+    try {
+      const file = fileMapRef.current.get(job.id);
+      if (!file) {
+        updateItems((prev) => prev.filter((item) => item.id !== job.id));
+        return;
+      }
+      const form = new FormData();
+      form.append("file", file);
+      form.append("propertyId", propertyId);
+      form.append("index", String(job.index));
+      form.append("kind", "image");
 
-      try {
-        const file = fileMapRef.current.get(job.id);
-        if (!file) return;
-        const form = new FormData();
-        form.append("file", file);
-        form.append("propertyId", propertyId);
-        form.append("index", String(job.index));
-        form.append("kind", "image");
+      const res = await fetch("/api/media/upload", { method: "POST", body: form });
+      const json = await res.json();
 
-        const res = await fetch("/api/media/upload", { method: "POST", body: form });
-        const json = await res.json();
-
-        if (!res.ok) {
-          onChange(
-            itemsRef.current.map((item) =>
-              item.id === job.id
-                ? {
-                    ...item,
-                    upload_status: "error" as const,
-                    upload_error: friendlyStorageError(
-                      json.error ?? "Upload failed"
-                    ),
-                  }
-                : item
-            )
-          );
-        } else {
-          const prev = itemsRef.current.find((i) => i.id === job.id);
-          if (prev?.local_preview) revokeListingPreview(prev.local_preview);
-          fileMapRef.current.delete(job.id);
-
-          onChange(
-            itemsRef.current.map((item) =>
-              item.id === job.id
-                ? {
-                    ...createMediaItemFromUpload({
-                      url: json.url,
-                      medium: json.medium,
-                      thumbnail: json.thumbnail,
-                      index: item.sort_order ?? 0,
-                      width: json.width,
-                      height: json.height,
-                      blur_data_url: json.blur_data_url,
-                    }),
-                    id: item.id,
-                    room_label: item.room_label,
-                    is_cover: item.is_cover,
-                    upload_status: "ready" as const,
-                    small_warning: json.small_warning || item.small_warning,
-                  }
-                : item
-            )
-          );
-        }
-      } catch {
-        onChange(
-          itemsRef.current.map((item) =>
+      if (!res.ok) {
+        updateItems((prev) =>
+          prev.map((item) =>
             item.id === job.id
               ? {
                   ...item,
                   upload_status: "error" as const,
-                  upload_error: "Network error — try again",
+                  upload_error: friendlyStorageError(json.error ?? "Upload failed"),
                 }
               : item
           )
         );
-      } finally {
-        runningRef.current -= 1;
-        setActiveUploads((n) => Math.max(0, n - 1));
-        void pumpQueue();
+        return;
       }
+
+      updateItems((prev) => {
+        const prevItem = prev.find((i) => i.id === job.id);
+        if (prevItem?.local_preview) revokeListingPreview(prevItem.local_preview);
+        fileMapRef.current.delete(job.id);
+
+        return prev.map((item) =>
+          item.id === job.id
+            ? {
+                ...createMediaItemFromUpload({
+                  url: json.url,
+                  medium: json.medium,
+                  thumbnail: json.thumbnail,
+                  index: item.sort_order ?? 0,
+                  width: json.width,
+                  height: json.height,
+                  blur_data_url: json.blur_data_url,
+                }),
+                id: item.id,
+                room_label: item.room_label,
+                is_cover: item.is_cover,
+                upload_status: "ready" as const,
+                small_warning: json.small_warning || item.small_warning,
+              }
+            : item
+        );
+      });
+    } catch {
+      updateItems((prev) =>
+        prev.map((item) =>
+          item.id === job.id
+            ? {
+                ...item,
+                upload_status: "error" as const,
+                upload_error: "Network error — try again",
+              }
+            : item
+        )
+      );
+    } finally {
+      runningRef.current -= 1;
+      setActiveUploads((n) => Math.max(0, n - 1));
+      void pumpQueue();
+    }
+  }
+
+  function pumpQueue() {
+    while (runningRef.current < MAX_CONCURRENT && queueRef.current.length > 0) {
+      const job = queueRef.current.shift();
+      if (!job) break;
+      runningRef.current += 1;
+      setActiveUploads((n) => n + 1);
+      void uploadJob(job);
     }
   }
 
@@ -151,38 +165,62 @@ export function ListingPhotoManager({
     setError("");
 
     const startIndex = itemsRef.current.length;
-    const pending: ListingPhotoItem[] = [];
+    const fileList = Array.from(files);
+    const preparedResults = await Promise.all(
+      fileList.map(async (file, i) => {
+        try {
+          const prepared = await prepareListingUpload(file);
+          return { ok: true as const, prepared, i };
+        } catch (e) {
+          return {
+            ok: false as const,
+            i,
+            message: e instanceof Error ? e.message : UPLOAD_ERROR_FALLBACK,
+          };
+        }
+      })
+    );
 
-    for (let i = 0; i < files.length; i++) {
-      try {
-        const prepared = await prepareListingUpload(files[i]);
-        const id = `pending_${Date.now()}_${i}`;
-        pending.push({
-          ...createMediaItemFromUpload({
-            url: prepared.previewUrl,
-            medium: prepared.previewUrl,
-            thumbnail: prepared.previewUrl,
-            index: startIndex + i,
-            width: prepared.width,
-            height: prepared.height,
-          }),
-          id,
-          local_preview: prepared.previewUrl,
-          upload_status: "uploading",
-          small_warning: prepared.smallWarning,
-        });
-        fileMapRef.current.set(id, prepared.file);
-        queueRef.current.push({
-          id,
-          index: Date.now() + startIndex + i,
-        });
-      } catch (e) {
-        setError(friendlyPublicError(e instanceof Error ? e.message : undefined, UPLOAD_ERROR_FALLBACK));
+    const pending: ListingPhotoItem[] = [];
+    const failures: string[] = [];
+
+    for (const result of preparedResults) {
+      if (!result.ok) {
+        failures.push(result.message);
+        continue;
       }
+      const id = newPendingId(result.i);
+      pending.push({
+        ...createMediaItemFromUpload({
+          url: result.prepared.previewUrl,
+          medium: result.prepared.previewUrl,
+          thumbnail: result.prepared.previewUrl,
+          index: startIndex + result.i,
+          width: result.prepared.width,
+          height: result.prepared.height,
+        }),
+        id,
+        local_preview: result.prepared.previewUrl,
+        upload_status: "uploading",
+        small_warning: result.prepared.smallWarning,
+      });
+      fileMapRef.current.set(id, result.prepared.file);
+      queueRef.current.push({
+        id,
+        index: Date.now() + startIndex + result.i + Math.floor(Math.random() * 1000),
+      });
+    }
+
+    if (failures.length > 0) {
+      setError(
+        failures.length === fileList.length
+          ? friendlyPublicError(failures[0], UPLOAD_ERROR_FALLBACK)
+          : `${failures.length} photo${failures.length === 1 ? "" : "s"} skipped — ${friendlyPublicError(failures[0], UPLOAD_ERROR_FALLBACK)}`
+      );
     }
 
     if (pending.length > 0) {
-      onChange([...itemsRef.current, ...pending]);
+      updateItems((prev) => [...prev, ...pending]);
       void pumpQueue();
     }
   }
