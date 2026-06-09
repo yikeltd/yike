@@ -1,11 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
-import { isStandaloneApp } from "@/lib/app-environment";
+import { isAndroidTwa, isStandaloneApp } from "@/lib/app-environment";
+
+const SW_URL = "/sw.js?v=26";
+
+async function clearServiceWorkers(): Promise<void> {
+  if (!("serviceWorker" in navigator)) return;
+  const regs = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(regs.map((reg) => reg.unregister()));
+}
 
 export function PwaRegister() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+    // TWA runs in Chrome Custom Tabs — a stale browser SW can break first load.
+    if (isAndroidTwa()) {
+      void clearServiceWorkers();
+      return;
+    }
 
     const hotReloadServiceWorker = !isStandaloneApp();
     let refreshing = false;
@@ -17,7 +31,7 @@ export function PwaRegister() {
     });
 
     navigator.serviceWorker
-      .register("/sw.js?v=25")
+      .register(SW_URL)
       .then((reg) => {
         if (!hotReloadServiceWorker) return;
 

@@ -1,4 +1,4 @@
-const SHELL_CACHE = "yike-shell-v25";
+const SHELL_CACHE = "yike-shell-v26";
 const IMAGE_CACHE = "yike-images-v5";
 const LISTING_CACHE = "yike-listings-v3";
 const CACHE_PREFIX = "yike-";
@@ -21,10 +21,10 @@ const IMAGE_HOSTS = ["images.unsplash.com", "supabase.co"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(SHELL_CACHE)
-      .then((cache) => cache.addAll(SHELL))
-      .then(() => self.skipWaiting())
+    caches.open(SHELL_CACHE).then(async (cache) => {
+      await Promise.allSettled(SHELL.map((url) => cache.add(url)));
+      await self.skipWaiting();
+    })
   );
 });
 
@@ -97,21 +97,10 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (event.request.mode === "navigate") {
-    const networkOnlyPrefixes = [
-      "/search",
-      "/browse",
-      "/agent",
-      "/properties/",
-      "/lex",
-      "/staff",
-      "/auth",
-      "/dev",
-    ];
-    const preferNetwork = networkOnlyPrefixes.some((p) => url.pathname.startsWith(p));
     event.respondWith(
-      fetch(event.request, preferNetwork ? { cache: "no-store" } : undefined)
+      fetch(event.request, { cache: "no-store" })
         .then((res) => {
-          if (res.ok && !preferNetwork) {
+          if (res.ok) {
             const clone = res.clone();
             const cacheName = url.pathname.startsWith("/properties/")
               ? LISTING_CACHE

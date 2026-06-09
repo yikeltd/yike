@@ -36,10 +36,10 @@ export function avatarDisplayUrl(url: string | null | undefined): string | null 
   return profileMediaVariantUrl(url, "avatar", "thumb");
 }
 
-/** Mobile-first cover — thumb on phones, medium on wider screens. */
+/** Mobile-first cover — thumb on phones, medium/large on wider screens. */
 export function coverDisplayUrl(
   url: string | null | undefined,
-  variant: "thumb" | "medium" = "thumb"
+  variant: "thumb" | "medium" | "large" = "thumb"
 ): string | null {
   return profileMediaVariantUrl(url, "cover", variant);
 }

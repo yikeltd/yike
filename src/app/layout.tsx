@@ -19,6 +19,9 @@ import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
 
 const themeInitScript = `(function(){try{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');localStorage.setItem('yike-theme','light');}catch(e){}})();`;
 
+/** Drop stale browser service workers inside Android TWA before they intercept navigation. */
+const twaSwCleanupScript = `(function(){try{if(document.referrer.indexOf('android-app://')!==0)return;if(!('serviceWorker' in navigator))return;navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});});}catch(e){}})();`;
+
 /** Branded boot splash for PWA/TWA — min 3s, logo + spinner only (no URL chrome). */
 const bootSplashHideScript = `(function(){var MIN=3000,t0=Date.now(),done=false;function isApp(){try{if(window.matchMedia('(display-mode: standalone)').matches)return true;if(window.matchMedia('(display-mode: fullscreen)').matches)return true;if(window.navigator.standalone)return true;if(document.referrer.indexOf('android-app://')===0)return true;}catch(e){}return false;}function hide(){if(done)return;var s=document.getElementById('yike-boot-splash');if(!s)return;done=true;s.classList.add('yike-boot-splash--out');setTimeout(function(){s.remove();},400);}function removeNow(){var s=document.getElementById('yike-boot-splash');if(s)s.remove();}if(!isApp()){if(document.body)removeNow();else document.addEventListener('DOMContentLoaded',removeNow,{once:true});return;}function schedule(){var wait=Math.max(0,MIN-(Date.now()-t0));setTimeout(hide,wait);}if(document.readyState==='complete')schedule();else window.addEventListener('load',schedule,{once:true});setTimeout(hide,MIN+500);})();`;
 
@@ -173,6 +176,7 @@ export default function RootLayout({
         />
         <link rel="apple-touch-startup-image" href="/splash/splash-1080x1920.png" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: twaSwCleanupScript }} />
         <script dangerouslySetInnerHTML={{ __html: bootSplashHideScript }} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
