@@ -18,6 +18,9 @@ export function hashUserAgent(ua: string | null): string | null {
 export type AuthSecurityEventType =
   | "login.success"
   | "login.failed"
+  | "login.otp_required"
+  | "login.otp_verified"
+  | "signup.device_trusted"
   | "pin.success"
   | "pin.failed"
   | "pin.locked"

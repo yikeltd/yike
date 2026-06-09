@@ -5,7 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
-import { EmailOtpModal } from "@/components/auth/email-otp-modal";
+import {
+  EmailOtpModal,
+  type EmailOtpPurpose,
+  type EmailOtpVerifyResponse,
+} from "@/components/auth/email-otp-modal";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PinLoginPanel } from "@/components/auth/pin-login-panel";
 import { PinSetupModal } from "@/components/auth/pin-setup-modal";
@@ -21,6 +25,16 @@ import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
 import type { UserRole } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+type LoginProfile = {
+  id: string;
+  email?: string | null;
+  full_name?: string | null;
+  username?: string | null;
+  avatar_url?: string | null;
+  role?: UserRole | null;
+  has_pin_set?: boolean | null;
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,8 +52,10 @@ export default function LoginPage() {
   const [quickUser, setQuickUser] = useState<ReturnType<typeof getQuickLoginUser>>(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
+  const [emailOtpPurpose, setEmailOtpPurpose] = useState<EmailOtpPurpose>("email_verify");
   const [resolvedEmail, setResolvedEmail] = useState("");
   const [pinSetupOpen, setPinSetupOpen] = useState(false);
+  const [activeProfile, setActiveProfile] = useState<LoginProfile | null>(null);
 
   useEffect(() => {
     if (forcePassword) {
@@ -59,20 +75,32 @@ export default function LoginPage() {
     }
   }, [sessionReason]);
 
-  async function finishLogin(profile: {
-    id: string;
-    email?: string | null;
-    full_name?: string | null;
-    username?: string | null;
-    avatar_url?: string | null;
-    role?: UserRole;
-  }) {
+  async function loadCurrentProfile(): Promise<LoginProfile | null> {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, full_name, username, avatar_url, email, role, has_pin_set")
+      .eq("id", user.id)
+      .maybeSingle();
+    return (profile as LoginProfile | null) ?? null;
+  }
+
+  async function finishLogin(profile: LoginProfile) {
+    if (!profile.id) {
+      const current = await loadCurrentProfile();
+      if (current) return finishLogin(current);
+    }
+
     if (profile.role && isStaffRole(profile.role)) {
       router.replace(getDefaultConsolePath(profile.role));
       return true;
     }
 
-    if (profile.email) {
+    if (profile.id && profile.email && profile.has_pin_set) {
       saveQuickLoginUser({
         userId: profile.id,
         email: profile.email,
@@ -104,20 +132,23 @@ export default function LoginPage() {
       return false;
     }
 
-    const email = data.profile?.email ?? signedInIdentifier;
+    const profile = (data.profile ?? null) as LoginProfile | null;
+    setActiveProfile(profile);
+
+    const email = profile?.email ?? signedInIdentifier;
     setResolvedEmail(email);
 
     if (data.needsEmailVerify && !isReviewerAccountEmail(email)) {
+      setEmailOtpPurpose("email_verify");
       setEmailVerifyOpen(true);
       return false;
     }
 
-    const supabase = createClient();
-    if (data.profile?.id) {
-      await supabase
-        .from("profiles")
-        .update({ email_verified: true })
-        .eq("id", data.profile.id);
+    if (data.needsLoginOtp && !isReviewerAccountEmail(email)) {
+      setEmailOtpPurpose("login");
+      setInfo("Fresh device detected. Enter the email code once, then this device can use PIN.");
+      setEmailVerifyOpen(true);
+      return false;
     }
 
     if (data.requiresPinSetup) {
@@ -130,7 +161,7 @@ export default function LoginPage() {
       return false;
     }
 
-    return finishLogin(data.profile ?? { id: "", email });
+    return finishLogin(profile ?? { id: "", email });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -145,10 +176,43 @@ export default function LoginPage() {
 
   const usePin = quickUser && !showPasswordForm && !forcePassword;
 
+  async function finishAfterOtp(data: EmailOtpVerifyResponse) {
+    const otpProfile = (data.profile ?? null) as LoginProfile | null;
+    const profile = otpProfile ?? activeProfile ?? (await loadCurrentProfile());
+    if (profile) setActiveProfile(profile);
+
+    setEmailVerifyOpen(false);
+
+    if (data.requiresPinSetup || (profile && !profile.has_pin_set)) {
+      setPinSetupOpen(true);
+      return;
+    }
+
+    await finishLogin(profile ?? { id: "", email: resolvedEmail || identifier });
+  }
+
+  async function finishAfterPinSetup(pinSaved: boolean) {
+    setPinSetupOpen(false);
+    const profile = activeProfile ?? (await loadCurrentProfile());
+    if (profile) {
+      await finishLogin({ ...profile, has_pin_set: pinSaved ? true : profile.has_pin_set });
+      return;
+    }
+    await finishLogin({
+      id: quickUser?.userId ?? "",
+      email: resolvedEmail || identifier,
+    });
+  }
+
   return (
     <>
       <AuthShell
-        title={usePin ? undefined : "Welcome back"}
+        title={usePin ? undefined : "Sign in to Yike"}
+        subtitle={
+          usePin
+            ? undefined
+            : "Use your email or username with password. New devices get one email code before PIN unlock is enabled."
+        }
         compact={Boolean(usePin)}
         footer={
           !usePin ? (
@@ -190,6 +254,7 @@ export default function LoginPage() {
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="email@example.com or username"
                 required
                 className="h-12 rounded-xl"
                 autoComplete="username"
@@ -241,29 +306,8 @@ export default function LoginPage() {
       <EmailOtpModal
         open={emailVerifyOpen}
         email={resolvedEmail || identifier}
-        purpose="email_verify"
-        onVerified={async () => {
-          const supabase = createClient();
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (!user) return;
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("id, full_name, username, avatar_url, email, role")
-            .eq("id", user.id)
-            .maybeSingle();
-          if (profile) {
-            await finishLogin({
-              id: profile.id,
-              email: profile.email ?? (resolvedEmail || identifier),
-              full_name: profile.full_name,
-              username: profile.username,
-              avatar_url: profile.avatar_url,
-              role: profile.role as UserRole,
-            });
-          }
-        }}
+        purpose={emailOtpPurpose}
+        onVerified={finishAfterOtp}
         autoSend
       />
 
@@ -272,18 +316,10 @@ export default function LoginPage() {
         resetMode={resetPin}
         loginPassword={resetPin ? password : undefined}
         onClose={() => {
-          setPinSetupOpen(false);
-          void finishLogin({
-            id: quickUser?.userId ?? "",
-            email: resolvedEmail || identifier,
-          });
+          void finishAfterPinSetup(false);
         }}
         onComplete={() => {
-          setPinSetupOpen(false);
-          void finishLogin({
-            id: quickUser?.userId ?? "",
-            email: resolvedEmail || identifier,
-          });
+          void finishAfterPinSetup(true);
         }}
       />
     </>

@@ -10,6 +10,7 @@ import { logAuthSecurityEvent } from "@/lib/auth/security-events";
 import { beginUserSession, getRequestMeta, markSessionUnlocked } from "@/lib/auth/session-state";
 import {
   getDeviceTokenFromCookies,
+  isDeviceTrusted,
   registerTrustedDevice,
   touchTrustedDevice,
 } from "@/lib/auth/trusted-device";
@@ -36,6 +37,23 @@ export async function POST(request: Request) {
   if (!row) {
     return NextResponse.json(
       { error: "Incorrect PIN. Try again or use your password." },
+      { status: 401 }
+    );
+  }
+
+  if (
+    !deviceToken ||
+    !(await isDeviceTrusted(row.user_id, deviceToken, { userAgent, ip }))
+  ) {
+    await logAuthSecurityEvent({
+      userId: row.user_id,
+      eventType: "pin.failed",
+      metadata: { reason: "untrusted_device", scope: "pin_login" },
+      ip,
+      userAgent,
+    });
+    return NextResponse.json(
+      { error: "Use your password to approve this device first.", requiresPassword: true },
       { status: 401 }
     );
   }

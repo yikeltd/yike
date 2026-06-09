@@ -10,6 +10,15 @@ import { cn } from "@/lib/utils";
 const RESEND_COOLDOWN_SEC = 60;
 
 export type EmailOtpPurpose = "signup" | "login" | "email_verify" | "password_reset";
+export type EmailOtpVerifyResponse = {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  userId?: string;
+  profile?: unknown;
+  deviceTrusted?: boolean;
+  requiresPinSetup?: boolean;
+};
 
 export function EmailOtpModal({
   open,
@@ -28,7 +37,7 @@ export function EmailOtpModal({
   purpose?: EmailOtpPurpose;
   password?: string;
   onClose?: () => void;
-  onVerified: () => void | Promise<void>;
+  onVerified: (data: EmailOtpVerifyResponse) => void | Promise<void>;
   autoSend?: boolean;
   initialCodeSent?: boolean;
 }) {
@@ -49,7 +58,7 @@ export function EmailOtpModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, fullName, purpose }),
       });
-      const data = (await res.json()) as { error?: string; message?: string };
+      const data = (await res.json()) as EmailOtpVerifyResponse;
       if (!res.ok) {
         setError(data.error ?? EMAIL_OTP_USER_MESSAGES.sendFailed);
         setCodeSent(false);
@@ -121,7 +130,7 @@ export function EmailOtpModal({
       }
       setSuccess(data.message ?? EMAIL_OTP_USER_MESSAGES.verified);
       await new Promise((r) => window.setTimeout(r, 400));
-      await onVerified();
+      await onVerified(data);
     } catch {
       setError(EMAIL_OTP_USER_MESSAGES.network);
       setCode("");
