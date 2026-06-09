@@ -51,7 +51,7 @@ export function buildEmailAdBlock(ad: EmailAdInput): string {
 export function buildSampleEmailAdHtml(): string {
   return buildEmailAdBlock({
     title: "List your property free",
-    image_url: `${SITE_URL}/images/logo.png`,
+    image_url: `${SITE_URL}/images/logo.webp`,
     link_url: `${SITE_URL}/list-property`,
     alt_text: "List on Yike",
   });

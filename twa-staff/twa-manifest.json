@@ -13,10 +13,10 @@
   "backgroundColor": "#031B4E",
   "enableNotifications": false,
   "startUrl": "/staff",
-  "iconUrl": "https://yike.ng/staff/icons/crew-512.png",
-  "maskableIconUrl": "https://yike.ng/staff/icons/crew-512.png",
+  "iconUrl": "https://yike.ng/images/logo.webp",
+  "maskableIconUrl": "https://yike.ng/images/logo.webp",
   "splashScreenFadeOutDuration": 500,
-  "splashScreenImage": "https://yike.ng/staff/splash/crew-1080x1920.png",
+  "splashScreenImage": "https://yike.ng/splash/splash-1080x1920.png",
   "signingKey": {
     "path": "./android.keystore",
     "alias": "yike"

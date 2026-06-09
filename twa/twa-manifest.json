@@ -13,8 +13,8 @@
   "backgroundColor": "#031B4E",
   "enableNotifications": false,
   "startUrl": "/",
-  "iconUrl": "https://yike.ng/icons/android-chrome-512.png",
-  "maskableIconUrl": "https://yike.ng/icons/android-chrome-512.png",
+  "iconUrl": "https://yike.ng/images/logo.webp",
+  "maskableIconUrl": "https://yike.ng/images/logo.webp",
   "splashScreenFadeOutDuration": 300,
   "splashScreenImage": "https://yike.ng/splash/splash-1080x1920.png",
   "signingKey": {
@@ -28,13 +28,13 @@
       "name": "Swipe homes",
       "shortName": "Swipe",
       "url": "https://yike.ng/browse",
-      "chosenIconUrl": "https://yike.ng/icons/android-chrome-192.png"
+      "chosenIconUrl": "https://yike.ng/images/logo-sm.webp"
     },
     {
       "name": "Search",
       "shortName": "Search",
       "url": "https://yike.ng/search",
-      "chosenIconUrl": "https://yike.ng/icons/android-chrome-192.png"
+      "chosenIconUrl": "https://yike.ng/images/logo-sm.webp"
     }
   ],
   "generatorApp": "bubblewrap-cli",

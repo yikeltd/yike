@@ -34,7 +34,7 @@ function localizePreviewHtml(html: string): string {
   return html
     .replaceAll("https://yike.ng/email/social/", "../social/")
     .replaceAll("https://yike.ng/email/badges/", "../badges/")
-    .replaceAll("https://yike.ng/images/logo.png", "../../images/logo.png")
+    .replaceAll("https://yike.ng/images/logo.webp", "../../images/logo.webp")
     .replaceAll("https://yike.ng/images/", "../../images/")
     .replaceAll("https://yike.ng/icons/", "../../icons/");
 }

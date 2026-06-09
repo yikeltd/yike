@@ -1,4 +1,4 @@
-const SHELL_CACHE = "yike-shell-v23";
+const SHELL_CACHE = "yike-shell-v24";
 const IMAGE_CACHE = "yike-images-v4";
 const LISTING_CACHE = "yike-listings-v2";
 const CACHE_PREFIX = "yike-";
@@ -9,7 +9,7 @@ const SHELL = [
   "/browse",
   "/saved",
   "/search",
-  "/images/logo-sm.webp",
+  "/images/logo.webp",
   "/manifest.json",
   "/favicon.ico",
   "/apple-touch-icon.png",

@@ -1,15 +1,16 @@
 /**
- * Yike Crew TWA splash + launcher assets — logo blends into navy (no cream block).
+ * Yike Crew TWA splash + launcher assets from the canonical logo.webp.
+ * The logo background is preserved; do not cut out or alpha-mask the mark.
  * Run: node scripts/generate-crew-twa-assets.mjs
  */
 import sharp from "sharp";
-import { mkdir, stat, writeFile } from "fs/promises";
+import { mkdir, stat } from "fs/promises";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const INPUT = join(ROOT, "public/images/app-icon.webp");
+const INPUT = join(ROOT, "public/images/logo.webp");
 const TWA_RES = join(ROOT, "twa-staff/app/src/main/res");
 const STAFF_SPLASH = join(ROOT, "public/staff/splash");
 
@@ -31,62 +32,12 @@ const LAUNCHER_SIZES = [
   { folder: "mipmap-xxxhdpi", size: 192 },
 ];
 
-function dist(r, g, b, t) {
-  return Math.sqrt((r - t.r) ** 2 + (g - t.g) ** 2 + (b - t.b) ** 2);
-}
-
-function sampleBg(data, width, height) {
-  const points = [
-    [2, 2],
-    [width - 3, 2],
-    [2, height - 3],
-    [width - 3, height - 3],
-  ];
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  for (const [x, y] of points) {
-    const i = (y * width + x) * 4;
-    r += data[i];
-    g += data[i + 1];
-    b += data[i + 2];
-  }
-  return { r: Math.round(r / 4), g: Math.round(g / 4), b: Math.round(b / 4) };
-}
-
-async function logoOnlyBuffer() {
-  const { data, info } = await sharp(await sharp(INPUT).rotate().toBuffer())
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-
-  const bg = sampleBg(data, info.width, info.height);
-
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const d = dist(r, g, b, bg);
-    if (d < 48 || (r > 195 && g > 195 && b > 190)) {
-      data[i + 3] = 0;
-    } else if (d < 72) {
-      data[i + 3] = Math.round(((d - 48) / 24) * 255);
-    }
-  }
-
-  return sharp(data, {
-    raw: { width: info.width, height: info.height, channels: 4 },
-  })
-    .png()
-    .toBuffer();
-}
-
-async function writeBlendedSplash(logoBuf, outPath, size) {
+async function writeBlendedSplash(source, outPath, size) {
   const logoPx = Math.round(size * 0.52);
-  const logo = await sharp(logoBuf)
+  const logo = await sharp(source)
     .resize(logoPx, logoPx, {
       fit: "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
+      background: NAVY,
     })
     .png()
     .toBuffer();
@@ -99,27 +50,16 @@ async function writeBlendedSplash(logoBuf, outPath, size) {
     .toFile(outPath);
 }
 
-async function writeLauncher(logoBuf, outPath, size) {
-  const logoPx = Math.round(size * 0.72);
-  const logo = await sharp(logoBuf)
-    .resize(logoPx, logoPx, {
-      fit: "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-    .png()
-    .toBuffer();
-
-  await sharp({
-    create: { width: size, height: size, channels: 4, background: NAVY },
-  })
-    .composite([{ input: logo, gravity: "centre" }])
+async function writeLauncher(source, outPath, size) {
+  await sharp(source)
+    .resize(size, size, { fit: "cover", position: "centre" })
     .png({ compressionLevel: 9, palette: true })
     .toFile(outPath);
 }
 
 async function main() {
   console.log("Generating Yike Crew TWA assets…\n");
-  const logoBuf = await logoOnlyBuffer();
+  const logoBuf = await sharp(INPUT).rotate().toBuffer();
 
   for (const { folder, size } of SPLASH_DENSITIES) {
     const dir = join(TWA_RES, folder);

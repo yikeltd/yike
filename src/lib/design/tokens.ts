@@ -18,18 +18,18 @@ export const brand = {
   domain: "yike.ng",
   tagline: "The fastest and safest way to find real houses in Nigeria.",
   logo: "/images/logo.webp",
-  logoSm: "/images/logo-sm.webp",
-  logoFallback: "/images/logo.png",
+  logoSm: "/images/logo.webp",
+  logoFallback: "/images/logo.webp",
 } as const;
 
-/** Yike Crew — internal ops app (light-background mark from app-icon.webp) */
+/** Yike Crew — internal ops app, using the same Yike mark for brand consistency. */
 export const crewBrand = {
   name: "Yike Crew",
   shortName: "Yike Crew",
-  logo: "/images/crew-icon.webp",
-  logoSm: "/images/crew-icon-sm.webp",
-  icon192: "/staff/icons/crew-192.webp",
-  icon512: "/staff/icons/crew-512.webp",
-  icon192Png: "/staff/icons/crew-192.png",
-  icon512Png: "/staff/icons/crew-512.png",
+  logo: "/images/logo.webp",
+  logoSm: "/images/logo.webp",
+  icon192: "/images/logo-sm.webp",
+  icon512: "/images/logo.webp",
+  icon192Png: "/icons/android-chrome-192.png",
+  icon512Png: "/icons/android-chrome-512.png",
 } as const;

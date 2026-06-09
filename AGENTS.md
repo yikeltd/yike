@@ -26,6 +26,7 @@ node scripts/optimize-brand-assets.mjs   # regenerate favicons from logo.png
 - Push to `main` → Vercel production deploy automatically (Git integration — no manual step)
 - Preview deploys on other branches / PRs
 - Env vars: see `.env.example` (set in Vercel → Settings → Environment Variables)
+- **Agent rule:** When work is done, commit all related changes and push to `origin/main` — do not leave the tree dirty or unpushed unless the founder says to hold. See `.cursor/rules/ship-everything.mdc`.
 
 ## Supabase
 
