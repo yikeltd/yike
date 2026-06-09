@@ -14,12 +14,14 @@ export function AuthShell({
   compact,
   children,
   footer,
+  belowLegal,
 }: {
   title?: string;
   subtitle?: string;
   compact?: boolean;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  belowLegal?: React.ReactNode;
 }) {
   return (
     <div className="min-h-[100dvh] bg-background">
@@ -90,6 +92,7 @@ export function AuthShell({
             Privacy
           </Link>
         </p>
+        {belowLegal ? <div className="mt-4">{belowLegal}</div> : null}
       </div>
     </div>
   );

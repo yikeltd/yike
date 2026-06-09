@@ -8,6 +8,7 @@ export const AD_PLACEMENT_KEYS = [
   "location_top",
   "property_detail",
   "footer_strip",
+  "auth_login_footer",
   "email_transactional",
   "home_hotspot_1",
   "home_hotspot_2",
@@ -53,6 +54,11 @@ export const AD_PLACEMENT_META: Record<
     label: "Footer sponsor strip",
     hint: "Wide strip above site footer on all public pages.",
     aspect: "strip",
+  },
+  auth_login_footer: {
+    label: "Sign in — below Terms & Privacy",
+    hint: "Compact card under the Terms and Privacy links on /auth/login.",
+    aspect: "card",
   },
   email_transactional: {
     label: "Transactional email — under headline",
