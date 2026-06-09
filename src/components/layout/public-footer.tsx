@@ -3,8 +3,9 @@ import { SiteFooter } from "./site-footer";
 
 export async function PublicFooter() {
   return (
-    <div className="mt-auto border-t border-surface bg-elevated">
-      <AdSlot placement="footer_strip" className="pt-6" />
+    <div className="site-footer-shell mt-auto">
+      <div aria-hidden className="site-footer-blend" />
+      <AdSlot placement="footer_strip" className="pt-2" />
       <SiteFooter />
     </div>
   );

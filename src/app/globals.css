@@ -425,6 +425,32 @@ body {
     linear-gradient(160deg, var(--navy-dark) 0%, var(--navy) 48%, var(--navy-mid) 100%);
 }
 
+/* Site footer — blended navy band that fades in from page background */
+.site-footer-shell {
+  background: linear-gradient(180deg, #021428 0%, #031b4e 55%, #052654 100%);
+  color: #f0f4fa;
+  padding-bottom: calc(var(--bottom-nav-stack) + 1rem);
+}
+
+@media (min-width: 1024px) {
+  .site-footer-shell {
+    padding-bottom: 0;
+  }
+}
+
+.site-footer-blend {
+  height: 2.75rem;
+  background: linear-gradient(180deg, var(--background) 0%, #021428 100%);
+}
+
+.dark .site-footer-blend {
+  background: linear-gradient(180deg, var(--background) 0%, #021428 100%);
+}
+
+.site-footer-shell .site-footer-divider {
+  border-color: rgb(255 255 255 / 14%);
+}
+
 .section-band {
   position: relative;
   padding-top: 0.5rem;

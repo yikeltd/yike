@@ -98,7 +98,7 @@ export function FollowYike({
               className={cn(
                 "pressable inline-flex items-center gap-2 transition-colors",
                 variant === "footer"
-                  ? "rounded-full p-2 text-muted hover:bg-surface hover:text-gold-dark"
+                  ? "rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-[#e4b547]"
                   : variant === "icons"
                     ? "h-11 w-11 items-center justify-center rounded-xl bg-navy/5 text-navy hover:bg-gold/15 hover:text-navy"
                     : "rounded-full bg-surface px-3 py-2 text-sm font-semibold text-navy hover:bg-gold/10"

@@ -37,7 +37,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-elevated">
+    <footer className="text-[#f0f4fa]">
       <div className="mx-auto max-w-7xl px-6 py-10 xl:px-8">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
@@ -49,16 +49,16 @@ export function SiteFooter() {
                 height={36}
                 className="rounded-lg"
               />
-              <span className="text-lg font-bold text-foreground">{SITE_NAME}</span>
+              <span className="text-lg font-bold text-white">{SITE_NAME}</span>
             </Link>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted">
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/75">
               Nigeria&apos;s visual housing marketplace. Browse homes, contact
               agents on WhatsApp, list for free.
             </p>
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-muted">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#e4b547]">
               Explore
             </p>
             <ul className="mt-3 space-y-2">
@@ -66,7 +66,7 @@ export function SiteFooter() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-sm text-foreground/80 hover:text-gold-dark"
+                    className="text-sm text-white/90 transition-colors hover:text-[#e4b547]"
                   >
                     {l.label}
                   </Link>
@@ -76,7 +76,7 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-muted">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#e4b547]">
               Company
             </p>
             <ul className="mt-3 space-y-2">
@@ -84,7 +84,7 @@ export function SiteFooter() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-sm text-foreground/80 hover:text-gold-dark"
+                    className="text-sm text-white/90 transition-colors hover:text-[#e4b547]"
                   >
                     {l.label}
                   </Link>
@@ -94,7 +94,7 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-muted">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#e4b547]">
               Legal
             </p>
             <ul className="mt-3 space-y-2">
@@ -102,7 +102,7 @@ export function SiteFooter() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-sm text-foreground/80 hover:text-gold-dark"
+                    className="text-sm text-white/90 transition-colors hover:text-[#e4b547]"
                   >
                     {l.label}
                   </Link>
@@ -112,25 +112,34 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-4 border-t border-surface pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted">
-            © {year} {COMPANY_DISPLAY_NAME} All rights reserved.
-          </p>
-          <FollowYike title="" variant="footer" />
-        </div>
-
-        <p className="mt-4 text-[11px] leading-relaxed text-muted">
-          {COMPANY_DISPLAY_NAME} · {COMPANY_RC}
-        </p>
-        <p className="mt-2 text-[11px] leading-relaxed text-muted">
-          {SITE_NAME} is an online listing platform only. We do not own
-          properties, collect rent, hold deposits, or guarantee listings.
-          Always verify properties in person before payment. Read our{" "}
-          <Link href="/disclaimer" className="underline hover:text-foreground">
-            full disclaimer
-          </Link>
-          .
-        </p>
+        <section
+          className="site-footer-legal site-footer-divider mt-10 border-t pt-8"
+          aria-label="Legal information"
+        >
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-3xl space-y-3">
+              <p className="text-xs leading-relaxed text-white/80">
+                © {year} {COMPANY_DISPLAY_NAME} All rights reserved.
+              </p>
+              <p className="text-xs leading-relaxed text-white/75">
+                {COMPANY_DISPLAY_NAME} · {COMPANY_RC}
+              </p>
+              <p className="text-xs leading-relaxed text-white/75">
+                {SITE_NAME} is an online listing platform only. We do not own
+                properties, collect rent, hold deposits, or guarantee listings.
+                Always verify properties in person before payment. Read our{" "}
+                <Link
+                  href="/disclaimer"
+                  className="text-white/85 underline decoration-white/30 underline-offset-2 transition-colors hover:text-[#e4b547]"
+                >
+                  full disclaimer
+                </Link>
+                .
+              </p>
+            </div>
+            <FollowYike title="" variant="footer" className="shrink-0" />
+          </div>
+        </section>
       </div>
     </footer>
   );
