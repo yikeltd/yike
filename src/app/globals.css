@@ -18,19 +18,20 @@
 
 @media (display-mode: standalone), (display-mode: fullscreen) {
   #yike-boot-splash {
-    animation: yike-boot-splash-fallback 3s ease forwards;
+    animation: yike-boot-splash-fallback 2s ease forwards;
   }
 }
 
 @keyframes yike-boot-splash-fallback {
   0%,
-  82% {
+  75% {
     opacity: 1;
   }
 
   100% {
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
   }
 }
 
@@ -63,8 +64,10 @@
 }
 
 #yike-boot-splash.yike-boot-splash--out {
-  opacity: 0;
-  pointer-events: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  display: none !important;
 }
 
 #yike-boot-splash.yike-boot-splash--out,
