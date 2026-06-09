@@ -17,8 +17,18 @@ function mergeAuthResponse(from: NextResponse, to: NextResponse) {
   }
 }
 
+function hasSupabaseSessionCookie(request: NextRequest): boolean {
+  return request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.startsWith("sb-") && Boolean(cookie.value));
+}
+
 export async function updateSession(request: NextRequest) {
   if (!isSupabaseConfigured()) {
+    return NextResponse.next({ request });
+  }
+
+  if (!hasSupabaseSessionCookie(request)) {
     return NextResponse.next({ request });
   }
 

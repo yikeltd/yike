@@ -131,9 +131,15 @@ export function StaffLoginForm({ staffApp = false }: Props) {
               height={staffApp ? 72 : 48}
               className={staffApp ? "rounded-2xl shadow-lg" : "rounded-xl"}
             />
-            <h1 className="text-xl font-bold text-white">{brand.name}</h1>
+            <h1 className="text-xl font-bold text-white">
+              {staffApp ? crewBrand.name : brand.name}
+            </h1>
           </div>
-          {!staffApp && (
+          {staffApp ? (
+            <p className="mt-1 text-sm text-white/50">
+              Hope you have a nice time working today.
+            </p>
+          ) : (
             <>
               <p className="text-lg font-semibold text-gold">Yike Ops</p>
               <p className="mt-1 text-sm text-white/50">
