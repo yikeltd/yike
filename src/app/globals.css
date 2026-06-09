@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Legacy splash from cached HTML — auto-hide even if dismiss script is delayed. */
+/* Branded boot splash — PWA/TWA cold start; covers URL chrome during handoff. */
 #yike-boot-splash {
   position: fixed;
   inset: 0;
@@ -8,14 +8,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
+    env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
   background: #031b4e;
-  pointer-events: none;
-  animation: yike-boot-splash-fallback 2.5s ease forwards;
+  pointer-events: auto;
+  transition: opacity 0.4s ease;
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  #yike-boot-splash {
+    animation: yike-boot-splash-fallback 3s ease forwards;
+  }
 }
 
 @keyframes yike-boot-splash-fallback {
   0%,
-  70% {
+  82% {
     opacity: 1;
   }
 
@@ -25,14 +34,42 @@
   }
 }
 
+.yike-boot-splash__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
 #yike-boot-splash img {
   width: 7.5rem;
   height: 7.5rem;
   object-fit: contain;
 }
 
+.yike-boot-splash__loader {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgb(228 181 71 / 25%);
+  border-top-color: #e4b547;
+  border-radius: 50%;
+  animation: yike-boot-spin 0.75s linear infinite;
+}
+
+@keyframes yike-boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 #yike-boot-splash.yike-boot-splash--out {
-  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#yike-boot-splash.yike-boot-splash--out,
+#yike-boot-splash.yike-boot-splash--out .yike-boot-splash__loader {
+  animation: none;
 }
 
 :root {

@@ -19,8 +19,8 @@ import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
 
 const themeInitScript = `(function(){try{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');localStorage.setItem('yike-theme','light');}catch(e){}})();`;
 
-/** Inline only — /boot-splash.js was redirected to /search by middleware and never ran. */
-const bootSplashHideScript = `(function(){function hide(){var s=document.getElementById('yike-boot-splash');if(!s)return;s.classList.add('yike-boot-splash--out');setTimeout(function(){s.remove()},400);}var n=0,t=setInterval(function(){hide();if(++n>60)clearInterval(t);},100);document.addEventListener('DOMContentLoaded',hide,{once:true});window.addEventListener('load',function(){hide();clearInterval(t);},{once:true});setTimeout(function(){hide();clearInterval(t);},2500);})();`;
+/** Branded boot splash for PWA/TWA — min 3s, logo + spinner only (no URL chrome). */
+const bootSplashHideScript = `(function(){var MIN=3000,t0=Date.now(),done=false;function isApp(){try{if(window.matchMedia('(display-mode: standalone)').matches)return true;if(window.matchMedia('(display-mode: fullscreen)').matches)return true;if(window.navigator.standalone)return true;if(document.referrer.indexOf('android-app://')===0)return true;}catch(e){}return false;}function hide(){if(done)return;var s=document.getElementById('yike-boot-splash');if(!s)return;done=true;s.classList.add('yike-boot-splash--out');setTimeout(function(){s.remove();},400);}function removeNow(){var s=document.getElementById('yike-boot-splash');if(s)s.remove();}if(!isApp()){if(document.body)removeNow();else document.addEventListener('DOMContentLoaded',removeNow,{once:true});return;}function schedule(){var wait=Math.max(0,MIN-(Date.now()-t0));setTimeout(hide,wait);}if(document.readyState==='complete')schedule();else window.addEventListener('load',schedule,{once:true});setTimeout(hide,MIN+500);})();`;
 
 const supabaseOrigin = (() => {
   try {
@@ -176,6 +176,19 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: bootSplashHideScript }} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
+        <div id="yike-boot-splash" aria-hidden="true">
+          <div className="yike-boot-splash__content">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo.webp"
+              alt=""
+              width={120}
+              height={120}
+              decoding="sync"
+            />
+            <div className="yike-boot-splash__loader" aria-hidden="true" />
+          </div>
+        </div>
         <ThemeProvider>
           <AuthProvider>
             <StructuredData />

@@ -15,7 +15,7 @@
   "startUrl": "/",
   "iconUrl": "https://yike.ng/images/logo.webp",
   "maskableIconUrl": "https://yike.ng/images/logo.webp",
-  "splashScreenFadeOutDuration": 300,
+  "splashScreenFadeOutDuration": 0,
   "splashScreenImage": "https://yike.ng/splash/splash-1080x1920.png",
   "signingKey": {
     "path": "./android.keystore",
@@ -39,7 +39,7 @@
   ],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://yike.ng/manifest.json",
-  "fallbackType": "webview",
+  "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": {
     "enabled": false
