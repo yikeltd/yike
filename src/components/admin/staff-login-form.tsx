@@ -87,6 +87,25 @@ export function StaffLoginForm({ staffApp = false }: Props) {
       .update({ last_login_at: new Date().toISOString() })
       .eq("id", user.id);
 
+    const postLogin = await fetch("/api/staff/post-login", { method: "POST" });
+    const postData = (await postLogin.json().catch(() => ({}))) as {
+      blocked?: boolean;
+      message?: string;
+      requiresPasswordReset?: boolean;
+    };
+
+    if (postLogin.status === 403 || postData.blocked) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      setError(postData.message ?? "Your staff access has been suspended.");
+      return;
+    }
+
+    if (postData.requiresPasswordReset) {
+      router.replace("/lex/auth/staff/set-password");
+      return;
+    }
+
     await fetch("/api/auth/session/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -13,7 +13,7 @@ import {
   isVerifiedAgent,
 } from "@/lib/utils";
 import { propertyAbsoluteUrl } from "@/lib/property-url";
-import { optimizeListingImageUrl } from "@/lib/image-url";
+import { listingShareImageUrl } from "@/lib/share-images";
 import { AgentTrustCard } from "@/components/property/agent-trust-card";
 import { ReportRentedButton } from "@/components/property/report-rented-button";
 import { ListingGallery } from "@/components/property/listing-gallery";
@@ -69,11 +69,9 @@ export async function generateMetadata({
   const description =
     property.seo_description ??
     `${propertyTypeLabel(property.property_type)} in ${property.area}, ${property.city}. ${price}. Contact agent on WhatsApp — ${SITE_NAME}.`;
-  const image = property.media_urls[0]?.startsWith("http")
-    ? optimizeListingImageUrl(property.media_urls[0], 1200)
-    : `${SITE_URL}/placeholder-property.svg`;
-
+  const image = listingShareImageUrl(property.media_urls);
   const canonical = propertyAbsoluteUrl(property);
+
   return {
     title,
     description,
@@ -82,14 +80,23 @@ export async function generateMetadata({
       title,
       description,
       url: canonical,
-      images: [{ url: image, width: 1200, height: 630 }],
+      siteName: SITE_NAME,
+      locale: "en_NG",
       type: "website",
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 1200,
+          alt: property.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [image],
+      images: [{ url: image, alt: property.title }],
     },
   };
 }

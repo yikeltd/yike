@@ -130,7 +130,13 @@ export async function PATCH(req: Request) {
 
   const body = (await req.json()) as {
     id: string;
-    action: "disable" | "enable" | "reset_password";
+    action:
+      | "disable"
+      | "enable"
+      | "suspend"
+      | "archive"
+      | "reactivate"
+      | "reset_password";
     password?: string;
   };
 
@@ -142,28 +148,42 @@ export async function PATCH(req: Request) {
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim();
 
-  if (body.action === "disable") {
+  if (body.action === "disable" || body.action === "suspend") {
     await supabase
       .from("staff_profiles")
-      .update({ status: "disabled", disabled_at: new Date().toISOString() })
+      .update({ status: "suspended", disabled_at: new Date().toISOString() })
       .eq("id", body.id);
     await writeAuditLog({
       actor_id: auth.user.id,
       actor_role: auth.profile.role,
-      action: "staff.disable",
+      action: "staff.suspend",
       target_type: "staff",
       target_id: body.id,
       ip,
     });
-  } else if (body.action === "enable") {
+  } else if (body.action === "enable" || body.action === "reactivate") {
     await supabase
       .from("staff_profiles")
-      .update({ status: "active", disabled_at: null })
+      .update({ status: "active", disabled_at: null, archived_at: null })
       .eq("id", body.id);
     await writeAuditLog({
       actor_id: auth.user.id,
       actor_role: auth.profile.role,
-      action: "staff.enable",
+      action: "staff.reactivate",
+      target_type: "staff",
+      target_id: body.id,
+      ip,
+    });
+  } else if (body.action === "archive") {
+    const now = new Date().toISOString();
+    await supabase
+      .from("staff_profiles")
+      .update({ status: "archived", disabled_at: now, archived_at: now })
+      .eq("id", body.id);
+    await writeAuditLog({
+      actor_id: auth.user.id,
+      actor_role: auth.profile.role,
+      action: "staff.archive",
       target_type: "staff",
       target_id: body.id,
       ip,
@@ -205,6 +225,25 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
 
+  const { data: staff } = await supabase
+    .from("staff_profiles")
+    .select("status, full_name")
+    .eq("id", id)
+    .single();
+
+  if (!staff) {
+    return NextResponse.json({ error: "Staff not found" }, { status: 404 });
+  }
+
+  if (staff.status !== "archived") {
+    return NextResponse.json(
+      {
+        error: "Archive staff before permanent deletion. Use Suspend or Archive to preserve audit logs.",
+      },
+      { status: 400 }
+    );
+  }
+
   await supabase.from("staff_profiles").delete().eq("id", id);
   await supabase.auth.admin.deleteUser(id);
 
@@ -217,6 +256,7 @@ export async function DELETE(req: Request) {
     action: "staff.delete",
     target_type: "staff",
     target_id: id,
+    target_user_name: staff.full_name,
     ip,
   });
 

@@ -1,7 +1,7 @@
 # Yike Crew — Trusted Web Activity (TWA)
 
 Package: `ng.yike.staff`  
-Launcher name: **Crew**  
+Launcher name: **Yike Crew**  
 Host: `https://yike.ng`  
 Start URL: `https://yike.ng/staff`  
 Manifest: `https://yike.ng/staff/manifest.json`

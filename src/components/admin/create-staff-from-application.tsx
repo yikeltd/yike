@@ -11,6 +11,11 @@ import {
   getOnboardingRoleOption,
   type OnboardingRoleKey,
 } from "@/lib/admin/staff-onboarding/constants";
+import {
+  ACCESS_CHECKLIST_ITEMS,
+  defaultAccessChecklist,
+  type AccessChecklist,
+} from "@/lib/admin/staff-onboarding/checklist";
 import { generateTemporaryPassword } from "@/lib/admin/staff-onboarding/password";
 import { STAFF_WORK_AREA_LABELS } from "@/lib/admin/staff-work-areas";
 import { cn } from "@/lib/utils";
@@ -63,6 +68,9 @@ export function CreateStaffFromApplication({ application }: { application: Appli
     zoho_login_url: DEFAULT_ZOHO_MAIL_LOGIN_URL,
     welcome_note: "Welcome to Yike. We're excited to have you on the team.",
     instructions: "",
+    access_checklist: defaultAccessChecklist(),
+    require_password_reset: true,
+    internal_notes: "",
   }));
 
   const roleOpt = useMemo(
@@ -132,6 +140,9 @@ export function CreateStaffFromApplication({ application }: { application: Appli
           zoho_login_url: form.zoho_login_url,
           welcome_note: form.welcome_note,
           instructions: form.instructions,
+          access_checklist: form.access_checklist,
+          require_password_reset: form.require_password_reset,
+          internal_notes: form.internal_notes,
         }),
       });
       const data = (await res.json()) as { html?: string; subject?: string; error?: string };
@@ -185,6 +196,9 @@ export function CreateStaffFromApplication({ application }: { application: Appli
           zoho_login_url: form.zoho_login_url,
           welcome_note: form.welcome_note,
           instructions: form.instructions,
+          access_checklist: form.access_checklist,
+          require_password_reset: form.require_password_reset,
+          internal_notes: form.internal_notes,
         }),
       });
       const data = (await res.json()) as { error?: string; message?: string };
@@ -361,6 +375,66 @@ export function CreateStaffFromApplication({ application }: { application: Appli
                       value={form.instructions}
                       onChange={(e) => setForm({ ...form, instructions: e.target.value })}
                       placeholder="Expectations, hours, reporting, onboarding steps…"
+                      className="mt-1 w-full rounded-xl border border-navy/10 px-3 py-2 text-sm"
+                    />
+                  </label>
+
+                  <div className="rounded-xl border border-navy/10 bg-surface/40 p-4">
+                    <p className="text-xs font-bold text-navy">Access included</p>
+                    <p className="mt-1 text-[11px] text-muted">
+                      Tick what is ready before sending onboarding.
+                    </p>
+                    <ul className="mt-3 space-y-2">
+                      {ACCESS_CHECKLIST_ITEMS.map((item) => (
+                        <li key={item.key}>
+                          <label className="flex cursor-pointer items-center gap-2 text-sm text-navy">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(form.access_checklist[item.key])}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  access_checklist: {
+                                    ...f.access_checklist,
+                                    [item.key]: e.target.checked,
+                                  } as AccessChecklist,
+                                }))
+                              }
+                              className="rounded border-navy/20 text-gold focus:ring-gold"
+                            />
+                            {item.label}
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-navy/10 p-4">
+                    <input
+                      type="checkbox"
+                      checked={form.require_password_reset}
+                      onChange={(e) =>
+                        setForm({ ...form, require_password_reset: e.target.checked })
+                      }
+                      className="mt-0.5 rounded border-navy/20 text-gold focus:ring-gold"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-navy">
+                        Require password reset on first login
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted">
+                        Recommended — staff must set a new Yike login password before access.
+                      </span>
+                    </span>
+                  </label>
+
+                  <label className="block text-xs font-semibold text-muted">
+                    Internal admin notes (private)
+                    <textarea
+                      rows={2}
+                      value={form.internal_notes}
+                      onChange={(e) => setForm({ ...form, internal_notes: e.target.value })}
+                      placeholder="Strong communication, part-time only, needs supervision…"
                       className="mt-1 w-full rounded-xl border border-navy/10 px-3 py-2 text-sm"
                     />
                   </label>

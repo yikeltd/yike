@@ -25,7 +25,7 @@ export const brand = {
 /** Yike Crew — internal ops app (light-background mark from app-icon.webp) */
 export const crewBrand = {
   name: "Yike Crew",
-  shortName: "Crew",
+  shortName: "Yike Crew",
   logo: "/images/crew-icon.webp",
   logoSm: "/images/crew-icon-sm.webp",
   icon192: "/staff/icons/crew-192.webp",

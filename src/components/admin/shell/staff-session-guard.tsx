@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { STAFF_LOGIN_PATH } from "@/lib/admin-paths";
 import { SessionLockOverlay } from "@/components/auth/session-lock-overlay";
 import { PinSetupModal } from "@/components/auth/pin-setup-modal";
+import { StaffFirstLoginChecklist } from "@/components/admin/staff-first-login-checklist";
 
 const HEARTBEAT_MS = 45_000;
 
@@ -122,9 +123,17 @@ export function StaffSessionGuard({ children }: { children: React.ReactNode }) {
         onComplete={() => {
           pinPromptDismissed.current = true;
           setPinSetupOpen(false);
+          void fetch("/api/staff/onboarding-checklist", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: "pin_set", completed: true }),
+          });
           void refreshStatus();
         }}
       />
+      {session?.policy?.accountClass === "staff" && session.authenticated ? (
+        <StaffFirstLoginChecklist />
+      ) : null}
     </>
   );
 }

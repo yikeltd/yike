@@ -5,16 +5,28 @@ import { useEffect, useMemo } from "react";
 import { getStateForCity } from "@/lib/constants";
 import { budgetIndexFromSearchParams } from "@/lib/budget-ranges";
 import { chipKeyFromParams, type Initial } from "@/lib/home-search-params";
-import { BrowseListingsBlock } from "@/components/search/browse-listings-block";
 import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { addRecentSearch } from "@/lib/search-recent";
 import { trackEvent } from "@/lib/analytics";
+import { useDesktopWeb } from "@/hooks/use-desktop-web";
+import { HomeMobileHero } from "@/components/home/home-mobile-hero";
+import { HomeDesktopHero } from "@/components/home/home-desktop-hero";
+import type { HeroTrustedAgentsConfig } from "@/lib/home/hero-trusted-agents";
+import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 
 export { type Initial } from "@/lib/home-search-params";
 
-export function HomeSearchHero({ initial }: { initial?: Initial }) {
+export function HomeSearchHero({
+  initial,
+  trustedAgents,
+}: {
+  initial?: Initial;
+  trustedAgents: HeroTrustedAgentsConfig;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const desktopWeb = useDesktopWeb();
+
   const browseInitial = useMemo(() => {
     const type = searchParams.get("type") ?? initial?.listingType ?? "";
     const hub = searchParams.get("hub") ?? initial?.hub ?? "";
@@ -40,53 +52,47 @@ export function HomeSearchHero({ initial }: { initial?: Initial }) {
 
   useEffect(() => {
     if (searchParams.get("focus") === "search") {
+      const targetId = desktopWeb ? "home-desktop-search" : "home-search";
       document
-        .getElementById("home-search")
+        .getElementById(targetId)
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [searchParams]);
+  }, [searchParams, desktopWeb]);
+
+  function handleSearch({ params, label }: BrowseSearchPayload) {
+    trackEvent("search", {
+      city: params.get("city") || undefined,
+      area: params.get("area") || undefined,
+      listing_type: params.get("type") || undefined,
+      placement: desktopWeb ? "home_desktop_filters" : "home_filters",
+    });
+
+    saveBrowsePreferences({
+      city: params.get("city") || undefined,
+      area: params.get("area") || undefined,
+      listingType: params.get("type") || undefined,
+      propertyType: params.get("property_type") || undefined,
+      minPrice: params.get("min") ? Number(params.get("min")) : undefined,
+      maxPrice: params.get("max") ? Number(params.get("max")) : undefined,
+    });
+
+    const qs = params.toString();
+    const href = qs ? `/search?${qs}` : "/search";
+    addRecentSearch({ label, href });
+    router.push(href);
+  }
+
+  if (desktopWeb) {
+    return (
+      <HomeDesktopHero
+        browseInitial={browseInitial}
+        trustedAgents={trustedAgents}
+        onSearch={handleSearch}
+      />
+    );
+  }
 
   return (
-    <div
-      id="home-search"
-      className="home-hero-premium full-bleed px-3 pb-6 pt-3 lg:px-6 lg:py-4 xl:px-8"
-    >
-      <div className="mx-auto max-w-7xl">
-        <BrowseListingsBlock
-          key={
-            browseInitial.dealKey +
-            browseInitial.city +
-            browseInitial.area +
-            browseInitial.propertyType +
-            browseInitial.budgetIndex
-          }
-          variant="home-premium"
-          initial={browseInitial}
-          title="Discover Homes Across Nigeria"
-          onSearch={({ params, label }) => {
-            trackEvent("search", {
-              city: params.get("city") || undefined,
-              area: params.get("area") || undefined,
-              listing_type: params.get("type") || undefined,
-              placement: "home_filters",
-            });
-
-            saveBrowsePreferences({
-              city: params.get("city") || undefined,
-              area: params.get("area") || undefined,
-              listingType: params.get("type") || undefined,
-              propertyType: params.get("property_type") || undefined,
-              minPrice: params.get("min") ? Number(params.get("min")) : undefined,
-              maxPrice: params.get("max") ? Number(params.get("max")) : undefined,
-            });
-
-            const qs = params.toString();
-            const href = qs ? `/search?${qs}` : "/search";
-            addRecentSearch({ label, href });
-            router.push(href);
-          }}
-        />
-      </div>
-    </div>
+    <HomeMobileHero browseInitial={browseInitial} onSearch={handleSearch} />
   );
 }

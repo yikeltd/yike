@@ -1,0 +1,8 @@
+-- DEPRECATED — use scripts/pending-production-migrations-20250717-20250718.sql instead.
+--
+-- The 20250718 migrations depend on 20250717 (creates verification_control_config).
+-- Running this file alone causes:
+--   ERROR: relation "verification_control_config" does not exist
+--
+-- Run the full ordered bundle:
+--   scripts/pending-production-migrations-20250717-20250718.sql

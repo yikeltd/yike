@@ -1,8 +1,8 @@
 {
-  "packageId": "com.yike.app",
+  "packageId": "ng.yike.staff",
   "host": "yike.ng",
-  "name": "Yike",
-  "launcherName": "Yike",
+  "name": "Yike Crew",
+  "launcherName": "Yike Crew",
   "display": "standalone",
   "themeColor": "#031B4E",
   "themeColorDark": "#031B4E",
@@ -12,33 +12,20 @@
   "navigationDividerColorDark": "#031B4E",
   "backgroundColor": "#031B4E",
   "enableNotifications": false,
-  "startUrl": "/",
-  "iconUrl": "https://yike.ng/icons/android-chrome-512.png",
-  "maskableIconUrl": "https://yike.ng/icons/android-chrome-512.png",
+  "startUrl": "/staff",
+  "iconUrl": "https://yike.ng/staff/icons/crew-512.png",
+  "maskableIconUrl": "https://yike.ng/staff/icons/crew-512.png",
   "splashScreenFadeOutDuration": 500,
-  "splashScreenImage": "https://yike.ng/splash/splash-1080x1920.png",
+  "splashScreenImage": "https://yike.ng/staff/splash/crew-1080x1920.png",
   "signingKey": {
     "path": "./android.keystore",
     "alias": "yike"
   },
-  "appVersionName": "1.0.2",
-  "appVersionCode": 3,
-  "shortcuts": [
-    {
-      "name": "Swipe homes",
-      "shortName": "Swipe",
-      "url": "https://yike.ng/browse",
-      "chosenIconUrl": "https://yike.ng/icons/android-chrome-192.png"
-    },
-    {
-      "name": "Search",
-      "shortName": "Search",
-      "url": "https://yike.ng/search",
-      "chosenIconUrl": "https://yike.ng/icons/android-chrome-192.png"
-    }
-  ],
+  "appVersionName": "1.0.3",
+  "appVersionCode": 4,
+  "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://yike.ng/manifest.json",
+  "webManifestUrl": "https://yike.ng/staff/manifest.json",
   "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": {
@@ -61,5 +48,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1.0.2"
+  "appVersion": "1.0.3"
 }

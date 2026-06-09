@@ -103,6 +103,12 @@ export function StatusBadge({
     pending: "bg-amber-100 text-amber-800",
     open: "bg-amber-100 text-amber-800",
     disabled: "bg-slate-100 text-slate-600",
+    suspended: "bg-red-100 text-red-700",
+    archived: "bg-slate-100 text-slate-500",
+    onboarding_pending: "bg-amber-100 text-amber-800",
+    invited: "bg-sky-100 text-sky-800",
+    onboarding_sent: "bg-indigo-100 text-indigo-800",
+    first_login_pending: "bg-violet-100 text-violet-800",
     failed: "bg-red-100 text-red-700",
   };
   return (

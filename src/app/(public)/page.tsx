@@ -5,6 +5,7 @@ import { HomeHotPicksSections } from "@/components/home/home-hotspot-row";
 import { HomeFilteredFeed } from "@/components/home/home-sections";
 import { SocialProofBar } from "@/components/home/social-proof-bar";
 import { getMarketplaceStats } from "@/lib/marketplace-stats";
+import { getHomeHeroTrustedAgentsConfig } from "@/lib/home/hero-trusted-agents.server";
 import { parseSearchParams } from "@/lib/properties";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { PrefSync } from "@/components/personalization/pref-sync";
@@ -32,7 +33,10 @@ export default async function HomePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const stats = await getMarketplaceStats();
+  const [stats, trustedAgents] = await Promise.all([
+    getMarketplaceStats(),
+    getHomeHeroTrustedAgentsConfig(),
+  ]);
   const filters = parseSearchParams(params);
   const initial = {
     listingType: filters.listing_type,
@@ -49,7 +53,7 @@ export default async function HomePage({
     <div className="home-canvas min-h-[100dvh] lg:pb-8">
       <PrefSync />
       <Suspense fallback={null}>
-        <HomeSearchHero initial={initial} />
+        <HomeSearchHero initial={initial} trustedAgents={trustedAgents} />
       </Suspense>
 
       <Suspense fallback={<SectionFallback />}>

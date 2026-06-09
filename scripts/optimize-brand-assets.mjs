@@ -1,56 +1,31 @@
 /**
- * Generates optimized Yike brand assets from public/images/logo.png
+ * Generates favicon, PWA icons, and social share images from public/images/app-icon.webp
  * Run: node scripts/optimize-brand-assets.mjs
  */
 import sharp from "sharp";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, writeFile, stat } from "fs/promises";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import pngToIco from "png-to-ico";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const INPUT = join(ROOT, "public/images/logo.png");
+const INPUT = join(ROOT, "public/images/app-icon.webp");
 const OUT_DIR = join(ROOT, "public");
 const ICONS_DIR = join(OUT_DIR, "icons");
+const APP_DIR = join(ROOT, "src/app");
 
 const NAVY = { r: 3, g: 27, b: 78, alpha: 255 };
 
-function colorDistance(r, g, b, target) {
-  return Math.sqrt(
-    (r - target.r) ** 2 + (g - target.g) ** 2 + (b - target.b) ** 2
-  );
+async function logFile(path) {
+  const { size } = await stat(path);
+  console.log(`  ${path.replace(ROOT, "")} — ${(size / 1024).toFixed(1)}KB`);
 }
 
-/** Key out navy-ish background pixels for transparent variants */
-async function withTransparentBackground(inputBuffer) {
-  const { data, info } = await sharp(inputBuffer)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-
-  const pixels = data;
-  for (let i = 0; i < pixels.length; i += 4) {
-    const r = pixels[i];
-    const g = pixels[i + 1];
-    const b = pixels[i + 2];
-    const dist = colorDistance(r, g, b, NAVY);
-    const isDark = r < 60 && g < 80 && b < 120;
-    if (dist < 55 || (isDark && dist < 90)) {
-      pixels[i + 3] = 0;
-    }
-  }
-
-  return sharp(pixels, {
-    raw: { width: info.width, height: info.height, channels: 4 },
-  }).png();
-}
-
-/** Navy-backed icon for favicon / PWA — high contrast on light & dark tabs */
-async function writeNavyIcon(transparent, path, size) {
-  const logo = await transparent
-    .clone()
-    .resize(Math.round(size * 0.78), Math.round(size * 0.78), {
+/** Square mark centred on navy — crisp in browser tabs */
+async function writeNavyIcon(source, path, size) {
+  const logo = await sharp(source)
+    .resize(Math.round(size * 0.82), Math.round(size * 0.82), {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
@@ -70,32 +45,59 @@ async function writeNavyIcon(transparent, path, size) {
     .toFile(path);
 }
 
-async function writeWebp(pipeline, path, width, quality) {
-  await pipeline
+/** WhatsApp / Telegram / Facebook link preview (1.91:1) */
+async function writeOgShare(source) {
+  const logo = await sharp(source)
+    .resize(520, 520, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+
+  const card = sharp({
+    create: {
+      width: 1200,
+      height: 630,
+      channels: 4,
+      background: NAVY,
+    },
+  }).composite([{ input: logo, gravity: "centre" }]);
+
+  await card
+    .webp({ quality: 84, effort: 6, smartSubsample: true })
+    .toFile(join(OUT_DIR, "images/og-share.webp"));
+  await card
     .clone()
-    .resize(width, width, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .webp({ quality, effort: 6, smartSubsample: true })
-    .toFile(path);
-  const { size } = await import("fs/promises").then((fs) =>
-    fs.stat(path).then((s) => ({ size: s.size }))
-  );
-  console.log(`  ${path} — ${width}px, ${(size / 1024).toFixed(1)}KB`);
+    .png({ compressionLevel: 9, palette: true, quality: 80 })
+    .toFile(join(OUT_DIR, "images/og-share.png"));
+
+  await logFile(join(OUT_DIR, "images/og-share.webp"));
+  await logFile(join(OUT_DIR, "images/og-share.png"));
 }
 
 async function main() {
-  console.log("Optimizing Yike brand assets…\n");
+  console.log("Optimizing Yike brand assets from app-icon.webp…\n");
   await mkdir(ICONS_DIR, { recursive: true });
 
-  const inputBuffer = await sharp(INPUT).toBuffer();
-  const transparent = await withTransparentBackground(inputBuffer);
+  const source = await sharp(INPUT).rotate().toBuffer();
+  const meta = await sharp(source).metadata();
+  console.log(`Source: ${meta.width}x${meta.height}\n`);
 
-  await sharp(inputBuffer)
-    .resize(512, 512, { fit: "inside", withoutEnlargement: true })
+  await sharp(source)
+    .resize(512, 512, { fit: "cover", position: "centre" })
+    .webp({ quality: 82, effort: 6, smartSubsample: true })
+    .toFile(join(OUT_DIR, "images/logo.webp"));
+  await sharp(source)
+    .resize(192, 192, { fit: "cover", position: "centre" })
+    .webp({ quality: 78, effort: 6, smartSubsample: true })
+    .toFile(join(OUT_DIR, "images/logo-sm.webp"));
+  await sharp(source)
+    .resize(512, 512, { fit: "cover", position: "centre" })
     .png({ compressionLevel: 9, palette: true })
     .toFile(join(OUT_DIR, "images/logo.png"));
 
-  await writeWebp(transparent, join(OUT_DIR, "images/logo.webp"), 512, 82);
-  await writeWebp(transparent, join(OUT_DIR, "images/logo-sm.webp"), 192, 78);
+  await logFile(join(OUT_DIR, "images/logo.webp"));
+  await logFile(join(OUT_DIR, "images/logo-sm.webp"));
+
+  await writeOgShare(source);
 
   const sizes = [
     { name: "icon-16.png", size: 16 },
@@ -107,14 +109,14 @@ async function main() {
   ];
 
   for (const { name, size } of sizes) {
-    await writeNavyIcon(transparent, join(ICONS_DIR, name), size);
-    console.log(`  icons/${name} — ${size}px navy`);
+    await writeNavyIcon(source, join(ICONS_DIR, name), size);
+    console.log(`  icons/${name} — ${size}px`);
   }
 
   const icoBuffers = await Promise.all(
     [16, 32, 48].map(async (s) => {
       const tmp = join(ICONS_DIR, `_ico-${s}.png`);
-      await writeNavyIcon(transparent, tmp, s);
+      await writeNavyIcon(source, tmp, s);
       return sharp(tmp).png().toBuffer();
     })
   );
@@ -125,7 +127,19 @@ async function main() {
     await sharp(join(ICONS_DIR, "apple-touch-icon.png")).toBuffer()
   );
 
-  console.log("\nDone. Navy-backed favicon/PWA icons written to public/ and public/icons/");
+  await writeNavyIcon(source, join(APP_DIR, "icon.png"), 512);
+  await writeNavyIcon(source, join(APP_DIR, "apple-icon.png"), 180);
+
+  const compressedMaster = join(OUT_DIR, "images/_app-icon-master.webp");
+  await sharp(source)
+    .resize(1024, 1024, { fit: "cover", position: "centre" })
+    .webp({ quality: 82, effort: 6, smartSubsample: true })
+    .toFile(compressedMaster);
+  await writeFile(INPUT, await sharp(compressedMaster).toBuffer());
+  await import("fs/promises").then((fs) => fs.unlink(compressedMaster));
+  await logFile(INPUT);
+
+  console.log("\nDone. Favicon, PWA icons, and og-share images updated.");
 }
 
 main().catch((err) => {

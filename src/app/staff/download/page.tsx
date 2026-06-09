@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 const APK_PATH = "/downloads/yike-crew.apk";
-const APK_SIZE = "2.4 MB";
+const APK_VERSION = "1.0.3";
 
 export default function StaffDownloadPage() {
   return (
@@ -35,7 +35,7 @@ export default function StaffDownloadPage() {
           download="yike-crew.apk"
           className="flex w-full items-center justify-center rounded-xl bg-gold px-4 py-3.5 text-base font-semibold text-navy shadow-sm transition active:scale-[0.98]"
         >
-          Download Android app ({APK_SIZE})
+          Download Yike Crew v{APK_VERSION}
         </a>
         <Link
           href={STAFF_APP_START_PATH}
@@ -67,7 +67,7 @@ export default function StaffDownloadPage() {
       </section>
 
       <p className="mt-auto pt-8 text-center text-xs text-white/45">
-        Crew access only. Unauthorized use is prohibited.
+        Yike Crew access only. Unauthorized use is prohibited.
       </p>
     </main>
   );

@@ -1,49 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminPageHeader, StatusBadge } from "@/components/admin/dashboard/admin-ui";
+import { AdminPageHeader } from "@/components/admin/dashboard/admin-ui";
 import { PinConfirmModal } from "@/components/admin/pin-confirm-modal";
 import { AdminPinResetPanel } from "@/components/admin/admin-pin-reset-panel";
 import { StaffAssignmentPanel } from "@/components/admin/staff-assignment-panel";
-import type { StaffProfile, StaffRole } from "@/types/database";
-
-const ROLES: StaffRole[] = [
-  "super_admin",
-  "admin",
-  "support",
-  "tech",
-  "content",
-  "careers",
-  "moderator",
-];
+import { StaffAccessSummaryCard } from "@/components/admin/staff-access-summary-card";
+import type { StaffOnboardingEvent, StaffProfile } from "@/types/database";
 
 export default function StaffManagementPage() {
   const router = useRouter();
   const [staff, setStaff] = useState<StaffProfile[]>([]);
+  const [eventsByStaff, setEventsByStaff] = useState<
+    Record<string, (StaffOnboardingEvent & { actor_name?: string | null })[]>
+  >({});
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showPin, setShowPin] = useState(false);
-  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const [form, setForm] = useState({
     full_name: "",
     email: "",
     phone: "",
-    role: "support" as StaffRole,
+    role: "support" as StaffProfile["role"],
     department: "",
     password: "",
     admin_pin: "",
   });
 
-  useEffect(() => {
-    void fetch("/api/admin/staff")
-      .then((r) => r.json())
-      .then((d: { staff?: StaffProfile[] }) => {
-        setStaff(d.staff ?? []);
-        setLoading(false);
-      });
+  const loadStaff = useCallback(async () => {
+    const res = await fetch("/api/admin/staff");
+    const d = (await res.json()) as { staff?: StaffProfile[] };
+    setStaff(d.staff ?? []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    void loadStaff();
+  }, [loadStaff]);
 
   function handleCreateClick(e: React.FormEvent) {
     e.preventDefault();
@@ -51,42 +46,24 @@ export default function StaffManagementPage() {
   }
 
   async function submitCreate() {
-    setPendingSubmit(true);
     const res = await fetch("/api/admin/staff", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-    setPendingSubmit(false);
     if (res.ok) {
       setShowCreate(false);
       setShowPin(false);
       router.refresh();
-      const data = await fetch("/api/admin/staff").then((r) => r.json());
-      setStaff(data.staff ?? []);
+      await loadStaff();
     }
-  }
-
-  async function toggleStatus(id: string, disable: boolean) {
-    setShowPin(true);
-    // PIN gate handled via modal then PATCH
-    window.__staffAction = async () => {
-      await fetch("/api/admin/staff", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, action: disable ? "disable" : "enable" }),
-      });
-      router.refresh();
-      const data = await fetch("/api/admin/staff").then((r) => r.json());
-      setStaff(data.staff ?? []);
-    };
   }
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="Staff accounts"
-        description="Create and manage internal team access"
+        description="Lifecycle management — onboard, suspend, archive. Deletion requires archive first."
         actions={
           <button
             type="button"
@@ -107,36 +84,32 @@ export default function StaffManagementPage() {
           No staff profiles yet. Create the first team member above.
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {staff.map((s) => (
-            <article
-              key={s.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-navy/10 bg-white p-4 shadow-sm"
-            >
-              <div>
-                <p className="font-bold text-navy">{s.full_name}</p>
-                <p className="text-sm text-muted">{s.email}</p>
-                <p className="mt-1 text-xs text-muted">
-                  {s.role.replace("_", " ")} · {s.department ?? "General"}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={s.status} />
+            <div key={s.id} className="space-y-2">
+              <StaffAccessSummaryCard
+                staff={s}
+                events={eventsByStaff[s.id]}
+                onUpdated={() => {
+                  void loadStaff();
+                  void fetch(`/api/admin/staff/${s.id}`)
+                    .then((r) => r.json())
+                    .then((d) => {
+                      if (d.events) {
+                        setEventsByStaff((prev) => ({ ...prev, [s.id]: d.events }));
+                      }
+                    });
+                }}
+              />
+              <div className="flex justify-end px-1">
                 <AdminPinResetPanel
                   profileId={s.id}
                   pinType="admin"
                   label="Reset admin PIN"
                   compact
                 />
-                <button
-                  type="button"
-                  onClick={() => void toggleStatus(s.id, s.status === "active")}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-navy ring-1 ring-navy/10 hover:bg-surface"
-                >
-                  {s.status === "active" ? "Disable" : "Enable"}
-                </button>
               </div>
-            </article>
+            </div>
           ))}
         </div>
       )}
@@ -156,10 +129,10 @@ export default function StaffManagementPage() {
                 Role
                 <select
                   value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value as StaffRole })}
+                  onChange={(e) => setForm({ ...form, role: e.target.value as StaffProfile["role"] })}
                   className="mt-1 w-full rounded-xl border border-navy/10 px-3 py-2 text-sm"
                 >
-                  {ROLES.map((r) => (
+                  {["super_admin", "admin", "support", "tech", "content", "careers", "moderator"].map((r) => (
                     <option key={r} value={r}>{r.replace("_", " ")}</option>
                   ))}
                 </select>
@@ -180,7 +153,6 @@ export default function StaffManagementPage() {
         <PinConfirmModal
           onVerified={async () => {
             if (showCreate) await submitCreate();
-            else if (typeof window.__staffAction === "function") await window.__staffAction();
             setShowPin(false);
           }}
           onCancel={() => setShowPin(false)}
@@ -213,10 +185,4 @@ function Field({
       />
     </label>
   );
-}
-
-declare global {
-  interface Window {
-    __staffAction?: () => Promise<void>;
-  }
 }

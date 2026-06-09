@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Plus } from "lucide-react";
 import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 import { ListPropertyNavLink } from "@/components/auth/list-property-button";
@@ -19,7 +20,7 @@ export function HeaderDesktop({ className }: { className?: string }) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 hidden border-b border-surface bg-elevated/95 backdrop-blur-md lg:block",
+        "sticky top-0 z-50 hidden border-b border-surface/80 bg-white/95 backdrop-blur-md lg:block",
         className
       )}
     >
@@ -49,12 +50,14 @@ export function HeaderDesktop({ className }: { className?: string }) {
           ))}
         </nav>
         <div className="flex items-center gap-3">
-          <AuthHeaderAccount />
+          <AuthHeaderAccount variant="desktop" />
+          <span className="h-6 w-px bg-surface" aria-hidden />
           <ListPropertyNavLink
             href="/post-property"
-            className="rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy shadow-glow-gold transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy shadow-glow-gold transition-transform hover:scale-[1.02] active:scale-[0.98]"
           >
             List Property
+            <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           </ListPropertyNavLink>
         </div>
       </div>

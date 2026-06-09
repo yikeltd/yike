@@ -25,7 +25,7 @@ def twaManifest = [
     hostName: 'yike.ng', // The domain being opened in the TWA.
     launchUrl: '/staff', // The start path for the TWA. Must be relative to the domain.
     name: 'Yike Crew', // The application name.
-    launcherName: 'Crew', // The name shown on the Android Launcher.
+    launcherName: 'Yike Crew', // The name shown on the Android Launcher.
     themeColor: '#031B4E', // The color used for the status bar.
     themeColorDark: '#031B4E', // The color used for the dark status bar.
     navigationColor: '#031B4E', // The color used for the navigation bar.
@@ -41,7 +41,7 @@ def twaManifest = [
     // - icon: Name of the resource in the drawable folder to use as an icon.
     shortcuts: [],
     // The duration of fade out animation in milliseconds to be played when removing splash screen.
-    splashScreenFadeOutDuration: 300,
+    splashScreenFadeOutDuration: 500,
     generatorApp: 'bubblewrap-cli', // Application that generated the Android Project
     // The fallback strategy for when Trusted Web Activity is not available. Possible values are
     // 'customtabs' and 'webview'.
@@ -57,8 +57,8 @@ android {
         applicationId "ng.yike.staff"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 4
+        versionName "1.0.3"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name

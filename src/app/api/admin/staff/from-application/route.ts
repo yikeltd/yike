@@ -18,6 +18,9 @@ import {
 import { sendStaffOnboardingEmail } from "@/lib/email/service";
 import type { StaffWorkArea } from "@/lib/admin/staff-work-areas";
 import { STAFF_WORK_AREA_LABELS } from "@/lib/admin/staff-work-areas";
+import { defaultAccessChecklist, type AccessChecklist } from "@/lib/admin/staff-onboarding/checklist";
+import { statusAfterOnboardingSend } from "@/lib/admin/staff-onboarding/status";
+import { logStaffOnboardingEvent } from "@/lib/admin/staff-onboarding/events";
 
 export const runtime = "nodejs";
 
@@ -35,6 +38,9 @@ type Body = {
   welcome_note?: string;
   instructions?: string;
   admin_pin?: string;
+  access_checklist?: AccessChecklist;
+  require_password_reset?: boolean;
+  internal_notes?: string;
 };
 
 export async function POST(req: Request) {
@@ -109,6 +115,8 @@ export async function POST(req: Request) {
   const responsibilities = roleOpt.workAreas as string[];
   const yikeLoginUrl = body.yike_login_url?.trim() || DEFAULT_YIKE_STAFF_LOGIN_URL;
   const zohoLoginUrl = body.zoho_login_url?.trim() || DEFAULT_ZOHO_MAIL_LOGIN_URL;
+  const accessChecklist = { ...defaultAccessChecklist(), ...body.access_checklist };
+  const requirePasswordReset = body.require_password_reset !== false;
 
   const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
     email: yikeLoginEmail,
@@ -161,6 +169,10 @@ export async function POST(req: Request) {
     application_id: body.application_id,
     onboarding_role_label: roleOpt.label,
     created_by: auth.user.id,
+    access_checklist: accessChecklist,
+    require_password_reset: requirePasswordReset,
+    internal_notes: body.internal_notes?.trim() || null,
+    status: "invited",
   });
 
   for (const workArea of roleOpt.workAreas) {
@@ -211,6 +223,11 @@ export async function POST(req: Request) {
   });
 
   if (!emailResult.ok) {
+    await supabase
+      .from("staff_profiles")
+      .update({ status: "onboarding_pending", onboarding_sent_at: null })
+      .eq("id", staffId);
+
     return NextResponse.json(
       {
         error: emailResult.error,
@@ -221,6 +238,23 @@ export async function POST(req: Request) {
       { status: 502 }
     );
   }
+
+  const lifecycleStatus = statusAfterOnboardingSend(requirePasswordReset);
+  await supabase
+    .from("staff_profiles")
+    .update({ status: lifecycleStatus, onboarding_sent_at: now })
+    .eq("id", staffId);
+
+  await logStaffOnboardingEvent(supabase, {
+    staff_id: staffId,
+    event_type: "onboarding_sent",
+    actor_id: auth.user.id,
+    metadata: {
+      work_email: workEmail,
+      role_label: roleOpt.label,
+      require_password_reset: requirePasswordReset,
+    },
+  });
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim();

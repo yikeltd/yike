@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ApplicationActions } from "@/components/admin/application-actions";
 import { CreateStaffFromApplication } from "@/components/admin/create-staff-from-application";
+import { StaffAccessSummaryCard } from "@/components/admin/staff-access-summary-card";
 import { FollowUpReviewPanel } from "@/components/admin/follow-up-review";
 import { SendFollowUpButton } from "@/components/admin/send-follow-up-button";
 import { AdminPagination } from "@/components/admin/admin-pagination";
@@ -11,6 +12,7 @@ import { parseAdminPage } from "@/lib/admin/pagination";
 import type { ApplicationRow } from "@/lib/careers/constants";
 import { statusLabel } from "@/lib/careers/constants";
 import type { CareerFollowUpRow } from "@/lib/careers/follow-up/types";
+import type { StaffProfile } from "@/types/database";
 
 type Props = {
   searchParams: Promise<{
@@ -98,6 +100,31 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
     }
   }
 
+  const staffByApplication = new Map<string, StaffProfile>();
+  const onboardedByNames = new Map<string, string>();
+
+  if (applicationIds.length > 0) {
+    const { data: staffRows } = await supabase
+      .from("staff_profiles")
+      .select("*")
+      .in("application_id", applicationIds);
+
+    for (const row of (staffRows ?? []) as StaffProfile[]) {
+      if (row.application_id) staffByApplication.set(row.application_id, row);
+    }
+
+    const onboardedIds = [...new Set((staffRows ?? []).map((s) => s.onboarded_by).filter(Boolean))];
+    if (onboardedIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", onboardedIds as string[]);
+      for (const p of profiles ?? []) {
+        onboardedByNames.set(p.id, p.full_name ?? "Admin");
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -181,6 +208,10 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
         <div className="space-y-4">
           {applications.map((app) => {
             const followUp = followUpByApp.get(app.id) ?? null;
+            const staffProfile = staffByApplication.get(app.id);
+            const onboardedName = staffProfile?.onboarded_by
+              ? onboardedByNames.get(staffProfile.onboarded_by)
+              : null;
             return (
             <article
               key={app.id}
@@ -295,6 +326,16 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
 
               {followUp && (
                 <FollowUpReviewPanel followUp={followUp} applicationId={app.id} />
+              )}
+
+              {staffProfile && (
+                <div className="mt-4">
+                  <StaffAccessSummaryCard
+                    staff={staffProfile}
+                    onboardedByName={onboardedName}
+                    compact
+                  />
+                </div>
               )}
 
               <p className="mt-2 text-[11px] text-muted">

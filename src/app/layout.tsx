@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
+import { BRAND_OG_IMAGE, BRAND_OG_IMAGE_WEBP } from "@/lib/share-images";
 import { brand, colors } from "@/lib/design/tokens";
 import { StructuredData } from "@/components/seo/structured-data";
 import { PwaRegister } from "@/components/pwa/register";
@@ -27,7 +28,7 @@ const inter = Inter({
   display: "swap",
 });
 
-const ogImage = `${SITE_URL}/images/logo.webp`;
+const ogImage = BRAND_OG_IMAGE;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -88,7 +89,10 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} — Nigerian Housing Marketplace`,
     description: SITE_TAGLINE,
-    images: [{ url: ogImage, width: 512, height: 512, alt: "Yike logo" }],
+    images: [
+      { url: ogImage, width: 1200, height: 630, alt: "Yike — Nigerian housing marketplace", type: "image/png" },
+      { url: BRAND_OG_IMAGE_WEBP, width: 1200, height: 630, alt: "Yike — Nigerian housing marketplace", type: "image/webp" },
+    ],
   },
   twitter: {
     card: "summary_large_image",

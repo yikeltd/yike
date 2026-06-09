@@ -1,4 +1,5 @@
 import type { OnboardingRoleKey } from "./constants";
+import type { AccessChecklist } from "./checklist";
 
 export type StaffOnboardingPayload = {
   application_id: string;
@@ -14,6 +15,9 @@ export type StaffOnboardingPayload = {
   welcome_note: string;
   instructions: string;
   responsibilities?: string[];
+  access_checklist?: AccessChecklist;
+  require_password_reset?: boolean;
+  internal_notes?: string;
 };
 
 export type StaffOnboardingPreviewInput = Omit<
