@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { requireSuperAdminApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPin } from "@/lib/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 
@@ -46,8 +46,10 @@ export async function PATCH(
     return NextResponse.json({ error: "PIN must be 6 digits" }, { status: 400 });
   }
 
-  const supabase = await createClient();
-  if (!supabase) {
+  let supabase: ReturnType<typeof createAdminClient>;
+  try {
+    supabase = createAdminClient();
+  } catch {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
 

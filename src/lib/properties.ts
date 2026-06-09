@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Property } from "@/types/database";
 import {
   getMockPropertyById,
@@ -462,9 +463,12 @@ export async function getRelatedSections(
 
 export async function incrementPropertyViews(id: string) {
   if (isDemoProperty(id) || !isSupabaseConfigured()) return;
-  const supabase = await createClient();
-  if (!supabase) return;
-  await supabase.rpc("increment_property_views", { property_id: id });
+  try {
+    const admin = createAdminClient();
+    await admin.rpc("increment_property_views", { property_id: id });
+  } catch (error) {
+    console.warn("[properties] view increment skipped", (error as Error).message);
+  }
 }
 
 export function parseSearchParams(

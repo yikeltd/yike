@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { trackEvent } from "@/lib/analytics";
@@ -59,9 +58,9 @@ export async function trackContactClick(input: ContactTrackInput) {
 
   if (!isSupabaseConfigured() || isDemoProperty(propertyId)) return;
 
-  const supabase = createClient();
-  await supabase.rpc("increment_contact_clicks", {
-    property_id: propertyId,
+  void fetch(`/api/properties/${encodeURIComponent(propertyId)}/contact-click`, {
+    method: "POST",
+    keepalive: true,
   });
 
   void fetch("/api/analytics/listing-event", {

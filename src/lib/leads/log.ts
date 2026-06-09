@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { generateLeadReference } from "./reference";
 import type { LeadType } from "./types";
 
@@ -7,13 +7,13 @@ function serverToken(): string | null {
   return process.env.YIKE_OTP_SERVER_TOKEN?.trim() || null;
 }
 
-function anonClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  if (!url || !key) return null;
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+function adminClient() {
+  try {
+    return createAdminClient();
+  } catch (error) {
+    console.error("[leads] admin client unavailable", (error as Error).message);
+    return null;
+  }
 }
 
 export function hashClientIp(ip: string | null): string | null {
@@ -40,7 +40,7 @@ export async function logLead(input: {
   | { ok: false; error: string; cooldown?: boolean }
 > {
   const token = serverToken();
-  const client = anonClient();
+  const client = adminClient();
   if (!token || !client) {
     return { ok: false, error: "Lead logging unavailable" };
   }

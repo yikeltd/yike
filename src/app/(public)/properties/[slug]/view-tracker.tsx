@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { addRecentlyViewed } from "@/lib/recently-viewed";
@@ -55,9 +54,11 @@ export function PropertyViewTracker({
     }
 
     if (isDemoProperty(propertyId) || !isSupabaseConfigured()) return;
-    const supabase = createClient();
-    supabase.rpc("increment_property_views", { property_id: propertyId });
-  }, [propertyId, property]);
+    void fetch(`/api/properties/${encodeURIComponent(propertyId)}/view`, {
+      method: "POST",
+      keepalive: true,
+    });
+  }, [propertyId, property, slug]);
 
   return null;
 }

@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { OtpChannel } from "@/lib/notifications/types";
 import { OTP_PROVIDER } from "./constants";
 
@@ -17,16 +18,16 @@ function otpServerToken(): string | null {
   return process.env.YIKE_OTP_SERVER_TOKEN?.trim() || null;
 }
 
-/** Server OTP DB access via SECURITY DEFINER RPC (no service-role key required). */
+/** Server OTP DB access via service-role RPC. */
 export function createOtpDbClient(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
-  if (!url || !key || !otpServerToken()) return null;
-  return createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  if (!otpServerToken()) return null;
+
+  try {
+    return createAdminClient();
+  } catch (error) {
+    console.error("[otp-rpc] admin client unavailable", (error as Error).message);
+    return null;
+  }
 }
 
 function token(): string {
