@@ -37,3 +37,5 @@ CREATE TRIGGER profiles_sync_company_cover
 UPDATE storage.buckets
 SET file_size_limit = 6291456
 WHERE id = 'profile-images';
+
+NOTIFY pgrst, 'reload schema';
