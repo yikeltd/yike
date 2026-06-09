@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { VerificationWizard } from "@/components/agent/verification-wizard";
-import { BankVerificationCard } from "@/components/verification/bank-verification-card";
 import { TrustCenterCard } from "@/components/profile/trust-center-card";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
 import type { AgentVerification, Profile } from "@/types/database";
@@ -61,18 +60,11 @@ export default function AgentVerificationPage() {
       <div>
         <h1 className="text-xl font-bold text-navy">Verification center</h1>
         <p className="mt-1 text-sm text-muted">
-          Build trust step by step — unlock visibility and platform access.
+          Email and profile photo unlock listing. Badge and WhatsApp verification are optional for now.
         </p>
       </div>
 
       <TrustCenterCard profile={profile} verified={verified} defaultExpanded />
-
-      <BankVerificationCard
-        bankName={profile.bank_name}
-        resolvedName={profile.bank_account_resolved_name}
-        verified={profile.bank_verified}
-        defaultOpen={!profile.bank_verified}
-      />
 
       <VerificationWizard
         profile={profile}

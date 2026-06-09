@@ -53,9 +53,10 @@ export async function POST(request: Request) {
   const whatsapp = body.whatsapp
     ? normalizeNigerianPhone(body.whatsapp)
     : "";
-  if (!canRequestPhoneOtp(whatsapp)) {
+  const hasWhatsApp = Boolean(whatsapp && canRequestPhoneOtp(whatsapp));
+  if (body.whatsapp && !hasWhatsApp) {
     return NextResponse.json(
-      { error: "Add a valid Nigerian WhatsApp number" },
+      { error: "Add a valid Nigerian WhatsApp number or leave it blank for now." },
       { status: 400 }
     );
   }
@@ -84,11 +85,9 @@ export async function POST(request: Request) {
     await admin
       .from("profiles")
       .update({
-        whatsapp,
-        phone: whatsapp,
+        ...(hasWhatsApp ? { whatsapp, phone: whatsapp } : {}),
         account_type: accountType,
         listing_rules_accepted_at: new Date().toISOString(),
-        adaptive_trust_level: 2,
       })
       .eq("id", user.id);
     await syncProfileVerificationMeta(admin, user.id);
@@ -116,11 +115,9 @@ export async function POST(request: Request) {
       listing_limit: UNVERIFIED_AGENT_LISTING_LIMIT,
       verified_badge: false,
       account_type: accountType,
-      whatsapp,
-      phone: whatsapp,
-      verification_status: "pending",
+      ...(hasWhatsApp ? { whatsapp, phone: whatsapp } : {}),
+      verification_status: "not_started",
       listing_rules_accepted_at: new Date().toISOString(),
-      adaptive_trust_level: 2,
     })
     .eq("id", user.id);
 

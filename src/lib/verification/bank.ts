@@ -1,3 +1,5 @@
+import { NIGERIAN_COMMERCIAL_BANKS } from "@/lib/ambassador/nigerian-banks";
+
 /** Bank verification prep — provider integration (Paystack/Monnify) comes later. */
 
 export type BankVerificationInput = {
@@ -5,25 +7,8 @@ export type BankVerificationInput = {
   accountNumber: string;
 };
 
-const NIGERIAN_BANKS = [
-  "Access Bank",
-  "GTBank",
-  "Zenith Bank",
-  "First Bank",
-  "UBA",
-  "Stanbic IBTC",
-  "Fidelity Bank",
-  "Union Bank",
-  "Sterling Bank",
-  "Polaris Bank",
-  "Wema Bank",
-  "Kuda",
-  "Opay",
-  "Palmpay",
-] as const;
-
 export function listNigerianBanks(): readonly string[] {
-  return NIGERIAN_BANKS;
+  return NIGERIAN_COMMERCIAL_BANKS.map((bank) => bank.name);
 }
 
 export function normalizeAccountNumber(raw: string): string {

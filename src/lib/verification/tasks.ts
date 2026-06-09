@@ -1,3 +1,4 @@
+import { isAgentRole } from "@/lib/agent-tiers";
 import type { VerificationControlConfig } from "./config";
 import { effectiveTrustLevel, type TrustProfileSlice } from "./levels";
 
@@ -28,8 +29,9 @@ export function getRequiredVerificationTasks(
   const escalated = profile.verification_required || level >= 4;
   const tasks: VerificationTask[] = [];
 
+  const isLister = isAgentRole(profile.role);
   const needsEmail = config?.email_verification_required !== false;
-  const needsWhatsApp = config?.whatsapp_verification_required !== false;
+  const needsWhatsApp = config?.whatsapp_verification_required === true;
   const needsBank =
     config?.bank_verification_required ||
     escalationActions.includes("require_bank_verification");
@@ -62,14 +64,14 @@ export function getRequiredVerificationTasks(
     id: "profile_complete",
     label: "Complete your profile",
     complete: Boolean(profile.full_name?.trim()),
-    required: escalated,
+    required: escalated || (isLister && level < 2 && !profile.full_name?.trim()),
   });
 
   tasks.push({
     id: "profile_photo",
     label: "Add a profile photo",
     complete: Boolean(profile.avatar_url),
-    required: level >= 4,
+    required: (isLister && level < 2 && !profile.avatar_url) || level >= 4,
   });
 
   if (needsBank) {

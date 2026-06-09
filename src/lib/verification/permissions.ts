@@ -28,10 +28,10 @@ export function getTrustCapabilities(
   profile: (Partial<TrustProfileSlice> & Pick<TrustProfileSlice, "role" | "is_banned">) | null | undefined,
   config: VerificationControlConfig = {
     email_verification_required: true,
-    whatsapp_verification_required: true,
+    whatsapp_verification_required: false,
     bank_verification_required: false,
     listing_review_required: true,
-    verified_badge_required: true,
+    verified_badge_required: false,
     enhanced_review_required: false,
     company_verification_required: false,
     cac_verification_required: false,

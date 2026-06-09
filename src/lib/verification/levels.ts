@@ -60,19 +60,17 @@ export function computeSuggestedTrustLevel(profile: Partial<TrustProfileSlice>):
   if (profile.is_banned) return 5;
 
   const hasEmail = profile.email_verified;
-  const hasContact = Boolean(
-    profile.whatsapp?.trim() || profile.phone?.trim()
-  );
-  const hasWhatsAppVerified = profile.phone_verified || hasContact;
-  const profileComplete = Boolean(profile.full_name?.trim()) && hasContact;
+  const hasName = Boolean(profile.full_name?.trim());
+  const hasPhoto = Boolean(profile.avatar_url);
   const isLister = isAgentRole(profile.role);
   const listingReady =
     isLister &&
     Boolean(profile.listing_rules_accepted_at) &&
-    hasWhatsAppVerified;
+    hasName &&
+    hasPhoto;
   const verifiedAgent = isVerifiedAgentProfile({
     role: profile.role ?? "user",
-    verification_status: profile.verification_status ?? "pending",
+    verification_status: profile.verification_status ?? "not_started",
     verified_badge: profile.verified_badge ?? false,
     listing_limit: null,
   });
@@ -83,8 +81,8 @@ export function computeSuggestedTrustLevel(profile: Partial<TrustProfileSlice>):
     profile.account_type === "landlord";
 
   if (!hasEmail) return 0;
-  if (!profileComplete || !hasWhatsAppVerified) return 1;
-  if (!isLister || !listingReady) return 1;
+  if (!isLister) return 1;
+  if (!listingReady) return 1;
   if (!verifiedAgent) return 2;
   if (verifiedAgent && bankOk && companyOk) return 3;
   if (verifiedAgent) return 3;

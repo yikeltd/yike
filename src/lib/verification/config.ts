@@ -19,11 +19,11 @@ export type VerificationControlConfig = {
 
 export const DEFAULT_VERIFICATION_CONFIG: VerificationControlConfig = {
   email_verification_required: true,
-  whatsapp_verification_required: true,
+  whatsapp_verification_required: false,
   bank_verification_required: false,
   listing_review_required: true,
   listing_verification_required: false,
-  verified_badge_required: true,
+  verified_badge_required: false,
   enhanced_review_required: false,
   company_verification_required: false,
   cac_verification_required: false,
@@ -47,10 +47,10 @@ export async function getVerificationControlConfig(
 
   return {
     email_verification_required: data.email_verification_required ?? true,
-    whatsapp_verification_required: data.whatsapp_verification_required ?? true,
+    whatsapp_verification_required: data.whatsapp_verification_required ?? false,
     bank_verification_required: data.bank_verification_required ?? false,
     listing_review_required: data.listing_review_required ?? true,
-    verified_badge_required: data.verified_badge_required ?? true,
+    verified_badge_required: data.verified_badge_required ?? false,
     enhanced_review_required: data.enhanced_review_required ?? false,
     company_verification_required: data.company_verification_required ?? false,
     cac_verification_required: data.cac_verification_required ?? false,

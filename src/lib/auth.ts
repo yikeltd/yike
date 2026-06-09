@@ -89,10 +89,6 @@ export async function requireAgentLister(redirectTo = "/agent/become") {
   }
 
   if (canListProperties(profile)) {
-    const hasContact = Boolean(profile.whatsapp?.trim() || profile.phone?.trim());
-    if (!hasContact) {
-      redirect("/agent/become");
-    }
     return { user, profile };
   }
 

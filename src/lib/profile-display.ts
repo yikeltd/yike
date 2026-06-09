@@ -71,8 +71,7 @@ export function listingVerificationJourney(
   if (!canListProperties(profile)) return [];
 
   const hasName = Boolean(profile.full_name?.trim());
-  const hasWhatsApp = Boolean(profile.whatsapp?.trim() || profile.phone?.trim());
-  const phoneOk = profile.phone_verified || hasWhatsApp;
+  const hasPhoto = Boolean(profile.avatar_url);
   const canPublish =
     !profile.verification_required &&
     profile.account_status !== "on_hold" &&
@@ -81,25 +80,19 @@ export function listingVerificationJourney(
   const steps: ListingJourneyStep[] = [
     {
       id: "profile",
-      label: "Profile",
-      done: hasName && hasWhatsApp,
-      current: !hasName || !hasWhatsApp,
-    },
-    {
-      id: "whatsapp",
-      label: "WhatsApp",
-      done: phoneOk,
-      current: hasName && hasWhatsApp && !phoneOk,
+      label: "Profile & photo",
+      done: hasName && hasPhoto,
+      current: !hasName || !hasPhoto,
     },
     {
       id: "review",
       label: "Ready to list",
-      done: canPublish && !verified,
-      current: phoneOk && !canPublish,
+      done: canPublish,
+      current: hasName && hasPhoto && !canPublish,
     },
     {
       id: "verified",
-      label: "Verified badge",
+      label: "Verified badge (optional)",
       done: verified,
       current: canPublish && !verified,
     },
@@ -126,7 +119,7 @@ export function agentOnboardingComplete(profile: Profile): boolean {
   return (
     canListProperties(profile) &&
     Boolean(profile.full_name?.trim()) &&
-    hasWhatsAppForListing(profile) &&
+    Boolean(profile.avatar_url) &&
     Boolean(profile.account_type)
   );
 }

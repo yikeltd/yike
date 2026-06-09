@@ -44,7 +44,6 @@ export function BecomeAgentCard({
   const [error, setError] = useState("");
 
   const phoneRequired = isPhoneOtpEnabledClient();
-  const hasWhatsApp = canRequestPhoneOtp(normalizeNigerianPhone(whatsapp));
   const identityReady = emailVerified && (!phoneRequired || phoneVerified);
 
   async function becomeAgent() {
@@ -52,9 +51,12 @@ export function BecomeAgentCard({
       setError("Please accept the listing rules to continue.");
       return;
     }
-    const normalized = normalizeNigerianPhone(whatsapp);
-    if (!canRequestPhoneOtp(normalized)) {
-      setError("Add a valid Nigerian WhatsApp number.");
+
+    const normalized = whatsapp.trim()
+      ? normalizeNigerianPhone(whatsapp)
+      : "";
+    if (normalized && !canRequestPhoneOtp(normalized)) {
+      setError("Use a valid Nigerian WhatsApp number or leave it blank for now.");
       return;
     }
 
@@ -65,7 +67,7 @@ export function BecomeAgentCard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         accountType,
-        whatsapp: normalized,
+        whatsapp: normalized || undefined,
         acceptRules: true,
       }),
     });
@@ -84,12 +86,13 @@ export function BecomeAgentCard({
       <div className="rounded-2xl border border-gold/25 bg-gold/10 p-5">
         <h1 className="text-xl font-bold text-navy">List on Yike</h1>
         <p className="mt-2 text-sm text-foreground">
-          Quick setup keeps listings trusted. Browse stays free.
+          Verify your email, add a profile photo, and post your first listing. WhatsApp and badge
+          verification can come later.
         </p>
       </div>
 
       <div className="flex gap-1">
-        {[1, 2, 3].map((n) => (
+        {[1, 2].map((n) => (
           <div
             key={n}
             className={cn(
@@ -126,17 +129,34 @@ export function BecomeAgentCard({
       )}
 
       {step === 2 && (
-        <section className="space-y-3">
-          <p className="text-sm font-bold text-navy">2. WhatsApp contact</p>
-          <p className="text-xs text-muted">
-            Renters reach you on WhatsApp. We use this for trust checks.
-          </p>
-          <Input
-            value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
-            placeholder="08012345678"
-            inputMode="tel"
-          />
+        <section className="space-y-4">
+          <p className="text-sm font-bold text-navy">2. Listing rules</p>
+          <ul className="space-y-2 text-sm text-muted">
+            <li className="flex gap-2">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
+              Real prices only — no call-for-price bait
+            </li>
+            <li className="flex gap-2">
+              <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
+              WhatsApp contact recommended for inquiries (optional for now)
+            </li>
+            <li className="flex gap-2">
+              <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
+              Up to {UNVERIFIED_AGENT_LISTING_LIMIT} active listings while you grow
+            </li>
+          </ul>
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-navy">WhatsApp number (optional)</p>
+            <Input
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              placeholder="08012345678 — add later if you prefer"
+              inputMode="tel"
+            />
+            <p className="text-xs text-muted">
+              SMS and WhatsApp verification are coming soon. You can list without this for now.
+            </p>
+          </div>
           {phoneRequired && !phoneVerified && (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               Verify your phone first.{" "}
@@ -153,39 +173,6 @@ export function BecomeAgentCard({
               </Link>
             </p>
           )}
-          <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={() => setStep(1)}>
-              Back
-            </Button>
-            <Button
-              type="button"
-              className="flex-1"
-              disabled={!identityReady || !hasWhatsApp}
-              onClick={() => setStep(3)}
-            >
-              Continue
-            </Button>
-          </div>
-        </section>
-      )}
-
-      {step === 3 && (
-        <section className="space-y-4">
-          <p className="text-sm font-bold text-navy">3. Listing rules</p>
-          <ul className="space-y-2 text-sm text-muted">
-            <li className="flex gap-2">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
-              Real prices only — no call-for-price bait
-            </li>
-            <li className="flex gap-2">
-              <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
-              Keep WhatsApp active for inquiries
-            </li>
-            <li className="flex gap-2">
-              <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
-              Up to {UNVERIFIED_AGENT_LISTING_LIMIT} active listings while you grow
-            </li>
-          </ul>
           <label className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
@@ -201,13 +188,13 @@ export function BecomeAgentCard({
             </p>
           )}
           <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={() => setStep(2)}>
+            <Button type="button" variant="ghost" onClick={() => setStep(1)}>
               Back
             </Button>
             <Button
               type="button"
               className="flex-1"
-              disabled={!acceptRules || loading}
+              disabled={!acceptRules || !identityReady || loading}
               onClick={() => void becomeAgent()}
             >
               {loading ? "Setting up…" : "Start listing"}

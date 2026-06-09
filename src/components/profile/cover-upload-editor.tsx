@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { ImageIcon, Loader2, Trash2, X } from "lucide-react";
 import { prepareCoverUpload } from "@/lib/media/prepare-cover-upload";
@@ -28,12 +29,26 @@ export function CoverUploadEditor({
 }: CoverUploadEditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [focalY, setFocalY] = useState(initialFocalY);
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   const resetDraft = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -145,57 +160,36 @@ export function CoverUploadEditor({
 
   const displayPreview = previewUrl ?? coverUrl;
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          if (hasCover) {
-            setFocalY(initialFocalY);
-            setOpen(true);
-          } else {
-            inputRef.current?.click();
-          }
-        }}
-        className={cn(
-          "pressable absolute right-3 top-3 z-20 flex h-9 items-center gap-1.5 rounded-full bg-black/35 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50",
-          className
-        )}
-        aria-label="Edit cover photo"
+  const editor =
+    open && displayPreview && mounted ? (
+      <div
+        className="fixed inset-0 z-[100] flex flex-col justify-end bg-navy/70 pb-[var(--bottom-nav-stack)] lg:items-center lg:justify-center lg:p-4 lg:pb-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cover-editor-title"
       >
-        <ImageIcon className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">Edit cover</span>
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => void onPickFile(e)}
-      />
+        <button
+          type="button"
+          className="absolute inset-0"
+          aria-label="Close"
+          onClick={closeEditor}
+        />
+        <div className="relative mx-auto w-full max-w-lg overflow-hidden rounded-t-2xl bg-white shadow-float-lg lg:max-h-[min(90vh,640px)] lg:rounded-2xl lg:flex lg:flex-col">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <h2 id="cover-editor-title" className="text-sm font-bold text-navy">
+              {pendingFile ? "Preview cover" : "Reposition cover"}
+            </h2>
+            <button
+              type="button"
+              onClick={closeEditor}
+              className="pressable rounded-full p-1 text-muted hover:bg-surface"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-      {open && displayPreview ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-navy/70 p-4 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="cover-editor-title"
-        >
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-float-lg">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h2 id="cover-editor-title" className="text-sm font-bold text-navy">
-                {pendingFile ? "Preview cover" : "Reposition cover"}
-              </h2>
-              <button
-                type="button"
-                onClick={closeEditor}
-                className="pressable rounded-full p-1 text-muted hover:bg-surface"
-                aria-label="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
+          <div className="max-h-[min(58vh,420px)] overflow-y-auto overscroll-contain lg:max-h-none lg:flex-1 lg:overflow-visible">
             <div className="relative mx-4 mt-4 aspect-[3/1] overflow-hidden rounded-xl bg-navy">
               <Image
                 src={displayPreview}
@@ -236,43 +230,75 @@ export function CoverUploadEditor({
               </p>
               {error ? <p className="text-xs text-danger">{error}</p> : null}
             </div>
+          </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3">
-              {hasCover ? (
-                <button
-                  type="button"
-                  onClick={() => void removeCover()}
-                  disabled={removing || uploading}
-                  className="pressable inline-flex items-center gap-1.5 text-xs font-semibold text-danger disabled:opacity-50"
-                >
-                  {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                  Remove cover
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={closeEditor}
-                  className="pressable rounded-full px-4 py-2 text-xs font-semibold text-muted"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void (pendingFile ? saveCover() : saveRepositionOnly())}
-                  disabled={uploading || removing || (!pendingFile && !hasCover)}
-                  className="pressable inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-bold text-navy disabled:opacity-50"
-                >
-                  {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                  Save
-                </button>
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pb-3">
+            {hasCover ? (
+              <button
+                type="button"
+                onClick={() => void removeCover()}
+                disabled={removing || uploading}
+                className="pressable inline-flex items-center gap-1.5 text-xs font-semibold text-danger disabled:opacity-50"
+              >
+                {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Remove cover
+              </button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={closeEditor}
+                className="pressable rounded-full px-4 py-2 text-xs font-semibold text-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void (pendingFile ? saveCover() : saveRepositionOnly())}
+                disabled={uploading || removing || (!pendingFile && !hasCover)}
+                className="pressable inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-bold text-navy disabled:opacity-50"
+              >
+                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                Save
+              </button>
             </div>
           </div>
         </div>
-      ) : null}
+      </div>
+    ) : null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          if (hasCover) {
+            setFocalY(initialFocalY);
+            setOpen(true);
+          } else {
+            inputRef.current?.click();
+          }
+        }}
+        className={cn(
+          "pressable absolute right-3 top-3 z-20 flex h-9 items-center gap-1.5 rounded-full bg-black/35 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50",
+          className
+        )}
+        aria-label="Edit cover photo"
+      >
+        <ImageIcon className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Edit cover</span>
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => void onPickFile(e)}
+      />
+
+      {editor ? createPortal(editor, document.body) : null}
     </>
   );
 }

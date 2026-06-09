@@ -2,7 +2,6 @@ import type { Profile } from "@/types/database";
 import { isAgentRole } from "@/lib/agent-tiers";
 import { getProfilePersona } from "@/lib/profile-display";
 import { effectiveTrustLevel } from "./levels";
-import { getRequiredVerificationTasks } from "./tasks";
 
 export type TrustItemStatus =
   | "complete"
@@ -31,11 +30,11 @@ export function getTrustStatusChip(
   const status = profile.verification_status;
   const level = effectiveTrustLevel(profile);
 
-  if (status === "pending") {
-    return { label: "Under review", tone: "warning" };
-  }
   if (verified || profile.verified_badge) {
     return { label: "Premium verified", tone: "premium" };
+  }
+  if (status === "pending" && profile.verified_badge) {
+    return { label: "Under review", tone: "warning" };
   }
   if (level >= 3) {
     return { label: "Verified", tone: "success" };
@@ -55,7 +54,6 @@ export function getTrustProgressItems(
 ): TrustProgressItem[] {
   const persona = getProfilePersona(profile);
   const isLister = isAgentRole(profile.role);
-  const tasks = getRequiredVerificationTasks(profile);
   const items: TrustProgressItem[] = [];
 
   items.push({
@@ -71,7 +69,7 @@ export function getTrustProgressItems(
   items.push({
     id: "whatsapp",
     label: "WhatsApp connected",
-    status: whatsappDone ? "complete" : "action_needed",
+    status: whatsappDone ? "complete" : "optional",
     href: "/agent",
   });
 
@@ -83,16 +81,6 @@ export function getTrustProgressItems(
   });
 
   if (isLister) {
-    const bankTask = tasks.find((t) => t.id === "bank");
-    if (bankTask) {
-      items.push({
-        id: "bank",
-        label: "Bank verification",
-        status: profile.bank_verified ? "complete" : "action_needed",
-        href: "/agent/verification",
-      });
-    }
-
     if (persona === "company") {
       items.push({
         id: "company",
@@ -109,17 +97,13 @@ export function getTrustProgressItems(
         status: "complete",
         href: "/agent/verification",
       });
-    } else if (profile.verification_status === "pending") {
+    } else {
       items.push({
         id: "agent_badge",
-        label: "Verified agent badge",
-        status: "under_review",
-        href: "/agent/verification",
-      });
-    } else if (profile.verification_status !== "not_started") {
-      items.push({
-        id: "agent_badge",
-        label: "Verified agent badge",
+        label:
+          profile.verification_status === "pending"
+            ? "Verified agent badge (under review)"
+            : "Verified agent badge",
         status: "optional",
         href: "/agent/verification",
       });
@@ -152,15 +136,10 @@ export function getNextStepMessage(
       return "Add WhatsApp so buyers can reach you.";
     case "profile_photo":
       return "Add a profile photo.";
-    case "bank":
-      return "Add bank details to unlock payouts.";
     case "company":
       return "Complete company verification.";
     case "agent_badge":
-      if (next.status === "under_review") {
-        return "Badge application under review.";
-      }
-      return "Apply for verified badge for higher visibility.";
+      return "Optional — apply for higher visibility when you are ready.";
     default:
       return null;
   }
