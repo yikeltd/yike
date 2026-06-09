@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createVerifiedAdminClient, probeSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   getSendchampConfigSummary,
   isSendchampConfigured,
@@ -24,12 +24,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const admin = createAdminClient();
-  let supabaseAdminConfigured = false;
+  const supabaseProbe = await probeSupabaseAdmin();
+  const admin = await createVerifiedAdminClient();
+  let phoneOtpRequestsReachable = false;
   if (admin) {
     const { error } = await admin.from("phone_otp_requests").select("id").limit(1);
-    supabaseAdminConfigured = !error;
+    phoneOtpRequestsReachable = !error;
+    if (error) {
+      console.error("[health/otp] phone_otp_requests query failed", error.message);
+    }
   }
+  const supabaseAdminConfigured = supabaseProbe.ok && phoneOtpRequestsReachable;
 
   const sendchamp = getSendchampConfigSummary();
   const diagnostics = isSendchampConfigured()
@@ -39,6 +44,8 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: supabaseAdminConfigured && sendchamp.configured,
     supabaseAdminConfigured,
+    supabaseAdmin: supabaseProbe,
+    phoneOtpRequestsReachable,
     sendchampPublicKeyConfigured: sendchamp.publicKeyConfigured ?? false,
     sendchampBaseUrlConfigured:
       sendchamp.baseUrlConfigured ?? Boolean(process.env.SENDCHAMP_LIVE_BASE_URL?.trim()),

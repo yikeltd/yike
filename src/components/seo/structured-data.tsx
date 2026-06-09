@@ -20,7 +20,7 @@ export function StructuredData() {
         url: SITE_URL,
         logo: {
           "@type": "ImageObject",
-          url: `${SITE_URL}/images/og-share.webp`,
+          url: `${SITE_URL}/images/logo.webp`,
           width: 512,
           height: 512,
         },

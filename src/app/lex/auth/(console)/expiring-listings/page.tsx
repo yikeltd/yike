@@ -6,6 +6,7 @@ import { parseAdminPage } from "@/lib/admin/pagination";
 import { propertyPath } from "@/lib/property-url";
 import { daysUntilExpiry } from "@/lib/listing-lifecycle";
 import type { Property } from "@/types/database";
+import { offsetDaysIso } from "@/lib/time";
 
 export default async function ExpiringListingsPage({
   searchParams,
@@ -18,7 +19,7 @@ export default async function ExpiringListingsPage({
   const supabase = await requireServerClient();
 
   const now = new Date().toISOString();
-  const cutoff = new Date(Date.now() + withinDays * 86_400_000).toISOString();
+  const cutoff = offsetDaysIso(withinDays);
 
   const { data, count } = await supabase
     .from("properties")

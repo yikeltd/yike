@@ -298,12 +298,15 @@ export function AdminTrustCommandCenter() {
       </div>
 
       <div className="flex flex-wrap gap-2 text-xs">
+        {/* API downloads intentionally use native anchors. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a
           href="/api/admin/trust/exports?kind=property_verifications"
           className="rounded-lg border px-2 py-1 font-bold text-navy"
         >
           Export property CSV
         </a>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a
           href="/api/admin/trust/exports?kind=legal_verifications"
           className="rounded-lg border px-2 py-1 font-bold text-navy"

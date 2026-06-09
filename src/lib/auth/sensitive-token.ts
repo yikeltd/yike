@@ -6,7 +6,6 @@ function signingSecret(): string | null {
   const secret =
     process.env.SENSITIVE_TOKEN_SECRET?.trim() ||
     process.env.CRON_SECRET?.trim() ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
     null;
   return secret;
 }

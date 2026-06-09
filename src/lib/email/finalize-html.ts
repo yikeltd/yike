@@ -10,6 +10,9 @@ export async function finalizeTransactionalEmailHtml(
   if (options?.includeAd === false) {
     return applyEmailAd(html, "");
   }
-  const adHtml = await resolveEmailAdHtml(options?.admin ?? null);
+  const adHtml = await resolveEmailAdHtml(options?.admin ?? null).catch((error) => {
+    console.warn("[email] optional ad injection skipped:", (error as Error).message);
+    return "";
+  });
   return applyEmailAd(html, adHtml);
 }

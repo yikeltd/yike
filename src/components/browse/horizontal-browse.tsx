@@ -39,7 +39,7 @@ export function HorizontalBrowse({ properties }: { properties: Property[] }) {
   const [resumeHint, setResumeHint] = useState<string | null>(null);
   const touchStart = useRef(0);
   const animating = useRef(false);
-  const cardEnteredAt = useRef(Date.now());
+  const cardEnteredAt = useRef(0);
   const lowData = !motionEnabled();
 
   useEffect(() => {

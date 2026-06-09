@@ -1,6 +1,6 @@
-const SHELL_CACHE = "yike-shell-v24";
-const IMAGE_CACHE = "yike-images-v4";
-const LISTING_CACHE = "yike-listings-v2";
+const SHELL_CACHE = "yike-shell-v25";
+const IMAGE_CACHE = "yike-images-v5";
+const LISTING_CACHE = "yike-listings-v3";
 const CACHE_PREFIX = "yike-";
 
 const SHELL = [

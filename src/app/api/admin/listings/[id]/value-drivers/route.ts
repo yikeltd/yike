@@ -68,7 +68,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
 
   let approveKeys = body.approveKeys ?? [];
   let rejectKeys = body.rejectKeys ?? [];
-  let requestEvidenceKeys = body.requestEvidenceKeys ?? [];
+  const requestEvidenceKeys = body.requestEvidenceKeys ?? [];
 
   if (body.action === "approve_all") {
     approveKeys = drivers.map((d) => d.driver_key);

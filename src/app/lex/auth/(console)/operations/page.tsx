@@ -3,11 +3,13 @@ import { requireServerClient } from "@/lib/supabase/require-client";
 import { adminPath } from "@/lib/admin-paths";
 import { AdminPageHeader, MetricCard } from "@/components/admin/dashboard/admin-ui";
 import { OPEN_REPORT_STATUSES } from "@/lib/constants";
+import { offsetDaysIso } from "@/lib/time";
 
 export default async function AdminOperationsPage() {
   const supabase = await requireServerClient();
   const now = new Date().toISOString();
-  const inThreeDays = new Date(Date.now() + 3 * 86_400_000).toISOString();
+  const inThreeDays = offsetDaysIso(3);
+  const lastSevenDays = offsetDaysIso(-7);
 
   const [
     openReports,
@@ -49,7 +51,7 @@ export default async function AdminOperationsPage() {
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
-      .gte("created_at", new Date(Date.now() - 7 * 86_400_000).toISOString()),
+      .gte("created_at", lastSevenDays),
     supabase
       .from("properties")
       .select("*", { count: "exact", head: true })

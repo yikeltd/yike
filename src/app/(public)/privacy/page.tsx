@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SITE_NAME, SITE_URL, COMPANY_LEGAL_NAME, COMPANY_RC, COMPANY_EMAIL } from "@/lib/constants";
 import {
   LegalCallout,
@@ -129,9 +130,9 @@ export default function PrivacyPage() {
         </p>
         <p>
           <strong>Delete your account:</strong> use our{" "}
-          <a href="/account/delete" className="font-semibold text-gold-dark underline">
+          <Link href="/account/delete" className="font-semibold text-gold-dark underline">
             account deletion page
-          </a>{" "}
+          </Link>{" "}
           while signed in, or from Profile → Delete account in the app.
         </p>
       </LegalSection>

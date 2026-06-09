@@ -5,11 +5,12 @@ import { EnvHealthPanel } from "@/components/admin/env-health-panel";
 import { adminPath } from "@/lib/admin-paths";
 import Link from "next/link";
 import { TECH_BASE_PATH } from "@/lib/admin-paths";
+import { offsetDaysIso } from "@/lib/time";
 
 export default async function AdminHealthPage() {
   await requireSuperAdmin();
   const supabase = await requireServerClient();
-  const since = new Date(Date.now() - 86400000).toISOString();
+  const since = offsetDaysIso(-1);
 
   const [emailSent, emailFailed, otpSent, otpFailed] = await Promise.all([
     supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("status", "sent").gte("created_at", since),

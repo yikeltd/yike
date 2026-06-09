@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   ArrowDown,
@@ -53,13 +53,16 @@ export function ListingPhotoManager({
   const fileMapRef = useRef<Map<string, File>>(new Map());
   const runningRef = useRef(0);
   const itemsRef = useRef(items);
-  itemsRef.current = items;
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   const ready =
     items.filter((i) => i.upload_status !== "uploading" && i.upload_status !== "error")
       .length >= MIN_LISTING_IMAGES;
 
-  const pumpQueue = useCallback(async () => {
+  async function pumpQueue() {
     while (
       runningRef.current < MAX_CONCURRENT &&
       queueRef.current.length > 0
@@ -141,7 +144,7 @@ export function ListingPhotoManager({
         void pumpQueue();
       }
     }
-  }, [onChange, propertyId]);
+  }
 
   async function handleFiles(files: FileList | null) {
     if (!files?.length) return;

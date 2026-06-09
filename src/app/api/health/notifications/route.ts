@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient, probeSupabaseAdmin } from "@/lib/supabase/admin";
+import { createVerifiedAdminClient, probeSupabaseAdmin } from "@/lib/supabase/admin";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
 import { getSendchampConfigSummary } from "@/lib/notifications/providers/sendchamp";
 
@@ -21,8 +21,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const admin = createAdminClient();
   const supabaseProbe = await probeSupabaseAdmin();
+  const admin = await createVerifiedAdminClient();
   let supabaseAdminConfigured = supabaseProbe.ok;
   if (admin && !supabaseAdminConfigured) {
     const { error } = await admin.from("phone_otp_requests").select("id").limit(1);
@@ -37,6 +37,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     supabaseAdminConfigured,
+    supabaseAdmin: supabaseProbe,
     yikeOtpServerTokenConfigured: Boolean(process.env.YIKE_OTP_SERVER_TOKEN?.trim()),
     yikeOtpRpcConfigured: Boolean(
       process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&

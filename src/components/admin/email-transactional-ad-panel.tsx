@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { AdPlacement } from "@/types/database";
@@ -200,9 +201,9 @@ export function EmailTransactionalAdPanel({
           </div>
           <p className="mt-3 text-xs text-muted">
             Also preview full templates at{" "}
-            <a href="/dev/emails" className="font-semibold text-navy underline">
+            <Link href="/dev/emails" className="font-semibold text-navy underline">
               /dev/emails
-            </a>
+            </Link>
             .
           </p>
         </div>

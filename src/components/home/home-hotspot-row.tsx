@@ -5,10 +5,19 @@ import {
 import { HomeHotPicksCarousel } from "./home-hot-picks-carousel";
 
 export async function HomeHotPicksSections() {
-  const [hottest, adminPicks] = await Promise.all([
-    getHottestListings(10),
-    getAdminHotPicks(10),
-  ]);
+  let hottest: Awaited<ReturnType<typeof getHottestListings>> = [];
+  let adminPicks: Awaited<ReturnType<typeof getAdminHotPicks>> = [];
+
+  try {
+    [hottest, adminPicks] = await Promise.all([
+      getHottestListings(10),
+      getAdminHotPicks(10),
+    ]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn("[home] hot picks unavailable", message);
+    return null;
+  }
 
   return (
     <>

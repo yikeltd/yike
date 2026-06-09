@@ -231,7 +231,7 @@ async function pickUniqueSlug(
   base: string,
   excludeId: string
 ) {
-  let candidate = normalizePropertySlug(base);
+  const candidate = normalizePropertySlug(base);
   for (let n = 1; n <= 25; n++) {
     const trySlug = n === 1 ? candidate : `${candidate}-${n}`;
     if (!(await slugTaken(supabase, trySlug, excludeId))) return trySlug;

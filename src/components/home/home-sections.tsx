@@ -14,6 +14,24 @@ import { hasActiveFilters } from "@/lib/search-filters";
 import { POPULAR_AREAS } from "@/lib/constants";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
 
+function logHomeSectionFailure(label: string, error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.warn(`[home] ${label} unavailable`, message);
+}
+
+async function safeHomeLoad<T>(
+  label: string,
+  load: () => Promise<T>,
+  fallback: T
+): Promise<T> {
+  try {
+    return await load();
+  } catch (error) {
+    logHomeSectionFailure(label, error);
+    return fallback;
+  }
+}
+
 function SectionHeader({
   title,
   subtitle,
@@ -44,7 +62,7 @@ function SectionHeader({
 }
 
 export async function HomeFeaturedSection() {
-  const featured = await getFeaturedProperties(6);
+  const featured = await safeHomeLoad("featured listings", () => getFeaturedProperties(6), []);
   const { items, isDemo } = withDemoFallback(featured);
   if (items.length === 0) return null;
   return (
@@ -60,7 +78,7 @@ export async function HomeFeaturedSection() {
 }
 
 export async function HomeVerifiedSection() {
-  const verified = await getVerifiedListings(6);
+  const verified = await safeHomeLoad("verified listings", () => getVerifiedListings(6), []);
   const { items, isDemo } = withDemoFallback(verified);
   if (items.length === 0) return null;
   return (
@@ -76,7 +94,7 @@ export async function HomeVerifiedSection() {
 }
 
 export async function HomeTrendingSection() {
-  const trending = await getMostViewedListings(6);
+  const trending = await safeHomeLoad("trending listings", () => getMostViewedListings(6), []);
   const { items, isDemo } = withDemoFallback(trending);
   if (items.length === 0) return null;
   return (
@@ -92,7 +110,7 @@ export async function HomeTrendingSection() {
 }
 
 export async function HomeRecentSection() {
-  const recent = await getPublicProperties({}, 8);
+  const recent = await safeHomeLoad("recent listings", () => getPublicProperties({}, 8), []);
   const { items, isDemo } = withDemoFallback(recent);
   if (items.length === 0) return null;
   return (
@@ -113,11 +131,13 @@ export async function HomeFilteredFeed({
   filters: PropertySearchParams;
 }) {
   const active = hasActiveFilters(filters);
-  const inferred = active ? {} : await getServerSearchPreferences();
+  const inferred = active
+    ? {}
+    : await safeHomeLoad("search preferences", getServerSearchPreferences, {});
   const query = active ? filters : { ...inferred };
-  const properties = await getPublicProperties(query, 24);
+  const properties = await safeHomeLoad("feed listings", () => getPublicProperties(query, 24), []);
   const { items, isDemo } = withDemoFallback(properties);
-  const midAd = await getActiveAd("home_feed_mid");
+  const midAd = await safeHomeLoad("home feed ad", () => getActiveAd("home_feed_mid"), null);
 
   if (items.length === 0) {
     return (

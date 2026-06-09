@@ -20,6 +20,7 @@ import type { DiscoverHub } from "@/types/database";
 import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
 import { isHotelPropertyType } from "@/constants/listingTypes";
 import type { PropertySearchParams } from "@/lib/property-search";
+import { isProductionEnv } from "@/lib/env";
 
 export type { PropertySearchParams } from "@/lib/property-search";
 
@@ -33,6 +34,10 @@ const PUBLIC_SELECT = `
     is_verified_agent, verification_level, is_responsive, response_rate
   )
 `;
+
+function canUseMockListings() {
+  return !isProductionEnv();
+}
 
 function mergeSearchParams(params: PropertySearchParams): PropertySearchParams {
   return params.q ? mergeQueryIntoParams(params, params.q) : params;
@@ -117,6 +122,7 @@ export async function getPublicProperties(
 
 export async function getApprovedPropertyIds(limit = 200): Promise<string[]> {
   if (!isSupabaseConfigured()) {
+    if (!canUseMockListings()) return [];
     return MOCK_LISTINGS.map((p) => p.id).slice(0, limit);
   }
   const supabase = await createClient();
@@ -136,13 +142,17 @@ export async function getApprovedPropertyIds(limit = 200): Promise<string[]> {
 }
 
 export async function getFeaturedProperties(limit = 8): Promise<Property[]> {
-  if (!isSupabaseConfigured()) return getMockFeatured(limit);
+  if (!isSupabaseConfigured()) {
+    return canUseMockListings() ? getMockFeatured(limit) : [];
+  }
   const rows = await getPublicProperties({ featured: true }, limit);
   return rows;
 }
 
 export async function getVerifiedListings(limit = 8): Promise<Property[]> {
-  if (!isSupabaseConfigured()) return getMockVerified(limit);
+  if (!isSupabaseConfigured()) {
+    return canUseMockListings() ? getMockVerified(limit) : [];
+  }
   const supabase = await createClient();
   if (!supabase) return [];
   const { data } = await supabase
@@ -162,13 +172,17 @@ export async function getHubListings(
   limit = 8
 ): Promise<Property[]> {
   const { getMockByHub } = await import("@/lib/mock-listings");
-  if (!isSupabaseConfigured()) return getMockByHub(hub, limit);
+  if (!isSupabaseConfigured()) {
+    return canUseMockListings() ? getMockByHub(hub, limit) : [];
+  }
   const rows = await getPublicProperties({ hub }, limit);
   return rows;
 }
 
 export async function getPropertyById(id: string): Promise<Property | null> {
-  if (isDemoProperty(id)) return getMockPropertyById(id);
+  if (isDemoProperty(id)) {
+    return canUseMockListings() ? getMockPropertyById(id) : null;
+  }
 
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
@@ -182,11 +196,15 @@ export async function getPropertyById(id: string): Promise<Property | null> {
     }
   }
 
-  return isSupabaseConfigured() ? null : getMockPropertyById(id);
+  return isSupabaseConfigured() || !canUseMockListings()
+    ? null
+    : getMockPropertyById(id);
 }
 
 export async function getPropertyBySlug(slug: string): Promise<Property | null> {
-  if (isDemoProperty(slug)) return getMockPropertyById(slug);
+  if (isDemoProperty(slug)) {
+    return canUseMockListings() ? getMockPropertyById(slug) : null;
+  }
 
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
@@ -200,7 +218,7 @@ export async function getPropertyBySlug(slug: string): Promise<Property | null> 
     }
   }
 
-  if (isSupabaseConfigured()) return null;
+  if (isSupabaseConfigured() || !canUseMockListings()) return null;
 
   const mock = MOCK_LISTINGS.find(
     (p) =>
@@ -234,7 +252,9 @@ export async function resolvePropertyRoute(
   if (bySlug) return { property: bySlug };
 
   if (isDemoProperty(param)) {
-    return { property: getMockPropertyById(param) };
+    return {
+      property: canUseMockListings() ? getMockPropertyById(param) : null,
+    };
   }
 
   return { property: null };
@@ -249,6 +269,7 @@ export async function getApprovedPropertySlugs(
   limit = 200
 ): Promise<{ id: string; slug: string | null }[]> {
   if (!isSupabaseConfigured()) {
+    if (!canUseMockListings()) return [];
     return MOCK_LISTINGS.slice(0, limit).map((p) => ({
       id: p.id,
       slug: p.slug,
@@ -279,11 +300,11 @@ export async function getRelatedProperties(
   limit = 6
 ): Promise<Property[]> {
   if (isDemoProperty(property.id)) {
-    return getRelatedMockListings(property, limit);
+    return canUseMockListings() ? getRelatedMockListings(property, limit) : [];
   }
 
   if (!isSupabaseConfigured()) {
-    return getRelatedMockListings(property, limit);
+    return canUseMockListings() ? getRelatedMockListings(property, limit) : [];
   }
 
   const supabase = await createClient();
@@ -330,7 +351,7 @@ async function fetchRelatedPool(
   limit: number
 ): Promise<Property[]> {
   if (isDemoProperty(property.id) || !isSupabaseConfigured()) {
-    return getRelatedMockListings(property, limit * 3);
+    return canUseMockListings() ? getRelatedMockListings(property, limit * 3) : [];
   }
   const supabase = await createClient();
   if (!supabase) return [];

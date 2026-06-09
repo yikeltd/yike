@@ -5,6 +5,7 @@ import { AdminLeadDealControls } from "@/components/admin/admin-lead-deal-contro
 import { AdminLeadsFilters } from "@/components/admin/admin-leads-filters";
 import { parseAdminPage, ADMIN_PAGE_SIZE } from "@/lib/admin/pagination";
 import type { LeadType } from "@/lib/leads/types";
+import { offsetDaysIso } from "@/lib/time";
 
 export default async function AdminLeadsPage({
   searchParams,
@@ -27,7 +28,7 @@ export default async function AdminLeadsPage({
   }
 
   const days = Number(params.days ?? 30);
-  const fromDate = new Date(Date.now() - days * 86_400_000).toISOString();
+  const fromDate = offsetDaysIso(-days);
   const leadType =
     params.type === "whatsapp" || params.type === "call"
       ? (params.type as LeadType)

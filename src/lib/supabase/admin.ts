@@ -2,17 +2,27 @@ import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+const ADMIN_KEY_ENV_NAMES = [
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SERVICE_ROLE",
+  "SUPABASE_SERVICE_KEY",
+] as const;
+
+type AdminKeySource = (typeof ADMIN_KEY_ENV_NAMES)[number];
+
 function supabaseUrl(): string | null {
   return process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || null;
 }
 
-function adminKeyCandidates(): string[] {
-  return [
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
-    process.env.SUPABASE_SERVICE_ROLE?.trim(),
-    process.env.SUPABASE_SERVICE_KEY?.trim(),
-    process.env.SUPABASE_SECRET_KEY?.trim(),
-  ].filter((key): key is string => Boolean(key));
+function readEnv(name: AdminKeySource): string | null {
+  return process.env[name]?.trim() || null;
+}
+
+function adminKeyCandidates(): Array<{ source: AdminKeySource; key: string }> {
+  return ADMIN_KEY_ENV_NAMES.flatMap((source) => {
+    const key = readEnv(source);
+    return key ? [{ source, key }] : [];
+  });
 }
 
 function isNewSecretKey(key: string): boolean {
@@ -27,6 +37,26 @@ function assertServerOnly() {
   if (typeof window !== "undefined") {
     throw new Error("Supabase admin client is server-only and cannot run in the browser");
   }
+}
+
+export function getSupabaseAdminConfig(): {
+  supabaseUrlPresent: boolean;
+  serviceRolePresent: boolean;
+  standardServiceRolePresent: boolean;
+  legacyServiceRolePresent: boolean;
+  serviceRoleSource: AdminKeySource | null;
+} {
+  assertServerOnly();
+  const candidates = adminKeyCandidates();
+  return {
+    supabaseUrlPresent: Boolean(supabaseUrl()),
+    serviceRolePresent: candidates.length > 0,
+    standardServiceRolePresent: Boolean(readEnv("SUPABASE_SERVICE_ROLE_KEY")),
+    legacyServiceRolePresent: candidates.some(
+      (candidate) => candidate.source !== "SUPABASE_SERVICE_ROLE_KEY"
+    ),
+    serviceRoleSource: candidates[0]?.source ?? null,
+  };
 }
 
 /** Service / secret key client for trusted server operations only. */
@@ -52,7 +82,7 @@ export function createAdminClient(): SupabaseClient {
   if (keys.length === 0) {
     throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY for Supabase admin client");
   }
-  return createServiceClient(keys[0]);
+  return createServiceClient(keys[0].key);
 }
 
 async function verifyServiceClient(client: SupabaseClient): Promise<string | null> {
@@ -82,10 +112,10 @@ export async function createVerifiedAdminClient(): Promise<SupabaseClient | null
   const keys = adminKeyCandidates();
   if (!supabaseUrl() || keys.length === 0) return null;
 
-  for (const key of keys) {
+  for (const { source, key } of keys) {
     if (describeKey(key) === "invalid") {
       console.error(
-        "[supabase/admin] SUPABASE_SERVICE_ROLE_KEY looks truncated or malformed — reveal the full key in Supabase dashboard"
+        `[supabase/admin] ${source} looks truncated or malformed — reveal the full key in Supabase dashboard`
       );
       continue;
     }
@@ -106,62 +136,113 @@ export async function probeSupabaseAdmin(): Promise<{
   keyFormat: "sb_secret" | "jwt" | "invalid" | "missing";
   supabaseUrlPresent: boolean;
   serviceRolePresent: boolean;
+  standardServiceRolePresent: boolean;
+  legacyServiceRolePresent: boolean;
+  serviceRoleSource: AdminKeySource | null;
   authAdminReachable: boolean;
   profilesReachable: boolean;
   error?: string;
 }> {
   assertServerOnly();
+  const config = getSupabaseAdminConfig();
   const keys = adminKeyCandidates();
   if (!supabaseUrl() || keys.length === 0) {
     return {
       configured: false,
       ok: false,
       keyFormat: "missing",
-      supabaseUrlPresent: Boolean(supabaseUrl()),
-      serviceRolePresent: keys.length > 0,
+      supabaseUrlPresent: config.supabaseUrlPresent,
+      serviceRolePresent: config.serviceRolePresent,
+      standardServiceRolePresent: config.standardServiceRolePresent,
+      legacyServiceRolePresent: config.legacyServiceRolePresent,
+      serviceRoleSource: config.serviceRoleSource,
       authAdminReachable: false,
       profilesReachable: false,
     };
   }
 
-  const key = keys[0];
-  const keyFormat = describeKey(key);
+  let lastResult: {
+    keyFormat: "sb_secret" | "jwt" | "invalid";
+    source: AdminKeySource;
+    authAdminReachable: boolean;
+    profilesReachable: boolean;
+    error?: string;
+  } | null = null;
 
-  if (keyFormat === "invalid") {
-    return {
-      configured: true,
-      ok: false,
+  for (const { source, key } of keys) {
+    const keyFormat = describeKey(key);
+
+    if (keyFormat === "invalid") {
+      lastResult = {
+        keyFormat,
+        source,
+        authAdminReachable: false,
+        profilesReachable: false,
+        error:
+          "Service role key looks truncated or malformed. Copy the full service_role secret from Supabase.",
+      };
+      continue;
+    }
+
+    const client = createServiceClient(key);
+    const { error: profilesError } = await client.from("profiles").select("id").limit(1);
+    const { error: authError } = await client.auth.admin.listUsers({ page: 1, perPage: 1 });
+    if (profilesError) {
+      console.error("[supabase/admin] profiles probe failed:", profilesError.message);
+    }
+    if (authError) {
+      console.error("[supabase/admin] auth admin probe failed:", authError.message);
+    }
+
+    const profilesReachable = !profilesError;
+    const authAdminReachable = !authError;
+    lastResult = {
       keyFormat,
-      supabaseUrlPresent: true,
-      serviceRolePresent: true,
-      authAdminReachable: false,
-      profilesReachable: false,
+      source,
+      authAdminReachable,
+      profilesReachable,
       error:
-        "Key looks truncated or malformed — copy the full sb_secret_… or service_role JWT from Supabase (Reveal key)",
+        profilesReachable && authAdminReachable
+          ? undefined
+          : "Supabase service role cannot access auth admin or profiles. Check service role key/project match.",
     };
+
+    if (profilesReachable && authAdminReachable) {
+      return {
+        configured: true,
+        ok: true,
+        keyFormat,
+        supabaseUrlPresent: true,
+        serviceRolePresent: true,
+        standardServiceRolePresent: config.standardServiceRolePresent,
+        legacyServiceRolePresent: config.legacyServiceRolePresent,
+        serviceRoleSource: source,
+        authAdminReachable,
+        profilesReachable,
+      };
+    }
   }
 
-  const client = createServiceClient(key);
-
-  const { error: profilesError } = await client.from("profiles").select("id").limit(1);
-  const { error: authError } = await client.auth.admin.listUsers({ page: 1, perPage: 1 });
-  if (profilesError) console.error("[supabase/admin] profiles probe failed:", profilesError.message);
-  if (authError) console.error("[supabase/admin] auth admin probe failed:", authError.message);
-
-  const profilesReachable = !profilesError;
-  const authAdminReachable = !authError;
+  const result = lastResult ?? {
+    keyFormat: "invalid" as const,
+    source: keys[0].source,
+    authAdminReachable: false,
+    profilesReachable: false,
+    error:
+      "Service role key looks truncated or malformed. Copy the full service_role secret from Supabase.",
+  };
   return {
     configured: true,
-    ok: profilesReachable && authAdminReachable,
-    keyFormat,
+    ok: false,
+    keyFormat: result.keyFormat,
     supabaseUrlPresent: true,
     serviceRolePresent: true,
-    authAdminReachable,
-    profilesReachable,
-    error:
-      profilesReachable && authAdminReachable
-        ? undefined
-        : "Supabase service role cannot access auth admin or profiles. Check service role key/project match.",
+    standardServiceRolePresent: config.standardServiceRolePresent,
+    legacyServiceRolePresent: config.legacyServiceRolePresent,
+    serviceRoleSource: result.source,
+    authAdminReachable: result.authAdminReachable,
+    profilesReachable: result.profilesReachable,
+    error: result.error,
   };
 }
 

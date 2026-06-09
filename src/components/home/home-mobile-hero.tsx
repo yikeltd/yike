@@ -33,7 +33,7 @@ export function HomeMobileHero({ browseInitial, onSearch }: HomeMobileHeroProps)
           alt=""
           fill
           priority
-          unoptimized
+          fetchPriority="high"
           className="object-cover object-[center_32%]"
           sizes="100vw"
         />

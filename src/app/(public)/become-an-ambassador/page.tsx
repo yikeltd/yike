@@ -3,7 +3,7 @@ import { PageHero } from "@/components/pages/page-hero";
 import { SITE_NAME } from "@/lib/constants";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { AmbassadorApplicationForm } from "@/components/ambassador/ambassador-application-form";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createVerifiedAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { cityHasCapacity } from "@/lib/ambassador/slots";
 
 export const metadata = {
@@ -28,13 +28,11 @@ const RESPONSIBILITIES = [
 ];
 
 async function getOpenCities() {
-  let admin;
-  try {
-    admin = createAdminClient();
-  } catch (error) {
-    console.warn("[ambassadors] open cities unavailable:", (error as Error).message);
+  if (!isAdminClientConfigured()) {
     return [];
   }
+  const admin = await createVerifiedAdminClient();
+  if (!admin) return [];
 
   const { data } = await admin
     .from("city_ambassador_slots")

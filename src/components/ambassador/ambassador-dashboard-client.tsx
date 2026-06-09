@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useSensitiveActionGate } from "@/components/auth/use-sensitive-action-gate";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { REVENUE_SOURCE_LABELS } from "@/lib/ambassador/constants";
@@ -170,9 +171,9 @@ export function AmbassadorDashboardClient() {
     return (
       <div className="mx-auto max-w-lg rounded-2xl border border-surface bg-white p-6 text-center">
         <p className="text-sm text-muted">{error}</p>
-        <a href="/become-an-ambassador" className="mt-3 inline-block text-sm font-bold text-gold-dark">
+        <Link href="/become-an-ambassador" className="mt-3 inline-block text-sm font-bold text-gold-dark">
           Apply to become an ambassador
-        </a>
+        </Link>
       </div>
     );
   }

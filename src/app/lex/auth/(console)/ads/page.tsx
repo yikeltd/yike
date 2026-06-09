@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getAllAdPlacements } from "@/lib/ads";
 import { AdPlacementForm } from "@/components/admin/ad-placement-form";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -12,9 +13,9 @@ export default async function AdminAdsPage() {
         <p className="mt-2 max-w-2xl text-sm text-muted">
           Website slots below. For the compact sponsor on{" "}
           <strong className="text-navy">all transactional emails</strong>, use{" "}
-          <a href="/lex/auth/email-ads" className="font-semibold text-navy underline">
+          <Link href="/lex/auth/email-ads" className="font-semibold text-navy underline">
             Email ads
-          </a>
+          </Link>
           .
         </p>
         {!isSupabaseConfigured() && (

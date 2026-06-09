@@ -9,6 +9,7 @@ import { isExpiringSoon, isListingExpired } from "@/lib/listing-lifecycle";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { ProfilePageClient } from "@/components/profile/profile-page-client";
 import type { Property } from "@/types/database";
+import { offsetDaysIso } from "@/lib/time";
 
 function formatMemberSince(iso: string): string {
   try {
@@ -49,7 +50,7 @@ export default async function ProfilePage() {
             .from("leads")
             .select("*", { count: "exact", head: true })
             .eq("agent_id", user.id)
-            .gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString())
+            .gte("created_at", offsetDaysIso(-30))
         : Promise.resolve({ count: 0 }),
       supabase
         .from("property_verification_requests")

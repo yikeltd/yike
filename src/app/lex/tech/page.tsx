@@ -6,12 +6,13 @@ import {
   AdminPageHeader,
   MetricCard,
 } from "@/components/admin/dashboard/admin-ui";
+import { offsetDaysIso } from "@/lib/time";
 
 export default async function TechDashboardPage() {
   const supabase = await requireServerClient();
   const sendchamp = getSendchampConfigSummary();
   const otpDbConfigured = Boolean(createOtpDbClient());
-  const since = new Date(Date.now() - 86400000).toISOString();
+  const since = offsetDaysIso(-1);
 
   const [emailSent, emailFailed, otpSent, otpFailed, recentOtpErrors, recentEmailErrors] =
     await Promise.all([

@@ -4,7 +4,7 @@ import { requireSuperAdminApi } from "@/lib/admin/api-auth";
 import { hasValidPinSession } from "@/lib/admin/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { repairAllMissingProfiles } from "@/lib/auth/profile-repair";
-import { createVerifiedAdminClient } from "@/lib/supabase/admin";
+import { createVerifiedAdminClient, probeSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -21,7 +21,20 @@ export async function POST() {
 
   const admin = await createVerifiedAdminClient();
   if (!admin) {
-    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+    const diagnostics = await probeSupabaseAdmin();
+    return NextResponse.json(
+      {
+        error:
+          "Supabase service role cannot access auth admin. Check service role key/project match.",
+        diagnostics: {
+          serviceRolePresent: diagnostics.serviceRolePresent,
+          supabaseUrlPresent: diagnostics.supabaseUrlPresent,
+          authAdminReachable: diagnostics.authAdminReachable,
+          profilesReachable: diagnostics.profilesReachable,
+        },
+      },
+      { status: 503 }
+    );
   }
 
   const result = await repairAllMissingProfiles(admin);

@@ -10,6 +10,7 @@ import {
   isSmsOtpEnabled,
   isWhatsappOtpEnabled,
 } from "@/lib/feature-flags";
+import { offsetDaysIso } from "@/lib/time";
 
 export default async function OtpFailuresPage({
   searchParams,
@@ -19,7 +20,7 @@ export default async function OtpFailuresPage({
   const sp = await searchParams;
   const { page, from, to } = parseAdminPage(sp);
   const supabase = await requireServerClient();
-  const since = new Date(Date.now() - 86400000).toISOString();
+  const since = offsetDaysIso(-1);
 
   const sendchamp = getSendchampConfigSummary();
   const otpDbConfigured = Boolean(createOtpDbClient());

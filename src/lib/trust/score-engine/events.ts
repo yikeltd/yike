@@ -102,7 +102,7 @@ export async function recordTrustScoreEvent(
   const eventCount = row.event_count + 1;
   let trustScore = clampScore(Number(row.trust_score) + scoreDelta);
   let riskScore = clampScore(Number(row.risk_score) + riskDelta);
-  let confidenceScore = clampScore(
+  const confidenceScore = clampScore(
     confidenceFromEventCount(eventCount) + confidenceDelta,
     0,
     95

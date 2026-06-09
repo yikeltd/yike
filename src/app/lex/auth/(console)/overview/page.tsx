@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin/audit-query";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StaffWorkspaceHome } from "@/components/admin/shell/staff-workspace-home";
+import { offsetDaysIso } from "@/lib/time";
 
 export default async function AdminOverviewPage() {
   const supabase = await requireServerClient();
@@ -102,17 +103,19 @@ export default async function AdminOverviewPage() {
       .limit(5),
   ]);
 
+  const since = offsetDaysIso(-1);
+
   const emailOk = await supabase
     .from("email_logs")
     .select("*", { count: "exact", head: true })
     .eq("status", "sent")
-    .gte("created_at", new Date(Date.now() - 86400000).toISOString());
+    .gte("created_at", since);
 
   const otpFailed = await supabase
     .from("otp_logs")
     .select("*", { count: "exact", head: true })
     .eq("status", "failed")
-    .gte("created_at", new Date(Date.now() - 86400000).toISOString());
+    .gte("created_at", since);
 
   const systemHealth =
     (otpFailed.count ?? 0) > 10 ? "Degraded" : "Operational";

@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { permanentRedirect } from "next/navigation";
 import { resolvePropertyRoute } from "@/lib/properties";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { getAgentRecentLeadsCount } from "@/lib/leads/queries";
 import {
   formatPrice,
@@ -25,7 +25,6 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { RentTransparencyCard } from "@/components/property/rent-transparency-card";
 import { AmenityChips } from "@/components/property/amenity-chips";
 import { ListingStructuredData } from "@/components/seo/listing-structured-data";
-import { getSession } from "@/lib/auth";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { ListingFreshness } from "@/components/property/listing-freshness";
 import { BedDouble, Bath, MapPin, Navigation } from "lucide-react";
@@ -33,7 +32,7 @@ import { PropertyViewTracker } from "./view-tracker";
 import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
 import { PropertyBackButton } from "@/components/property/property-back-button";
 import { ListingUnavailable } from "@/components/property/listing-unavailable";
-import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import { SITE_NAME } from "@/lib/constants";
 import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 import { ListingInsightsSection } from "@/components/property/listing-insights-section";
 import { ListingValueDriversSection } from "@/components/property/listing-value-drivers-section";
@@ -58,7 +57,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const { property } = await resolvePropertyRoute(slug);
-  if (!property) return { title: "Home not found" };
+  if (!property) {
+    return {
+      title: "Home not found",
+      robots: { index: false, follow: false },
+    };
+  }
 
   const price = formatPrice(
     Number(property.price),
@@ -71,11 +75,16 @@ export async function generateMetadata({
     `${propertyTypeLabel(property.property_type)} in ${property.area}, ${property.city}. ${price}. Contact agent on WhatsApp — ${SITE_NAME}.`;
   const image = listingShareImageUrl(property.media_urls);
   const canonical = propertyAbsoluteUrl(property);
+  const unavailable =
+    property.status !== "approved" || new Date(property.expires_at) <= new Date();
 
   return {
     title,
     description,
     alternates: { canonical },
+    robots: unavailable
+      ? { index: false, follow: true }
+      : { index: true, follow: true },
     openGraph: {
       title,
       description,
@@ -128,10 +137,15 @@ export default async function PropertyDetailPage({
   }
 
   const agent = property.agent;
-  const sessionUser = await getSession();
-  const admin = createAdminClient();
-  const recentLeads =
-    agent && admin ? await getAgentRecentLeadsCount(admin, agent.id) : 0;
+  let recentLeads = 0;
+  if (agent && isAdminClientConfigured()) {
+    try {
+      const admin = createAdminClient();
+      recentLeads = await getAgentRecentLeadsCount(admin, agent.id);
+    } catch (error) {
+      console.warn("[property/detail] recent leads unavailable:", (error as Error).message);
+    }
+  }
   const verified =
     property.is_verified_listing ||
     (agent ? isVerifiedAgent(agent) : false);

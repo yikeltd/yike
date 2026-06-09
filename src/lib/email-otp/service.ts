@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildEmailOtpHtml } from "@/lib/email/templates/email-otp";
 import { finalizeTransactionalEmailHtml } from "@/lib/email/finalize-html";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createVerifiedAdminClient } from "@/lib/supabase/admin";
 import { isProductionEnv } from "@/lib/env";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { EMAIL_OTP_USER_MESSAGES } from "@/lib/notifications/messages";
@@ -96,13 +96,14 @@ export async function sendEmailOtp(
     return { ok: false, error: EMAIL_OTP_USER_MESSAGES.sendFailed, status: 503 };
   }
 
+  const admin = await createVerifiedAdminClient();
   const html = await finalizeTransactionalEmailHtml(
     buildEmailOtpHtml({
       fullName: params.fullName ?? "",
       code,
       purpose: "signup",
     }),
-    { admin: createAdminClient() ?? db }
+    { admin }
   );
 
   const result = await sendTransactionalEmail({

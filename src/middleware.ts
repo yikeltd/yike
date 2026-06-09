@@ -18,6 +18,13 @@ import { STAFF_APP_COOKIE } from "@/lib/admin/staff-app";
 async function handleMiddleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
+  if (request.nextUrl.hostname === "www.yike.ng") {
+    const url = request.nextUrl.clone();
+    url.hostname = "yike.ng";
+    url.protocol = "https:";
+    return NextResponse.redirect(url, 308);
+  }
+
   const slashTarget = trailingSlashRedirect(pathname);
   if (slashTarget) {
     const url = request.nextUrl.clone();

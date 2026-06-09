@@ -17,7 +17,7 @@ export function PwaRegister() {
     });
 
     navigator.serviceWorker
-      .register("/sw.js?v=18")
+      .register("/sw.js?v=25")
       .then((reg) => {
         if (!hotReloadServiceWorker) return;
 

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Property } from "@/types/database";
 import { MOCK_LISTINGS } from "@/lib/mock-listings";
+import { isProductionEnv } from "@/lib/env";
 
 const PUBLIC_SELECT = `
   *,
@@ -23,15 +24,21 @@ function mockTrending(city?: string, limit = 6): Property[] {
   return rows.slice(0, limit);
 }
 
+function canUseMockListings() {
+  return !isProductionEnv();
+}
+
 /** Listings with highest views — honest signal, no fake counts. */
 export async function getMostViewedListings(
   limit = 6,
   city?: string
 ): Promise<Property[]> {
-  if (!isSupabaseConfigured()) return mockTrending(city, limit);
+  if (!isSupabaseConfigured()) {
+    return canUseMockListings() ? mockTrending(city, limit) : [];
+  }
 
   const supabase = await createClient();
-  if (!supabase) return mockTrending(city, limit);
+  if (!supabase) return [];
 
   let query = supabase
     .from("properties")
@@ -47,7 +54,7 @@ export async function getMostViewedListings(
   const { data } = await query;
   const rows = (data ?? []) as Property[];
   if (rows.length > 0) return rows;
-  return mockTrending(city, limit);
+  return canUseMockListings() ? mockTrending(city, limit) : [];
 }
 
 /** Recently approved listings — marketplace activity feel. */
@@ -56,6 +63,7 @@ export async function getLatestListings(
   city?: string
 ): Promise<Property[]> {
   if (!isSupabaseConfigured()) {
+    if (!canUseMockListings()) return [];
     let rows = [...MOCK_LISTINGS].sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -69,7 +77,7 @@ export async function getLatestListings(
   }
 
   const supabase = await createClient();
-  if (!supabase) return mockTrending(city, limit);
+  if (!supabase) return [];
 
   let query = supabase
     .from("properties")
@@ -84,7 +92,7 @@ export async function getLatestListings(
   const { data } = await query;
   const rows = (data ?? []) as Property[];
   if (rows.length > 0) return rows;
-  return mockTrending(city, limit);
+  return canUseMockListings() ? mockTrending(city, limit) : [];
 }
 
 /** Trending in a city — views + recency blend (simple, no fake numbers). */

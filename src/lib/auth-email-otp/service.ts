@@ -158,7 +158,7 @@ export async function sendAuthEmailOtp(
   }
 
   const otpPurpose = mapAuthOtpPurpose(params.purpose);
-  const admin = (await createVerifiedAdminClient()) ?? db;
+  const admin = await createVerifiedAdminClient();
   const html = await finalizeTransactionalEmailHtml(
     buildEmailOtpHtml({
       fullName: params.fullName ?? "",

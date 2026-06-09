@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SITE_NAME, SITE_URL, COMPANY_LEGAL_NAME, COMPANY_RC } from "@/lib/constants";
 import {
   LegalCallout,
@@ -80,9 +81,9 @@ export default function TermsPage() {
         </ul>
         <p>
           See our{" "}
-          <a href="/moderation" className="font-semibold text-gold-dark underline">
+          <Link href="/moderation" className="font-semibold text-gold-dark underline">
             Moderation &amp; Reporting Policy
-          </a>{" "}
+          </Link>{" "}
           for how reports are handled.
         </p>
       </LegalSection>
@@ -90,9 +91,9 @@ export default function TermsPage() {
       <LegalSection title="5b. Account deletion">
         <p>
           You may delete your account at any time from{" "}
-          <a href="/account/delete" className="font-semibold text-gold-dark underline">
+          <Link href="/account/delete" className="font-semibold text-gold-dark underline">
             yike.ng/account/delete
-          </a>
+          </Link>
           . Deletion is permanent and removes your profile and listings from the
           marketplace, subject to legal retention described in our Privacy Policy.
         </p>

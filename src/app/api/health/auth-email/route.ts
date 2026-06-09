@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   const fromUsesHello = resolvedFrom.toLowerCase().includes(COMPANY_EMAIL);
   const resendKey = Boolean(process.env.RESEND_API_KEY?.trim());
   const otpToken = Boolean(process.env.YIKE_OTP_SERVER_TOKEN?.trim());
-  const serviceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+  const serviceRole = supabaseProbe.serviceRolePresent;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "";
 
   const otpDbReady = Boolean(otpDb) && (serviceRole || otpToken);
@@ -44,6 +44,8 @@ export async function GET(request: Request) {
     emailOtpEnabled: isEmailOtpEnabled(),
     otpRpcClient: Boolean(otpDb),
     supabaseServiceRole: serviceRole,
+    supabaseServiceRoleSource: supabaseProbe.serviceRoleSource,
+    standardSupabaseServiceRole: supabaseProbe.standardServiceRolePresent,
     yikeOtpServerToken: otpToken,
     resendApiKey: resendKey,
     authEmailFrom: fromUsesHello,

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -7,6 +7,11 @@ import { SavedEmptyLoggedIn } from "@/components/property/saved-empty-logged-in"
 import { SavedGuestView } from "@/components/auth/saved-guest-view";
 import type { Property } from "@/types/database";
 import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
+
+export const metadata: Metadata = {
+  title: "Saved homes",
+  robots: { index: false, follow: false },
+};
 
 export default async function SavedPage() {
   const user = await getSession();

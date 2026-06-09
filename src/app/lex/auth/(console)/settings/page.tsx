@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AdminPageHeader } from "@/components/admin/dashboard/admin-ui";
 import { AdminPinSetupCard } from "@/components/admin/admin-pin-setup-card";
 import { ReviewPublishingSettings } from "@/components/admin/review-publishing-settings";
@@ -44,9 +45,9 @@ export default async function PlatformSettingsPage() {
         <SettingsCard title="Trust & reviews">
           <p className="text-sm text-muted">
             Moderate reviews at{" "}
-            <a href="/lex/auth/reviews" className="text-gold-dark underline">
+            <Link href="/lex/auth/reviews" className="text-gold-dark underline">
               Reviews
-            </a>
+            </Link>
             . Users must be logged in. One review per agent unless admin removes it.
           </p>
         </SettingsCard>

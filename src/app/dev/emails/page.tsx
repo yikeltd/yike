@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { headers } from "next/headers";
 import { requireAdmin } from "@/lib/auth";
 import { buildEmailPreviewCategories } from "@/lib/email/templates";
@@ -51,9 +52,9 @@ export default async function DevEmailsPage() {
             Email sponsor chip: <span className="font-semibold text-navy">{adSource}</span>
             {" · "}
             Manage at{" "}
-            <a href="/lex/auth/email-ads" className="font-semibold text-navy underline">
+            <Link href="/lex/auth/email-ads" className="font-semibold text-navy underline">
               /lex/auth/email-ads
-            </a>
+            </Link>
           </p>
           <nav className="mt-4 flex flex-wrap justify-center gap-2">
             {categories.map((cat) => (

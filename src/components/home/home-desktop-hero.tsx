@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   ShieldCheck,
-  MessageCircle,
   Headphones,
   Award,
   Shield,
@@ -72,8 +71,6 @@ export function HomeDesktopHero({
               src={DESKTOP_HERO_IMAGE}
               alt=""
               fill
-              priority
-              unoptimized
               className="object-cover object-center"
               sizes="(min-width: 1280px) 1280px, 100vw"
             />

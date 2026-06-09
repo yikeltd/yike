@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getDemoMarketplaceStats } from "@/lib/demo-marketplace-stats";
+import { isProductionEnv } from "@/lib/env";
 
 export type MarketplaceStats = {
   listingsThisWeek: number;
@@ -9,7 +10,9 @@ export type MarketplaceStats = {
 };
 
 export async function getMarketplaceStats(): Promise<MarketplaceStats | null> {
-  if (!isSupabaseConfigured()) return getDemoMarketplaceStats();
+  if (!isSupabaseConfigured()) {
+    return isProductionEnv() ? null : getDemoMarketplaceStats();
+  }
 
   const supabase = await createClient();
   if (!supabase) return null;
@@ -51,7 +54,7 @@ export async function getMarketplaceStats(): Promise<MarketplaceStats | null> {
   }
 
   if (listingsThisWeek === 0 && verifiedAgentsRecently === 0 && !trendingCity) {
-    return getDemoMarketplaceStats();
+    return isProductionEnv() ? null : getDemoMarketplaceStats();
   }
 
   return {

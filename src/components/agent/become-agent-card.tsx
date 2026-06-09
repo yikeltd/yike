@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, MessageCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -139,17 +140,17 @@ export function BecomeAgentCard({
           {phoneRequired && !phoneVerified && (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               Verify your phone first.{" "}
-              <a href="/auth/verify-phone?next=/agent/become" className="font-semibold underline">
+              <Link href="/auth/verify-phone?next=/agent/become" className="font-semibold underline">
                 Verify phone
-              </a>
+              </Link>
             </p>
           )}
           {(!phoneRequired || phoneVerified) && !emailVerified && (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               Verify your email first.{" "}
-              <a href="/auth/verify-email?next=/agent/become" className="font-semibold underline">
+              <Link href="/auth/verify-email?next=/agent/become" className="font-semibold underline">
                 Verify email
-              </a>
+              </Link>
             </p>
           )}
           <div className="flex gap-2">

@@ -86,18 +86,6 @@ function mapProfile(
   };
 }
 
-function applyTypeFilter<T extends { eq: Function; in: Function; or: Function }>(
-  dbQuery: T,
-  type: AdminEntityType
-): T {
-  let q = dbQuery.eq("is_banned", false) as T;
-  if (type === "user") return q.eq("role", "user") as T;
-  if (type === "agent") return q.in("role", [...AGENT_ROLES]) as T;
-  if (type === "company") return q.or(COMPANY_OR_FILTER) as T;
-  if (type === "staff") return q.in("role", [...STAFF_ROLES]) as T;
-  return q;
-}
-
 export async function searchAdminProfiles(
   admin: SupabaseClient,
   type: AdminEntityType,
@@ -109,7 +97,11 @@ export async function searchAdminProfiles(
   if (q.length < 2) return [];
 
   let dbQuery = admin.from("profiles").select(PROFILE_SELECT).limit(limit);
-  dbQuery = applyTypeFilter(dbQuery, type);
+  dbQuery = dbQuery.eq("is_banned", false);
+  if (type === "user") dbQuery = dbQuery.eq("role", "user");
+  if (type === "agent") dbQuery = dbQuery.in("role", [...AGENT_ROLES]);
+  if (type === "company") dbQuery = dbQuery.or(COMPANY_OR_FILTER);
+  if (type === "staff") dbQuery = dbQuery.in("role", [...STAFF_ROLES]);
 
   if (isUuid(q)) {
     dbQuery = dbQuery.eq("id", q);
@@ -159,7 +151,11 @@ export async function fetchProfilesByIds(
 ): Promise<AdminEntitySearchResult[]> {
   if (ids.length === 0) return [];
   let dbQuery = admin.from("profiles").select(PROFILE_SELECT).in("id", ids);
-  dbQuery = applyTypeFilter(dbQuery, type);
+  dbQuery = dbQuery.eq("is_banned", false);
+  if (type === "user") dbQuery = dbQuery.eq("role", "user");
+  if (type === "agent") dbQuery = dbQuery.in("role", [...AGENT_ROLES]);
+  if (type === "company") dbQuery = dbQuery.or(COMPANY_OR_FILTER);
+  if (type === "staff") dbQuery = dbQuery.in("role", [...STAFF_ROLES]);
   const { data, error } = await dbQuery;
   if (error) throw new Error(error.message);
   const mapped = (data ?? []).map((row) => mapProfile(type, row));
