@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { UserAvatar } from "@/components/profile/user-avatar";
 import type { Profile, PaymentPeriod, ListingType } from "@/types/database";
 import { VerifiedBadge, TrustPill, ResponsiveBadge, DeveloperBadge, AgencyBadge } from "@/components/ui/badge";
 import { ContactButtons } from "./contact-buttons";
@@ -72,21 +72,12 @@ export function AgentTrustCard({
         href={agentPublicPath(agent)}
         className="mt-3 flex items-center gap-3 pressable"
       >
-        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface">
-          {agent.avatar_url ? (
-            <Image
-              src={agent.avatar_url}
-              alt={agent.full_name ?? "Agent"}
-              fill
-              className="object-cover"
-              unoptimized
-            />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-xl font-bold text-gold">
-              {(agent.full_name ?? "A").charAt(0)}
-            </span>
-          )}
-        </div>
+        <UserAvatar
+          name={agent.full_name}
+          avatarUrl={agent.avatar_url}
+          size="md"
+          className="rounded-xl"
+        />
         <div>
           <p className="font-bold text-navy">{agent.full_name ?? "Agent"}</p>
           {agent.agent_type && (

@@ -1,6 +1,7 @@
 import sharp from "sharp";
 import {
   ALLOWED_IMAGE_TYPES,
+  AVATAR_PROFILE_SIZES,
   COVER_SIZES,
   IMAGE_PRESET_SIZES,
   IMAGE_SIZES,
@@ -188,6 +189,78 @@ async function toWebp(
     .toBuffer();
 }
 
+/** Iteratively lower WebP quality until under byte cap — stays ≥ min quality. */
+async function webpSquareToTarget(
+  pipeline: sharp.Sharp,
+  size: number,
+  startQuality: number,
+  maxBytes: number
+): Promise<Buffer> {
+  let quality = startQuality;
+  const minQ = PROFILE_MEDIA_LIMITS.minWebpQuality;
+  let last = await pipeline
+    .clone()
+    .resize(size, size, {
+      fit: "cover",
+      position: "centre",
+      kernel: sharp.kernel.lanczos3,
+    })
+    .webp(webpOptions(startQuality))
+    .toBuffer();
+
+  while (quality >= minQ) {
+    last = await pipeline
+      .clone()
+      .resize(size, size, {
+        fit: "cover",
+        position: "centre",
+        kernel: sharp.kernel.lanczos3,
+      })
+      .webp(webpOptions(quality))
+      .toBuffer();
+    if (last.length <= maxBytes) return last;
+    quality -= 3;
+  }
+
+  return last;
+}
+
+async function webpCoverToTarget(
+  pipeline: sharp.Sharp,
+  width: number,
+  startQuality: number,
+  maxBytes: number
+): Promise<Buffer> {
+  const height = Math.round(width / PROFILE_MEDIA_LIMITS.coverAspectRatio);
+  let quality = startQuality;
+  const minQ = PROFILE_MEDIA_LIMITS.minWebpQuality;
+  let last = await pipeline
+    .clone()
+    .resize(width, height, {
+      fit: "cover",
+      position: "centre",
+      kernel: sharp.kernel.lanczos3,
+    })
+    .webp(webpOptions(startQuality))
+    .toBuffer();
+
+  while (quality >= minQ) {
+    last = await pipeline
+      .clone()
+      .resize(width, height, {
+        fit: "cover",
+        position: "centre",
+        kernel: sharp.kernel.lanczos3,
+      })
+      .webp(webpOptions(quality))
+      .toBuffer();
+    if (last.length <= maxBytes) return last;
+    quality -= 3;
+  }
+
+  return last;
+}
+
 async function toBlurPlaceholder(pipeline: sharp.Sharp): Promise<string> {
   const buf = await pipeline
     .clone()
@@ -222,6 +295,66 @@ export function buildAvatarStoragePaths(userId: string): {
     thumbnail: `${base}/avatar-thumb.webp`,
     medium: `${base}/avatar.webp`,
     large: `${base}/avatar-lg.webp`,
+  };
+}
+
+/** Profile avatar — square WebP crops tuned for fast mobile loads. */
+export async function optimizeProfileAvatarImage(input: Buffer): Promise<OptimizedImageSet> {
+  if (input.length > MEDIA_LIMITS.maxUploadBytes) {
+    throw new Error("Image is too large. Try a smaller photo.");
+  }
+
+  const base = sharp(input, { failOn: "none" }).rotate();
+  const meta = await base.metadata();
+  const originalWidth = meta.width ?? 0;
+  const originalHeight = meta.height ?? 0;
+  const longEdge = Math.max(originalWidth, originalHeight);
+  const smallSource = longEdge > 0 && longEdge < MEDIA_LIMITS.minSharpLongEdge;
+  const stripped = stripMetadata(base);
+
+  const [thumbnail, medium, large, blur] = await Promise.all([
+    webpSquareToTarget(
+      stripped,
+      AVATAR_PROFILE_SIZES.thumbnail.size,
+      AVATAR_PROFILE_SIZES.thumbnail.quality,
+      AVATAR_PROFILE_SIZES.thumbnail.maxBytes
+    ),
+    webpSquareToTarget(
+      stripped,
+      AVATAR_PROFILE_SIZES.medium.size,
+      AVATAR_PROFILE_SIZES.medium.quality,
+      AVATAR_PROFILE_SIZES.medium.maxBytes
+    ),
+    webpSquareToTarget(
+      stripped,
+      AVATAR_PROFILE_SIZES.large.size,
+      AVATAR_PROFILE_SIZES.large.quality,
+      AVATAR_PROFILE_SIZES.large.maxBytes
+    ),
+    stripped
+      .clone()
+      .resize(AVATAR_PROFILE_SIZES.blur.size, AVATAR_PROFILE_SIZES.blur.size, {
+        fit: "cover",
+        position: "centre",
+      })
+      .webp({ quality: AVATAR_PROFILE_SIZES.blur.quality })
+      .toBuffer()
+      .then((buf) => `data:image/webp;base64,${buf.toString("base64")}`),
+  ]);
+
+  return {
+    thumbnail,
+    medium,
+    large,
+    blurDataUrl: blur,
+    widths: {
+      thumbnail: AVATAR_PROFILE_SIZES.thumbnail.size,
+      medium: AVATAR_PROFILE_SIZES.medium.size,
+      large: AVATAR_PROFILE_SIZES.large.size,
+    },
+    originalWidth,
+    originalHeight,
+    smallSource,
   };
 }
 
@@ -267,23 +400,6 @@ function computeCoverExtract(
   return { left, top, width: cropW, height: cropH };
 }
 
-async function toCoverWebp(
-  pipeline: sharp.Sharp,
-  width: number,
-  quality: number
-): Promise<Buffer> {
-  const height = Math.round(width / PROFILE_MEDIA_LIMITS.coverAspectRatio);
-  return pipeline
-    .clone()
-    .resize(width, height, {
-      fit: "cover",
-      position: "centre",
-      kernel: sharp.kernel.lanczos3,
-    })
-    .webp(webpOptions(quality))
-    .toBuffer();
-}
-
 /** Banner cover — 3:1 crop with vertical focal point, three WebP sizes. */
 export async function optimizeCoverImage(
   input: Buffer,
@@ -317,9 +433,24 @@ export async function optimizeCoverImage(
   );
 
   const [thumbnail, medium, large, blur] = await Promise.all([
-    toCoverWebp(cropped, COVER_SIZES.thumbnail.width, COVER_SIZES.thumbnail.quality),
-    toCoverWebp(cropped, COVER_SIZES.medium.width, COVER_SIZES.medium.quality),
-    toCoverWebp(cropped, COVER_SIZES.large.width, COVER_SIZES.large.quality),
+    webpCoverToTarget(
+      cropped,
+      COVER_SIZES.thumbnail.width,
+      COVER_SIZES.thumbnail.quality,
+      COVER_SIZES.thumbnail.maxBytes
+    ),
+    webpCoverToTarget(
+      cropped,
+      COVER_SIZES.medium.width,
+      COVER_SIZES.medium.quality,
+      COVER_SIZES.medium.maxBytes
+    ),
+    webpCoverToTarget(
+      cropped,
+      COVER_SIZES.large.width,
+      COVER_SIZES.large.quality,
+      COVER_SIZES.large.maxBytes
+    ),
     toBlurPlaceholder(cropped),
   ]);
 

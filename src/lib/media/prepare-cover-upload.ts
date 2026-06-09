@@ -29,7 +29,7 @@ function decodeViaImageElement(file: File): Promise<HTMLCanvasElement> {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      const maxEdge = 2400;
+      const maxEdge = 1400;
       const scale = Math.min(1, maxEdge / Math.max(img.naturalWidth, img.naturalHeight, 1));
       const w = Math.max(1, Math.round(img.naturalWidth * scale));
       const h = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -54,7 +54,7 @@ function decodeViaImageElement(file: File): Promise<HTMLCanvasElement> {
 }
 
 async function decodeToCanvas(file: File): Promise<HTMLCanvasElement> {
-  const maxEdge = 2400;
+  const maxEdge = 1400;
   try {
     const bitmap = await createImageBitmap(file);
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height, 1));

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { avatarDisplayUrl } from "@/lib/profile/media-urls";
 import { cn } from "@/lib/utils";
 
 export function UserAvatar({
@@ -16,6 +17,7 @@ export function UserAvatar({
 }) {
   const label = name?.trim() || "User";
   const initial = label.charAt(0).toUpperCase();
+  const src = avatarDisplayUrl(avatarUrl);
   const sizeClass = {
     sm: "h-8 w-8 text-xs",
     md: "h-12 w-12 text-base",
@@ -32,12 +34,14 @@ export function UserAvatar({
         className
       )}
     >
-      {avatarUrl ? (
+      {src ? (
         <Image
-          src={avatarUrl}
+          src={src}
           alt={label}
           fill
+          sizes={size === "xl" ? "112px" : size === "lg" ? "80px" : size === "md" ? "48px" : "32px"}
           className="object-cover"
+          decoding="async"
           unoptimized
         />
       ) : (

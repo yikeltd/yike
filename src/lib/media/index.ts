@@ -1,6 +1,7 @@
 /** Yike media pipeline — every user/admin image upload must WebP-compress server-side. */
 export {
   optimizeUploadedImage,
+  optimizeProfileAvatarImage,
   optimizeCoverImage,
   optimizeImagePreset,
   resolveImageMime,
@@ -18,6 +19,7 @@ export {
 export {
   MEDIA_LIMITS,
   PROFILE_MEDIA_LIMITS,
+  AVATAR_PROFILE_SIZES,
   IMAGE_SIZES,
   COVER_SIZES,
   IMAGE_PRESET_SIZES,

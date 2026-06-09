@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getTrustedAdminClient } from "@/lib/supabase/admin";
 import {
   assertAvatarOutputSize,
-  optimizeUploadedImage,
+  optimizeProfileAvatarImage,
   buildAvatarStoragePaths,
   resolveImageMime,
 } from "@/lib/media/image";
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     let optimized;
     try {
-      optimized = await optimizeUploadedImage(buffer);
+      optimized = await optimizeProfileAvatarImage(buffer);
       assertAvatarOutputSize(optimized);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not process image";

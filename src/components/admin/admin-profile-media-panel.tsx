@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronDown, ChevronUp, Loader2, Trash2 } from "lucide-react";
 import type { Profile } from "@/types/database";
 import { getProfileCoverUrl } from "@/lib/profile/cover";
+import { profileMediaVariantUrl } from "@/lib/profile/media-urls";
 import { cn } from "@/lib/utils";
 
 export function AdminProfileMediaPanel({ profile }: { profile: Profile }) {
@@ -41,6 +42,8 @@ export function AdminProfileMediaPanel({ profile }: { profile: Profile }) {
   }
 
   const hasMedia = Boolean(avatarUrl || coverUrl);
+  const coverReviewUrl = profileMediaVariantUrl(coverUrl, "cover", "medium");
+  const avatarReviewUrl = profileMediaVariantUrl(avatarUrl, "avatar", "medium");
 
   return (
     <section className="rounded-2xl border border-navy/10 bg-white shadow-sm">
@@ -82,7 +85,13 @@ export function AdminProfileMediaPanel({ profile }: { profile: Profile }) {
             <div className="space-y-2">
               <p className="text-xs font-bold uppercase tracking-wide text-muted">Cover</p>
               <div className="relative aspect-[3/1] overflow-hidden rounded-xl bg-navy ring-1 ring-navy/10">
-                <Image src={coverUrl} alt="Profile cover" fill className="object-cover" unoptimized />
+                <Image
+                  src={coverReviewUrl ?? coverUrl}
+                  alt="Profile cover"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
                 <div className="absolute inset-0 bg-navy/35" />
               </div>
               <button
@@ -108,7 +117,13 @@ export function AdminProfileMediaPanel({ profile }: { profile: Profile }) {
             <div className="space-y-2">
               <p className="text-xs font-bold uppercase tracking-wide text-muted">Avatar</p>
               <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-2xl bg-surface ring-1 ring-navy/10">
-                <Image src={avatarUrl} alt="Profile avatar" fill className="object-cover" unoptimized />
+                <Image
+                  src={avatarReviewUrl ?? avatarUrl}
+                  alt="Profile avatar"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
               </div>
               <button
                 type="button"

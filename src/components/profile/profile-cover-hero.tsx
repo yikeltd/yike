@@ -10,6 +10,8 @@ import {
   getProfileCoverPositionY,
   getProfileCoverUrl,
 } from "@/lib/profile/cover";
+import { coverDisplayUrl } from "@/lib/profile/media-urls";
+import { useMobileCover } from "@/hooks/use-mobile-cover";
 import { cn } from "@/lib/utils";
 
 type ProfileCoverHeroProps = {
@@ -31,20 +33,23 @@ export function ProfileCoverHero({
 }: ProfileCoverHeroProps) {
   const [coverUrl, setCoverUrl] = useState(getProfileCoverUrl(profile));
   const [coverPositionY, setCoverPositionY] = useState(getProfileCoverPositionY(profile));
+  const mobileCover = useMobileCover();
+  const coverSrc = coverDisplayUrl(coverUrl, mobileCover ? "thumb" : "medium");
 
   return (
     <section className="relative overflow-hidden rounded-[1.75rem] bg-navy text-white shadow-float-lg">
       <div className="absolute inset-0">
-        {coverUrl ? (
+        {coverSrc ? (
           <Image
-            src={coverUrl}
+            src={coverSrc}
             alt=""
             fill
-            priority={false}
-            loading="lazy"
-            sizes="(max-width: 640px) 100vw, 560px"
+            priority
+            fetchPriority="high"
+            sizes="(max-width: 767px) 100vw, 560px"
             className="object-cover"
             style={{ objectPosition: coverObjectPosition(coverPositionY) }}
+            decoding="async"
             unoptimized
           />
         ) : (

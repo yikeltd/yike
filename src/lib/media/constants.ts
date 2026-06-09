@@ -1,10 +1,27 @@
 /** Media optimization limits — Yike.ng */
 /** Post-compression caps for profile media outputs. */
 export const PROFILE_MEDIA_LIMITS = {
-  avatarMaxOutputBytes: 2 * 1024 * 1024,
-  coverMaxOutputBytes: 5 * 1024 * 1024,
+  avatarMaxOutputBytes: 120 * 1024,
+  coverMaxOutputBytes: 280 * 1024,
   coverAspectRatio: 3, // width : height (LinkedIn/Facebook-style banner)
   coverFocalDefault: 50,
+  minWebpQuality: 76,
+} as const;
+
+/** Square avatar crops — sized for retina up to 112px display (xl). */
+export const AVATAR_PROFILE_SIZES = {
+  thumbnail: { size: 128, maxBytes: 14 * 1024, quality: 80 },
+  medium: { size: 256, maxBytes: 32 * 1024, quality: 82 },
+  large: { size: 384, maxBytes: 52 * 1024, quality: 84 },
+  blur: { size: 24, quality: 40 },
+} as const;
+
+/** Cover banner variants — mobile-first, sharp at hero width without bloat. */
+export const COVER_SIZES = {
+  thumbnail: { width: 480, maxBytes: 32 * 1024, quality: 78 },
+  medium: { width: 768, maxBytes: 68 * 1024, quality: 80 },
+  large: { width: 1080, maxBytes: 110 * 1024, quality: 82 },
+  blur: { width: 32, quality: 40 },
 } as const;
 
 export const MEDIA_LIMITS = {
@@ -29,14 +46,6 @@ export const IMAGE_SIZES = {
   medium: { width: 768, quality: 84 },
   large: { width: 1600, quality: 86 },
   blur: { width: 24, quality: 40 },
-} as const;
-
-/** Cover banner variants — 3:1 crop, centre-safe with focal Y. */
-export const COVER_SIZES = {
-  thumbnail: { width: 640, quality: 82 },
-  medium: { width: 1024, quality: 84 },
-  large: { width: 1600, quality: 86 },
-  blur: { width: 32, quality: 40 },
 } as const;
 
 /** Single-size presets — all uploads must pass through one of these or IMAGE_SIZES responsive set. */

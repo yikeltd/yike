@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import type { Profile } from "@/types/database";
 import {
@@ -13,6 +15,8 @@ import {
   getProfileCoverPositionY,
   getProfileCoverUrl,
 } from "@/lib/profile/cover";
+import { avatarDisplayUrl, coverDisplayUrl } from "@/lib/profile/media-urls";
+import { useMobileCover } from "@/hooks/use-mobile-cover";
 
 export function CompanyProfileHero({
   agent,
@@ -30,22 +34,27 @@ export function CompanyProfileHero({
   const responsive = isResponsiveAgent(agent);
   const cover = getProfileCoverUrl(agent);
   const coverPositionY = getProfileCoverPositionY(agent);
-  const logo = agent.company_logo_url ?? agent.avatar_url;
+  const mobileCover = useMobileCover();
+  const coverSrc = coverDisplayUrl(cover, mobileCover ? "thumb" : "medium");
+  const logo =
+    agent.company_logo_url ?? avatarDisplayUrl(agent.avatar_url) ?? agent.avatar_url;
 
   if (!isAgency && !isDeveloper) return null;
 
   return (
     <header className="overflow-hidden rounded-2xl bg-white shadow-float ring-1 ring-black/[0.04]">
       <div className="relative h-36 w-full bg-navy sm:h-44">
-        {cover ? (
+        {coverSrc ? (
           <Image
-            src={cover}
+            src={coverSrc}
             alt=""
             fill
-            loading="lazy"
-            sizes="(max-width: 640px) 100vw, 720px"
+            priority
+            fetchPriority="high"
+            sizes="(max-width: 767px) 100vw, 720px"
             className="object-cover"
             style={{ objectPosition: coverObjectPosition(coverPositionY) }}
+            decoding="async"
             unoptimized
           />
         ) : (
@@ -62,7 +71,15 @@ export function CompanyProfileHero({
         <div className="-mt-10 mb-3 flex items-end gap-4">
           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-4 border-white bg-surface shadow-md">
             {logo ? (
-              <Image src={logo} alt="" fill className="object-cover" unoptimized />
+              <Image
+                src={logo}
+                alt=""
+                fill
+                sizes="80px"
+                className="object-cover"
+                decoding="async"
+                unoptimized
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-navy">
                 {displayName.charAt(0)}
