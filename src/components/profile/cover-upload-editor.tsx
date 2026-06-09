@@ -199,8 +199,8 @@ export function CoverUploadEditor({
                 style={{ objectPosition: coverObjectPosition(focalY) }}
                 unoptimized
               />
-              <div className="pointer-events-none absolute inset-0 bg-navy/45" />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/25 to-navy/15" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#021428]/85 via-[#031B4E]/25 to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/15 to-transparent" />
             </div>
 
             <div className="space-y-2 px-4 py-4">

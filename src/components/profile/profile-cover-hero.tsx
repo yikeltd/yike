@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
 import type { Profile } from "@/types/database";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
@@ -34,24 +34,44 @@ export function ProfileCoverHero({
   const [coverUrl, setCoverUrl] = useState(getProfileCoverUrl(profile));
   const [coverPositionY, setCoverPositionY] = useState(getProfileCoverPositionY(profile));
   const mobileCover = useMobileCover();
-  const coverSrc = coverDisplayUrl(coverUrl, mobileCover ? "thumb" : "medium");
+  const coverVariant = mobileCover ? "medium" : "large";
+  const [coverSrc, setCoverSrc] = useState(
+    () => coverDisplayUrl(coverUrl, coverVariant) ?? coverUrl
+  );
+
+  useEffect(() => {
+    setCoverSrc(coverDisplayUrl(coverUrl, coverVariant) ?? coverUrl);
+  }, [coverUrl, coverVariant]);
 
   return (
     <section className="relative overflow-hidden rounded-[1.75rem] bg-navy text-white shadow-float-lg">
       <div className="absolute inset-0">
         {coverSrc ? (
-          <Image
-            src={coverSrc}
-            alt=""
-            fill
-            priority
-            fetchPriority="high"
-            sizes="(max-width: 767px) 100vw, 560px"
-            className="object-cover"
-            style={{ objectPosition: coverObjectPosition(coverPositionY) }}
-            decoding="async"
-            unoptimized
-          />
+          <>
+            <Image
+              src={coverSrc}
+              alt=""
+              fill
+              priority
+              fetchPriority="high"
+              sizes="(max-width: 767px) 100vw, 560px"
+              className="object-cover"
+              style={{ objectPosition: coverObjectPosition(coverPositionY) }}
+              decoding="async"
+              unoptimized
+              onError={() => {
+                if (coverUrl && coverSrc !== coverUrl) setCoverSrc(coverUrl);
+              }}
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-[#021428]/88 via-[#031B4E]/28 to-transparent"
+              aria-hidden
+            />
+            <div
+              className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/20 to-transparent"
+              aria-hidden
+            />
+          </>
         ) : (
           <>
             <div className="absolute inset-0 bg-gradient-to-br from-navy via-[#021428] to-[#010d1f]" />
@@ -59,17 +79,13 @@ export function ProfileCoverHero({
               className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/25 blur-3xl"
               aria-hidden
             />
+            <div className="absolute inset-0 bg-navy/40" aria-hidden />
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-navy/25"
+              aria-hidden
+            />
           </>
         )}
-        <div className="absolute inset-0 bg-navy/55" aria-hidden />
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-navy via-navy/45 to-navy/20"
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent"
-          aria-hidden
-        />
       </div>
 
       {editable ? (
