@@ -392,11 +392,18 @@ body {
 
 /* Homepage hero — mobile browser + installed PWA/TWA only */
 .home-hero-mobile {
-  background:
-    linear-gradient(180deg, transparent 0%, transparent 82%, var(--background) 100%),
-    radial-gradient(ellipse 90% 60% at 50% -10%, rgb(228 181 71 / 8%), transparent 55%),
-    linear-gradient(168deg, #021433 0%, #031b4e 46%, #042560 100%);
   box-shadow: inset 0 1px 0 rgb(228 181 71 / 10%);
+}
+
+.home-hero-mobile::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 1;
+  height: 2.5rem;
+  background: linear-gradient(to bottom, transparent, var(--background));
+  pointer-events: none;
 }
 
 .home-desktop-hero-panel {
