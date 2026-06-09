@@ -45,7 +45,14 @@ export type VerificationCallStatus =
   | "failed";
 export type ReviewPublishingMode = "manual_review" | "auto_publish";
 
-export type StaffStatus = "active" | "disabled";
+export type StaffStatus =
+  | "onboarding_pending"
+  | "invited"
+  | "onboarding_sent"
+  | "first_login_pending"
+  | "active"
+  | "suspended"
+  | "archived";
 
 export type SponsoredStatus = "none" | "sponsored" | "boosted";
 export type FeaturedTier = "basic" | "premium" | "launch" | "developer";
@@ -362,6 +369,8 @@ export interface Profile {
   company_name?: string | null;
   company_logo_url?: string | null;
   company_cover_url?: string | null;
+  cover_url?: string | null;
+  cover_position_y?: number;
   company_bio?: string | null;
   company_slug?: string | null;
   office_address?: string | null;
@@ -443,6 +452,31 @@ export interface StaffProfile {
   created_at: string;
   disabled_at: string | null;
   last_login_at: string | null;
+  work_email?: string | null;
+  onboarding_note?: string | null;
+  onboarding_instructions?: string | null;
+  onboarding_sent_at?: string | null;
+  onboarded_by?: string | null;
+  supervisor_id?: string | null;
+  application_id?: string | null;
+  first_login_at?: string | null;
+  onboarding_role_label?: string | null;
+  access_checklist?: Record<string, boolean>;
+  require_password_reset?: boolean;
+  password_reset_completed_at?: string | null;
+  internal_notes?: string | null;
+  hr_metadata?: Record<string, unknown>;
+  onboarding_checklist?: Record<string, boolean>;
+  archived_at?: string | null;
+}
+
+export interface StaffOnboardingEvent {
+  id: string;
+  staff_id: string;
+  event_type: string;
+  actor_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
 }
 
 export interface AuditLog {

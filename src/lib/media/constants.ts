@@ -1,4 +1,12 @@
 /** Media optimization limits — Yike.ng */
+/** Post-compression caps for profile media outputs. */
+export const PROFILE_MEDIA_LIMITS = {
+  avatarMaxOutputBytes: 2 * 1024 * 1024,
+  coverMaxOutputBytes: 5 * 1024 * 1024,
+  coverAspectRatio: 3, // width : height (LinkedIn/Facebook-style banner)
+  coverFocalDefault: 50,
+} as const;
+
 export const MEDIA_LIMITS = {
   maxUploadBytes: 15 * 1024 * 1024, // 15MB before compression
   maxVideoUploadBytes: 15 * 1024 * 1024,
@@ -21,6 +29,14 @@ export const IMAGE_SIZES = {
   medium: { width: 768, quality: 84 },
   large: { width: 1600, quality: 86 },
   blur: { width: 24, quality: 40 },
+} as const;
+
+/** Cover banner variants — 3:1 crop, centre-safe with focal Y. */
+export const COVER_SIZES = {
+  thumbnail: { width: 640, quality: 82 },
+  medium: { width: 1024, quality: 84 },
+  large: { width: 1600, quality: 86 },
+  blur: { width: 32, quality: 40 },
 } as const;
 
 /** Single-size presets — all uploads must pass through one of these or IMAGE_SIZES responsive set. */

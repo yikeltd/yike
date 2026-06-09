@@ -8,6 +8,11 @@ import {
 } from "@/components/ui/badge";
 import { isVerifiedAgent } from "@/lib/utils";
 import { isResponsiveAgent } from "@/lib/agent-response";
+import {
+  coverObjectPosition,
+  getProfileCoverPositionY,
+  getProfileCoverUrl,
+} from "@/lib/profile/cover";
 
 export function CompanyProfileHero({
   agent,
@@ -23,7 +28,8 @@ export function CompanyProfileHero({
   const displayName = agent.company_name?.trim() || agent.full_name?.trim() || "Company";
   const verified = isVerifiedAgent(agent);
   const responsive = isResponsiveAgent(agent);
-  const cover = agent.company_cover_url;
+  const cover = getProfileCoverUrl(agent);
+  const coverPositionY = getProfileCoverPositionY(agent);
   const logo = agent.company_logo_url ?? agent.avatar_url;
 
   if (!isAgency && !isDeveloper) return null;
@@ -32,11 +38,25 @@ export function CompanyProfileHero({
     <header className="overflow-hidden rounded-2xl bg-white shadow-float ring-1 ring-black/[0.04]">
       <div className="relative h-36 w-full bg-navy sm:h-44">
         {cover ? (
-          <Image src={cover} alt="" fill className="object-cover" unoptimized />
+          <Image
+            src={cover}
+            alt=""
+            fill
+            loading="lazy"
+            sizes="(max-width: 640px) 100vw, 720px"
+            className="object-cover"
+            style={{ objectPosition: coverObjectPosition(coverPositionY) }}
+            unoptimized
+          />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy to-navy/80" />
+          <div className="absolute inset-0 bg-gradient-to-br from-navy via-[#021428] to-[#010d1f]" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute inset-0 bg-navy/50" aria-hidden />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/35 to-navy/15"
+          aria-hidden
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" aria-hidden />
       </div>
       <div className="relative px-5 pb-5">
         <div className="-mt-10 mb-3 flex items-end gap-4">
@@ -53,7 +73,7 @@ export function CompanyProfileHero({
             <p className="text-xs font-bold uppercase tracking-wider text-muted">
               {isDeveloper ? "Developer" : "Agency"}
             </p>
-            <h1 className="text-xl font-bold text-navy sm:text-2xl">{displayName}</h1>
+            <h1 className="text-xl font-bold text-navy drop-shadow-sm sm:text-2xl">{displayName}</h1>
           </div>
         </div>
         {agent.company_bio ? (

@@ -15,7 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { Profile } from "@/types/database";
-import { AvatarUpload } from "@/components/profile/avatar-upload";
+import { ProfileCoverHero } from "@/components/profile/profile-cover-hero";
 import { VerifiedBadge, StatusBadge } from "@/components/ui/badge";
 import { ProfileAccountActions } from "@/components/profile/profile-account-actions";
 import { ProfileUserActivityStats } from "@/components/profile/profile-user-activity-stats";
@@ -71,32 +71,20 @@ export function ProfilePageClient({
 
   return (
     <div className="space-y-4 pb-4">
-      <section className="relative overflow-hidden rounded-[1.75rem] bg-navy px-5 pb-6 pt-8 text-white shadow-float-lg">
-        <div
-          className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/25 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative flex flex-col items-center text-center">
-          <AvatarUpload
-            userId={profile.id}
-            email={email}
-            name={profile.full_name}
-            username={profile.username}
-            avatarUrl={profile.avatar_url}
-          />
-          <h1 className="mt-4 text-2xl font-bold tracking-tight">{displayName}</h1>
-          {profile.username && (
-            <p className="mt-1 text-sm text-white/75">@{profile.username}</p>
-          )}
-          <p className="mt-2 text-xs text-white/60">Member since {memberSince}</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
+      <ProfileCoverHero
+        profile={profile}
+        email={email}
+        displayName={displayName}
+        memberSince={memberSince}
+        badges={
+          <>
             {showAgentBadge(profile, verified) ? <VerifiedBadge /> : null}
             {roleLabel ? (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
                 {roleLabel}
               </span>
             ) : null}
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
               {trustChip.label}
             </span>
             {profile.verification_status !== "not_started" &&
@@ -105,9 +93,9 @@ export function ProfilePageClient({
               !showTrust && (
                 <StatusBadge status={profile.verification_status} />
               )}
-          </div>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       {statusMessage ? (
         <div

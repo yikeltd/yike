@@ -17,6 +17,11 @@ export type AuditAction =
   | "staff.onboarding.sent"
   | "staff.onboarding.resent"
   | "staff.credentials.generated"
+  | "staff.suspend"
+  | "staff.archive"
+  | "staff.reactivate"
+  | "staff.role.changed"
+  | "staff.onboarding.deactivated"
   | "listing.delete"
   | "listing.approve"
   | "listing.reject"
@@ -219,7 +224,13 @@ export type AuditAction =
   | "career.follow_up.sent"
   | "career.follow_up.submitted"
   | "career.application.status"
-  | "career.follow_up.review";
+  | "career.follow_up.review"
+  | "profile.avatar.upload"
+  | "profile.cover.upload"
+  | "profile.cover.remove"
+  | "profile.cover.reposition"
+  | "admin.profile.avatar.remove"
+  | "admin.profile.cover.remove";
 
 export type AuditLogEntry = {
   actor_id: string;

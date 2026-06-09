@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getTrustedAdminClient } from "@/lib/supabase/admin";
-import { optimizeUploadedImage, buildAvatarStoragePaths, resolveImageMime } from "@/lib/media/image";
-import { WEBP_CONTENT_TYPE } from "@/lib/media/constants";
-import { friendlyStorageError } from "@/lib/media/storage-errors";
+import {
+  assertAvatarOutputSize,
+  optimizeUploadedImage,
+  buildAvatarStoragePaths,
+  resolveImageMime,
+} from "@/lib/media/image";
+import { logUserProfileMedia } from "@/lib/profile/media-audit";
+import { uploadProfileImageVariants } from "@/lib/profile/media-storage";
+import type { UserRole } from "@/types/database";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const PROFILE_IMAGES_BUCKET = "profile-images";
 const PROFILE_SAVE_ERROR = "We couldn't save this photo right now. Please try again.";
 
 export async function POST(request: Request) {
@@ -40,6 +45,7 @@ export async function POST(request: Request) {
     let optimized;
     try {
       optimized = await optimizeUploadedImage(buffer);
+      assertAvatarOutputSize(optimized);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not process image";
       return NextResponse.json({ error: message }, { status: 400 });
@@ -54,44 +60,24 @@ export async function POST(request: Request) {
     }
 
     const paths = buildAvatarStoragePaths(user.id);
-
-    for (const [key, path] of Object.entries(paths) as [
-      keyof typeof paths,
-      string,
-    ][]) {
-      const body =
-        key === "thumbnail"
-          ? optimized.thumbnail
-          : key === "medium"
-            ? optimized.medium
-            : optimized.large;
-      const { error } = await admin.storage
-        .from(PROFILE_IMAGES_BUCKET)
-        .upload(path, body, {
-          contentType: WEBP_CONTENT_TYPE,
-          upsert: true,
-        });
-      if (error) {
-        console.error("[profile/avatar] storage upload failed:", {
-          bucket: PROFILE_IMAGES_BUCKET,
-          path,
-          message: error.message,
-        });
-        return NextResponse.json(
-          { error: friendlyStorageError(error.message) },
-          { status: 500 }
-        );
-      }
+    const uploaded = await uploadProfileImageVariants(admin, paths, {
+      thumbnail: optimized.thumbnail,
+      medium: optimized.medium,
+      large: optimized.large,
+    });
+    if (!uploaded.ok) {
+      return NextResponse.json({ error: uploaded.error }, { status: 500 });
     }
 
-    const { data: urlData } = admin.storage
-      .from(PROFILE_IMAGES_BUCKET)
-      .getPublicUrl(paths.medium);
-    const avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
 
     const { error: profileError } = await supabase
       .from("profiles")
-      .update({ avatar_url: avatarUrl })
+      .update({ avatar_url: uploaded.publicUrl })
       .eq("id", user.id);
 
     if (profileError) {
@@ -99,7 +85,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: PROFILE_SAVE_ERROR }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, avatarUrl });
+    logUserProfileMedia(user.id, (profileRow?.role ?? "user") as UserRole, "profile.avatar.upload");
+
+    return NextResponse.json({ ok: true, avatarUrl: uploaded.publicUrl });
   } catch (err) {
     console.error("[profile/avatar]", err);
     return NextResponse.json(

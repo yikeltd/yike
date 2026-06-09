@@ -1,9 +1,11 @@
 import sharp from "sharp";
 import {
   ALLOWED_IMAGE_TYPES,
+  COVER_SIZES,
   IMAGE_PRESET_SIZES,
   IMAGE_SIZES,
   MEDIA_LIMITS,
+  PROFILE_MEDIA_LIMITS,
   WEBP_CONTENT_TYPE,
   type ImagePreset,
 } from "./constants";
@@ -221,4 +223,131 @@ export function buildAvatarStoragePaths(userId: string): {
     medium: `${base}/avatar.webp`,
     large: `${base}/avatar-lg.webp`,
   };
+}
+
+export function buildCoverStoragePaths(userId: string): {
+  thumbnail: string;
+  medium: string;
+  large: string;
+} {
+  const base = `${userId}`;
+  return {
+    thumbnail: `${base}/cover-thumb.webp`,
+    medium: `${base}/cover.webp`,
+    large: `${base}/cover-lg.webp`,
+  };
+}
+
+export type OptimizedCoverSet = OptimizedImageSet;
+
+function clampFocalY(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function computeCoverExtract(
+  width: number,
+  height: number,
+  aspect: number,
+  focalY: number
+): { left: number; top: number; width: number; height: number } {
+  let cropW: number;
+  let cropH: number;
+  const sourceAspect = width / height;
+  if (sourceAspect > aspect) {
+    cropH = height;
+    cropW = Math.round(height * aspect);
+  } else {
+    cropW = width;
+    cropH = Math.round(width / aspect);
+  }
+  const left = Math.round((width - cropW) / 2);
+  const focalPx = (clampFocalY(focalY) / 100) * height;
+  let top = Math.round(focalPx - cropH / 2);
+  top = Math.max(0, Math.min(height - cropH, top));
+  return { left, top, width: cropW, height: cropH };
+}
+
+async function toCoverWebp(
+  pipeline: sharp.Sharp,
+  width: number,
+  quality: number
+): Promise<Buffer> {
+  const height = Math.round(width / PROFILE_MEDIA_LIMITS.coverAspectRatio);
+  return pipeline
+    .clone()
+    .resize(width, height, {
+      fit: "cover",
+      position: "centre",
+      kernel: sharp.kernel.lanczos3,
+    })
+    .webp(webpOptions(quality))
+    .toBuffer();
+}
+
+/** Banner cover — 3:1 crop with vertical focal point, three WebP sizes. */
+export async function optimizeCoverImage(
+  input: Buffer,
+  focalY: number = PROFILE_MEDIA_LIMITS.coverFocalDefault
+): Promise<OptimizedCoverSet> {
+  if (input.length > MEDIA_LIMITS.maxUploadBytes) {
+    throw new Error("Image is too large. Try a smaller photo.");
+  }
+
+  const base = sharp(input, { failOn: "none" }).rotate();
+  const meta = await base.metadata();
+  const originalWidth = meta.width ?? 0;
+  const originalHeight = meta.height ?? 0;
+  const longEdge = Math.max(originalWidth, originalHeight);
+  const smallSource = longEdge > 0 && longEdge < MEDIA_LIMITS.minSharpLongEdge;
+
+  const extract = computeCoverExtract(
+    originalWidth,
+    originalHeight,
+    PROFILE_MEDIA_LIMITS.coverAspectRatio,
+    focalY
+  );
+
+  const cropped = stripMetadata(
+    base.extract({
+      left: extract.left,
+      top: extract.top,
+      width: extract.width,
+      height: extract.height,
+    })
+  );
+
+  const [thumbnail, medium, large, blur] = await Promise.all([
+    toCoverWebp(cropped, COVER_SIZES.thumbnail.width, COVER_SIZES.thumbnail.quality),
+    toCoverWebp(cropped, COVER_SIZES.medium.width, COVER_SIZES.medium.quality),
+    toCoverWebp(cropped, COVER_SIZES.large.width, COVER_SIZES.large.quality),
+    toBlurPlaceholder(cropped),
+  ]);
+
+  const totalBytes = thumbnail.length + medium.length + large.length;
+  if (totalBytes > PROFILE_MEDIA_LIMITS.coverMaxOutputBytes) {
+    throw new Error("Cover is too large after compression. Try a simpler image.");
+  }
+
+  return {
+    thumbnail,
+    medium,
+    large,
+    blurDataUrl: blur,
+    widths: {
+      thumbnail: COVER_SIZES.thumbnail.width,
+      medium: COVER_SIZES.medium.width,
+      large: COVER_SIZES.large.width,
+    },
+    originalWidth,
+    originalHeight,
+    smallSource,
+  };
+}
+
+export function assertAvatarOutputSize(optimized: OptimizedImageSet): void {
+  const total =
+    optimized.thumbnail.length + optimized.medium.length + optimized.large.length;
+  if (total > PROFILE_MEDIA_LIMITS.avatarMaxOutputBytes) {
+    throw new Error("Photo is too large after compression. Try a simpler image.");
+  }
 }

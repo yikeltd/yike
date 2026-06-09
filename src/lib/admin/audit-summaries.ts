@@ -77,6 +77,31 @@ const ACTION_TEMPLATES: Record<string, (a: SummaryInput) => string> = {
   "staff.delete": (i) => `${actorLabel(i)} deleted staff account ${targetLabel(i)}.`,
   "staff.reset_password": (i) =>
     `${actorLabel(i)} reset password for staff ${targetLabel(i)}.`,
+  "staff.onboarding.sent": (i) =>
+    `${actorLabel(i)} sent staff onboarding to ${targetLabel(i)}.`,
+  "staff.onboarding.resent": (i) =>
+    `${actorLabel(i)} resent staff onboarding email to ${targetLabel(i)}.`,
+  "staff.suspend": (i) => `${actorLabel(i)} suspended staff access for ${targetLabel(i)}.`,
+  "staff.archive": (i) => `${actorLabel(i)} archived staff account ${targetLabel(i)}.`,
+  "staff.reactivate": (i) => `${actorLabel(i)} reactivated staff account ${targetLabel(i)}.`,
+  "staff.role.changed": (i) => {
+    const from = i.metadata?.from_role ?? i.metadata?.previous_role;
+    const to = i.metadata?.to_role ?? i.metadata?.new_role;
+    if (from && to) {
+      return `${actorLabel(i)} changed staff role from ${from} → ${to} for ${targetLabel(i)}.`;
+    }
+    return `${actorLabel(i)} changed staff role for ${targetLabel(i)}.`;
+  },
+  "staff.onboarding.deactivated": (i) =>
+    `${actorLabel(i)} deactivated onboarding for ${targetLabel(i)}.`,
+  "profile.avatar.upload": (i) => `${targetLabel(i)} updated profile photo.`,
+  "profile.cover.upload": (i) => `${targetLabel(i)} uploaded a profile cover.`,
+  "profile.cover.remove": (i) => `${targetLabel(i)} removed profile cover.`,
+  "profile.cover.reposition": (i) => `${targetLabel(i)} repositioned profile cover.`,
+  "admin.profile.avatar.remove": (i) =>
+    `${actorLabel(i)} removed profile photo for ${targetLabel(i)}.`,
+  "admin.profile.cover.remove": (i) =>
+    `${actorLabel(i)} removed profile cover for ${targetLabel(i)}.`,
   "notification.sent": (i) => `${actorLabel(i)} sent notification campaign ${targetLabel(i)}.`,
   "notification.cancelled": (i) =>
     `${actorLabel(i)} cancelled notification campaign ${targetLabel(i)}.`,

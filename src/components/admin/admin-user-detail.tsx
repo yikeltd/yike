@@ -10,6 +10,7 @@ import { AdminUserNotes } from "@/components/admin/admin-user-notes";
 import { AgentStatusActions } from "@/components/admin/agent-verification-actions";
 import { AdminUserTrustActions } from "@/components/admin/admin-user-trust-actions";
 import { AdminPinResetPanel } from "@/components/admin/admin-pin-reset-panel";
+import { AdminProfileMediaPanel } from "@/components/admin/admin-profile-media-panel";
 import { SupportViewPanel } from "@/components/admin/support-view-panel";
 import type { SupportViewSession } from "@/lib/admin/support-view";
 import { StatusBadge, VerifiedBadge } from "@/components/ui/badge";
@@ -221,6 +222,8 @@ export function AdminUserDetail({
               activeCount={stats.active_listing_count}
             />
           )}
+
+          <AdminProfileMediaPanel profile={profile} />
 
           <AdminPinResetPanel
             profileId={profile.id}
