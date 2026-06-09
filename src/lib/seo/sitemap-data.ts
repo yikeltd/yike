@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createVerifiedAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { MOCK_LISTINGS } from "@/lib/mock-listings";
 import { propertyPublicSlug } from "@/lib/property-slugs";
@@ -16,7 +16,9 @@ export async function getSitemapPropertyEntries(
     }));
   }
 
-  const admin = createAdminClient();
+  const admin = isAdminClientConfigured()
+    ? await createVerifiedAdminClient()
+    : null;
   if (!admin) {
     return MOCK_LISTINGS.slice(0, limit).map((p) => ({
       path: propertyPublicSlug(p),
