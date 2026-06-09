@@ -140,11 +140,19 @@ export function ListingLocationSearch({
 
       <div>
         <FieldLabel>Landmark</FieldLabel>
-        <Input name="landmark" defaultValue={initialLandmark ?? ""} />
+        <Input
+          name="landmark"
+          defaultValue={initialLandmark ?? ""}
+          placeholder="(optional)"
+        />
       </div>
       <div>
         <FieldLabel>Private address note</FieldLabel>
-        <Input name="address_hint" defaultValue={initialAddressHint ?? ""} />
+        <Input
+          name="address_hint"
+          defaultValue={initialAddressHint ?? ""}
+          placeholder="(optional)"
+        />
       </div>
     </div>
   );

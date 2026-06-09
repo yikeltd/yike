@@ -187,7 +187,7 @@ export function transparencyToExtras(
     apply(
       "caution_fee",
       "caution_fee_mode",
-      "caution_months",
+      "caution_deposit",
       values.caution_fee ?? "",
       modes.caution_fee ?? "exact"
     );

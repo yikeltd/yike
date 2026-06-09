@@ -116,7 +116,8 @@ function extrasToTransparency(initial?: Property | null) {
   const modes: Record<string, FeeTransparencyMode> = {};
   if (!e) return { values, modes };
   if (e.agency_fee_percent != null) values.agency_fee = String(e.agency_fee_percent);
-  if (e.caution_months != null) values.caution_fee = String(e.caution_months);
+  if (e.caution_deposit != null) values.caution_fee = String(e.caution_deposit);
+  else if (e.caution_months != null) values.caution_fee = String(e.caution_months);
   if (e.agreement_fee != null) values.agreement_fee = String(e.agreement_fee);
   if (e.service_charge != null) values.service_charge = String(e.service_charge);
   if (e.legal_fee != null) values.legal_fee = String(e.legal_fee);
@@ -163,9 +164,15 @@ export function ListingForm({
   const [paymentPeriod, setPaymentPeriod] = useState<string>(
     initial?.payment_period ?? defaultPaymentPeriodForListingType("rent")
   );
-  const [bedrooms, setBedrooms] = useState(String(initial?.bedrooms ?? 1));
-  const [bathrooms, setBathrooms] = useState(String(initial?.bathrooms ?? 1));
-  const [toilets, setToilets] = useState(String(initial?.toilets ?? 1));
+  const [bedrooms, setBedrooms] = useState(
+    initial?.bedrooms != null && initial.bedrooms > 0 ? String(initial.bedrooms) : ""
+  );
+  const [bathrooms, setBathrooms] = useState(
+    initial?.bathrooms != null && initial.bathrooms > 0 ? String(initial.bathrooms) : ""
+  );
+  const [toilets, setToilets] = useState(
+    initial?.toilets != null && initial.toilets > 0 ? String(initial.toilets) : ""
+  );
 
   const [state, setState] = useState(initial?.state ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
@@ -754,7 +761,45 @@ export function ListingForm({
               value={price}
               onChange={setPrice}
               required
+              placeholder="e.g. 1,500,000 or 1.5m"
             />
+            {showRooms ? (
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <FieldLabel>Beds</FieldLabel>
+                  <Input
+                    value={bedrooms}
+                    onChange={(e) =>
+                      setBedrooms(e.target.value.replace(/\D/g, "").slice(0, 2))
+                    }
+                    inputMode="numeric"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Baths</FieldLabel>
+                  <Input
+                    value={bathrooms}
+                    onChange={(e) =>
+                      setBathrooms(e.target.value.replace(/\D/g, "").slice(0, 2))
+                    }
+                    inputMode="numeric"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Toilets</FieldLabel>
+                  <Input
+                    value={toilets}
+                    onChange={(e) =>
+                      setToilets(e.target.value.replace(/\D/g, "").slice(0, 2))
+                    }
+                    inputMode="numeric"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            ) : null}
             <div>
               <FieldLabel>Payment period</FieldLabel>
               <Select
@@ -768,40 +813,6 @@ export function ListingForm({
                 ))}
               </Select>
             </div>
-            {showRooms ? (
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <FieldLabel>Beds</FieldLabel>
-                  <Input
-                    value={bedrooms}
-                    onChange={(e) => setBedrooms(e.target.value)}
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                  />
-                </div>
-                <div>
-                  <FieldLabel>Baths</FieldLabel>
-                  <Input
-                    value={bathrooms}
-                    onChange={(e) => setBathrooms(e.target.value)}
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                  />
-                </div>
-                <div>
-                  <FieldLabel>Toilets</FieldLabel>
-                  <Input
-                    value={toilets}
-                    onChange={(e) => setToilets(e.target.value)}
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                  />
-                </div>
-              </div>
-            ) : null}
             {parseNairaAmount(price) ? (
               <ListingInlineFees
                 listingType={listingType}

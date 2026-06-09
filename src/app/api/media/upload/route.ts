@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { optimizeUploadedImage, buildStoragePaths } from "@/lib/media/image";
+import { optimizeUploadedImage, buildStoragePaths, resolveImageMime } from "@/lib/media/image";
 import { validateVideoUpload } from "@/lib/media/video";
 import { ALLOWED_IMAGE_TYPES } from "@/lib/media/constants";
 import { friendlyStorageError } from "@/lib/media/storage-errors";
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const canUpload =
     profile &&
     !profile.is_banned &&
-    ["agent_unverified", "agent_verified", "admin", "super_admin"].includes(
+    ["agent", "agent_unverified", "agent_verified", "admin", "super_admin"].includes(
       profile.role
     );
 
@@ -90,10 +90,11 @@ export async function POST(request: Request) {
     });
   }
 
+  const mime = resolveImageMime(file, buffer);
+
   if (
-    !ALLOWED_IMAGE_TYPES.includes(
-      file.type as (typeof ALLOWED_IMAGE_TYPES)[number]
-    )
+    !mime ||
+    !ALLOWED_IMAGE_TYPES.includes(mime as (typeof ALLOWED_IMAGE_TYPES)[number])
   ) {
     return NextResponse.json(
       { error: "This photo format is not supported. Please upload JPEG or PNG." },

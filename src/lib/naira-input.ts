@@ -1,8 +1,8 @@
 /** Parse digits from formatted or raw naira input. */
 export function parseNairaAmount(value: string): number | null {
-  const cleaned = value.replace(/[^\d.]/g, "");
-  if (!cleaned) return null;
-  const n = Number(cleaned);
+  const digits = digitsOnly(normalizeNairaInput(value));
+  if (!digits) return null;
+  const n = Number(digits);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
@@ -15,7 +15,33 @@ export function formatNairaAmount(amount: number): string {
   }).format(amount);
 }
 
+/** Comma grouping while typing — no forced decimals. */
+export function formatNairaTyping(digits: string): string {
+  if (!digits) return "";
+  const n = Number(digits);
+  if (!Number.isFinite(n)) return digits;
+  return n.toLocaleString("en-NG");
+}
+
 /** Keep digits only for controlled state. */
 export function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");
+}
+
+/** Expand 500k / 2.5m / 1b shorthands; strip commas and spaces. */
+export function normalizeNairaInput(raw: string): string {
+  const trimmed = raw.trim().replace(/,/g, "").replace(/\s+/g, "");
+  if (!trimmed) return "";
+
+  const shorthand = trimmed.match(/^(\d+(?:\.\d+)?)([kmb])$/i);
+  if (shorthand) {
+    const num = parseFloat(shorthand[1]);
+    if (!Number.isFinite(num) || num <= 0) return digitsOnly(trimmed);
+    const suffix = shorthand[2].toLowerCase();
+    const mult =
+      suffix === "k" ? 1_000 : suffix === "m" ? 1_000_000 : 1_000_000_000;
+    return String(Math.round(num * mult));
+  }
+
+  return digitsOnly(trimmed);
 }

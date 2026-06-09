@@ -87,7 +87,11 @@ export function ListingPhotoManager({
       form.append("index", String(job.index));
       form.append("kind", "image");
 
-      const res = await fetch("/api/media/upload", { method: "POST", body: form });
+      const res = await fetch("/api/media/upload", {
+        method: "POST",
+        body: form,
+        credentials: "same-origin",
+      });
       const json = await res.json();
 
       if (!res.ok) {
@@ -243,6 +247,22 @@ export function ListingPhotoManager({
     onChange(removeMediaItem(items, id) as ListingPhotoItem[]);
   }
 
+  function retryUpload(id: string) {
+    if (!fileMapRef.current.has(id)) return;
+    updateItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, upload_status: "uploading" as const, upload_error: undefined }
+          : item
+      )
+    );
+    queueRef.current.push({
+      id,
+      index: Date.now() + Math.floor(Math.random() * 1000),
+    });
+    void pumpQueue();
+  }
+
   function confirmAllLabels() {
     onChange(sortMediaItemsForStory(applyDefaultLabels(items)) as ListingPhotoItem[]);
   }
@@ -281,7 +301,7 @@ export function ListingPhotoManager({
           ) : (
             <Upload className="h-8 w-8 text-navy" />
           )}
-          <span className="text-sm font-bold text-navy">Add photos from your phone</span>
+          <span className="text-sm font-bold text-navy">Add photos</span>
           <span className="text-xs text-muted">At least {MIN_LISTING_IMAGES} clear photos</span>
         </label>
         {error ? (
@@ -371,9 +391,20 @@ export function ListingPhotoManager({
                       </p>
                     ) : null}
                     {item.upload_status === "error" ? (
-                      <p className="text-[10px] text-danger">
-                        {item.upload_error ?? "Upload failed"}
-                      </p>
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-danger">
+                          {item.upload_error ?? "Upload failed"}
+                        </p>
+                        {fileMapRef.current.has(item.id) ? (
+                          <button
+                            type="button"
+                            onClick={() => retryUpload(item.id)}
+                            className="text-[10px] font-bold text-gold-dark underline"
+                          >
+                            Retry upload
+                          </button>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
 
