@@ -2,19 +2,17 @@
 
 import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  getAllCitiesComplete,
-  getAllCitiesForState,
-  getStateDisplayLabel,
-  getStateForCity,
-  getStates,
-} from "@/lib/constants";
-import { PROPERTY_TYPES } from "@/constants/propertyCategories";
+import { getStateForCity } from "@/lib/constants";
 import {
   budgetIndexFromSearchParams,
   budgetParamsFromIndex,
-  budgetSelectOptions,
 } from "@/lib/budget-ranges";
+import {
+  buildBudgetSelectOptions,
+  buildCitySelectOptions,
+  buildPropertyTypeSelectOptions,
+  buildStateSelectOptions,
+} from "@/lib/search-dropdown-options";
 import { ThemedSelect } from "@/components/ui/themed-select";
 import { cn } from "@/lib/utils";
 import { ShieldCheck, Star } from "lucide-react";
@@ -34,42 +32,16 @@ export function SearchRefineFilters({ className }: { className?: string }) {
     [sp]
   );
 
-  const cityOptions = useMemo(
-    () => (state ? getAllCitiesForState(state) : getAllCitiesComplete()),
+  const stateOptions = useMemo(() => buildStateSelectOptions(), []);
+  const cityOptionsList = useMemo(
+    () => buildCitySelectOptions(state || undefined),
     [state]
   );
-
-  const stateOptions = useMemo(
-    () => [
-      { value: "", label: "Any state" },
-      ...getStates().map((s) => ({
-        value: s,
-        label: getStateDisplayLabel(s),
-      })),
-    ],
-    []
-  );
-
-  const cityOptionsList = useMemo(
-    () => [
-      { value: "", label: "Any city" },
-      ...cityOptions.map((c) => ({ value: c, label: c })),
-    ],
-    [cityOptions]
-  );
-
   const propertyTypeOptions = useMemo(
-    () => [
-      { value: "", label: "Any property type" },
-      ...PROPERTY_TYPES.slice(0, 16).map((t) => ({
-        value: t.value,
-        label: t.label,
-      })),
-    ],
+    () => buildPropertyTypeSelectOptions(),
     []
   );
-
-  const budgetOptions = useMemo(() => budgetSelectOptions(), []);
+  const budgetOptions = useMemo(() => buildBudgetSelectOptions(), []);
 
   function push(updates: Record<string, string | null>) {
     const params = new URLSearchParams(sp.toString());

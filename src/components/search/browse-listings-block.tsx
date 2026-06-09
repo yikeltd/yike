@@ -1,19 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { getStateForCity } from "@/lib/constants";
+import { budgetParamsFromIndex } from "@/lib/budget-ranges";
 import {
-  getAllCitiesComplete,
-  getAllCitiesForState,
-  getStateDisplayLabel,
-  getStateForCity,
-  getStates,
-} from "@/lib/constants";
-import {
-  budgetHeroSelectOptions,
-  budgetParamsFromIndex,
-  budgetSelectOptions,
-} from "@/lib/budget-ranges";
-import { PROPERTY_TYPES } from "@/constants/propertyCategories";
+  buildBudgetHeroSelectOptions,
+  buildBudgetSelectOptions,
+  buildCitySelectOptions,
+  buildPropertyTypeSelectOptions,
+  buildStateSelectOptions,
+} from "@/lib/search-dropdown-options";
 import {
   HOME_DEAL_TYPES,
   chipToFilterParams,
@@ -74,11 +70,6 @@ export function BrowseListingsBlock({
   const [area] = useState(initial?.area ?? "");
   const [propertyType, setPropertyType] = useState(initial?.propertyType ?? "");
   const [budget, setBudget] = useState(initial?.budgetIndex ?? "0");
-
-  const cityOptions = useMemo(
-    () => (state ? getAllCitiesForState(state) : getAllCitiesComplete()),
-    [state]
-  );
 
   const hasFilterSelection = Boolean(
     dealKey || state || city || area || propertyType || budget !== "0"
@@ -148,25 +139,20 @@ export function BrowseListingsBlock({
   const selectVariant = isPremium ? "hero" : isDesktopPanel ? "hero" : "default";
   const showSearchButton = isDesktopPanel || hasFilterSelection;
 
-  const stateOptions = [
-    { value: "", label: "Any state" },
-    ...getStates().map((s) => ({
-      value: s,
-      label: getStateDisplayLabel(s),
-    })),
-  ];
-
-  const cityOptionsList = [
-    { value: "", label: "Any city" },
-    ...cityOptions.map((c) => ({ value: c, label: c })),
-  ];
-
-  const propertyTypeOptions = [
-    { value: "", label: "Any property type" },
-    ...PROPERTY_TYPES.slice(0, 14).map((t) => ({ value: t.value, label: t.label })),
-  ];
-
-  const budgetOptions = isPremium ? budgetHeroSelectOptions() : budgetSelectOptions();
+  const stateOptions = useMemo(() => buildStateSelectOptions(), []);
+  const cityOptionsList = useMemo(
+    () => buildCitySelectOptions(state || undefined),
+    [state]
+  );
+  const propertyTypeOptions = useMemo(
+    () => buildPropertyTypeSelectOptions(),
+    []
+  );
+  const budgetOptions = useMemo(
+    () =>
+      isPremium ? buildBudgetHeroSelectOptions() : buildBudgetSelectOptions(),
+    [isPremium]
+  );
 
   return (
     <div className={shellClass}>

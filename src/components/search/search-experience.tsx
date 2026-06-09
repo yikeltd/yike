@@ -3,11 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAreasForSearchCity } from "@/lib/constants";
-import {
-  BUDGET_RANGES,
-  budgetParamsFromIndex,
-  budgetSelectOptions,
-} from "@/lib/budget-ranges";
+import { BUDGET_RANGES, budgetParamsFromIndex } from "@/lib/budget-ranges";
 import { getAllCitiesForState } from "@/constants/nigeriaAllCities";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { SEARCH_DEAL_TYPES, findDealChip } from "@/constants/listingTypes";
@@ -20,6 +16,7 @@ import {
 import { parseLocationQuery } from "@/lib/location-search";
 import { LocationCombobox } from "./location-combobox";
 import { ThemedSelect } from "@/components/ui/themed-select";
+import { buildBudgetSelectOptions } from "@/lib/search-dropdown-options";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
 import { TrendingUp, Clock, ChevronDown, SlidersHorizontal } from "lucide-react";
@@ -253,7 +250,7 @@ export function SearchExperience({
             <ThemedSelect
               value={budget}
               onChange={setBudget}
-              options={budgetSelectOptions()}
+              options={buildBudgetSelectOptions()}
               placeholder="Any budget"
               ariaLabel="Budget"
             />

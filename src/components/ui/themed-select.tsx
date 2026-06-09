@@ -1,12 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, ChevronDown, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Check, ChevronDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ThemedSelectOption = { value: string; label: string };
+type SelectableOption = { value: string; label: string };
+type HeaderOption = { kind: "header"; id: string; label: string };
+type SeparatorOption = { kind: "separator"; id: string; label: string };
+
+export type ThemedSelectOption =
+  | SelectableOption
+  | HeaderOption
+  | SeparatorOption;
 
 type Variant = "default" | "hero";
+
+function isSelectable(opt: ThemedSelectOption): opt is SelectableOption {
+  return "value" in opt;
+}
+
+function optionKey(opt: ThemedSelectOption, index: number): string {
+  if (isSelectable(opt)) return opt.value || "__empty";
+  return opt.id || `meta-${index}`;
+}
 
 export function ThemedSelect({
   value,
@@ -16,6 +32,7 @@ export function ThemedSelect({
   ariaLabel,
   variant = "default",
   compactLabel,
+  searchable,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -25,12 +42,36 @@ export function ThemedSelect({
   variant?: Variant;
   /** Tighter typography for currency-style labels (e.g. budget tiers). */
   compactLabel?: boolean;
+  /** Filter long lists — defaults on when there are more than 8 choices. */
+  searchable?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const selected = options.find((o) => o.value === value);
+  const [query, setQuery] = useState("");
+
+  const selectableOptions = useMemo(
+    () => options.filter(isSelectable),
+    [options]
+  );
+
+  const selected = selectableOptions.find((o) => o.value === value);
   const isPlaceholder =
     !selected || (selected.value === "" && selected.label === placeholder);
   const display = isPlaceholder ? placeholder : (selected?.label ?? placeholder);
+
+  const showSearch =
+    searchable ??
+    selectableOptions.filter((o) => o.value !== "").length > 8;
+
+  const visibleOptions = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return options;
+
+    return selectableOptions.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(trimmed) ||
+        (opt.value && opt.value.toLowerCase().includes(trimmed))
+    );
+  }, [options, query, selectableOptions]);
 
   useEffect(() => {
     if (!open) return;
@@ -40,6 +81,11 @@ export function ThemedSelect({
       document.body.style.overflow = prev;
     };
   }, [open]);
+
+  function close() {
+    setOpen(false);
+    setQuery("");
+  }
 
   const triggerClass =
     variant === "hero"
@@ -59,6 +105,21 @@ export function ThemedSelect({
           "focus-visible:ring-2 focus-visible:ring-gold/35",
           "dark:border-white/10 dark:bg-elevated lg:text-sm"
         );
+
+  const headerTextClass =
+    variant === "hero"
+      ? "px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-navy/45"
+      : "px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/45";
+
+  const separatorClass =
+    variant === "hero"
+      ? "mx-3 my-1.5 border-t border-navy/8"
+      : "mx-3 my-1.5 border-t border-white/10";
+
+  const separatorLabelClass =
+    variant === "hero"
+      ? "px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-navy/40"
+      : "px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40";
 
   return (
     <>
@@ -100,7 +161,7 @@ export function ThemedSelect({
               variant === "hero" ? "bg-navy/55" : "bg-[#021433]/70 backdrop-blur-[2px]"
             )}
             aria-label="Close"
-            onClick={() => setOpen(false)}
+            onClick={close}
           />
           <div
             role="dialog"
@@ -130,7 +191,7 @@ export function ThemedSelect({
               </p>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={close}
                 className={cn(
                   "pressable flex h-8 w-8 items-center justify-center rounded-full",
                   variant === "hero"
@@ -142,48 +203,122 @@ export function ThemedSelect({
                 <X className="h-4 w-4" />
               </button>
             </div>
+
+            {showSearch ? (
+              <div
+                className={cn(
+                  "border-b px-3 py-2.5",
+                  variant === "hero" ? "border-navy/8" : "border-white/10"
+                )}
+              >
+                <label className="sr-only" htmlFor={`${ariaLabel}-search`}>
+                  Search {ariaLabel}
+                </label>
+                <div
+                  className={cn(
+                    "flex items-center gap-2 rounded-xl border px-3 py-2.5",
+                    variant === "hero"
+                      ? "border-navy/10 bg-navy/[0.03]"
+                      : "border-white/12 bg-white/[0.06]"
+                  )}
+                >
+                  <Search
+                    className={cn(
+                      "h-4 w-4 shrink-0",
+                      variant === "hero" ? "text-navy/40" : "text-white/45"
+                    )}
+                    aria-hidden
+                  />
+                  <input
+                    id={`${ariaLabel}-search`}
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={`Search ${ariaLabel.toLowerCase()}…`}
+                    autoComplete="off"
+                    className={cn(
+                      "min-w-0 flex-1 bg-transparent text-sm outline-none",
+                      variant === "hero"
+                        ? "text-navy placeholder:text-navy/40"
+                        : "text-white placeholder:text-white/40"
+                    )}
+                  />
+                </div>
+              </div>
+            ) : null}
+
             <ul
               role="listbox"
               aria-label={ariaLabel}
               className="hide-scrollbar flex-1 overflow-y-auto px-2 py-2"
             >
-              {options.map((opt) => {
-                const active = opt.value === value;
-                return (
-                  <li key={opt.value || "__empty"} role="option" aria-selected={active}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onChange(opt.value);
-                        setOpen(false);
-                      }}
-                      className={cn(
-                        "pressable flex w-full items-center justify-between gap-2 rounded-xl px-3 text-left transition-colors",
-                        compactLabel ? "py-3.5 text-[13px] sm:text-sm" : "py-3.5 text-sm",
-                        variant === "hero"
-                          ? active
-                            ? "bg-gold/14 font-bold text-navy"
-                            : "font-medium text-navy/85 hover:bg-navy/[0.04]"
-                          : active
-                            ? "bg-gold/15 font-bold text-gold"
-                            : "text-white/90 hover:bg-white/[0.06]"
-                      )}
+              {visibleOptions.length === 0 ? (
+                <li className="px-3 py-6 text-center text-sm text-muted">
+                  No matches
+                </li>
+              ) : (
+                visibleOptions.map((opt, index) => {
+                  if (!isSelectable(opt)) {
+                    if (opt.kind === "header") {
+                      return (
+                        <li key={optionKey(opt, index)} aria-hidden>
+                          <p className={headerTextClass}>{opt.label}</p>
+                        </li>
+                      );
+                    }
+                    return (
+                      <li key={optionKey(opt, index)} aria-hidden>
+                        <div className={separatorClass} role="separator" />
+                        <p className={separatorLabelClass}>{opt.label}</p>
+                      </li>
+                    );
+                  }
+
+                  const active = opt.value === value;
+                  return (
+                    <li
+                      key={optionKey(opt, index)}
+                      role="option"
+                      aria-selected={active}
                     >
-                      <span className={cn("min-w-0", compactLabel && "tracking-tight")}>
-                        {opt.label}
-                      </span>
-                      {active ? (
-                        <Check
-                          className={cn(
-                            "h-4 w-4 shrink-0",
-                            variant === "hero" ? "text-gold-dark" : "text-gold"
-                          )}
-                        />
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onChange(opt.value);
+                          close();
+                        }}
+                        className={cn(
+                          "pressable flex w-full items-center justify-between gap-2 rounded-xl px-3 text-left transition-colors",
+                          compactLabel
+                            ? "py-3.5 text-[13px] sm:text-sm"
+                            : "py-3.5 text-sm",
+                          variant === "hero"
+                            ? active
+                              ? "bg-gold/14 font-bold text-navy"
+                              : "font-medium text-navy/85 hover:bg-navy/[0.04]"
+                            : active
+                              ? "bg-gold/15 font-bold text-gold"
+                              : "text-white/90 hover:bg-white/[0.06]"
+                        )}
+                      >
+                        <span
+                          className={cn("min-w-0", compactLabel && "tracking-tight")}
+                        >
+                          {opt.label}
+                        </span>
+                        {active ? (
+                          <Check
+                            className={cn(
+                              "h-4 w-4 shrink-0",
+                              variant === "hero" ? "text-gold-dark" : "text-gold"
+                            )}
+                          />
+                        ) : null}
+                      </button>
+                    </li>
+                  );
+                })
+              )}
             </ul>
             <div className="h-[max(0.5rem,env(safe-area-inset-bottom))]" />
           </div>
