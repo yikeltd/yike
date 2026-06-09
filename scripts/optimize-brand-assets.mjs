@@ -8,6 +8,11 @@ import { mkdir, writeFile, stat } from "fs/promises";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import pngToIco from "png-to-ico";
+import {
+  SPLASH_NAVY,
+  writeTwaSplashImage,
+  logoMarkPngBuffer,
+} from "./lib/logo-splash-mark.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -20,7 +25,7 @@ const TWA_RES_DIRS = [
   join(ROOT, "twa-staff/app/src/main/res"),
 ];
 
-const NAVY = { r: 3, g: 27, b: 78, alpha: 255 };
+const NAVY = SPLASH_NAVY;
 
 const TWA_SPLASH_DENSITIES = [
   { folder: "drawable-mdpi", size: 320 },
@@ -58,20 +63,7 @@ async function writeLogoIcon(source, path, size) {
 }
 
 async function writeTwaSplash(source, path, size) {
-  const logoPx = Math.round(size * 0.52);
-  const logo = await logoPngBuffer(source, logoPx, "contain");
-
-  await sharp({
-    create: {
-      width: size,
-      height: size,
-      channels: 4,
-      background: NAVY,
-    },
-  })
-    .composite([{ input: logo, gravity: "centre" }])
-    .png({ compressionLevel: 9 })
-    .toFile(path);
+  await writeTwaSplashImage(source, path, size);
 }
 
 async function writeTwaNativeAssets(source, resDir) {
@@ -177,6 +169,11 @@ async function main() {
 
   await writeLogoIcon(source, join(APP_DIR, "icon.png"), 512);
   await writeLogoIcon(source, join(APP_DIR, "apple-icon.png"), 180);
+
+  const mark512 = await logoMarkPngBuffer(source, 512);
+  await sharp(mark512)
+    .webp({ quality: 86, effort: 6, smartSubsample: true })
+    .toFile(join(OUT_DIR, "images/logo-mark.webp"));
 
   for (const resDir of TWA_RES_DIRS) {
     await writeTwaNativeAssets(source, resDir);

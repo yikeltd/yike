@@ -1,12 +1,16 @@
 /**
  * Yike Crew TWA splash + launcher assets from the canonical logo.webp.
- * The logo background is preserved; do not cut out or alpha-mask the mark.
+ * Splash uses the transparent logo mark on navy (no square logo background).
  * Run: node scripts/generate-crew-twa-assets.mjs
  */
 import sharp from "sharp";
 import { mkdir, stat } from "fs/promises";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import {
+  SPLASH_NAVY,
+  writeTwaSplashImage,
+} from "./lib/logo-splash-mark.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -14,7 +18,7 @@ const INPUT = join(ROOT, "public/images/logo.webp");
 const TWA_RES = join(ROOT, "twa-staff/app/src/main/res");
 const STAFF_SPLASH = join(ROOT, "public/staff/splash");
 
-const NAVY = { r: 3, g: 27, b: 78, alpha: 255 };
+const NAVY = SPLASH_NAVY;
 
 const SPLASH_DENSITIES = [
   { folder: "drawable-mdpi", size: 320 },
@@ -33,21 +37,7 @@ const LAUNCHER_SIZES = [
 ];
 
 async function writeBlendedSplash(source, outPath, size) {
-  const logoPx = Math.round(size * 0.52);
-  const logo = await sharp(source)
-    .resize(logoPx, logoPx, {
-      fit: "contain",
-      background: NAVY,
-    })
-    .png()
-    .toBuffer();
-
-  await sharp({
-    create: { width: size, height: size, channels: 4, background: NAVY },
-  })
-    .composite([{ input: logo, gravity: "centre" }])
-    .png({ compressionLevel: 9 })
-    .toFile(outPath);
+  await writeTwaSplashImage(source, outPath, size);
 }
 
 async function writeLauncher(source, outPath, size) {

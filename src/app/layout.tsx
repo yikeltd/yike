@@ -183,7 +183,7 @@ export default function RootLayout({
           <div className="yike-boot-splash__content">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/logo.webp"
+              src="/images/logo-mark.webp"
               alt=""
               width={120}
               height={120}

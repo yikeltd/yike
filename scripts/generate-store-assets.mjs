@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { mkdir } from "fs/promises";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { logoMarkPngBuffer } from "./lib/logo-splash-mark.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -74,10 +75,7 @@ function splashSvg(w, h) {
 }
 
 async function compositeLogo(basePipeline, logoSize, left, top) {
-  const logo = await sharp(LOGO)
-    .resize(logoSize, logoSize)
-    .png()
-    .toBuffer();
+  const logo = await logoMarkPngBuffer(LOGO, logoSize);
   return basePipeline.composite([{ input: logo, left, top }]);
 }
 
