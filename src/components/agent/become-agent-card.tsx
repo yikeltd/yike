@@ -53,7 +53,7 @@ export function BecomeAgentCard({
       ? normalizeNigerianPhone(whatsapp)
       : "";
     if (normalized && !canRequestPhoneOtp(normalized)) {
-      setError("Use a valid Nigerian WhatsApp number or leave it blank for now.");
+      setError("Use a valid Nigerian WhatsApp number or leave it blank.");
       return;
     }
 
@@ -135,7 +135,7 @@ export function BecomeAgentCard({
             </li>
             <li className="flex gap-2">
               <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
-              WhatsApp contact recommended for inquiries (optional for now)
+              WhatsApp contact recommended for inquiries
             </li>
             <li className="flex gap-2">
               <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" />
@@ -143,11 +143,11 @@ export function BecomeAgentCard({
             </li>
           </ul>
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-navy">WhatsApp number (optional)</p>
+            <p className="text-xs font-semibold text-navy">WhatsApp number</p>
             <Input
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
-              placeholder="08012345678 — add later if you prefer"
+              placeholder="08012345678"
               inputMode="tel"
             />
           </div>
@@ -166,7 +166,13 @@ export function BecomeAgentCard({
               onChange={(e) => setAcceptRules(e.target.checked)}
               className="mt-1"
             />
-            <span>I agree to Yike listing rules and honest property details.</span>
+            <span>
+              I agree to Yike listing rules,{" "}
+              <Link href="/terms" className="font-semibold text-gold-dark underline">
+                terms and conditions
+              </Link>
+              .
+            </span>
           </label>
           {error && (
             <p className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
@@ -183,7 +189,7 @@ export function BecomeAgentCard({
               disabled={!acceptRules || !identityReady || loading}
               onClick={() => void becomeAgent()}
             >
-              {loading ? "Setting up…" : "Start listing"}
+              {loading ? "Setting up…" : "Continue"}
             </Button>
           </div>
         </section>

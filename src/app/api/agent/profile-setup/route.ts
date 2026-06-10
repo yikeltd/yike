@@ -80,24 +80,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please verify your email to continue." }, { status: 400 });
   }
 
-  const { error } = await admin
-    .from("profiles")
-    .update({
-      full_name: fullName,
-      date_of_birth: dateOfBirth,
-      residential_address: residentialAddress,
-      residential_area: residentialArea || null,
-      residential_city: residentialCity,
-      residential_state: residentialState,
-      residential_postal_code: residentialPostalCode || null,
-      country,
-      office_address: residentialAddress,
-      ...(phone ? { phone, whatsapp: phone } : {}),
-    })
-    .eq("id", user.id);
+  const fullUpdate = {
+    full_name: fullName,
+    date_of_birth: dateOfBirth,
+    residential_address: residentialAddress,
+    residential_area: residentialArea || null,
+    residential_city: residentialCity,
+    residential_state: residentialState,
+    residential_postal_code: residentialPostalCode || null,
+    country,
+    office_address: residentialAddress,
+    ...(phone ? { phone, whatsapp: phone } : {}),
+  };
+
+  let { error } = await admin.from("profiles").update(fullUpdate).eq("id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: "Could not save profile." }, { status: 500 });
+    console.error("[agent/profile-setup] full update failed:", error.message);
+    const fallbackUpdate = {
+      full_name: fullName,
+      office_address: residentialAddress,
+      ...(phone ? { phone, whatsapp: phone } : {}),
+    };
+    const retry = await admin.from("profiles").update(fallbackUpdate).eq("id", user.id);
+    error = retry.error;
+    if (error) {
+      console.error("[agent/profile-setup] fallback update failed:", error.message);
+      return NextResponse.json({ error: "Could not save profile." }, { status: 500 });
+    }
   }
 
   await syncProfileVerificationMeta(admin, user.id);
