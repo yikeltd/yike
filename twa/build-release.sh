@@ -65,10 +65,8 @@ fs.writeFileSync(manifestPath, androidManifest);
 NODE
 
 node <<'NODE'
-const path = require("path");
 const sharp = require("sharp");
 
-const source = path.resolve("..", "public", "splash", "splash-1080x1920.png");
 const targets = [
   ["app/src/main/res/drawable-mdpi/splash.png", 320],
   ["app/src/main/res/drawable-hdpi/splash.png", 480],
@@ -77,10 +75,17 @@ const targets = [
   ["app/src/main/res/drawable-xxxhdpi/splash.png", 1280],
 ];
 
+// Keep Android/TWA's native launch phase logo-free; the web app owns the branded full-screen splash.
 Promise.all(
   targets.map(([out, size]) =>
-    sharp(source)
-      .resize(size, size, { fit: "cover", position: "center" })
+    sharp({
+      create: {
+        width: size,
+        height: size,
+        channels: 4,
+        background: { r: 3, g: 27, b: 78, alpha: 0 },
+      },
+    })
       .png({ compressionLevel: 9, adaptiveFiltering: true })
       .toFile(out)
   )
