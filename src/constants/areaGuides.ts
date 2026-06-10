@@ -42,7 +42,7 @@ const GUIDES: Record<string, AreaGuide> = {
     typicalRent: "₦1.5m – ₦6m/yr",
     tips: [
       "Parking can be limited in older blocks.",
-      "Verify agent identity before inspection fees.",
+      "Confirm agent identity and fee breakdown before you pay.",
     ],
   },
   "abuja::gwarinpa": {
@@ -291,7 +291,7 @@ export function getAreaGuide(city: string, area: string): AreaGuide | null {
     highlights: profiles.map((p) => PROFILE_COPY[p]),
     tips: [
       "Use WhatsApp to confirm total move-in cost before paying.",
-      "Never pay inspection fees to unverified agents.",
+      "Decide viewing and agency fees on your terms — receipts help.",
     ],
   };
 }

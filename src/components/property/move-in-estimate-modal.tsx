@@ -121,23 +121,20 @@ export function MoveInEstimateModal({
           </button>
           <h2 className="pr-8 text-lg font-bold text-navy">Move-in estimate</h2>
           <p className="mt-1 text-xs text-muted">
-            Based on what the agent listed. Edit if your quote differs.
+            Rent is from the listing. Adjust fees if your agent quoted differently.
           </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <div className="space-y-3">
-            <FeeField
-              label={isLease ? "Annual lease" : "Annual rent"}
-              value={String(state.rent)}
-              onChange={(v) =>
-                setState((s) => ({
-                  ...s,
-                  rent: Number(v.replace(/[^\d.]/g, "")) || 0,
-                }))
-              }
-              suffix="₦"
-            />
+            <div className="rounded-xl border border-surface bg-surface/50 px-3 py-2.5">
+              <p className="text-xs font-semibold text-muted">
+                {isLease ? "Annual lease" : "Annual rent"}
+              </p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-navy">
+                {formatAmount(state.rent)}
+              </p>
+            </div>
             <FeeField
               label="Agency fee"
               value={state.agency.raw}
@@ -147,7 +144,6 @@ export function MoveInEstimateModal({
               label="Refundable caution"
               value={state.caution.raw}
               onChange={(v) => updateFee("caution", v)}
-              hint="Enter ₦ amount or % — not months of rent"
             />
             <FeeField
               label="Agreement fee"

@@ -5,7 +5,7 @@ export const RENT_FAQS = [
   },
   {
     q: "Should I pay before inspecting?",
-    a: "No. Visit the property first. Avoid upfront inspection fees to strangers on WhatsApp. Yike never collects rent on your behalf.",
+    a: "That is your call. Many renters visit the property first; some agents charge a viewing fee. Yike never collects rent or deposits on your behalf.",
   },
   {
     q: "What does Verified mean on Yike?",

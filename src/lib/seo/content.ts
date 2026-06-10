@@ -9,7 +9,7 @@ export function buildCityIntro(city: string, state: string): string[] {
   return [
     `${city} is one of Nigeria's most active housing markets. Whether you are looking for a self contain, family flat, shop space or shortlet, ${city} offers options across many neighborhoods — but prices and quality vary sharply by area.`,
     `${p.rentalGuide}`,
-    `On Yike, you browse listings from identity-checked agents and contact them directly on WhatsApp. We do not process rent or hold deposits — you inspect first, then pay when satisfied. Report suspicious listings if something looks off.`,
+    `On Yike, you browse listings from identity-checked agents and contact them directly on WhatsApp. We do not process rent or hold deposits — you decide when and how to pay. Report suspicious listings if something looks off.`,
     `Use the sections below to explore popular neighborhoods in ${city}, compare property types, and read safety tips before you commit.`,
   ];
 }
@@ -32,7 +32,7 @@ export function buildNeighborhoodIntro(
     `${p.rentalGuide}`,
     guide?.tips?.[0]
       ? `Local tip: ${guide.tips[0]}`
-      : `Always meet agents at the actual property — not a random office — before paying inspection fees or rent.`,
+      : `Many renters meet agents at the actual property — not only a roadside handover — before large payments.`,
     `Browse verified listings below or explore related property types and nearby areas.`,
   ];
 }
@@ -76,7 +76,7 @@ export function buildCityFaqs(city: string): SeoFaq[] {
     },
     {
       q: "What if a listing looks fake?",
-      a: "Use the report button on the listing page. Never pay large sums before a physical inspection.",
+      a: "Use the report button on the listing page. Consider inspecting the property before large payments.",
     },
   ];
 }

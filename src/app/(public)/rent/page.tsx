@@ -110,7 +110,7 @@ export default function RentPage() {
           <ul className="mt-3 space-y-2 text-sm text-muted">
             <li>• Confirm agency fee, caution deposit and agreement fee before transfer.</li>
             <li>• Inspect water, prepaid meter, security and road access in person.</li>
-            <li>• Avoid paying inspection fees to agents you haven&apos;t met at the property.</li>
+            <li>• Decide payment timing yourself — many renters meet at the property before large transfers.</li>
             <li>• Use Verified filters when you want identity-checked agents.</li>
           </ul>
           <Link href="/blog" className="mt-4 inline-block text-sm font-bold text-gold-dark">

@@ -10,12 +10,12 @@ const DEFAULT: { icon: LucideIcon; title: string; body: string }[] = [
   {
     icon: MessageCircle,
     title: "WhatsApp-first",
-    body: "Chat directly with agents. No middleman fees through Yike — inspect first, pay when satisfied.",
+    body: "Chat directly with agents. No middleman fees through Yike — you agree payments with the agent.",
   },
   {
     icon: Eye,
     title: "Inspect in person",
-    body: "Never pay large sums before visiting the property. Walk the unit, check water, light and access roads.",
+    body: "Walking the unit helps — check water, light and access roads before you commit to large payments.",
   },
   {
     icon: ShieldCheck,

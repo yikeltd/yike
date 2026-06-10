@@ -295,7 +295,7 @@ function viralPosts(): BlogPost[] {
       sections: [
         {
           heading: "Search smarter",
-          body: "Save listings on Yike, shortlist three areas, then book physical inspections the same week. Never pay from photos alone — especially on WhatsApp.",
+          body: "Save listings on Yike, shortlist three areas, then book physical inspections the same week. Photos alone are rarely enough — especially on WhatsApp.",
         },
       ],
       faqs: [],

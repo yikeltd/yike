@@ -29,8 +29,8 @@ export function CallSafetyModal({
       >
         <p className="text-lg font-bold text-navy">Before you call</p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          We&apos;ll connect you to the agent. For your safety, do not pay
-          inspection fees before seeing the property.
+          We&apos;ll connect you to the agent. Any viewing or agency fees are
+          between you and the agent — pay when and if you are comfortable.
         </p>
         <div className="mt-5 flex flex-col gap-2">
           <Button type="button" fullWidth onClick={onConfirm}>

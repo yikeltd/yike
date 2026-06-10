@@ -4,18 +4,18 @@ import { PageHero } from "@/components/pages/page-hero";
 import { FaqSection } from "@/components/pages/faq-section";
 import { CtaBanner } from "@/components/pages/cta-banner";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
-import { SAFETY_WARNING, SITE_NAME } from "@/lib/constants";
+import { SITE_NAME } from "@/lib/constants";
 
 export const metadata = {
   title: `Safety Tips for Renting in Nigeria | ${SITE_NAME}`,
   description:
-    "Avoid fake agents, inspection fee scams and rental fraud. Practical safety checklist for Nigerian renters and buyers.",
+    "Practical safety checklist for Nigerian renters and buyers — inspect smart, understand fees, and decide payments on your terms.",
 };
 
 const SCAM_FLAGS = [
   "Agent refuses physical viewing or sends a different unit",
-  "Pressure to pay before you inspect the property",
-  "Price far below market with luxury photos",
+  "Pressure to pay before you have inspected the property",
+  "Price far below market with luxury photos only",
   "Only accepts transfer to personal accounts — no receipts",
   "Duplicate listing photos across multiple cities",
   "Cannot explain agency affiliation or office address",
@@ -24,34 +24,78 @@ const SCAM_FLAGS = [
 const CITY_SCAM_TIPS = [
   {
     city: "Lagos",
-    tip: "Extra caution in Lekki/Ajah — verify estate security and actual unit before agency fees.",
+    tip: "High-demand areas like Lekki, Ajah, Ikeja and Yaba see heavy listing volume. Confirm you are viewing the exact unit and estate access before paying agency or caution fees.",
   },
   {
     city: "Abuja",
-    tip: "Confirm plot numbers in Gwarinpa, Lugbe and Kubwa match survey pins on site.",
+    tip: "In Gwarinpa, Lugbe, Kubwa, Wuse and satellite districts, match posted plot or flat details on site. A written fee breakdown helps before you transfer.",
   },
   {
     city: "Port Harcourt",
-    tip: "GRA listings attract impersonators — meet at the property, not a proxy location.",
+    tip: "GRA, Woji and Rumuola attract premium rents. Many renters prefer meeting at the property gate or compound — not only a roadside handover.",
   },
   {
-    city: "Enugu / Aba",
-    tip: "Student areas see seasonal scams near resumption — inspect with a friend.",
+    city: "Enugu",
+    tip: "Near UNN, ESCET and New Haven, student letting peaks around resumption. Bring someone along for viewings when you can.",
+  },
+  {
+    city: "Aba",
+    tip: "Commercial and residential listings move quickly. Confirm total move-in cost in writing and who receives each payment.",
+  },
+  {
+    city: "Owerri",
+    tip: "Areas around IMSU and Aladinma see seasonal demand. Compare multiple listings — photos are sometimes reused.",
+  },
+  {
+    city: "Ibadan",
+    tip: "Bodija, UI and Challenge vary in road access and utilities. A daylight visit helps you judge water, power and security.",
+  },
+  {
+    city: "Benin City",
+    tip: "USO and Ekehuan student corridors — verify who manages the compound and what utilities are included in the rent.",
+  },
+  {
+    city: "Kano",
+    tip: "Confirm estate or compound rules and who you are paying. Receipts help if you choose to pay any viewing or agency fee.",
+  },
+  {
+    city: "Calabar / Uyo",
+    tip: "Shortlet and yearly rents are quoted differently. Clarify whether the price is nightly, monthly or yearly before paying.",
+  },
+  {
+    city: "Kaduna / Jos",
+    tip: "Security and road access vary by district. Physical inspection tells you more than photos alone.",
+  },
+  {
+    city: "Warri / Asaba",
+    tip: "Oil-city rents shift with demand. Verify the listed address on maps and in person before large transfers.",
   },
 ];
 
 const SAFETY_FAQS = [
   {
     q: "Should I pay an inspection fee?",
-    a: "Be cautious. Some legitimate agents charge small viewing fees, but widespread scam pattern is upfront payment before any viewing. Prefer agents who meet you at the property first.",
+    a: "That is your decision. Some agents charge a viewing or logistics fee; others do not. If you pay, agree in writing what it covers. Many renters prefer to meet at the property first when possible.",
   },
   {
     q: "How do I verify a landlord?",
-    a: "Ask for ID, agency affiliation, and neighbours who can confirm tenancy. For purchases, use a lawyer for title search — Yike does not verify ownership.",
+    a: "Ask for identification and any tenancy papers the agent can share. Speak with neighbours, estate security or facility managers where available. For purchases, a lawyer can run title searches — Yike verifies agent identity where marked Verified, not property ownership.",
   },
   {
     q: "What if I already paid a scammer?",
-    a: "Report to police/EFCC where appropriate, notify your bank immediately, and report the listing on Yike with screenshots.",
+    a: "Contact your bank immediately to report the transfer. You can file a complaint with your local police station. For online fraud, Nigerians often also report to the EFCC (efcc.gov.ng). Report the Yike listing with screenshots so we can review it.",
+  },
+  {
+    q: "Does Verified mean the property is safe to pay for?",
+    a: "No. Verified means the agent passed Yike identity checks. You should still inspect the property and be comfortable with the terms before paying.",
+  },
+  {
+    q: "Does Yike hold rent or caution deposits?",
+    a: "No. Yike is a discovery platform. Payments are between you and the agent or landlord.",
+  },
+  {
+    q: "What are common warning signs?",
+    a: "Pressure to pay before any viewing, prices far below market with luxury photos only, refusal to meet at the property, or transfers to unrelated personal accounts without clear receipts.",
   },
 ];
 
@@ -60,7 +104,7 @@ export default function SafetyPage() {
     <div className="pb-12">
       <PageHero
         title="Stay safe while house hunting"
-        subtitle="Practical advice for Nigerian renters and buyers — avoid fake agents, inspect first, pay smart."
+        subtitle="Practical advice for Nigerian renters and buyers — understand fees, inspect when you can, and decide payments on your terms."
         image={PAGE_IMAGERY.safety}
         badge="Safety"
         variant="dark"
@@ -72,7 +116,8 @@ export default function SafetyPage() {
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/40 dark:bg-amber-950/30">
           <p className="flex items-start gap-2 text-sm text-amber-950 dark:text-amber-100">
             <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
-            {SAFETY_WARNING}
+            Yike does not process rent, caution deposits or viewing fees. How and when you pay
+            is your decision — these tips are general guidance, not legal advice.
           </p>
         </div>
 
@@ -81,7 +126,7 @@ export default function SafetyPage() {
           <ul className="mt-4 space-y-3 text-sm text-muted">
             <li className="flex gap-2">
               <span className="font-bold text-gold-dark">1.</span>
-              Visit the property — check water, light, roads, security
+              Visit the property when you can — check water, light, roads, security
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-gold-dark">2.</span>
@@ -97,7 +142,7 @@ export default function SafetyPage() {
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-gold-dark">5.</span>
-              Chat on WhatsApp but don&apos;t send large sums without inspection
+              Chat on WhatsApp — decide payment timing in a way that works for you
             </li>
           </ul>
         </section>
@@ -141,8 +186,9 @@ export default function SafetyPage() {
           </h2>
           <p className="mt-2 text-sm text-white/85">
             Use the Report button on any listing, or email hello@yike.ng with the
-            listing URL and screenshots. For emergencies involving fraud, contact
-            local police or EFCC as appropriate.
+            listing URL and screenshots. For fraud involving money already transferred,
+            contact your bank and local police; EFCC handles many online fraud reports
+            in Nigeria.
           </p>
           <Link
             href="/contact"
@@ -156,8 +202,8 @@ export default function SafetyPage() {
       <FaqSection title="Safety FAQs" faqs={SAFETY_FAQS} />
 
       <CtaBanner
-        title="Avoid fake agents"
-        body="Chat directly on WhatsApp with Verified agents — inspect properties before you pay."
+        title="Browse with confidence"
+        body="Chat on WhatsApp with Verified agents. Inspect properties and agree fees before you pay — on your timeline."
         primary={{ label: "Verified listings", href: "/search?verified=1" }}
         secondary={{ label: "Read disclaimer", href: "/disclaimer" }}
       />
