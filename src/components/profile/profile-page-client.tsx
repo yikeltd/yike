@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { Profile } from "@/types/database";
 import { ProfileCoverHero } from "@/components/profile/profile-cover-hero";
-import { VerifiedBadge, StatusBadge } from "@/components/ui/badge";
+import { VerifiedBadge, StatusBadge, SellerTypeBadge } from "@/components/ui/badge";
 import { ProfileAccountActions } from "@/components/profile/profile-account-actions";
 import { ProfileUserActivityStats } from "@/components/profile/profile-user-activity-stats";
 import { TrustCenterCard } from "@/components/profile/trust-center-card";
@@ -24,6 +24,7 @@ import { accountStatusMessage } from "@/lib/account-control";
 import { cn } from "@/lib/utils";
 import {
   formatListingSlots,
+  getSellerType,
   profileRoleLabel,
   showAgentBadge,
 } from "@/lib/profile-display";
@@ -64,6 +65,7 @@ export function ProfilePageClient({
   const displayName = profile.full_name ?? profile.username ?? "Your profile";
   const isLister = canList;
   const roleLabel = profileRoleLabel(profile, verified);
+  const sellerType = getSellerType(profile);
   const statusMessage = accountStatusMessage(profile);
   const trustChip = getTrustStatusChip(profile, verified);
   const showTrust = shouldShowTrustCenter(profile, verified);
@@ -79,7 +81,8 @@ export function ProfilePageClient({
         badges={
           <>
             {showAgentBadge(profile, verified) ? <VerifiedBadge /> : null}
-            {roleLabel ? (
+            {sellerType ? <SellerTypeBadge type={sellerType} /> : null}
+            {roleLabel && !sellerType ? (
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
                 {roleLabel}
               </span>
@@ -103,8 +106,8 @@ export function ProfilePageClient({
           role="status"
         >
           <p className="font-medium">{statusMessage}</p>
-          <Link href="/agent/verification" className="mt-1 inline-block text-xs font-semibold text-navy">
-            Open trust center →
+          <Link href="/agent/profile-setup" className="mt-1 inline-block text-xs font-semibold text-navy">
+            Complete basic profile →
           </Link>
         </div>
       ) : null}

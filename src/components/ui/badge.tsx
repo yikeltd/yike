@@ -150,6 +150,43 @@ export function AgencyBadge({ className }: { className?: string }) {
   );
 }
 
+export function SellerTypeBadge({
+  type,
+  prefix,
+  className,
+  size = "md",
+}: {
+  type: "agent" | "landlord" | "company";
+  prefix?: "listed_by" | "none";
+  className?: string;
+  size?: "sm" | "md";
+}) {
+  const label =
+    prefix === "listed_by"
+      ? type === "company"
+        ? "Listed by Company"
+        : type === "landlord"
+          ? "Listed by Landlord"
+          : "Listed by Agent"
+      : type === "company"
+        ? "Company"
+        : type === "landlord"
+          ? "Landlord"
+          : "Agent";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border border-navy/15 bg-navy/5 font-semibold text-navy dark:text-white",
+        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+        className
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
 export function SafetyBadge({ className }: { className?: string }) {
   return (
     <span

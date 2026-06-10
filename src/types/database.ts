@@ -387,6 +387,7 @@ export interface Profile {
   residential_postal_code?: string | null;
   country?: string | null;
   cac_number?: string | null;
+  cac_document_path?: string | null;
   company_verified?: boolean;
   company_verified_at?: string | null;
   company_verified_by?: string | null;

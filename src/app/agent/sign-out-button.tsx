@@ -1,27 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import { LogOut } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/auth-provider";
 
 export function AgentSignOut() {
-  const router = useRouter();
+  const { signOut } = useAuth();
+  const [busy, setBusy] = useState(false);
 
-  async function signOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+  async function handleSignOut() {
+    if (busy) return;
+    setBusy(true);
+    await signOut("/");
   }
 
   return (
     <button
       type="button"
-      onClick={signOut}
-      className="flex w-full items-center justify-center gap-2 py-3 text-sm text-muted"
+      onClick={() => void handleSignOut()}
+      disabled={busy}
+      className="flex w-full items-center justify-center gap-2 py-3 text-sm text-muted disabled:opacity-60"
     >
       <LogOut className="h-4 w-4" />
-      Log out
+      {busy ? "Logging out…" : "Log out"}
     </button>
   );
 }

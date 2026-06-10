@@ -23,6 +23,7 @@ import {
   saveAuthIntent,
 } from "@/lib/auth-intent";
 import { executeAuthIntent } from "@/lib/execute-auth-intent";
+import { performFastLogout } from "@/lib/auth/fast-logout";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { AuthModal } from "./auth-modal";
@@ -40,6 +41,7 @@ interface AuthContextValue {
   closeAuth: () => void;
   refreshAuth: () => Promise<void>;
   guardAction: (intent: AuthIntent, onAuthorized: () => void) => void;
+  signOut: (redirectTo?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -67,8 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => new Set()
   );
   const intentResumeRef = useRef<string | null>(null);
+  const signingOutRef = useRef(false);
 
   const refreshAuth = useCallback(async () => {
+    if (signingOutRef.current) return;
     if (!isSupabaseConfigured()) {
       setUser(null);
       setProfile(null);
@@ -134,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
+      if (signingOutRef.current) return;
       void refreshAuth();
     });
     return () => subscription.unsubscribe();
@@ -173,6 +178,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setModalIntent(undefined);
   }, []);
 
+  const signOut = useCallback(
+    async (redirectTo = "/") => {
+      signingOutRef.current = true;
+      setUser(null);
+      setProfile(null);
+      setSavedListingIds(new Set());
+      setLoading(false);
+      setModalOpen(false);
+      router.replace(redirectTo);
+      void performFastLogout().finally(() => {
+        signingOutRef.current = false;
+      });
+    },
+    [router]
+  );
+
   const guardAction = useCallback(
     (intent: AuthIntent, onAuthorized: () => void) => {
       if (loading) return;
@@ -208,6 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       closeAuth,
       refreshAuth,
       guardAction,
+      signOut,
     }),
     [
       user,
@@ -221,6 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       closeAuth,
       refreshAuth,
       guardAction,
+      signOut,
     ]
   );
 

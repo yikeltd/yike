@@ -45,16 +45,49 @@ export function showAgentBadge(profile: Profile, verified: boolean): boolean {
   return canShowPublicVerifiedBadge(profile) || verified;
 }
 
+export type SellerType = "agent" | "landlord" | "company";
+
+export function getSellerType(profile: Profile): SellerType | null {
+  if (!isAgentRole(profile.role)) return null;
+  if (
+    profile.account_type === "agency" ||
+    profile.account_type === "developer" ||
+    Boolean(profile.company_name)
+  ) {
+    return "company";
+  }
+  if (profile.account_type === "landlord") return "landlord";
+  return "agent";
+}
+
+export function sellerTypeLabel(type: SellerType): string {
+  if (type === "company") return "Company";
+  if (type === "landlord") return "Landlord";
+  return "Agent";
+}
+
+export function listedByLabel(type: SellerType): string {
+  return `Listed by ${sellerTypeLabel(type)}`;
+}
+
+export function profileTypeHeading(type: SellerType): string {
+  if (type === "company") return "Company profile";
+  if (type === "landlord") return "Landlord profile";
+  return "Agent profile";
+}
+
 export function profileRoleLabel(profile: Profile, verified: boolean): string | null {
-  const persona = getProfilePersona(profile);
-  if (persona === "user") return null;
-  if (verified) return null; // VerifiedBadge handles this
-  if (persona === "company") return "Company";
-  if (persona === "agent") return "Agent account";
-  if (persona === "city_ambassador") return "Ambassador";
-  if (persona === "field_verifier") return "Verifier";
-  if (persona === "legal_partner") return "Legal partner";
-  return null;
+  const sellerType = getSellerType(profile);
+  if (!sellerType) {
+    const persona = getProfilePersona(profile);
+    if (persona === "user") return null;
+    if (persona === "city_ambassador") return "Ambassador";
+    if (persona === "field_verifier") return "Verifier";
+    if (persona === "legal_partner") return "Legal partner";
+    return null;
+  }
+  if (verified) return sellerTypeLabel(sellerType);
+  return sellerTypeLabel(sellerType);
 }
 
 export type ListingJourneyStep = {

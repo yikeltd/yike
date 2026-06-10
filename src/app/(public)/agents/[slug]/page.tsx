@@ -12,6 +12,7 @@ import {
   ResponsiveBadge,
   DeveloperBadge,
   AgencyBadge,
+  SellerTypeBadge,
 } from "@/components/ui/badge";
 import { isVerifiedAgent } from "@/lib/utils";
 import { isDemoProperty } from "@/lib/mock-listings";
@@ -20,6 +21,7 @@ import { AgentReviewsSection } from "@/components/reviews/agent-reviews-section"
 import { CompanyProfileHero } from "@/components/agent/company-profile-hero";
 import { getReviewStats, formatReviewSummary } from "@/lib/reviews/queries";
 import { isResponsiveAgent } from "@/lib/agent-response";
+import { getSellerType, profileTypeHeading } from "@/lib/profile-display";
 
 export async function generateMetadata({
   params,
@@ -57,6 +59,7 @@ export default async function AgentProfilePage({
   const isAgency =
     agent.account_type === "agency" || agent.agent_type === "agency";
   const isDeveloper = agent.account_type === "developer";
+  const sellerType = getSellerType(agent);
   const displayName =
     agent.company_name?.trim() || agent.full_name?.trim() || "Agent";
   const suspended = agent.profile_status === "suspended";
@@ -93,19 +96,17 @@ export default async function AgentProfilePage({
             }`}
           >
             <p className="text-xs font-bold uppercase tracking-wider text-muted">
-              {isAgency
-                ? "Agency profile"
-                : isDeveloper
-                  ? "Developer profile"
-                  : "Agent profile"}
+              {sellerType
+                ? profileTypeHeading(sellerType)
+                : isAgency
+                  ? "Agency profile"
+                  : isDeveloper
+                    ? "Developer profile"
+                    : "Agent profile"}
             </p>
             <h1 className="mt-2 text-2xl font-bold text-navy">{displayName}</h1>
-            {agent.agent_type && agent.account_type === "individual" && (
-              <p className="mt-1 text-sm capitalize text-muted">
-                {agent.agent_type.replace("_", " ")}
-              </p>
-            )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
+              {sellerType ? <SellerTypeBadge type={sellerType} /> : null}
               {verified ? <VerifiedBadge /> : null}
               {responsive ? <ResponsiveBadge size="sm" /> : null}
               {isDeveloper && agent.developer_verified ? (

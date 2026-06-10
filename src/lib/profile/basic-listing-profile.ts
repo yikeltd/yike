@@ -1,4 +1,4 @@
-import type { Profile } from "@/types/database";
+import type { Profile, AccountType } from "@/types/database";
 
 export type BasicListingProfileSlice = Pick<
   Profile,
@@ -8,12 +8,20 @@ export type BasicListingProfileSlice = Pick<
   | "residential_area"
   | "residential_city"
   | "residential_state"
-  | "residential_postal_code"
-  | "country"
   | "office_address"
   | "phone"
   | "whatsapp"
+  | "account_type"
+  | "company_name"
+  | "cac_number"
+  | "cac_document_path"
 >;
+
+export function isCompanyAccount(
+  accountType: AccountType | null | undefined
+): boolean {
+  return accountType === "agency" || accountType === "developer";
+}
 
 export function profileStreetAddress(
   profile: Partial<BasicListingProfileSlice> | null | undefined
@@ -28,13 +36,23 @@ export function profileStreetAddress(
 export function hasBasicListingProfile(
   profile: Partial<BasicListingProfileSlice> | null | undefined
 ): boolean {
-  if (!profile?.full_name?.trim()) return false;
+  if (!profile) return false;
+
+  if (isCompanyAccount(profile.account_type)) {
+    if (!profile.company_name?.trim()) return false;
+    if (!profile.cac_number?.trim()) return false;
+    if (!profile.cac_document_path?.trim()) return false;
+    if (!profileStreetAddress(profile)) return false;
+    if (!profile.residential_city?.trim()) return false;
+    if (!profile.residential_state?.trim()) return false;
+    if (!profile.phone?.trim() && !profile.whatsapp?.trim()) return false;
+    return true;
+  }
+
+  if (!profile.full_name?.trim()) return false;
   if (!profile.date_of_birth) return false;
   if (!profileStreetAddress(profile)) return false;
   if (!profile.residential_city?.trim()) return false;
   if (!profile.residential_state?.trim()) return false;
   return true;
 }
-
-export const BASIC_PROFILE_SETUP_MESSAGE =
-  "Complete your basic profile to list a property.";

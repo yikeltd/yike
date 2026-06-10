@@ -1,24 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { FieldLabel } from "@/components/ui/field-label";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { normalizeNigerianPhone } from "@/lib/phone";
-import { BASIC_PROFILE_SETUP_MESSAGE } from "@/lib/profile/basic-listing-profile";
+import { isCompanyAccount } from "@/lib/profile/basic-listing-profile";
 import type { Profile } from "@/types/database";
 import { friendlyPublicError, PUBLIC_ERROR_FALLBACK } from "@/lib/copy/public-errors";
+import { Upload } from "lucide-react";
 
-export function BasicProfileForm({
-  profile,
-  nextPath = "/agent/listings/new",
-}: {
-  profile: Profile;
-  nextPath?: string;
-}) {
+export function BasicProfileForm({ profile }: { profile: Profile }) {
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const isCompany = isCompanyAccount(profile.account_type);
+  const isLandlord = profile.account_type === "landlord";
+
   const [fullName, setFullName] = useState(profile.full_name ?? "");
   const [dateOfBirth, setDateOfBirth] = useState(profile.date_of_birth ?? "");
   const [phone, setPhone] = useState(profile.phone ?? profile.whatsapp ?? "");
@@ -28,32 +27,62 @@ export function BasicProfileForm({
   const [residentialArea, setResidentialArea] = useState(profile.residential_area ?? "");
   const [residentialCity, setResidentialCity] = useState(profile.residential_city ?? "");
   const [residentialState, setResidentialState] = useState(profile.residential_state ?? "");
-  const [residentialPostalCode, setResidentialPostalCode] = useState(
-    profile.residential_postal_code ?? ""
-  );
-  const [country, setCountry] = useState(profile.country ?? "Nigeria");
+
+  const [companyName, setCompanyName] = useState(profile.company_name ?? "");
+  const [cacNumber, setCacNumber] = useState(profile.cac_number ?? "");
+  const [cacFileName, setCacFileName] = useState("");
+  const [cacDocumentPath, setCacDocumentPath] = useState(profile.cac_document_path ?? "");
+
   const [loading, setLoading] = useState(false);
+  const [uploadingCac, setUploadingCac] = useState(false);
   const [error, setError] = useState("");
+
+  async function handleCacUpload(file: File) {
+    setUploadingCac(true);
+    setError("");
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/api/agent/cac-upload", { method: "POST", body: form });
+    const data = await res.json().catch(() => ({}));
+    setUploadingCac(false);
+    if (!res.ok) {
+      setError(friendlyPublicError(data.error as string, PUBLIC_ERROR_FALLBACK));
+      return;
+    }
+    setCacDocumentPath(data.path as string);
+    setCacFileName(file.name);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
+    const payload = isCompany
+      ? {
+          companyName,
+          cacNumber,
+          cacDocumentPath,
+          phone: normalizeNigerianPhone(phone),
+          residentialAddress,
+          residentialArea,
+          residentialCity,
+          residentialState,
+        }
+      : {
+          fullName,
+          dateOfBirth,
+          phone: phone.trim() ? normalizeNigerianPhone(phone) : undefined,
+          residentialAddress,
+          residentialArea,
+          residentialCity,
+          residentialState,
+        };
+
     const res = await fetch("/api/agent/profile-setup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fullName,
-        dateOfBirth,
-        phone: phone.trim() ? normalizeNigerianPhone(phone) : undefined,
-        residentialAddress,
-        residentialArea,
-        residentialCity,
-        residentialState,
-        residentialPostalCode,
-        country,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -64,59 +93,109 @@ export function BasicProfileForm({
       return;
     }
 
-    router.push(nextPath);
+    router.push("/agent/profile-setup/complete");
     router.refresh();
   }
 
+  const profileTypeLabel = isCompany
+    ? "Company"
+    : isLandlord
+      ? "Landlord"
+      : "Agent";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="text-sm text-muted">{BASIC_PROFILE_SETUP_MESSAGE}</p>
+      <p className="text-sm font-semibold text-navy">{profileTypeLabel}</p>
 
-      <div>
-        <FieldLabel>Full Name</FieldLabel>
-        <Input
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required
-          autoComplete="name"
-          className="h-12 rounded-xl"
-        />
-      </div>
-
-      <div>
-        <FieldLabel>Date of Birth</FieldLabel>
-        <Input
-          type="date"
-          value={dateOfBirth}
-          onChange={(e) => setDateOfBirth(e.target.value)}
-          required
-          className="h-12 rounded-xl"
-        />
-      </div>
-
-      <div>
-        <FieldLabel>Phone Number</FieldLabel>
-        <Input
-          type="tel"
-          inputMode="tel"
-          value={phone}
-          onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
-          placeholder="Optional — for listing contact"
-          className="h-12 rounded-xl"
-          autoComplete="tel"
-        />
-      </div>
-
-      <div>
-        <FieldLabel>Street Address</FieldLabel>
-        <Input
-          value={residentialAddress}
-          onChange={(e) => setResidentialAddress(e.target.value)}
-          required
-          autoComplete="street-address"
-          className="h-12 rounded-xl"
-        />
-      </div>
+      {isCompany ? (
+        <>
+          <div>
+            <FieldLabel>Company Name</FieldLabel>
+            <Input
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              required
+              autoComplete="organization"
+              className="h-12 rounded-xl"
+            />
+          </div>
+          <div>
+            <FieldLabel>RC or BN Number</FieldLabel>
+            <Input
+              value={cacNumber}
+              onChange={(e) => setCacNumber(e.target.value)}
+              required
+              className="h-12 rounded-xl"
+            />
+          </div>
+          <div>
+            <FieldLabel>Company Phone Number</FieldLabel>
+            <Input
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
+              required
+              className="h-12 rounded-xl"
+              autoComplete="tel"
+            />
+          </div>
+          <div>
+            <FieldLabel>Company Address</FieldLabel>
+            <Input
+              value={residentialAddress}
+              onChange={(e) => setResidentialAddress(e.target.value)}
+              required
+              autoComplete="street-address"
+              className="h-12 rounded-xl"
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <div>
+            <FieldLabel>Full Name</FieldLabel>
+            <Input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              autoComplete="name"
+              className="h-12 rounded-xl"
+            />
+          </div>
+          <div>
+            <FieldLabel>Date of Birth</FieldLabel>
+            <Input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              required
+              className="h-12 rounded-xl"
+            />
+          </div>
+          <div>
+            <FieldLabel>Phone Number</FieldLabel>
+            <Input
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
+              className="h-12 rounded-xl"
+              autoComplete="tel"
+            />
+          </div>
+          <div>
+            <FieldLabel>Street Address</FieldLabel>
+            <Input
+              value={residentialAddress}
+              onChange={(e) => setResidentialAddress(e.target.value)}
+              required
+              autoComplete="street-address"
+              className="h-12 rounded-xl"
+            />
+          </div>
+        </>
+      )}
 
       <div>
         <FieldLabel>Area / Neighbourhood</FieldLabel>
@@ -155,26 +234,35 @@ export function BasicProfileForm({
         </Select>
       </div>
 
-      <div>
-        <FieldLabel>Country</FieldLabel>
-        <Input
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          required
-          autoComplete="country-name"
-          className="h-12 rounded-xl"
-        />
-      </div>
-
-      <div>
-        <FieldLabel>Postal Code / ZIP Code</FieldLabel>
-        <Input
-          value={residentialPostalCode}
-          onChange={(e) => setResidentialPostalCode(e.target.value)}
-          className="h-12 rounded-xl"
-          autoComplete="postal-code"
-        />
-      </div>
+      {isCompany ? (
+        <div>
+          <FieldLabel>Upload CAC Certificate</FieldLabel>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleCacUpload(file);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploadingCac}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-navy/20 bg-surface text-sm font-semibold text-navy pressable"
+          >
+            <Upload className="h-4 w-4" />
+            {uploadingCac
+              ? "Uploading…"
+              : cacFileName || cacDocumentPath
+                ? cacFileName || "CAC uploaded"
+                : "Upload CAC Certificate"}
+          </button>
+          <p className="mt-1 text-xs text-muted">PDF, JPG, PNG, or WebP — max 15MB</p>
+        </div>
+      ) : null}
 
       {error ? (
         <p className="rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
@@ -182,8 +270,12 @@ export function BasicProfileForm({
         </p>
       ) : null}
 
-      <Button type="submit" fullWidth disabled={loading}>
-        {loading ? "Saving…" : "Continue to listing"}
+      <Button
+        type="submit"
+        fullWidth
+        disabled={loading || uploadingCac || (isCompany && !cacDocumentPath)}
+      >
+        {loading ? "Saving…" : "Save profile"}
       </Button>
     </form>
   );

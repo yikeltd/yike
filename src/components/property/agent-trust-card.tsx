@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { UserAvatar } from "@/components/profile/user-avatar";
 import type { Profile, PaymentPeriod, ListingType } from "@/types/database";
-import { VerifiedBadge, TrustPill, ResponsiveBadge, DeveloperBadge, AgencyBadge } from "@/components/ui/badge";
+import { VerifiedBadge, TrustPill, ResponsiveBadge, DeveloperBadge, AgencyBadge, SellerTypeBadge } from "@/components/ui/badge";
 import { ContactButtons } from "./contact-buttons";
 import { isVerifiedAgent, cn } from "@/lib/utils";
 import {
@@ -11,6 +11,7 @@ import {
   isResponsiveAgent,
 } from "@/lib/agent-response";
 import { agentPublicPath } from "@/lib/agent-slugs";
+import { getSellerType } from "@/lib/profile-display";
 import { MessageCircle } from "lucide-react";
 
 export function AgentTrustCard({
@@ -52,10 +53,13 @@ export function AgentTrustCard({
   const isDeveloper = agent.account_type === "developer";
   const isAgency =
     agent.account_type === "agency" || agent.agent_type === "agency";
+  const sellerType = getSellerType(agent);
   const signals = { contactClicks, recentLeads };
   const responseLabel = getAgentResponseLabel(agent, signals);
   const microLabel = getAgentMicroLabel(agent, signals);
   const activeStatus = getAgentActiveStatus(signals);
+  const displayName =
+    agent.company_name?.trim() || agent.full_name?.trim() || "Agent";
 
   return (
     <div
@@ -66,28 +70,26 @@ export function AgentTrustCard({
       )}
     >
       <p className="text-xs font-bold uppercase tracking-wider text-muted">
-        Listed by
+        {sellerType ? `Listed by ${sellerType === "company" ? "Company" : sellerType === "landlord" ? "Landlord" : "Agent"}` : "Listed by"}
       </p>
       <Link
         href={agentPublicPath(agent)}
         className="mt-3 flex items-center gap-3 pressable"
       >
         <UserAvatar
-          name={agent.full_name}
+          name={displayName}
           avatarUrl={agent.avatar_url}
           size="md"
           className="rounded-xl"
         />
         <div>
-          <p className="font-bold text-navy">{agent.full_name ?? "Agent"}</p>
-          {agent.agent_type && (
-            <p className="text-xs capitalize text-muted">
-              {agent.agent_type.replace("_", " ")}
-            </p>
-          )}
+          <p className="font-bold text-navy">{displayName}</p>
         </div>
       </Link>
       <div className="mt-3 flex flex-wrap items-center gap-2">
+        {sellerType ? (
+          <SellerTypeBadge type={sellerType} size="sm" />
+        ) : null}
         {verified ? <VerifiedBadge /> : <TrustPill />}
         {responsive ? <ResponsiveBadge size="sm" /> : null}
         {isDeveloper && agent.developer_verified ? <DeveloperBadge /> : null}
@@ -125,7 +127,7 @@ export function AgentTrustCard({
               propertyType={propertyType}
               bedrooms={bedrooms}
               agentId={agent.id}
-              agentName={agent.full_name ?? "Agent"}
+              agentName={displayName}
               price={price}
               paymentPeriod={paymentPeriod}
               phone={agent.phone}

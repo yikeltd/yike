@@ -20,13 +20,8 @@ export default async function ProfileSetupPage({
 
   return (
     <div className="mx-auto max-w-lg space-y-4 px-3 pt-4 pb-8">
-      <div>
-        <h1 className="text-xl font-bold text-navy">Your profile</h1>
-        <p className="mt-1 text-sm text-muted">
-          A few details so you can list on Yike. No ID or SMS verification required.
-        </p>
-      </div>
-      <BasicProfileForm profile={profile} nextPath={nextPath} />
+      <h1 className="text-xl font-bold text-navy">Your profile</h1>
+      <BasicProfileForm profile={profile} />
     </div>
   );
 }

@@ -16,9 +16,9 @@ import { PUBLIC_ERROR_FALLBACK, friendlyPublicError } from "@/lib/copy/public-er
 import { cn } from "@/lib/utils";
 
 const ACCOUNT_TYPES: { id: AccountType; label: string; hint: string }[] = [
-  { id: "individual", label: "Individual agent", hint: "Solo agent or broker" },
-  { id: "agency", label: "Company / agency", hint: "Registered property business" },
-  { id: "landlord", label: "Property owner", hint: "Landlord listing directly" },
+  { id: "individual", label: "Agent", hint: "Solo agent or broker" },
+  { id: "landlord", label: "Landlord", hint: "Property owner listing directly" },
+  { id: "agency", label: "Company", hint: "Registered property business" },
 ];
 
 export function BecomeAgentCard({

@@ -38,14 +38,12 @@ const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
 const CONSUMER_SENSITIVE_OTP = [
   "change_email",
   "change_password",
-  "delete_account",
   "change_payout_bank",
 ] as const;
 
 const TRUST_SENSITIVE_OTP = [
   "change_email",
   "change_password",
-  "delete_account",
   "change_payout_bank",
   "change_identity",
 ] as const;

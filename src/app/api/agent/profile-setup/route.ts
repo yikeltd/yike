@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeNigerianPhone, canRequestPhoneOtp } from "@/lib/phone";
 import { NIGERIAN_STATES } from "@/lib/constants";
+import { isCompanyAccount } from "@/lib/profile/basic-listing-profile";
 
 export const runtime = "nodejs";
 
@@ -16,8 +17,9 @@ type Body = {
   residentialArea?: string;
   residentialCity?: string;
   residentialState?: string;
-  residentialPostalCode?: string;
-  country?: string;
+  companyName?: string;
+  cacNumber?: string;
+  cacDocumentPath?: string;
 };
 
 export async function POST(request: Request) {
@@ -40,16 +42,27 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => ({}))) as Body;
 
-  const fullName = String(body.fullName ?? "").trim();
-  const dateOfBirth = String(body.dateOfBirth ?? "").trim();
+  const { data: existingProfile } = await admin
+    .from("profiles")
+    .select("role, email_verified, is_banned, account_type")
+    .eq("id", user.id)
+    .single();
+
+  if (!existingProfile || existingProfile.is_banned) {
+    return NextResponse.json({ error: "Account unavailable" }, { status: 403 });
+  }
+
+  if (!isEmailVerified(user, { email_verified: existingProfile.email_verified })) {
+    return NextResponse.json({ error: "Please verify your email to continue." }, { status: 400 });
+  }
+
+  const isCompany = isCompanyAccount(existingProfile.account_type);
   const residentialAddress = String(body.residentialAddress ?? "").trim();
   const residentialArea = String(body.residentialArea ?? "").trim();
   const residentialCity = String(body.residentialCity ?? "").trim();
   const residentialState = String(body.residentialState ?? "").trim();
-  const residentialPostalCode = String(body.residentialPostalCode ?? "").trim();
-  const country = String(body.country ?? "Nigeria").trim() || "Nigeria";
 
-  if (!fullName || !dateOfBirth || !residentialAddress || !residentialCity || !residentialState) {
+  if (!residentialAddress || !residentialCity || !residentialState) {
     return NextResponse.json(
       { error: "Complete all required profile fields." },
       { status: 400 }
@@ -66,42 +79,78 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Use a valid Nigerian phone number." }, { status: 400 });
   }
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("role, email_verified, is_banned")
-    .eq("id", user.id)
-    .single();
+  let fullUpdate: Record<string, unknown>;
 
-  if (!profile || profile.is_banned) {
-    return NextResponse.json({ error: "Account unavailable" }, { status: 403 });
+  if (isCompany) {
+    const companyName = String(body.companyName ?? "").trim();
+    const cacNumber = String(body.cacNumber ?? "").trim();
+    const cacDocumentPath = String(body.cacDocumentPath ?? "").trim();
+
+    if (!companyName || !cacNumber || !cacDocumentPath) {
+      return NextResponse.json(
+        { error: "Complete company name, RC/BN number, and CAC upload." },
+        { status: 400 }
+      );
+    }
+    if (!phone) {
+      return NextResponse.json({ error: "Company phone number is required." }, { status: 400 });
+    }
+
+    fullUpdate = {
+      company_name: companyName,
+      full_name: companyName,
+      cac_number: cacNumber,
+      cac_document_path: cacDocumentPath,
+      residential_address: residentialAddress,
+      residential_area: residentialArea || null,
+      residential_city: residentialCity,
+      residential_state: residentialState,
+      country: "Nigeria",
+      office_address: residentialAddress,
+      phone,
+      whatsapp: phone,
+    };
+  } else {
+    const fullName = String(body.fullName ?? "").trim();
+    const dateOfBirth = String(body.dateOfBirth ?? "").trim();
+
+    if (!fullName || !dateOfBirth) {
+      return NextResponse.json(
+        { error: "Complete all required profile fields." },
+        { status: 400 }
+      );
+    }
+
+    fullUpdate = {
+      full_name: fullName,
+      date_of_birth: dateOfBirth,
+      residential_address: residentialAddress,
+      residential_area: residentialArea || null,
+      residential_city: residentialCity,
+      residential_state: residentialState,
+      country: "Nigeria",
+      office_address: residentialAddress,
+      ...(phone ? { phone, whatsapp: phone } : {}),
+    };
   }
-
-  if (!isEmailVerified(user, { email_verified: profile.email_verified })) {
-    return NextResponse.json({ error: "Please verify your email to continue." }, { status: 400 });
-  }
-
-  const fullUpdate = {
-    full_name: fullName,
-    date_of_birth: dateOfBirth,
-    residential_address: residentialAddress,
-    residential_area: residentialArea || null,
-    residential_city: residentialCity,
-    residential_state: residentialState,
-    residential_postal_code: residentialPostalCode || null,
-    country,
-    office_address: residentialAddress,
-    ...(phone ? { phone, whatsapp: phone } : {}),
-  };
 
   let { error } = await admin.from("profiles").update(fullUpdate).eq("id", user.id);
 
   if (error) {
-    console.error("[agent/profile-setup] full update failed:", error.message);
-    const fallbackUpdate = {
-      full_name: fullName,
-      office_address: residentialAddress,
-      ...(phone ? { phone, whatsapp: phone } : {}),
-    };
+    console.error("[agent/profile-setup] update failed:", error.message);
+    const fallbackUpdate = isCompany
+      ? {
+          company_name: fullUpdate.company_name,
+          full_name: fullUpdate.full_name,
+          office_address: residentialAddress,
+          phone: fullUpdate.phone,
+          whatsapp: fullUpdate.whatsapp,
+        }
+      : {
+          full_name: fullUpdate.full_name,
+          office_address: residentialAddress,
+          ...(phone ? { phone, whatsapp: phone } : {}),
+        };
     const retry = await admin.from("profiles").update(fallbackUpdate).eq("id", user.id);
     error = retry.error;
     if (error) {

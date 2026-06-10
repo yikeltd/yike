@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { KeyRound, LogOut, Mail, Trash2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/auth/auth-provider";
 import { useSensitiveActionGate } from "@/components/auth/use-sensitive-action-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,9 @@ import { cn } from "@/lib/utils";
 
 export function ProfileAccountActions({ email }: { email: string }) {
   const router = useRouter();
+  const { signOut } = useAuth();
   const { gateSensitiveAction, sensitiveActionModals } = useSensitiveActionGate(email);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [panel, setPanel] = useState<"password" | "email" | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -34,11 +36,10 @@ export function ProfileAccountActions({ email }: { email: string }) {
     setMessage("");
   }
 
-  async function signOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+  async function handleSignOut() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    await signOut("/");
   }
 
   async function changePassword(e: React.FormEvent) {
@@ -155,9 +156,10 @@ export function ProfileAccountActions({ email }: { email: string }) {
           />
           <AccountTile
             icon={LogOut}
-            label="Log out"
-            onClick={() => void signOut()}
+            label={loggingOut ? "Logging out…" : "Log out"}
+            onClick={() => void handleSignOut()}
             variant="outline"
+            disabled={loggingOut}
           />
           <Link
             href="/account/delete"
@@ -241,17 +243,20 @@ function AccountTile({
   onClick,
   active,
   variant,
+  disabled,
 }: {
   icon: typeof KeyRound;
   label: string;
   onClick: () => void;
   active?: boolean;
   variant: "navy" | "outline";
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         "pressable flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-4 text-center transition-colors",
         variant === "navy" &&

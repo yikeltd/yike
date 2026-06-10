@@ -27,10 +27,6 @@ import { Input, Select, Textarea } from "@/components/ui/input";
 import { NairaInput } from "@/components/ui/naira-input";
 import { SubmitOverlay } from "@/components/ui/submit-overlay";
 import { AdBanner } from "@/components/ads/ad-banner";
-import {
-  HumanVerifyField,
-  readHumanVerifyFromForm,
-} from "@/components/forms/human-verify-field";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type {
@@ -72,11 +68,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const STEPS = [
   { n: 1, title: "Listing type" },
-  { n: 2, title: "Property" },
-  { n: 3, title: "Price" },
-  { n: 4, title: "Location" },
-  { n: 5, title: "Photos" },
-  { n: 6, title: "Review" },
+  { n: 2, title: "Property details" },
+  { n: 3, title: "Location" },
+  { n: 4, title: "Photos & submit" },
 ] as const;
 
 const PRIMARY_DEAL_OPTIONS = [
@@ -212,7 +206,7 @@ export function ListingForm({
   const [feeModes, setFeeModes] = useState(initTransparency.modes);
 
   const [moreDealsOpen, setMoreDealsOpen] = useState(false);
-  const [verifyOk, setVerifyOk] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
   const [priceDialog, setPriceDialog] = useState<{
     analysis: PriceAnalysisResult;
     price: number;
@@ -301,7 +295,7 @@ export function ListingForm({
   }, [buildDraft, isEdit, draftPrompt]);
 
   function applyDraft(draft: ListingDraft) {
-    setStep(draft.step);
+    setStep(Math.min(4, draft.step));
     setListingType(draft.listingType);
     setPropertyType(draft.propertyType);
     setTitle(draft.title);
@@ -325,15 +319,20 @@ export function ListingForm({
 
   function applyDealOption(
     listingTypeValue: ListingTypeValue,
-    nextPropertyType?: string
+    nextPropertyType?: string,
+    autoAdvance = false
   ) {
     setListingType(listingTypeValue);
     if (nextPropertyType) {
       setPropertyType(nextPropertyType);
-      return;
+    } else {
+      const options = propertyTypesForListingType(listingTypeValue);
+      setPropertyType(options[0]?.value ?? propertyType);
     }
-    const options = propertyTypesForListingType(listingTypeValue);
-    setPropertyType(options[0]?.value ?? propertyType);
+    if (autoAdvance && step === 1) {
+      setError("");
+      setStep(2);
+    }
   }
 
   function validateStep(n: number): string | null {
@@ -343,15 +342,13 @@ export function ListingForm({
     if (n === 2) {
       if (!title.trim()) return "Add a short title for your listing.";
       if (!propertyType) return "Choose a property type.";
-    }
-    if (n === 3) {
       const p = parseNairaAmount(price);
       if (!p) return "Enter a real price in ₦.";
     }
-    if (n === 4) {
+    if (n === 3) {
       if (!city.trim()) return "Pick a city or area from search.";
     }
-    if (n === 5) {
+    if (n === 4) {
       const ready = readyPhotoItems(mediaItems);
       const readyCount = mediaItemsToUrls(ready).length;
       const failedCount = mediaItems.filter((i) => i.upload_status === "error").length;
@@ -375,7 +372,7 @@ export function ListingForm({
       return;
     }
     setError("");
-    setStep((s) => Math.min(6, s + 1));
+    setStep((s) => Math.min(4, s + 1));
   }
 
   function goBack() {
@@ -477,7 +474,7 @@ export function ListingForm({
       return;
     }
 
-    for (let s = 1; s <= 5; s++) {
+    for (let s = 1; s <= 4; s++) {
       const err = validateStep(s);
       if (err) {
         setStep(s);
@@ -486,12 +483,22 @@ export function ListingForm({
       }
     }
 
-    const form = new FormData(e.currentTarget);
-    const verify = readHumanVerifyFromForm(form);
-    if (!verify.ok) {
-      setError(verify.error ?? "Complete quick verification.");
+    if (honeypot.trim()) {
       return;
     }
+
+    const guardRes = await fetch("/api/agent/listings/submit-guard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ honeypot }),
+    });
+    if (!guardRes.ok) {
+      const guardData = await guardRes.json().catch(() => ({}));
+      setError((guardData.error as string) || "Could not submit. Try again.");
+      return;
+    }
+
+    const form = new FormData(e.currentTarget);
 
     const priceNum = parseNairaAmount(price) ?? 0;
     const persisted = readyPhotoItems(mediaItems).map(stripListingPhotoForPersist);
@@ -693,7 +700,7 @@ export function ListingForm({
         ))}
       </div>
       <p className="mb-2 text-xs font-semibold text-muted">
-        Step {step} of 6 · {STEPS[step - 1].title}
+        Step {step} of 4 · {STEPS[step - 1].title}
       </p>
 
       <form ref={formRef} onSubmit={handleSubmit} className="listing-form-pad space-y-5">
@@ -711,7 +718,9 @@ export function ListingForm({
                   <button
                     key={option.id}
                     type="button"
-                    onClick={() => applyDealOption(option.listingType, presetType)}
+                    onClick={() =>
+                      applyDealOption(option.listingType, presetType, true)
+                    }
                     className={cn(
                       "pressable rounded-xl px-3 py-4 text-sm font-bold",
                       active
@@ -737,7 +746,7 @@ export function ListingForm({
                   <button
                     key={option.id}
                     type="button"
-                    onClick={() => applyDealOption(option.listingType)}
+                    onClick={() => applyDealOption(option.listingType, undefined, true)}
                     className={cn(
                       "pressable rounded-full px-4 py-2 text-xs font-bold",
                       listingType === option.listingType
@@ -768,13 +777,8 @@ export function ListingForm({
                 onChange={setPropertyType}
               />
             ) : (
-              <p className="text-xs text-muted">Land listing — add plot details in review if helpful.</p>
+              <p className="text-xs text-muted">Land listing — add plot details below if helpful.</p>
             )}
-          </section>
-        )}
-
-        {step === 3 && (
-          <section className="space-y-4">
             <NairaInput
               label="Price (₦)"
               value={price}
@@ -840,20 +844,11 @@ export function ListingForm({
                   className="rounded-xl"
                 />
               </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-navy/10 bg-surface/60 px-4 py-5 text-center">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  Listing tip
-                </p>
-                <p className="mt-1 text-sm text-navy">
-                  Clear photos, exact location, and honest fees help serious renters contact you faster.
-                </p>
-              </div>
-            )}
+            ) : null}
           </section>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <section>
             <ListingLocationSearch
               state={state}
@@ -868,14 +863,10 @@ export function ListingForm({
           </section>
         )}
 
-        {step === 5 && (
-          <section>
-            <ListingPhotoManager items={mediaItems} onChange={setMediaItems} />
-          </section>
-        )}
-
-        {step === 6 && (
+        {step === 4 && (
           <section className="space-y-4">
+            <ListingPhotoManager items={mediaItems} onChange={setMediaItems} />
+
             <details className="rounded-xl border border-navy/10 bg-surface/40">
               <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
                 Amenities (optional)
@@ -915,17 +906,26 @@ export function ListingForm({
               placeholder="Video link (optional)"
             />
 
+            <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+              <label htmlFor="listing-hp">Website</label>
+              <input
+                id="listing-hp"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
+            </div>
+
             {error && (
               <p className="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-danger">
                 {error}
               </p>
             )}
-
-            <HumanVerifyField onValidChange={setVerifyOk} />
           </section>
         )}
 
-        {step < 6 && error && (
+        {step < 4 && error && (
           <p className="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-danger">
             {error}
           </p>
@@ -941,20 +941,20 @@ export function ListingForm({
             ) : (
               <div className="w-20 shrink-0" />
             )}
-            {step < 6 ? (
+            {step < 4 ? (
               <Button type="button" fullWidth onClick={goNext}>
                 Continue
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             ) : (
-              <Button type="submit" fullWidth size="lg" disabled={loading || !verifyOk}>
+              <Button type="submit" fullWidth size="lg" disabled={loading}>
                 {initial ? "Save changes" : "Submit listing"}
               </Button>
             )}
           </div>
-          {step === 6 ? (
+          {step === 4 ? (
             <p className="mt-2 text-center text-[10px] text-muted">
-              Quick review before your listing goes live.
+              Submitted listings are reviewed before going live.
             </p>
           ) : null}
         </div>
