@@ -107,7 +107,7 @@ export function ProfilePageClient({
         >
           <p className="font-medium">{statusMessage}</p>
           <Link href="/agent/profile-setup" className="mt-1 inline-block text-xs font-semibold text-navy">
-            Complete basic profile →
+            Complete profile →
           </Link>
         </div>
       ) : null}

@@ -174,7 +174,6 @@ export function EmailOtpModal({
             <>
               Code sent to{" "}
               <span className="font-semibold text-foreground">{email}</span>.
-              Enter all 6 digits — we&apos;ll verify automatically.
             </>
           ) : sending ? (
             <>Sending your code to {email}…</>

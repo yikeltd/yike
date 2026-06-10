@@ -65,7 +65,7 @@ export function getRequiredVerificationTasks(
 
   tasks.push({
     id: "profile_complete",
-    label: "Complete your basic profile",
+    label: "Complete your profile",
     complete: hasBasicListingProfile(profile),
     required:
       escalated || (isLister && !hasBasicListingProfile(profile)),

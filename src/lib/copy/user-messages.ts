@@ -1,17 +1,17 @@
 /** Calm, user-facing trust & verification copy — single source of truth. */
 
-export const TRUST_SETUP_TITLE = "Complete your basic profile to list a property.";
+export const TRUST_SETUP_TITLE = "Complete your profile to list a property.";
 
 export const TRUST_SETUP_SUBTEXT =
   "Add your name, date of birth, and address — then you can post.";
 
-export const VERIFICATION_GATE_TITLE = "Complete your basic profile";
+export const VERIFICATION_GATE_TITLE = "Complete your profile";
 
 export const VERIFICATION_GATE_SUBTEXT =
   "Add your name, date of birth, and address to list a property.";
 
 export const VERIFICATION_LISTING_GATE_MESSAGE =
-  "Complete your basic profile to list a property.";
+  "Complete your profile to list a property.";
 
 export const EMAIL_VERIFY_TO_CONTINUE = "Please verify your email to continue.";
 

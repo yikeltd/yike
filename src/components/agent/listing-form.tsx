@@ -500,11 +500,15 @@ export function ListingForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ honeypot, title, description }),
     });
+    const guardData = (await guardRes.json().catch(() => ({}))) as {
+      error?: string;
+      moderationFlags?: string[];
+    };
     if (!guardRes.ok) {
-      const guardData = await guardRes.json().catch(() => ({}));
-      setError((guardData.error as string) || "Could not submit. Try again.");
+      setError(guardData.error || "Could not submit. Try again.");
       return;
     }
+    const spamModerationFlags = guardData.moderationFlags ?? [];
 
     const form = new FormData(e.currentTarget);
 
@@ -563,6 +567,8 @@ export function ListingForm({
       video_url: videoUrl || null,
       extras,
       status: initial?.status === "approved" ? "approved" : "pending",
+      moderation_flags:
+        spamModerationFlags.length > 0 ? spamModerationFlags : undefined,
       listing_plan: listingPlan,
       ...(() => {
         const { expiresAt, durationDays } = computeExpiresAt(listingPlan);
@@ -908,6 +914,10 @@ export function ListingForm({
               placeholder="Short description (optional)"
               rows={3}
             />
+            <p className="text-xs text-muted">
+              Tip: You can add rooms, location, price details, and nearby landmarks to get better
+              responses.
+            </p>
             <Input
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}

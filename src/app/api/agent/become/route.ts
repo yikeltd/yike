@@ -129,7 +129,7 @@ export async function POST(request: Request) {
 
   if (!body.acceptRules) {
     return NextResponse.json(
-      { error: "Accept listing rules to continue" },
+      { error: "Accept listing terms to continue" },
       { status: 400 }
     );
   }

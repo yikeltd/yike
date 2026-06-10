@@ -44,7 +44,7 @@ export function VerificationTrustGate({
               href={verificationHref}
               className="pressable mt-2 inline-flex items-center gap-1 text-xs font-semibold text-gold-dark"
             >
-              Complete basic profile
+              Complete profile
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           ) : null}

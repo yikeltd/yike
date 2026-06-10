@@ -51,7 +51,7 @@ export function BecomeAgentCard({
 
   async function becomeAgent() {
     if (!acceptRules) {
-      setError("Please accept the listing rules to continue.");
+      setError("Please accept the listing terms to continue.");
       return;
     }
 
@@ -89,8 +89,7 @@ export function BecomeAgentCard({
       <div className="rounded-2xl border border-gold/25 bg-gold/10 p-5">
         <h1 className="text-xl font-bold text-navy">List on Yike</h1>
         <p className="mt-2 text-sm text-foreground">
-          Verify your email, add your basic profile, and post your first listing. Badge verification
-          is optional later.
+          Verify your email, complete your profile, and start listing properties on Yike.
         </p>
       </div>
 
@@ -173,7 +172,7 @@ export function BecomeAgentCard({
               className="mt-1"
             />
             <span>
-              I agree to Yike listing rules,{" "}
+              I agree to Yike listing{" "}
               <Link href="/terms" className="font-semibold text-gold-dark underline">
                 terms and conditions
               </Link>

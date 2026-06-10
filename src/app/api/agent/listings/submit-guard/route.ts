@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isEmailVerified } from "@/lib/auth";
-import { analyzeListingSpam } from "@/lib/listing-spam-guard";
+import { analyzeListingSpam, moderationFlagsFromSpam } from "@/lib/listing-spam-guard";
 
 export const runtime = "nodejs";
 
@@ -137,5 +137,8 @@ export async function POST(request: Request) {
     if (logError) console.error("[submit-guard] log insert failed:", logError.message);
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    moderationFlags: moderationFlagsFromSpam(spam.flags),
+  });
 }

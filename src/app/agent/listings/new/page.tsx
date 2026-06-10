@@ -52,7 +52,7 @@ export default async function NewListingPage() {
           <p className="font-medium">Posting paused</p>
           <p className="mt-1 text-xs">{statusMessage}</p>
           <Link href="/agent/profile-setup" className="mt-2 inline-flex text-xs font-semibold text-navy">
-            Complete basic profile →
+            Complete profile →
           </Link>
         </div>
       ) : atLimit ? (
