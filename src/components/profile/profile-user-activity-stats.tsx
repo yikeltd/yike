@@ -40,8 +40,11 @@ export function ProfileUserActivityStats({
   const [searchCount, setSearchCount] = useState(0);
 
   useEffect(() => {
-    setViewedCount(getRecentlyViewed().length);
-    setSearchCount(getRecentSearches().length);
+    const frame = window.requestAnimationFrame(() => {
+      setViewedCount(getRecentlyViewed().length);
+      setSearchCount(getRecentSearches().length);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   return (
@@ -53,7 +56,7 @@ export function ProfileUserActivityStats({
         icon={ShieldCheck}
         label="Verification requests"
         value={String(verificationRequestsCount)}
-        href="/property-verification"
+        href="/property-verification/requests"
       />
     </section>
   );

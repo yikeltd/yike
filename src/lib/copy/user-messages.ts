@@ -34,10 +34,10 @@ export const ACCOUNT_REVIEW_BLOCKS_MESSAGE =
   "Your account is under review. Contact support for help.";
 
 export const VERIFICATION_LEGAL_DISCLAIMER_SHORT =
-  "Physical inspection assistance only — not legal title or ownership confirmation.";
+  "Yike provides physical inspection assistance only.";
 
 export const VERIFICATION_LEGAL_DISCLAIMER =
-  "Yike coordinates independent physical inspections. This is not legal ownership confirmation or legal advice. Always do your own due diligence before paying.";
+  "Yike provides physical inspection assistance only. This is not legal title, ownership, or document verification.";
 
 export const LEGAL_REVIEW_DISCLAIMER_SHORT =
   "Independent legal review assistance — not a title guarantee.";

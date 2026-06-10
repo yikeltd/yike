@@ -21,10 +21,32 @@ function derivePriority(input: {
   concerns: Record<string, boolean>;
 }): VerificationPriority {
   if (input.alreadyPaid || input.concerns.already_paid) return "urgent";
-  if (input.urgency === "urgent") return "urgent";
-  if (input.urgency === "high" || input.outsideNigeria || input.concerns.outside_nigeria) return "high";
+  if (input.urgency === "same_day" || input.urgency === "24_hours") return "urgent";
+  if (
+    input.urgency === "urgent" ||
+    input.urgency === "48_hours" ||
+    input.urgency === "high" ||
+    input.outsideNigeria ||
+    input.concerns.outside_nigeria
+  ) {
+    return "high";
+  }
   if (input.urgency === "low") return "low";
   return "normal";
+}
+
+function flagsToRecord(value: unknown): Record<string, boolean> {
+  if (Array.isArray(value)) {
+    return value.reduce<Record<string, boolean>>((acc, item) => {
+      const key = String(item).trim();
+      if (key) acc[key] = true;
+      return acc;
+    }, {});
+  }
+  if (value && typeof value === "object") {
+    return value as Record<string, boolean>;
+  }
+  return {};
 }
 
 function parsePropertyIdFromLink(link: string): string | null {
@@ -56,11 +78,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please accept verification assistance terms" }, { status: 400 });
   }
 
-  const concernFlags = (body.concernFlags ?? {}) as Record<string, boolean>;
+  const situationFlags = flagsToRecord(body.situationFlags);
+  const concernFlags = {
+    ...flagsToRecord(body.concernFlags),
+    ...situationFlags,
+  };
+  const verificationNeeds =
+    body.verificationNeeds ?? flagsToRecord(body.checksRequested);
+  const outsideNigeria =
+    Boolean(body.outsideNigeria) ||
+    Boolean(situationFlags.outside_nigeria) ||
+    String(body.buyerCountry ?? "Nigeria").trim() !== "Nigeria";
+  const outsideCity = Boolean(body.outsideCity) || Boolean(situationFlags.outside_property_city);
+  const alreadyPaid = Boolean(body.alreadyPaid) || Boolean(situationFlags.already_paid);
   const priority = derivePriority({
     urgency: String(body.urgency ?? "normal"),
-    alreadyPaid: Boolean(body.alreadyPaid),
-    outsideNigeria: Boolean(body.outsideNigeria),
+    alreadyPaid,
+    outsideNigeria,
     concerns: concernFlags,
   });
 
@@ -88,7 +122,7 @@ export async function POST(request: Request) {
     .insert({
       request_reference: reference,
       source: "public_form",
-      status: "submitted",
+      status: "pending",
       requester_user_id: user?.id ?? null,
       property_id: propertyId,
       listing_agent_id: listingAgentId,
@@ -105,17 +139,18 @@ export async function POST(request: Request) {
       property_location_text: propertyLocation,
       agent_company_name: String(body.agentCompanyName ?? "").trim() || null,
       asking_price: String(body.askingPrice ?? "").trim() || null,
-      verification_needs: body.verificationNeeds ?? {},
+      verification_needs: verificationNeeds,
       buyer_context: {
-        outsideCity: Boolean(body.outsideCity),
-        outsideNigeria: Boolean(body.outsideNigeria),
-        alreadyPaid: Boolean(body.alreadyPaid),
+        outsideCity,
+        outsideNigeria,
+        alreadyPaid,
         urgency: String(body.urgency ?? "normal"),
+        situationFlags,
         additionalNotes: String(body.additionalNotes ?? "").trim() || null,
       },
       concern_flags: concernFlags,
-      is_diaspora_request: Boolean(body.outsideNigeria) || Boolean(concernFlags.outside_nigeria),
-      diaspora_priority: Boolean(body.outsideNigeria) || Boolean(concernFlags.outside_nigeria),
+      is_diaspora_request: outsideNigeria || Boolean(concernFlags.outside_nigeria),
+      diaspora_priority: outsideNigeria || Boolean(concernFlags.outside_nigeria),
       priority,
       preferred_timeline: String(body.preferredTimeline ?? "").trim() || null,
       requester_notes: String(body.additionalNotes ?? "").trim() || null,
@@ -141,12 +176,12 @@ export async function POST(request: Request) {
   const risk = assessPropertyVerificationRisk({
     concernFlags,
     buyerContext: {
-      outside_nigeria: Boolean(body.outsideNigeria),
-      already_paid: Boolean(body.alreadyPaid),
+      outside_nigeria: outsideNigeria,
+      already_paid: alreadyPaid,
     },
-    isDiaspora: Boolean(body.outsideNigeria),
+    isDiaspora: outsideNigeria,
     priority,
-    alreadyPaid: Boolean(body.alreadyPaid),
+    alreadyPaid,
   });
 
   await persistRiskAssessment(admin, {
@@ -181,6 +216,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     reference,
-    message: "Thank you. Yike will review your request and contact you shortly on WhatsApp.",
+    message: "Your verification request has been submitted.",
   });
 }
