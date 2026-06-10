@@ -284,7 +284,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
       <Button
         type="submit"
         fullWidth
-        disabled={loading || uploadingCac || (isBusiness && !cacDocumentPath)}
+        disabled={loading || uploadingCac}
       >
         {loading ? "Saving…" : "Save profile"}
       </Button>

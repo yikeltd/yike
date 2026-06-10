@@ -23,7 +23,7 @@ export function isBusinessAccount(
   return accountType === "agency" || accountType === "developer";
 }
 
-/** @deprecated use isBusinessAccount for CAC-required flows */
+/** @deprecated use isBusinessAccount for business-profile flows */
 export function isCompanyAccount(
   accountType: AccountType | null | undefined
 ): boolean {
@@ -53,8 +53,6 @@ export function hasBasicListingProfile(
 
   if (isBusinessAccount(profile.account_type)) {
     if (!profile.company_name?.trim()) return false;
-    if (!profile.cac_number?.trim()) return false;
-    if (!profile.cac_document_path?.trim()) return false;
     if (!profileStreetAddress(profile)) return false;
     if (!profile.residential_city?.trim()) return false;
     if (!profile.residential_state?.trim()) return false;
