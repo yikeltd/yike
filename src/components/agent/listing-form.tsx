@@ -352,7 +352,7 @@ export function ListingForm({
     nextPropertyType?: string,
     autoAdvance = false
   ) {
-    if (step === 1 && showDraftBanner) {
+    if (!isEdit && step === 1 && showDraftBanner) {
       dismissDraftForNewListing();
     }
     setListingType(listingTypeValue);
@@ -362,10 +362,21 @@ export function ListingForm({
       const options = propertyTypesForListingType(listingTypeValue);
       setPropertyType(options[0]?.value ?? propertyType);
     }
-    if (autoAdvance && step === 1) {
+    if (!isEdit && autoAdvance && step === 1) {
       setError("");
       setStep(2);
     }
+  }
+
+  function showStep(n: number) {
+    return isEdit || step === n;
+  }
+
+  function editSectionHeading(n: number) {
+    if (!isEdit) return null;
+    return (
+      <h2 className="text-sm font-bold text-navy">{STEPS[n - 1].title}</h2>
+    );
   }
 
   function validateStep(n: number): string | null {
@@ -474,7 +485,7 @@ export function ListingForm({
   ) {
     const startedAt = Date.now();
     setLoading(true);
-    setSubmitMessage("Saving your listing…");
+    setSubmitMessage(initial ? "Saving…" : "Saving your listing…");
 
     const pricingFields = priceMeta
       ? {
@@ -505,6 +516,11 @@ export function ListingForm({
           throw new Error(data.error || "Could not save listing. Please try again.");
         }
         void syncValueDrivers(initial.id, valueDriverKeys);
+        void fetch("/api/notifications/email/listing-submitted", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ propertyId: initial.id }),
+        });
         if (priceMeta?.confirmed) {
           void fetch("/api/pricing/confirm", {
             method: "POST",
@@ -644,7 +660,7 @@ export function ListingForm({
     let deferredToPriceDialog = false;
     setError("");
     setLoading(true);
-    setSubmitMessage("Submitting…");
+    setSubmitMessage(isEdit ? "Saving…" : "Submitting…");
     logListingSubmit({
       stage: "listing_submit_started",
       userId: agentId,
@@ -660,7 +676,7 @@ export function ListingForm({
       for (let s = 1; s <= 4; s++) {
         const err = validateStep(s);
         if (err && s < 4) {
-          setStep(s);
+          if (!isEdit) setStep(s);
           setError(err);
           return;
         }
@@ -704,7 +720,7 @@ export function ListingForm({
       for (let s = 1; s <= 4; s++) {
         const err = validateStep(s);
         if (err) {
-          setStep(s);
+          if (!isEdit) setStep(s);
           setError(err);
           return;
         }
@@ -828,7 +844,7 @@ export function ListingForm({
         media_items,
         video_url: videoUrl || null,
         extras,
-        status: initial?.status === "approved" ? "approved" : "pending",
+        status: "pending",
         moderation_flags:
           mergedModerationFlags.length > 0 ? mergedModerationFlags : undefined,
         listing_plan: listingPlan,
@@ -964,21 +980,25 @@ export function ListingForm({
       )}
       <SubmitOverlay show={loading} message={submitMessage} />
 
-      <div className="mb-3 flex items-center gap-1">
-        {STEPS.map((s) => (
-          <div
-            key={s.n}
-            className={cn(
-              "h-1 flex-1 rounded-full transition-colors",
-              s.n <= step ? "bg-gold" : "bg-navy/10"
-            )}
-            aria-hidden
-          />
-        ))}
-      </div>
-      <p className="mb-2 text-xs font-semibold text-muted">
-        Step {step} of 4 · {STEPS[step - 1].title}
-      </p>
+      {!isEdit ? (
+        <>
+          <div className="mb-3 flex items-center gap-1">
+            {STEPS.map((s) => (
+              <div
+                key={s.n}
+                className={cn(
+                  "h-1 flex-1 rounded-full transition-colors",
+                  s.n <= step ? "bg-gold" : "bg-navy/10"
+                )}
+                aria-hidden
+              />
+            ))}
+          </div>
+          <p className="mb-2 text-xs font-semibold text-muted">
+            Step {step} of 4 · {STEPS[step - 1].title}
+          </p>
+        </>
+      ) : null}
 
       {!isEdit && showDraftBanner && step === 1 ? (
         <ListingDraftBanner
@@ -988,10 +1008,17 @@ export function ListingForm({
         />
       ) : null}
 
-      <form ref={formRef} onSubmit={handleSubmit} className="listing-form-pad space-y-5">
-        {step === 1 && (
-          <section className="space-y-3">
-            <p className="text-sm font-bold text-navy">What are you listing?</p>
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className={cn("listing-form-pad space-y-5", isEdit && "space-y-8")}
+      >
+        {showStep(1) && (
+          <section className={cn("space-y-3", isEdit && "rounded-2xl border border-navy/8 bg-elevated p-4")}>
+            {editSectionHeading(1)}
+            <p className={cn("text-sm font-bold text-navy", isEdit && "sr-only")}>
+              What are you listing?
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {PRIMARY_DEAL_OPTIONS.map((option) => {
                 const presetType =
@@ -1047,8 +1074,9 @@ export function ListingForm({
           </section>
         )}
 
-        {step === 2 && (
-          <section className="space-y-4">
+        {showStep(2) && (
+          <section className={cn("space-y-4", isEdit && "rounded-2xl border border-navy/8 bg-elevated p-4")}>
+            {editSectionHeading(2)}
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -1133,8 +1161,9 @@ export function ListingForm({
           </section>
         )}
 
-        {step === 3 && (
-          <section>
+        {showStep(3) && (
+          <section className={cn(isEdit && "rounded-2xl border border-navy/8 bg-elevated p-4")}>
+            {editSectionHeading(3)}
             <ListingLocationSearch
               state={state}
               city={city}
@@ -1148,8 +1177,9 @@ export function ListingForm({
           </section>
         )}
 
-        {step === 4 && (
-          <section className="space-y-4">
+        {showStep(4) && (
+          <section className={cn("space-y-4", isEdit && "rounded-2xl border border-navy/8 bg-elevated p-4")}>
+            {editSectionHeading(4)}
             <ListingPhotoManager
               ref={photoManagerRef}
               items={mediaItems}
@@ -1189,10 +1219,12 @@ export function ListingForm({
               placeholder="Short description (optional)"
               rows={3}
             />
-            <p className="text-xs text-muted">
-              Tip: You can add rooms, location, price details, and nearby landmarks to get better
-              responses.
-            </p>
+            {!isEdit ? (
+              <p className="text-xs text-muted">
+                Tip: You can add rooms, location, price details, and nearby landmarks to get better
+                responses.
+              </p>
+            ) : null}
             <Input
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
@@ -1210,46 +1242,45 @@ export function ListingForm({
               />
             </div>
 
-            {error && (
-              <p className="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-danger">
-                {error}
-              </p>
-            )}
           </section>
         )}
 
-        {step < 4 && error && (
+        {error ? (
           <p className="rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-danger">
             {error}
           </p>
-        )}
+        ) : null}
 
         <div className="listing-form-action-bar fixed inset-x-0 z-40 border-t border-navy/10 bg-white/98 px-3 py-3 shadow-[0_-8px_24px_rgb(2_20_51_/10%)] backdrop-blur-md lg:z-30">
           <div className="mx-auto flex max-w-2xl gap-2">
-            {step > 1 ? (
-              <Button type="button" variant="ghost" onClick={goBack} className="shrink-0">
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                Back
-              </Button>
-            ) : (
-              <div className="w-20 shrink-0" />
-            )}
-            {step < 4 ? (
-              <Button type="button" fullWidth onClick={goNext}>
-                Continue
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            ) : (
+            {isEdit ? (
               <Button type="submit" fullWidth size="lg" disabled={loading}>
-                {loading
-                  ? submitMessage
-                  : initial
-                    ? "Save changes"
-                    : "Submit listing"}
+                {loading ? submitMessage : "Save changes"}
               </Button>
+            ) : (
+              <>
+                {step > 1 ? (
+                  <Button type="button" variant="ghost" onClick={goBack} className="shrink-0">
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Back
+                  </Button>
+                ) : (
+                  <div className="w-20 shrink-0" />
+                )}
+                {step < 4 ? (
+                  <Button type="button" fullWidth onClick={goNext}>
+                    Continue
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button type="submit" fullWidth size="lg" disabled={loading}>
+                    {loading ? submitMessage : "Submit listing"}
+                  </Button>
+                )}
+              </>
             )}
           </div>
-          {step === 4 ? (
+          {!isEdit && step === 4 ? (
             <p className="mt-2 text-center text-[10px] text-muted">
               Submitted listings are reviewed before going live.
             </p>

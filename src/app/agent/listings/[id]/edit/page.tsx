@@ -31,8 +31,8 @@ export default async function EditListingPage({
     driverRows?.map((r) => r.driver_key as string) ?? [];
 
   return (
-    <div className="space-y-4 px-3 pt-2 pb-8">
-      <h1 className="text-xl font-bold">Edit listing</h1>
+    <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">
+      <h1 className="text-xl font-bold text-navy lg:text-2xl">Edit listing</h1>
       <AgentReviewResponseBox listingId={id} />
       <ListingForm
         agentId={user.id}
