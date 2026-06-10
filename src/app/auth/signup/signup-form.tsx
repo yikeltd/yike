@@ -425,7 +425,7 @@ export function SignupForm({
               )}
             </Field>
           ) : (
-            <Field label="Phone number">
+            <Field label="Phone number (optional)">
               <Input
                 type="tel"
                 inputMode="numeric"

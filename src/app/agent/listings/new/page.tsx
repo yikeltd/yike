@@ -14,7 +14,7 @@ import Link from "next/link";
 import type { Property } from "@/types/database";
 
 export default async function NewListingPage() {
-  const { user, profile } = await requireAgentLister();
+  const { user, profile } = await requireAgentLister("/agent/listings/new");
   const supabase = await requireServerClient();
 
   const { data } = await supabase
@@ -49,8 +49,8 @@ export default async function NewListingPage() {
         <div className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
           <p className="font-medium">Posting paused</p>
           <p className="mt-1 text-xs">{statusMessage}</p>
-          <Link href="/agent/verification" className="mt-2 inline-flex text-xs font-semibold text-navy">
-            Open trust center →
+          <Link href="/agent/profile-setup" className="mt-2 inline-flex text-xs font-semibold text-navy">
+            Complete basic profile →
           </Link>
         </div>
       ) : atLimit ? (
@@ -61,7 +61,7 @@ export default async function NewListingPage() {
             href="/agent/verification"
             className="mt-2 inline-flex text-xs font-semibold text-navy"
           >
-            Complete trust setup →
+            Open verification center →
           </Link>
         </div>
       ) : (

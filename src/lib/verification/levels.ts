@@ -1,6 +1,7 @@
 import type { Profile } from "@/types/database";
 import { isAgentRole, isVerifiedAgentProfile } from "@/lib/agent-tiers";
 import { normalizeAccountStatus } from "@/lib/account-control";
+import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
 import type { AdaptiveTrustLevel } from "./constants";
 import type { VerificationControlConfig } from "./config";
 
@@ -12,6 +13,14 @@ export type TrustProfileSlice = Pick<
   | "whatsapp"
   | "phone"
   | "full_name"
+  | "date_of_birth"
+  | "residential_address"
+  | "residential_area"
+  | "residential_city"
+  | "residential_state"
+  | "residential_postal_code"
+  | "country"
+  | "office_address"
   | "verified_badge"
   | "verification_status"
   | "account_status"
@@ -61,13 +70,12 @@ export function computeSuggestedTrustLevel(profile: Partial<TrustProfileSlice>):
 
   const hasEmail = profile.email_verified;
   const hasName = Boolean(profile.full_name?.trim());
-  const hasPhoto = Boolean(profile.avatar_url);
   const isLister = isAgentRole(profile.role);
   const listingReady =
     isLister &&
     Boolean(profile.listing_rules_accepted_at) &&
     hasName &&
-    hasPhoto;
+    hasBasicListingProfile(profile);
   const verifiedAgent = isVerifiedAgentProfile({
     role: profile.role ?? "user",
     verification_status: profile.verification_status ?? "not_started",

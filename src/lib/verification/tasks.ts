@@ -1,4 +1,6 @@
 import { isAgentRole } from "@/lib/agent-tiers";
+import { isPhoneOtpEnabled } from "@/lib/feature-flags";
+import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
 import type { VerificationControlConfig } from "./config";
 import { effectiveTrustLevel, type TrustProfileSlice } from "./levels";
 
@@ -31,7 +33,8 @@ export function getRequiredVerificationTasks(
 
   const isLister = isAgentRole(profile.role);
   const needsEmail = config?.email_verification_required !== false;
-  const needsWhatsApp = config?.whatsapp_verification_required === true;
+  const needsWhatsApp =
+    isPhoneOtpEnabled() && config?.whatsapp_verification_required === true;
   const needsBank =
     config?.bank_verification_required ||
     escalationActions.includes("require_bank_verification");
@@ -62,16 +65,17 @@ export function getRequiredVerificationTasks(
 
   tasks.push({
     id: "profile_complete",
-    label: "Complete your profile",
-    complete: Boolean(profile.full_name?.trim()),
-    required: escalated || (isLister && level < 2 && !profile.full_name?.trim()),
+    label: "Complete your basic profile",
+    complete: hasBasicListingProfile(profile),
+    required:
+      escalated || (isLister && !hasBasicListingProfile(profile)),
   });
 
   tasks.push({
     id: "profile_photo",
-    label: "Add a profile photo",
+    label: "Add a profile photo (optional)",
     complete: Boolean(profile.avatar_url),
-    required: (isLister && level < 2 && !profile.avatar_url) || level >= 4,
+    required: level >= 4,
   });
 
   if (needsBank) {

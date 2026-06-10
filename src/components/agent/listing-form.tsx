@@ -40,6 +40,7 @@ import {
   sortMediaItemsForStory,
 } from "@/lib/media/items";
 import { LISTING_LIMIT_REACHED_MESSAGE } from "@/lib/account-control";
+import { LISTING_SUBMITTED_MESSAGE } from "@/lib/copy/user-messages";
 import {
   BLOCKING_QUALITY_FLAGS,
   moderateListingDraft,
@@ -587,7 +588,7 @@ export function ListingForm({
           ✓
         </div>
         <p className="mt-4 text-lg font-bold text-navy">
-          Your listing has been submitted for review.
+          {LISTING_SUBMITTED_MESSAGE}
         </p>
         <p className="mt-2 max-w-sm text-sm text-muted">
           We&apos;ll notify you once it goes live — usually within 24 hours.

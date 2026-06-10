@@ -69,7 +69,7 @@ export default async function PostPropertyPage() {
     <div className="pb-12">
       <PageHero
         title="List your property on Yike"
-        subtitle="Create your account, verify phone & email, then list for free. Real prices only — no call for price."
+        subtitle="Create your account, verify your email, then list for free. Real prices only — no call for price."
         image={PAGE_IMAGERY.list}
         badge="For agents & landlords"
         cta={{ label: "Create account", href: "/auth/signup" }}
@@ -97,8 +97,8 @@ export default async function PostPropertyPage() {
           <ul className="mt-4 space-y-3 text-sm text-white/90">
             {[
               "Create one Yike account — renters and listers use the same signup",
-              "Verify your phone and email",
-              "Tap List Property → Become an Agent → post immediately",
+              "Verify your email",
+              "Tap List Property → add your address and date of birth → post",
               "Optional verified badge later for more trust and visibility",
               "WhatsApp contact required · minimum 3 clear photos · real prices only",
             ].map((item) => (

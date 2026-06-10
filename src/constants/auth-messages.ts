@@ -15,4 +15,5 @@ export const AUTH_USER_MESSAGES = {
   fullLoginRequired: "Please sign in again to continue.",
   signupUnavailable: "We could not start signup right now. Please try again.",
   signInToContinue: "Sign in to continue",
+  emailVerifyRequired: "Please verify your email to continue.",
 } as const;

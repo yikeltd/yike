@@ -16,7 +16,7 @@ import {
 } from "@/lib/admin/roles";
 import type { Profile, UserRole } from "@/types/database";
 import { canListProperties } from "@/lib/agent-tiers";
-import { isPhoneVerificationRequired } from "@/lib/feature-flags";
+import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 
@@ -72,16 +72,16 @@ export function isEmailVerified(
   return profile?.email_verified === true;
 }
 
-export async function requireAgentLister(redirectTo = "/agent/become") {
+export async function requireAgentLister(
+  redirectTo = "/agent/become",
+  options?: { skipProfileSetup?: boolean }
+) {
   const user = await requireAuth();
   const profile = await getProfile(user.id);
   if (!profile || profile.is_banned) redirect("/");
 
-  if (isPhoneVerificationRequired() && !profile.phone_verified) {
-    redirect("/auth/verify-phone?next=/agent/become");
-  }
   if (!isEmailVerified(user, profile)) {
-    redirect("/auth/verify-email?next=/agent/become");
+    redirect(`/auth/verify-email?next=${encodeURIComponent(redirectTo)}`);
   }
 
   if (isAdmin(profile.role)) {
@@ -89,6 +89,11 @@ export async function requireAgentLister(redirectTo = "/agent/become") {
   }
 
   if (canListProperties(profile)) {
+    if (!options?.skipProfileSetup && !hasBasicListingProfile(profile)) {
+      const next =
+        redirectTo === "/agent/become" ? "/agent/listings/new" : redirectTo;
+      redirect(`/agent/profile-setup?next=${encodeURIComponent(next)}`);
+    }
     return { user, profile };
   }
 

@@ -139,6 +139,7 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
     setResolvedEmail(email);
 
     if (data.needsEmailVerify && !isReviewerAccountEmail(email)) {
+      setInfo(AUTH_USER_MESSAGES.emailVerifyRequired);
       setEmailOtpPurpose("email_verify");
       setEmailVerifyOpen(true);
       return false;

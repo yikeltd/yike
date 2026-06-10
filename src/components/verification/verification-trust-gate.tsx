@@ -17,7 +17,7 @@ type Props = {
 export function VerificationTrustGate({
   className = "",
   tasks = [],
-  verificationHref = "/agent/verification",
+  verificationHref = "/agent/profile-setup",
   hideActions = false,
 }: Props) {
   const pending = tasks.filter((t) => t.required && !t.complete);
@@ -44,7 +44,7 @@ export function VerificationTrustGate({
               href={verificationHref}
               className="pressable mt-2 inline-flex items-center gap-1 text-xs font-semibold text-gold-dark"
             >
-              Open trust center
+              Complete basic profile
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           ) : null}

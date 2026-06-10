@@ -1,6 +1,7 @@
 import type { Profile } from "@/types/database";
 import { isAgentRole } from "@/lib/agent-tiers";
 import { normalizeAccountStatus } from "@/lib/account-control";
+import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
 import type { VerificationControlConfig } from "./config";
 import { effectiveTrustLevel, type TrustProfileSlice } from "./levels";
 import type { AdaptiveTrustLevel } from "./constants";
@@ -73,10 +74,14 @@ export function getTrustCapabilities(
   const canInquire = level >= 1 && !escalated;
   const listingGate =
     config.listing_verification_required && isAgentRole(profile.role) && level < 2;
-  const canList =
-    level >= 2 &&
-    level < 5 &&
+  const basicProfileReady =
     isAgentRole(profile.role) &&
+    Boolean(profile.email_verified) &&
+    hasBasicListingProfile(profile);
+  const canList =
+    level >= 1 &&
+    level < 5 &&
+    basicProfileReady &&
     !escalated &&
     !listingGate &&
     status === "active";

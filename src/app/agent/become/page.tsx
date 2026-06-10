@@ -2,6 +2,7 @@ import { getSession, getProfile, isEmailVerified } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { BecomeAgentCard } from "@/components/agent/become-agent-card";
 import { canListProperties } from "@/lib/agent-tiers";
+import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
 
 export default async function BecomeAgentPage() {
   const user = await getSession();
@@ -15,7 +16,10 @@ export default async function BecomeAgentPage() {
   }
 
   if (canListProperties(profile)) {
-    redirect("/agent");
+    if (!hasBasicListingProfile(profile)) {
+      redirect("/agent/profile-setup?next=/agent/listings/new");
+    }
+    redirect("/agent/listings/new");
   }
 
   return (

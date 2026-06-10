@@ -374,6 +374,13 @@ export interface Profile {
   company_bio?: string | null;
   company_slug?: string | null;
   office_address?: string | null;
+  date_of_birth?: string | null;
+  residential_address?: string | null;
+  residential_area?: string | null;
+  residential_city?: string | null;
+  residential_state?: string | null;
+  residential_postal_code?: string | null;
+  country?: string | null;
   cac_number?: string | null;
   company_verified?: boolean;
   company_verified_at?: string | null;

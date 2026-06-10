@@ -7,7 +7,6 @@ import { BadgeCheck, MessageCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
-import { isPhoneOtpEnabledClient } from "@/lib/feature-flags";
 import type { AccountType, Profile } from "@/types/database";
 import {
   canRequestPhoneOtp,
@@ -24,11 +23,10 @@ const ACCOUNT_TYPES: { id: AccountType; label: string; hint: string }[] = [
 
 export function BecomeAgentCard({
   profile,
-  phoneVerified,
   emailVerified,
 }: {
   profile: Profile;
-  phoneVerified: boolean;
+  phoneVerified?: boolean;
   emailVerified: boolean;
 }) {
   const router = useRouter();
@@ -43,8 +41,7 @@ export function BecomeAgentCard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const phoneRequired = isPhoneOtpEnabledClient();
-  const identityReady = emailVerified && (!phoneRequired || phoneVerified);
+  const identityReady = emailVerified;
 
   async function becomeAgent() {
     if (!acceptRules) {
@@ -77,7 +74,7 @@ export function BecomeAgentCard({
       setError(friendlyPublicError(data.error as string, PUBLIC_ERROR_FALLBACK));
       return;
     }
-    router.push("/agent/listings/new");
+    router.push("/agent/profile-setup");
     router.refresh();
   }
 
@@ -86,8 +83,8 @@ export function BecomeAgentCard({
       <div className="rounded-2xl border border-gold/25 bg-gold/10 p-5">
         <h1 className="text-xl font-bold text-navy">List on Yike</h1>
         <p className="mt-2 text-sm text-foreground">
-          Verify your email, add a profile photo, and post your first listing. WhatsApp and badge
-          verification can come later.
+          Verify your email, add your basic profile, and post your first listing. Badge verification
+          is optional later.
         </p>
       </div>
 
@@ -153,19 +150,8 @@ export function BecomeAgentCard({
               placeholder="08012345678 — add later if you prefer"
               inputMode="tel"
             />
-            <p className="text-xs text-muted">
-              SMS and WhatsApp verification are coming soon. You can list without this for now.
-            </p>
           </div>
-          {phoneRequired && !phoneVerified && (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Verify your phone first.{" "}
-              <Link href="/auth/verify-phone?next=/agent/become" className="font-semibold underline">
-                Verify phone
-              </Link>
-            </p>
-          )}
-          {(!phoneRequired || phoneVerified) && !emailVerified && (
+          {!emailVerified && (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               Verify your email first.{" "}
               <Link href="/auth/verify-email?next=/agent/become" className="font-semibold underline">

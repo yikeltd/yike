@@ -1,17 +1,21 @@
 /** Calm, user-facing trust & verification copy — single source of truth. */
 
-export const TRUST_SETUP_TITLE = "Complete your trust setup";
+export const TRUST_SETUP_TITLE = "Complete your basic profile to list a property.";
 
 export const TRUST_SETUP_SUBTEXT =
-  "A few quick steps unlock listing and lead access.";
+  "Add your name, date of birth, and address — then you can post.";
 
-export const VERIFICATION_GATE_TITLE = "Verification needed to continue";
+export const VERIFICATION_GATE_TITLE = "Complete your basic profile";
 
 export const VERIFICATION_GATE_SUBTEXT =
-  "Finish your trust profile to unlock access.";
+  "Add your name, date of birth, and address to list a property.";
 
 export const VERIFICATION_LISTING_GATE_MESSAGE =
-  "Complete trust setup to list or receive leads.";
+  "Complete your basic profile to list a property.";
+
+export const EMAIL_VERIFY_TO_CONTINUE = "Please verify your email to continue.";
+
+export const LISTING_SUBMITTED_MESSAGE = "Your listing has been submitted.";
 
 export const ACCOUNT_ON_HOLD_MESSAGE =
   "Your account is under review. Contact support if you need help.";
@@ -20,7 +24,7 @@ export const ACCOUNT_SUSPENDED_MESSAGE =
   "Account access is restricted. Contact support for help.";
 
 export const ACCOUNT_PENDING_VERIFICATION_MESSAGE =
-  "Complete verification to continue posting listings.";
+  "Your account is under review. Contact support if you need help.";
 
 export const LISTING_LIMIT_REACHED_MESSAGE =
   "You've reached your listing limit. Get verified or contact us to upgrade.";

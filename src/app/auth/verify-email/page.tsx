@@ -33,7 +33,8 @@ function VerifyEmailContent() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        router.replace(`/auth/login?next=${encodeURIComponent("/auth/verify-email")}`);
+        const verifyPath = `/auth/verify-email?next=${encodeURIComponent(next)}`;
+        router.replace(`/auth/login?next=${encodeURIComponent(verifyPath)}`);
         return;
       }
       setEmail(user.email ?? null);
@@ -85,7 +86,7 @@ function VerifyEmailContent() {
   return (
     <AuthShell
       title="Check your email"
-      subtitle="Verify your account to unlock saving homes, contacting agents, and listing property."
+      subtitle="Please verify your email to continue."
       footer={
         <Link
           href="/auth/login"

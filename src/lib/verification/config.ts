@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isPhoneOtpEnabled } from "@/lib/feature-flags";
 
 export type VerificationControlConfig = {
   email_verification_required: boolean;
@@ -45,9 +46,13 @@ export async function getVerificationControlConfig(
 
   if (!data) return DEFAULT_VERIFICATION_CONFIG;
 
+  const phoneOtp = isPhoneOtpEnabled();
+
   return {
     email_verification_required: data.email_verification_required ?? true,
-    whatsapp_verification_required: data.whatsapp_verification_required ?? false,
+    whatsapp_verification_required: phoneOtp
+      ? (data.whatsapp_verification_required ?? false)
+      : false,
     bank_verification_required: data.bank_verification_required ?? false,
     listing_review_required: data.listing_review_required ?? true,
     verified_badge_required: data.verified_badge_required ?? false,
