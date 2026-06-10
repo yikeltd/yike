@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { isAndroidTwa, isStandaloneApp } from "@/lib/app-environment";
 
-const SW_URL = "/sw.js?v=26";
+const SW_URL = "/sw.js?v=28";
+const CACHE_RESET_KEY = "yike-cache-reset-v28";
 
 async function clearServiceWorkers(): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
@@ -11,11 +12,34 @@ async function clearServiceWorkers(): Promise<void> {
   await Promise.all(regs.map((reg) => reg.unregister()));
 }
 
+async function purgeOldShellCaches(): Promise<void> {
+  if (!("caches" in window)) return;
+  try {
+    if (window.localStorage.getItem(CACHE_RESET_KEY) === "done") return;
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter(
+          (key) =>
+            /^yike-(shell|listings)-v\d+$/.test(key) &&
+            key !== "yike-shell-v28" &&
+            key !== "yike-listings-v4"
+        )
+        .map((key) => caches.delete(key))
+    );
+    window.localStorage.setItem(CACHE_RESET_KEY, "done");
+  } catch {
+    /* best effort */
+  }
+}
+
 export function PwaRegister() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
-    // TWA runs in Chrome Custom Tabs — a stale browser SW can break first load.
+    void purgeOldShellCaches();
+
+    // Stale browser SW inside Android wrapper can break first load.
     if (isAndroidTwa()) {
       void clearServiceWorkers();
       return;

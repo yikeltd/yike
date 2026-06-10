@@ -1,14 +1,10 @@
-const SHELL_CACHE = "yike-shell-v26";
-const IMAGE_CACHE = "yike-images-v5";
-const LISTING_CACHE = "yike-listings-v3";
+const SHELL_CACHE = "yike-shell-v28";
+const IMAGE_CACHE = "yike-images-v6";
+const LISTING_CACHE = "yike-listings-v4";
 const CACHE_PREFIX = "yike-";
 
 const SHELL = [
-  "/",
   "/offline",
-  "/browse",
-  "/saved",
-  "/search",
   "/images/logo.webp",
   "/manifest.json",
   "/favicon.ico",
@@ -99,26 +95,15 @@ self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request, { cache: "no-store" })
-        .then((res) => {
-          if (res.ok) {
-            const clone = res.clone();
-            const cacheName = url.pathname.startsWith("/properties/")
-              ? LISTING_CACHE
-              : SHELL_CACHE;
-            caches.open(cacheName).then((c) => c.put(event.request, clone));
-          }
-          return res;
-        })
+        .then((res) => res)
         .catch(async () => {
-          const listing = await caches.match(event.request, {
-            cacheName: LISTING_CACHE,
-          });
-          if (listing) return listing;
-          const shell = await caches.match(event.request, {
-            cacheName: SHELL_CACHE,
-          });
-          if (shell) return shell;
-          return caches.match("/offline");
+          return (
+            (await caches.match("/offline")) ||
+            new Response("Offline", {
+              status: 503,
+              headers: { "Content-Type": "text/plain; charset=utf-8" },
+            })
+          );
         })
     );
     return;

@@ -1,37 +1,43 @@
 @import "tailwindcss";
 
-/* Branded boot splash — PWA/TWA cold start; covers URL chrome during handoff. */
+/* Branded boot splash: hidden by default, cosmetic only for installed PWA/TWA. */
 #yike-boot-splash {
   position: fixed;
   inset: 0;
   z-index: 99999;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   min-height: 100dvh;
   padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
     env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
   background: #031b4e;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.28s ease, visibility 0.28s ease;
+}
+
+html.yike-boot-splash-enabled #yike-boot-splash {
+  display: flex;
+  opacity: 1;
   pointer-events: auto;
-  transition: opacity 0.4s ease;
+  visibility: visible;
+  animation: yike-boot-splash-fail-open 2.5s ease forwards;
 }
 
-@media (display-mode: standalone), (display-mode: fullscreen) {
-  #yike-boot-splash {
-    animation: yike-boot-splash-fallback 2s ease forwards;
-  }
-}
-
-@keyframes yike-boot-splash-fallback {
+@keyframes yike-boot-splash-fail-open {
   0%,
-  75% {
+  70% {
     opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
   }
 
   100% {
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
+    visibility: hidden;
   }
 }
 
@@ -39,27 +45,108 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.yike-boot-splash__mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.yike-boot-splash__mark::before {
+  content: "";
+  position: absolute;
+  width: 8.5rem;
+  height: 8.5rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgb(228 181 71 / 24%), rgb(228 181 71 / 0%) 68%);
+  opacity: 0.7;
+  transform: scale(0.92);
+  animation: yike-boot-logo-glow 1.6s ease-in-out infinite;
 }
 
 #yike-boot-splash img {
+  position: relative;
   width: 7.5rem;
   height: 7.5rem;
   object-fit: contain;
+  animation: yike-boot-logo-pulse 1.6s ease-in-out infinite;
 }
 
-.yike-boot-splash__loader {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid rgb(228 181 71 / 25%);
-  border-top-color: #e4b547;
-  border-radius: 50%;
-  animation: yike-boot-spin 0.75s linear infinite;
+.yike-boot-splash__recovery {
+  max-width: 18rem;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.4rem);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-@keyframes yike-boot-spin {
-  to {
-    transform: rotate(360deg);
+#yike-boot-splash.yike-boot-splash--recovery .yike-boot-splash__recovery {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.yike-boot-splash__recovery p {
+  color: rgb(255 255 255 / 78%);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.yike-boot-splash__actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.yike-boot-splash__actions button {
+  min-width: 5.25rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 0.9rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.yike-boot-splash__continue {
+  background: #e4b547;
+  color: #031b4e;
+}
+
+.yike-boot-splash__refresh {
+  background: rgb(255 255 255 / 12%);
+  color: white;
+}
+
+@keyframes yike-boot-logo-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgb(228 181 71 / 0%));
+    opacity: 0.86;
+    transform: scale(0.98);
+  }
+
+  50% {
+    filter: drop-shadow(0 0 22px rgb(228 181 71 / 42%));
+    opacity: 1;
+    transform: scale(1.025);
+  }
+}
+
+@keyframes yike-boot-logo-glow {
+  0%,
+  100% {
+    opacity: 0.38;
+    transform: scale(0.88);
+  }
+
+  50% {
+    opacity: 0.82;
+    transform: scale(1);
   }
 }
 
@@ -70,9 +157,19 @@
   display: none !important;
 }
 
+html.yike-boot-splash-disabled #yike-boot-splash,
 #yike-boot-splash.yike-boot-splash--out,
-#yike-boot-splash.yike-boot-splash--out .yike-boot-splash__loader {
+#yike-boot-splash.yike-boot-splash--out img,
+#yike-boot-splash.yike-boot-splash--out .yike-boot-splash__mark::before {
   animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.yike-boot-splash-enabled #yike-boot-splash,
+  #yike-boot-splash img,
+  .yike-boot-splash__mark::before {
+    animation: none;
+  }
 }
 
 :root {
@@ -190,11 +287,16 @@ html {
 }
 
 /* Installed PWA / TWA — block native browser pull-to-refresh chrome; use PullToRefresh */
-@media (display-mode: standalone) {
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
   html,
   body {
     overscroll-behavior-y: contain;
   }
+}
+
+html.yike-app-mode,
+html.yike-app-mode body {
+  overscroll-behavior-y: contain;
 }
 
 body {

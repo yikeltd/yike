@@ -3,7 +3,7 @@
   "host": "yike.ng",
   "name": "Yike",
   "launcherName": "Yike",
-  "display": "standalone",
+  "display": "fullscreen",
   "themeColor": "#031B4E",
   "themeColorDark": "#031B4E",
   "navigationColor": "#031B4E",
@@ -21,8 +21,8 @@
     "path": "./android.keystore",
     "alias": "yike"
   },
-  "appVersionName": "1.0.7",
-  "appVersionCode": 8,
+  "appVersionName": "1.0.8",
+  "appVersionCode": 9,
   "shortcuts": [
     {
       "name": "Swipe homes",
@@ -39,7 +39,7 @@
   ],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://yike.ng/manifest.json",
-  "fallbackType": "customtabs",
+  "fallbackType": "webview",
   "features": {},
   "alphaDependencies": {
     "enabled": false
@@ -61,5 +61,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": ["fullscreen", "standalone"],
-  "appVersion": "1.0.7"
+  "appVersion": "1.0.8"
 }

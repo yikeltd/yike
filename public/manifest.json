@@ -1,10 +1,11 @@
 {
+  "id": "/",
   "name": "Yike",
   "short_name": "Yike",
   "description": "The fastest and safest way to find real houses in Nigeria.",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "display_override": ["fullscreen", "standalone"],
   "background_color": "#031B4E",
   "theme_color": "#031B4E",

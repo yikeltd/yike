@@ -22,8 +22,11 @@ const themeInitScript = `(function(){try{document.documentElement.classList.add(
 /** Drop stale browser service workers inside Android TWA before they intercept navigation. */
 const twaSwCleanupScript = `(function(){try{if(document.referrer.indexOf('android-app://')!==0)return;if(!('serviceWorker' in navigator))return;navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});});}catch(e){}})();`;
 
-/** Branded boot splash — dismiss reliably after splash element exists in DOM. */
-const bootSplashHideScript = `(function(){var done=false;function isTwa(){try{return document.referrer.indexOf('android-app://')===0;}catch(e){return false;}}function isApp(){try{if(isTwa())return true;if(window.matchMedia('(display-mode: standalone)').matches)return true;if(window.matchMedia('(display-mode: fullscreen)').matches)return true;if(window.navigator.standalone)return true;}catch(e){}return false;}function hide(){if(done)return;var s=document.getElementById('yike-boot-splash');if(!s){setTimeout(hide,32);return;}done=true;s.classList.add('yike-boot-splash--out');setTimeout(function(){s.remove();},280);}function removeNow(){var s=document.getElementById('yike-boot-splash');if(s)s.remove();}function boot(){if(!isApp()){removeNow();return;}var wait=isTwa()?600:1800;setTimeout(hide,wait);setTimeout(hide,wait+1500);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();})();`;
+/** Arm splash + app-mode class for installed PWA/TWA. Normal web stays visible immediately. */
+const bootSplashArmScript = `(function(){try{var nav=window.navigator||{};var app=document.referrer.indexOf('android-app://')===0;if(!app&&window.matchMedia){app=window.matchMedia('(display-mode: standalone)').matches||window.matchMedia('(display-mode: fullscreen)').matches||window.matchMedia('(display-mode: minimal-ui)').matches;}if(!app&&nav.standalone===true)app=true;document.documentElement.classList.add(app?'yike-app-mode':'yike-web-mode');document.documentElement.classList.add(app?'yike-boot-splash-enabled':'yike-boot-splash-disabled');}catch(e){document.documentElement.classList.add('yike-web-mode','yike-boot-splash-disabled');}})();`;
+
+/** Cosmetic splash dismissal: fail open by 2.5s, never waits on auth/SW/API. */
+const bootSplashHideScript = `(function(){var done=false;var MAX=2500;function htmlDone(){document.documentElement.classList.remove('yike-boot-splash-enabled');document.documentElement.classList.add('yike-boot-splash-disabled');}function hide(){if(done)return;var s=document.getElementById('yike-boot-splash');if(!s){htmlDone();done=true;return;}done=true;htmlDone();s.classList.add('yike-boot-splash--out');setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s);},280);}function showRecovery(){if(done)return;var s=document.getElementById('yike-boot-splash');if(s)s.classList.add('yike-boot-splash--recovery');}function bind(){var c=document.getElementById('yike-boot-continue');var r=document.getElementById('yike-boot-refresh');if(c)c.addEventListener('click',hide,{once:true});if(r)r.addEventListener('click',function(){window.location.reload();},{once:true});}function boot(){bind();if(!document.documentElement.classList.contains('yike-boot-splash-enabled')){hide();return;}setTimeout(showRecovery,1800);setTimeout(hide,1500);setTimeout(hide,MAX);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();window.addEventListener('pageshow',function(){setTimeout(hide,MAX);},{once:true});})();`;
 
 const supabaseOrigin = (() => {
   try {
@@ -156,6 +159,7 @@ export default function RootLayout({
           }
         />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
         {supabaseOrigin ? (
           <>
             <link rel="dns-prefetch" href={supabaseOrigin} />
@@ -176,20 +180,41 @@ export default function RootLayout({
         />
         <link rel="apple-touch-startup-image" href="/splash/splash-1080x1920.png" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: bootSplashArmScript }} />
         <script dangerouslySetInnerHTML={{ __html: twaSwCleanupScript }} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
         <div id="yike-boot-splash" aria-hidden="true">
           <div className="yike-boot-splash__content">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/logo-mark.webp"
-              alt=""
-              width={120}
-              height={120}
-              decoding="sync"
-            />
-            <div className="yike-boot-splash__loader" aria-hidden="true" />
+            <div className="yike-boot-splash__mark">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo-mark.webp"
+                alt=""
+                width={120}
+                height={120}
+                decoding="sync"
+              />
+            </div>
+            <div className="yike-boot-splash__recovery">
+              <p>We&apos;re having trouble loading. Tap to continue.</p>
+              <div className="yike-boot-splash__actions">
+                <button
+                  id="yike-boot-continue"
+                  className="yike-boot-splash__continue"
+                  type="button"
+                >
+                  Continue
+                </button>
+                <button
+                  id="yike-boot-refresh"
+                  className="yike-boot-splash__refresh"
+                  type="button"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <script dangerouslySetInnerHTML={{ __html: bootSplashHideScript }} />

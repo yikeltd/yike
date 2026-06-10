@@ -84,7 +84,13 @@ Store assets (in `public/store/`):
 
 Store listing copy: see `twa/play-store-listing.txt`.
 
-## 6. Verify TWA / Digital Asset Links
+## 6. TWA fallback mode
+
+Use `fallbackType: "webview"` in `twa-manifest.json` (not `customtabs`). Custom Tabs show the `yike.ng` URL bar and a top loading line — that reads as a website wrapper, not a native app. WebView fallback keeps a clean shell when Digital Asset Links are still propagating.
+
+If the Play Store build is signed with **Play App Signing**, add the **App signing key certificate** SHA-256 (Play Console → Setup → App signing) to `public/.well-known/assetlinks.json` in addition to your upload key.
+
+## 7. Verify TWA / Digital Asset Links
 
 After deploy + fingerprint update:
 
@@ -95,7 +101,7 @@ curl "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.sit
 
 Or use [Statement List Generator](https://developers.google.com/digital-asset-links/tools/generator).
 
-## 7. Review safety notes
+## 8. Review safety notes
 
 - Browse, search, swipe, and listing detail work **without login**
 - WhatsApp and call are public intents (no auth wall)

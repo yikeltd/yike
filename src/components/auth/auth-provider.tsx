@@ -43,6 +43,18 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const AUTH_BOOT_TIMEOUT_MS = 2500;
+
+function withAuthTimeout<T>(work: Promise<T>, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallback), AUTH_BOOT_TIMEOUT_MS);
+  });
+
+  return Promise.race([work.catch(() => fallback), timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -65,16 +77,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const supabase = createClient();
-    const {
-      data: { user: u },
-    } = await supabase.auth.getUser();
+    const u = await withAuthTimeout(
+      supabase.auth.getUser().then(({ data }) => data.user ?? null),
+      null
+    );
     setUser(u);
     if (u) {
-      const [{ data }, { data: favorites }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", u.id).single(),
-        supabase.from("favorites").select("property_id").eq("user_id", u.id),
-      ]);
-      const p = data as Profile | null;
+      const { profile: p, favorites } = await withAuthTimeout(
+        Promise.all([
+          supabase.from("profiles").select("*").eq("id", u.id).single(),
+          supabase.from("favorites").select("property_id").eq("user_id", u.id),
+        ]).then(([profileRes, favoritesRes]) => ({
+          profile: profileRes.data as Profile | null,
+          favorites: (favoritesRes.data ?? []) as Array<{ property_id: string }>,
+        })),
+        { profile: null, favorites: [] }
+      );
       setProfile(p);
       setSavedListingIds(
         new Set((favorites ?? []).map((row) => row.property_id as string))
