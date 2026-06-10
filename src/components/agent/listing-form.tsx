@@ -45,7 +45,10 @@ import {
   sortMediaItemsForStory,
 } from "@/lib/media/items";
 import { LISTING_LIMIT_REACHED_MESSAGE } from "@/lib/account-control";
-import { LISTING_SUBMITTED_MESSAGE } from "@/lib/copy/user-messages";
+import {
+  LISTING_SUBMITTED_MESSAGE,
+  LISTING_SUBMITTED_SUBTEXT,
+} from "@/lib/copy/user-messages";
 import { friendlyPublicError } from "@/lib/copy/public-errors";
 import {
   BLOCKING_QUALITY_FLAGS,
@@ -188,7 +191,7 @@ export function ListingForm({
   const [submitMessage, setSubmitMessage] = useState("Submitting…");
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [draftBannerKey, setDraftBannerKey] = useState(0);
+  const [showDraftBanner, setShowDraftBanner] = useState(true);
 
   const [listingType, setListingType] = useState<ListingTypeValue>(
     (initial?.listing_type as ListingTypeValue) ?? "rent"
@@ -336,7 +339,12 @@ export function ListingForm({
     setMediaItems(draft.mediaItems);
     setFeeValues(draft.transparency);
     setFeeModes(draft.feeModes as Record<string, FeeTransparencyMode>);
-    setDraftBannerKey((k) => k + 1);
+    setShowDraftBanner(false);
+  }
+
+  function dismissDraftForNewListing() {
+    clearListingDraft();
+    setShowDraftBanner(false);
   }
 
   function applyDealOption(
@@ -344,6 +352,9 @@ export function ListingForm({
     nextPropertyType?: string,
     autoAdvance = false
   ) {
+    if (step === 1 && showDraftBanner) {
+      dismissDraftForNewListing();
+    }
     setListingType(listingTypeValue);
     if (nextPropertyType) {
       setPropertyType(nextPropertyType);
@@ -913,9 +924,7 @@ export function ListingForm({
         <p className="mt-4 text-lg font-bold text-navy">
           {LISTING_SUBMITTED_MESSAGE}
         </p>
-        <p className="mt-2 max-w-sm text-sm text-muted">
-          We&apos;ll notify you once it goes live — usually within 24 hours.
-        </p>
+        <p className="mt-2 max-w-sm text-sm text-muted">{LISTING_SUBMITTED_SUBTEXT}</p>
         <div className="mt-6 flex w-full max-w-xs flex-col gap-2">
           <Link
             href="/agent/listings"
@@ -971,12 +980,11 @@ export function ListingForm({
         Step {step} of 4 · {STEPS[step - 1].title}
       </p>
 
-      {!isEdit ? (
+      {!isEdit && showDraftBanner && step === 1 ? (
         <ListingDraftBanner
-          key={draftBannerKey}
           agentId={agentId}
           onContinue={(draft) => applyDraft(draft)}
-          onDeleted={() => setDraftBannerKey((k) => k + 1)}
+          onDeleted={() => setShowDraftBanner(false)}
         />
       ) : null}
 

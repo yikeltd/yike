@@ -15,8 +15,9 @@ export const VERIFICATION_LISTING_GATE_MESSAGE =
 
 export const EMAIL_VERIFY_TO_CONTINUE = "Please verify your email to continue.";
 
-export const LISTING_SUBMITTED_MESSAGE =
-  "Your listing has been submitted for review.";
+export const LISTING_SUBMITTED_MESSAGE = "Your listing has been submitted.";
+
+export const LISTING_SUBMITTED_SUBTEXT = "We'll notify you once it goes live.";
 
 export const ACCOUNT_ON_HOLD_MESSAGE =
   "Your account is under review. Contact support if you need help.";
