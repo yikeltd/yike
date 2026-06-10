@@ -75,11 +75,26 @@ export function MoveInEstimateModal({
     key: keyof Omit<MoveInEditableState, "rent">,
     raw: string
   ) {
-    const mode: FeeTransparencyMode = raw.includes("%") ? "percent" : "exact";
-    setState((s) => ({
-      ...s,
-      [key]: { raw, mode } satisfies EditableFeeField,
-    }));
+    setState((s) => {
+      const prev = s[key];
+      const flexModes = new Set<FeeTransparencyMode>([
+        "negotiable",
+        "landlord",
+        "not_fixed",
+      ]);
+      let mode: FeeTransparencyMode = prev.mode;
+      if (raw.includes("%")) {
+        mode = "percent";
+      } else if (raw.trim()) {
+        mode = "exact";
+      } else if (!flexModes.has(prev.mode)) {
+        mode = "exact";
+      }
+      return {
+        ...s,
+        [key]: { raw, mode } satisfies EditableFeeField,
+      };
+    });
   }
 
   return (
@@ -152,8 +167,8 @@ export function MoveInEstimateModal({
           </div>
 
           <ul className="mt-4 space-y-2 border-t border-surface pt-4 text-sm">
-            {items.map((item) => (
-              <li key={item.label} className="flex justify-between gap-3">
+            {items.map((item, index) => (
+              <li key={`${item.label}-${index}`} className="flex justify-between gap-3">
                 <span className="text-muted">{item.label}</span>
                 <span className="font-semibold tabular-nums text-navy">
                   {item.flexible && item.note ? item.note : formatAmount(item.amount)}

@@ -17,6 +17,7 @@ import { ListingPropertyTypePicker } from "./listing-property-type-picker";
 import { ListingLocationSearch } from "./listing-location-search";
 import { ListingAmenitiesPicker } from "./listing-amenities-picker";
 import { transparencyToExtras } from "./listing-transparency-fields";
+import { extrasToFeeFormState } from "@/lib/rent-breakdown";
 import { ListingInlineFees } from "./listing-inline-fees";
 import { MIN_LISTING_IMAGES, MAX_LISTING_IMAGES, PAYMENT_PERIODS } from "@/lib/constants";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
@@ -141,35 +142,8 @@ async function syncValueDrivers(listingId: string, driverKeys: string[]) {
 }
 
 function extrasToTransparency(initial?: Property | null) {
-  const e = initial?.extras;
-  const values: Record<string, string> = {};
-  const modes: Record<string, FeeTransparencyMode> = {};
-  if (!e) return { values, modes };
-  if (e.agency_fee_mode === "exact" && e.agency_fee != null) {
-    values.agency_fee = String(e.agency_fee);
-  } else if (e.agency_fee_percent != null) {
-    values.agency_fee = `${e.agency_fee_percent}%`;
-  }
-  if (e.caution_fee_mode === "percent" && e.caution_fee_percent != null) {
-    values.caution_fee = `${e.caution_fee_percent}%`;
-  } else if (e.caution_deposit != null) values.caution_fee = String(e.caution_deposit);
-  else if (e.caution_months != null) values.caution_fee = String(e.caution_months);
-  if (e.agreement_fee != null) values.agreement_fee = String(e.agreement_fee);
-  else if (e.agreement_fee_percent != null) values.agreement_fee = `${e.agreement_fee_percent}%`;
-  if (e.service_charge != null) values.service_charge = String(e.service_charge);
-  else if (e.service_charge_percent != null) values.service_charge = `${e.service_charge_percent}%`;
-  if (e.legal_fee != null) values.legal_fee = String(e.legal_fee);
-  else if (e.legal_fee_percent != null) values.legal_fee = `${e.legal_fee_percent}%`;
-  if (e.cleaning_fee != null) values.cleaning_fee = String(e.cleaning_fee);
-  if (e.caution_deposit != null) values.caution_deposit = String(e.caution_deposit);
-  if (e.agency_fee_mode) modes.agency_fee = e.agency_fee_mode;
-  if (e.caution_fee_mode) modes.caution_fee = e.caution_fee_mode;
-  if (e.agreement_fee_mode) modes.agreement_fee = e.agreement_fee_mode;
-  if (e.service_charge_mode) modes.service_charge = e.service_charge_mode;
-  if (e.legal_fee_mode) modes.legal_fee = e.legal_fee_mode;
-  if (e.cleaning_fee_mode) modes.cleaning_fee = e.cleaning_fee_mode;
-  if (e.caution_deposit_mode) modes.caution_deposit = e.caution_deposit_mode;
-  return { values, modes };
+  if (!initial?.extras) return { values: {}, modes: {} };
+  return extrasToFeeFormState(initial.extras);
 }
 
 export function ListingForm({

@@ -62,7 +62,7 @@ export function ListingTransparencyFields({
           onModeChange={onModeChange}
         />
         <FeeRow
-          field={{ key: "caution_deposit", label: "Caution deposit", placeholder: "e.g. ₦50,000" }}
+          field={{ key: "caution_deposit", label: "Refundable caution", placeholder: "e.g. ₦50,000" }}
           value={values.caution_deposit ?? ""}
           mode={modes.caution_deposit ?? "exact"}
           onValueChange={onValueChange}
@@ -245,6 +245,14 @@ export function transparencyToExtras(
       "legal_fee",
       values.legal_fee ?? "",
       modes.legal_fee ?? "exact"
+    );
+    apply(
+      "agency_fee",
+      "agency_fee_mode",
+      "agency_fee",
+      values.agency_fee ?? "",
+      modes.agency_fee ?? "exact",
+      "agency_fee_percent"
     );
   }
 

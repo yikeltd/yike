@@ -12,6 +12,7 @@ export type MoveInBreakdown = {
   items: RentLineItem[];
   total: number;
   headline: string;
+  hasFlex: boolean;
 };
 
 export type EditableFeeField = {
@@ -64,7 +65,6 @@ function feeFieldFromExtras(
     mode: keyof ListingExtras;
     amount: keyof ListingExtras;
     percent: keyof ListingExtras;
-    formKey?: "agency_fee" | "caution_fee" | "agreement_fee" | "service_charge" | "legal_fee";
   }
 ): EditableFeeField {
   const mode = (extras[keys.mode] as FeeTransparencyMode | undefined) ?? "exact";
@@ -81,6 +81,88 @@ function feeFieldFromExtras(
     return { raw: `${percent}%`, mode: "percent" };
   }
   return { raw: "", mode };
+}
+
+/** Map stored listing extras into agent fee form values (listing create/edit). */
+export function extrasToFeeFormState(extras: ListingExtras): {
+  values: Record<string, string>;
+  modes: Record<string, FeeTransparencyMode>;
+} {
+  const values: Record<string, string> = {};
+  const modes: Record<string, FeeTransparencyMode> = {};
+
+  function load(
+    formKey: string,
+    keys: {
+      mode: keyof ListingExtras;
+      amount: keyof ListingExtras;
+      percent: keyof ListingExtras;
+    }
+  ) {
+    const field = feeFieldFromExtras(extras, keys);
+    modes[formKey] = field.mode;
+    if (field.raw) values[formKey] = field.raw;
+  }
+
+  load("agency_fee", {
+    mode: "agency_fee_mode",
+    amount: "agency_fee",
+    percent: "agency_fee_percent",
+  });
+  load("caution_fee", {
+    mode: "caution_fee_mode",
+    amount: "caution_deposit",
+    percent: "caution_fee_percent",
+  });
+  load("agreement_fee", {
+    mode: "agreement_fee_mode",
+    amount: "agreement_fee",
+    percent: "agreement_fee_percent",
+  });
+  load("service_charge", {
+    mode: "service_charge_mode",
+    amount: "service_charge",
+    percent: "service_charge_percent",
+  });
+  load("legal_fee", {
+    mode: "legal_fee_mode",
+    amount: "legal_fee",
+    percent: "legal_fee_percent",
+  });
+  load("cleaning_fee", {
+    mode: "cleaning_fee_mode",
+    amount: "cleaning_fee",
+    percent: "cleaning_fee",
+  });
+  load("caution_deposit", {
+    mode: "caution_deposit_mode",
+    amount: "caution_deposit",
+    percent: "caution_deposit",
+  });
+
+  return { values, modes };
+}
+
+export function displayMoveInHeadline(
+  breakdown: MoveInBreakdown,
+  property: Property,
+  variant: "card" | "hint" = "card"
+): string {
+  const { headline, hasFlex } = breakdown;
+
+  if (property.listing_type === "shortlet") {
+    if (hasFlex) {
+      return `From ${formatNaira(Number(property.price))}`;
+    }
+    return variant === "hint" ? `From ${headline}` : headline;
+  }
+
+  const prefixed = hasFlex ? `~${headline}` : headline;
+  if (variant === "hint") {
+    if (property.listing_type === "lease") return `${prefixed} upfront`;
+    return `${prefixed} move-in`;
+  }
+  return prefixed;
 }
 
 export function extrasToMoveInEditableState(property: Property): MoveInEditableState {
@@ -275,7 +357,8 @@ function addShortletFees(property: Property, price: number): MoveInBreakdown | n
   return {
     items,
     total,
-    headline: hasFlex ? `From ${formatNaira(price)}` : formatNaira(total),
+    headline: formatNaira(total),
+    hasFlex,
   };
 }
 
@@ -307,18 +390,13 @@ export function calculateMoveInBreakdown(property: Property): MoveInBreakdown | 
   return {
     items,
     total,
-    headline: hasFlex ? `~${formatNaira(total)}` : formatNaira(total),
+    headline: formatNaira(total),
+    hasFlex,
   };
 }
 
 export function formatMoveInHint(property: Property): string | null {
   const breakdown = calculateMoveInBreakdown(property);
   if (!breakdown) return null;
-  if (property.listing_type === "shortlet") {
-    return `From ${breakdown.headline}`;
-  }
-  if (property.listing_type === "lease") {
-    return `~${breakdown.headline} upfront`;
-  }
-  return `~${breakdown.headline} move-in`;
+  return displayMoveInHeadline(breakdown, property, "hint");
 }

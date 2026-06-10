@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import type { Property } from "@/types/database";
-import { calculateMoveInBreakdown } from "@/lib/rent-breakdown";
+import {
+  calculateMoveInBreakdown,
+  displayMoveInHeadline,
+} from "@/lib/rent-breakdown";
 import { MoveInEstimateModal } from "./move-in-estimate-modal";
 import { Info, ChevronRight } from "lucide-react";
 
@@ -43,7 +46,7 @@ export function RentTransparencyCard({ property }: { property: Property }) {
             </p>
           </div>
           <p className="shrink-0 text-lg font-bold tabular-nums text-navy lg:text-xl">
-            {breakdown.headline}
+            {displayMoveInHeadline(breakdown, property)}
           </p>
           <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted" aria-hidden />
         </div>
