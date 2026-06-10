@@ -8,7 +8,6 @@ import {
   HomeShowcaseSection,
   PopularAreasSection,
 } from "@/components/home/home-sections";
-import { HomeMarketplaceIntro } from "@/components/home/home-marketplace-intro";
 import { SocialProofBar } from "@/components/home/social-proof-bar";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
 import { getMarketplaceStats } from "@/lib/marketplace-stats";
@@ -177,8 +176,6 @@ export default async function HomePage({
       <Suspense fallback={null}>
         <HomeSearchHero initial={initial} trustedAgents={trustedAgents} />
       </Suspense>
-
-      <HomeMarketplaceIntro />
 
       <Suspense fallback={<SectionFallback />}>
         <HomeHotPicksSections />

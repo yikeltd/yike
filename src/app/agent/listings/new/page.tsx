@@ -10,6 +10,7 @@ import { TrustGateCompact } from "@/components/verification/trust-gate-compact";
 import { getRequiredVerificationTasks } from "@/lib/verification/tasks";
 import { getTrustCapabilities } from "@/lib/verification/permissions";
 import { countAsActiveListing, getListingLimit } from "@/lib/agent-tiers";
+import { getActiveAd } from "@/lib/ads";
 import Link from "next/link";
 import type { Property } from "@/types/database";
 
@@ -32,6 +33,7 @@ export default async function NewListingPage() {
   const canPublish = canPublishListings(profile);
   const trustCaps = getTrustCapabilities(profile);
   const verificationTasks = getRequiredVerificationTasks(profile);
+  const listingFormAd = canPublish && !atLimit ? await getActiveAd("agent_listing_form") : null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">
@@ -65,7 +67,12 @@ export default async function NewListingPage() {
           </Link>
         </div>
       ) : (
-        <ListingForm agentId={user.id} activeCount={activeCount} listingLimit={limit} />
+        <ListingForm
+          agentId={user.id}
+          activeCount={activeCount}
+          listingLimit={limit}
+          listingFormAd={listingFormAd}
+        />
       )}
     </div>
   );

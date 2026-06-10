@@ -165,12 +165,16 @@ export function transparencyToExtras(
     modeField: keyof ListingExtras,
     valueField: keyof ListingExtras,
     raw: string,
-    mode: FeeTransparencyMode
+    mode: FeeTransparencyMode,
+    percentField?: keyof ListingExtras
   ) {
     (extras as Record<string, FeeTransparencyMode>)[modeField as string] = mode;
     if (!flex.has(mode)) {
       const n = parseFeeValue(raw, mode);
-      if (n != null) (extras as Record<string, number>)[valueField as string] = n;
+      if (n != null) {
+        const targetField = mode === "percent" && percentField ? percentField : valueField;
+        (extras as Record<string, number>)[targetField as string] = n;
+      }
     }
   }
 
@@ -178,37 +182,42 @@ export function transparencyToExtras(
     apply(
       "agency_fee",
       "agency_fee_mode",
-      "agency_fee_percent",
+      "agency_fee",
       values.agency_fee ?? "",
-      modes.agency_fee ?? "exact"
+      modes.agency_fee ?? "exact",
+      "agency_fee_percent"
     );
     apply(
       "caution_fee",
       "caution_fee_mode",
       "caution_deposit",
       values.caution_fee ?? "",
-      modes.caution_fee ?? "exact"
+      modes.caution_fee ?? "exact",
+      "caution_fee_percent"
     );
     apply(
       "agreement_fee",
       "agreement_fee_mode",
       "agreement_fee",
       values.agreement_fee ?? "",
-      modes.agreement_fee ?? "exact"
+      modes.agreement_fee ?? "exact",
+      "agreement_fee_percent"
     );
     apply(
       "service_charge",
       "service_charge_mode",
       "service_charge",
       values.service_charge ?? "",
-      modes.service_charge ?? "exact"
+      modes.service_charge ?? "exact",
+      "service_charge_percent"
     );
     apply(
       "legal_fee",
       "legal_fee_mode",
       "legal_fee",
       values.legal_fee ?? "",
-      modes.legal_fee ?? "exact"
+      modes.legal_fee ?? "exact",
+      "legal_fee_percent"
     );
   }
 

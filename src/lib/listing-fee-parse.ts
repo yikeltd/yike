@@ -1,4 +1,5 @@
 import type { FeeTransparencyMode } from "@/types/database";
+import { parseNairaAmount } from "@/lib/naira-input";
 
 export function parseFeeValue(
   raw: string,
@@ -13,6 +14,5 @@ export function parseFeeValue(
     const n = parseFloat(s.replace("%", ""));
     return Number.isFinite(n) && n > 0 ? n : undefined;
   }
-  const n = Number(s);
-  return Number.isFinite(n) && n > 0 ? n : undefined;
+  return parseNairaAmount(s) ?? undefined;
 }

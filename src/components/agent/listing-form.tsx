@@ -26,13 +26,19 @@ import { FieldLabel } from "@/components/ui/field-label";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { NairaInput } from "@/components/ui/naira-input";
 import { SubmitOverlay } from "@/components/ui/submit-overlay";
+import { AdBanner } from "@/components/ads/ad-banner";
 import {
   HumanVerifyField,
   readHumanVerifyFromForm,
 } from "@/components/forms/human-verify-field";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import type { FeeTransparencyMode, ListingExtras, Property } from "@/types/database";
+import type {
+  AdPlacement,
+  FeeTransparencyMode,
+  ListingExtras,
+  Property,
+} from "@/types/database";
 import {
   dedupeMediaItems,
   mediaItemsToUrls,
@@ -101,6 +107,7 @@ type ListingFormProps = {
   initialValueDriverKeys?: string[];
   activeCount?: number;
   listingLimit?: number | null;
+  listingFormAd?: AdPlacement | null;
 };
 
 async function syncValueDrivers(listingId: string, driverKeys: string[]) {
@@ -116,12 +123,21 @@ function extrasToTransparency(initial?: Property | null) {
   const values: Record<string, string> = {};
   const modes: Record<string, FeeTransparencyMode> = {};
   if (!e) return { values, modes };
-  if (e.agency_fee_percent != null) values.agency_fee = String(e.agency_fee_percent);
-  if (e.caution_deposit != null) values.caution_fee = String(e.caution_deposit);
+  if (e.agency_fee_mode === "exact" && e.agency_fee != null) {
+    values.agency_fee = String(e.agency_fee);
+  } else if (e.agency_fee_percent != null) {
+    values.agency_fee = `${e.agency_fee_percent}%`;
+  }
+  if (e.caution_fee_mode === "percent" && e.caution_fee_percent != null) {
+    values.caution_fee = `${e.caution_fee_percent}%`;
+  } else if (e.caution_deposit != null) values.caution_fee = String(e.caution_deposit);
   else if (e.caution_months != null) values.caution_fee = String(e.caution_months);
   if (e.agreement_fee != null) values.agreement_fee = String(e.agreement_fee);
+  else if (e.agreement_fee_percent != null) values.agreement_fee = `${e.agreement_fee_percent}%`;
   if (e.service_charge != null) values.service_charge = String(e.service_charge);
+  else if (e.service_charge_percent != null) values.service_charge = `${e.service_charge_percent}%`;
   if (e.legal_fee != null) values.legal_fee = String(e.legal_fee);
+  else if (e.legal_fee_percent != null) values.legal_fee = `${e.legal_fee_percent}%`;
   if (e.cleaning_fee != null) values.cleaning_fee = String(e.cleaning_fee);
   if (e.caution_deposit != null) values.caution_deposit = String(e.caution_deposit);
   if (e.agency_fee_mode) modes.agency_fee = e.agency_fee_mode;
@@ -140,6 +156,7 @@ export function ListingForm({
   initialValueDriverKeys = [],
   activeCount = 0,
   listingLimit = null,
+  listingFormAd = null,
 }: ListingFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -769,11 +786,15 @@ export function ListingForm({
               <ListingInlineFees
                 listingType={listingType}
                 values={feeValues}
+                modes={feeModes}
                 onValueChange={(k, v) => setFeeValues((prev) => ({ ...prev, [k]: v }))}
+                onModeChange={(k, mode) =>
+                  setFeeModes((prev) => ({ ...prev, [k]: mode }))
+                }
               />
             ) : null}
             {showRooms ? (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <FieldLabel>Beds</FieldLabel>
                   <Input
@@ -785,22 +806,14 @@ export function ListingForm({
                   />
                 </div>
                 <div>
-                  <FieldLabel>Baths</FieldLabel>
+                  <FieldLabel>Baths/Toilet</FieldLabel>
                   <Input
-                    value={bathrooms}
-                    onChange={(e) =>
-                      setBathrooms(e.target.value.replace(/\D/g, "").slice(0, 2))
-                    }
-                    inputMode="numeric"
-                  />
-                </div>
-                <div>
-                  <FieldLabel>Toilets</FieldLabel>
-                  <Input
-                    value={toilets}
-                    onChange={(e) =>
-                      setToilets(e.target.value.replace(/\D/g, "").slice(0, 2))
-                    }
+                    value={bathrooms || toilets}
+                    onChange={(e) => {
+                      const next = e.target.value.replace(/\D/g, "").slice(0, 2);
+                      setBathrooms(next);
+                      setToilets(next);
+                    }}
                     inputMode="numeric"
                   />
                 </div>
@@ -819,6 +832,24 @@ export function ListingForm({
                 ))}
               </Select>
             </div>
+            {listingFormAd ? (
+              <div className="pt-1">
+                <AdBanner
+                  ad={listingFormAd}
+                  placementKey="agent_listing_form"
+                  className="rounded-xl"
+                />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-navy/10 bg-surface/60 px-4 py-5 text-center">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Listing tip
+                </p>
+                <p className="mt-1 text-sm text-navy">
+                  Clear photos, exact location, and honest fees help serious renters contact you faster.
+                </p>
+              </div>
+            )}
           </section>
         )}
 

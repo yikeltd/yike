@@ -230,15 +230,20 @@ export type FeeTransparencyMode =
 /** Nigerian rent transparency + amenities — stored as JSONB */
 export interface ListingExtras {
   amenities?: string[];
+  agency_fee?: number;
   agency_fee_percent?: number;
   agency_fee_mode?: FeeTransparencyMode;
   caution_months?: number;
+  caution_fee_percent?: number;
   caution_fee_mode?: FeeTransparencyMode;
   agreement_fee?: number;
+  agreement_fee_percent?: number;
   agreement_fee_mode?: FeeTransparencyMode;
   service_charge?: number;
+  service_charge_percent?: number;
   service_charge_mode?: FeeTransparencyMode;
   legal_fee?: number;
+  legal_fee_percent?: number;
   legal_fee_mode?: FeeTransparencyMode;
   commission_mode?: FeeTransparencyMode;
   cleaning_fee?: number;

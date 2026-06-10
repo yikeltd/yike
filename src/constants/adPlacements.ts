@@ -10,6 +10,7 @@ export const AD_PLACEMENT_KEYS = [
   "footer_strip",
   "auth_login_footer",
   "email_transactional",
+  "agent_listing_form",
   "home_hotspot_1",
   "home_hotspot_2",
 ] as const;
@@ -64,6 +65,11 @@ export const AD_PLACEMENT_META: Record<
     label: "Transactional email — under headline",
     hint: "Compact promo chip directly under the email headline (in the fold). Use a square thumb ~80×80px. Shown on OTP, welcome, listing updates — not admin alerts.",
     aspect: "card",
+  },
+  agent_listing_form: {
+    label: "Agent listing form — price step",
+    hint: "Shown under Payment period while an agent creates a listing. Use for listing tips, boosts, verification, or sponsor ads.",
+    aspect: "banner",
   },
   home_hotspot_1: {
     label: "Home — Hottest pick slot 1",

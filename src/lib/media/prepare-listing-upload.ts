@@ -21,7 +21,7 @@ export type PreparedListingPhoto = {
 };
 
 const HEIC_UNSUPPORTED =
-  "This photo format is not supported. Please upload JPEG or PNG.";
+  "This photo format is not supported. Please upload JPG, PNG, or WebP.";
 
 /** Client-side decode + gentle resize before upload — keeps uploads fast on mobile. */
 export async function prepareListingUpload(file: File): Promise<PreparedListingPhoto> {
@@ -41,7 +41,7 @@ export async function prepareListingUpload(file: File): Promise<PreparedListingP
     if (mime === "image/heic" || mime === "image/heif") {
       throw new Error(HEIC_UNSUPPORTED);
     }
-    throw new Error("Could not read this photo. Try JPG or PNG.");
+    throw new Error("Could not read this photo. Try JPG, PNG, or WebP.");
   }
 
   const longEdge = Math.max(bitmap.width, bitmap.height, 1);

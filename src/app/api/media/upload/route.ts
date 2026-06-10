@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     !ALLOWED_IMAGE_TYPES.includes(mime as (typeof ALLOWED_IMAGE_TYPES)[number])
   ) {
     return NextResponse.json(
-      { error: "This photo format is not supported. Please upload JPEG or PNG." },
+      { error: "This photo format is not supported. Please upload JPG, PNG, or WebP." },
       { status: 400 }
     );
   }
@@ -108,23 +108,29 @@ export async function POST(request: Request) {
     const optimized = await optimizeUploadedImage(buffer);
     const paths = buildStoragePaths(propertyId, index);
 
-    const uploads = await Promise.all([
-      storage.from(BUCKET).upload(paths.thumbnail, optimized.thumbnail, {
+    const uploads = [
+      await storage.from(BUCKET).upload(paths.thumbnail, optimized.thumbnail, {
         contentType: "image/webp",
         upsert: true,
       }),
-      storage.from(BUCKET).upload(paths.medium, optimized.medium, {
+      await storage.from(BUCKET).upload(paths.medium, optimized.medium, {
         contentType: "image/webp",
         upsert: true,
       }),
-      storage.from(BUCKET).upload(paths.large, optimized.large, {
+      await storage.from(BUCKET).upload(paths.large, optimized.large, {
         contentType: "image/webp",
         upsert: true,
       }),
-    ]);
+    ];
 
     const failed = uploads.find((u) => u.error);
     if (failed?.error) {
+      console.error("[media/upload] storage upload failed", {
+        bucket: BUCKET,
+        propertyId,
+        mime,
+        message: failed.error.message,
+      });
       return NextResponse.json(
         { error: friendlyStorageError(failed.error.message) },
         { status: 500 }
@@ -148,6 +154,11 @@ export async function POST(request: Request) {
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Upload failed — try again";
+    console.error("[media/upload] image processing failed", {
+      propertyId,
+      mime,
+      message,
+    });
     return NextResponse.json({ error: friendlyStorageError(message) }, { status: 400 });
   }
 }

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { HeaderDesktop } from "./header-desktop";
 import { HeaderMobile } from "./header-mobile";
 import { BottomNavMobile } from "./bottom-nav-mobile";
+import { DesktopWhatsappAdminButton } from "./desktop-whatsapp-admin-button";
 import type { SiteBanner } from "@/types/database";
 
 export function ConsumerShell({
@@ -52,6 +53,7 @@ export function ConsumerShell({
       <Suspense fallback={null}>
         <BottomNavMobile />
       </Suspense>
+      <DesktopWhatsappAdminButton />
     </>
   );
 }

@@ -74,7 +74,8 @@ async function applyAgentUpgrade(
 
   console.error("[agent/become] profile update failed:", error.message, error.code);
 
-  const { listing_rules_accepted_at: _rulesAt, ...withoutRules } = payload;
+  const withoutRules = { ...payload };
+  delete withoutRules.listing_rules_accepted_at;
   if (Object.keys(withoutRules).length > 0) {
     const { error: retryError } = await admin
       .from("profiles")

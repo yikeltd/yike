@@ -7,7 +7,7 @@ export function friendlyStorageError(message: string): string {
     return "Photo is too large. Try a smaller image.";
   }
   if (lower.includes("invalid") && lower.includes("mime")) {
-    return "This photo format is not supported. Please upload JPEG or PNG.";
+    return "This photo format is not supported. Please upload JPG, PNG, or WebP.";
   }
   return friendlyPublicError(message, UPLOAD_ERROR_FALLBACK);
 }

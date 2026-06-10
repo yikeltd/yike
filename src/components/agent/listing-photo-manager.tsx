@@ -40,7 +40,7 @@ type Props = {
   onChange: (items: ListingPhotoItem[]) => void;
 };
 
-const MAX_CONCURRENT = 3;
+const MAX_CONCURRENT = 1;
 
 function newPendingId(index: number): string {
   return `pending_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 9)}`;
@@ -162,14 +162,15 @@ export function ListingPhotoManager({
             : item
         );
       });
-    } catch {
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Upload paused. Retry this photo or remove it.";
       updateItems((prev) =>
         prev.map((item) =>
           item.id === job.id
             ? {
                 ...item,
                 upload_status: "error" as const,
-                upload_error: "Upload paused. Retry this photo or remove it.",
+                upload_error: friendlyPublicError(message, "Upload paused. Retry this photo or remove it."),
               }
             : item
         )
@@ -197,20 +198,23 @@ export function ListingPhotoManager({
 
     const startIndex = itemsRef.current.length;
     const fileList = Array.from(files);
-    const preparedResults = await Promise.all(
-      fileList.map(async (file, i) => {
-        try {
-          const prepared = await prepareListingUpload(file);
-          return { ok: true as const, prepared, i };
-        } catch (e) {
-          return {
-            ok: false as const,
-            i,
-            message: e instanceof Error ? e.message : UPLOAD_ERROR_FALLBACK,
-          };
-        }
-      })
-    );
+    const preparedResults: Array<
+      | { ok: true; prepared: Awaited<ReturnType<typeof prepareListingUpload>>; i: number }
+      | { ok: false; i: number; message: string }
+    > = [];
+
+    for (const [i, file] of fileList.entries()) {
+      try {
+        const prepared = await prepareListingUpload(file);
+        preparedResults.push({ ok: true, prepared, i });
+      } catch (e) {
+        preparedResults.push({
+          ok: false,
+          i,
+          message: e instanceof Error ? e.message : UPLOAD_ERROR_FALLBACK,
+        });
+      }
+    }
 
     const pending: ListingPhotoItem[] = [];
     const failures: string[] = [];
