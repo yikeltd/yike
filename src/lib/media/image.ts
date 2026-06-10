@@ -14,6 +14,15 @@ import {
 export type { ImagePreset };
 export { WEBP_CONTENT_TYPE };
 
+function isTinySource(width: number, height: number): boolean {
+  return (
+    width > 0 &&
+    height > 0 &&
+    width < MEDIA_LIMITS.minSharpWidth &&
+    height < MEDIA_LIMITS.minSharpHeight
+  );
+}
+
 const EXT_MIME: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
@@ -87,8 +96,7 @@ export async function optimizeUploadedImage(
   const meta = await base.metadata();
   const originalWidth = meta.width ?? 0;
   const originalHeight = meta.height ?? 0;
-  const longEdge = Math.max(originalWidth, originalHeight);
-  const smallSource = longEdge > 0 && longEdge < MEDIA_LIMITS.minSharpLongEdge;
+  const smallSource = isTinySource(originalWidth, originalHeight);
 
   const stripped = base.withMetadata({ exif: undefined, icc: undefined });
 
@@ -308,8 +316,7 @@ export async function optimizeProfileAvatarImage(input: Buffer): Promise<Optimiz
   const meta = await base.metadata();
   const originalWidth = meta.width ?? 0;
   const originalHeight = meta.height ?? 0;
-  const longEdge = Math.max(originalWidth, originalHeight);
-  const smallSource = longEdge > 0 && longEdge < MEDIA_LIMITS.minSharpLongEdge;
+  const smallSource = isTinySource(originalWidth, originalHeight);
   const stripped = stripMetadata(base);
 
   const [thumbnail, medium, large, blur] = await Promise.all([
@@ -413,8 +420,7 @@ export async function optimizeCoverImage(
   const meta = await base.metadata();
   const originalWidth = meta.width ?? 0;
   const originalHeight = meta.height ?? 0;
-  const longEdge = Math.max(originalWidth, originalHeight);
-  const smallSource = longEdge > 0 && longEdge < MEDIA_LIMITS.minSharpLongEdge;
+  const smallSource = isTinySource(originalWidth, originalHeight);
 
   const extract = computeCoverExtract(
     originalWidth,

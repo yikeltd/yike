@@ -73,7 +73,17 @@ async function applyAgentUpgrade(
 
   if (!error) return { ok: true };
 
-  console.error("[agent/become] profile update failed:", error.message, error.code);
+  console.error("[agent/become] profile update failed:", {
+    message: error.message,
+    code: error.code,
+    accountType: payload.account_type,
+  });
+
+  if (error.code === "23514" && payload.account_type === "agent") {
+    console.error(
+      "[agent/become] account_type=agent blocked by DB constraint — run scripts/apply-agent-account-type-production.sql on production"
+    );
+  }
 
   const withoutRules = { ...payload };
   delete withoutRules.listing_rules_accepted_at;
@@ -165,7 +175,10 @@ export async function POST(request: Request) {
     });
 
     if (!result.ok) {
-      return NextResponse.json({ error: "Could not upgrade account" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Could not update profile. Please try again." },
+        { status: 500 }
+      );
     }
 
     await syncProfileVerificationMeta(admin, user.id).catch((err) => {
@@ -200,7 +213,10 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    return NextResponse.json({ error: "Could not upgrade account" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not update profile. Please try again." },
+      { status: 500 }
+    );
   }
 
   await syncProfileVerificationMeta(admin, user.id).catch((err) => {

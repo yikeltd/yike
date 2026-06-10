@@ -87,12 +87,12 @@ export async function POST(request: Request) {
     const cacNumber = String(body.cacNumber ?? "").trim();
     const cacDocumentPath = String(body.cacDocumentPath ?? "").trim();
 
-    if (!companyName || !cacNumber || !cacDocumentPath) {
+    if (!companyName) {
       return NextResponse.json(
         {
           error: isDeveloper
-            ? "Complete developer name, RC/BN number, and registration certificate."
-            : "Complete company name, RC/BN number, and CAC upload.",
+            ? "Add your developer or company name."
+            : "Add your company name.",
         },
         { status: 400 }
       );
@@ -104,8 +104,8 @@ export async function POST(request: Request) {
     fullUpdate = {
       company_name: companyName,
       full_name: companyName,
-      cac_number: cacNumber,
-      cac_document_path: cacDocumentPath,
+      ...(cacNumber ? { cac_number: cacNumber } : {}),
+      ...(cacDocumentPath ? { cac_document_path: cacDocumentPath } : {}),
       residential_address: residentialAddress,
       residential_area: residentialArea || null,
       residential_city: residentialCity,

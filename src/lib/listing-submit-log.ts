@@ -2,12 +2,24 @@
 
 export type ListingSubmitStage =
   | "listing_submit_started"
+  | "auth_checked"
+  | "profile_loaded"
+  | "profile_type_checked"
+  | "local_validation_passed"
   | "photos_waiting"
   | "photos_completed"
   | "profile_checked"
+  | "listing_insert_started"
+  | "listing_insert_failed"
+  | "listing_insert_success"
   | "listing_record_created"
+  | "photo_validation_started"
   | "photo_upload_started"
+  | "photo_upload_failed"
+  | "photo_upload_success"
   | "photo_upload_completed"
+  | "listing_photo_attach_started"
+  | "listing_photo_attach_failed"
   | "listing_submit_completed"
   | "listing_submit_failed"
   | "listing_submit_timeout";
@@ -16,9 +28,11 @@ type LogPayload = {
   stage: ListingSubmitStage;
   userId?: string;
   listingId?: string;
+  profileType?: string;
   photoCount?: number;
   durationMs?: number;
   errorCode?: string;
+  message?: string;
 };
 
 export function logListingSubmit(payload: LogPayload): void {

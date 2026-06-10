@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     .limit(1)
     .maybeSingle();
 
-  if (lastListing?.created_at) {
+  if (lastListing?.created_at && (hourlyCount ?? 0) > 0) {
     const elapsed = Date.now() - new Date(lastListing.created_at).getTime();
     if (elapsed < USER_COOLDOWN_MS) {
       return NextResponse.json(
@@ -131,12 +131,14 @@ export async function POST(request: Request) {
     }
   }
 
-  await admin.from("listing_submit_log").insert({
-    user_id: user.id,
-    ip,
-  }).then(({ error: logError }) => {
-    if (logError) console.error("[submit-guard] log insert failed:", logError.message);
-  });
+  void admin
+    .from("listing_submit_log")
+    .insert({ user_id: user.id, ip })
+    .then(({ error: logError }) => {
+      if (logError) {
+        console.error("[submit-guard] log insert failed:", logError.message);
+      }
+    });
 
   console.info("[submit-guard] ok", {
     userId: user.id,

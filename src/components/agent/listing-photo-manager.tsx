@@ -42,7 +42,7 @@ import { SUBMIT_TIMEOUT_MESSAGE } from "@/lib/fetch-timeout";
 import { cn } from "@/lib/utils";
 
 const MAX_CONCURRENT = 3;
-const UPLOAD_TIMEOUT_MS = 20_000;
+const UPLOAD_TIMEOUT_MS = 45_000;
 
 export type ListingPhotoManagerHandle = {
   waitForUploads: (opts: {
@@ -534,11 +534,11 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
                           </option>
                         ))}
                       </select>
-                      {item.small_warning && item.upload_status !== "error" ? (
-                        <p className="text-[10px] text-amber-700">
-                          Low-resolution photo. A clearer one may perform better.
-                        </p>
-                      ) : null}
+                    {item.small_warning && item.upload_status !== "error" ? (
+                      <p className="text-[10px] text-muted">
+                        This photo is small. You can still continue.
+                      </p>
+                    ) : null}
                       {item.upload_status === "error" ? (
                         <div className="space-y-1">
                           <p className="text-[10px] text-danger">

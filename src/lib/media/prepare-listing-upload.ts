@@ -45,7 +45,9 @@ export async function prepareListingUpload(file: File): Promise<PreparedListingP
   }
 
   const longEdge = Math.max(bitmap.width, bitmap.height, 1);
-  const smallWarning = longEdge < MEDIA_LIMITS.minSharpLongEdge;
+  const smallWarning =
+    bitmap.width < MEDIA_LIMITS.minSharpWidth &&
+    bitmap.height < MEDIA_LIMITS.minSharpHeight;
   const maxEdge = MEDIA_LIMITS.clientMaxLongEdge;
   const scale = Math.min(1, maxEdge / longEdge);
   const w = Math.max(1, Math.round(bitmap.width * scale));

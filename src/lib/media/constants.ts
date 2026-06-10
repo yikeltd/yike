@@ -29,8 +29,10 @@ export const MEDIA_LIMITS = {
   maxVideoUploadBytes: 15 * 1024 * 1024,
   maxVideoDurationSec: 30,
   maxVideoOptimizedBytes: 8 * 1024 * 1024,
-  /** Warn agents when source long edge is below this — still allow upload. */
-  minSharpLongEdge: 480,
+  /** Warn only when source is genuinely tiny — normal phone photos should not warn. */
+  minSharpLongEdge: 600,
+  minSharpWidth: 600,
+  minSharpHeight: 400,
   /** Client pre-upload resize cap — server also caps at gallery_large. */
   clientMaxLongEdge: 2000,
   targets: {

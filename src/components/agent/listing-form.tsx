@@ -30,7 +30,6 @@ import { Input, Select, Textarea } from "@/components/ui/input";
 import { NairaInput } from "@/components/ui/naira-input";
 import { SubmitOverlay } from "@/components/ui/submit-overlay";
 import { AdBanner } from "@/components/ads/ad-banner";
-import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type {
   AdPlacement,
@@ -72,7 +71,6 @@ import {
   FetchTimeoutError,
   fetchWithTimeout,
   SUBMIT_TIMEOUT_MESSAGE,
-  withTimeout,
 } from "@/lib/fetch-timeout";
 import {
   analyzeListingSpam,
@@ -88,10 +86,10 @@ import {
 } from "@/lib/listing-submit-log";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const TOTAL_SUBMIT_TIMEOUT_MS = 45_000;
-const DB_INSERT_TIMEOUT_MS = 10_000;
-const SUBMIT_GUARD_TIMEOUT_MS = 5_000;
-const PRICING_ANALYZE_TIMEOUT_MS = 3_000;
+const TOTAL_SUBMIT_TIMEOUT_MS = 5 * 60_000;
+const DB_INSERT_TIMEOUT_MS = 15_000;
+const SUBMIT_GUARD_TIMEOUT_MS = 20_000;
+const PRICING_ANALYZE_TIMEOUT_MS = 8_000;
 
 const STEPS = [
   { n: 1, title: "Listing type" },
@@ -436,35 +434,40 @@ export function ListingForm({
   ) {
     const startedAt = Date.now();
     setLoading(true);
-    setSubmitMessage("Saving listing…");
+    setSubmitMessage("Saving your listing…");
+
+    const pricingFields = priceMeta
+      ? {
+          price_confidence_score: priceMeta.analysis.confidence_score,
+          price_anomaly_level: priceMeta.analysis.anomaly_level,
+          price_anomaly_reason: priceMeta.analysis.reason,
+          market_price_snapshot: priceMeta.analysis.market_snapshot,
+          price_review_status: priceMeta.confirmed
+            ? "confirmed_by_agent"
+            : priceMeta.analysis.price_review_status,
+        }
+      : {};
 
     try {
-      const supabase = createClient();
-      const pricingFields = priceMeta
-        ? {
-            price_confidence_score: priceMeta.analysis.confidence_score,
-            price_anomaly_level: priceMeta.analysis.anomaly_level,
-            price_anomaly_reason: priceMeta.analysis.reason,
-            market_price_snapshot: priceMeta.analysis.market_snapshot,
-            price_review_status: priceMeta.confirmed
-              ? "confirmed_by_agent"
-              : priceMeta.analysis.price_review_status,
-          }
-        : {};
+      logListingSubmit({ stage: "listing_insert_started", userId: agentId });
 
       if (initial) {
-        const { error: updateError } = await withTimeout(
-          Promise.resolve(
-            supabase
-              .from("properties")
-              .update({ ...payload, ...pricingFields })
-              .eq("id", initial.id)
-          ),
-          DB_INSERT_TIMEOUT_MS,
-          "db_update"
-        );
-        if (updateError) {
-          throw new Error(updateError.message);
+        const res = await fetchWithTimeout("/api/agent/listings/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            listingId: initial.id,
+            payload,
+            pricingFields,
+          }),
+          timeoutMs: DB_INSERT_TIMEOUT_MS,
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          listingId?: string;
+        };
+        if (!res.ok) {
+          throw new Error(data.error || "Could not save listing. Please try again.");
         }
         void syncValueDrivers(initial.id, valueDriverKeys);
         if (priceMeta?.confirmed) {
@@ -497,58 +500,44 @@ export function ListingForm({
       }
 
       const pendingId = getPendingListingId(agentId);
-      let listingId = pendingId;
+      const res = await fetchWithTimeout("/api/agent/listings/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: pendingId ?? undefined,
+          idempotencyKey: getListingSubmitIdempotencyKey(agentId),
+          payload,
+          pricingFields,
+        }),
+        timeoutMs: DB_INSERT_TIMEOUT_MS,
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        listingId?: string;
+      };
 
-      if (pendingId) {
-        setSubmitMessage("Almost done…");
-        const { error: updateError } = await withTimeout(
-          Promise.resolve(
-            supabase
-              .from("properties")
-              .update({ ...payload, ...pricingFields })
-              .eq("id", pendingId)
-              .eq("agent_id", agentId)
-          ),
-          DB_INSERT_TIMEOUT_MS,
-          "db_update"
-        );
-        if (updateError) {
-          throw new Error(updateError.message);
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Your session expired. Please log in again.");
         }
-      } else {
-        const { data: created, error: insertError } = await withTimeout(
-          Promise.resolve(
-            supabase
-              .from("properties")
-              .insert({ ...payload, ...pricingFields })
-              .select("id")
-              .single()
-          ),
-          DB_INSERT_TIMEOUT_MS,
-          "db_insert"
-        );
-        if (insertError) {
-          if (
-            insertError.message.toLowerCase().includes("jwt") ||
-            insertError.message.toLowerCase().includes("session")
-          ) {
-            throw new Error("Your session expired. Please log in again.");
-          }
-          throw new Error(insertError.message);
-        }
-        listingId = created?.id ?? null;
-        if (listingId) {
-          setPendingListingId(agentId, listingId);
-        }
+        logListingSubmit({
+          stage: "listing_insert_failed",
+          userId: agentId,
+          errorCode: String(res.status),
+          message: data.error,
+          durationMs: Date.now() - startedAt,
+        });
+        throw new Error(data.error || "Could not save listing. Please try again.");
       }
 
+      const listingId = data.listingId;
       if (!listingId) {
-        throw new Error("Could not submit listing. Please try again.");
+        throw new Error("Could not save listing. Please try again.");
       }
 
       setSubmitMessage("Almost done…");
       logListingSubmit({
-        stage: "listing_record_created",
+        stage: "listing_insert_success",
         userId: agentId,
         listingId,
         photoCount: Array.isArray(payload.media_urls)
@@ -585,17 +574,18 @@ export function ListingForm({
       });
       setSuccess(true);
     } catch (e) {
-      const isTimeout = e instanceof FetchTimeoutError;
-      const message =
-        isTimeout
-          ? SUBMIT_TIMEOUT_MESSAGE
-          : e instanceof Error
-            ? e.message
-            : "Could not submit listing. Please try again.";
+      const isTimeout =
+        e instanceof FetchTimeoutError ||
+        (e instanceof DOMException && e.name === "AbortError");
+      const message = isTimeout
+        ? SUBMIT_TIMEOUT_MESSAGE
+        : e instanceof Error
+          ? e.message
+          : "Could not save listing. Please try again.";
       setError(
         message.includes("session expired")
           ? message
-          : friendlyPublicError(message, "Could not submit listing. Please try again.")
+          : friendlyPublicError(message, "Could not save listing. Please try again.")
       );
       logListingSubmit({
         stage: isTimeout ? "listing_submit_timeout" : "listing_submit_failed",
@@ -605,6 +595,7 @@ export function ListingForm({
           : undefined,
         durationMs: Date.now() - startedAt,
         errorCode: isTimeout ? "timeout" : "persist_failed",
+        message: e instanceof Error ? e.message : undefined,
       });
     } finally {
       setLoading(false);
@@ -654,9 +645,25 @@ export function ListingForm({
       logListingSubmit({ stage: "photo_upload_completed", userId: agentId, photoCount: mediaItems.length });
 
       if (uploadWait && !uploadWait.ok) {
-        setError(uploadWait.error ?? "Photo upload failed. Please remove the failed photo or retry.");
+        const uploadErr = uploadWait.error ?? "";
+        setError(
+          uploadErr.includes("taking too long")
+            ? uploadErr
+            : "Some photos could not upload. Please retry or remove the failed photos."
+        );
+        logListingSubmit({
+          stage: "photo_upload_failed",
+          userId: agentId,
+          photoCount: mediaItems.length,
+          message: uploadErr,
+        });
         return;
       }
+      logListingSubmit({
+        stage: "photo_upload_success",
+        userId: agentId,
+        photoCount: mediaItems.length,
+      });
 
       for (let s = 1; s <= 4; s++) {
         const err = validateStep(s);
@@ -692,23 +699,33 @@ export function ListingForm({
             setError("Your session expired. Please log in again.");
             return;
           }
-          setError(guardData.error || "Could not submit listing. Please try again.");
+          if (guardRes.status === 429) {
+            setError(guardData.error || "Too many submissions. Please wait and try again.");
+            return;
+          }
+          logListingSubmit({
+            stage: "listing_submit_failed",
+            userId: agentId,
+            errorCode: `guard_${guardRes.status}`,
+            message: guardData.error,
+          });
+          setError(guardData.error || "Could not save listing. Please try again.");
           return;
         }
         guardModerationFlags = guardData.moderationFlags ?? [];
         logListingSubmit({ stage: "profile_checked", userId: agentId });
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") {
-          setError(SUBMIT_TIMEOUT_MESSAGE);
           logListingSubmit({
-            stage: "listing_submit_timeout",
+            stage: "profile_checked",
             userId: agentId,
-            errorCode: "submit_guard_timeout",
+            errorCode: "submit_guard_skipped_timeout",
             durationMs: Date.now() - startedAt,
           });
-          return;
         }
       }
+
+      logListingSubmit({ stage: "local_validation_passed", userId: agentId });
 
       const mergedModerationFlags = [
         ...new Set([...spamModerationFlags, ...guardModerationFlags]),
@@ -876,7 +893,7 @@ export function ListingForm({
             href="/agent/listings/new"
             className="flex h-12 w-full items-center justify-center rounded-xl text-sm font-semibold text-navy hover:bg-surface"
           >
-            Add another listing
+            Post another property
           </Link>
         </div>
       </div>
