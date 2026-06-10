@@ -156,7 +156,7 @@ export function ListingInlineFees({
           onModeChange={onModeChange}
         />
         <FlexibleFeeInput
-          label="Caution (optional)"
+          label="Refundable caution (optional)"
           fieldKey="caution_fee"
           value={values.caution_fee ?? ""}
           mode={modes.caution_fee}

@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Property } from "@/types/database";
+import type { FeeTransparencyMode } from "@/types/database";
 import {
-  calculateMoveInBreakdown,
-  getListingExtras,
-  type RentLineItem,
+  buildMoveInItems,
+  extrasToMoveInEditableState,
+  type EditableFeeField,
+  type MoveInEditableState,
 } from "@/lib/rent-breakdown";
 import { Button } from "@/components/ui/button";
 import { X, Copy, Share2 } from "lucide-react";
@@ -18,48 +20,6 @@ function formatAmount(amount: number) {
   }).format(amount);
 }
 
-type EditableState = {
-  rent: number;
-  agencyPercent: number;
-  cautionMonths: number;
-  agreementFee: number;
-  legalFee: number;
-  serviceCharge: number;
-  otherFees: number;
-};
-
-function buildItems(state: EditableState, isLease: boolean): RentLineItem[] {
-  const agencyFee = Math.round(state.rent * (state.agencyPercent / 100));
-  const caution = Math.round(state.rent * (state.cautionMonths / 12));
-  const rentLabel = isLease ? "Annual lease" : "Annual rent";
-  const items: RentLineItem[] = [
-    { label: rentLabel, amount: state.rent },
-    {
-      label: `Agency fee (${state.agencyPercent}%)`,
-      amount: agencyFee,
-      note: "One-time",
-    },
-    {
-      label: `Caution deposit (${state.cautionMonths} mo)`,
-      amount: caution,
-      note: "Refundable",
-    },
-  ];
-  if (state.agreementFee > 0) {
-    items.push({ label: "Agreement fee", amount: state.agreementFee, note: "One-time" });
-  }
-  if (state.serviceCharge > 0) {
-    items.push({ label: "Service charge", amount: state.serviceCharge, note: "Annual" });
-  }
-  if (state.legalFee > 0) {
-    items.push({ label: "Legal fee", amount: state.legalFee });
-  }
-  if (state.otherFees > 0) {
-    items.push({ label: "Other fees", amount: state.otherFees });
-  }
-  return items;
-}
-
 export function MoveInEstimateModal({
   property,
   open,
@@ -69,34 +29,30 @@ export function MoveInEstimateModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const base = calculateMoveInBreakdown(property);
-  const extras = getListingExtras(property);
+  const initial = useMemo(
+    () => extrasToMoveInEditableState(property),
+    [property]
+  );
+  const [state, setState] = useState<MoveInEditableState>(initial);
   const isLease = property.listing_type === "lease";
 
-  const initial = useMemo<EditableState>(() => {
-    const rent = Number(property.price);
-    return {
-      rent,
-      agencyPercent: extras.agency_fee_percent ?? 10,
-      cautionMonths: extras.caution_months ?? 12,
-      agreementFee: extras.agreement_fee ?? 50_000,
-      legalFee: extras.legal_fee ?? 0,
-      serviceCharge: extras.service_charge ?? 0,
-      otherFees: 0,
-    };
-  }, [property, extras]);
+  useEffect(() => {
+    if (open) setState(extrasToMoveInEditableState(property));
+  }, [open, property]);
 
-  const [state, setState] = useState(initial);
+  if (!open) return null;
 
-  if (!open || !base) return null;
-
-  const items = buildItems(state, isLease);
-  const total = items.reduce((sum, i) => sum + i.amount, 0);
+  const items = buildMoveInItems(state, isLease, property.payment_period);
+  const total = items.reduce((sum, i) => sum + (i.flexible ? 0 : i.amount), 0);
   const shareText = [
     `Yike move-in estimate — ${property.title}`,
-    ...items.map((i) => `${i.label}: ${formatAmount(i.amount)}`),
+    ...items.map((i) =>
+      i.flexible && i.note
+        ? `${i.label}: ${i.note}`
+        : `${i.label}: ${formatAmount(i.amount)}`
+    ),
     `Total: ${formatAmount(total)}`,
-    "Figures are estimates. Confirm all fees directly before payment.",
+    "Confirm all fees with your agent before payment.",
   ].join("\n");
 
   function copyEstimate() {
@@ -115,120 +71,157 @@ export function MoveInEstimateModal({
     copyEstimate();
   }
 
+  function updateFee(
+    key: keyof Omit<MoveInEditableState, "rent">,
+    raw: string
+  ) {
+    const mode: FeeTransparencyMode = raw.includes("%") ? "percent" : "exact";
+    setState((s) => ({
+      ...s,
+      [key]: { raw, mode } satisfies EditableFeeField,
+    }));
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <button type="button" className="absolute inset-0 bg-black/50" aria-label="Close" onClick={onClose} />
+    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-4">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50"
+        aria-label="Close"
+        onClick={onClose}
+      />
       <div
         role="dialog"
         aria-modal="true"
-        className="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-float-lg sm:rounded-2xl"
+        className="relative flex max-h-[min(92dvh,calc(100dvh-var(--bottom-nav-stack)))] w-full max-w-md flex-col rounded-t-2xl bg-white shadow-float-lg sm:max-h-[90dvh] sm:rounded-2xl"
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 rounded-lg p-1 text-muted hover:text-foreground"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
-        <h2 className="pr-8 text-lg font-bold text-navy">Move-in estimate</h2>
-        <p className="mt-1 text-xs text-muted">Edit amounts to match what your agent quoted.</p>
-
-        <div className="mt-4 space-y-3">
-          <Field label="Annual rent" value={state.rent} onChange={(v) => setState((s) => ({ ...s, rent: v }))} />
-          <Field
-            label="Agency %"
-            value={state.agencyPercent}
-            onChange={(v) => setState((s) => ({ ...s, agencyPercent: v }))}
-            suffix="%"
-          />
-          <Field
-            label="Caution (months)"
-            value={state.cautionMonths}
-            onChange={(v) => setState((s) => ({ ...s, cautionMonths: v }))}
-          />
-          <Field
-            label="Agreement fee"
-            value={state.agreementFee}
-            onChange={(v) => setState((s) => ({ ...s, agreementFee: v }))}
-          />
-          <Field
-            label="Legal fee"
-            value={state.legalFee}
-            onChange={(v) => setState((s) => ({ ...s, legalFee: v }))}
-          />
-          <Field
-            label="Service charge"
-            value={state.serviceCharge}
-            onChange={(v) => setState((s) => ({ ...s, serviceCharge: v }))}
-          />
-          <Field
-            label="Other fees"
-            value={state.otherFees}
-            onChange={(v) => setState((s) => ({ ...s, otherFees: v }))}
-          />
+        <div className="shrink-0 border-b border-surface px-5 pb-3 pt-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-3 top-3 rounded-lg p-1 text-muted hover:text-foreground"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <h2 className="pr-8 text-lg font-bold text-navy">Move-in estimate</h2>
+          <p className="mt-1 text-xs text-muted">
+            Based on what the agent listed. Edit if your quote differs.
+          </p>
         </div>
 
-        <ul className="mt-4 space-y-2 border-t border-surface pt-4 text-sm">
-          {items.map((item) => (
-            <li key={item.label} className="flex justify-between gap-3">
-              <span className="text-muted">{item.label}</span>
-              <span className="font-semibold tabular-nums">{formatAmount(item.amount)}</span>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <div className="space-y-3">
+            <FeeField
+              label={isLease ? "Annual lease" : "Annual rent"}
+              value={String(state.rent)}
+              onChange={(v) =>
+                setState((s) => ({
+                  ...s,
+                  rent: Number(v.replace(/[^\d.]/g, "")) || 0,
+                }))
+              }
+              suffix="₦"
+            />
+            <FeeField
+              label="Agency fee"
+              value={state.agency.raw}
+              onChange={(v) => updateFee("agency", v)}
+            />
+            <FeeField
+              label="Refundable caution"
+              value={state.caution.raw}
+              onChange={(v) => updateFee("caution", v)}
+              hint="Enter ₦ amount or % — not months of rent"
+            />
+            <FeeField
+              label="Agreement fee"
+              value={state.agreement.raw}
+              onChange={(v) => updateFee("agreement", v)}
+            />
+            <FeeField
+              label="Legal fee"
+              value={state.legal.raw}
+              onChange={(v) => updateFee("legal", v)}
+            />
+            <FeeField
+              label="Service charge"
+              value={state.serviceCharge.raw}
+              onChange={(v) => updateFee("serviceCharge", v)}
+            />
+          </div>
+
+          <ul className="mt-4 space-y-2 border-t border-surface pt-4 text-sm">
+            {items.map((item) => (
+              <li key={item.label} className="flex justify-between gap-3">
+                <span className="text-muted">{item.label}</span>
+                <span className="font-semibold tabular-nums text-navy">
+                  {item.flexible && item.note ? item.note : formatAmount(item.amount)}
+                </span>
+              </li>
+            ))}
+            <li className="flex justify-between gap-3 border-t border-surface pt-2 font-bold text-navy">
+              <span>Total</span>
+              <span className="tabular-nums">{formatAmount(total)}</span>
             </li>
-          ))}
-          <li className="flex justify-between gap-3 border-t border-surface pt-2 font-bold text-navy">
-            <span>Total</span>
-            <span className="tabular-nums">{formatAmount(total)}</span>
-          </li>
-        </ul>
+          </ul>
 
-        <p className="mt-3 text-xs leading-relaxed text-muted">
-          Figures are estimates. Confirm all fees directly before payment.
-        </p>
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Refundable caution is returned if there is no damage. Confirm every fee with your
+            agent before payment.
+          </p>
+        </div>
 
-        <div className="mt-4 flex gap-2">
-          <Button type="button" variant="outline" className="flex-1" onClick={copyEstimate}>
-            <Copy className="mr-1.5 h-4 w-4" />
-            Copy
-          </Button>
-          <Button type="button" className="flex-1" onClick={shareEstimate}>
-            <Share2 className="mr-1.5 h-4 w-4" />
-            Share
-          </Button>
+        <div className="shrink-0 border-t border-surface bg-white px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={copyEstimate}>
+              <Copy className="mr-1.5 h-4 w-4" />
+              Copy
+            </Button>
+            <Button type="button" className="flex-1" onClick={shareEstimate}>
+              <Share2 className="mr-1.5 h-4 w-4" />
+              Share
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function Field({
+function FeeField({
   label,
   value,
   onChange,
   suffix,
+  hint,
 }: {
   label: string;
-  value: number;
-  onChange: (v: number) => void;
+  value: string;
+  onChange: (v: string) => void;
   suffix?: string;
+  hint?: string;
 }) {
+  const displaySuffix =
+    suffix ?? (value.includes("%") ? "%" : value.trim() ? "₦" : "₦ or %");
+
   return (
     <label className="block text-xs font-semibold text-muted">
       {label}
       <div className="relative mt-1">
         <input
-          type="number"
-          inputMode="numeric"
+          type="text"
+          inputMode="decimal"
           value={value}
-          onChange={(e) => onChange(Number(e.target.value) || 0)}
-          className="h-10 w-full rounded-xl border border-surface bg-surface/50 px-3 text-sm font-semibold text-foreground"
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="e.g. 10% or 300000"
+          className="h-10 w-full rounded-xl border border-surface bg-surface/50 px-3 pr-14 text-sm font-semibold text-foreground"
         />
-        {suffix && (
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
-            {suffix}
-          </span>
-        )}
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase text-muted">
+          {displaySuffix}
+        </span>
       </div>
+      {hint ? <span className="mt-1 block text-[10px] text-muted">{hint}</span> : null}
     </label>
   );
 }
