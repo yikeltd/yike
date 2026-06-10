@@ -7,7 +7,7 @@ import { Input, Select } from "@/components/ui/input";
 import { FieldLabel } from "@/components/ui/field-label";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { normalizeNigerianPhone } from "@/lib/phone";
-import { isCompanyAccount } from "@/lib/profile/basic-listing-profile";
+import { isBusinessAccount, isDeveloperAccount } from "@/lib/profile/basic-listing-profile";
 import type { Profile } from "@/types/database";
 import { friendlyPublicError, PUBLIC_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 import { Upload } from "lucide-react";
@@ -15,7 +15,8 @@ import { Upload } from "lucide-react";
 export function BasicProfileForm({ profile }: { profile: Profile }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const isCompany = isCompanyAccount(profile.account_type);
+  const isBusiness = isBusinessAccount(profile.account_type);
+  const isDeveloper = isDeveloperAccount(profile.account_type);
   const isLandlord = profile.account_type === "landlord";
   const isAgentType = profile.account_type === "agent";
 
@@ -59,7 +60,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
     setLoading(true);
     setError("");
 
-    const payload = isCompany
+    const payload = isBusiness
       ? {
           companyName,
           cacNumber,
@@ -98,22 +99,29 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
     router.refresh();
   }
 
-  const profileTypeLabel = isCompany
-    ? "Company"
-    : isLandlord
-      ? "Landlord"
-      : isAgentType
-        ? "Agent"
-        : "Individual";
+  const profileTypeLabel = isDeveloper
+    ? "Developer"
+    : isBusiness
+      ? "Company"
+      : isLandlord
+        ? "Landlord"
+        : isAgentType
+          ? "Agent"
+          : "Individual";
+
+  const businessNameLabel = isDeveloper ? "Company/Developer Name" : "Company Name";
+  const cacUploadLabel = isDeveloper
+    ? "Upload Company Registration Certificate"
+    : "Upload CAC Certificate";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-sm font-semibold text-navy">{profileTypeLabel}</p>
 
-      {isCompany ? (
+      {isBusiness ? (
         <>
           <div>
-            <FieldLabel>Company Name</FieldLabel>
+            <FieldLabel>{businessNameLabel}</FieldLabel>
             <Input
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
@@ -237,9 +245,9 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
         </Select>
       </div>
 
-      {isCompany ? (
+      {isBusiness ? (
         <div>
-          <FieldLabel>Upload CAC Certificate</FieldLabel>
+          <FieldLabel>{cacUploadLabel}</FieldLabel>
           <input
             ref={fileRef}
             type="file"
@@ -260,8 +268,8 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
             {uploadingCac
               ? "Uploading…"
               : cacFileName || cacDocumentPath
-                ? cacFileName || "CAC uploaded"
-                : "Upload CAC Certificate"}
+                ? cacFileName || "Certificate uploaded"
+                : cacUploadLabel}
           </button>
           <p className="mt-1 text-xs text-muted">PDF, JPG, PNG, or WebP — max 15MB</p>
         </div>
@@ -276,7 +284,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
       <Button
         type="submit"
         fullWidth
-        disabled={loading || uploadingCac || (isCompany && !cacDocumentPath)}
+        disabled={loading || uploadingCac || (isBusiness && !cacDocumentPath)}
       >
         {loading ? "Saving…" : "Save profile"}
       </Button>

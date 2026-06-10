@@ -17,10 +17,23 @@ export type BasicListingProfileSlice = Pick<
   | "cac_document_path"
 >;
 
-export function isCompanyAccount(
+export function isBusinessAccount(
   accountType: AccountType | null | undefined
 ): boolean {
   return accountType === "agency" || accountType === "developer";
+}
+
+/** @deprecated use isBusinessAccount for CAC-required flows */
+export function isCompanyAccount(
+  accountType: AccountType | null | undefined
+): boolean {
+  return isBusinessAccount(accountType);
+}
+
+export function isDeveloperAccount(
+  accountType: AccountType | null | undefined
+): boolean {
+  return accountType === "developer";
 }
 
 export function profileStreetAddress(
@@ -38,7 +51,7 @@ export function hasBasicListingProfile(
 ): boolean {
   if (!profile) return false;
 
-  if (isCompanyAccount(profile.account_type)) {
+  if (isBusinessAccount(profile.account_type)) {
     if (!profile.company_name?.trim()) return false;
     if (!profile.cac_number?.trim()) return false;
     if (!profile.cac_document_path?.trim()) return false;

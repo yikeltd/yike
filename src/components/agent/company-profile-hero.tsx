@@ -88,7 +88,7 @@ export function CompanyProfileHero({
           </div>
           <div className="min-w-0 pb-1">
             <p className="text-xs font-bold uppercase tracking-wider text-muted">
-              {isDeveloper ? "Developer" : "Agency"}
+              {isDeveloper ? "Developer" : "Company"}
             </p>
             <h1 className="text-xl font-bold text-navy drop-shadow-sm sm:text-2xl">{displayName}</h1>
           </div>

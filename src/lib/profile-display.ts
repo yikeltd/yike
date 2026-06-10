@@ -29,11 +29,10 @@ export function getProfilePersona(profile: Profile): ProfilePersona {
   if (profile.account_type === "city_ambassador") return "city_ambassador";
   if (profile.account_type === "field_verifier") return "field_verifier";
   if (profile.account_type === "legal_partner") return "legal_partner";
-  if (
-    profile.account_type === "agency" ||
-    profile.account_type === "developer" ||
-    Boolean(profile.company_name)
-  ) {
+  if (profile.account_type === "agency") {
+    return "company";
+  }
+  if (profile.account_type === "developer") {
     return "company";
   }
   if (isAgentRole(profile.role)) return "agent";
@@ -45,17 +44,12 @@ export function showAgentBadge(profile: Profile, verified: boolean): boolean {
   return canShowPublicVerifiedBadge(profile) || verified;
 }
 
-export type SellerType = "individual" | "agent" | "landlord" | "company";
+export type SellerType = "individual" | "agent" | "landlord" | "company" | "developer";
 
 export function getSellerType(profile: Profile): SellerType | null {
   if (!isAgentRole(profile.role)) return null;
-  if (
-    profile.account_type === "agency" ||
-    profile.account_type === "developer" ||
-    Boolean(profile.company_name)
-  ) {
-    return "company";
-  }
+  if (profile.account_type === "developer") return "developer";
+  if (profile.account_type === "agency") return "company";
   if (profile.account_type === "landlord") return "landlord";
   if (profile.account_type === "agent") return "agent";
   if (profile.account_type === "individual") return "individual";
@@ -63,6 +57,7 @@ export function getSellerType(profile: Profile): SellerType | null {
 }
 
 export function sellerTypeLabel(type: SellerType): string {
+  if (type === "developer") return "Developer";
   if (type === "company") return "Company";
   if (type === "landlord") return "Landlord";
   if (type === "agent") return "Agent";
@@ -74,6 +69,7 @@ export function listedByLabel(type: SellerType): string {
 }
 
 export function profileTypeHeading(type: SellerType): string {
+  if (type === "developer") return "Developer profile";
   if (type === "company") return "Company profile";
   if (type === "landlord") return "Landlord profile";
   if (type === "agent") return "Agent profile";

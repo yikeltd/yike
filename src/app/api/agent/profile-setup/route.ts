@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeNigerianPhone, canRequestPhoneOtp } from "@/lib/phone";
 import { NIGERIAN_STATES } from "@/lib/constants";
-import { isCompanyAccount } from "@/lib/profile/basic-listing-profile";
+import { isBusinessAccount, isDeveloperAccount } from "@/lib/profile/basic-listing-profile";
 
 export const runtime = "nodejs";
 
@@ -56,7 +56,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please verify your email to continue." }, { status: 400 });
   }
 
-  const isCompany = isCompanyAccount(existingProfile.account_type);
+  const isBusiness = isBusinessAccount(existingProfile.account_type);
+  const isDeveloper = isDeveloperAccount(existingProfile.account_type);
   const residentialAddress = String(body.residentialAddress ?? "").trim();
   const residentialArea = String(body.residentialArea ?? "").trim();
   const residentialCity = String(body.residentialCity ?? "").trim();
@@ -81,14 +82,18 @@ export async function POST(request: Request) {
 
   let fullUpdate: Record<string, unknown>;
 
-  if (isCompany) {
+  if (isBusiness) {
     const companyName = String(body.companyName ?? "").trim();
     const cacNumber = String(body.cacNumber ?? "").trim();
     const cacDocumentPath = String(body.cacDocumentPath ?? "").trim();
 
     if (!companyName || !cacNumber || !cacDocumentPath) {
       return NextResponse.json(
-        { error: "Complete company name, RC/BN number, and CAC upload." },
+        {
+          error: isDeveloper
+            ? "Complete developer name, RC/BN number, and registration certificate."
+            : "Complete company name, RC/BN number, and CAC upload.",
+        },
         { status: 400 }
       );
     }
@@ -138,7 +143,7 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error("[agent/profile-setup] update failed:", error.message);
-    const fallbackUpdate = isCompany
+    const fallbackUpdate = isBusiness
       ? {
           company_name: fullUpdate.company_name,
           full_name: fullUpdate.full_name,

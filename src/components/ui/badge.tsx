@@ -150,22 +150,25 @@ export function AgencyBadge({ className }: { className?: string }) {
   );
 }
 
+import type { SellerType } from "@/lib/profile-display";
+
 export function SellerTypeBadge({
   type,
   prefix,
   className,
   size = "md",
 }: {
-  type: "individual" | "agent" | "landlord" | "company";
+  type: SellerType;
   prefix?: "listed_by" | "none";
   className?: string;
   size?: "sm" | "md";
 }) {
-  const labels: Record<typeof type, { listed_by: string; plain: string }> = {
+  const labels: Record<SellerType, { listed_by: string; plain: string }> = {
     individual: { listed_by: "Listed by Individual", plain: "Individual" },
     agent: { listed_by: "Listed by Agent", plain: "Agent" },
     landlord: { listed_by: "Listed by Landlord", plain: "Landlord" },
     company: { listed_by: "Listed by Company", plain: "Company" },
+    developer: { listed_by: "Listed by Developer", plain: "Developer" },
   };
   const label = prefix === "listed_by" ? labels[type].listed_by : labels[type].plain;
 
