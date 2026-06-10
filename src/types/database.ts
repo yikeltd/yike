@@ -145,6 +145,7 @@ export type InquiryStatus =
 
 export type AccountType =
   | "individual"
+  | "agent"
   | "agency"
   | "developer"
   | "landlord"

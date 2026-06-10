@@ -15,6 +15,7 @@ export const runtime = "nodejs";
 
 const ALLOWED_ACCOUNT_TYPES = new Set<AccountType>([
   "individual",
+  "agent",
   "agency",
   "landlord",
   "developer",

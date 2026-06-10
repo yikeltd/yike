@@ -88,11 +88,11 @@ function analyzeListingSignals(input: {
   }
 
   const desc = (input.description ?? "").trim();
-  if (desc.length > 0 && desc.length < 40) {
+  if (desc.length > 0 && desc.length < 15) {
     flags.push("thin_description");
   }
 
-  if (input.media_urls.length < 3) {
+  if (input.media_urls.length < 2) {
     flags.push("few_images");
   }
 

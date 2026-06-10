@@ -139,4 +139,5 @@ export const OPEN_REPORT_STATUSES = ["open", "pending"] as const;
 export const SAFETY_WARNING =
   "Never pay inspection fees before seeing a property. Meet at the property, verify documents, and pay only after you are satisfied.";
 
-export const MIN_LISTING_IMAGES = 3;
+export const MIN_LISTING_IMAGES = 2;
+export const MAX_LISTING_IMAGES = 20;

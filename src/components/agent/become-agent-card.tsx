@@ -16,7 +16,8 @@ import { PUBLIC_ERROR_FALLBACK, friendlyPublicError } from "@/lib/copy/public-er
 import { cn } from "@/lib/utils";
 
 const ACCOUNT_TYPES: { id: AccountType; label: string; hint: string }[] = [
-  { id: "individual", label: "Agent", hint: "Solo agent or broker" },
+  { id: "individual", label: "Individual", hint: "Home owner or personal listing" },
+  { id: "agent", label: "Agent", hint: "Solo agent or broker" },
   { id: "landlord", label: "Landlord", hint: "Property owner listing directly" },
   { id: "agency", label: "Company", hint: "Registered property business" },
 ];

@@ -100,7 +100,7 @@ export default async function PostPropertyPage() {
               "Verify your email",
               "Tap List Property → add your address and date of birth → post",
               "Optional verified badge later for more trust and visibility",
-              "WhatsApp contact required · minimum 3 clear photos · real prices only",
+              "WhatsApp contact recommended · minimum 2 clear photos · real prices only",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gold" />

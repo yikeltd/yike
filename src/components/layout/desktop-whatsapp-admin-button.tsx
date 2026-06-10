@@ -5,7 +5,7 @@ import { useDesktopWeb } from "@/hooks/use-desktop-web";
 import { YIKE_SUPPORT_PHONE_DISPLAY, YIKE_SUPPORT_WHATSAPP } from "@/lib/constants";
 
 const ADMIN_WHATSAPP_URL = `https://wa.me/${YIKE_SUPPORT_WHATSAPP}?text=${encodeURIComponent(
-  "Hello Yike admin, I need help."
+  "Hello Yike, I need help with..."
 )}`;
 
 export function DesktopWhatsappAdminButton() {

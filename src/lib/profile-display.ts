@@ -45,7 +45,7 @@ export function showAgentBadge(profile: Profile, verified: boolean): boolean {
   return canShowPublicVerifiedBadge(profile) || verified;
 }
 
-export type SellerType = "agent" | "landlord" | "company";
+export type SellerType = "individual" | "agent" | "landlord" | "company";
 
 export function getSellerType(profile: Profile): SellerType | null {
   if (!isAgentRole(profile.role)) return null;
@@ -57,13 +57,16 @@ export function getSellerType(profile: Profile): SellerType | null {
     return "company";
   }
   if (profile.account_type === "landlord") return "landlord";
-  return "agent";
+  if (profile.account_type === "agent") return "agent";
+  if (profile.account_type === "individual") return "individual";
+  return "individual";
 }
 
 export function sellerTypeLabel(type: SellerType): string {
   if (type === "company") return "Company";
   if (type === "landlord") return "Landlord";
-  return "Agent";
+  if (type === "agent") return "Agent";
+  return "Individual";
 }
 
 export function listedByLabel(type: SellerType): string {
@@ -73,7 +76,8 @@ export function listedByLabel(type: SellerType): string {
 export function profileTypeHeading(type: SellerType): string {
   if (type === "company") return "Company profile";
   if (type === "landlord") return "Landlord profile";
-  return "Agent profile";
+  if (type === "agent") return "Agent profile";
+  return "Individual profile";
 }
 
 export function profileRoleLabel(profile: Profile, verified: boolean): string | null {
@@ -86,7 +90,7 @@ export function profileRoleLabel(profile: Profile, verified: boolean): string | 
     if (persona === "legal_partner") return "Legal partner";
     return null;
   }
-  if (verified) return sellerTypeLabel(sellerType);
+  void verified;
   return sellerTypeLabel(sellerType);
 }
 

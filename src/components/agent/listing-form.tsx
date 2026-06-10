@@ -14,7 +14,7 @@ import { ListingLocationSearch } from "./listing-location-search";
 import { ListingAmenitiesPicker } from "./listing-amenities-picker";
 import { transparencyToExtras } from "./listing-transparency-fields";
 import { ListingInlineFees } from "./listing-inline-fees";
-import { MIN_LISTING_IMAGES, PAYMENT_PERIODS } from "@/lib/constants";
+import { MIN_LISTING_IMAGES, MAX_LISTING_IMAGES, PAYMENT_PERIODS } from "@/lib/constants";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
 import {
   defaultPaymentPeriodForListingType,
@@ -355,11 +355,14 @@ export function ListingForm({
       if (mediaItems.some((i) => i.upload_status === "uploading")) {
         return "Wait for photos to finish uploading.";
       }
+      if (readyCount > MAX_LISTING_IMAGES) {
+        return "Maximum is 20 photos.";
+      }
       if (readyCount < MIN_LISTING_IMAGES && failedCount > 0) {
-        return `Add at least ${MIN_LISTING_IMAGES} clear photos, or retry/remove failed uploads.`;
+        return "Minimum is 2 photos.";
       }
       if (readyCount < MIN_LISTING_IMAGES) {
-        return `Add at least ${MIN_LISTING_IMAGES} clear photos.`;
+        return "Minimum is 2 photos.";
       }
     }
     return null;
@@ -450,6 +453,11 @@ export function ListingForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ propertyId: created.id }),
       });
+      void fetch("/api/agent/listings/duplicate-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId: created.id }),
+      });
       if (priceMeta?.confirmed) {
         void fetch("/api/pricing/confirm", {
           method: "POST",
@@ -490,7 +498,7 @@ export function ListingForm({
     const guardRes = await fetch("/api/agent/listings/submit-guard", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ honeypot }),
+      body: JSON.stringify({ honeypot, title, description }),
     });
     if (!guardRes.ok) {
       const guardData = await guardRes.json().catch(() => ({}));

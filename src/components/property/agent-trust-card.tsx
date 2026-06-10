@@ -11,7 +11,7 @@ import {
   isResponsiveAgent,
 } from "@/lib/agent-response";
 import { agentPublicPath } from "@/lib/agent-slugs";
-import { getSellerType } from "@/lib/profile-display";
+import { getSellerType, sellerTypeLabel } from "@/lib/profile-display";
 import { MessageCircle } from "lucide-react";
 
 export function AgentTrustCard({
@@ -70,7 +70,7 @@ export function AgentTrustCard({
       )}
     >
       <p className="text-xs font-bold uppercase tracking-wider text-muted">
-        {sellerType ? `Listed by ${sellerType === "company" ? "Company" : sellerType === "landlord" ? "Landlord" : "Agent"}` : "Listed by"}
+        {sellerType ? `Listed by ${sellerTypeLabel(sellerType)}` : "Listed by"}
       </p>
       <Link
         href={agentPublicPath(agent)}

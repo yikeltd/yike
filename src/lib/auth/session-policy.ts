@@ -25,7 +25,8 @@ const TRUST_ACCOUNT_TYPES = new Set<AccountType>([
 ]);
 
 const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  individual: "Account",
+  individual: "Individual",
+  agent: "Agent",
   agency: "Agency",
   developer: "Developer",
   landlord: "Landlord",

@@ -17,6 +17,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const isCompany = isCompanyAccount(profile.account_type);
   const isLandlord = profile.account_type === "landlord";
+  const isAgentType = profile.account_type === "agent";
 
   const [fullName, setFullName] = useState(profile.full_name ?? "");
   const [dateOfBirth, setDateOfBirth] = useState(profile.date_of_birth ?? "");
@@ -101,7 +102,9 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
     ? "Company"
     : isLandlord
       ? "Landlord"
-      : "Agent";
+      : isAgentType
+        ? "Agent"
+        : "Individual";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

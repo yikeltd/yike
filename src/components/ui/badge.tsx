@@ -156,23 +156,18 @@ export function SellerTypeBadge({
   className,
   size = "md",
 }: {
-  type: "agent" | "landlord" | "company";
+  type: "individual" | "agent" | "landlord" | "company";
   prefix?: "listed_by" | "none";
   className?: string;
   size?: "sm" | "md";
 }) {
-  const label =
-    prefix === "listed_by"
-      ? type === "company"
-        ? "Listed by Company"
-        : type === "landlord"
-          ? "Listed by Landlord"
-          : "Listed by Agent"
-      : type === "company"
-        ? "Company"
-        : type === "landlord"
-          ? "Landlord"
-          : "Agent";
+  const labels: Record<typeof type, { listed_by: string; plain: string }> = {
+    individual: { listed_by: "Listed by Individual", plain: "Individual" },
+    agent: { listed_by: "Listed by Agent", plain: "Agent" },
+    landlord: { listed_by: "Listed by Landlord", plain: "Landlord" },
+    company: { listed_by: "Listed by Company", plain: "Company" },
+  };
+  const label = prefix === "listed_by" ? labels[type].listed_by : labels[type].plain;
 
   return (
     <span

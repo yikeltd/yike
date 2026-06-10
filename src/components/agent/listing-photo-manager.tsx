@@ -11,7 +11,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { MIN_LISTING_IMAGES } from "@/lib/constants";
+import { MIN_LISTING_IMAGES, MAX_LISTING_IMAGES } from "@/lib/constants";
 import { ROOM_LABELS } from "@/lib/media/labels";
 import {
   applyDefaultLabels,
@@ -52,6 +52,7 @@ export function ListingPhotoManager({
   onChange,
 }: Props) {
   const [error, setError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const [activeUploads, setActiveUploads] = useState(0);
   const queueRef = useRef<{ id: string; index: number }[]>([]);
   const fileMapRef = useRef<Map<string, File>>(new Map());
@@ -69,10 +70,6 @@ export function ListingPhotoManager({
     itemsRef.current = next;
     onChange(next);
   }
-
-  const ready =
-    items.filter((i) => i.upload_status !== "uploading" && i.upload_status !== "error")
-      .length >= MIN_LISTING_IMAGES;
 
   async function uploadJob(job: { id: string; index: number }) {
     try {
@@ -196,8 +193,11 @@ export function ListingPhotoManager({
     if (!files?.length) return;
     setError("");
 
+    const remaining = MAX_LISTING_IMAGES - itemsRef.current.length;
+    if (remaining <= 0) return;
+
     const startIndex = itemsRef.current.length;
-    const fileList = Array.from(files);
+    const fileList = Array.from(files).slice(0, remaining);
     const preparedResults: Array<
       | { ok: true; prepared: Awaited<ReturnType<typeof prepareListingUpload>>; i: number }
       | { ok: false; i: number; message: string }
@@ -307,14 +307,28 @@ export function ListingPhotoManager({
   }, []);
 
   const uploading = activeUploads > 0;
+  const readyCount = items.filter(
+    (i) => i.upload_status !== "uploading" && i.upload_status !== "error"
+  ).length;
 
   return (
     <div className="space-y-4">
       <div
         className={cn(
-          "rounded-xl border border-dashed border-gold/35 bg-gold/5 p-4 transition-all",
+          "rounded-xl border border-dashed p-4 transition-all",
+          dragOver ? "border-gold bg-gold/10" : "border-gold/35 bg-gold/5",
           uploading && "ring-2 ring-gold/25"
         )}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          void handleFiles(e.dataTransfer.files);
+        }}
       >
         <label className="flex cursor-pointer flex-col items-center gap-1.5 touch-feedback">
           <input
@@ -333,10 +347,20 @@ export function ListingPhotoManager({
             <Upload className="h-8 w-8 text-navy" />
           )}
           <span className="text-sm font-bold text-navy">Add photos</span>
-          <span className="text-xs text-muted">At least {MIN_LISTING_IMAGES} clear photos</span>
+          <span className="text-xs text-muted">Tap to pick or drag photos here</span>
         </label>
         {error ? (
           <p className="mt-2 text-center text-sm font-medium text-danger">{error}</p>
+        ) : null}
+        {readyCount === 1 ? (
+          <p className="mt-2 text-center text-sm font-medium text-danger">
+            Minimum is 2 photos.
+          </p>
+        ) : null}
+        {items.length > MAX_LISTING_IMAGES ? (
+          <p className="mt-2 text-center text-sm font-medium text-danger">
+            Maximum is 20 photos.
+          </p>
         ) : null}
       </div>
 
@@ -345,12 +369,7 @@ export function ListingPhotoManager({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted">Star marks the cover photo</p>
             <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  "text-xs font-semibold",
-                  ready ? "text-gold-dark" : "text-muted"
-                )}
-              >
+              <span className="text-xs font-semibold text-muted">
                 {items.length} photo{items.length === 1 ? "" : "s"}
               </span>
               <button
