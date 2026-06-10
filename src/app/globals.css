@@ -42,10 +42,12 @@ html.yike-boot-splash-enabled #yike-boot-splash {
 }
 
 .yike-boot-splash__content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
   text-align: center;
 }
 
@@ -53,30 +55,71 @@ html.yike-boot-splash-enabled #yike-boot-splash {
   position: relative;
   display: grid;
   place-items: center;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #031b4e;
 }
 
 .yike-boot-splash__mark::before {
   content: "";
   position: absolute;
-  width: 8.5rem;
-  height: 8.5rem;
+  top: 46.5%;
+  left: 50%;
+  z-index: 2;
+  width: clamp(12rem, 48vw, 20rem);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: conic-gradient(
+    from 0deg,
+    rgb(228 181 71 / 0%),
+    rgb(255 255 255 / 64%),
+    rgb(228 181 71 / 36%),
+    rgb(228 181 71 / 0%) 62%,
+    rgb(255 255 255 / 42%),
+    rgb(228 181 71 / 0%)
+  );
+  filter: blur(12px);
+  mix-blend-mode: screen;
+  opacity: 0.58;
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: yike-boot-shine-roll 1.45s linear infinite;
+}
+
+.yike-boot-splash__mark::after {
+  content: "";
+  position: absolute;
+  top: 46.5%;
+  left: 50%;
+  z-index: 3;
+  width: clamp(8rem, 32vw, 14rem);
+  aspect-ratio: 1;
   border-radius: 999px;
   background: radial-gradient(circle, rgb(228 181 71 / 24%), rgb(228 181 71 / 0%) 68%);
-  opacity: 0.7;
-  transform: scale(0.92);
+  mix-blend-mode: screen;
+  opacity: 0.78;
+  transform: translate(-50%, -50%) scale(0.92);
   animation: yike-boot-logo-glow 1.6s ease-in-out infinite;
 }
 
 #yike-boot-splash img {
   position: relative;
-  width: 7.5rem;
-  height: 7.5rem;
-  object-fit: contain;
-  animation: yike-boot-logo-pulse 1.6s ease-in-out infinite;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
+  animation: yike-boot-splash-breathe 1.6s ease-in-out infinite;
 }
 
 .yike-boot-splash__recovery {
+  position: absolute;
+  right: 1.25rem;
+  bottom: calc(env(safe-area-inset-bottom, 0) + 2rem);
+  left: 1.25rem;
+  z-index: 4;
   max-width: 18rem;
+  margin-inline: auto;
   opacity: 0;
   pointer-events: none;
   transform: translateY(0.4rem);
@@ -122,18 +165,26 @@ html.yike-boot-splash-enabled #yike-boot-splash {
   color: white;
 }
 
-@keyframes yike-boot-logo-pulse {
+@keyframes yike-boot-splash-breathe {
   0%,
   100% {
-    filter: drop-shadow(0 0 0 rgb(228 181 71 / 0%));
-    opacity: 0.86;
-    transform: scale(0.98);
+    filter: brightness(0.98) drop-shadow(0 0 0 rgb(228 181 71 / 0%));
+    transform: scale(1.08);
   }
 
   50% {
-    filter: drop-shadow(0 0 22px rgb(228 181 71 / 42%));
-    opacity: 1;
-    transform: scale(1.025);
+    filter: brightness(1.06) drop-shadow(0 0 18px rgb(228 181 71 / 28%));
+    transform: scale(1.095);
+  }
+}
+
+@keyframes yike-boot-shine-roll {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
@@ -141,12 +192,12 @@ html.yike-boot-splash-enabled #yike-boot-splash {
   0%,
   100% {
     opacity: 0.38;
-    transform: scale(0.88);
+    transform: translate(-50%, -50%) scale(0.88);
   }
 
   50% {
     opacity: 0.82;
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -160,14 +211,16 @@ html.yike-boot-splash-enabled #yike-boot-splash {
 html.yike-boot-splash-disabled #yike-boot-splash,
 #yike-boot-splash.yike-boot-splash--out,
 #yike-boot-splash.yike-boot-splash--out img,
-#yike-boot-splash.yike-boot-splash--out .yike-boot-splash__mark::before {
+#yike-boot-splash.yike-boot-splash--out .yike-boot-splash__mark::before,
+#yike-boot-splash.yike-boot-splash--out .yike-boot-splash__mark::after {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html.yike-boot-splash-enabled #yike-boot-splash,
   #yike-boot-splash img,
-  .yike-boot-splash__mark::before {
+  .yike-boot-splash__mark::before,
+  .yike-boot-splash__mark::after {
     animation: none;
   }
 }
