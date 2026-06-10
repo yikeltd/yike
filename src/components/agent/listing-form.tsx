@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ListingPhotoManager } from "./listing-photo-manager";
+import {
+  ListingPhotoManager,
+  type ListingPhotoManagerHandle,
+} from "./listing-photo-manager";
 import {
   readyPhotoItems,
   stripListingPhotoForPersist,
@@ -43,6 +46,7 @@ import {
 } from "@/lib/media/items";
 import { LISTING_LIMIT_REACHED_MESSAGE } from "@/lib/account-control";
 import { LISTING_SUBMITTED_MESSAGE } from "@/lib/copy/user-messages";
+import { friendlyPublicError } from "@/lib/copy/public-errors";
 import {
   BLOCKING_QUALITY_FLAGS,
   moderateListingDraft,
@@ -64,7 +68,30 @@ import {
 } from "@/lib/listing-field-rules";
 import { cn } from "@/lib/utils";
 import { parseNairaAmount } from "@/lib/naira-input";
+import {
+  FetchTimeoutError,
+  fetchWithTimeout,
+  SUBMIT_TIMEOUT_MESSAGE,
+  withTimeout,
+} from "@/lib/fetch-timeout";
+import {
+  analyzeListingSpam,
+  moderationFlagsFromSpam,
+} from "@/lib/listing-spam-guard";
+import {
+  clearListingSubmitIdempotencyKey,
+  clearPendingListingId,
+  getListingSubmitIdempotencyKey,
+  getPendingListingId,
+  logListingSubmit,
+  setPendingListingId,
+} from "@/lib/listing-submit-log";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const TOTAL_SUBMIT_TIMEOUT_MS = 45_000;
+const DB_INSERT_TIMEOUT_MS = 10_000;
+const SUBMIT_GUARD_TIMEOUT_MS = 5_000;
+const PRICING_ANALYZE_TIMEOUT_MS = 3_000;
 
 const STEPS = [
   { n: 1, title: "Listing type" },
@@ -154,10 +181,13 @@ export function ListingForm({
 }: ListingFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const photoManagerRef = useRef<ListingPhotoManagerHandle>(null);
+  const submitInFlightRef = useRef<Promise<void> | null>(null);
   const isEdit = Boolean(initial);
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("Submitting…");
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [draftPrompt, setDraftPrompt] = useState(false);
@@ -383,6 +413,20 @@ export function ListingForm({
     setStep((s) => Math.max(1, s - 1));
   }
 
+  function runBackgroundListingTasks(listingId: string, payload: Record<string, unknown>) {
+    void syncValueDrivers(listingId, valueDriverKeys);
+    void fetch("/api/notifications/email/listing-submitted", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ propertyId: listingId }),
+    });
+    void fetch("/api/agent/listings/duplicate-check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ propertyId: listingId }),
+    });
+  }
+
   async function persistListing(
     payload: Record<string, unknown>,
     priceMeta?: {
@@ -390,233 +434,423 @@ export function ListingForm({
       confirmed: boolean;
     }
   ) {
+    const startedAt = Date.now();
     setLoading(true);
-    const supabase = createClient();
-    const pricingFields = priceMeta
-      ? {
-          price_confidence_score: priceMeta.analysis.confidence_score,
-          price_anomaly_level: priceMeta.analysis.anomaly_level,
-          price_anomaly_reason: priceMeta.analysis.reason,
-          market_price_snapshot: priceMeta.analysis.market_snapshot,
-          price_review_status: priceMeta.confirmed
-            ? "confirmed_by_agent"
-            : priceMeta.analysis.price_review_status,
-        }
-      : {};
+    setSubmitMessage("Saving listing…");
 
-    if (initial) {
-      const { error: updateError } = await supabase
-        .from("properties")
-        .update({ ...payload, ...pricingFields })
-        .eq("id", initial.id);
-      setLoading(false);
-      if (updateError) {
-        setError(updateError.message);
+    try {
+      const supabase = createClient();
+      const pricingFields = priceMeta
+        ? {
+            price_confidence_score: priceMeta.analysis.confidence_score,
+            price_anomaly_level: priceMeta.analysis.anomaly_level,
+            price_anomaly_reason: priceMeta.analysis.reason,
+            market_price_snapshot: priceMeta.analysis.market_snapshot,
+            price_review_status: priceMeta.confirmed
+              ? "confirmed_by_agent"
+              : priceMeta.analysis.price_review_status,
+          }
+        : {};
+
+      if (initial) {
+        const { error: updateError } = await withTimeout(
+          Promise.resolve(
+            supabase
+              .from("properties")
+              .update({ ...payload, ...pricingFields })
+              .eq("id", initial.id)
+          ),
+          DB_INSERT_TIMEOUT_MS,
+          "db_update"
+        );
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+        void syncValueDrivers(initial.id, valueDriverKeys);
+        if (priceMeta?.confirmed) {
+          void fetch("/api/pricing/confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              propertyId: initial.id,
+              price: payload.price,
+              ...pricingFields,
+            }),
+          });
+        }
+        logListingSubmit({
+          stage: "listing_submit_completed",
+          userId: agentId,
+          listingId: initial.id,
+          photoCount: Array.isArray(payload.media_urls)
+            ? payload.media_urls.length
+            : undefined,
+          durationMs: Date.now() - startedAt,
+        });
+        router.push("/agent/listings");
         return;
       }
-      void syncValueDrivers(initial.id, valueDriverKeys);
+
+      if (listingLimit !== null && activeCount >= listingLimit) {
+        setError(LISTING_LIMIT_REACHED_MESSAGE);
+        return;
+      }
+
+      const pendingId = getPendingListingId(agentId);
+      let listingId = pendingId;
+
+      if (pendingId) {
+        setSubmitMessage("Almost done…");
+        const { error: updateError } = await withTimeout(
+          Promise.resolve(
+            supabase
+              .from("properties")
+              .update({ ...payload, ...pricingFields })
+              .eq("id", pendingId)
+              .eq("agent_id", agentId)
+          ),
+          DB_INSERT_TIMEOUT_MS,
+          "db_update"
+        );
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      } else {
+        const { data: created, error: insertError } = await withTimeout(
+          Promise.resolve(
+            supabase
+              .from("properties")
+              .insert({ ...payload, ...pricingFields })
+              .select("id")
+              .single()
+          ),
+          DB_INSERT_TIMEOUT_MS,
+          "db_insert"
+        );
+        if (insertError) {
+          if (
+            insertError.message.toLowerCase().includes("jwt") ||
+            insertError.message.toLowerCase().includes("session")
+          ) {
+            throw new Error("Your session expired. Please log in again.");
+          }
+          throw new Error(insertError.message);
+        }
+        listingId = created?.id ?? null;
+        if (listingId) {
+          setPendingListingId(agentId, listingId);
+        }
+      }
+
+      if (!listingId) {
+        throw new Error("Could not submit listing. Please try again.");
+      }
+
+      setSubmitMessage("Almost done…");
+      logListingSubmit({
+        stage: "listing_record_created",
+        userId: agentId,
+        listingId,
+        photoCount: Array.isArray(payload.media_urls)
+          ? payload.media_urls.length
+          : undefined,
+        durationMs: Date.now() - startedAt,
+      });
+
+      runBackgroundListingTasks(listingId, payload);
+
       if (priceMeta?.confirmed) {
         void fetch("/api/pricing/confirm", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            propertyId: initial.id,
+            propertyId: listingId,
             price: payload.price,
             ...pricingFields,
           }),
         });
       }
-      router.push("/agent/listings");
-      return;
-    }
 
-    if (listingLimit !== null && activeCount >= listingLimit) {
-      setError(LISTING_LIMIT_REACHED_MESSAGE);
+      clearListingDraft();
+      clearPendingListingId(agentId);
+      clearListingSubmitIdempotencyKey(agentId);
+      logListingSubmit({
+        stage: "listing_submit_completed",
+        userId: agentId,
+        listingId,
+        photoCount: Array.isArray(payload.media_urls)
+          ? payload.media_urls.length
+          : undefined,
+        durationMs: Date.now() - startedAt,
+      });
+      setSuccess(true);
+    } catch (e) {
+      const isTimeout = e instanceof FetchTimeoutError;
+      const message =
+        isTimeout
+          ? SUBMIT_TIMEOUT_MESSAGE
+          : e instanceof Error
+            ? e.message
+            : "Could not submit listing. Please try again.";
+      setError(
+        message.includes("session expired")
+          ? message
+          : friendlyPublicError(message, "Could not submit listing. Please try again.")
+      );
+      logListingSubmit({
+        stage: isTimeout ? "listing_submit_timeout" : "listing_submit_failed",
+        userId: agentId,
+        photoCount: Array.isArray(payload.media_urls)
+          ? payload.media_urls.length
+          : undefined,
+        durationMs: Date.now() - startedAt,
+        errorCode: isTimeout ? "timeout" : "persist_failed",
+      });
+    } finally {
       setLoading(false);
-      return;
+      setSubmitMessage("Submitting…");
     }
+  }
 
-    const { data: created, error: insertError } = await supabase
-      .from("properties")
-      .insert({ ...payload, ...pricingFields })
-      .select("id")
-      .single();
-    setLoading(false);
-    if (insertError) {
-      setError(insertError.message);
-      return;
-    }
-    if (created?.id) {
-      void syncValueDrivers(created.id, valueDriverKeys);
-      void fetch("/api/notifications/email/listing-submitted", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ propertyId: created.id }),
+  async function executeSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const startedAt = Date.now();
+    let deferredToPriceDialog = false;
+    setError("");
+    setLoading(true);
+    setSubmitMessage("Submitting…");
+    logListingSubmit({
+      stage: "listing_submit_started",
+      userId: agentId,
+      photoCount: mediaItems.length,
+    });
+
+    try {
+      if (!isSupabaseConfigured()) {
+        setError("Supabase is not connected. Add env vars to publish listings.");
+        return;
+      }
+
+      for (let s = 1; s <= 4; s++) {
+        const err = validateStep(s);
+        if (err && s < 4) {
+          setStep(s);
+          setError(err);
+          return;
+        }
+      }
+
+      if (honeypot.trim()) {
+        return;
+      }
+
+      setSubmitMessage("Uploading photos…");
+      logListingSubmit({ stage: "photo_upload_started", userId: agentId, photoCount: mediaItems.length });
+      const uploadWait = await photoManagerRef.current?.waitForUploads({
+        timeoutMs: TOTAL_SUBMIT_TIMEOUT_MS,
+        onProgress: (done, total) => {
+          setSubmitMessage(`Uploading photos ${Math.min(done + 1, total)}/${total}…`);
+        },
       });
-      void fetch("/api/agent/listings/duplicate-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ propertyId: created.id }),
+      logListingSubmit({ stage: "photo_upload_completed", userId: agentId, photoCount: mediaItems.length });
+
+      if (uploadWait && !uploadWait.ok) {
+        setError(uploadWait.error ?? "Photo upload failed. Please remove the failed photo or retry.");
+        return;
+      }
+
+      for (let s = 1; s <= 4; s++) {
+        const err = validateStep(s);
+        if (err) {
+          setStep(s);
+          setError(err);
+          return;
+        }
+      }
+
+      const spam = analyzeListingSpam({ title, description });
+      if (spam.block) {
+        setError(spam.reason ?? "Could not submit listing. Please try again.");
+        return;
+      }
+      const spamModerationFlags = moderationFlagsFromSpam(spam.flags);
+
+      setSubmitMessage("Submitting…");
+      let guardModerationFlags: string[] = [];
+      try {
+        const guardRes = await fetchWithTimeout("/api/agent/listings/submit-guard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ honeypot, title, description }),
+          timeoutMs: SUBMIT_GUARD_TIMEOUT_MS,
+        });
+        const guardData = (await guardRes.json().catch(() => ({}))) as {
+          error?: string;
+          moderationFlags?: string[];
+        };
+        if (!guardRes.ok) {
+          if (guardRes.status === 401) {
+            setError("Your session expired. Please log in again.");
+            return;
+          }
+          setError(guardData.error || "Could not submit listing. Please try again.");
+          return;
+        }
+        guardModerationFlags = guardData.moderationFlags ?? [];
+        logListingSubmit({ stage: "profile_checked", userId: agentId });
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          setError(SUBMIT_TIMEOUT_MESSAGE);
+          logListingSubmit({
+            stage: "listing_submit_timeout",
+            userId: agentId,
+            errorCode: "submit_guard_timeout",
+            durationMs: Date.now() - startedAt,
+          });
+          return;
+        }
+      }
+
+      const mergedModerationFlags = [
+        ...new Set([...spamModerationFlags, ...guardModerationFlags]),
+      ];
+
+      const form = new FormData(e.currentTarget);
+      const priceNum = parseNairaAmount(price) ?? 0;
+      const persisted = readyPhotoItems(mediaItems).map(stripListingPhotoForPersist);
+      const media_items = sortMediaItemsForStory(dedupeMediaItems(persisted));
+      const media_urls = mediaItemsToUrls(media_items);
+
+      const softened = softenListingTitle(title);
+      const qualityFlags = moderateListingDraft({
+        title: softened,
+        description,
+        price: priceNum,
+        city,
+        listing_type: listingType,
+        media_urls,
       });
-      if (priceMeta?.confirmed) {
-        void fetch("/api/pricing/confirm", {
+      const blocking = qualityFlags.filter((f) =>
+        BLOCKING_QUALITY_FLAGS.includes(f)
+      );
+      if (blocking.length > 0) {
+        setError(
+          `Please fix before submitting: ${blocking.map(qualityFlagLabel).join(", ")}.`
+        );
+        return;
+      }
+
+      const transparencyExtras = transparencyToExtras(
+        listingType,
+        feeValues,
+        feeModes
+      );
+      const extras: ListingExtras = {
+        ...transparencyExtras,
+        amenities: amenities.length > 0 ? amenities : undefined,
+      };
+
+      const payload = {
+        agent_id: agentId,
+        title: softened,
+        description: description || null,
+        listing_type: listingType,
+        property_type: propertyType,
+        bedrooms: land ? 0 : Number(bedrooms || 0),
+        bathrooms: land ? 0 : Number(bathrooms || 0),
+        toilets: land ? 0 : Number(toilets || 0),
+        price: priceNum,
+        payment_period: paymentPeriod,
+        state,
+        city,
+        area,
+        address_hint: (form.get("address_hint") as string) || null,
+        landmark: (form.get("landmark") as string) || null,
+        media_urls,
+        media_items,
+        video_url: videoUrl || null,
+        extras,
+        status: initial?.status === "approved" ? "approved" : "pending",
+        moderation_flags:
+          mergedModerationFlags.length > 0 ? mergedModerationFlags : undefined,
+        listing_plan: listingPlan,
+        ...(() => {
+          const { expiresAt, durationDays } = computeExpiresAt(listingPlan);
+          return {
+            expires_at: expiresAt,
+            listing_duration_days: durationDays,
+            published_at: initial?.published_at ?? new Date().toISOString(),
+          };
+        })(),
+      };
+
+      void getListingSubmitIdempotencyKey(agentId);
+
+      let priceMeta: { analysis: PriceAnalysisResult; confirmed: boolean } | undefined;
+      try {
+        const analyzeRes = await fetchWithTimeout("/api/pricing/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            propertyId: created.id,
-            price: payload.price,
-            ...pricingFields,
+            state,
+            city,
+            area,
+            property_type: propertyType,
+            listing_type: listingType,
+            price: priceNum,
+            bedrooms: land ? 0 : Number(bedrooms || 0),
           }),
+          timeoutMs: PRICING_ANALYZE_TIMEOUT_MS,
         });
+        if (analyzeRes.ok) {
+          const { analysis } = (await analyzeRes.json()) as {
+            analysis: PriceAnalysisResult;
+          };
+          if (analysis.requires_agent_confirmation) {
+            deferredToPriceDialog = true;
+            setLoading(false);
+            setPriceDialog({
+              analysis,
+              price: priceNum,
+              paymentPeriod,
+              payload,
+              isEdit: Boolean(initial),
+              propertyId: initial?.id,
+            });
+            return;
+          }
+          priceMeta = { analysis, confirmed: false };
+        }
+      } catch {
+        /* price check is optional — never block submit */
+      }
+
+      await persistListing(payload, priceMeta);
+    } catch {
+      setError("Could not submit listing. Please try again.");
+      logListingSubmit({
+        stage: "listing_submit_failed",
+        userId: agentId,
+        errorCode: "unexpected",
+        durationMs: Date.now() - startedAt,
+      });
+    } finally {
+      if (!deferredToPriceDialog) {
+        setLoading(false);
+        setSubmitMessage("Submitting…");
       }
     }
-    clearListingDraft();
-    setSuccess(true);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError("");
-    if (!isSupabaseConfigured()) {
-      setError("Supabase is not connected. Add env vars to publish listings.");
-      return;
+    if (submitInFlightRef.current) {
+      return submitInFlightRef.current;
     }
-
-    for (let s = 1; s <= 4; s++) {
-      const err = validateStep(s);
-      if (err) {
-        setStep(s);
-        setError(err);
-        return;
-      }
-    }
-
-    if (honeypot.trim()) {
-      return;
-    }
-
-    const guardRes = await fetch("/api/agent/listings/submit-guard", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ honeypot, title, description }),
+    const task = executeSubmit(e).finally(() => {
+      submitInFlightRef.current = null;
     });
-    const guardData = (await guardRes.json().catch(() => ({}))) as {
-      error?: string;
-      moderationFlags?: string[];
-    };
-    if (!guardRes.ok) {
-      setError(guardData.error || "Could not submit. Try again.");
-      return;
-    }
-    const spamModerationFlags = guardData.moderationFlags ?? [];
-
-    const form = new FormData(e.currentTarget);
-
-    const priceNum = parseNairaAmount(price) ?? 0;
-    const persisted = readyPhotoItems(mediaItems).map(stripListingPhotoForPersist);
-    const media_items = sortMediaItemsForStory(dedupeMediaItems(persisted));
-    const media_urls = mediaItemsToUrls(media_items);
-
-    const softened = softenListingTitle(title);
-    const qualityFlags = moderateListingDraft({
-      title: softened,
-      description,
-      price: priceNum,
-      city,
-      listing_type: listingType,
-      media_urls,
-    });
-    const blocking = qualityFlags.filter((f) =>
-      BLOCKING_QUALITY_FLAGS.includes(f)
-    );
-    if (blocking.length > 0) {
-      setError(
-        `Please fix before submitting: ${blocking.map(qualityFlagLabel).join(", ")}.`
-      );
-      return;
-    }
-
-    const transparencyExtras = transparencyToExtras(
-      listingType,
-      feeValues,
-      feeModes
-    );
-    const extras: ListingExtras = {
-      ...transparencyExtras,
-      amenities: amenities.length > 0 ? amenities : undefined,
-    };
-
-    const payload = {
-      agent_id: agentId,
-      title: softened,
-      description: description || null,
-      listing_type: listingType,
-      property_type: propertyType,
-      bedrooms: land ? 0 : Number(bedrooms || 0),
-      bathrooms: land ? 0 : Number(bathrooms || 0),
-      toilets: land ? 0 : Number(toilets || 0),
-      price: priceNum,
-      payment_period: paymentPeriod,
-      state,
-      city,
-      area,
-      address_hint: (form.get("address_hint") as string) || null,
-      landmark: (form.get("landmark") as string) || null,
-      media_urls,
-      media_items,
-      video_url: videoUrl || null,
-      extras,
-      status: initial?.status === "approved" ? "approved" : "pending",
-      moderation_flags:
-        spamModerationFlags.length > 0 ? spamModerationFlags : undefined,
-      listing_plan: listingPlan,
-      ...(() => {
-        const { expiresAt, durationDays } = computeExpiresAt(listingPlan);
-        return {
-          expires_at: expiresAt,
-          listing_duration_days: durationDays,
-          published_at: initial?.published_at ?? new Date().toISOString(),
-        };
-      })(),
-    };
-
-    try {
-      const analyzeRes = await fetch("/api/pricing/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          state,
-          city,
-          area,
-          property_type: propertyType,
-          listing_type: listingType,
-          price: priceNum,
-          bedrooms: land ? 0 : Number(bedrooms || 0),
-        }),
-      });
-      if (analyzeRes.ok) {
-        const { analysis } = (await analyzeRes.json()) as {
-          analysis: PriceAnalysisResult;
-        };
-        if (analysis.requires_agent_confirmation) {
-          setPriceDialog({
-            analysis,
-            price: priceNum,
-            paymentPeriod,
-            payload,
-            isEdit: Boolean(initial),
-            propertyId: initial?.id,
-          });
-          return;
-        }
-        await persistListing(payload, { analysis, confirmed: false });
-        return;
-      }
-    } catch {
-      /* proceed without blocking */
-    }
-
-    await persistListing(payload);
+    submitInFlightRef.current = task;
+    return task;
   }
 
   if (success) {
@@ -696,10 +930,7 @@ export function ListingForm({
           }}
         />
       )}
-      <SubmitOverlay
-        show={loading}
-        message={initial ? "Updating…" : "Submitting for review…"}
-      />
+      <SubmitOverlay show={loading} message={submitMessage} />
 
       <div className="mb-3 flex items-center gap-1">
         {STEPS.map((s) => (
@@ -879,7 +1110,11 @@ export function ListingForm({
 
         {step === 4 && (
           <section className="space-y-4">
-            <ListingPhotoManager items={mediaItems} onChange={setMediaItems} />
+            <ListingPhotoManager
+              ref={photoManagerRef}
+              items={mediaItems}
+              onChange={setMediaItems}
+            />
 
             <details className="rounded-xl border border-navy/10 bg-surface/40">
               <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
@@ -966,7 +1201,11 @@ export function ListingForm({
               </Button>
             ) : (
               <Button type="submit" fullWidth size="lg" disabled={loading}>
-                {initial ? "Save changes" : "Submit listing"}
+                {loading
+                  ? submitMessage
+                  : initial
+                    ? "Save changes"
+                    : "Submit listing"}
               </Button>
             )}
           </div>

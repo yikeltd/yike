@@ -28,6 +28,7 @@ function clientIp(hdrs: Headers): string | null {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   const supabase = await createClient();
   if (!supabase) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
@@ -135,6 +136,12 @@ export async function POST(request: Request) {
     ip,
   }).then(({ error: logError }) => {
     if (logError) console.error("[submit-guard] log insert failed:", logError.message);
+  });
+
+  console.info("[submit-guard] ok", {
+    userId: user.id,
+    durationMs: Date.now() - startedAt,
+    flagCount: moderationFlagsFromSpam(spam.flags).length,
   });
 
   return NextResponse.json({
