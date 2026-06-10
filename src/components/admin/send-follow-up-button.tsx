@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { SendFollowUpModal } from "@/components/admin/send-follow-up-modal";
-import type { CareerFollowUpRow } from "@/lib/careers/follow-up/types";
+import type { CareerFollowUpRow, FollowUpGenerationInput } from "@/lib/careers/follow-up/types";
+import type { FollowUpQuestion } from "@/lib/careers/follow-up/types";
 
 export function SendFollowUpButton({
   applicationId,
@@ -10,12 +11,16 @@ export function SendFollowUpButton({
   jobTitle,
   applicationStatus,
   latestFollowUp,
+  generationInput,
+  savedTemplate,
 }: {
   applicationId: string;
   applicantName: string;
   jobTitle: string;
   applicationStatus: string;
   latestFollowUp?: CareerFollowUpRow | null;
+  generationInput: FollowUpGenerationInput;
+  savedTemplate?: FollowUpQuestion[] | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -38,6 +43,8 @@ export function SendFollowUpButton({
           applicationId={applicationId}
           applicantName={applicantName}
           jobTitle={jobTitle}
+          generationInput={generationInput}
+          savedTemplate={savedTemplate}
           onClose={() => setOpen(false)}
         />
       )}

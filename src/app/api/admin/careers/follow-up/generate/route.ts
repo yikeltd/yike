@@ -7,6 +7,8 @@ import { generateFollowUpQuestions } from "@/lib/careers/follow-up/generate-ques
 import type { FollowUpQuestion } from "@/lib/careers/follow-up/types";
 
 export const runtime = "nodejs";
+/** Prefer client-side `generateFollowUpQuestions` — this route is for API/tools only. */
+export const maxDuration = 15;
 
 async function requireAdminApi() {
   if (!isSupabaseConfigured()) return null;

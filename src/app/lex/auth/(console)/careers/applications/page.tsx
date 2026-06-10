@@ -11,7 +11,9 @@ import { adminPath } from "@/lib/admin-paths";
 import { parseAdminPage } from "@/lib/admin/pagination";
 import type { ApplicationRow } from "@/lib/careers/constants";
 import { statusLabel } from "@/lib/careers/constants";
-import type { CareerFollowUpRow } from "@/lib/careers/follow-up/types";
+import type { CareerFollowUpRow, FollowUpQuestion } from "@/lib/careers/follow-up/types";
+import { applicationToFollowUpInput } from "@/lib/careers/follow-up/build-input";
+import type { RoleCategory } from "@/lib/careers/constants";
 import type { StaffProfile } from "@/types/database";
 
 type Props = {
@@ -85,6 +87,29 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
 
   const applicationIds = applications.map((a) => a.id);
   const followUpByApp = new Map<string, CareerFollowUpRow>();
+  const templatesByCategory = new Map<RoleCategory, FollowUpQuestion[]>();
+
+  const categories = [
+    ...new Set(
+      applications
+        .map((a) => a.jobs?.category)
+        .filter((c): c is RoleCategory => Boolean(c))
+    ),
+  ];
+
+  if (categories.length > 0) {
+    const { data: templates } = await supabase
+      .from("career_follow_up_templates")
+      .select("job_category, questions, created_at")
+      .in("job_category", categories)
+      .order("created_at", { ascending: false });
+
+    for (const row of templates ?? []) {
+      const cat = row.job_category as RoleCategory | null;
+      if (!cat || templatesByCategory.has(cat)) continue;
+      templatesByCategory.set(cat, (row.questions ?? []) as FollowUpQuestion[]);
+    }
+  }
 
   if (applicationIds.length > 0) {
     const { data: followUps } = await supabase
@@ -319,6 +344,12 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
                   jobTitle={app.jobs?.title ?? "Role"}
                   applicationStatus={app.status}
                   latestFollowUp={followUp}
+                  generationInput={applicationToFollowUpInput(app)}
+                  savedTemplate={
+                    app.jobs?.category
+                      ? templatesByCategory.get(app.jobs.category) ?? null
+                      : null
+                  }
                 />
                 <ApplicationActions applicationId={app.id} compact />
                 <CreateStaffFromApplication application={app} />
