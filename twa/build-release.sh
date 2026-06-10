@@ -57,6 +57,11 @@ for (const [pattern, value] of replacements) {
 }
 
 fs.writeFileSync(gradlePath, gradle);
+
+const manifestPath = "app/src/main/AndroidManifest.xml";
+let androidManifest = fs.readFileSync(manifestPath, "utf8");
+androidManifest = androidManifest.replace(/\n\s+android:pathPrefix="\/"\s*/g, " ");
+fs.writeFileSync(manifestPath, androidManifest);
 NODE
 
 echo "Building signed release APK + AAB (com.yike.app)..."
