@@ -167,3 +167,47 @@ export function withDemoFallback(
   }
   return { items: MOCK_LISTINGS.slice(0, 24), isDemo: true };
 }
+
+const HOME_CURATED_MIN = 6;
+
+/** Fill homepage rails when live inventory is thin — keeps first impression review-friendly. */
+export function withCuratedHomeFallback(
+  properties: Property[],
+  options?: { minCount?: number; limit?: number }
+): { items: Property[]; isDemo: boolean; supplemented: boolean } {
+  const minCount = options?.minCount ?? HOME_CURATED_MIN;
+  const limit = options?.limit ?? 24;
+
+  if (properties.length >= minCount) {
+    return {
+      items: properties.slice(0, limit),
+      isDemo: properties.every((p) => isDemoProperty(p.id)),
+      supplemented: false,
+    };
+  }
+
+  const seen = new Set(properties.map((p) => p.id));
+  const curated = MOCK_LISTINGS.filter((p) => !seen.has(p.id)).slice(
+    0,
+    Math.max(0, minCount - properties.length)
+  );
+  const items = [...properties, ...curated].slice(0, limit);
+
+  return {
+    items,
+    isDemo: curated.length > 0,
+    supplemented: curated.length > 0,
+  };
+}
+
+export function propertiesToHotPicks(
+  properties: Property[],
+  badge = "Featured"
+): Array<{ id: string; property: Property; headline: string; badge: string }> {
+  return properties.map((property) => ({
+    id: `curated-${property.id}`,
+    property,
+    headline: property.title,
+    badge: property.is_featured ? "Featured" : badge,
+  }));
+}

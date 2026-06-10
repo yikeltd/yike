@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { HomeSearchHero } from "@/components/home/home-search-hero";
 import { HomeHotPicksSections } from "@/components/home/home-hotspot-row";
-import { HomeFilteredFeed } from "@/components/home/home-sections";
+import {
+  HomeFilteredFeed,
+  HomeShowcaseSection,
+  PopularAreasSection,
+} from "@/components/home/home-sections";
+import { HomeMarketplaceIntro } from "@/components/home/home-marketplace-intro";
 import { SocialProofBar } from "@/components/home/social-proof-bar";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
 import { getMarketplaceStats } from "@/lib/marketplace-stats";
@@ -173,8 +178,14 @@ export default async function HomePage({
         <HomeSearchHero initial={initial} trustedAgents={trustedAgents} />
       </Suspense>
 
+      <HomeMarketplaceIntro />
+
       <Suspense fallback={<SectionFallback />}>
         <HomeHotPicksSections />
+      </Suspense>
+
+      <Suspense fallback={<SectionFallback />}>
+        <HomeShowcaseSection />
       </Suspense>
 
       <Suspense fallback={null}>
@@ -211,6 +222,8 @@ export default async function HomePage({
       <Suspense fallback={<SectionFallback />}>
         <HomeFilteredFeed filters={filters} />
       </Suspense>
+
+      <PopularAreasSection />
 
       <Suspense fallback={null}>
         <HomePopularSearches

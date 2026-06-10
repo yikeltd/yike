@@ -1,6 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { COMPANY_DISPLAY_NAME, COMPANY_RC, SITE_NAME } from "@/lib/constants";
+import {
+  COMPANY_DISPLAY_NAME,
+  COMPANY_EMAIL,
+  COMPANY_RC,
+  SITE_NAME,
+  YIKE_SUPPORT_PHONE_DISPLAY,
+} from "@/lib/constants";
 import { brand } from "@/lib/design/tokens";
 import { FollowYike } from "@/components/social/follow-yike";
 const explore = [
@@ -55,6 +61,20 @@ export function SiteFooter() {
               Nigeria&apos;s visual housing marketplace. Browse homes, contact
               agents on WhatsApp, list for free.
             </p>
+            <div className="mt-4 space-y-1 text-sm">
+              <a
+                href={`mailto:${COMPANY_EMAIL}`}
+                className="block font-semibold text-white/90 transition-colors hover:text-[#e4b547]"
+              >
+                {COMPANY_EMAIL}
+              </a>
+              <a
+                href={`tel:${YIKE_SUPPORT_PHONE_DISPLAY.replace(/\s/g, "")}`}
+                className="block text-white/80 transition-colors hover:text-[#e4b547]"
+              >
+                {YIKE_SUPPORT_PHONE_DISPLAY}
+              </a>
+            </div>
           </div>
 
           <div>

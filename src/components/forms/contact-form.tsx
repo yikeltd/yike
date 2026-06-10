@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Mail, MapPin } from "lucide-react";
-import { YIKE_SUPPORT_WHATSAPP } from "@/lib/constants";
+import { MessageCircle, Mail, MapPin, Phone } from "lucide-react";
+import { YIKE_SUPPORT_PHONE_DISPLAY, YIKE_SUPPORT_WHATSAPP } from "@/lib/constants";
 import { whatsAppDeepLink } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -129,11 +129,23 @@ export function ContactSidebar() {
         </div>
       </div>
       <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-float">
+        <Phone className="mt-0.5 h-5 w-5 text-gold-dark" />
+        <div>
+          <p className="text-sm font-bold text-navy">Phone</p>
+          <a
+            href={`tel:${YIKE_SUPPORT_PHONE_DISPLAY.replace(/\s/g, "")}`}
+            className="text-sm text-gold-dark"
+          >
+            {YIKE_SUPPORT_PHONE_DISPLAY}
+          </a>
+        </div>
+      </div>
+      <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-float">
         <MapPin className="mt-0.5 h-5 w-5 text-gold-dark" />
         <div>
-          <p className="text-sm font-bold text-navy">Office</p>
+          <p className="text-sm font-bold text-navy">Coverage</p>
           <p className="text-sm text-muted">
-            Nigeria — remote-first team serving all states
+            Lagos, Abuja, Aba, Enugu, Owerri, Port Harcourt — all Nigerian states
           </p>
         </div>
       </div>

@@ -11,6 +11,9 @@ export const COMPANY_EMAIL = "hello@yike.ng";
 /** Official Yike support WhatsApp (international format, no +). */
 export const YIKE_SUPPORT_WHATSAPP = "2348035143299";
 
+/** Human-readable support phone for contact pages and compliance. */
+export const YIKE_SUPPORT_PHONE_DISPLAY = "+234 803 514 3299";
+
 /** @deprecated HomeHeroPitch removed — kept for reference only */
 export const HOME_HERO_HEADLINE = "Discover trusted homes across Nigeria.";
 export const HOME_HERO_SUBLINE =

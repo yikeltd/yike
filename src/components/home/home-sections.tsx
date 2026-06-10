@@ -9,7 +9,7 @@ import {
 } from "@/lib/properties";
 import { getMostViewedListings } from "@/lib/trending";
 import { getActiveAd } from "@/lib/ads";
-import { withDemoFallback } from "@/lib/mock-listings";
+import { withCuratedHomeFallback, withDemoFallback } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
 import { POPULAR_AREAS } from "@/lib/constants";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
@@ -61,9 +61,41 @@ function SectionHeader({
   );
 }
 
+export async function HomeShowcaseSection() {
+  const [featured, trending, recent] = await Promise.all([
+    safeHomeLoad("showcase featured", () => getFeaturedProperties(6), []),
+    safeHomeLoad("showcase trending", () => getMostViewedListings(6), []),
+    safeHomeLoad("showcase recent", () => getPublicProperties({}, 6), []),
+  ]);
+
+  const merged = [...featured, ...trending, ...recent].filter(
+    (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
+  );
+  const { items, isDemo, supplemented } = withCuratedHomeFallback(merged, {
+    minCount: 6,
+    limit: 6,
+  });
+  if (items.length === 0) return null;
+
+  return (
+    <section className="mx-auto mt-6 max-w-7xl px-3 lg:mt-8 lg:px-6 xl:px-8">
+      <SectionHeader
+        title="Trending homes"
+        subtitle={
+          supplemented
+            ? "Sample listings across Nigerian cities — browse free, no login"
+            : "Fresh verified listings across Nigeria"
+        }
+        href="/search"
+      />
+      <PropertyGrid properties={items} isDemo={isDemo} richEmpty={false} />
+    </section>
+  );
+}
+
 export async function HomeFeaturedSection() {
   const featured = await safeHomeLoad("featured listings", () => getFeaturedProperties(6), []);
-  const { items, isDemo } = withDemoFallback(featured);
+  const { items, isDemo } = withCuratedHomeFallback(featured, { minCount: 4, limit: 6 });
   if (items.length === 0) return null;
   return (
     <section className="mt-8 lg:mt-12">
@@ -136,23 +168,32 @@ export async function HomeFilteredFeed({
     : await safeHomeLoad("search preferences", getServerSearchPreferences, {});
   const query = active ? filters : { ...inferred };
   const properties = await safeHomeLoad("feed listings", () => getPublicProperties(query, 24), []);
-  const { items, isDemo } = withDemoFallback(properties);
+  const { items, isDemo, supplemented } = withCuratedHomeFallback(properties, {
+    minCount: active ? 0 : 8,
+    limit: 24,
+  });
   const midAd = await safeHomeLoad("home feed ad", () => getActiveAd("home_feed_mid"), null);
 
   if (items.length === 0) {
     return (
-      <section className="mt-4 px-3 lg:px-0">
+      <section className="mt-4 space-y-6 px-3 lg:px-0">
         <EmptyStateRich
           message="No homes match these filters. Try a nearby area or wider budget."
           city={filters.city}
           area={filters.area}
         />
+        <PopularAreasSection />
       </section>
     );
   }
 
   return (
     <section className="section-editorial mx-auto mt-4 max-w-7xl px-3 lg:mt-6 lg:px-6 xl:px-8">
+      {supplemented && !active && (
+        <p className="mb-3 text-xs text-muted">
+          Showing sample listings across Nigeria — browse free, no account needed.
+        </p>
+      )}
       <PropertyGrid
         properties={items.slice(0, active ? 24 : 12)}
         emptyCity={query.city}
@@ -162,13 +203,14 @@ export async function HomeFilteredFeed({
         feedAdInsertAfter={4}
         adPlacementKey="home_feed_mid"
       />
+      {!active && items.length < 8 && <PopularAreasSection />}
     </section>
   );
 }
 
 export function PopularAreasSection() {
   return (
-    <section className="mt-8 px-3 lg:mt-12 lg:px-0">
+    <section className="mx-auto mt-8 max-w-7xl px-3 lg:mt-12 lg:px-6 xl:px-8">
       <SectionHeader
         title="Popular areas"
         subtitle="High-demand neighborhoods"

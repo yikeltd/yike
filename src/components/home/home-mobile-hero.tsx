@@ -53,7 +53,7 @@ export function HomeMobileHero({ browseInitial, onSearch }: HomeMobileHeroProps)
           }
           variant="home-premium"
           initial={browseInitial}
-          title="Discover Homes Across Nigeria"
+          title="Find Verified Homes Across Nigeria"
           onSearch={onSearch}
         />
       </div>

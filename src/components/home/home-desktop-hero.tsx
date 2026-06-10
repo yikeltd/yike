@@ -93,7 +93,8 @@ export function HomeDesktopHero({
               </h1>
 
               <p className="mt-4 max-w-lg text-base leading-relaxed text-white/80 xl:text-lg">
-                Verified listings. Smarter search. Stronger trust.
+                Nigeria&apos;s property marketplace — rent, buy, land and shops.
+                Browse free, contact agents on WhatsApp, email sign-in only.
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
