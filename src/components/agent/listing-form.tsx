@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ListingDraftBanner } from "./listing-draft-banner";
 import {
   ListingPhotoManager,
   type ListingPhotoManagerHandle,
@@ -57,7 +58,6 @@ import { softenListingTitle } from "@/lib/title-normalize";
 import type { PriceAnalysisResult } from "@/lib/pricing/types";
 import {
   clearListingDraft,
-  loadListingDraft,
   saveListingDraft,
   type ListingDraft,
 } from "@/lib/listing-draft";
@@ -188,7 +188,7 @@ export function ListingForm({
   const [submitMessage, setSubmitMessage] = useState("Submitting…");
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [draftPrompt, setDraftPrompt] = useState(false);
+  const [draftBannerKey, setDraftBannerKey] = useState(0);
 
   const [listingType, setListingType] = useState<ListingTypeValue>(
     (initial?.listing_type as ListingTypeValue) ?? "rent"
@@ -247,12 +247,6 @@ export function ListingForm({
   const listingPlan = initial?.listing_plan ?? "free";
   const showRooms = showRoomFields(propertyType, listingType);
   const land = isLandProperty(propertyType);
-
-  useEffect(() => {
-    if (isEdit) return;
-    const draft = loadListingDraft(agentId);
-    if (draft) setDraftPrompt(true);
-  }, [agentId, isEdit]);
 
   useEffect(() => {
     setPropertyType((prev) => {
@@ -317,10 +311,10 @@ export function ListingForm({
   ]);
 
   useEffect(() => {
-    if (isEdit || draftPrompt) return;
+    if (isEdit) return;
     const t = window.setTimeout(() => saveListingDraft(buildDraft()), 1200);
     return () => window.clearTimeout(t);
-  }, [buildDraft, isEdit, draftPrompt]);
+  }, [buildDraft, isEdit]);
 
   function applyDraft(draft: ListingDraft) {
     setStep(Math.min(4, draft.step));
@@ -342,7 +336,7 @@ export function ListingForm({
     setMediaItems(draft.mediaItems);
     setFeeValues(draft.transparency);
     setFeeModes(draft.feeModes as Record<string, FeeTransparencyMode>);
-    setDraftPrompt(false);
+    setDraftBannerKey((k) => k + 1);
   }
 
   function applyDealOption(
@@ -900,34 +894,6 @@ export function ListingForm({
     );
   }
 
-  if (draftPrompt && !isEdit) {
-    const draft = loadListingDraft(agentId);
-    return (
-      <div className="rounded-2xl border border-gold/30 bg-gold/10 p-5">
-        <p className="font-semibold text-navy">Continue your unfinished listing?</p>
-        <p className="mt-1 text-xs text-muted">Your progress is saved automatically.</p>
-        <div className="mt-4 flex gap-2">
-          <Button
-            type="button"
-            onClick={() => draft && applyDraft(draft)}
-          >
-            Continue draft
-          </Button>
-          <Button
-            type="button"
-            variant="danger"
-            onClick={() => {
-              clearListingDraft();
-              setDraftPrompt(false);
-            }}
-          >
-            Delete draft
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       {priceDialog && (
@@ -964,6 +930,15 @@ export function ListingForm({
       <p className="mb-2 text-xs font-semibold text-muted">
         Step {step} of 4 · {STEPS[step - 1].title}
       </p>
+
+      {!isEdit ? (
+        <ListingDraftBanner
+          key={draftBannerKey}
+          agentId={agentId}
+          onContinue={(draft) => applyDraft(draft)}
+          onDeleted={() => setDraftBannerKey((k) => k + 1)}
+        />
+      ) : null}
 
       <form ref={formRef} onSubmit={handleSubmit} className="listing-form-pad space-y-5">
         {step === 1 && (

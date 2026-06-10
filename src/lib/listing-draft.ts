@@ -1,4 +1,5 @@
 import type { ListingTypeValue } from "@/constants/listingTypes";
+import { propertyTypesForListingType } from "@/constants/listingTypes";
 import type { PropertyMediaItem } from "@/types/database";
 
 const STORAGE_KEY = "yike_listing_draft_v1";
@@ -63,4 +64,23 @@ export function saveListingDraft(draft: ListingDraft): void {
 export function clearListingDraft(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
+}
+
+export function draftDisplayLabel(draft: ListingDraft): string {
+  if (draft.title.trim()) return draft.title.trim();
+
+  const typeLabel =
+    propertyTypesForListingType(draft.listingType).find((o) => o.value === draft.propertyType)
+      ?.label ??
+    draft.propertyType.replace(/_/g, " ");
+
+  const place = [draft.area, draft.city].filter(Boolean).join(", ");
+  if (place) return `${typeLabel} · ${place}`;
+  return typeLabel;
+}
+
+export function draftThumbUrl(draft: ListingDraft): string | null {
+  const item = draft.mediaItems[0];
+  if (!item) return null;
+  return item.thumbnail_url || item.webp_url || item.image_url || null;
 }

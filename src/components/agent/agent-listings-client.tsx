@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -8,14 +8,32 @@ import type { Property } from "@/types/database";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { isListingExpired, isListingPubliclyActive } from "@/lib/listing-lifecycle";
+import {
+  clearListingDraft,
+  draftDisplayLabel,
+  draftThumbUrl,
+  loadListingDraft,
+  type ListingDraft,
+} from "@/lib/listing-draft";
 import { cn } from "@/lib/utils";
 
 type Tab = "all" | "active" | "expired" | "closed" | "archived";
 
-export function AgentListingsClient({ listings }: { listings: Property[] }) {
+export function AgentListingsClient({
+  agentId,
+  listings,
+}: {
+  agentId: string;
+  listings: Property[];
+}) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("all");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [localDraft, setLocalDraft] = useState<ListingDraft | null>(null);
+
+  useEffect(() => {
+    setLocalDraft(loadListingDraft(agentId));
+  }, [agentId]);
 
   const filtered = useMemo(() => {
     return listings.filter((p) => {
@@ -83,9 +101,57 @@ export function AgentListingsClient({ listings }: { listings: Property[] }) {
         ))}
       </nav>
 
-      {filtered.length === 0 ? (
+      {tab === "all" && localDraft ? (
+        <div className="card-shadow rounded-xl border border-gold/30 bg-gold/5 p-3">
+          <div className="flex gap-3">
+            <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+              {draftThumbUrl(localDraft) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={draftThumbUrl(localDraft)!}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-muted">
+                  Draft
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium line-clamp-1">{draftDisplayLabel(localDraft)}</p>
+              <p className="text-sm text-muted">Not submitted yet</p>
+              <div className="mt-1">
+                <span className="inline-flex rounded-full bg-navy/10 px-2 py-0.5 text-[10px] font-bold text-navy">
+                  Draft
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/agent/listings/new"
+              className="rounded-lg bg-gold px-3 py-1.5 text-xs font-bold text-navy"
+            >
+              Continue draft
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                clearListingDraft();
+                setLocalDraft(null);
+              }}
+              className="rounded-lg bg-surface px-3 py-1.5 text-xs font-bold text-danger"
+            >
+              Delete draft
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {filtered.length === 0 && !(tab === "all" && localDraft) ? (
         <p className="text-sm text-muted">No listings in this view.</p>
-      ) : (
+      ) : filtered.length > 0 ? (
         <ul className="space-y-3">
           {filtered.map((p) => {
             const expired = isListingExpired(p);
@@ -177,7 +243,7 @@ export function AgentListingsClient({ listings }: { listings: Property[] }) {
             );
           })}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 }

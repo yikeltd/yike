@@ -12,5 +12,7 @@ export default async function AgentListingsPage() {
     .eq("agent_id", user.id)
     .order("created_at", { ascending: false });
 
-  return <AgentListingsClient listings={(data ?? []) as Property[]} />;
+  return (
+    <AgentListingsClient agentId={user.id} listings={(data ?? []) as Property[]} />
+  );
 }
