@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { adminPath } from "@/lib/admin-paths";
+import { adminListingsPath, adminPath } from "@/lib/admin-paths";
 import type { AdminNavBadges } from "@/lib/admin/navigation";
 
 const ACTION_LINKS: {
@@ -11,7 +11,7 @@ const ACTION_LINKS: {
   {
     badgeKey: "pending-reviews",
     label: "Pending reviews",
-    href: adminPath("listings/review"),
+    href: adminListingsPath("pending"),
     variant: "warning",
   },
   {

@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { requireServerClient } from "@/lib/supabase/require-client";
+import { adminListingsPath } from "@/lib/admin-paths";
 import { ModerationCard } from "@/components/admin/moderation-card";
 import { ListingActions } from "@/components/admin/listing-actions";
 import { AdminPagination } from "@/components/admin/admin-pagination";
@@ -17,7 +19,11 @@ export default async function AdminListingsPage({
   searchParams: Promise<{ status?: string; page?: string; agent?: string }>;
 }) {
   const sp = await searchParams;
-  const { status = "pending" } = sp;
+  const tabs = ["pending", "approved", "hidden", "rejected"] as const;
+  if (!sp.status || !tabs.includes(sp.status as (typeof tabs)[number])) {
+    redirect(adminListingsPath("pending"));
+  }
+  const status = sp.status;
   const { page, from, to } = parseAdminPage(sp);
   const supabase = await requireServerClient();
 
@@ -37,7 +43,6 @@ export default async function AdminListingsPage({
   const listings = (data ?? []) as (Property & { agent: Profile })[];
   const total = count ?? 0;
 
-  const tabs = ["pending", "approved", "hidden", "rejected"] as const;
   const pageParams = { status, agent: sp.agent };
 
   return (
@@ -58,7 +63,7 @@ export default async function AdminListingsPage({
         {tabs.map((s) => (
           <Link
             key={s}
-            href={`/lex/auth/listings?status=${s}`}
+            href={adminListingsPath(s, sp.agent ? { agent: sp.agent } : undefined)}
             className={cn(
               "pressable shrink-0 rounded-full px-4 py-2 text-sm font-bold capitalize",
               status === s
@@ -121,13 +126,20 @@ export default async function AdminListingsPage({
                         </Link>
                       </td>
                       <td className="px-4 py-4">
-                        <Link
-                          href={pubPath}
-                          className="font-mono text-xs text-gold-dark hover:underline"
-                          target="_blank"
-                        >
-                          {p.slug ?? "—"}
-                        </Link>
+                        {p.status === "approved" ? (
+                          <Link
+                            href={pubPath}
+                            className="font-mono text-xs text-gold-dark hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {p.slug ?? "—"}
+                          </Link>
+                        ) : (
+                          <span className="font-mono text-xs text-muted" title="Live after approval">
+                            {p.slug ?? "—"}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-4 font-bold text-navy">
                         {formatPrice(

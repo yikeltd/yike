@@ -64,10 +64,7 @@ export function AgentReviewResponseBox({ listingId }: { listingId: string }) {
 
   return (
     <div className="rounded-xl border border-gold/40 bg-gold/5 p-4">
-      <h3 className="text-sm font-bold text-navy">Respond to Yike review</h3>
-      <p className="mt-1 text-xs text-muted">
-        Our team asked for clarification. A calm, honest reply helps get your listing live faster.
-      </p>
+      <h3 className="text-sm font-bold text-navy">Update requested</h3>
 
       {requests.length > 1 && (
         <select

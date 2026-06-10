@@ -39,7 +39,53 @@ const VISIBILITY_MAP: Partial<Record<SilentAction, number>> = {
   promote: 10,
 };
 
-export async function GET(_req: Request, ctx: RouteCtx) {
+function reviewPayloadFromProperty(
+  property: Property,
+  openRequests: { id: string; request_type: string; message: string; status: string; created_at: string }[],
+  memories: { decision_type: string; decision_reason: string | null; created_at: string }[],
+  agentOutcome: Record<string, unknown> | null,
+  result?: Awaited<ReturnType<typeof recalculateListingReview>>
+) {
+  const judgment = result?.judgment ?? {
+    scores: (property.review_scores as Record<string, number>) ?? {
+      overall: property.review_overall_score ?? 0,
+      photo: 0,
+      pricing: 0,
+      location: 0,
+      description: 0,
+      trustRisk: 0,
+      completion: 0,
+      naijaFlex: 0,
+    },
+    riskLevel: property.review_risk_level ?? "moderate",
+    good: (property.review_scores as { good?: string[] })?.good ?? [],
+    attention: (property.review_scores as { attention?: string[] })?.attention ?? [],
+  };
+  const suggestedAction =
+    result?.suggestedAction ??
+    (property.review_suggested_action as ReviewSuggestedAction) ??
+    "request_update";
+
+  return {
+    judgment,
+    suggestedAction,
+    suggestedActionLabel: REVIEW_ACTION_LABELS[suggestedAction],
+    queueGroup: result?.queueGroup ?? property.review_queue_group ?? "needs_small_update",
+    openRequests,
+    recentDecisions: memories,
+    visibilityModifier: property.review_visibility_modifier ?? 0,
+    holdStatus: property.review_hold_status ?? "none",
+    outcome: {
+      score: property.outcome_score ?? result?.outcomeScore ?? null,
+      evolutionDelta: property.outcome_evolution_delta ?? result?.outcomeDelta ?? 0,
+      signals: property.outcome_signals ?? null,
+      updatedAt: property.outcome_updated_at ?? null,
+    },
+    agentOutcome,
+  };
+}
+
+export async function GET(req: Request, ctx: RouteCtx) {
   const auth = await requireAdminApi();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -67,8 +113,8 @@ export async function GET(_req: Request, ctx: RouteCtx) {
   }
 
   const property = data as Property & { agent: Profile | null };
-  const result = await recalculateListingReview(admin, property);
-  await persistListingReviewScores(admin, id, result);
+  const forceRefresh = new URL(req.url).searchParams.get("refresh") === "1";
+  const hasCachedScore = property.review_overall_score != null;
 
   const { data: openRequests } = await admin
     .from("listing_review_requests")
@@ -94,23 +140,29 @@ export async function GET(_req: Request, ctx: RouteCtx) {
     agentOutcome = data;
   }
 
-  return NextResponse.json({
-    judgment: result.judgment,
-    suggestedAction: result.suggestedAction,
-    suggestedActionLabel: REVIEW_ACTION_LABELS[result.suggestedAction],
-    queueGroup: result.queueGroup,
-    openRequests: openRequests ?? [],
-    recentDecisions: memories ?? [],
-    visibilityModifier: property.review_visibility_modifier ?? 0,
-    holdStatus: property.review_hold_status ?? "none",
-    outcome: {
-      score: property.outcome_score ?? result.outcomeScore,
-      evolutionDelta: property.outcome_evolution_delta ?? result.outcomeDelta,
-      signals: property.outcome_signals ?? null,
-      updatedAt: property.outcome_updated_at ?? null,
-    },
-    agentOutcome,
-  });
+  if (!forceRefresh && hasCachedScore) {
+    return NextResponse.json(
+      reviewPayloadFromProperty(
+        property,
+        openRequests ?? [],
+        memories ?? [],
+        agentOutcome
+      )
+    );
+  }
+
+  const result = await recalculateListingReview(admin, property);
+  await persistListingReviewScores(admin, id, result);
+
+  return NextResponse.json(
+    reviewPayloadFromProperty(
+      property,
+      openRequests ?? [],
+      memories ?? [],
+      agentOutcome,
+      result
+    )
+  );
 }
 
 export async function POST(req: Request, ctx: RouteCtx) {

@@ -53,9 +53,13 @@ export function ModerationCard({
             </Link>
             <StatusBadge status={property.status} />
           </div>
-          <Link href={pubHref} className="text-[10px] text-gold-dark">
-            {property.slug ?? "View public"}
-          </Link>
+          {property.status === "approved" ? (
+            <Link href={pubHref} className="text-[10px] text-gold-dark" target="_blank" rel="noopener noreferrer">
+              {property.slug ?? "View public"}
+            </Link>
+          ) : (
+            <span className="text-[10px] text-muted">Pending — staff preview only</span>
+          )}
           <p className="mt-1 text-lg font-bold text-navy">
             {formatPrice(
               Number(property.price),

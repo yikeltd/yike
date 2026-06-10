@@ -16,7 +16,10 @@ import { ListingLeadRoutingBox } from "@/components/admin/listing-lead-routing-b
 import { AdminPriceHint } from "@/components/admin/admin-price-hint";
 import { AdminListingHistoryTimeline } from "@/components/admin/admin-listing-history-timeline";
 import { AdminValueDriversPanel } from "@/components/admin/admin-value-drivers-panel";
+import { AdminListingPreview } from "@/components/admin/admin-listing-preview";
+import { AdminRecommendedEdits } from "@/components/admin/admin-recommended-edits";
 import { AdminListingReviewPanel } from "@/components/admin/admin-listing-review-panel";
+import { adminListingsPath } from "@/lib/admin-paths";
 import { AdminEntitySelector } from "@/components/admin/selection";
 import type { AdminEntityItem } from "@/components/admin/selection/types";
 
@@ -180,10 +183,20 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
 
   const previewPath = propertyPath({ ...listing, slug: form.slug || listing.slug });
 
+  const canPreviewPublic = listing.status === "approved";
+
   return (
     <div className="space-y-8 pb-12">
       {pinModal}
-      <AdminListingReviewPanel listingId={listing.id} />
+      <AdminListingPreview listing={listing} />
+      <section className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-sm font-bold text-navy">Quick moderation</h2>
+        <ListingActions
+          propertyId={listing.id}
+          agentVerified={!!listing.agent?.verification_status}
+        />
+      </section>
+      <AdminRecommendedEdits listingId={listing.id} />
       <AdminPriceHint listing={listing} />
       <ListingLeadRoutingBox
         listingId={listing.id}
@@ -208,18 +221,21 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {canPreviewPublic ? (
+            <Link
+              href={previewPath}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pressable rounded-xl border border-navy/15 px-4 py-2 text-xs font-bold text-navy"
+            >
+              View live page
+            </Link>
+          ) : null}
           <Link
-            href={previewPath}
-            target="_blank"
-            className="pressable rounded-xl border border-navy/15 px-4 py-2 text-xs font-bold text-navy"
-          >
-            Preview public page
-          </Link>
-          <Link
-            href="/lex/auth/listings"
+            href={adminListingsPath(listing.status === "approved" ? "approved" : "pending")}
             className="pressable rounded-xl bg-surface px-4 py-2 text-xs font-bold text-muted"
           >
-            ← Back to list
+            ← Back to queue
           </Link>
         </div>
       </div>
@@ -553,13 +569,14 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
 
       <AdminValueDriversPanel listingId={listing.id} />
 
-      <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
-        <h2 className="mb-3 font-bold text-navy">Quick moderation</h2>
-        <ListingActions
-          propertyId={listing.id}
-          agentVerified={!!listing.agent?.verification_status}
-        />
-      </section>
+      <details className="rounded-2xl border border-navy/10 bg-white shadow-sm">
+        <summary className="cursor-pointer px-5 py-4 text-sm font-bold text-navy">
+          Review scores (optional)
+        </summary>
+        <div className="border-t border-navy/8 px-2 pb-4">
+          <AdminListingReviewPanel listingId={listing.id} />
+        </div>
+      </details>
     </div>
   );
 }

@@ -50,13 +50,24 @@ export async function POST(req: Request, ctx: RouteCtx) {
 
   const { id } = await ctx.params;
   const body = (await req.json()) as {
-    requestType: ReviewRequestType;
+    requestType?: ReviewRequestType;
+    requestTypes?: ReviewRequestType[];
     message?: string;
   };
 
-  if (!REQUEST_TYPES.includes(body.requestType)) {
+  const types = (
+    body.requestTypes?.length
+      ? body.requestTypes
+      : body.requestType
+        ? [body.requestType]
+        : []
+  ).filter((t): t is ReviewRequestType => REQUEST_TYPES.includes(t));
+
+  if (types.length === 0) {
     return NextResponse.json({ error: "Invalid request type" }, { status: 400 });
   }
+
+  const primaryType = types[0];
 
   const admin = createAdminClient();
   if (!admin) {
@@ -74,7 +85,10 @@ export async function POST(req: Request, ctx: RouteCtx) {
   }
 
   const message =
-    body.message?.trim() || REVIEW_REQUEST_TEMPLATES[body.requestType];
+    body.message?.trim() ||
+    (types.length === 1
+      ? REVIEW_REQUEST_TEMPLATES[primaryType]
+      : `Please update this listing (${types.join(", ")}).`);
   const now = new Date().toISOString();
 
   const { data: request, error } = await admin
@@ -82,7 +96,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
     .insert({
       listing_id: id,
       agent_id: listing.agent_id,
-      request_type: body.requestType,
+      request_type: primaryType,
       message,
       status: "open",
       requested_by: auth.user.id,
@@ -105,17 +119,21 @@ export async function POST(req: Request, ctx: RouteCtx) {
 
   await saveReviewDecision(admin, {
     listing: listing as Property,
-    decisionType: DECISION_MAP[body.requestType],
+    decisionType: DECISION_MAP[primaryType],
     decisionReason: message,
     adminId: auth.user.id,
-    extraSignals: { request_type: body.requestType, request_id: request.id },
+    extraSignals: {
+      request_type: primaryType,
+      request_types: types,
+      request_id: request.id,
+    },
   });
 
   await notifyAgentReviewRequest(admin, {
     agentId: listing.agent_id,
     listingId: id,
     listingTitle: listing.title,
-    requestType: body.requestType,
+    requestType: primaryType,
     message,
     requestId: request.id,
   });
@@ -129,7 +147,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
     action: "listing.review_request",
     target_type: "property",
     target_id: id,
-    metadata: { request_type: body.requestType, request_id: request.id },
+    metadata: { request_type: primaryType, request_types: types, request_id: request.id },
     ip,
   });
 

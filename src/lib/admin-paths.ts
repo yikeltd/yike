@@ -11,6 +11,18 @@ export function adminPath(segment = ""): string {
   return `${ADMIN_BASE_PATH}/${segment.replace(/^\//, "")}`;
 }
 
+/** Classic moderation queue — always include status so tabs match the URL. */
+export function adminListingsPath(
+  status = "pending",
+  extra?: Record<string, string | undefined>
+): string {
+  const q = new URLSearchParams({ status });
+  for (const [key, value] of Object.entries(extra ?? {})) {
+    if (value) q.set(key, value);
+  }
+  return `${adminPath("listings")}?${q.toString()}`;
+}
+
 export function supportPath(segment = ""): string {
   if (!segment) return SUPPORT_BASE_PATH;
   return `${SUPPORT_BASE_PATH}/${segment.replace(/^\//, "")}`;

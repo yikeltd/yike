@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { adminPath, SUPPORT_BASE_PATH } from "@/lib/admin-paths";
+import { adminListingsPath, adminPath, SUPPORT_BASE_PATH } from "@/lib/admin-paths";
 import { isSuperAdmin } from "@/lib/admin/roles";
 import { crewBrand } from "@/lib/design/tokens";
 import type { UserRole } from "@/types/database";
@@ -37,7 +37,7 @@ export function StaffWorkspaceHome({ role, displayName }: Props) {
 
   const quickLinks = [
     data?.permissions?.can_review_listings
-      ? { href: adminPath("listings/review"), label: "Pending listings" }
+      ? { href: adminListingsPath("pending"), label: "Pending listings" }
       : null,
     data?.permissions?.can_enforce_trust
       ? { href: adminPath("trust-review-queue"), label: "Trust queue" }

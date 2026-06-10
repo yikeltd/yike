@@ -138,8 +138,8 @@ export function AdminListingReviewPanel({ listingId }: { listingId: string }) {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-white p-4 text-sm text-muted shadow-float">
-        Loading review intelligence…
+      <div className="rounded-2xl bg-white p-4 text-sm text-muted">
+        Loading scores…
       </div>
     );
   }
@@ -156,11 +156,11 @@ export function AdminListingReviewPanel({ listingId }: { listingId: string }) {
   const scores = judgment.scores;
 
   return (
-    <div className="space-y-4 rounded-2xl bg-white p-4 shadow-float">
+    <div className="space-y-4 rounded-2xl bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
-            Review intelligence
+            Scores
           </h2>
           <p className="mt-1 text-3xl font-bold text-navy">
             {scores.overall}

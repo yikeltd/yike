@@ -1,5 +1,6 @@
 import type { AdminConsole } from "@/lib/admin/roles";
 import {
+  adminListingsPath,
   adminPath,
   supportPath,
   techPath,
@@ -77,7 +78,7 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     label: "Marketplace",
     items: [
       {
-        href: adminPath("listings"),
+        href: adminListingsPath("pending"),
         label: "Listings",
         segment: "listings",
         emphasis: "primary",

@@ -5,10 +5,6 @@ import {
   REVIEW_QUEUE_LABELS,
   type ReviewQueueGroup,
 } from "@/lib/review-memory";
-import {
-  persistListingReviewScores,
-  recalculateListingReview,
-} from "@/lib/review-memory/recalculate";
 import type { Property, Profile } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -53,29 +49,18 @@ export async function GET(req: Request) {
     agent: Profile | null;
   })[];
 
-  const needsScore = listings.filter((l) => !l.review_overall_score);
-  for (const listing of needsScore.slice(0, 20)) {
-    const result = await recalculateListingReview(admin, listing);
-    await persistListingReviewScores(admin, listing.id, result);
-    listing.review_overall_score = result.judgment.scores.overall;
-    listing.review_risk_level = result.judgment.riskLevel;
-    listing.review_suggested_action = result.suggestedAction;
-    listing.review_queue_group = result.queueGroup;
-    listing.review_scores = {
-      ...result.judgment.scores,
-      good: result.judgment.good,
-      attention: result.judgment.attention,
-    };
-  }
+  const { data: groupRows } = await admin
+    .from("properties")
+    .select("review_queue_group")
+    .eq("status", status);
 
   const groups: Record<string, number> = {};
   for (const g of Object.keys(REVIEW_QUEUE_LABELS) as ReviewQueueGroup[]) {
-    const { count: gc } = await admin
-      .from("properties")
-      .select("id", { count: "exact", head: true })
-      .eq("status", status)
-      .eq("review_queue_group", g);
-    groups[g] = gc ?? 0;
+    groups[g] = 0;
+  }
+  for (const row of groupRows ?? []) {
+    const key = row.review_queue_group as ReviewQueueGroup | null;
+    if (key && key in groups) groups[key] += 1;
   }
 
   return NextResponse.json({
