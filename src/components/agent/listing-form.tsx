@@ -369,6 +369,7 @@ export function ListingForm({
     }
     if (n === 3) {
       if (!city.trim()) return "Pick a city or area from search.";
+      if (!state.trim()) return "Pick a city or area from search.";
     }
     if (n === 4) {
       const ready = readyPhotoItems(mediaItems);
@@ -403,6 +404,40 @@ export function ListingForm({
   function goBack() {
     setError("");
     setStep((s) => Math.max(1, s - 1));
+  }
+
+  function readHiddenFormFields(): {
+    address_hint: string | null;
+    landmark: string | null;
+  } {
+    const form = formRef.current;
+    if (!form) return { address_hint: null, landmark: null };
+    const fd = new FormData(form);
+    return {
+      address_hint: String(fd.get("address_hint") ?? "").trim() || null,
+      landmark: String(fd.get("landmark") ?? "").trim() || null,
+    };
+  }
+
+  function buildMediaPayload(): {
+    media_items: ReturnType<typeof sortMediaItemsForStory>;
+    media_urls: string[];
+  } {
+    const persisted = readyPhotoItems(mediaItems).map(stripListingPhotoForPersist);
+    const media_items = sortMediaItemsForStory(dedupeMediaItems(persisted));
+    const media_urls = mediaItemsToUrls(media_items).filter(
+      (u) => u.startsWith("http")
+    );
+    return { media_items, media_urls };
+  }
+
+  async function requestListingCreate(body: Record<string, unknown>) {
+    return fetchWithTimeout("/api/agent/listings/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      timeoutMs: DB_INSERT_TIMEOUT_MS,
+    });
   }
 
   function runBackgroundListingTasks(listingId: string, payload: Record<string, unknown>) {
@@ -446,15 +481,10 @@ export function ListingForm({
       logListingSubmit({ stage: "listing_insert_started", userId: agentId });
 
       if (initial) {
-        const res = await fetchWithTimeout("/api/agent/listings/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            listingId: initial.id,
-            payload,
-            pricingFields,
-          }),
-          timeoutMs: DB_INSERT_TIMEOUT_MS,
+        const res = await requestListingCreate({
+          listingId: initial.id,
+          payload,
+          pricingFields,
         });
         const data = (await res.json().catch(() => ({}))) as {
           error?: string;
@@ -494,17 +524,18 @@ export function ListingForm({
       }
 
       const pendingId = getPendingListingId(agentId);
-      const res = await fetchWithTimeout("/api/agent/listings/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          listingId: pendingId ?? undefined,
-          idempotencyKey: getListingSubmitIdempotencyKey(agentId),
-          payload,
-          pricingFields,
-        }),
-        timeoutMs: DB_INSERT_TIMEOUT_MS,
+      void getListingSubmitIdempotencyKey(agentId);
+
+      let res = await requestListingCreate({
+        listingId: pendingId ?? undefined,
+        payload,
+        pricingFields,
       });
+
+      if (!res.ok && pendingId) {
+        clearPendingListingId(agentId);
+        res = await requestListingCreate({ payload, pricingFields });
+      }
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
         listingId?: string;
@@ -725,11 +756,17 @@ export function ListingForm({
         ...new Set([...spamModerationFlags, ...guardModerationFlags]),
       ];
 
-      const form = new FormData(e.currentTarget);
       const priceNum = parseNairaAmount(price) ?? 0;
-      const persisted = readyPhotoItems(mediaItems).map(stripListingPhotoForPersist);
-      const media_items = sortMediaItemsForStory(dedupeMediaItems(persisted));
-      const media_urls = mediaItemsToUrls(media_items);
+      const { media_items, media_urls } = buildMediaPayload();
+
+      if (media_urls.length < MIN_LISTING_IMAGES) {
+        setError(
+          "Some photos could not upload. Please retry or remove the failed photos."
+        );
+        return;
+      }
+
+      const { address_hint, landmark } = readHiddenFormFields();
 
       const softened = softenListingTitle(title);
       const qualityFlags = moderateListingDraft({
@@ -774,8 +811,8 @@ export function ListingForm({
         state,
         city,
         area,
-        address_hint: (form.get("address_hint") as string) || null,
-        landmark: (form.get("landmark") as string) || null,
+        address_hint,
+        landmark,
         media_urls,
         media_items,
         video_url: videoUrl || null,
@@ -836,12 +873,15 @@ export function ListingForm({
       }
 
       await persistListing(payload, priceMeta);
-    } catch {
-      setError("Could not submit listing. Please try again.");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not submit listing. Please try again.";
+      setError(friendlyPublicError(message, "Could not submit listing. Please try again."));
       logListingSubmit({
         stage: "listing_submit_failed",
         userId: agentId,
         errorCode: "unexpected",
+        message,
         durationMs: Date.now() - startedAt,
       });
     } finally {

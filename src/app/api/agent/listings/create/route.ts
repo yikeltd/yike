@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isEmailVerified } from "@/lib/auth";
 import { UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
+import { computeExpiresAt } from "@/lib/listing-lifecycle";
+
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
@@ -13,13 +15,6 @@ type Body = {
   pricingFields?: Record<string, unknown>;
 };
 
-function logStage(
-  stage: string,
-  extra: Record<string, unknown> = {}
-): void {
-  console.info("[listing-create]", { stage, ...extra });
-}
-
 const LISTER_ROLES = new Set([
   "agent_unverified",
   "agent_verified",
@@ -27,18 +22,90 @@ const LISTER_ROLES = new Set([
   "super_admin",
 ]);
 
-/** Strip fields that may be missing on older production schemas — core listing still saves. */
-function sanitizeInsertRow(
-  row: Record<string, unknown>
+function logStage(stage: string, extra: Record<string, unknown> = {}): void {
+  console.info("[listing-create]", { stage, ...extra });
+}
+
+function httpMediaUrls(payload: Record<string, unknown>): string[] {
+  if (!Array.isArray(payload.media_urls)) return [];
+  return payload.media_urls.filter(
+    (u): u is string =>
+      typeof u === "string" &&
+      u.startsWith("http") &&
+      !u.startsWith("blob:") &&
+      !u.startsWith("data:")
+  );
+}
+
+function buildMinimalRow(
+  payload: Record<string, unknown>,
+  userId: string,
+  mediaUrls: string[]
 ): Record<string, unknown> {
+  const { expiresAt } = computeExpiresAt(
+    (payload.listing_plan as "free") ?? "free"
+  );
+  const city = String(payload.city ?? "").trim();
+  const state = String(payload.state ?? "").trim() || "Abia";
+
+  return {
+    agent_id: userId,
+    title: String(payload.title ?? "").trim(),
+    description: payload.description ?? null,
+    listing_type: String(payload.listing_type ?? "rent"),
+    property_type: payload.property_type ?? "flat",
+    bedrooms: Number(payload.bedrooms ?? 0) || 0,
+    bathrooms: Number(payload.bathrooms ?? 0) || 0,
+    toilets: Number(payload.toilets ?? 0) || 0,
+    price: Number(payload.price ?? 0),
+    payment_period: String(payload.payment_period ?? "yearly"),
+    state,
+    city,
+    area: String(payload.area ?? "").trim() || city,
+    address_hint: payload.address_hint ?? null,
+    landmark: payload.landmark ?? null,
+    media_urls: mediaUrls,
+    media_items: Array.isArray(payload.media_items) ? payload.media_items : [],
+    video_url: payload.video_url || null,
+    extras: payload.extras ?? {},
+    status: "pending",
+    listing_plan: payload.listing_plan ?? "free",
+    expires_at: payload.expires_at ?? expiresAt,
+    listing_duration_days: payload.listing_duration_days ?? 14,
+    published_at: payload.published_at ?? new Date().toISOString(),
+    moderation_flags: Array.isArray(payload.moderation_flags)
+      ? payload.moderation_flags
+      : [],
+  };
+}
+
+function stripOptionalFields(row: Record<string, unknown>): Record<string, unknown> {
   const out = { ...row };
-  if (
-    Array.isArray(out.moderation_flags) &&
-    (out.moderation_flags as string[]).length === 0
-  ) {
+  delete out.price_confidence_score;
+  delete out.price_anomaly_level;
+  delete out.price_anomaly_reason;
+  delete out.market_price_snapshot;
+  delete out.price_review_status;
+  if (Array.isArray(out.moderation_flags) && !(out.moderation_flags as string[]).length) {
     delete out.moderation_flags;
   }
   return out;
+}
+
+async function insertListing(
+  admin: ReturnType<typeof createAdminClient>,
+  row: Record<string, unknown>
+): Promise<{ id: string } | { error: string; code?: string }> {
+  const { data, error } = await admin
+    .from("properties")
+    .insert(row)
+    .select("id")
+    .single();
+
+  if (error) {
+    return { error: error.message, code: error.code };
+  }
+  return { id: data.id };
 }
 
 export async function POST(request: Request) {
@@ -54,11 +121,8 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    logStage("listing_insert_failed", { errorCode: "auth_missing" });
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
-
-  logStage("auth_checked", { userId: user.id });
 
   const admin = createAdminClient();
   if (!admin) {
@@ -72,26 +136,13 @@ export async function POST(request: Request) {
 
   const { data: profile, error: profileError } = await admin
     .from("profiles")
-    .select(
-      "role, email_verified, is_banned, account_type, listing_limit, account_status"
-    )
+    .select("role, email_verified, is_banned, listing_limit")
     .eq("id", user.id)
     .single();
 
   if (profileError || !profile) {
-    logStage("listing_insert_failed", {
-      userId: user.id,
-      errorCode: "profile_missing",
-      message: profileError?.message,
-    });
     return NextResponse.json({ error: "Profile not found." }, { status: 403 });
   }
-
-  logStage("profile_loaded", {
-    userId: user.id,
-    profileType: profile.account_type,
-    role: profile.role,
-  });
 
   if (profile.is_banned) {
     return NextResponse.json({ error: "Account unavailable" }, { status: 403 });
@@ -102,22 +153,16 @@ export async function POST(request: Request) {
   }
 
   if (!LISTER_ROLES.has(profile.role)) {
-    logStage("listing_insert_failed", {
-      userId: user.id,
-      errorCode: "not_lister",
-      role: profile.role,
-    });
     return NextResponse.json(
       { error: "Complete seller setup before listing." },
       { status: 403 }
     );
   }
 
-  logStage("profile_type_checked", { profileType: profile.account_type });
-
   const title = String(payload.title ?? "").trim();
   const city = String(payload.city ?? "").trim();
   const price = Number(payload.price ?? 0);
+  const mediaUrls = httpMediaUrls(payload);
 
   if (!title || !city || !price) {
     return NextResponse.json(
@@ -126,7 +171,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const mediaUrls = Array.isArray(payload.media_urls) ? payload.media_urls : [];
   if (mediaUrls.length < 2 || mediaUrls.length > 20) {
     return NextResponse.json(
       { error: "Upload between 2 and 20 photos." },
@@ -134,73 +178,37 @@ export async function POST(request: Request) {
     );
   }
 
-  const invalidUrl = mediaUrls.some(
-    (u) =>
-      typeof u !== "string" ||
-      u.startsWith("blob:") ||
-      u.startsWith("data:") ||
-      !u.startsWith("http")
-  );
-  if (invalidUrl) {
-    logStage("listing_insert_failed", {
-      userId: user.id,
-      errorCode: "invalid_media_urls",
-      photoCount: mediaUrls.length,
-    });
-    return NextResponse.json(
-      {
-        error:
-          "Some photos could not upload. Please retry or remove the failed photos.",
-      },
-      { status: 400 }
-    );
-  }
-
-  const row = sanitizeInsertRow({
-    ...payload,
-    ...pricingFields,
-    agent_id: user.id,
-    status: payload.status === "approved" ? "approved" : "pending",
-  });
+  const minimal = buildMinimalRow(payload, user.id, mediaUrls);
+  const fullRow = stripOptionalFields({ ...minimal, ...pricingFields });
 
   if (listingId) {
     const { data: updated, error: updateError } = await admin
       .from("properties")
-      .update(row)
+      .update(fullRow)
       .eq("id", listingId)
       .eq("agent_id", user.id)
       .select("id")
       .maybeSingle();
 
+    if (!updateError && updated?.id) {
+      logStage("listing_insert_success", {
+        userId: user.id,
+        listingId: updated.id,
+        mode: "update",
+        durationMs: Date.now() - startedAt,
+      });
+      return NextResponse.json({ ok: true, listingId: updated.id });
+    }
+
     if (updateError) {
       logStage("listing_insert_failed", {
         userId: user.id,
         listingId,
-        errorCode: updateError.code,
         message: updateError.message,
-        durationMs: Date.now() - startedAt,
+        code: updateError.code,
       });
-      return NextResponse.json(
-        { error: "Could not save listing. Please try again." },
-        { status: 500 }
-      );
     }
-
-    if (!updated?.id) {
-      return NextResponse.json(
-        { error: "Could not save listing. Please try again." },
-        { status: 404 }
-      );
-    }
-
-    logStage("listing_insert_success", {
-      userId: user.id,
-      listingId: updated.id,
-      photoCount: mediaUrls.length,
-      durationMs: Date.now() - startedAt,
-    });
-
-    return NextResponse.json({ ok: true, listingId: updated.id });
+    // Stale pending id — fall through to fresh insert
   }
 
   const limit = profile.listing_limit ?? UNVERIFIED_AGENT_LISTING_LIMIT;
@@ -211,65 +219,37 @@ export async function POST(request: Request) {
     .in("status", ["pending", "approved", "flagged"]);
 
   if ((activeCount ?? 0) >= limit) {
-    return NextResponse.json(
-      { error: "Listing limit reached." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Listing limit reached." }, { status: 400 });
   }
 
-  const { data: created, error: insertError } = await admin
-    .from("properties")
-    .insert(row)
-    .select("id")
-    .single();
+  let result = await insertListing(admin, fullRow);
+  if ("error" in result) {
+    logStage("listing_insert_retry", {
+      userId: user.id,
+      message: result.error,
+      code: result.code,
+    });
+    result = await insertListing(admin, minimal);
+  }
 
-  if (insertError) {
+  if ("error" in result) {
     logStage("listing_insert_failed", {
       userId: user.id,
-      errorCode: insertError.code,
-      message: insertError.message,
-      photoCount: mediaUrls.length,
+      message: result.error,
+      code: result.code,
       durationMs: Date.now() - startedAt,
     });
-
-    const retryRow = { ...row };
-    delete retryRow.moderation_flags;
-    delete retryRow.price_confidence_score;
-    delete retryRow.price_anomaly_level;
-    delete retryRow.price_anomaly_reason;
-    delete retryRow.market_price_snapshot;
-    delete retryRow.price_review_status;
-
-    const { data: retryCreated, error: retryError } = await admin
-      .from("properties")
-      .insert(retryRow)
-      .select("id")
-      .single();
-
-    if (retryError) {
-      return NextResponse.json(
-        { error: "Could not save listing. Please try again." },
-        { status: 500 }
-      );
-    }
-
-    logStage("listing_insert_success", {
-      userId: user.id,
-      listingId: retryCreated.id,
-      photoCount: mediaUrls.length,
-      retried: true,
-      durationMs: Date.now() - startedAt,
-    });
-
-    return NextResponse.json({ ok: true, listingId: retryCreated.id });
+    return NextResponse.json(
+      { error: "Could not save listing. Please try again." },
+      { status: 500 }
+    );
   }
 
   logStage("listing_insert_success", {
     userId: user.id,
-    listingId: created.id,
-    photoCount: mediaUrls.length,
+    listingId: result.id,
     durationMs: Date.now() - startedAt,
   });
 
-  return NextResponse.json({ ok: true, listingId: created.id });
+  return NextResponse.json({ ok: true, listingId: result.id });
 }
