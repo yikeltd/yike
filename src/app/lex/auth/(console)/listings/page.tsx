@@ -30,7 +30,7 @@ export default async function AdminListingsPage({
   let query = supabase
     .from("properties")
     .select(
-      `*, agent:profiles!properties_agent_id_fkey (id, full_name, verification_status, verified_badge, role)`,
+      `*, agent:profiles!properties_agent_id_fkey (id, full_name, verification_status, verified_badge, role, phone, whatsapp)`,
       { count: "exact" }
     )
     .eq("status", status)
@@ -157,9 +157,15 @@ export default async function AdminListingsPage({
                       <td className="px-4 py-4">
                         <StatusBadge status={p.status} />
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 align-top">
                         <ListingActions
                           propertyId={p.id}
+                          title={p.title}
+                          status={p.status}
+                          agentId={p.agent?.id}
+                          agentName={p.agent?.full_name ?? undefined}
+                          agentWhatsapp={p.agent?.whatsapp}
+                          agentPhone={p.agent?.phone}
                           agentVerified={
                             !!(
                               p.agent?.verified_badge ||

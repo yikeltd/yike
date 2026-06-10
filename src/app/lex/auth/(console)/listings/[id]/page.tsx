@@ -15,7 +15,7 @@ export default async function AdminListingEditPage({
     .from("properties")
     .select(
       `*, agent:profiles!properties_agent_id_fkey (
-        id, full_name, email, phone, whatsapp, role, verification_status, listing_limit,
+        id, full_name, email, phone, whatsapp, role, verification_status, verified_badge, listing_limit,
         public_agent_code, public_slug
       )`
     )

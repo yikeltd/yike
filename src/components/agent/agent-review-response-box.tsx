@@ -56,7 +56,7 @@ export function AgentReviewResponseBox({ listingId }: { listingId: string }) {
       setMessage(body.error ?? "Could not send response");
       return;
     }
-    setMessage("Response sent — thank you. We will review shortly.");
+    setMessage("Sent. We'll review your update.");
     setResponseText("");
     router.refresh();
     void load();

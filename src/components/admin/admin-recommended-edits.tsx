@@ -9,7 +9,13 @@ import {
 import type { ReviewRequestType } from "@/lib/review-memory/constants";
 import { cn } from "@/lib/utils";
 
-export function AdminRecommendedEdits({ listingId }: { listingId: string }) {
+export function AdminRecommendedEdits({
+  listingId,
+  embedded,
+}: {
+  listingId: string;
+  embedded?: boolean;
+}) {
   const { requirePin, pinModal } = usePinGate();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<ReviewRequestType>>(new Set());
@@ -53,19 +59,26 @@ export function AdminRecommendedEdits({ listingId }: { listingId: string }) {
     setOpen(false);
   }
 
-  return (
-    <section className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm space-y-3">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="pressable flex w-full items-center justify-between gap-2 text-left"
-      >
-        <span className="text-sm font-bold text-navy">Recommended edits</span>
-        <span className="text-xs font-bold text-gold-dark">{open ? "Close" : "Open"}</span>
-      </button>
+  const Wrapper = embedded ? "div" : "section";
+  const wrapperClass = embedded
+    ? "space-y-3"
+    : "rounded-2xl border border-navy/10 bg-white p-4 shadow-sm space-y-3";
 
-      {open ? (
-        <div className="space-y-3 border-t border-navy/8 pt-3">
+  return (
+    <Wrapper className={wrapperClass}>
+      {!embedded ? (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="pressable flex w-full items-center justify-between gap-2 text-left"
+        >
+          <span className="text-sm font-bold text-navy">Recommended edits</span>
+          <span className="text-xs font-bold text-gold-dark">{open ? "Close" : "Open"}</span>
+        </button>
+      ) : null}
+
+      {(embedded || open) ? (
+        <div className={cn("space-y-3", !embedded && "border-t border-navy/8 pt-3")}>
           <p className="text-xs text-muted">Select what the agent should fix, then send.</p>
           <div className="flex flex-wrap gap-2">
             {RECOMMENDED_EDIT_OPTIONS.map((opt) => {
@@ -108,6 +121,6 @@ export function AdminRecommendedEdits({ listingId }: { listingId: string }) {
 
       {message ? <p className="text-sm text-muted">{message}</p> : null}
       {pinModal}
-    </section>
+    </Wrapper>
   );
 }

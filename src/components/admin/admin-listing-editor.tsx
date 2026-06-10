@@ -193,7 +193,19 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
         <h2 className="mb-3 text-sm font-bold text-navy">Quick moderation</h2>
         <ListingActions
           propertyId={listing.id}
-          agentVerified={!!listing.agent?.verification_status}
+          title={listing.title}
+          status={listing.status}
+          agentId={listing.agent?.id ?? listing.agent_id}
+          agentName={listing.agent?.full_name ?? undefined}
+          agentWhatsapp={listing.agent?.whatsapp}
+          agentPhone={listing.agent?.phone}
+          agentVerified={
+            !!(
+              listing.agent?.verified_badge ||
+              listing.agent?.role === "agent_verified" ||
+              listing.agent?.verification_status === "approved"
+            )
+          }
         />
       </section>
       <AdminRecommendedEdits listingId={listing.id} />

@@ -98,9 +98,13 @@ export function ModerationCard({
       <div className="border-t border-surface px-3 py-3">
         <ListingActions
           propertyId={property.id}
-          agentVerified={
-            agent ? isVerifiedAgent(agent) : false
-          }
+          title={property.title}
+          status={property.status}
+          agentId={agent?.id}
+          agentName={agent?.full_name ?? undefined}
+          agentWhatsapp={agent?.whatsapp}
+          agentPhone={agent?.phone}
+          agentVerified={agent ? isVerifiedAgent(agent) : false}
         />
       </div>
     </li>

@@ -20,6 +20,8 @@ const ACTIONS = [
   "flag",
   "hide",
   "request_edits",
+  "rented",
+  "pending",
 ] as const;
 
 type ModerateAction = (typeof ACTIONS)[number];
@@ -30,6 +32,8 @@ const STATUS_MAP: Record<ModerateAction, PropertyStatus | null> = {
   flag: "flagged",
   hide: "hidden",
   request_edits: "pending",
+  rented: "rented",
+  pending: "pending",
 };
 
 export async function POST(req: Request, ctx: RouteCtx) {
@@ -48,6 +52,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
     action: ModerateAction;
     note?: string;
     clear_duplicate?: boolean;
+    agent_verified?: boolean;
   };
 
   if (!ACTIONS.includes(body.action)) {
@@ -82,6 +87,16 @@ export async function POST(req: Request, ctx: RouteCtx) {
   if (body.action === "approve") {
     patch.last_refreshed_at = now;
     patch.listing_activity_status = "active";
+    patch.is_verified_listing = body.agent_verified === true;
+  }
+
+  if (body.action === "rented") {
+    patch.listing_activity_status = "rented";
+    patch.unavailable_at = now;
+  }
+
+  if (body.action === "pending" || body.action === "request_edits") {
+    patch.review_hold_status = "update_requested";
   }
 
   if (body.clear_duplicate || body.action === "approve") {
@@ -143,6 +158,8 @@ export async function POST(req: Request, ctx: RouteCtx) {
     flag: "held_for_review",
     hide: "lowered_visibility",
     request_edits: "requested_update",
+    pending: "requested_update",
+    rented: "approved",
   };
 
   void saveReviewDecision(admin, {
