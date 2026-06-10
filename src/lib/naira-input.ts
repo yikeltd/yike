@@ -33,13 +33,18 @@ export function normalizeNairaInput(raw: string): string {
   const trimmed = raw.trim().replace(/,/g, "").replace(/\s+/g, "");
   if (!trimmed) return "";
 
-  const shorthand = trimmed.match(/^(\d+(?:\.\d+)?)([kmb])$/i);
+  const shorthand = trimmed.match(
+    /^(\d+(?:\.\d+)?)(k|thousand|thousands|m|mn|mil|million|millions|b|bn|bil|billion|billions)$/i
+  );
   if (shorthand) {
     const num = parseFloat(shorthand[1]);
     if (!Number.isFinite(num) || num <= 0) return digitsOnly(trimmed);
     const suffix = shorthand[2].toLowerCase();
-    const mult =
-      suffix === "k" ? 1_000 : suffix === "m" ? 1_000_000 : 1_000_000_000;
+    const mult = ["k", "thousand", "thousands"].includes(suffix)
+      ? 1_000
+      : ["m", "mn", "mil", "million", "millions"].includes(suffix)
+        ? 1_000_000
+        : 1_000_000_000;
     return String(Math.round(num * mult));
   }
 

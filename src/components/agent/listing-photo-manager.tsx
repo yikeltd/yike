@@ -92,7 +92,16 @@ export function ListingPhotoManager({
         body: form,
         credentials: "same-origin",
       });
-      const json = await res.json();
+      const json = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        medium?: string;
+        thumbnail?: string;
+        width?: number;
+        height?: number;
+        blur_data_url?: string;
+        small_warning?: boolean;
+        error?: string;
+      };
 
       if (!res.ok) {
         updateItems((prev) =>
@@ -101,7 +110,25 @@ export function ListingPhotoManager({
               ? {
                   ...item,
                   upload_status: "error" as const,
-                  upload_error: friendlyStorageError(json.error ?? "Upload failed"),
+                  upload_error: friendlyStorageError(
+                    json.error ?? "We couldn't upload this photo. Retry or remove it."
+                  ),
+                }
+              : item
+          )
+        );
+        return;
+      }
+
+      const { url, medium, thumbnail } = json;
+      if (!url || !medium || !thumbnail) {
+        updateItems((prev) =>
+          prev.map((item) =>
+            item.id === job.id
+              ? {
+                  ...item,
+                  upload_status: "error" as const,
+                  upload_error: "Upload finished without a usable image. Retry this photo.",
                 }
               : item
           )
@@ -118,9 +145,9 @@ export function ListingPhotoManager({
           item.id === job.id
             ? {
                 ...createMediaItemFromUpload({
-                  url: json.url,
-                  medium: json.medium,
-                  thumbnail: json.thumbnail,
+                  url,
+                  medium,
+                  thumbnail,
                   index: item.sort_order ?? 0,
                   width: json.width,
                   height: json.height,
@@ -142,7 +169,7 @@ export function ListingPhotoManager({
             ? {
                 ...item,
                 upload_status: "error" as const,
-                upload_error: "Network error — try again",
+                upload_error: "Upload paused. Retry this photo or remove it.",
               }
             : item
         )
@@ -343,7 +370,7 @@ export function ListingPhotoManager({
                   className="flex items-center gap-2 rounded-xl bg-surface p-2 shadow-float"
                 >
                   <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-elevated">
-                    {thumb.startsWith("data:") ? (
+                    {thumb.startsWith("data:") || thumb.startsWith("blob:") ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={thumb} alt="" className="h-full w-full object-cover" />
                     ) : (
@@ -385,9 +412,9 @@ export function ListingPhotoManager({
                         </option>
                       ))}
                     </select>
-                    {item.small_warning ? (
+                    {item.small_warning && item.upload_status !== "error" ? (
                       <p className="text-[10px] text-amber-700">
-                        May look blurry — a clearer photo performs better.
+                        Low-resolution photo. A clearer one may perform better.
                       </p>
                     ) : null}
                     {item.upload_status === "error" ? (
@@ -395,15 +422,13 @@ export function ListingPhotoManager({
                         <p className="text-[10px] text-danger">
                           {item.upload_error ?? "Upload failed"}
                         </p>
-                        {fileMapRef.current.has(item.id) ? (
-                          <button
-                            type="button"
-                            onClick={() => retryUpload(item.id)}
-                            className="text-[10px] font-bold text-gold-dark underline"
-                          >
-                            Retry upload
-                          </button>
-                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => retryUpload(item.id)}
+                          className="text-[10px] font-bold text-gold-dark underline"
+                        >
+                          Retry upload
+                        </button>
                       </div>
                     ) : null}
                   </div>

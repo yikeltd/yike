@@ -20,7 +20,7 @@
     "admin:ensure": "node scripts/ensure-admin-user.mjs",
     "reviewer:ensure": "node scripts/ensure-reviewer-users.mjs",
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "seed:sql": "tsx scripts/seed-supabase.ts --sql",

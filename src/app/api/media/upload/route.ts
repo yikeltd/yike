@@ -20,8 +20,10 @@ export async function POST(request: Request) {
   if (!supabase) {
     return NextResponse.json({ error: "Supabase unavailable" }, { status: 503 });
   }
-  const admin = createAdminClient();
-  if (!admin) {
+  let admin: ReturnType<typeof createAdminClient>;
+  try {
+    admin = createAdminClient();
+  } catch {
     return NextResponse.json({ error: "Supabase unavailable" }, { status: 503 });
   }
 

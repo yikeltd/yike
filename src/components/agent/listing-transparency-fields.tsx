@@ -11,7 +11,6 @@ type FeeKey =
   | "agreement_fee"
   | "service_charge"
   | "legal_fee"
-  | "commission"
   | "cleaning_fee"
   | "caution_deposit";
 
@@ -30,11 +29,10 @@ type FieldDef = {
 
 const RENT_FIELDS: FieldDef[] = [
   { key: "agency_fee", label: "Agency fee", placeholder: "e.g. 10%" },
-  { key: "caution_fee", label: "Caution fee", placeholder: "e.g. 12 months" },
+  { key: "caution_fee", label: "Caution fee", placeholder: "e.g. ₦200,000" },
   { key: "agreement_fee", label: "Agreement fee", placeholder: "e.g. ₦150,000" },
   { key: "service_charge", label: "Service charge", placeholder: "e.g. ₦500,000/year" },
   { key: "legal_fee", label: "Legal fee", placeholder: "e.g. ₦150,000" },
-  { key: "commission", label: "Commission", placeholder: "e.g. 5%" },
 ];
 
 export function ListingTransparencyFields({
@@ -212,7 +210,6 @@ export function transparencyToExtras(
       values.legal_fee ?? "",
       modes.legal_fee ?? "exact"
     );
-    if (modes.commission) extras.commission_mode = modes.commission;
   }
 
   if (listingType === "shortlet") {

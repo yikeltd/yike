@@ -128,7 +128,6 @@ function extrasToTransparency(initial?: Property | null) {
   if (e.agreement_fee_mode) modes.agreement_fee = e.agreement_fee_mode;
   if (e.service_charge_mode) modes.service_charge = e.service_charge_mode;
   if (e.legal_fee_mode) modes.legal_fee = e.legal_fee_mode;
-  if (e.commission_mode) modes.commission = e.commission_mode;
   if (e.cleaning_fee_mode) modes.cleaning_fee = e.cleaning_fee_mode;
   if (e.caution_deposit_mode) modes.caution_deposit = e.caution_deposit_mode;
   return { values, modes };
@@ -336,13 +335,15 @@ export function ListingForm({
     }
     if (n === 5) {
       const ready = readyPhotoItems(mediaItems);
+      const readyCount = mediaItemsToUrls(ready).length;
+      const failedCount = mediaItems.filter((i) => i.upload_status === "error").length;
       if (mediaItems.some((i) => i.upload_status === "uploading")) {
         return "Wait for photos to finish uploading.";
       }
-      if (mediaItems.some((i) => i.upload_status === "error")) {
-        return "Remove or re-add failed photos before continuing.";
+      if (readyCount < MIN_LISTING_IMAGES && failedCount > 0) {
+        return `Add at least ${MIN_LISTING_IMAGES} clear photos, or retry/remove failed uploads.`;
       }
-      if (mediaItemsToUrls(ready).length < MIN_LISTING_IMAGES) {
+      if (readyCount < MIN_LISTING_IMAGES) {
         return `Add at least ${MIN_LISTING_IMAGES} clear photos.`;
       }
     }
@@ -624,13 +625,13 @@ export function ListingForm({
           </Button>
           <Button
             type="button"
-            variant="ghost"
+            variant="danger"
             onClick={() => {
               clearListingDraft();
               setDraftPrompt(false);
             }}
           >
-            Start new
+            Delete draft
           </Button>
         </div>
       </div>
@@ -763,6 +764,13 @@ export function ListingForm({
               required
               placeholder="e.g. 1,500,000 or 1.5m"
             />
+            {parseNairaAmount(price) ? (
+              <ListingInlineFees
+                listingType={listingType}
+                values={feeValues}
+                onValueChange={(k, v) => setFeeValues((prev) => ({ ...prev, [k]: v }))}
+              />
+            ) : null}
             {showRooms ? (
               <div className="grid grid-cols-3 gap-2">
                 <div>
@@ -773,7 +781,6 @@ export function ListingForm({
                       setBedrooms(e.target.value.replace(/\D/g, "").slice(0, 2))
                     }
                     inputMode="numeric"
-                    placeholder="0"
                   />
                 </div>
                 <div>
@@ -784,7 +791,6 @@ export function ListingForm({
                       setBathrooms(e.target.value.replace(/\D/g, "").slice(0, 2))
                     }
                     inputMode="numeric"
-                    placeholder="0"
                   />
                 </div>
                 <div>
@@ -795,7 +801,6 @@ export function ListingForm({
                       setToilets(e.target.value.replace(/\D/g, "").slice(0, 2))
                     }
                     inputMode="numeric"
-                    placeholder="0"
                   />
                 </div>
               </div>
@@ -813,13 +818,6 @@ export function ListingForm({
                 ))}
               </Select>
             </div>
-            {parseNairaAmount(price) ? (
-              <ListingInlineFees
-                listingType={listingType}
-                values={feeValues}
-                onValueChange={(k, v) => setFeeValues((prev) => ({ ...prev, [k]: v }))}
-              />
-            ) : null}
           </section>
         )}
 

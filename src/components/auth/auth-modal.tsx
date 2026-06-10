@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { AuthIntent } from "@/lib/auth-intent";
 import { clearAuthIntent } from "@/lib/auth-intent";
-import { friendlyAuthError } from "@/lib/auth-errors";
-import { EmailOtpModal } from "@/components/auth/email-otp-modal";
+import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
+import {
+  EmailOtpModal,
+  type EmailOtpPurpose,
+} from "@/components/auth/email-otp-modal";
 import { PasswordInput } from "@/components/auth/password-input";
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
 import { Button } from "@/components/ui/button";
@@ -30,11 +31,13 @@ export function AuthModal({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
+  const [emailOtpPurpose, setEmailOtpPurpose] = useState<EmailOtpPurpose>("email_verify");
+  const [resolvedEmail, setResolvedEmail] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -56,21 +59,34 @@ export function AuthModal({
     onClose();
   }
 
-  async function finishSignIn() {
-    if (!isSupabaseConfigured()) return false;
-    const supabase = createClient();
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+  async function finishSignIn(signedInIdentifier: string, signedInPassword: string) {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier: signedInIdentifier, password: signedInPassword }),
     });
-    if (authError) {
-      setError(friendlyAuthError(authError.message));
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setError(data.error ?? AUTH_USER_MESSAGES.invalidLogin);
       return false;
     }
-    if (!data.user?.email_confirmed_at && !isReviewerAccountEmail(email)) {
+
+    const email = (data.profile?.email as string | undefined) ?? signedInIdentifier;
+    setResolvedEmail(email);
+
+    if (data.needsEmailVerify && !isReviewerAccountEmail(email)) {
+      setEmailOtpPurpose("email_verify");
       setEmailVerifyOpen(true);
       return false;
     }
+
+    if (data.needsLoginOtp && !isReviewerAccountEmail(email)) {
+      setEmailOtpPurpose("login");
+      setEmailVerifyOpen(true);
+      return false;
+    }
+
     await onSuccess();
     setEmailVerifyOpen(false);
     const resumed = await resumePendingAuthIntent(router, {
@@ -86,7 +102,7 @@ export function AuthModal({
     e.preventDefault();
     setLoading(true);
     setError("");
-    await finishSignIn();
+    await finishSignIn(identifier, password);
     setLoading(false);
   }
 
@@ -169,13 +185,13 @@ export function AuthModal({
           ) : (
             <form onSubmit={handleSignIn} className="mt-5 space-y-3">
               <Input
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                placeholder="Email or username"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
                 className="h-12"
-                autoComplete="email"
+                autoComplete="username"
               />
               <PasswordInput
                 placeholder="Password"
@@ -209,10 +225,10 @@ export function AuthModal({
 
       <EmailOtpModal
         open={emailVerifyOpen}
-        email={email}
-        purpose="email_verify"
+        email={resolvedEmail || identifier}
+        purpose={emailOtpPurpose}
         onVerified={async () => {
-          await finishSignIn();
+          await finishSignIn(identifier, password);
         }}
         autoSend
       />

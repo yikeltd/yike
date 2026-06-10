@@ -10,6 +10,33 @@ import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
+const SCALE_ALIASES = [
+  "k",
+  "thousand",
+  "thousands",
+  "m",
+  "mn",
+  "mil",
+  "million",
+  "millions",
+  "b",
+  "bn",
+  "bil",
+  "billion",
+  "billions",
+];
+
+function cleanDraft(value: string): string {
+  return value.trim().replace(/,/g, "").replace(/\s+/g, "").toLowerCase();
+}
+
+function shouldKeepRawDraft(raw: string): boolean {
+  const cleaned = cleanDraft(raw);
+  if (/^\d+\.\d*$/.test(cleaned)) return true;
+  const scale = cleaned.match(/^\d+(?:\.\d+)?([a-z]+)$/)?.[1];
+  return Boolean(scale && !SCALE_ALIASES.includes(scale));
+}
+
 export function NairaInput({
   label,
   value,
@@ -26,9 +53,10 @@ export function NairaInput({
   placeholder?: string;
 }) {
   const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState("");
   const numeric = normalizeNairaInput(value);
   const display = focused
-    ? formatNairaTyping(numeric)
+    ? draft
     : numeric
       ? formatNairaAmount(Number(numeric))
       : "";
@@ -38,9 +66,26 @@ export function NairaInput({
       {label ? <FieldLabel>{label}</FieldLabel> : null}
       <Input
         value={display}
-        onChange={(e) => onChange(normalizeNairaInput(e.target.value))}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (shouldKeepRawDraft(raw)) {
+            setDraft(raw);
+            return;
+          }
+          const next = normalizeNairaInput(raw);
+          onChange(next);
+          setDraft(next ? formatNairaTyping(next) : "");
+        }}
+        onFocus={() => {
+          setFocused(true);
+          setDraft(numeric ? formatNairaTyping(numeric) : "");
+        }}
+        onBlur={() => {
+          setFocused(false);
+          if (!shouldKeepRawDraft(draft)) {
+            onChange(normalizeNairaInput(draft));
+          }
+        }}
         inputMode="decimal"
         required={required}
         placeholder={
