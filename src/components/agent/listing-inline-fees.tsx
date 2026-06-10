@@ -4,6 +4,7 @@ import type { ListingTypeValue } from "@/constants/listingTypes";
 import type { FeeTransparencyMode } from "@/types/database";
 import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
+import { formatAmountOrPercentTyping } from "@/lib/naira-input";
 
 type Props = {
   listingType: ListingTypeValue;
@@ -43,7 +44,7 @@ function FlexibleFeeInput({
         <Input
           value={value}
           onChange={(e) => {
-            const next = e.target.value;
+            const next = formatAmountOrPercentTyping(e.target.value);
             onValueChange(fieldKey, next);
             onModeChange(fieldKey, modeFromValue(next));
           }}

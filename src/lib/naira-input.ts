@@ -23,6 +23,30 @@ export function formatNairaTyping(digits: string): string {
   return n.toLocaleString("en-NG");
 }
 
+/** Comma-group integer digits (strips non-digits). */
+export function formatIntegerTyping(raw: string): string {
+  const digits = digitsOnly(raw);
+  if (!digits) return "";
+  return formatNairaTyping(digits);
+}
+
+/** Comma-group a leading amount; keep trailing text (e.g. /month, per project). */
+export function formatSalaryTyping(raw: string): string {
+  const match = raw.match(/^[\d,]*/);
+  const numRaw = match?.[0] ?? "";
+  const suffix = raw.slice(numRaw.length);
+  const digits = digitsOnly(numRaw);
+  if (!digits && !suffix) return "";
+  if (!digits) return raw;
+  return `${formatNairaTyping(digits)}${suffix}`;
+}
+
+/** Format amount fields that may be plain digits or a percentage. */
+export function formatAmountOrPercentTyping(raw: string): string {
+  if (raw.includes("%")) return raw;
+  return formatSalaryTyping(raw);
+}
+
 /** Keep digits only for controlled state. */
 export function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");

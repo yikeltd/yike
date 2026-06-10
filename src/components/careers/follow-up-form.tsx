@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { FollowUpQuestion, FollowUpQuestionType } from "@/lib/careers/follow-up/types";
+import { formatIntegerTyping, formatSalaryTyping } from "@/lib/naira-input";
 import { cn } from "@/lib/utils";
+
+const THANK_YOU_REDIRECT_MS = 4000;
 
 const QUESTION_TYPES: { value: FollowUpQuestionType; label: string }[] = [
   { value: "short_text", label: "Short text" },
@@ -106,6 +110,32 @@ function QuestionField({
     );
   }
 
+  if (question.type === "salary") {
+    return (
+      <input
+        type="text"
+        inputMode="decimal"
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(formatSalaryTyping(e.target.value))}
+        className={base}
+      />
+    );
+  }
+
+  if (question.type === "years_experience") {
+    return (
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(formatIntegerTyping(e.target.value))}
+        className={base}
+      />
+    );
+  }
+
   if (question.type === "rating") {
     return (
       <div className="flex flex-wrap gap-2">
@@ -136,6 +166,28 @@ function QuestionField({
       placeholder={question.placeholder}
       className={base}
     />
+  );
+}
+
+function ThankYouRedirect({ jobTitle }: { jobTitle?: string }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      router.push("/");
+    }, THANK_YOU_REDIRECT_MS);
+    return () => window.clearTimeout(timer);
+  }, [router]);
+
+  return (
+    <div className="rounded-2xl bg-white p-8 text-center shadow-float">
+      <p className="text-lg font-bold text-navy">Thank you</p>
+      <p className="mt-2 text-sm text-muted">
+        We received your follow-up for {jobTitle ?? "this role"}. Our team will review
+        your answers and contact you if we move forward.
+      </p>
+      <p className="mt-4 text-xs text-muted">Taking you to the homepage…</p>
+    </div>
   );
 }
 
@@ -246,15 +298,7 @@ export function CareerFollowUpForm({ token }: { token: string }) {
   }
 
   if (done) {
-    return (
-      <div className="rounded-2xl bg-white p-8 text-center shadow-float">
-        <p className="text-lg font-bold text-navy">Thank you</p>
-        <p className="mt-2 text-sm text-muted">
-          We received your follow-up for {payload?.jobTitle ?? "this role"}. Our team will review
-          your answers and contact you if we move forward.
-        </p>
-      </div>
-    );
+    return <ThankYouRedirect jobTitle={payload?.jobTitle} />;
   }
 
   return (

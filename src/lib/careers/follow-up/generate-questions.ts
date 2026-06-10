@@ -70,8 +70,7 @@ const CORE_QUESTIONS: FollowUpQuestion[] = [
     "salary_expectation",
     "What is your expected monthly compensation or project rate?",
     "salary",
-    "Salary and availability",
-    { placeholder: "e.g. ₦150,000/month or ₦80,000 per project" }
+    "Salary and availability"
   ),
   q(
     "work_arrangement",
