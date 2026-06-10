@@ -64,6 +64,32 @@ androidManifest = androidManifest.replace(/\n\s+android:pathPrefix="\/"\s*/g, " 
 fs.writeFileSync(manifestPath, androidManifest);
 NODE
 
+node <<'NODE'
+const path = require("path");
+const sharp = require("sharp");
+
+const source = path.resolve("..", "public", "splash", "splash-1080x1920.png");
+const targets = [
+  ["app/src/main/res/drawable-mdpi/splash.png", 320],
+  ["app/src/main/res/drawable-hdpi/splash.png", 480],
+  ["app/src/main/res/drawable-xhdpi/splash.png", 720],
+  ["app/src/main/res/drawable-xxhdpi/splash.png", 960],
+  ["app/src/main/res/drawable-xxxhdpi/splash.png", 1280],
+];
+
+Promise.all(
+  targets.map(([out, size]) =>
+    sharp(source)
+      .resize(size, size, { fit: "cover", position: "center" })
+      .png({ compressionLevel: 9, adaptiveFiltering: true })
+      .toFile(out)
+  )
+).catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
+NODE
+
 echo "Building signed release APK + AAB (com.yike.app)..."
 ./gradlew --no-daemon clean bundleRelease assembleRelease
 

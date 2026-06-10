@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { isAndroidTwa, isStandaloneApp } from "@/lib/app-environment";
 
-const SW_URL = "/sw.js?v=29";
-const CACHE_RESET_KEY = "yike-cache-reset-v29";
+const SW_URL = "/sw.js?v=30";
+const CACHE_RESET_KEY = "yike-cache-reset-v30";
 
 async function clearServiceWorkers(): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
@@ -22,7 +22,7 @@ async function purgeOldShellCaches(): Promise<void> {
         .filter(
           (key) =>
             /^yike-(shell|listings)-v\d+$/.test(key) &&
-            key !== "yike-shell-v29" &&
+            key !== "yike-shell-v30" &&
             key !== "yike-listings-v4"
         )
         .map((key) => caches.delete(key))
