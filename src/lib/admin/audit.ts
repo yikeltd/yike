@@ -44,6 +44,7 @@ export type AuditAction =
   | "company.verification.approve"
   | "company.verification.reject"
   | "agent.listing_limit"
+  | "agent.account_type"
   | "agent.approve"
   | "agent.suspend"
   | "agent.reinstate"

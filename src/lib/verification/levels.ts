@@ -36,6 +36,7 @@ export type TrustProfileSlice = Pick<
   | "account_type"
   | "avatar_url"
   | "cac_number"
+  | "cac_document_path"
 >;
 
 /** Effective level — admin override wins; escalated floor applies. */

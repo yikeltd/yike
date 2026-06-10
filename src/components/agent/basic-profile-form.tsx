@@ -31,7 +31,11 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
   const [residentialState, setResidentialState] = useState(profile.residential_state ?? "");
 
   const [companyName, setCompanyName] = useState(profile.company_name ?? "");
-  const [cacNumber, setCacNumber] = useState(profile.cac_number ?? "");
+  const [contactName, setContactName] = useState(
+    profile.full_name && profile.full_name !== profile.company_name
+      ? profile.full_name
+      : profile.full_name ?? ""
+  );
   const [cacFileName, setCacFileName] = useState("");
   const [cacDocumentPath, setCacDocumentPath] = useState(profile.cac_document_path ?? "");
 
@@ -63,8 +67,8 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
     const payload = isBusiness
       ? {
           companyName,
-          cacNumber,
-          cacDocumentPath,
+          fullName: contactName,
+          cacDocumentPath: cacDocumentPath || undefined,
           phone: normalizeNigerianPhone(phone),
           residentialAddress,
           residentialArea,
@@ -110,9 +114,6 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
           : "Individual";
 
   const businessNameLabel = isDeveloper ? "Company/Developer Name" : "Company Name";
-  const cacUploadLabel = isDeveloper
-    ? "Upload Company Registration Certificate"
-    : "Upload CAC Certificate";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -131,16 +132,17 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
             />
           </div>
           <div>
-            <FieldLabel>RC or BN Number</FieldLabel>
+            <FieldLabel>Your Name</FieldLabel>
             <Input
-              value={cacNumber}
-              onChange={(e) => setCacNumber(e.target.value)}
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
               required
+              autoComplete="name"
               className="h-12 rounded-xl"
             />
           </div>
           <div>
-            <FieldLabel>Company Phone Number</FieldLabel>
+            <FieldLabel>Phone Number</FieldLabel>
             <Input
               type="tel"
               inputMode="tel"
@@ -152,7 +154,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
             />
           </div>
           <div>
-            <FieldLabel>Company Address</FieldLabel>
+            <FieldLabel>Address</FieldLabel>
             <Input
               value={residentialAddress}
               onChange={(e) => setResidentialAddress(e.target.value)}
@@ -247,7 +249,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
 
       {isBusiness ? (
         <div>
-          <FieldLabel>{cacUploadLabel}</FieldLabel>
+          <FieldLabel>Upload CAC Certificates</FieldLabel>
           <input
             ref={fileRef}
             type="file"
@@ -269,7 +271,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
               ? "Uploading…"
               : cacFileName || cacDocumentPath
                 ? cacFileName || "Certificate uploaded"
-                : cacUploadLabel}
+                : "Upload CAC Certificates"}
           </button>
           <p className="mt-1 text-xs text-muted">PDF, JPG, PNG, or WebP — max 15MB</p>
         </div>

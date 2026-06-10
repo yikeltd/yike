@@ -5,7 +5,12 @@ import Link from "next/link";
 import type { Profile } from "@/types/database";
 import { normalizeAccountStatus } from "@/lib/account-control";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
+import { AdminAccountTypeControl } from "@/components/admin/admin-account-type-control";
 import { AdminListingLimitControl } from "@/components/admin/admin-listing-limit-control";
+import {
+  isListingSellerAccountType,
+  listingSellerAccountTypeLabel,
+} from "@/lib/profile/seller-account-types";
 import { AdminUserNotes } from "@/components/admin/admin-user-notes";
 import { AgentStatusActions } from "@/components/admin/agent-verification-actions";
 import { AdminUserTrustActions } from "@/components/admin/admin-user-trust-actions";
@@ -66,6 +71,8 @@ export function AdminUserDetail({
     profile.role === "agent_unverified" ||
     profile.role === "agent_verified" ||
     profile.role === "agent";
+  const canChangeSellerType =
+    isAgent || isListingSellerAccountType(profile.account_type);
 
   const visibleTabs = TABS.filter((t) => {
     if (t === "verification") return isAgent && verificationSection;
@@ -166,9 +173,23 @@ export function AdminUserDetail({
                 <dd className="font-medium">{profile.whatsapp ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-muted">Account type</dt>
-                <dd className="font-medium">{profile.account_type ?? "—"}</dd>
+                <dt className="text-muted">Profile type</dt>
+                <dd className="font-medium">
+                  {listingSellerAccountTypeLabel(profile.account_type)}
+                </dd>
               </div>
+              {profile.company_name ? (
+                <div>
+                  <dt className="text-muted">Company</dt>
+                  <dd className="font-medium">{profile.company_name}</dd>
+                </div>
+              ) : null}
+              {profile.cac_document_path ? (
+                <div>
+                  <dt className="text-muted">CAC</dt>
+                  <dd className="font-medium text-emerald-700">On file</dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-muted">Listing limit</dt>
                 <dd className="font-medium">
@@ -215,6 +236,8 @@ export function AdminUserDetail({
               </p>
             )}
           </section>
+
+          {canChangeSellerType ? <AdminAccountTypeControl profile={profile} /> : null}
 
           {showListingLimit && isAgent && (
             <AdminListingLimitControl

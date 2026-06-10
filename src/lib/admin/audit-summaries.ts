@@ -49,6 +49,11 @@ const ACTION_TEMPLATES: Record<string, (a: SummaryInput) => string> = {
   "agent.reinstate": (i) => `${actorLabel(i)} reinstated agent ${targetLabel(i)}.`,
   "agent.delete": (i) => `${actorLabel(i)} removed agent account ${targetLabel(i)}.`,
   "agent.on_hold": (i) => `${actorLabel(i)} placed agent ${targetLabel(i)} on hold.`,
+  "agent.account_type": (i) => {
+    const from = i.metadata?.from_label ?? i.metadata?.from ?? "previous";
+    const to = i.metadata?.to_label ?? i.metadata?.to ?? "new";
+    return `${actorLabel(i)} changed profile type for ${targetLabel(i)} from ${from} to ${to}.`;
+  },
   "agent.verification.approve": (i) =>
     `${actorLabel(i)} approved agent verification for ${targetLabel(i)}.`,
   "agent.verification.reject": (i) =>

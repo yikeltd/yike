@@ -100,7 +100,7 @@ export function getRequiredVerificationTasks(
     tasks.push({
       id: "cac",
       label: "Submit CAC documentation",
-      complete: Boolean(profile.cac_number),
+      complete: Boolean(profile.cac_document_path || profile.cac_number),
       required: level >= 3,
     });
   }

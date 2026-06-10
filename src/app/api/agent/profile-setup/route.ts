@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 
   if (isBusiness) {
     const companyName = String(body.companyName ?? "").trim();
-    const cacNumber = String(body.cacNumber ?? "").trim();
+    const contactName = String(body.fullName ?? "").trim();
     const cacDocumentPath = String(body.cacDocumentPath ?? "").trim();
 
     if (!companyName) {
@@ -97,14 +97,16 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    if (!contactName) {
+      return NextResponse.json({ error: "Add your name." }, { status: 400 });
+    }
     if (!phone) {
-      return NextResponse.json({ error: "Company phone number is required." }, { status: 400 });
+      return NextResponse.json({ error: "Phone number is required." }, { status: 400 });
     }
 
     fullUpdate = {
       company_name: companyName,
-      full_name: companyName,
-      ...(cacNumber ? { cac_number: cacNumber } : {}),
+      full_name: contactName,
       ...(cacDocumentPath ? { cac_document_path: cacDocumentPath } : {}),
       residential_address: residentialAddress,
       residential_area: residentialArea || null,

@@ -53,6 +53,7 @@ export function hasBasicListingProfile(
 
   if (isBusinessAccount(profile.account_type)) {
     if (!profile.company_name?.trim()) return false;
+    if (!profile.full_name?.trim()) return false;
     if (!profileStreetAddress(profile)) return false;
     if (!profile.residential_city?.trim()) return false;
     if (!profile.residential_state?.trim()) return false;
