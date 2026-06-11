@@ -67,6 +67,30 @@ export function RevenueOverviewPanel() {
       <MetricCard label="Pending payments" value={String(metrics.pendingPayments)} />
       <MetricCard label="Successful payments" value={String(metrics.successfulPayments)} />
       <MetricCard label="Failed payments" value={String(metrics.failedPayments)} />
+      <MetricCard
+        label="Verification revenue (30d)"
+        value={money(metrics.propertyVerificationRevenue)}
+      />
+      <MetricCard
+        label="Paid verification requests"
+        value={String(metrics.propertyVerificationPaid)}
+      />
+      <MetricCard
+        label="Completed verifications"
+        value={String(metrics.propertyVerificationCompleted)}
+      />
+      <MetricCard
+        label="Pending verifications"
+        value={String(metrics.propertyVerificationPending)}
+      />
+      <MetricCard
+        label="Avg completion time"
+        value={
+          metrics.propertyVerificationAvgCompletionHours != null
+            ? `${metrics.propertyVerificationAvgCompletionHours}h`
+            : "—"
+        }
+      />
     </div>
   );
 }

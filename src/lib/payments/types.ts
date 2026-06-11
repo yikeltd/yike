@@ -2,6 +2,7 @@ export type PaymentOrderType =
   | "featured_listing"
   | "boost_listing"
   | "property_verification"
+  | "verification_fee"
   | "subscription";
 
 export type PaymentOrderStatus =

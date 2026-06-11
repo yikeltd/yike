@@ -4,6 +4,8 @@ import { getPaymentCallbackUrl } from "@/lib/payments/config";
 import { logPaymentAudit } from "@/lib/payments/audit";
 import { fulfillBoostListingOrder } from "@/lib/payments/fulfillment/boost-listing";
 import { fulfillFeaturedListingOrder } from "@/lib/payments/fulfillment/featured-listing";
+import { fulfillPropertyVerificationOrder } from "@/lib/payments/fulfillment/property-verification";
+import { fulfillVerificationFeeOrder } from "@/lib/payments/fulfillment/verification-fee";
 import { resolvePaymentProvider } from "@/lib/payments/providers";
 import { generatePaymentReference } from "@/lib/payments/reference";
 import type {
@@ -258,6 +260,28 @@ async function fulfillOrder(
       alreadyFulfilled: result.alreadyFulfilled,
       boostedUntil: result.boostedUntil,
       listingId: (metadata.listing_id as string | undefined) ?? undefined,
+    };
+  }
+
+  if (order.order_type === "property_verification") {
+    const result = await fulfillPropertyVerificationOrder(admin, order);
+    if (!result.ok) return { ok: false, error: result.error };
+
+    return {
+      ok: true,
+      order,
+      alreadyFulfilled: result.alreadyFulfilled,
+    };
+  }
+
+  if (order.order_type === "verification_fee") {
+    const result = await fulfillVerificationFeeOrder(admin, order);
+    if (!result.ok) return { ok: false, error: result.error };
+
+    return {
+      ok: true,
+      order,
+      alreadyFulfilled: result.alreadyFulfilled,
     };
   }
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   checkLabels,
   priorityLabel,
@@ -8,9 +9,12 @@ import {
   situationLabels,
   timelineLabel,
 } from "@/lib/verification/public-request-display";
+import { PROPERTY_VERIFICATION_PACKAGES } from "@/lib/property-verification/packages";
+import type { PropertyVerificationOrder } from "@/types/database";
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ paid?: string }>;
 };
 
 type RequestDetail = {
@@ -59,8 +63,16 @@ function ChipList({ items }: { items: string[] }) {
   );
 }
 
-export default async function PropertyVerificationRequestDetailPage({ params }: Props) {
+function orderStatusLabel(status: string): string {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export default async function PropertyVerificationRequestDetailPage({
+  params,
+  searchParams,
+}: Props) {
   const { id } = await params;
+  const sp = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -78,6 +90,22 @@ export default async function PropertyVerificationRequestDetailPage({ params }: 
 
   if (!data) notFound();
   const request = data as RequestDetail;
+
+  let order: PropertyVerificationOrder | null = null;
+  const admin = createAdminClient();
+  if (admin) {
+    const { data: orderRow } = await admin
+      .from("property_verification_orders")
+      .select("*")
+      .eq("request_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    order = (orderRow as PropertyVerificationOrder | null) ?? null;
+  }
+
+  const paidBanner = sp.paid === "1" || order?.status === "paid";
+  const pkg = order ? PROPERTY_VERIFICATION_PACKAGES[order.package_type] : null;
   const context =
     request.buyer_context && typeof request.buyer_context === "object"
       ? (request.buyer_context as Record<string, unknown>)
@@ -96,6 +124,53 @@ export default async function PropertyVerificationRequestDetailPage({ params }: 
       <Link href="/property-verification/requests" className="text-sm font-bold text-gold-dark">
         Back to requests
       </Link>
+
+      {paidBanner ? (
+        <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          Payment received — your verification is queued for assignment.
+          {order?.verification_reference ? (
+            <span className="mt-1 block font-semibold">{order.verification_reference}</span>
+          ) : null}
+        </div>
+      ) : (
+        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm text-amber-950">
+            Choose a verification package to continue.
+          </p>
+          <Link
+            href={`/property-verification/packages?request=${id}&ref=${encodeURIComponent(request.request_reference ?? "")}`}
+            className="mt-3 inline-flex rounded-xl bg-navy px-4 py-2 text-sm font-bold text-gold"
+          >
+            Choose package & pay
+          </Link>
+        </div>
+      )}
+
+      {order ? (
+        <section className="mt-4 rounded-2xl border border-border bg-white p-5">
+          <h2 className="text-sm font-bold text-navy">Your package</h2>
+          <p className="mt-2 text-sm text-navy">
+            {pkg?.label ?? order.package_type} · {orderStatusLabel(order.status)}
+          </p>
+          {order.status === "completed" && order.report_summary ? (
+            <div className="mt-4 space-y-3">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-navy">
+                {order.report_summary}
+              </p>
+              {order.report_url ? (
+                <a
+                  href={order.report_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex rounded-xl bg-navy px-4 py-2 text-sm font-bold text-gold"
+                >
+                  Download report
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="mt-5 rounded-2xl border border-border bg-white p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">

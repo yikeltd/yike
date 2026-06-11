@@ -216,6 +216,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     reference,
+    requestId: row.id,
     message: "Your verification request has been submitted.",
   });
 }

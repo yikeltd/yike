@@ -200,6 +200,13 @@ export function PropertyVerificationForm({
       setError(data.error ?? "Could not submit request");
       return;
     }
+    const requestId = data.requestId as string | undefined;
+    if (requestId) {
+      router.push(
+        `/property-verification/packages?request=${encodeURIComponent(requestId)}&ref=${encodeURIComponent(data.reference ?? "")}`
+      );
+      return;
+    }
     router.push(
       `/property-verification/thank-you?ref=${encodeURIComponent(data.reference ?? "")}`
     );

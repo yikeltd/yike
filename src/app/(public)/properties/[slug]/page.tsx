@@ -28,6 +28,7 @@ import { AmenityChips } from "@/components/property/amenity-chips";
 import { ListingStructuredData } from "@/components/seo/listing-structured-data";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { ListingFreshness } from "@/components/property/listing-freshness";
+import { PropertyPhysicallyVerifiedCard } from "@/components/property/property-physically-verified";
 import { BedDouble, Bath, MapPin, Navigation } from "lucide-react";
 import { PropertyViewTracker } from "./view-tracker";
 import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
@@ -225,6 +226,11 @@ export default async function PropertyDetailPage({
                 <MapPin className="h-4 w-4 shrink-0 text-gold" />
                 {property.area}, {property.city}
               </p>
+              {property.physically_verified_at ? (
+                <div className="mt-3">
+                  <PropertyPhysicallyVerifiedCard verifiedAt={property.physically_verified_at} />
+                </div>
+              ) : null}
               {property.landmark && (
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
                   <Navigation className="h-3.5 w-3.5 shrink-0 text-gold" />

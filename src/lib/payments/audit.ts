@@ -8,7 +8,9 @@ export type PaymentAuditAction =
   | "payment_failed"
   | "payment_refunded"
   | "promotion_activated"
-  | "promotion_expired";
+  | "promotion_expired"
+  | "verification_request_created"
+  | "verification_approved";
 
 export function logPaymentAudit(input: {
   action: PaymentAuditAction;

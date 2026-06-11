@@ -320,6 +320,7 @@ export interface Profile {
   is_verified_agent?: boolean;
   verified_agent_at?: string | null;
   verified_agent_by?: string | null;
+  seller_verification_level?: "basic" | "business" | null;
   verification_level?: AgentVerificationLevel | null;
   inquiry_count?: number;
   avg_response_time_minutes?: number | null;
@@ -577,6 +578,7 @@ export interface Property {
   yike_verified?: boolean;
   yike_verified_at?: string | null;
   yike_verified_by?: string | null;
+  physically_verified_at?: string | null;
   yike_verification_level?: YikeVerificationLevel | null;
   is_premium_deal?: boolean;
   developer_partner_id?: string | null;
@@ -1090,6 +1092,7 @@ export type PaymentOrderType =
   | "featured_listing"
   | "boost_listing"
   | "property_verification"
+  | "verification_fee"
   | "subscription";
 
 export type PaymentOrderStatus =
@@ -1114,6 +1117,63 @@ export interface PaymentOrder {
   paid_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type PropertyVerificationPackageType = "basic" | "standard" | "premium";
+
+export type PropertyVerificationOrderStatus =
+  | "pending"
+  | "paid"
+  | "assigned"
+  | "in_progress"
+  | "completed"
+  | "cancelled"
+  | "refunded";
+
+export interface PropertyVerificationOrder {
+  id: string;
+  user_id: string;
+  property_id: string | null;
+  seller_id: string | null;
+  request_id: string | null;
+  package_type: PropertyVerificationPackageType;
+  amount: number;
+  status: PropertyVerificationOrderStatus;
+  payment_reference: string | null;
+  verification_reference: string | null;
+  request_notes: string | null;
+  report_url: string | null;
+  report_summary: string | null;
+  report_media: Record<string, unknown>;
+  assigned_to: string | null;
+  payment_order_id: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type SellerVerificationStatus =
+  | "pending"
+  | "under_review"
+  | "approved"
+  | "rejected";
+
+export type SellerVerificationLevel = "basic" | "business";
+
+export interface SellerVerification {
+  id: string;
+  user_id: string;
+  verification_level: SellerVerificationLevel;
+  status: SellerVerificationStatus;
+  review_notes: string | null;
+  documents: Record<string, unknown>;
+  payment_order_id: string | null;
+  reviewed_by: string | null;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: Pick<Profile, "id" | "full_name" | "email" | "username" | "seller_verification_level">;
 }
 
 export interface ListingPromotion {

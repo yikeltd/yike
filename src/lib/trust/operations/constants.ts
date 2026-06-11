@@ -38,6 +38,7 @@ export type TimelineEventType =
   | "delivered_to_buyer"
   | "case_closed"
   | "risk_assessed"
+  | "payment_received"
   | "listing_held"
   | "agent_frozen";
 

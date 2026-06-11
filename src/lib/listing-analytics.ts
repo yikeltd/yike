@@ -10,6 +10,9 @@ export const LISTING_EVENT_TYPES = [
   "search_impression",
   "featured_impression",
   "featured_click",
+  "boost_impression",
+  "boost_click",
+  "boost_order",
 ] as const;
 
 export type ListingEventType = (typeof LISTING_EVENT_TYPES)[number];

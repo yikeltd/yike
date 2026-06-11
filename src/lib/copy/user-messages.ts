@@ -38,7 +38,7 @@ export const VERIFICATION_LEGAL_DISCLAIMER_SHORT =
   "Yike provides physical inspection assistance only.";
 
 export const VERIFICATION_LEGAL_DISCLAIMER =
-  "Yike provides physical inspection assistance only. This is not legal title, ownership, or document verification.";
+  "Yike provides independent physical inspection assistance only. Yike does not guarantee ownership, title, legal status, or legal rights to any property.";
 
 export const LEGAL_REVIEW_DISCLAIMER_SHORT =
   "Independent legal review assistance — not a title guarantee.";
