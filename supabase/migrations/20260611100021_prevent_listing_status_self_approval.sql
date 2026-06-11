@@ -1,0 +1,1 @@
+-- No-op placeholder (CLI scaffold). Logic in 20260611120000_prevent_listing_status_self_approval.sql.

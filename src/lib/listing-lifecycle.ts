@@ -72,7 +72,7 @@ export function statusAfterAgentAction(
       };
     case "mark_sold":
       return {
-        status: "hidden",
+        status: "archived",
         availability_status: "sold",
         needsReview: false,
       };
