@@ -14,6 +14,7 @@ import {
 } from "@/lib/utils";
 import { propertyAbsoluteUrl } from "@/lib/property-url";
 import { listingShareImageUrl } from "@/lib/share-images";
+import { listingGalleryImages } from "@/lib/listing-gallery-images";
 import { AgentTrustCard } from "@/components/property/agent-trust-card";
 import { ReportRentedButton } from "@/components/property/report-rented-button";
 import { ListingGallery } from "@/components/property/listing-gallery";
@@ -150,10 +151,7 @@ export default async function PropertyDetailPage({
     property.is_verified_listing ||
     (agent ? isVerifiedAgent(agent) : false);
   const featuredActive = isFeaturedActive(property);
-  const images =
-    property.media_urls.length > 0
-      ? property.media_urls
-      : ["/placeholder-property.svg"];
+  const images = listingGalleryImages(property);
 
   const price = formatPrice(
     Number(property.price),

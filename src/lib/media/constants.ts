@@ -44,9 +44,9 @@ export const MEDIA_LIMITS = {
 
 /** Quality-preserving WebP variants — do not go below quality 75. */
 export const IMAGE_SIZES = {
-  thumbnail: { width: 320, quality: 82 },
-  medium: { width: 768, quality: 84 },
-  large: { width: 1600, quality: 86 },
+  thumbnail: { width: 400, quality: 84 },
+  medium: { width: 900, quality: 86 },
+  large: { width: 1800, quality: 88 },
   blur: { width: 24, quality: 40 },
 } as const;
 

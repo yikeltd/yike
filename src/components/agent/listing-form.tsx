@@ -89,6 +89,10 @@ import {
   setPendingListingId,
 } from "@/lib/listing-submit-log";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { WhatsAppVerificationModal } from "@/components/profile/whatsapp-verify-modal";
+import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
+import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
+import type { Profile } from "@/types/database";
 
 const TOTAL_SUBMIT_TIMEOUT_MS = 5 * 60_000;
 const DB_INSERT_TIMEOUT_MS = 15_000;
@@ -131,6 +135,7 @@ type ListingFormProps = {
   activeCount?: number;
   listingLimit?: number | null;
   listingFormAd?: AdPlacement | null;
+  profile?: Pick<Profile, "whatsapp" | "phone"> | null;
 };
 
 async function syncValueDrivers(listingId: string, driverKeys: string[]) {
@@ -153,11 +158,17 @@ export function ListingForm({
   activeCount = 0,
   listingLimit = null,
   listingFormAd = null,
+  profile = null,
 }: ListingFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const photoManagerRef = useRef<ListingPhotoManagerHandle>(null);
   const submitInFlightRef = useRef<Promise<void> | null>(null);
+  const afterWhatsappVerifyRef = useRef<(() => void) | null>(null);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+  const [whatsappPhone, setWhatsappPhone] = useState(() =>
+    getWhatsappNumber(profile ?? {})
+  );
   const isEdit = Boolean(initial);
 
   const [step, setStep] = useState(1);
@@ -436,6 +447,24 @@ export function ListingForm({
     });
   }
 
+  function openWhatsappVerification(retry: () => void) {
+    afterWhatsappVerifyRef.current = retry;
+    setWhatsappModalOpen(true);
+  }
+
+  function handleWhatsappApiBlock(
+    data: { error?: string; code?: string },
+    retry: () => void
+  ): boolean {
+    if (data.code === "whatsapp_verification_required") {
+      setError("");
+      setLoading(false);
+      openWhatsappVerification(retry);
+      return true;
+    }
+    return false;
+  }
+
   function runBackgroundListingTasks(listingId: string, payload: Record<string, unknown>) {
     void syncValueDrivers(listingId, valueDriverKeys);
     void fetch("/api/notifications/email/listing-submitted", {
@@ -484,9 +513,17 @@ export function ListingForm({
         });
         const data = (await res.json().catch(() => ({}))) as {
           error?: string;
+          code?: string;
           listingId?: string;
         };
         if (!res.ok) {
+          if (
+            handleWhatsappApiBlock(data, () => {
+              void persistListing(payload, priceMeta);
+            })
+          ) {
+            return;
+          }
           throw new Error(data.error || "Could not save listing. Please try again.");
         }
         void syncValueDrivers(initial.id, valueDriverKeys);
@@ -539,12 +576,20 @@ export function ListingForm({
       }
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
+        code?: string;
         listingId?: string;
       };
 
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error("Your session expired. Please log in again.");
+        }
+        if (
+          handleWhatsappApiBlock(data, () => {
+            void persistListing(payload, priceMeta);
+          })
+        ) {
+          return;
         }
         logListingSubmit({
           stage: "listing_insert_failed",
@@ -935,6 +980,18 @@ export function ListingForm({
 
   return (
     <>
+      <WhatsAppVerificationModal
+        open={whatsappModalOpen}
+        onOpenChange={setWhatsappModalOpen}
+        phoneNumber={whatsappPhone}
+        reason={WHATSAPP_VERIFY_COPY.listingPrompt}
+        onNumberUpdated={setWhatsappPhone}
+        onVerified={() => {
+          const retry = afterWhatsappVerifyRef.current;
+          afterWhatsappVerifyRef.current = null;
+          retry?.();
+        }}
+      />
       {priceDialog && (
         <PriceConfirmDialog
           analysis={priceDialog.analysis}

@@ -4,44 +4,64 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { canRequestPhoneOtp, normalizeNigerianPhone } from "@/lib/phone";
+import {
+  canRequestPhoneOtp,
+  formatWhatsappDisplay,
+  normalizeWhatsappInput,
+} from "@/lib/phone";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import { cn } from "@/lib/utils";
 
 type Step = "intro" | "update" | "code";
 
-export function WhatsAppVerifyModal({
+export type WhatsAppVerificationModalProps = {
+  open: boolean;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
+  initialPhone?: string;
+  phoneNumber?: string;
+  reason?: string;
+  onVerified?: () => void;
+  onNumberUpdated?: (phone: string) => void;
+};
+
+export function WhatsAppVerificationModal({
   open,
   onClose,
+  onOpenChange,
   initialPhone,
+  phoneNumber,
+  reason,
   onVerified,
-}: {
-  open: boolean;
-  onClose: () => void;
-  initialPhone: string;
-  onVerified?: () => void;
-}) {
+  onNumberUpdated,
+}: WhatsAppVerificationModalProps) {
+  const resolvedPhone = phoneNumber ?? initialPhone ?? "";
   const [step, setStep] = useState<Step>("intro");
-  const [phone, setPhone] = useState(initialPhone);
+  const [phone, setPhone] = useState(resolvedPhone);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
+  const setOpen = (next: boolean) => {
+    if (!next) onClose?.();
+    onOpenChange?.(next);
+  };
+
   useEffect(() => {
     if (open) {
-      setPhone(initialPhone);
+      setPhone(resolvedPhone);
       setStep("intro");
       setCode("");
       setError("");
       setInfo("");
     }
-  }, [open, initialPhone]);
+  }, [open, resolvedPhone]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !loading) onClose();
+      if (e.key === "Escape" && !loading) setOpen(false);
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -49,14 +69,14 @@ export function WhatsAppVerifyModal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [open, loading, onClose]);
+  }, [open, loading]);
 
   if (!open) return null;
 
   async function sendCode(phoneValue: string) {
-    const normalized = normalizeNigerianPhone(phoneValue);
+    const normalized = normalizeWhatsappInput(phoneValue);
     if (!canRequestPhoneOtp(normalized)) {
-      setError("Enter a valid Nigerian number (e.g. 08035143299).");
+      setError("Enter a valid Nigerian number (e.g. 08035143299 or +2348035143299).");
       return;
     }
 
@@ -71,11 +91,19 @@ export function WhatsAppVerifyModal({
     setLoading(false);
 
     if (!res.ok) {
-      setError((data.error as string) || WHATSAPP_VERIFY_COPY.providerUnavailable);
+      const message = (data.error as string) || WHATSAPP_VERIFY_COPY.providerUnavailable;
+      setError(
+        step === "update"
+          ? message.includes("update") || message.includes("Could not")
+            ? message
+            : "Could not update number. Please try again."
+          : message
+      );
       return;
     }
 
     setPhone(normalized);
+    onNumberUpdated?.(normalized);
     setInfo(WHATSAPP_VERIFY_COPY.afterSend);
     setStep("code");
   }
@@ -102,8 +130,10 @@ export function WhatsAppVerifyModal({
     }
 
     onVerified?.();
-    onClose();
+    setOpen(false);
   }
+
+  const displayNumber = formatWhatsappDisplay(phone || resolvedPhone);
 
   return (
     <div
@@ -119,10 +149,13 @@ export function WhatsAppVerifyModal({
               {WHATSAPP_VERIFY_COPY.modalTitle}
             </h2>
             <p className="mt-1 text-sm text-muted">{WHATSAPP_VERIFY_COPY.modalBody}</p>
+            {reason ? (
+              <p className="mt-2 text-xs font-medium text-navy">{reason}</p>
+            ) : null}
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => setOpen(false)}
             className="rounded-lg p-1 text-muted hover:text-foreground"
             aria-label="Close"
           >
@@ -132,15 +165,14 @@ export function WhatsAppVerifyModal({
 
         {step === "intro" && (
           <div className="mt-4 space-y-3">
-            <p className="text-xs text-muted">{WHATSAPP_VERIFY_COPY.beforeSend}</p>
-            {phone ? (
-              <p className="text-sm font-medium text-foreground">{phone}</p>
+            {displayNumber !== "—" ? (
+              <p className="text-sm font-semibold text-foreground">{displayNumber}</p>
             ) : null}
             <Button
               type="button"
               className="w-full"
               disabled={loading}
-              onClick={() => void sendCode(phone)}
+              onClick={() => void sendCode(phone || resolvedPhone)}
             >
               {loading ? "Sending…" : WHATSAPP_VERIFY_COPY.primaryButton}
             </Button>
@@ -162,9 +194,8 @@ export function WhatsAppVerifyModal({
               type="tel"
               inputMode="tel"
               value={phone}
-              onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
-              placeholder="08035143299"
-              maxLength={11}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="08035143299 or +2348035143299"
               className="h-11 rounded-xl"
               autoComplete="tel"
             />
@@ -174,7 +205,7 @@ export function WhatsAppVerifyModal({
               disabled={loading}
               onClick={() => void sendCode(phone)}
             >
-              {loading ? "Sending…" : WHATSAPP_VERIFY_COPY.verifyNumber}
+              {loading ? "Sending…" : "Update and send code"}
             </Button>
           </div>
         )}
@@ -215,3 +246,6 @@ export function WhatsAppVerifyModal({
     </div>
   );
 }
+
+/** @deprecated use WhatsAppVerificationModal */
+export const WhatsAppVerifyModal = WhatsAppVerificationModal;

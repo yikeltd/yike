@@ -34,15 +34,8 @@ function optimizeSupabaseStorageUrl(url: URL, width: number): string {
   const target = variantSuffix(width);
   const path = url.pathname;
 
-  if (/-lg\.webp$/i.test(path)) {
-    url.pathname = path.replace(/-lg\.webp$/i, target);
-    return url.toString();
-  }
-  if (/-md\.webp$/i.test(path) && width <= 420) {
-    url.pathname = path.replace(/-md\.webp$/i, "-thumb.webp");
-    return url.toString();
-  }
   if (/-(thumb|md|lg)\.webp$/i.test(path)) {
+    url.pathname = path.replace(/-(thumb|md|lg)\.webp$/i, target);
     return url.toString();
   }
 

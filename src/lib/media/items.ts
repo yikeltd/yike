@@ -29,8 +29,14 @@ function newMediaId(): string {
   return `media_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/** Primary display URL — large variant when available. */
 export function displayUrl(item: PropertyMediaItem): string {
-  return item.webp_url || item.image_url;
+  return item.image_url || item.webp_url || "";
+}
+
+/** Card / rail thumbnail — smaller variant for fast loads. */
+export function cardDisplayUrl(item: PropertyMediaItem): string {
+  return item.thumbnail_url || item.webp_url || item.image_url || "";
 }
 
 /** Build items from legacy media_urls array. */

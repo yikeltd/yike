@@ -1,6 +1,7 @@
 import { requireAgentLister } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { ListingForm } from "@/components/agent/listing-form";
+import { ListingFormErrorBoundary } from "@/components/agent/listing-form-error-boundary";
 import { ListingWhatsappVerifyPrompt } from "@/components/agent/listing-whatsapp-verify-prompt";
 import { mustVerifyWhatsappBeforeListing } from "@/lib/whatsapp-verification/profile";
 import {
@@ -72,12 +73,15 @@ export default async function NewListingPage() {
           </Link>
         </div>
       ) : (
-        <ListingForm
-          agentId={user.id}
-          activeCount={activeCount}
-          listingLimit={limit}
-          listingFormAd={listingFormAd}
-        />
+        <ListingFormErrorBoundary>
+          <ListingForm
+            agentId={user.id}
+            activeCount={activeCount}
+            listingLimit={limit}
+            listingFormAd={listingFormAd}
+            profile={profile}
+          />
+        </ListingFormErrorBoundary>
       )}
     </div>
   );

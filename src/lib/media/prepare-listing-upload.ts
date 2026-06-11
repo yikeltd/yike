@@ -77,7 +77,7 @@ export async function prepareListingUpload(file: File): Promise<PreparedListingP
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error("Could not process photo."))),
       "image/jpeg",
-      0.88
+      0.9
     );
   });
 

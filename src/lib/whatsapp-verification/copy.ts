@@ -3,7 +3,7 @@ export const WHATSAPP_VERIFY_COPY = {
     "Yike will send your verification code on WhatsApp. The sender name may appear as our verification provider, but the code is for your Yike account.",
   afterSend: "Enter the code sent to your WhatsApp to verify your number.",
   modalTitle: "Verify WhatsApp Number",
-  modalBody: "Receive your verification code on WhatsApp.",
+  modalBody: "Yike will send a verification code to your WhatsApp number.",
   primaryButton: "Receive code on WhatsApp",
   notYourNumber: "Not your WhatsApp number?",
   updateHere: "Update it here",

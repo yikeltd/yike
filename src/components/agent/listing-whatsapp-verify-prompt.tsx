@@ -9,39 +9,53 @@ import {
   isWhatsappNumberVerified,
   mustVerifyWhatsappBeforeListing,
 } from "@/lib/whatsapp-verification/profile";
-import { isWhatsappOtpEnabledClient } from "@/lib/feature-flags";
-import { WhatsAppVerifyModal } from "@/components/profile/whatsapp-verify-modal";
+import { formatWhatsappDisplay } from "@/lib/phone";
+import { WhatsAppVerificationModal } from "@/components/profile/whatsapp-verify-modal";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 
 export function ListingWhatsappVerifyPrompt({ profile }: { profile: Profile }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const needsVerification =
+    mustVerifyWhatsappBeforeListing(profile) && !isWhatsappNumberVerified(profile);
+  const [open, setOpen] = useState(needsVerification);
+  const [dismissed, setDismissed] = useState(false);
 
-  if (!isWhatsappOtpEnabledClient()) return null;
-  if (!mustVerifyWhatsappBeforeListing(profile)) return null;
-  if (isWhatsappNumberVerified(profile)) return null;
+  if (!needsVerification) return null;
 
   const phone = getWhatsappNumber(profile);
 
   return (
     <>
-      <div className="rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-navy">
-        <p className="font-semibold">{WHATSAPP_VERIFY_COPY.listingPrompt}</p>
-        {phone ? <p className="mt-1 text-xs text-muted">{phone}</p> : null}
-        <Button
-          type="button"
-          size="sm"
-          className="mt-3"
-          onClick={() => setOpen(true)}
-        >
-          Verify
-        </Button>
-      </div>
+      {!open || dismissed ? (
+        <div className="rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-navy">
+          <p className="font-semibold">{WHATSAPP_VERIFY_COPY.listingPrompt}</p>
+          {phone ? (
+            <p className="mt-1 text-xs text-muted">{formatWhatsappDisplay(phone)}</p>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            className="mt-3"
+            onClick={() => {
+              setDismissed(false);
+              setOpen(true);
+            }}
+          >
+            Verify WhatsApp
+          </Button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted">Verify your WhatsApp to start listing…</p>
+      )}
 
-      <WhatsAppVerifyModal
+      <WhatsAppVerificationModal
         open={open}
-        onClose={() => setOpen(false)}
-        initialPhone={phone}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setDismissed(true);
+        }}
+        phoneNumber={phone}
+        reason={WHATSAPP_VERIFY_COPY.listingPrompt}
         onVerified={() => router.refresh()}
       />
     </>

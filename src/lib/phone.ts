@@ -22,3 +22,17 @@ export function toInternationalNigerianPhone(input: string): string | null {
   if (digits.length === 11 && digits.startsWith("0")) return `234${digits.slice(1)}`;
   return null;
 }
+
+/** Display WhatsApp number for verification UI. */
+export function formatWhatsappDisplay(input: string): string {
+  const intl = toInternationalNigerianPhone(input);
+  if (!intl) return input.trim() || "—";
+  return `+${intl.slice(0, 3)} ${intl.slice(3, 6)} ${intl.slice(6, 9)} ${intl.slice(9)}`;
+}
+
+/** Normalize user input to local 11-digit Nigerian format for storage/API. */
+export function normalizeWhatsappInput(input: string): string {
+  const intl = toInternationalNigerianPhone(input);
+  if (intl) return `0${intl.slice(3)}`;
+  return normalizeNigerianPhone(input);
+}

@@ -30,6 +30,8 @@ import { trackSavedListing } from "@/lib/browse-preferences";
 import { listingImageAlt } from "@/lib/image-seo";
 import { useEffect, useState } from "react";
 import { ListingImage } from "./listing-image";
+import { listingCardImage } from "@/lib/listing-gallery-images";
+import { optimizeListingImageUrl } from "@/lib/image-url";
 import { ListingFreshness, getListingFreshness } from "./listing-freshness";
 import { AmenityChips } from "./amenity-chips";
 import { formatMoveInHint } from "@/lib/rent-breakdown";
@@ -63,7 +65,7 @@ export function PropertyCard({
   const [contactLoading, setContactLoading] = useState<"whatsapp" | "call" | null>(
     null
   );
-  const image = property.media_urls[0] ?? "/placeholder-property.svg";
+  const image = optimizeListingImageUrl(listingCardImage(property), layout === "desktop" ? 520 : 480);
   const agent = property.agent;
   const verified =
     property.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
