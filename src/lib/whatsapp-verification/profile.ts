@@ -26,7 +26,19 @@ export function mustVerifyWhatsappBeforeListing(profile: Partial<Profile>): bool
 export function whatsappVerifyBadgeLabel(profile: Partial<Profile>): string | null {
   if (isWhatsappNumberVerified(profile)) return "Verified";
   if (profile.whatsapp_verification_status === "admin_required") {
-    return "Verification required";
+    return "Required";
   }
+  if (getWhatsappNumber(profile)) return "Unverified";
   return null;
+}
+
+/** Client-safe: show verify UI when server feature is on (even if NEXT_PUBLIC env is unset). */
+export function isWhatsappVerificationFeatureActive(
+  profile: Partial<Profile>
+): boolean {
+  const raw = process.env.NEXT_PUBLIC_ENABLE_WHATSAPP_OTP?.trim().toLowerCase();
+  if (raw === "true" || raw === "1" || raw === "yes") return true;
+  if (profile.whatsapp_verification_status || profile.whatsapp_verified_at) return true;
+  if (getWhatsappNumber(profile) && !isWhatsappNumberVerified(profile)) return true;
+  return false;
 }

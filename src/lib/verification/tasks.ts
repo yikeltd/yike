@@ -34,10 +34,7 @@ export function getRequiredVerificationTasks(
 
   const isLister = isAgentRole(profile.role);
   const needsEmail = config?.email_verification_required !== false;
-  const needsWhatsApp =
-    isWhatsappProfileVerificationEnabled() &&
-    (config?.whatsapp_verification_required === true ||
-      profile.whatsapp_verification_status === "admin_required");
+  const needsWhatsApp = isWhatsappProfileVerificationEnabled();
   const needsBank =
     config?.bank_verification_required ||
     escalationActions.includes("require_bank_verification");

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldLabel } from "@/components/ui/field-label";
@@ -10,10 +9,10 @@ import type { Profile } from "@/types/database";
 import {
   getWhatsappNumber,
   isWhatsappNumberVerified,
+  isWhatsappVerificationFeatureActive,
   whatsappVerifyBadgeLabel,
 } from "@/lib/whatsapp-verification/profile";
-import { isWhatsappOtpEnabledClient } from "@/lib/feature-flags";
-import { WhatsAppVerifyModal } from "@/components/profile/whatsapp-verify-modal";
+import { WhatsAppVerificationModal } from "@/components/profile/whatsapp-verify-modal";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 
 export function WhatsAppVerifyField({
@@ -23,6 +22,7 @@ export function WhatsAppVerifyField({
   value,
   onChange,
   readOnlyInput,
+  onVerified,
 }: {
   profile: Profile;
   label?: string;
@@ -30,31 +30,13 @@ export function WhatsAppVerifyField({
   value: string;
   onChange: (v: string) => void;
   readOnlyInput?: boolean;
+  onVerified?: () => void;
 }) {
-  const router = useRouter();
-  const enabled = isWhatsappOtpEnabledClient();
+  const verifyActive = isWhatsappVerificationFeatureActive(profile);
   const [modalOpen, setModalOpen] = useState(false);
   const verified = isWhatsappNumberVerified(profile);
-  const badge = whatsappVerifyBadgeLabel(profile);
+  const badge = verifyActive ? whatsappVerifyBadgeLabel(profile) : null;
   const displayPhone = value || getWhatsappNumber(profile);
-
-  if (!enabled) {
-    return (
-      <div>
-        <FieldLabel>{label}</FieldLabel>
-        <Input
-          type="tel"
-          inputMode="tel"
-          value={value}
-          onChange={(e) => onChange(normalizeNigerianPhone(e.target.value))}
-          required={required}
-          readOnly={readOnlyInput}
-          className="h-12 rounded-xl"
-          autoComplete="tel"
-        />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -84,7 +66,7 @@ export function WhatsAppVerifyField({
             className="h-12 flex-1 rounded-xl"
             autoComplete="tel"
           />
-          {!verified ? (
+          {verifyActive && !verified ? (
             <Button
               type="button"
               variant="outline"
@@ -95,16 +77,21 @@ export function WhatsAppVerifyField({
             </Button>
           ) : null}
         </div>
-        {!verified && profile.whatsapp_verification_status === "admin_required" ? (
+        {verifyActive && !verified && profile.whatsapp_verification_status === "admin_required" ? (
           <p className="mt-1 text-xs text-amber-800">{WHATSAPP_VERIFY_COPY.adminRequired}</p>
+        ) : null}
+        {verifyActive && !verified ? (
+          <p className="mt-1 text-xs text-muted">
+            Required to list on Yike — tap Verify to receive a code on WhatsApp.
+          </p>
         ) : null}
       </div>
 
-      <WhatsAppVerifyModal
+      <WhatsAppVerificationModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        initialPhone={displayPhone}
-        onVerified={() => router.refresh()}
+        onOpenChange={setModalOpen}
+        phoneNumber={displayPhone}
+        onVerified={onVerified}
       />
     </>
   );

@@ -1,6 +1,11 @@
 import type { Profile } from "@/types/database";
 import { isAgentRole } from "@/lib/agent-tiers";
 import { getProfilePersona } from "@/lib/profile-display";
+import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
+import {
+  isWhatsappNumberVerified,
+  isWhatsappVerificationFeatureActive,
+} from "@/lib/whatsapp-verification/profile";
 import { effectiveTrustLevel } from "./levels";
 
 export type TrustItemStatus =
@@ -16,6 +21,7 @@ export type TrustProgressItem = {
   status: TrustItemStatus;
   href?: string;
   hidden?: boolean;
+  group?: "listing_setup" | "trust_upgrade";
 };
 
 export type TrustStatusChip = {
@@ -61,23 +67,33 @@ export function getTrustProgressItems(
     label: "Email verified",
     status: profile.email_verified ? "complete" : "action_needed",
     href: "/auth/verify-email",
+    group: "listing_setup",
   });
 
-  const whatsappDone = Boolean(
-    profile.phone_verified || profile.whatsapp?.trim() || profile.phone?.trim()
-  );
   items.push({
-    id: "whatsapp",
-    label: "WhatsApp connected",
-    status: whatsappDone ? "complete" : "optional",
-    href: "/agent",
+    id: "profile_complete",
+    label: "Personal details",
+    status: hasBasicListingProfile(profile) ? "complete" : isLister ? "action_needed" : "optional",
+    href: "/agent/profile-setup",
+    group: "listing_setup",
   });
+
+  if (isWhatsappVerificationFeatureActive(profile)) {
+    items.push({
+      id: "whatsapp",
+      label: "WhatsApp verified",
+      status: isWhatsappNumberVerified(profile) ? "complete" : "action_needed",
+      href: "/agent/verification",
+      group: "listing_setup",
+    });
+  }
 
   items.push({
     id: "profile_photo",
     label: "Profile photo",
-    status: profile.avatar_url ? "complete" : isLister ? "action_needed" : "optional",
+    status: profile.avatar_url ? "complete" : "optional",
     href: "/agent",
+    group: "listing_setup",
   });
 
   if (isLister) {
@@ -85,8 +101,9 @@ export function getTrustProgressItems(
       items.push({
         id: "company",
         label: "Company verification",
-        status: profile.company_verified ? "complete" : "action_needed",
+        status: profile.company_verified ? "complete" : "optional",
         href: "/agent/company",
+        group: "trust_upgrade",
       });
     }
 
@@ -96,6 +113,7 @@ export function getTrustProgressItems(
         label: "Verified agent badge",
         status: "complete",
         href: "/agent/verification",
+        group: "trust_upgrade",
       });
     } else {
       items.push({
@@ -104,8 +122,10 @@ export function getTrustProgressItems(
           profile.verification_status === "pending"
             ? "Verified agent badge (under review)"
             : "Verified agent badge",
-        status: "optional",
+        status:
+          profile.verification_status === "pending" ? "under_review" : "optional",
         href: "/agent/verification",
+        group: "trust_upgrade",
       });
     }
   }
@@ -117,8 +137,10 @@ export function getNextTrustStep(
   items: TrustProgressItem[]
 ): TrustProgressItem | null {
   const priority: TrustItemStatus[] = ["action_needed", "under_review", "pending", "optional"];
+  const listing = items.filter((i) => i.group === "listing_setup");
+  const pool = listing.length > 0 ? listing : items;
   for (const status of priority) {
-    const match = items.find((i) => i.status === status);
+    const match = pool.find((i) => i.status === status);
     if (match) return match;
   }
   return null;
@@ -133,9 +155,11 @@ export function getNextStepMessage(
     case "email":
       return "Verify your email to continue.";
     case "whatsapp":
-      return "Add WhatsApp so buyers can reach you.";
+      return "Verify your WhatsApp number to list on Yike.";
+    case "profile_complete":
+      return "Add your name, address, and date of birth.";
     case "profile_photo":
-      return "Add a profile photo.";
+      return "Optional — helps buyers trust your profile.";
     case "company":
       return "Complete company verification.";
     case "agent_badge":

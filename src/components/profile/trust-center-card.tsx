@@ -24,7 +24,6 @@ import {
   type TrustProgressItem,
 } from "@/lib/verification/trust-center";
 import { yikeVerificationWhatsAppLink } from "@/lib/agent-verification";
-import { OptionalWhatsAppInline } from "@/components/profile/optional-whatsapp-inline";
 
 function StatusIcon({ status }: { status: TrustItemStatus }) {
   switch (status) {
@@ -120,13 +119,14 @@ export function TrustCenterCard({
   const next = getNextTrustStep(items);
   const nextMessage = getNextStepMessage(profile, next);
 
-  const incomplete = items.filter(
+  const listingItems = items.filter((i) => i.group === "listing_setup");
+  const trustItems = items.filter((i) => i.group === "trust_upgrade");
+  const listingIncomplete = listingItems.filter(
     (i) => i.status === "action_needed" || i.status === "under_review"
   );
   const completed = items.filter((i) => i.status === "complete");
-  const optional = items.filter((i) => i.status === "optional");
 
-  const allDone = incomplete.length === 0;
+  const allDone = listingIncomplete.length === 0;
 
   return (
     <section className="rounded-2xl border border-border bg-elevated shadow-float">
@@ -144,7 +144,7 @@ export function TrustCenterCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-navy">Trust setup</p>
+            <p className="text-sm font-bold text-navy">Account setup</p>
             <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
               {chip.label}
             </span>
@@ -162,16 +162,35 @@ export function TrustCenterCard({
 
       {expanded ? (
         <div className="border-t border-border px-4 py-3">
-          {incomplete.length > 0 ? (
-            <ul className="space-y-2">
-              {incomplete.map((item) => (
-                <TrustRow key={item.id} item={item} />
-              ))}
-            </ul>
+          {listingItems.length > 0 ? (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+                Listing setup
+              </p>
+              <ul className="mt-2 space-y-2">
+                {listingItems.map((item) => (
+                  <TrustRow key={item.id} item={item} />
+                ))}
+              </ul>
+            </div>
           ) : null}
 
-          {completed.length > 0 ? (
-            <details className={cn(incomplete.length > 0 && "mt-3")}>
+          {trustItems.length > 0 ? (
+            <div className={cn(listingItems.length > 0 && "mt-4")}>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+                Trust upgrade
+              </p>
+              <p className="mt-0.5 text-xs text-muted">Optional — verified badge and company checks.</p>
+              <ul className="mt-2 space-y-1.5">
+                {trustItems.map((item) => (
+                  <TrustRow key={item.id} item={item} />
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {completed.length > 0 && listingIncomplete.length === 0 ? (
+            <details className="mt-3">
               <summary className="cursor-pointer text-xs font-semibold text-muted">
                 Completed ({completed.length})
               </summary>
@@ -183,24 +202,7 @@ export function TrustCenterCard({
             </details>
           ) : null}
 
-          {optional.length > 0 ? (
-            <ul className={cn("space-y-1.5", (incomplete.length > 0 || completed.length > 0) && "mt-3")}>
-              {optional.map((item) => (
-                <TrustRow key={item.id} item={item} />
-              ))}
-            </ul>
-          ) : null}
-
-          {next?.id === "whatsapp" && next.status === "action_needed" ? (
-            <OptionalWhatsAppInline
-              userId={profile.id}
-              phone={profile.phone}
-              whatsapp={profile.whatsapp}
-              phoneVerified={profile.phone_verified}
-            />
-          ) : null}
-
-          {next && next.status === "action_needed" && next.href && next.id !== "whatsapp" ? (
+          {next && next.status === "action_needed" && next.href ? (
             <Link
               href={next.href}
               className="pressable mt-3 flex items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy"

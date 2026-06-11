@@ -148,6 +148,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
             required
             value={phone}
             onChange={setPhone}
+            onVerified={() => router.refresh()}
           />
           <div>
             <FieldLabel>Address</FieldLabel>
@@ -187,6 +188,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
             label="WhatsApp / Phone Number"
             value={phone}
             onChange={setPhone}
+            onVerified={() => router.refresh()}
           />
           <div>
             <FieldLabel>Street Address</FieldLabel>

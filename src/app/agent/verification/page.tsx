@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { VerificationWizard } from "@/components/agent/verification-wizard";
-import { TrustCenterCard } from "@/components/profile/trust-center-card";
-import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
+import { ListingSetupCard } from "@/components/profile/listing-setup-card";
 import type { AgentVerification, Profile } from "@/types/database";
 
 export default function AgentVerificationPage() {
@@ -48,23 +47,16 @@ export default function AgentVerificationPage() {
     return <p className="pt-8 text-sm text-muted">Profile not found.</p>;
   }
 
-  const verified = isVerifiedAgentProfile({
-    role: profile.role,
-    verification_status: profile.verification_status,
-    verified_badge: profile.verified_badge,
-    listing_limit: null,
-  });
-
   return (
-    <div className="mx-auto max-w-lg space-y-4 pt-4 pb-8">
+    <div className="mx-auto max-w-lg space-y-6 pt-4 pb-8">
       <div>
-        <h1 className="text-xl font-bold text-navy">Verification center</h1>
+        <h1 className="text-xl font-bold text-navy">Account setup</h1>
         <p className="mt-1 text-sm text-muted">
-          Email and profile photo unlock listing. Badge and WhatsApp verification are optional for now.
+          Listing setup unlocks posting. The verified agent badge below is separate and optional.
         </p>
       </div>
 
-      <TrustCenterCard profile={profile} verified={verified} defaultExpanded />
+      <ListingSetupCard profile={profile} onVerified={() => void reload()} />
 
       <VerificationWizard
         profile={profile}
