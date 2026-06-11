@@ -991,6 +991,20 @@ export interface Favorite {
   property?: Property | null;
 }
 
+export interface ProfileFollow {
+  id: string;
+  follower_user_id: string;
+  followed_user_id: string;
+  created_at: string;
+}
+
+export interface ListingLike {
+  id: string;
+  listing_id: string;
+  user_id: string;
+  created_at: string;
+}
+
 export interface AgentVerification {
   id: string;
   agent_id: string;

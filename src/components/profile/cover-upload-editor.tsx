@@ -17,6 +17,7 @@ type CoverUploadEditorProps = {
   onSaved: (coverUrl: string, focalY: number) => void;
   onRemoved: () => void;
   className?: string;
+  iconOnly?: boolean;
 };
 
 export function CoverUploadEditor({
@@ -26,6 +27,7 @@ export function CoverUploadEditor({
   onSaved,
   onRemoved,
   className,
+  iconOnly = false,
 }: CoverUploadEditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -282,13 +284,14 @@ export function CoverUploadEditor({
           }
         }}
         className={cn(
-          "pressable absolute right-3 top-3 z-20 flex h-9 items-center gap-1.5 rounded-full bg-black/35 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50",
+          "pressable z-20 flex h-9 items-center gap-1.5 rounded-full bg-black/35 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50",
+          iconOnly ? "w-9 justify-center px-0" : "absolute right-3 top-3 px-3",
           className
         )}
-        aria-label="Edit cover photo"
+        aria-label="Change cover"
       >
         <ImageIcon className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">Edit cover</span>
+        {!iconOnly ? <span className="hidden sm:inline">Edit cover</span> : null}
       </button>
       <input
         ref={inputRef}

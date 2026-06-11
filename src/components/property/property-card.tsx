@@ -35,6 +35,7 @@ import { AmenityChips } from "./amenity-chips";
 import { formatMoveInHint } from "@/lib/rent-breakdown";
 import { propertyPath } from "@/lib/property-url";
 import { AgentListingChip } from "./agent-listing-chip";
+import { ListingLikeButton } from "@/components/social/listing-like-button";
 import {
   isGuestFavorite,
   toggleGuestFavorite,
@@ -423,7 +424,10 @@ export function PropertyCard({
               )}
             </div>
           )}
-          {agent && <AgentListingChip agent={agent} />}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {agent ? <AgentListingChip agent={agent} /> : <span />}
+            <ListingLikeButton listingId={property.id} compact />
+          </div>
           {contactRow}
         </div>
       </article>
@@ -487,7 +491,10 @@ export function PropertyCard({
         </div>
       </Link>
       <div className="space-y-3 p-4 pt-3">
-        {agent && <AgentListingChip agent={agent} />}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {agent ? <AgentListingChip agent={agent} /> : <span />}
+          <ListingLikeButton listingId={property.id} compact />
+        </div>
         {contactRow}
       </div>
     </article>

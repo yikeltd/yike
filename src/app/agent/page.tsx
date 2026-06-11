@@ -10,6 +10,7 @@ import { requireServerClient } from "@/lib/supabase/require-client";
 import { ProfilePageClient } from "@/components/profile/profile-page-client";
 import type { Property } from "@/types/database";
 import { offsetDaysIso } from "@/lib/time";
+import { getProfileSocialStats } from "@/lib/social/stats";
 
 function formatMemberSince(iso: string): string {
   try {
@@ -35,8 +36,13 @@ export default async function ProfilePage() {
   const canList = canListProperties(profile);
   const limit = getListingLimit(profile);
 
-  const [{ data: listings }, { count: savedCount }, { count: leadsCount }, { count: verificationCount }] =
-    await Promise.all([
+  const [
+    { data: listings },
+    { count: savedCount },
+    { count: leadsCount },
+    { count: verificationCount },
+    socialStats,
+  ] = await Promise.all([
       supabase
         .from("properties")
         .select("status, expires_at")
@@ -56,6 +62,7 @@ export default async function ProfilePage() {
         .from("property_verification_requests")
         .select("*", { count: "exact", head: true })
         .eq("requester_user_id", user.id),
+      getProfileSocialStats(supabase, user.id),
     ]);
 
   const rows = (listings ?? []) as Pick<Property, "status" | "expires_at">[];
@@ -85,6 +92,7 @@ export default async function ProfilePage() {
       leadsCount={leadsCount ?? 0}
       verificationRequestsCount={verificationCount ?? 0}
       memberSince={formatMemberSince(profile.created_at)}
+      socialStats={socialStats}
     />
   );
 }

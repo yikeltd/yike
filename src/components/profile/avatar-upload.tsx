@@ -15,6 +15,7 @@ export function AvatarUpload({
   username,
   avatarUrl: initialUrl,
   size = "xl",
+  className,
   onUpdated,
 }: {
   userId: string;
@@ -23,6 +24,7 @@ export function AvatarUpload({
   username: string | null;
   avatarUrl: string | null;
   size?: "lg" | "xl";
+  className?: string;
   onUpdated?: (url: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,7 +74,7 @@ export function AvatarUpload({
 
   return (
     <div className="relative inline-flex">
-      <UserAvatar name={name} avatarUrl={avatarUrl} size={size} ring />
+      <UserAvatar name={name} avatarUrl={avatarUrl} size={size} ring className={className} />
       <button
         type="button"
         onClick={() => inputRef.current?.click()}

@@ -7,21 +7,14 @@ import {
 import { AgentUnavailable } from "@/components/agent/agent-unavailable";
 import { PropertyFeed } from "@/components/property/property-feed";
 import { AgentTrustCard } from "@/components/property/agent-trust-card";
-import {
-  VerifiedBadge,
-  ResponsiveBadge,
-  DeveloperBadge,
-  AgencyBadge,
-  SellerTypeBadge,
-} from "@/components/ui/badge";
 import { isVerifiedAgent } from "@/lib/utils";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { AlertTriangle } from "lucide-react";
 import { AgentReviewsSection } from "@/components/reviews/agent-reviews-section";
-import { CompanyProfileHero } from "@/components/agent/company-profile-hero";
-import { getReviewStats, formatReviewSummary } from "@/lib/reviews/queries";
-import { isResponsiveAgent } from "@/lib/agent-response";
-import { getSellerType, profileTypeHeading } from "@/lib/profile-display";
+import { PublicSellerProfileHeader } from "@/components/agent/public-seller-profile-header";
+import { getSession } from "@/lib/auth";
+import { requireServerClient } from "@/lib/supabase/require-client";
+import { getProfileSocialStats } from "@/lib/social/stats";
 
 export async function generateMetadata({
   params,
@@ -49,27 +42,16 @@ export default async function AgentProfilePage({
   if (!agent) return <AgentUnavailable />;
 
   const agentId = agent.id;
-  const [listings, reviewStats] = await Promise.all([
+  const supabase = await requireServerClient();
+  const viewer = await getSession();
+  const [listings, socialStats] = await Promise.all([
     getAgentListings(agentId),
-    getReviewStats(agentId),
+    getProfileSocialStats(supabase, agentId),
   ]);
   const verified = isVerifiedAgent(agent);
-  const responsive = isResponsiveAgent(agent);
   const isDemo = listings.every((p) => isDemoProperty(p.id));
-  const isAgency =
-    agent.account_type === "agency" || agent.agent_type === "agency";
-  const isDeveloper = agent.account_type === "developer";
-  const sellerType = getSellerType(agent);
-  const displayName =
-    agent.company_name?.trim() || agent.full_name?.trim() || "Agent";
   const suspended = agent.profile_status === "suspended";
   const showListings = !suspended && agent.profile_status !== "deleted";
-  const joinedLabel = agent.created_at
-    ? new Date(agent.created_at).toLocaleDateString("en-NG", {
-        month: "short",
-        year: "numeric",
-      })
-    : null;
 
   return (
     <div className="space-y-6 px-3 pt-2 pb-8 lg:px-0 lg:pt-8">
@@ -83,50 +65,16 @@ export default async function AgentProfilePage({
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         <div className="space-y-6">
-          {(isAgency || isDeveloper) && (
-            <CompanyProfileHero
-              agent={agent}
-              listingCount={listings.length}
-              joinedLabel={joinedLabel}
-            />
-          )}
-          <header
-            className={`rounded-2xl bg-white p-5 shadow-float ring-1 ring-black/[0.04] lg:hidden ${
-              isAgency || isDeveloper ? "hidden" : ""
-            }`}
-          >
-            <p className="text-xs font-bold uppercase tracking-wider text-muted">
-              {sellerType
-                ? profileTypeHeading(sellerType)
-                : isAgency
-                  ? "Agency profile"
-                  : isDeveloper
-                    ? "Developer profile"
-                    : "Agent profile"}
-            </p>
-            <h1 className="mt-2 text-2xl font-bold text-navy">{displayName}</h1>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {sellerType ? <SellerTypeBadge type={sellerType} /> : null}
-              {verified ? <VerifiedBadge /> : null}
-              {responsive ? <ResponsiveBadge size="sm" /> : null}
-              {isDeveloper && agent.developer_verified ? (
-                <DeveloperBadge />
-              ) : null}
-              {isAgency && agent.agency_verified ? <AgencyBadge /> : null}
-              {reviewStats.total > 0 && (
-                <span className="text-xs font-semibold text-navy">
-                  {formatReviewSummary(reviewStats)}
-                </span>
-              )}
-            </div>
-            <p className="mt-3 text-sm text-muted">
-              {listings.length} active{" "}
-              {listings.length === 1 ? "listing" : "listings"}
-              {joinedLabel ? ` · Joined ${joinedLabel}` : ""}
-            </p>
-          </header>
+          <PublicSellerProfileHeader
+            agent={agent}
+            socialStats={socialStats}
+            viewerId={viewer?.id}
+          />
 
-          <AgentReviewsSection agentId={agentId} isAgency={isAgency} />
+          <AgentReviewsSection
+            agentId={agentId}
+            isAgency={agent.account_type === "agency" || agent.agent_type === "agency"}
+          />
 
           {showListings && (
             <section>

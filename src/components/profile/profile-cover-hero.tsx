@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import Image from "next/image";
+import { useState, type ReactNode } from "react";
 import type { Profile } from "@/types/database";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { CoverUploadEditor } from "@/components/profile/cover-upload-editor";
+import { SellerProfileHeader } from "@/components/profile/seller-profile-header";
 import {
-  coverObjectPosition,
   getProfileCoverPositionY,
   getProfileCoverUrl,
 } from "@/lib/profile/cover";
-import { coverDisplayUrl } from "@/lib/profile/media-urls";
-import { useMobileCover } from "@/hooks/use-mobile-cover";
-import { cn } from "@/lib/utils";
+import type { ProfileSocialStats } from "@/lib/social/types";
 
 type ProfileCoverHeroProps = {
   profile: Profile;
@@ -20,6 +17,7 @@ type ProfileCoverHeroProps = {
   displayName: string;
   memberSince: string;
   badges: ReactNode;
+  socialStats?: ProfileSocialStats;
   editable?: boolean;
 };
 
@@ -29,82 +27,29 @@ export function ProfileCoverHero({
   displayName,
   memberSince,
   badges,
+  socialStats,
   editable = true,
 }: ProfileCoverHeroProps) {
   const [coverUrl, setCoverUrl] = useState(getProfileCoverUrl(profile));
   const [coverPositionY, setCoverPositionY] = useState(getProfileCoverPositionY(profile));
-  const mobileCover = useMobileCover();
-  const coverVariant = mobileCover ? "medium" : "large";
-  const [coverSrc, setCoverSrc] = useState(
-    () => coverDisplayUrl(coverUrl, coverVariant) ?? coverUrl
-  );
 
-  useEffect(() => {
-    setCoverSrc(coverDisplayUrl(coverUrl, coverVariant) ?? coverUrl);
-  }, [coverUrl, coverVariant]);
+  const coverProfile = {
+    ...profile,
+    cover_url: coverUrl ?? profile.cover_url,
+    cover_position_y: coverPositionY,
+  };
 
   return (
-    <section className="relative overflow-hidden rounded-[1.75rem] bg-navy text-white shadow-float-lg">
-      <div className="absolute inset-0">
-        {coverSrc ? (
-          <>
-            <Image
-              src={coverSrc}
-              alt=""
-              fill
-              priority
-              fetchPriority="high"
-              sizes="(max-width: 767px) 100vw, 560px"
-              className="object-cover"
-              style={{ objectPosition: coverObjectPosition(coverPositionY) }}
-              decoding="async"
-              unoptimized
-              onError={() => {
-                if (coverUrl && coverSrc !== coverUrl) setCoverSrc(coverUrl);
-              }}
-            />
-            <div
-              className="absolute inset-0 bg-gradient-to-t from-[#021428]/88 via-[#031B4E]/28 to-transparent"
-              aria-hidden
-            />
-            <div
-              className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/20 to-transparent"
-              aria-hidden
-            />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-br from-navy via-[#021428] to-[#010d1f]" />
-            <div
-              className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/25 blur-3xl"
-              aria-hidden
-            />
-            <div className="absolute inset-0 bg-navy/40" aria-hidden />
-            <div
-              className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-navy/25"
-              aria-hidden
-            />
-          </>
-        )}
-      </div>
-
-      {editable ? (
-        <CoverUploadEditor
-          hasCover={Boolean(coverUrl)}
-          coverUrl={coverUrl}
-          initialFocalY={coverPositionY}
-          onSaved={(url, focal) => {
-            setCoverUrl(url);
-            setCoverPositionY(focal);
-          }}
-          onRemoved={() => {
-            setCoverUrl(null);
-            setCoverPositionY(50);
-          }}
-        />
-      ) : null}
-
-      <div className="relative flex flex-col items-center px-5 pb-6 pt-8 text-center">
+    <SellerProfileHeader
+      displayName={displayName}
+      username={profile.username}
+      coverProfile={coverProfile}
+      socialStats={socialStats}
+      showSocialLinks={editable}
+      memberSince={memberSince}
+      badges={badges}
+      bio={profile.company_bio}
+      avatarSlot={
         <AvatarUpload
           userId={profile.id}
           email={email}
@@ -112,23 +57,27 @@ export function ProfileCoverHero({
           username={profile.username}
           avatarUrl={profile.avatar_url}
           size="xl"
+          className="!h-24 !w-24 rounded-full border-4 border-white ring-2 ring-[#1877F2]/80 lg:!h-28 lg:!w-28"
         />
-        <h1
-          className={cn(
-            "mt-4 text-2xl font-bold tracking-tight",
-            coverUrl && "drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
-          )}
-        >
-          {displayName}
-        </h1>
-        {profile.username ? (
-          <p className="mt-1 text-sm text-white/85 drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">
-            @{profile.username}
-          </p>
-        ) : null}
-        <p className="mt-2 text-xs text-white/70">Member since {memberSince}</p>
-        <div className="mt-4 flex flex-wrap justify-center gap-2">{badges}</div>
-      </div>
-    </section>
+      }
+      coverControls={
+        editable ? (
+          <CoverUploadEditor
+            iconOnly
+            hasCover={Boolean(coverUrl)}
+            coverUrl={coverUrl}
+            initialFocalY={coverPositionY}
+            onSaved={(url, focal) => {
+              setCoverUrl(url);
+              setCoverPositionY(focal);
+            }}
+            onRemoved={() => {
+              setCoverUrl(null);
+              setCoverPositionY(50);
+            }}
+          />
+        ) : null
+      }
+    />
   );
 }

@@ -13,8 +13,10 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Users,
 } from "lucide-react";
 import type { Profile } from "@/types/database";
+import type { ProfileSocialStats } from "@/lib/social/types";
 import { ProfileCoverHero } from "@/components/profile/profile-cover-hero";
 import { VerifiedBadge, StatusBadge, SellerTypeBadge } from "@/components/ui/badge";
 import { ProfileAccountActions } from "@/components/profile/profile-account-actions";
@@ -47,6 +49,7 @@ export function ProfilePageClient({
   leadsCount = 0,
   verificationRequestsCount = 0,
   memberSince,
+  socialStats = { followersCount: 0, listingLikesCount: 0 },
 }: {
   profile: Profile;
   email: string;
@@ -61,6 +64,7 @@ export function ProfilePageClient({
   leadsCount?: number;
   verificationRequestsCount?: number;
   memberSince: string;
+  socialStats?: ProfileSocialStats;
 }) {
   const displayName = profile.full_name ?? profile.username ?? "Your profile";
   const isLister = canList;
@@ -78,6 +82,7 @@ export function ProfilePageClient({
         email={email}
         displayName={displayName}
         memberSince={memberSince}
+        socialStats={socialStats}
         badges={
           <>
             {showAgentBadge(profile, verified) ? <VerifiedBadge /> : null}
@@ -182,6 +187,8 @@ export function ProfilePageClient({
             )}
             <ActionLink href="/agent/leads" icon={MessageCircle} title="Inquiries & leads" />
             <ActionLink href="/agent/notifications" icon={Bell} title="Notifications" />
+            <ActionLink href="/agent/followers" icon={Users} title="Followers" />
+            <ActionLink href="/agent/following" icon={Users} title="Following" />
             <ActionLink
               href="/agent/verification"
               icon={ShieldCheck}
