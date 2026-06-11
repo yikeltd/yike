@@ -50,10 +50,10 @@ export function AdminRecommendedEdits({
     const body = (await res.json()) as { error?: string };
     setBusy(false);
     if (!res.ok) {
-      setMessage(body.error ?? "Could not send.");
+      setMessage(body.error ?? "Could not send edit request. Please try again.");
       return;
     }
-    setMessage("Sent to agent.");
+    setMessage("Edit request sent.");
     setSelected(new Set());
     setNote("");
     setOpen(false);

@@ -106,7 +106,11 @@ export async function POST(req: Request, ctx: RouteCtx) {
     .single();
 
   if (error || !request) {
-    return NextResponse.json({ error: error?.message ?? "Insert failed" }, { status: 500 });
+    console.error("[listing_review_request] insert failed", error?.message);
+    return NextResponse.json(
+      { error: "Could not send edit request. Please try again." },
+      { status: 500 }
+    );
   }
 
   await admin
@@ -129,14 +133,18 @@ export async function POST(req: Request, ctx: RouteCtx) {
     },
   });
 
-  await notifyAgentReviewRequest(admin, {
-    agentId: listing.agent_id,
-    listingId: id,
-    listingTitle: listing.title,
-    requestType: primaryType,
-    message,
-    requestId: request.id,
-  });
+  try {
+    await notifyAgentReviewRequest(admin, {
+      agentId: listing.agent_id,
+      listingId: id,
+      listingTitle: listing.title,
+      requestType: primaryType,
+      message,
+      requestId: request.id,
+    });
+  } catch (notifyErr) {
+    console.error("[listing_review_request] notification failed", notifyErr);
+  }
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim();

@@ -129,10 +129,10 @@ export function AdminListingReviewPanel({ listingId }: { listingId: string }) {
     const body = (await res.json()) as { error?: string };
     setBusy(null);
     if (!res.ok) {
-      setMessage(body.error ?? "Request failed");
+      setMessage(body.error ?? "Could not send edit request. Please try again.");
       return;
     }
-    setMessage("Request sent to agent");
+    setMessage("Edit request sent.");
     void load();
   }
 
