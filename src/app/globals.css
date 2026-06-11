@@ -56,18 +56,32 @@ html.yike-boot-splash-enabled #yike-boot-splash {
   display: grid;
   place-items: center;
   width: 100%;
-  height: 100dvh;
-  overflow: hidden;
+  min-height: 100dvh;
   background: #031b4e;
 }
 
 #yike-boot-splash img {
   position: relative;
   z-index: 1;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: clamp(5.5rem, 22vw, 7.5rem);
+  height: auto;
+  object-fit: contain;
   transform-origin: center;
+  animation: yike-boot-splash-breathe 2s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+@keyframes yike-boot-splash-breathe {
+  0%,
+  100% {
+    opacity: 0.88;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
 }
 
 .yike-boot-splash__recovery {
@@ -545,13 +559,14 @@ body {
   padding-bottom: calc(var(--bottom-nav-stack) + 1rem);
 }
 
-/* Installed PWA / Android TWA — native shell affordances only */
+/* Installed PWA / Android TWA — native shell; browser tabs unchanged */
 html.yike-app-mode {
   overscroll-behavior-y: none;
 }
 
 html.yike-app-mode body {
   -webkit-tap-highlight-color: transparent;
+  padding-top: env(safe-area-inset-top, 0);
 }
 
 /* Installed PWA / Android TWA — keep bottom nav clean, no website footer */
