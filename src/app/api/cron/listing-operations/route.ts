@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { runTrustQualityBatch } from "@/lib/trust/recalculate";
 import { archiveDueListings } from "@/lib/trust/listing-staleness";
 import { expireStaleVerificationReports } from "@/lib/verification/report-expiry";
+import { expireDueFeaturedPromotions } from "@/lib/featured-promotions/service";
 
 export const runtime = "nodejs";
 
@@ -33,6 +34,7 @@ export async function GET(request: Request) {
   const trust = await runTrustQualityBatch(admin);
   const archivedListings = await archiveDueListings(admin);
   const expiredReports = await expireStaleVerificationReports(admin);
+  const featuredExpiry = await expireDueFeaturedPromotions(admin);
 
   if (expireError) {
     return NextResponse.json(
@@ -46,6 +48,8 @@ export async function GET(request: Request) {
     expiredMarked: expiredCount ?? 0,
     archivedListings,
     expiredReports,
+    featuredExpiredListings: featuredExpiry.expiredListings,
+    featuredExpiredPromotions: featuredExpiry.expiredPromotions,
     ...trust,
   });
 }

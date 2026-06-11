@@ -16,20 +16,27 @@ import {
   type ListingDraft,
 } from "@/lib/listing-draft";
 import { cn } from "@/lib/utils";
+import { PromoteListingModal } from "@/components/agent/promote-listing-modal";
+import { isFeaturedActive } from "@/lib/agent-tiers";
 
 type Tab = "all" | "active" | "expired" | "closed" | "archived";
 
 export function AgentListingsClient({
   agentId,
   listings,
+  featuredListingsEnabled = false,
+  featuredPaymentsEnabled = false,
 }: {
   agentId: string;
   listings: Property[];
+  featuredListingsEnabled?: boolean;
+  featuredPaymentsEnabled?: boolean;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("all");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [localDraft, setLocalDraft] = useState<ListingDraft | null>(null);
+  const [promoteListing, setPromoteListing] = useState<Property | null>(null);
 
   useEffect(() => {
     setLocalDraft(loadListingDraft(agentId));
@@ -198,6 +205,14 @@ export function AgentListingsClient({
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
+                  {featuredListingsEnabled && p.status === "approved" && !expired && (
+                    <ActionBtn
+                      disabled={busyId === p.id}
+                      onClick={() => setPromoteListing(p)}
+                      label={isFeaturedActive(p) ? "Featured" : "Promote listing"}
+                      primary={!isFeaturedActive(p)}
+                    />
+                  )}
                   {p.status === "approved" && !expired && (
                     <>
                       <ActionBtn
@@ -243,6 +258,14 @@ export function AgentListingsClient({
             );
           })}
         </ul>
+      ) : null}
+
+      {promoteListing ? (
+        <PromoteListingModal
+          listing={promoteListing}
+          paymentsEnabled={featuredPaymentsEnabled}
+          onClose={() => setPromoteListing(null)}
+        />
       ) : null}
     </div>
   );

@@ -13,6 +13,8 @@ import { withDemoFallback } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
 import { POPULAR_AREAS } from "@/lib/constants";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
+import { isFeaturedListingsEnabled } from "@/lib/feature-flags";
+import { isFeaturedActive } from "@/lib/agent-tiers";
 
 function logHomeSectionFailure(label: string, error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
@@ -87,17 +89,20 @@ export async function HomeShowcaseSection() {
 }
 
 export async function HomeFeaturedSection() {
+  if (!isFeaturedListingsEnabled()) return null;
+
   const featured = await safeHomeLoad("featured listings", () => getFeaturedProperties(6), []);
-  const { items, isDemo } = withDemoFallback(featured);
-  if (items.length === 0) return null;
+  const active = featured.filter((p) => isFeaturedActive(p));
+  if (active.length === 0) return null;
+
   return (
-    <section className="mt-8 lg:mt-12">
+    <section className="mx-auto mt-6 max-w-7xl px-3 lg:mt-8 lg:px-6 xl:px-8">
       <SectionHeader
         title="Featured homes"
-        subtitle="Hand-picked across Nigeria"
+        subtitle="Promoted listings with extra visibility"
         href="/search?featured=1"
       />
-      <PropertyGrid properties={items.slice(0, 6)} isDemo={isDemo} />
+      <PropertyGrid properties={active.slice(0, 6)} trackFeaturedAnalytics />
     </section>
   );
 }

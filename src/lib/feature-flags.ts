@@ -127,3 +127,21 @@ export function isHomeServicesEnabledClient(): boolean {
   if (!raw) return false;
   return raw === "true" || raw === "1" || raw === "yes";
 }
+
+/** Featured listing promotion UI (launch: on — payments may stay off). */
+export function isFeaturedListingsEnabled(): boolean {
+  return envFlag("ENABLE_FEATURED_LISTINGS", true);
+}
+
+/** Featured listing checkout — off until payment gateway is connected. */
+export function isFeaturedPaymentsEnabled(): boolean {
+  return envFlag("ENABLE_FEATURED_PAYMENTS", false);
+}
+
+/** Client bundle — mirrors ENABLE_FEATURED_LISTINGS for agent promote UI. */
+export function isFeaturedListingsEnabledClient(): boolean {
+  const raw = process.env.NEXT_PUBLIC_ENABLE_FEATURED_LISTINGS?.trim().toLowerCase();
+  if (raw === "true" || raw === "1" || raw === "yes") return true;
+  if (raw === "false" || raw === "0" || raw === "no") return false;
+  return isFeaturedListingsEnabled();
+}

@@ -48,6 +48,10 @@ export const PROMOTIONS_SECTION_TABS: SectionTab[] = [
   { href: adminPath("promo-banners"), label: "Promo Banners" },
 ];
 
+export const REVENUE_SECTION_TABS: SectionTab[] = [
+  { href: adminPath("revenue/featured-listings"), label: "Featured Listings" },
+];
+
 export const PARTNERS_SECTION_TABS: SectionTab[] = [
   { href: adminPath("ambassadors"), label: "Ambassadors" },
   { href: adminPath("ambassadors/payouts"), label: "Amb. Payouts" },
@@ -144,6 +148,19 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
         label: "Requests",
         segment: "requests",
         keywords: ["property request", "contact"],
+      },
+    ],
+  },
+  {
+    id: "revenue",
+    label: "Revenue",
+    items: [
+      {
+        href: adminPath("revenue/featured-listings"),
+        label: "Featured Listings",
+        segment: "revenue/featured-listings",
+        emphasis: "primary",
+        keywords: ["promotion", "featured", "monetization", "orders"],
       },
     ],
   },

@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { HomeSearchHero } from "@/components/home/home-search-hero";
 import { HomeHotPicksSections } from "@/components/home/home-hotspot-row";
 import {
+  HomeFeaturedSection,
   HomeFilteredFeed,
   HomeShowcaseSection,
   PopularAreasSection,
@@ -182,6 +183,10 @@ export default async function HomePage({
 
       <Suspense fallback={<SectionFallback />}>
         <HomeShowcaseSection />
+      </Suspense>
+
+      <Suspense fallback={<SectionFallback />}>
+        <HomeFeaturedSection />
       </Suspense>
 
       <Suspense fallback={null}>

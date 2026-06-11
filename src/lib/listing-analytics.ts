@@ -8,6 +8,8 @@ export const LISTING_EVENT_TYPES = [
   "call_click",
   "share",
   "search_impression",
+  "featured_impression",
+  "featured_click",
 ] as const;
 
 export type ListingEventType = (typeof LISTING_EVENT_TYPES)[number];

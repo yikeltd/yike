@@ -42,6 +42,7 @@ import {
   isGuestFavorite,
   toggleGuestFavorite,
 } from "@/lib/guest-favorites";
+import { logFeaturedAnalyticsEvent } from "@/lib/featured-promotions/analytics-client";
 
 export type PropertyCardLayout = "mobile" | "desktop";
 
@@ -50,11 +51,13 @@ export function PropertyCard({
   layout = "mobile",
   priorityImage = false,
   inline,
+  trackFeaturedAnalytics = false,
 }: {
   property: Property;
   layout?: PropertyCardLayout;
   priorityImage?: boolean;
   inline?: boolean;
+  trackFeaturedAnalytics?: boolean;
 }) {
   const { guardAction, user, isListingSaved, setListingSaved } = useAuth();
   const [saved, setSaved] = useState(false);
@@ -72,6 +75,18 @@ export function PropertyCard({
   const hasAgent = !!agent?.id;
   const isDemo = isDemoProperty(property.id);
   const href = propertyPath(property);
+  const featuredActive = isFeaturedActive(property);
+
+  useEffect(() => {
+    if (!trackFeaturedAnalytics || !featuredActive || isDemo) return;
+    logFeaturedAnalyticsEvent(property.id, "featured_impression");
+  }, [trackFeaturedAnalytics, featuredActive, isDemo, property.id]);
+
+  function handleFeaturedNavigate() {
+    if (trackFeaturedAnalytics && featuredActive && !isDemo) {
+      logFeaturedAnalyticsEvent(property.id, "featured_click");
+    }
+  }
 
   const price = formatPrice(
     Number(property.price),
@@ -253,12 +268,12 @@ export function PropertyCard({
       </span>
       {verified && <VerifiedBadge size="sm" />}
       {property.yike_verified && <YikeVerifiedBadge size="sm" />}
-      {isFeaturedActive(property) && <FeaturedBadge />}
+      {featuredActive && <FeaturedBadge />}
       {freshness.showPublicly && freshness.tone === "trending" && <TrendingBadge />}
       {freshness.showPublicly && freshness.tone === "hot" && (
         <TrendingBadge label="Popular this week" />
       )}
-      {freshness.showPublicly && freshness.tone === "new" && !isFeaturedActive(property) && (
+      {freshness.showPublicly && freshness.tone === "new" && !featuredActive && (
         <NewListingBadge />
       )}
     </div>
@@ -362,7 +377,7 @@ export function PropertyCard({
   if (layout === "desktop") {
     return (
       <article className="group card-lift overflow-hidden rounded-2xl bg-elevated shadow-float ring-1 ring-black/[0.04] dark:ring-white/[0.08]">
-        <Link href={href} prefetch={!isDemo} className="block">
+        <Link href={href} prefetch={!isDemo} className="block" onClick={handleFeaturedNavigate}>
           <div className="relative aspect-[5/4] overflow-hidden bg-surface">
             <ListingImage
               src={image}
@@ -377,7 +392,7 @@ export function PropertyCard({
           </div>
         </Link>
         <div className="space-y-3.5 p-5 lg:p-6">
-          <Link href={href} prefetch={!isDemo} className="block">
+          <Link href={href} prefetch={!isDemo} className="block" onClick={handleFeaturedNavigate}>
             <p className="text-2xl font-bold tabular-nums tracking-tight text-foreground lg:text-[1.65rem]">
               {price}
             </p>
@@ -443,7 +458,7 @@ export function PropertyCard({
         inline ? "" : "mx-2.5 lg:mx-0"
       )}
     >
-      <Link href={href} prefetch={!isDemo} className="block pressable">
+      <Link href={href} prefetch={!isDemo} className="block pressable" onClick={handleFeaturedNavigate}>
         <div className="relative aspect-[5/6] overflow-hidden bg-surface sm:aspect-[4/5]">
           <ListingImage
             src={image}

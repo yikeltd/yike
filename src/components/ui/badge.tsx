@@ -57,11 +57,11 @@ export function FeaturedBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/15 px-2 py-0.5 text-[10px] font-bold text-navy backdrop-blur-sm",
+        "inline-flex items-center gap-1 rounded-full border border-white/25 bg-navy/75 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white/95 backdrop-blur-sm",
         className
       )}
     >
-      <Star className="h-3 w-3 fill-gold text-gold" />
+      <Star className="h-2.5 w-2.5 fill-gold/90 text-gold/90" strokeWidth={2} />
       Featured
     </span>
   );

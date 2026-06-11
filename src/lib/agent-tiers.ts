@@ -180,6 +180,10 @@ export function sortPropertiesByMarketRank(
   searchParams?: PropertySearchParams
 ): Property[] {
   return [...properties].sort((a, b) => {
+    const featuredDelta =
+      Number(isFeaturedActive(b)) - Number(isFeaturedActive(a));
+    if (featuredDelta !== 0) return featuredDelta;
+
     if (
       searchParams &&
       (searchParams.state ||

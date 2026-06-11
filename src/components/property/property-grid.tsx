@@ -18,11 +18,13 @@ export function PropertyGrid({
   emptyListingType,
   emptyPropertyType,
   richEmpty = true,
+  trackFeaturedAnalytics = false,
 }: {
   properties: Property[];
   emptyMessage?: string;
   showCount?: boolean;
   isDemo?: boolean;
+  trackFeaturedAnalytics?: boolean;
   midFeedAd?: AdPlacement | null;
   feedAdInsertAfter?: number;
   adPlacementKey?: AdPlacementKey;
@@ -79,6 +81,7 @@ export function PropertyGrid({
                 property={p}
                 layout="desktop"
                 priorityImage={i < 3}
+                trackFeaturedAnalytics={trackFeaturedAnalytics}
               />
             </div>
           </div>
@@ -90,6 +93,7 @@ export function PropertyGrid({
           midFeedAd={midFeedAd}
           insertAfter={feedAdInsertAfter}
           adPlacementKey={adPlacementKey}
+          trackFeaturedAnalytics={trackFeaturedAnalytics}
         />
       </div>
     </div>

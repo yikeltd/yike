@@ -11,11 +11,13 @@ export function FeedList({
   midFeedAd,
   insertAfter = 4,
   adPlacementKey = "home_feed_mid",
+  trackFeaturedAnalytics = false,
 }: {
   properties: Property[];
   midFeedAd?: AdPlacement | null;
   insertAfter?: number;
   adPlacementKey?: AdPlacementKey;
+  trackFeaturedAnalytics?: boolean;
 }) {
   return (
     <div className="feed-rhythm flex flex-col pb-2">
@@ -44,6 +46,7 @@ export function FeedList({
               property={p}
               layout="mobile"
               priorityImage={i < 3}
+              trackFeaturedAnalytics={trackFeaturedAnalytics}
             />
           </div>
         </div>

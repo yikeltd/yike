@@ -589,6 +589,8 @@ export interface Property {
   is_verified_listing: boolean;
   views_count: number;
   contact_clicks: number;
+  featured_impressions?: number;
+  featured_clicks?: number;
   expires_at: string;
   listing_plan?: ListingPlan;
   listing_duration_days?: number;
@@ -1072,6 +1074,34 @@ export interface SiteBanner {
   ends_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type ListingPromotionStatus =
+  | "pending"
+  | "paid"
+  | "active"
+  | "expired"
+  | "cancelled"
+  | "failed";
+
+export interface ListingPromotion {
+  id: string;
+  listing_id: string;
+  user_id: string;
+  promotion_type: "featured";
+  duration_days: 7 | 30;
+  amount: number;
+  currency: string;
+  status: ListingPromotionStatus;
+  starts_at: string | null;
+  expires_at: string | null;
+  promotion_reference: string;
+  payment_reference: string | null;
+  provider: string | null;
+  created_at: string;
+  updated_at: string;
+  listing?: Pick<Property, "id" | "title" | "area" | "city" | "status" | "is_featured" | "featured_until">;
+  user?: Pick<Profile, "id" | "full_name" | "email">;
 }
 
 export interface SafehavenVirtualAccount {
