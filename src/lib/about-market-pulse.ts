@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isProductionEnv } from "@/lib/env";
 import { MOCK_LISTINGS } from "@/lib/mock-listings";
 import { isTrustVerified } from "@/lib/hub-filters";
 
@@ -8,6 +9,13 @@ export type AboutMarketPulse = {
   verifiedAgents: number;
   citiesOnYike: number;
   whatsappConnections: number;
+};
+
+const EMPTY_PULSE: AboutMarketPulse = {
+  activeListings: 0,
+  verifiedAgents: 0,
+  citiesOnYike: 0,
+  whatsappConnections: 0,
 };
 
 export function getDemoAboutMarketPulse(): AboutMarketPulse {
@@ -31,10 +39,14 @@ export function getDemoAboutMarketPulse(): AboutMarketPulse {
 }
 
 export async function getAboutMarketPulse(): Promise<AboutMarketPulse> {
-  if (!isSupabaseConfigured()) return getDemoAboutMarketPulse();
+  if (!isSupabaseConfigured()) {
+    return isProductionEnv() ? EMPTY_PULSE : getDemoAboutMarketPulse();
+  }
 
   const supabase = await createClient();
-  if (!supabase) return getDemoAboutMarketPulse();
+  if (!supabase) {
+    return isProductionEnv() ? EMPTY_PULSE : getDemoAboutMarketPulse();
+  }
 
   const now = new Date().toISOString();
 
@@ -71,6 +83,8 @@ export async function getAboutMarketPulse(): Promise<AboutMarketPulse> {
     whatsappConnections,
   };
 
-  if (pulse.activeListings === 0) return getDemoAboutMarketPulse();
+  if (pulse.activeListings === 0 && !isProductionEnv()) {
+    return getDemoAboutMarketPulse();
+  }
   return pulse;
 }

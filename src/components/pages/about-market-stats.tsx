@@ -6,6 +6,20 @@ function formatCount(n: number): string {
 }
 
 export function AboutMarketStats({ pulse }: { pulse: AboutMarketPulse }) {
+  if (pulse.activeListings === 0) {
+    return (
+      <section className="mt-8 rounded-2xl bg-elevated px-5 py-6 ring-1 ring-black/[0.04] lg:mt-10 lg:px-6">
+        <p className="text-sm font-semibold text-foreground lg:text-base">
+          Yike is live and growing
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          We&apos;re building verified inventory across Nigeria. Browse what&apos;s
+          available now, or list your property to be among the first in your area.
+        </p>
+      </section>
+    );
+  }
+
   const items = [
     { label: "Active listings", value: pulse.activeListings },
     { label: "Verified agents", value: pulse.verifiedAgents },

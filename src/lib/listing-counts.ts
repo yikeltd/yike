@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isProductionEnv } from "@/lib/env";
 import { MOCK_LISTINGS } from "@/lib/mock-listings";
+
+function allowMockCounts(): boolean {
+  return !isProductionEnv() && !isSupabaseConfigured();
+}
 
 function countMockForCity(searchCity: string): number {
   const q = searchCity.toLowerCase();
@@ -26,10 +31,12 @@ function countMockForArea(city: string, area: string): number {
 }
 
 export async function countListingsForCity(searchCity: string): Promise<number> {
-  if (!isSupabaseConfigured()) return countMockForCity(searchCity);
+  if (!isSupabaseConfigured()) {
+    return allowMockCounts() ? countMockForCity(searchCity) : 0;
+  }
 
   const supabase = await createClient();
-  if (!supabase) return countMockForCity(searchCity);
+  if (!supabase) return allowMockCounts() ? countMockForCity(searchCity) : 0;
 
   const q = searchCity.toLowerCase();
   let query = supabase
@@ -48,17 +55,19 @@ export async function countListingsForCity(searchCity: string): Promise<number> 
 
   const { count } = await query;
   if (count && count > 0) return count;
-  return countMockForCity(searchCity);
+  return allowMockCounts() ? countMockForCity(searchCity) : 0;
 }
 
 export async function countListingsForArea(
   city: string,
   area: string
 ): Promise<number> {
-  if (!isSupabaseConfigured()) return countMockForArea(city, area);
+  if (!isSupabaseConfigured()) {
+    return allowMockCounts() ? countMockForArea(city, area) : 0;
+  }
 
   const supabase = await createClient();
-  if (!supabase) return countMockForArea(city, area);
+  if (!supabase) return allowMockCounts() ? countMockForArea(city, area) : 0;
 
   const { count } = await supabase
     .from("properties")
@@ -69,5 +78,5 @@ export async function countListingsForArea(
     .or(`city.ilike.%${city}%,area.ilike.%${city}%`);
 
   if (count && count > 0) return count;
-  return countMockForArea(city, area);
+  return allowMockCounts() ? countMockForArea(city, area) : 0;
 }

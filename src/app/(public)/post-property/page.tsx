@@ -43,7 +43,7 @@ const BENEFITS = [
   {
     icon: Camera,
     title: "Visual-first listings",
-    body: "Minimum 3 photos. Blurry or duplicate listings are rejected.",
+    body: "Minimum 2 clear photos. Blurry or duplicate listings are rejected.",
   },
   {
     icon: ShieldCheck,

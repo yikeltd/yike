@@ -170,13 +170,22 @@ export function withDemoFallback(
 
 const HOME_CURATED_MIN = 6;
 
-/** Fill homepage rails when live inventory is thin — keeps first impression review-friendly. */
+/** Fill homepage rails when live inventory is thin — dev only; never supplements in production. */
 export function withCuratedHomeFallback(
   properties: Property[],
   options?: { minCount?: number; limit?: number }
 ): { items: Property[]; isDemo: boolean; supplemented: boolean } {
-  const minCount = options?.minCount ?? HOME_CURATED_MIN;
   const limit = options?.limit ?? 24;
+
+  if (isProductionEnv() || isSupabaseConfigured()) {
+    return {
+      items: properties.slice(0, limit),
+      isDemo: properties.length > 0 && properties.every((p) => isDemoProperty(p.id)),
+      supplemented: false,
+    };
+  }
+
+  const minCount = options?.minCount ?? HOME_CURATED_MIN;
 
   if (properties.length >= minCount) {
     return {

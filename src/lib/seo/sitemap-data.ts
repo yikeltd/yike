@@ -1,7 +1,16 @@
 import { createVerifiedAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isProductionEnv } from "@/lib/env";
 import { MOCK_LISTINGS } from "@/lib/mock-listings";
 import { propertyPublicSlug } from "@/lib/property-slugs";
+
+function mockSitemapEntries(limit: number): SitemapPropertyEntry[] {
+  if (isProductionEnv() || isSupabaseConfigured()) return [];
+  return MOCK_LISTINGS.slice(0, limit).map((p) => ({
+    path: propertyPublicSlug(p),
+    updated_at: p.updated_at,
+  }));
+}
 
 export type SitemapPropertyEntry = { path: string; updated_at?: string };
 
@@ -10,20 +19,14 @@ export async function getSitemapPropertyEntries(
   limit = 5000
 ): Promise<SitemapPropertyEntry[]> {
   if (!isSupabaseConfigured()) {
-    return MOCK_LISTINGS.slice(0, limit).map((p) => ({
-      path: propertyPublicSlug(p),
-      updated_at: p.updated_at,
-    }));
+    return mockSitemapEntries(limit);
   }
 
   const admin = isAdminClientConfigured()
     ? await createVerifiedAdminClient()
     : null;
   if (!admin) {
-    return MOCK_LISTINGS.slice(0, limit).map((p) => ({
-      path: propertyPublicSlug(p),
-      updated_at: p.updated_at,
-    }));
+    return mockSitemapEntries(limit);
   }
 
   const { data } = await admin
@@ -47,10 +50,7 @@ export async function getSitemapPropertyEntries(
     }));
   }
 
-  return MOCK_LISTINGS.slice(0, limit).map((p) => ({
-    path: propertyPublicSlug(p),
-    updated_at: p.updated_at,
-  }));
+  return mockSitemapEntries(limit);
 }
 
 /** @deprecated use getSitemapPropertyEntries */
