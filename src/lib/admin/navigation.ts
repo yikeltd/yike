@@ -49,6 +49,7 @@ export const PROMOTIONS_SECTION_TABS: SectionTab[] = [
 ];
 
 export const REVENUE_SECTION_TABS: SectionTab[] = [
+  { href: adminPath("revenue/overview"), label: "Overview" },
   { href: adminPath("revenue/featured-listings"), label: "Featured Listings" },
 ];
 
@@ -156,10 +157,16 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     label: "Revenue",
     items: [
       {
+        href: adminPath("revenue/overview"),
+        label: "Revenue Overview",
+        segment: "revenue/overview",
+        emphasis: "primary",
+        keywords: ["payments", "revenue", "paystack"],
+      },
+      {
         href: adminPath("revenue/featured-listings"),
         label: "Featured Listings",
         segment: "revenue/featured-listings",
-        emphasis: "primary",
         keywords: ["promotion", "featured", "monetization", "orders"],
       },
     ],

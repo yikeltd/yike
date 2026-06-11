@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { ListingPromotion, ListingPromotionStatus } from "@/types/database";
-import { promotionStatusLabel } from "@/lib/featured-promotions/service";
+import {
+  promotionStatusLabel,
+  promotionTypeLabel,
+} from "@/lib/featured-promotions/constants";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -115,8 +118,11 @@ export function FeaturedPromotionsBoard() {
                     {p.listing?.city ? ` · ${p.listing.city}` : ""}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    {p.user?.full_name ?? "Agent"} · {p.duration_days} days ·{" "}
-                    {formatPrice(Number(p.amount), "total", "rent")}
+                    {promotionTypeLabel(p.promotion_type)} · {p.user?.full_name ?? "Agent"} ·{" "}
+                    {p.duration_hours
+                      ? `${p.duration_hours} hours`
+                      : `${p.duration_days} days`}{" "}
+                    · {formatPrice(Number(p.amount), "total", "rent")}
                   </p>
                   <p className="mt-1 font-mono text-[11px] text-muted">
                     {p.promotion_reference}

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import type { Property } from "@/types/database";
+import type { ListingPromotion, Property } from "@/types/database";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { isListingExpired, isListingPubliclyActive } from "@/lib/listing-lifecycle";
@@ -17,18 +17,22 @@ import {
 } from "@/lib/listing-draft";
 import { cn } from "@/lib/utils";
 import { PromoteListingModal } from "@/components/agent/promote-listing-modal";
-import { isFeaturedActive } from "@/lib/agent-tiers";
+import { isBoostedActive, isFeaturedActive } from "@/lib/agent-tiers";
 
 type Tab = "all" | "active" | "expired" | "closed" | "archived";
 
 export function AgentListingsClient({
   agentId,
   listings,
+  featuredByListing = {},
+  boostByListing = {},
   featuredListingsEnabled = false,
   featuredPaymentsEnabled = false,
 }: {
   agentId: string;
   listings: Property[];
+  featuredByListing?: Record<string, ListingPromotion>;
+  boostByListing?: Record<string, ListingPromotion>;
   featuredListingsEnabled?: boolean;
   featuredPaymentsEnabled?: boolean;
 }) {
@@ -162,6 +166,14 @@ export function AgentListingsClient({
         <ul className="space-y-3">
           {filtered.map((p) => {
             const expired = isListingExpired(p);
+            const featuredPromo = featuredByListing[p.id];
+            const boostPromo = boostByListing[p.id];
+            const featuredActive = isFeaturedActive(p);
+            const boostActive = isBoostedActive(p);
+            const featuredExpired =
+              (p.is_featured || featuredPromo?.status === "active") && !featuredActive;
+            const boostExpired =
+              (p.is_boosted || boostPromo?.status === "active") && !boostActive;
             const expiry = new Date(p.expires_at).toLocaleDateString("en-NG", {
               day: "numeric",
               month: "short",
@@ -201,6 +213,44 @@ export function AgentListingsClient({
                       {p.views_count > 0 && (
                         <span className="text-[10px] text-muted">{p.views_count} views</span>
                       )}
+                      {featuredActive && p.featured_until ? (
+                        <span className="text-[10px] font-semibold text-gold-dark">
+                          Featured · Active until{" "}
+                          {new Date(p.featured_until).toLocaleDateString("en-NG", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                      ) : null}
+                      {featuredExpired ? (
+                        <span className="text-[10px] font-semibold text-muted">
+                          Promotion expired
+                        </span>
+                      ) : null}
+                      {boostActive && p.boosted_until ? (
+                        <span className="text-[10px] font-semibold text-navy/80">
+                          Boost active · Expires{" "}
+                          {new Date(p.boosted_until).toLocaleDateString("en-NG", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                      ) : null}
+                      {boostExpired ? (
+                        <span className="text-[10px] font-semibold text-muted">
+                          Boost expired
+                        </span>
+                      ) : null}
+                      {!featuredActive && featuredPromo?.status === "pending" ? (
+                        <span className="text-[10px] font-semibold text-amber-700">
+                          Featured payment pending
+                        </span>
+                      ) : null}
+                      {!boostActive && boostPromo?.status === "pending" ? (
+                        <span className="text-[10px] font-semibold text-amber-700">
+                          Boost payment pending
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </div>

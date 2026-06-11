@@ -1,13 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ListingPromotion, Property } from "@/types/database";
 import {
+  BOOST_PROMOTION_SCORE,
+  BOOST_PROMOTION_TYPE,
   FEATURED_PROMOTION_TYPE,
+  boostPriceForPlan,
   featuredPriceForDays,
   isFeaturedDurationDays,
+  type BoostPlanId,
   type FeaturedDurationDays,
   type FeaturedPromotionStatus,
+  type PromotionType,
 } from "@/lib/featured-promotions/constants";
 import { generatePromotionReference } from "@/lib/featured-promotions/reference";
+import { logPaymentAudit } from "@/lib/payments/audit";
 
 export type CreateFeaturedPromotionInput = {
   listingId: string;
@@ -15,12 +21,28 @@ export type CreateFeaturedPromotionInput = {
   durationDays: FeaturedDurationDays;
 };
 
-export type FeaturedPromotionResult =
+export type CreateBoostPromotionInput = {
+  listingId: string;
+  userId: string;
+  plan: BoostPlanId;
+};
+
+export type PromotionResult =
   | { ok: true; promotion: ListingPromotion }
   | { ok: false; error: string; code?: string };
 
-function addDays(from: Date, days: number): Date {
-  return new Date(from.getTime() + days * 86_400_000);
+/** @deprecated use PromotionResult */
+export type FeaturedPromotionResult = PromotionResult;
+
+export function computePromotionExpiresAt(
+  durationDays: number,
+  durationHours?: number | null,
+  from: Date = new Date()
+): Date {
+  if (durationHours && durationHours > 0) {
+    return new Date(from.getTime() + durationHours * 3_600_000);
+  }
+  return new Date(from.getTime() + durationDays * 86_400_000);
 }
 
 export async function loadListingForPromotion(
@@ -38,18 +60,26 @@ export async function loadListingForPromotion(
   return (data as Property | null) ?? null;
 }
 
-export async function hasBlockingFeaturedPromotion(
+export async function hasBlockingPromotion(
   admin: SupabaseClient,
-  listingId: string
+  listingId: string,
+  promotionType: PromotionType
 ): Promise<boolean> {
   const { count } = await admin
     .from("listing_promotions")
     .select("id", { count: "exact", head: true })
     .eq("listing_id", listingId)
-    .eq("promotion_type", FEATURED_PROMOTION_TYPE)
+    .eq("promotion_type", promotionType)
     .in("status", ["pending", "paid", "active"]);
 
   return (count ?? 0) > 0;
+}
+
+export async function hasBlockingFeaturedPromotion(
+  admin: SupabaseClient,
+  listingId: string
+): Promise<boolean> {
+  return hasBlockingPromotion(admin, listingId, FEATURED_PROMOTION_TYPE);
 }
 
 export async function createFeaturedPromotion(
@@ -81,7 +111,7 @@ export async function createFeaturedPromotion(
   }
 
   const amount = featuredPriceForDays(input.durationDays);
-  const promotionReference = generatePromotionReference();
+  const promotionReference = generatePromotionReference("FP");
 
   const { data, error } = await admin
     .from("listing_promotions")
@@ -100,6 +130,58 @@ export async function createFeaturedPromotion(
 
   if (error || !data) {
     return { ok: false, error: error?.message ?? "Could not create promotion" };
+  }
+
+  return { ok: true, promotion: data as ListingPromotion };
+}
+
+export async function createBoostPromotion(
+  admin: SupabaseClient,
+  input: CreateBoostPromotionInput
+): Promise<PromotionResult> {
+  const listing = await loadListingForPromotion(admin, input.listingId, input.userId);
+  if (!listing) {
+    return { ok: false, error: "Listing not found", code: "not_found" };
+  }
+  if (listing.status !== "approved") {
+    return { ok: false, error: "Only approved listings can be boosted", code: "not_approved" };
+  }
+  if (new Date(listing.expires_at) <= new Date()) {
+    return { ok: false, error: "Renew this listing before boosting", code: "listing_expired" };
+  }
+
+  const blocked = await hasBlockingPromotion(admin, input.listingId, BOOST_PROMOTION_TYPE);
+  if (blocked) {
+    return {
+      ok: false,
+      error: "This listing already has a pending or active boost",
+      code: "promotion_exists",
+    };
+  }
+
+  const plan = input.plan === "hours24" ? { durationHours: 24, durationDays: 0 } : { durationHours: null, durationDays: 7 };
+  const amount = boostPriceForPlan(input.plan);
+  const promotionReference = generatePromotionReference("BP");
+
+  const { data, error } = await admin
+    .from("listing_promotions")
+    .insert({
+      listing_id: input.listingId,
+      user_id: input.userId,
+      promotion_type: BOOST_PROMOTION_TYPE,
+      duration_days: plan.durationDays,
+      duration_hours: plan.durationHours,
+      boost_score: BOOST_PROMOTION_SCORE,
+      amount,
+      currency: "NGN",
+      status: "pending",
+      promotion_reference: promotionReference,
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    return { ok: false, error: error?.message ?? "Could not create boost" };
   }
 
   return { ok: true, promotion: data as ListingPromotion };
@@ -139,7 +221,7 @@ export async function activateFeaturedPromotion(
   }
 
   const now = new Date();
-  const expiresAt = addDays(now, row.duration_days);
+  const expiresAt = computePromotionExpiresAt(row.duration_days, row.duration_hours, now);
   const nowIso = now.toISOString();
   const expiresIso = expiresAt.toISOString();
 
@@ -170,6 +252,86 @@ export async function activateFeaturedPromotion(
       featured_created_at: nowIso,
       boost_score: 50,
       sponsored_status: "boosted",
+      updated_at: nowIso,
+    })
+    .eq("id", row.listing_id);
+
+  if (listingError) {
+    await admin
+      .from("listing_promotions")
+      .update({ status: row.status, starts_at: row.starts_at, expires_at: row.expires_at })
+      .eq("id", promotionId);
+    return { ok: false, error: listingError.message };
+  }
+
+  return { ok: true, promotion: updatedPromotion as ListingPromotion };
+}
+
+export async function activateBoostPromotion(
+  admin: SupabaseClient,
+  promotionId: string,
+  actorId?: string | null
+): Promise<PromotionResult> {
+  const { data: promotion } = await admin
+    .from("listing_promotions")
+    .select("*")
+    .eq("id", promotionId)
+    .single();
+
+  if (!promotion) {
+    return { ok: false, error: "Promotion not found", code: "not_found" };
+  }
+
+  const row = promotion as ListingPromotion;
+  if (row.promotion_type !== BOOST_PROMOTION_TYPE) {
+    return { ok: false, error: "Not a boost promotion", code: "invalid_type" };
+  }
+  if (row.status === "active") {
+    return { ok: true, promotion: row };
+  }
+  if (!["pending", "paid"].includes(row.status)) {
+    return { ok: false, error: "Boost cannot be activated", code: "invalid_status" };
+  }
+
+  const { data: listing } = await admin
+    .from("properties")
+    .select("id, status")
+    .eq("id", row.listing_id)
+    .single();
+
+  if (!listing || listing.status !== "approved") {
+    return { ok: false, error: "Listing must be approved", code: "not_approved" };
+  }
+
+  const now = new Date();
+  const expiresAt = computePromotionExpiresAt(row.duration_days, row.duration_hours, now);
+  const nowIso = now.toISOString();
+  const expiresIso = expiresAt.toISOString();
+  const score = row.boost_score ?? BOOST_PROMOTION_SCORE;
+
+  const { data: updatedPromotion, error: promoError } = await admin
+    .from("listing_promotions")
+    .update({
+      status: "active",
+      starts_at: nowIso,
+      expires_at: expiresIso,
+      boost_score: score,
+      updated_at: nowIso,
+    })
+    .eq("id", promotionId)
+    .select("*")
+    .single();
+
+  if (promoError || !updatedPromotion) {
+    return { ok: false, error: promoError?.message ?? "Activation failed" };
+  }
+
+  const { error: listingError } = await admin
+    .from("properties")
+    .update({
+      is_boosted: true,
+      boosted_until: expiresIso,
+      boost_score: score,
       updated_at: nowIso,
     })
     .eq("id", row.listing_id);
@@ -224,14 +386,25 @@ export async function expireFeaturedPromotion(
     return { ok: false, error: promoError?.message ?? "Expiration failed" };
   }
 
-  if (row.status === "active") {
+  if (row.status === "active" && row.promotion_type === FEATURED_PROMOTION_TYPE) {
     await admin
       .from("properties")
       .update({
         is_featured: false,
         featured_until: null,
-        boost_score: 0,
         sponsored_status: "none",
+        updated_at: nowIso,
+      })
+      .eq("id", row.listing_id);
+  }
+
+  if (row.status === "active" && row.promotion_type === BOOST_PROMOTION_TYPE) {
+    await admin
+      .from("properties")
+      .update({
+        is_boosted: false,
+        boosted_until: null,
+        boost_score: 0,
         updated_at: nowIso,
       })
       .eq("id", row.listing_id);
@@ -277,45 +450,25 @@ export async function cancelFeaturedPromotion(
   return { ok: true, promotion: updated as ListingPromotion };
 }
 
-export async function expireDueFeaturedPromotions(
-  admin: SupabaseClient
+async function expireDuePromotionsByType(
+  admin: SupabaseClient,
+  promotionType: PromotionType,
+  listingFlags: Record<string, unknown>
 ): Promise<{ expiredListings: number; expiredPromotions: number }> {
   const nowIso = new Date().toISOString();
 
-  const { data: dueListings } = await admin
-    .from("properties")
-    .select("id")
-    .eq("is_featured", true)
-    .not("featured_until", "is", null)
-    .lt("featured_until", nowIso);
-
-  const listingIds = (dueListings ?? []).map((r) => r.id as string);
-  let expiredListings = 0;
-
-  if (listingIds.length > 0) {
-    const { error } = await admin
-      .from("properties")
-      .update({
-        is_featured: false,
-        featured_until: null,
-        boost_score: 0,
-        sponsored_status: "none",
-        updated_at: nowIso,
-      })
-      .in("id", listingIds);
-
-    if (!error) expiredListings = listingIds.length;
-  }
-
   const { data: duePromotions } = await admin
     .from("listing_promotions")
-    .select("id")
+    .select("id, listing_id, user_id")
+    .eq("promotion_type", promotionType)
     .eq("status", "active")
     .not("expires_at", "is", null)
     .lt("expires_at", nowIso);
 
-  const promoIds = (duePromotions ?? []).map((r) => r.id as string);
+  const promoRows = duePromotions ?? [];
+  const promoIds = promoRows.map((r) => r.id as string);
   let expiredPromotions = 0;
+  let expiredListings = 0;
 
   if (promoIds.length > 0) {
     const { error } = await admin
@@ -323,20 +476,64 @@ export async function expireDueFeaturedPromotions(
       .update({ status: "expired", updated_at: nowIso })
       .in("id", promoIds);
 
-    if (!error) expiredPromotions = promoIds.length;
+    if (!error) {
+      expiredPromotions = promoIds.length;
+      const listingIds = [...new Set(promoRows.map((r) => r.listing_id as string))];
+      if (listingIds.length > 0) {
+        const { error: listingError } = await admin
+          .from("properties")
+          .update({ ...listingFlags, updated_at: nowIso })
+          .in("id", listingIds);
+        if (!listingError) expiredListings = listingIds.length;
+      }
+
+      for (const promo of promoRows) {
+        if (promo.user_id) {
+          logPaymentAudit({
+            action: "promotion_expired",
+            actorId: promo.user_id as string,
+            targetId: promo.id as string,
+            targetUserId: promo.user_id as string,
+            metadata: { listing_id: promo.listing_id, promotion_type: promotionType },
+          });
+        }
+      }
+    }
   }
 
   return { expiredListings, expiredPromotions };
 }
 
-export function promotionStatusLabel(status: FeaturedPromotionStatus): string {
-  const labels: Record<FeaturedPromotionStatus, string> = {
-    pending: "Pending",
-    paid: "Paid",
-    active: "Active",
-    expired: "Expired",
-    cancelled: "Cancelled",
-    failed: "Failed",
-  };
-  return labels[status];
+export async function expireDueFeaturedPromotions(
+  admin: SupabaseClient
+): Promise<{ expiredListings: number; expiredPromotions: number }> {
+  return expireDuePromotionsByType(admin, FEATURED_PROMOTION_TYPE, {
+    is_featured: false,
+    featured_until: null,
+    sponsored_status: "none",
+  });
 }
+
+export async function expireDueBoostPromotions(
+  admin: SupabaseClient
+): Promise<{ expiredListings: number; expiredPromotions: number }> {
+  return expireDuePromotionsByType(admin, BOOST_PROMOTION_TYPE, {
+    is_boosted: false,
+    boosted_until: null,
+    boost_score: 0,
+  });
+}
+
+export async function expireDueListingPromotions(
+  admin: SupabaseClient
+): Promise<{
+  featured: { expiredListings: number; expiredPromotions: number };
+  boost: { expiredListings: number; expiredPromotions: number };
+}> {
+  const [featured, boost] = await Promise.all([
+    expireDueFeaturedPromotions(admin),
+    expireDueBoostPromotions(admin),
+  ]);
+  return { featured, boost };
+}
+

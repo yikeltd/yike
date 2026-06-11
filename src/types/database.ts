@@ -591,6 +591,8 @@ export interface Property {
   contact_clicks: number;
   featured_impressions?: number;
   featured_clicks?: number;
+  boost_impressions?: number;
+  boost_clicks?: number;
   expires_at: string;
   listing_plan?: ListingPlan;
   listing_duration_days?: number;
@@ -1084,12 +1086,44 @@ export type ListingPromotionStatus =
   | "cancelled"
   | "failed";
 
+export type PaymentOrderType =
+  | "featured_listing"
+  | "boost_listing"
+  | "property_verification"
+  | "subscription";
+
+export type PaymentOrderStatus =
+  | "pending"
+  | "processing"
+  | "successful"
+  | "failed"
+  | "cancelled"
+  | "refunded";
+
+export interface PaymentOrder {
+  id: string;
+  user_id: string;
+  order_type: PaymentOrderType;
+  reference: string;
+  provider: string | null;
+  amount: number;
+  currency: string;
+  status: PaymentOrderStatus;
+  entity_id: string | null;
+  metadata: Record<string, unknown>;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ListingPromotion {
   id: string;
   listing_id: string;
   user_id: string;
-  promotion_type: "featured";
-  duration_days: 7 | 30;
+  promotion_type: "featured" | "boost";
+  duration_days: number;
+  duration_hours?: number | null;
+  boost_score?: number;
   amount: number;
   currency: string;
   status: ListingPromotionStatus;
