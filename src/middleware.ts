@@ -19,6 +19,15 @@ import { STAFF_APP_COOKIE } from "@/lib/admin/staff-app";
 async function handleMiddleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
+  if (
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname.startsWith("/sitemap/") ||
+    pathname.startsWith("/.well-known/")
+  ) {
+    return NextResponse.next();
+  }
+
   if (request.nextUrl.hostname === "www.yike.ng") {
     const url = request.nextUrl.clone();
     url.hostname = "yike.ng";

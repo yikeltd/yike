@@ -81,10 +81,28 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: "/sitemap.xml",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/xml; charset=utf-8",
+          },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, s-maxage=3600",
+          },
+        ],
+      },
     ];
   },
   async redirects() {
     return [
+      {
+        source: "/sitemap/:id.xml",
+        destination: "/sitemap.xml",
+        permanent: true,
+      },
       {
         source: "/:path*",
         has: [{ type: "host", value: "www.yike.ng" }],
