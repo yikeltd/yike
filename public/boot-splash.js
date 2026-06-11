@@ -1,6 +1,6 @@
 /** Dismiss #yike-boot-splash — backup for cached HTML shells. */
 (function () {
-  var MAX = 1800;
+  var MAX = 2600;
   var done = false;
 
   function isTwa() {
@@ -81,8 +81,8 @@
     document.documentElement.classList.add("yike-app-mode");
     document.documentElement.classList.add("yike-boot-splash-enabled");
     bind();
-    setTimeout(showRecovery, 1600);
-    setTimeout(hide, isTwa() ? 900 : 1100);
+    setTimeout(showRecovery, 2300);
+    setTimeout(hide, isTwa() ? 1200 : 1500);
     setTimeout(hide, MAX);
   }
 
