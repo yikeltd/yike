@@ -2,6 +2,7 @@
 
 import type { FeeTransparencyMode, ListingExtras } from "@/types/database";
 import { parseFeeValue } from "@/lib/listing-fee-parse";
+import { formatAmountOrPercentTyping } from "@/lib/naira-input";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -140,7 +141,9 @@ function FeeRow({
       {needsInput ? (
         <Input
           value={value}
-          onChange={(e) => onValueChange(field.key, e.target.value)}
+          onChange={(e) =>
+            onValueChange(field.key, formatAmountOrPercentTyping(e.target.value))
+          }
           placeholder={field.placeholder}
           className="mt-2 h-10 rounded-xl"
         />

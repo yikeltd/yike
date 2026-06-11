@@ -7,6 +7,8 @@ import Image from "next/image";
 import type { Property, PropertyMediaItem, Profile } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NairaInput } from "@/components/ui/naira-input";
+import { parseNairaAmount } from "@/lib/naira-input";
 import { usePinGate } from "@/components/admin/pin-confirm-modal";
 import { propertyPath } from "@/lib/property-url";
 import { formatPrice } from "@/lib/utils";
@@ -96,7 +98,7 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
       body: JSON.stringify({
         title: form.title,
         description: form.description || null,
-        price: Number(form.price),
+        price: parseNairaAmount(form.price) ?? (Number(form.price) || 0),
         listing_type: form.listing_type,
         property_type: form.property_type || null,
         bedrooms: Number(form.bedrooms) || 0,
@@ -278,15 +280,14 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
               className="mt-1 w-full rounded-xl border border-navy/15 px-3 py-2 text-sm"
             />
           </label>
-          <label className="block text-sm">
-            <span className="font-semibold text-navy">Price (NGN)</span>
-            <Input
-              type="number"
+          <div className="text-sm">
+            <NairaInput
+              label="Price (NGN)"
               value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
-              className="mt-1"
+              onChange={(digits) => setForm({ ...form, price: digits })}
+              required
             />
-          </label>
+          </div>
           <label className="block text-sm">
             <span className="font-semibold text-navy">Status</span>
             <select

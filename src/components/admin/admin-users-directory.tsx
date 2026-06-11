@@ -7,17 +7,24 @@ import { normalizeAccountStatus } from "@/lib/account-control";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { AdminDirectoryRow, AdminUserFilter } from "@/lib/admin/users-directory";
+import {
+  accountKindLabel,
+  type AdminDirectoryRow,
+  type AdminUserFilter,
+} from "@/lib/admin/users-directory";
 
 const FILTER_OPTIONS: { value: AdminUserFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "users", label: "Users" },
+  { value: "individuals", label: "Individuals" },
   { value: "agents", label: "Agents" },
+  { value: "landlords", label: "Landlords" },
+  { value: "developers", label: "Developers" },
   { value: "companies", label: "Companies" },
+  { value: "staff", label: "Staff" },
   { value: "missing_profile", label: "Missing profile" },
   { value: "suspended", label: "Suspended" },
   { value: "on_hold", label: "On hold" },
-  { value: "staff", label: "Staff" },
 ];
 
 export function AdminUsersDirectory({
@@ -133,7 +140,12 @@ export function AdminUsersDirectory({
                   <td className="px-4 py-3 text-muted">{u.email ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-1">
-                      <StatusBadge status={u.role === "—" ? "user" : u.role} />
+                      <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-bold text-navy">
+                        {accountKindLabel(u.account_kind)}
+                      </span>
+                      {u.account_kind === "agent" && u.role !== "user" && u.role !== "—" && (
+                        <StatusBadge status={u.role} />
+                      )}
                       {u.profile_missing && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                           Profile missing

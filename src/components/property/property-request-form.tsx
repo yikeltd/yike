@@ -9,6 +9,8 @@ import { SEARCH_DEAL_TYPES } from "@/constants/listingTypes";
 import { PROPERTY_CATEGORIES } from "@/constants/propertyCategories";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
+import { NairaInput } from "@/components/ui/naira-input";
+import { parseNairaAmount } from "@/lib/naira-input";
 import { FormSection } from "@/components/ui/form-section";
 import {
   HumanVerifyField,
@@ -22,6 +24,7 @@ export function PropertyRequestForm() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
   const [verifyOk, setVerifyOk] = useState(false);
+  const [budgetMax, setBudgetMax] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -55,8 +58,8 @@ export function PropertyRequestForm() {
       listing_type: (form.get("listing_type") as string) || "rent",
       property_type: (form.get("property_type") as string) || null,
       bedrooms: Number(form.get("bedrooms")) || null,
-      budget_min: Number(form.get("budget_min")) || null,
-      budget_max: Number(form.get("budget_max")) || null,
+      budget_min: parseNairaAmount((form.get("budget_min") as string) ?? "") ?? null,
+      budget_max: parseNairaAmount(budgetMax) ?? null,
       whatsapp,
       notes: (form.get("notes") as string).trim() || null,
     });
@@ -141,10 +144,11 @@ export function PropertyRequestForm() {
             <span className="text-xs font-semibold text-muted">Bedrooms</span>
             <Input name="bedrooms" type="number" min={0} placeholder="2" className="mt-1" />
           </label>
-          <label className="block">
-            <span className="text-xs font-semibold text-muted">Max budget (₦)</span>
-            <Input name="budget_max" type="number" placeholder="800000" className="mt-1" />
-          </label>
+          <NairaInput
+            label="Max budget (optional)"
+            value={budgetMax}
+            onChange={setBudgetMax}
+          />
         </div>
       </FormSection>
 

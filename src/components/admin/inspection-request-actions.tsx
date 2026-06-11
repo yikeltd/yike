@@ -8,6 +8,7 @@ import type {
   InspectionRequest,
   InspectionRequestStatus,
 } from "@/types/database";
+import { formatIntegerTyping, parseNairaAmount } from "@/lib/naira-input";
 
 const STATUSES: InspectionRequestStatus[] = [
   "pending",
@@ -50,7 +51,7 @@ export function InspectionRequestActions({
       id: request.id,
       status,
       payment_status: paymentStatus,
-      inspection_fee_amount: fee ? Number(fee) : null,
+      inspection_fee_amount: fee ? parseNairaAmount(fee) ?? Number(fee) : null,
       admin_notes: adminNotes,
     };
 
@@ -116,10 +117,10 @@ export function InspectionRequestActions({
         <label className="text-xs font-semibold text-navy sm:col-span-2">
           Inspection fee (₦)
           <input
-            type="number"
-            min={0}
+            type="text"
+            inputMode="decimal"
             value={fee}
-            onChange={(e) => setFee(e.target.value)}
+            onChange={(e) => setFee(formatIntegerTyping(e.target.value))}
             className="mt-1 w-full rounded-lg border border-border px-2 py-2 text-sm"
           />
         </label>

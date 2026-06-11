@@ -6,6 +6,7 @@ import {
   JOB_TYPES,
   ROLE_CATEGORIES,
 } from "@/lib/careers/constants";
+import { NairaInput } from "@/components/ui/naira-input";
 
 export function CareerJobForm() {
   const router = useRouter();
@@ -121,24 +122,16 @@ export function CareerJobForm() {
             ))}
           </select>
         </label>
-        <label className="block">
-          <span className="text-xs font-semibold text-navy">Salary min (₦, optional)</span>
-          <input
-            type="number"
-            value={salaryMin}
-            onChange={(e) => setSalaryMin(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-navy/10 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="block">
-          <span className="text-xs font-semibold text-navy">Salary max (₦, optional)</span>
-          <input
-            type="number"
-            value={salaryMax}
-            onChange={(e) => setSalaryMax(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-navy/10 px-3 py-2 text-sm"
-          />
-        </label>
+        <NairaInput
+          label="Salary min (optional)"
+          value={salaryMin}
+          onChange={setSalaryMin}
+        />
+        <NairaInput
+          label="Salary max (optional)"
+          value={salaryMax}
+          onChange={setSalaryMax}
+        />
         <label className="block sm:col-span-2">
           <span className="text-xs font-semibold text-navy">Role summary *</span>
           <span className="mt-0.5 block text-[11px] text-muted">

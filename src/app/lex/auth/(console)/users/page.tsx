@@ -18,12 +18,15 @@ export const runtime = "nodejs";
 const FILTERS: AdminUserFilter[] = [
   "all",
   "users",
+  "individuals",
   "agents",
+  "landlords",
+  "developers",
   "companies",
+  "staff",
   "missing_profile",
   "suspended",
   "on_hold",
-  "staff",
 ];
 
 function parseFilter(raw: string | undefined): AdminUserFilter {

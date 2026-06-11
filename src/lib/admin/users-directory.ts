@@ -4,7 +4,10 @@ import { findAuthUserByEmail } from "@/lib/auth/find-auth-user";
 export type AdminUserFilter =
   | "all"
   | "users"
+  | "individuals"
   | "agents"
+  | "landlords"
+  | "developers"
   | "companies"
   | "staff"
   | "missing_profile"
@@ -16,12 +19,21 @@ export type AdminDirectoryRow = {
   full_name: string | null;
   email: string | null;
   role: string;
+  account_type: string | null;
   account_status: string | null;
   profile_status: string | null;
   is_banned: boolean;
   created_at: string;
   profile_missing: boolean;
-  account_kind: "user" | "agent" | "company" | "staff" | "ghost";
+  account_kind:
+    | "user"
+    | "individual"
+    | "agent"
+    | "landlord"
+    | "developer"
+    | "company"
+    | "staff"
+    | "ghost";
   email_verified: boolean | null;
   company_name: string | null;
 };
@@ -44,25 +56,22 @@ export class AdminUsersDirectoryError extends Error {
   }
 }
 
-function isCompanyProfile(row: {
-  account_type?: string | null;
-  company_name?: string | null;
-}): boolean {
-  return (
-    row.account_type === "agency" ||
-    row.account_type === "developer" ||
-    Boolean(row.company_name?.trim())
-  );
-}
-
 function classifyProfile(row: {
   role: string;
   account_type?: string | null;
   company_name?: string | null;
 }): AdminDirectoryRow["account_kind"] {
-  if (STAFF_ROLES.includes(row.role as (typeof STAFF_ROLES)[number])) return "staff";
-  if (AGENT_ROLES.includes(row.role as (typeof AGENT_ROLES)[number])) return "agent";
-  if (isCompanyProfile(row)) return "company";
+  const role = row.role;
+  const accountType = row.account_type;
+
+  if (STAFF_ROLES.includes(role as (typeof STAFF_ROLES)[number])) return "staff";
+  if (accountType === "individual") return "individual";
+  if (accountType === "landlord") return "landlord";
+  if (accountType === "developer") return "developer";
+  if (accountType === "agency") return "company";
+  if (accountType === "agent") return "agent";
+  if (AGENT_ROLES.includes(role as (typeof AGENT_ROLES)[number])) return "agent";
+  if (row.company_name?.trim()) return "company";
   return "user";
 }
 
@@ -72,8 +81,14 @@ function matchesFilter(row: AdminDirectoryRow, filter: AdminUserFilter): boolean
       return true;
     case "users":
       return row.account_kind === "user" && !row.profile_missing;
+    case "individuals":
+      return row.account_kind === "individual";
     case "agents":
       return row.account_kind === "agent";
+    case "landlords":
+      return row.account_kind === "landlord";
+    case "developers":
+      return row.account_kind === "developer";
     case "companies":
       return row.account_kind === "company";
     case "staff":
@@ -96,6 +111,7 @@ function profileToRow(p: Record<string, unknown>): AdminDirectoryRow {
     full_name: (p.full_name as string | null) ?? null,
     email: (p.email as string | null) ?? null,
     role,
+    account_type: (p.account_type as string | null) ?? null,
     account_status: (p.account_status as string | null) ?? null,
     profile_status: (p.profile_status as string | null) ?? null,
     is_banned: Boolean(p.is_banned),
@@ -103,8 +119,8 @@ function profileToRow(p: Record<string, unknown>): AdminDirectoryRow {
     profile_missing: false,
     account_kind: classifyProfile({
       role,
-      account_type: p.account_type as string | null,
-      company_name: p.company_name as string | null,
+      account_type: (p.account_type as string | null) ?? null,
+      company_name: (p.company_name as string | null) ?? null,
     }),
     email_verified: (p.email_verified as boolean | null) ?? null,
     company_name: (p.company_name as string | null) ?? null,
@@ -120,6 +136,7 @@ function authUserToMissingProfileRow(u: User): AdminDirectoryRow {
       null,
     email: u.email ?? null,
     role: "—",
+    account_type: null,
     account_status: null,
     profile_status: null,
     is_banned: false,
@@ -275,6 +292,7 @@ export async function lookupDirectoryUserByEmail(
     full_name: (authUser.user_metadata?.full_name as string) ?? null,
     email: authUser.email ?? null,
     role: "—",
+    account_type: null,
     account_status: null,
     profile_status: null,
     is_banned: false,
@@ -284,4 +302,25 @@ export async function lookupDirectoryUserByEmail(
     email_verified: Boolean(authUser.email_confirmed_at),
     company_name: null,
   };
+}
+
+export function accountKindLabel(kind: AdminDirectoryRow["account_kind"]): string {
+  switch (kind) {
+    case "individual":
+      return "Individual";
+    case "agent":
+      return "Agent";
+    case "landlord":
+      return "Landlord";
+    case "developer":
+      return "Developer";
+    case "company":
+      return "Company";
+    case "staff":
+      return "Staff";
+    case "user":
+      return "User";
+    default:
+      return "—";
+  }
 }
