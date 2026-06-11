@@ -19,7 +19,6 @@ import { PrefSync } from "@/components/personalization/pref-sync";
 import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
 import { HOME_SEO_SEARCH_LINKS } from "@/lib/home/popular-search-links";
-import { HomePopularSearches } from "@/components/home/home-popular-searches";
 import { BRAND_OG_IMAGE, BRAND_OG_IMAGE_WEBP } from "@/lib/share-images";
 
 const BrowseRail = dynamic(
@@ -221,17 +220,6 @@ export default async function HomePage({
       </Suspense>
 
       <PopularAreasSection />
-
-      <Suspense fallback={null}>
-        <HomePopularSearches
-          initialContext={{
-            listingType: filters.listing_type,
-            hub: filters.hub,
-            city: filters.city,
-            area: filters.area,
-          }}
-        />
-      </Suspense>
     </div>
   );
 }

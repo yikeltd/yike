@@ -645,6 +645,11 @@ body {
   padding-bottom: calc(var(--bottom-nav-stack) + 1rem);
 }
 
+/* Installed PWA / Android TWA — keep bottom nav clean, no website footer */
+.yike-app-mode .site-footer-shell {
+  display: none;
+}
+
 @media (min-width: 1024px) {
   .site-footer-shell {
     padding-bottom: 0;

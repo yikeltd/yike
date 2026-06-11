@@ -172,7 +172,6 @@ export async function HomeFilteredFeed({
           city={filters.city}
           area={filters.area}
         />
-        <PopularAreasSection />
       </section>
     );
   }
@@ -188,7 +187,6 @@ export async function HomeFilteredFeed({
         feedAdInsertAfter={4}
         adPlacementKey="home_feed_mid"
       />
-      {!active && items.length < 8 && <PopularAreasSection />}
     </section>
   );
 }
@@ -211,6 +209,14 @@ export function PopularAreasSection() {
           </Link>
         ))}
       </div>
+      <p className="mt-4 px-3 lg:px-0">
+        <Link
+          href="/explore"
+          className="text-sm font-bold text-gold-dark hover:underline"
+        >
+          Browse popular property searches
+        </Link>
+      </p>
     </section>
   );
 }
