@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeNigerianPhone, canRequestPhoneOtp } from "@/lib/phone";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { isBusinessAccount, isDeveloperAccount } from "@/lib/profile/basic-listing-profile";
+import { resetWhatsappVerificationOnNumberChange } from "@/lib/whatsapp-verification/service";
+import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
 
 export const runtime = "nodejs";
 
@@ -44,7 +46,7 @@ export async function POST(request: Request) {
 
   const { data: existingProfile } = await admin
     .from("profiles")
-    .select("role, email_verified, is_banned, account_type")
+    .select("role, email_verified, is_banned, account_type, whatsapp, phone")
     .eq("id", user.id)
     .single();
 
@@ -139,6 +141,13 @@ export async function POST(request: Request) {
       office_address: residentialAddress,
       ...(phone ? { phone, whatsapp: phone } : {}),
     };
+  }
+
+  if (phone && existingProfile) {
+    const previous = getWhatsappNumber(existingProfile);
+    if (phone !== previous) {
+      await resetWhatsappVerificationOnNumberChange(admin, user.id, phone, previous);
+    }
   }
 
   let { error } = await admin.from("profiles").update(fullUpdate).eq("id", user.id);

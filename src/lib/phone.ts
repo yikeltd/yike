@@ -14,3 +14,11 @@ export function isValidNigerianPhone(phone: string): boolean {
 export function canRequestPhoneOtp(phone: string): boolean {
   return isValidNigerianPhone(phone);
 }
+
+/** Nigerian local (080…) or intl (+234 / 234…) → 234XXXXXXXXXX for Sendchamp. */
+export function toInternationalNigerianPhone(input: string): string | null {
+  const digits = input.replace(/\D/g, "");
+  if (digits.startsWith("234") && digits.length === 13) return digits;
+  if (digits.length === 11 && digits.startsWith("0")) return `234${digits.slice(1)}`;
+  return null;
+}

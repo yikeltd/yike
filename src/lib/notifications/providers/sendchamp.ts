@@ -28,8 +28,8 @@ type SendchampConfig = {
 /** Public access key first; optional SENDCHAMP_API_KEY if dashboard provides it. */
 function getSendchampApiKeys(): string[] {
   const keys = [
-    process.env.SENDCHAMP_PUBLIC_KEY?.trim(),
     process.env.SENDCHAMP_API_KEY?.trim(),
+    process.env.SENDCHAMP_PUBLIC_KEY?.trim(),
   ].filter((key): key is string => {
     if (!key) return false;
     return !looksLikeSupabaseKey(key);

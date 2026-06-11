@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import {
   isPhoneOtpEnabled,
+  isWhatsappSignupOtpEnabled,
   phoneOtpDisabledPublicMessage,
 } from "@/lib/feature-flags";
+import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import { isProductionEnv } from "@/lib/env";
 import { OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import type { OtpChannel } from "@/lib/notifications/types";
@@ -13,7 +15,15 @@ import { canRequestPhoneOtp, normalizeNigerianPhone } from "@/lib/phone";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  if (!isPhoneOtpEnabled()) {
+  const body = await request.json().catch(() => ({}));
+  const phone = normalizeNigerianPhone(String(body.phone ?? ""));
+  const preferred: OtpChannel | undefined =
+    body.channel === "whatsapp" ? "whatsapp" : body.channel === "sms" ? "sms" : undefined;
+
+  const whatsappOnlySignup =
+    preferred === "whatsapp" && isWhatsappSignupOtpEnabled() && !isPhoneOtpEnabled();
+
+  if (!isPhoneOtpEnabled() && !whatsappOnlySignup) {
     return NextResponse.json(
       {
         error: phoneOtpDisabledPublicMessage(),
@@ -27,11 +37,6 @@ export async function POST(request: Request) {
   if (!db) {
     return NextResponse.json({ error: OTP_USER_MESSAGES.unavailable }, { status: 503 });
   }
-
-  const body = await request.json().catch(() => ({}));
-  const phone = normalizeNigerianPhone(String(body.phone ?? ""));
-  const preferred: OtpChannel | undefined =
-    body.channel === "whatsapp" ? "whatsapp" : body.channel === "sms" ? "sms" : undefined;
 
   if (!canRequestPhoneOtp(phone)) {
     return NextResponse.json({ error: OTP_USER_MESSAGES.invalidPhone }, { status: 400 });
@@ -53,6 +58,7 @@ export async function POST(request: Request) {
     ok: true,
     channel: result.channel,
     message: result.message,
+    ...(whatsappOnlySignup ? { hint: WHATSAPP_VERIFY_COPY.beforeSend } : {}),
     ...(result.devOtp && !isProductionEnv() ? { devOtp: result.devOtp } : {}),
   });
 }

@@ -1,5 +1,6 @@
 import { isAgentRole } from "@/lib/agent-tiers";
-import { isPhoneOtpEnabled } from "@/lib/feature-flags";
+import { isWhatsappProfileVerificationEnabled } from "@/lib/feature-flags";
+import { isWhatsappNumberVerified } from "@/lib/whatsapp-verification/profile";
 import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
 import type { VerificationControlConfig } from "./config";
 import { effectiveTrustLevel, type TrustProfileSlice } from "./levels";
@@ -34,7 +35,9 @@ export function getRequiredVerificationTasks(
   const isLister = isAgentRole(profile.role);
   const needsEmail = config?.email_verification_required !== false;
   const needsWhatsApp =
-    isPhoneOtpEnabled() && config?.whatsapp_verification_required === true;
+    isWhatsappProfileVerificationEnabled() &&
+    (config?.whatsapp_verification_required === true ||
+      profile.whatsapp_verification_status === "admin_required");
   const needsBank =
     config?.bank_verification_required ||
     escalationActions.includes("require_bank_verification");
@@ -53,12 +56,8 @@ export function getRequiredVerificationTasks(
   if (needsWhatsApp || escalationActions.includes("require_whatsapp_review")) {
     tasks.push({
       id: "whatsapp",
-      label: "Verify WhatsApp contact",
-      complete: Boolean(
-        profile.phone_verified ||
-          profile.whatsapp?.trim() ||
-          profile.phone?.trim()
-      ),
+      label: "Verify WhatsApp number",
+      complete: isWhatsappNumberVerified(profile),
       required: true,
     });
   }

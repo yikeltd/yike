@@ -4,6 +4,7 @@ import { escalateUserTrust, restoreUserTrust } from "./escalate";
 import { levelForEnforcementAction } from "./status-states";
 import type { VerificationControlConfig } from "./config";
 import { syncProfileVerificationMeta } from "./sync-meta";
+import { setAdminRequiredWhatsappVerification } from "@/lib/whatsapp-verification/service";
 
 export type EnforcementAction =
   | "require_whatsapp"
@@ -101,6 +102,10 @@ export async function applyEnforcementAction(
   const requiredActions = ACTION_TO_REVIEW[params.action]
     ? [ACTION_TO_REVIEW[params.action]!]
     : [];
+
+  if (params.action === "require_whatsapp") {
+    await setAdminRequiredWhatsappVerification(client, params.userId);
+  }
 
   const result = await escalateUserTrust(client, {
     userId: params.userId,

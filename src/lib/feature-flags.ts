@@ -20,8 +20,25 @@ export function isSmsOtpEnabled(): boolean {
   return envFlag("ENABLE_SMS_OTP", false) && isPhoneOtpEnabled();
 }
 
+/** WhatsApp OTP via Sendchamp — independent of legacy phone OTP master switch. */
 export function isWhatsappOtpEnabled(): boolean {
-  return envFlag("ENABLE_WHATSAPP_OTP", false) && isPhoneOtpEnabled();
+  return envFlag("ENABLE_WHATSAPP_OTP", false);
+}
+
+export function isWhatsappOtpProviderSendchamp(): boolean {
+  const raw = process.env.WHATSAPP_OTP_PROVIDER?.trim().toLowerCase();
+  if (!raw) return true;
+  return raw === "sendchamp";
+}
+
+/** Profile + listing WhatsApp number verification. */
+export function isWhatsappProfileVerificationEnabled(): boolean {
+  return isWhatsappOtpEnabled() && isWhatsappOtpProviderSendchamp();
+}
+
+/** Signup optional WhatsApp OTP (does not require ENABLE_PHONE_OTP). */
+export function isWhatsappSignupOtpEnabled(): boolean {
+  return isWhatsappOtpEnabled() && isWhatsappOtpProviderSendchamp();
 }
 
 /** Email verification / magic-link flow (launch default: on). */
@@ -37,6 +54,13 @@ export function isPhoneVerificationRequired(): boolean {
 /** Client bundle — mirrors ENABLE_PHONE_OTP for signup UI. */
 export function isPhoneOtpEnabledClient(): boolean {
   const raw = process.env.NEXT_PUBLIC_ENABLE_PHONE_OTP?.trim().toLowerCase();
+  if (!raw) return false;
+  return raw === "true" || raw === "1" || raw === "yes";
+}
+
+/** Client bundle — mirrors ENABLE_WHATSAPP_OTP for verify UI. */
+export function isWhatsappOtpEnabledClient(): boolean {
+  const raw = process.env.NEXT_PUBLIC_ENABLE_WHATSAPP_OTP?.trim().toLowerCase();
   if (!raw) return false;
   return raw === "true" || raw === "1" || raw === "yes";
 }

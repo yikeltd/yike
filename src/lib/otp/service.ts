@@ -3,7 +3,14 @@ import {
   deliverOtp,
   getSendchampConfigSummary,
   isSendchampConfigured,
+  toSendchampPhone,
 } from "@/lib/notifications/providers/sendchamp";
+import {
+  createSendchampWhatsappVerification,
+  confirmSendchampVerification,
+} from "@/lib/notifications/providers/sendchamp-verification";
+import { isWhatsappOtpProviderSendchamp } from "@/lib/feature-flags";
+import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import { otpSentMessage, OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import type { OtpChannel } from "@/lib/notifications/types";
 import { isProductionEnv } from "@/lib/env";
@@ -112,7 +119,12 @@ export async function sendPhoneOtp(
   phone: string,
   preferredChannel?: OtpChannel
 ): Promise<SendOtpResult> {
-  if (!isPhoneOtpEnabled()) {
+  const whatsappOnly =
+    preferredChannel === "whatsapp" &&
+    isWhatsappOtpProviderSendchamp() &&
+    !isPhoneOtpEnabled();
+
+  if (!isPhoneOtpEnabled() && !whatsappOnly) {
     return {
       ok: false,
       error: phoneOtpDisabledPublicMessage(),
@@ -158,6 +170,55 @@ export async function sendPhoneOtp(
       ok: false,
       error: OTP_USER_MESSAGES.sendFailed,
       status: 503,
+    };
+  }
+
+  if (channel === "whatsapp" && isWhatsappOtpProviderSendchamp()) {
+    const phoneIntl = toSendchampPhone(phone);
+    const created = await createSendchampWhatsappVerification({
+      phoneIntl,
+      purpose: "account_verification",
+    });
+
+    if (!created.ok) {
+      if (created.code === "provider_auth_failed") {
+        console.error("[otp] provider_auth_failed");
+      }
+      return {
+        ok: false,
+        error: WHATSAPP_VERIFY_COPY.providerUnavailable,
+        status: created.status,
+        code: "whatsapp_failed",
+      };
+    }
+
+    const expiresAt = new Date(
+      Date.now() + created.expiresMinutes * 60_000
+    ).toISOString();
+
+    const inserted = await otpInsertPending(db, {
+      phone,
+      otpHash: hashOtp(created.reference),
+      expiresAt,
+      channel: "whatsapp",
+    });
+
+    if (!inserted) {
+      return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
+    }
+
+    await otpMarkSent(db, inserted.id, "whatsapp", created.reference);
+    await otpLogEvent(db, {
+      phone,
+      channel: "whatsapp",
+      status: "sent",
+      expiresAt,
+    });
+
+    return {
+      ok: true,
+      channel: "whatsapp",
+      message: WHATSAPP_VERIFY_COPY.afterSend,
     };
   }
 
@@ -253,7 +314,10 @@ export async function verifyPhoneOtp(
   phone: string,
   code: string
 ): Promise<VerifyOtpResult> {
-  if (!isPhoneOtpEnabled()) {
+  const whatsappSignupOnly =
+    isWhatsappOtpProviderSendchamp() && !isPhoneOtpEnabled();
+
+  if (!isPhoneOtpEnabled() && !whatsappSignupOnly) {
     return {
       ok: false,
       error: phoneOtpDisabledPublicMessage(),
@@ -270,6 +334,14 @@ export async function verifyPhoneOtp(
 
   if (!row) {
     return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 400 };
+  }
+
+  if (whatsappSignupOnly && row.channel !== "whatsapp") {
+    return {
+      ok: false,
+      error: phoneOtpDisabledPublicMessage(),
+      status: 403,
+    };
   }
 
   if (row.verified) {
@@ -292,7 +364,31 @@ export async function verifyPhoneOtp(
     return { ok: false, error: OTP_USER_MESSAGES.maxAttempts, status: 429 };
   }
 
-  if (!verifyOtpHash(code, row.otp_hash)) {
+  const { data: providerRow } = await db
+    .from("phone_otp_requests")
+    .select("provider_reference")
+    .eq("id", row.id)
+    .maybeSingle();
+
+  const providerReference = providerRow?.provider_reference as string | undefined;
+
+  if (providerReference) {
+    const confirmed = await confirmSendchampVerification({
+      reference: providerReference,
+      code,
+    });
+    if (!confirmed.ok) {
+      const attempts = (await otpIncrementAttempts(db, row.id)) ?? row.attempts + 1;
+      await otpLogEvent(db, {
+        phone,
+        channel: row.channel ?? "whatsapp",
+        status: "failed",
+        attempts,
+        expiresAt: row.expires_at,
+      });
+      return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 400 };
+    }
+  } else if (!verifyOtpHash(code, row.otp_hash)) {
     const attempts = (await otpIncrementAttempts(db, row.id)) ?? row.attempts + 1;
     await otpLogEvent(db, {
       phone,

@@ -170,7 +170,29 @@ export function AdminUserDetail({
               </div>
               <div>
                 <dt className="text-muted">WhatsApp</dt>
-                <dd className="font-medium">{profile.whatsapp ?? "—"}</dd>
+                <dd className="font-medium">{profile.whatsapp ?? profile.phone ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">WhatsApp verification</dt>
+                <dd className="font-medium capitalize">
+                  {profile.whatsapp_verification_status?.replace(/_/g, " ") ?? "unverified"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">WhatsApp verified</dt>
+                <dd className="font-medium">
+                  {profile.whatsapp_verified_at
+                    ? new Date(profile.whatsapp_verified_at).toLocaleString("en-NG")
+                    : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">Last WhatsApp OTP request</dt>
+                <dd className="font-medium">
+                  {profile.whatsapp_verification_requested_at
+                    ? new Date(profile.whatsapp_verification_requested_at).toLocaleString("en-NG")
+                    : "—"}
+                </dd>
               </div>
               <div>
                 <dt className="text-muted">Profile type</dt>

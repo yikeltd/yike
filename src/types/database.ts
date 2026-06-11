@@ -288,6 +288,15 @@ export interface Profile {
   phone_verified: boolean;
   email_verified: boolean;
   whatsapp: string | null;
+  whatsapp_verification_status?:
+    | "unverified"
+    | "pending"
+    | "verified"
+    | "admin_required";
+  whatsapp_verified_at?: string | null;
+  whatsapp_verification_reference?: string | null;
+  whatsapp_verification_requested_at?: string | null;
+  whatsapp_verification_attempts?: number;
   avatar_url: string | null;
   pin_hash?: string | null;
   has_pin_set?: boolean;

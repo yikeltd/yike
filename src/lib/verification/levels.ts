@@ -11,6 +11,8 @@ export type TrustProfileSlice = Pick<
   | "email_verified"
   | "phone_verified"
   | "whatsapp"
+  | "whatsapp_verification_status"
+  | "whatsapp_verified_at"
   | "phone"
   | "full_name"
   | "date_of_birth"

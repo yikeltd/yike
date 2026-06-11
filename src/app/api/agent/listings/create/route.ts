@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isEmailVerified } from "@/lib/auth";
 import { UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
+import { mustVerifyWhatsappBeforeListing } from "@/lib/whatsapp-verification/profile";
+import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -136,7 +138,9 @@ export async function POST(request: Request) {
 
   const { data: profile, error: profileError } = await admin
     .from("profiles")
-    .select("role, email_verified, is_banned, listing_limit")
+    .select(
+      "role, email_verified, is_banned, listing_limit, whatsapp, phone, whatsapp_verified_at, whatsapp_verification_status"
+    )
     .eq("id", user.id)
     .single();
 
@@ -150,6 +154,16 @@ export async function POST(request: Request) {
 
   if (!isEmailVerified(user, { email_verified: profile.email_verified })) {
     return NextResponse.json({ error: "Verify your email to list." }, { status: 400 });
+  }
+
+  if (mustVerifyWhatsappBeforeListing(profile)) {
+    return NextResponse.json(
+      {
+        error: WHATSAPP_VERIFY_COPY.listingPrompt,
+        code: "whatsapp_verification_required",
+      },
+      { status: 403 }
+    );
   }
 
   if (!LISTER_ROLES.has(profile.role)) {
