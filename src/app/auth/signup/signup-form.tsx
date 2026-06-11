@@ -440,11 +440,7 @@ export function SignupForm({
             </Field>
           ) : (
             <Field
-              label={
-                optionalWhatsappOtp
-                  ? "Phone / WhatsApp (optional)"
-                  : "Phone number (optional)"
-              }
+              label="Phone number"
             >
               <div className="flex items-center gap-2">
                 <Input

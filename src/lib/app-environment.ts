@@ -1,3 +1,9 @@
+/**
+ * Installed PWA / Android TWA detection.
+ * Used to hide website footer, skip browser SW, and avoid browser-style loaders.
+ * Normal browser tabs always get yike-web-mode — SEO and desktop UX unchanged.
+ */
+
 function matchesDisplayMode(mode: string): boolean {
   try {
     return window.matchMedia(`(display-mode: ${mode})`).matches;
@@ -9,12 +15,9 @@ function matchesDisplayMode(mode: string): boolean {
 /** True when launched from the Android TWA wrapper (com.yike.app). */
 export function isAndroidTwa(): boolean {
   if (typeof window === "undefined") return false;
-  if (document.referrer.startsWith("android-app://")) return true;
-  try {
-    return window.matchMedia("(display-mode: fullscreen)").matches;
-  } catch {
-    return false;
-  }
+  const ref = document.referrer ?? "";
+  if (ref.startsWith("android-app://")) return true;
+  return false;
 }
 
 /** True when running as installed PWA or Android TWA. */
@@ -28,4 +31,3 @@ export function isStandaloneApp(): boolean {
   if (nav.standalone === true) return true;
   return false;
 }
-

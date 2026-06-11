@@ -95,9 +95,11 @@ If the Play Store build is signed with **Play App Signing**, add the **App signi
 After deploy + fingerprint update:
 
 ```bash
-# Should return success for com.yike.app
+# Should list com.yike.app with both upload + Play App Signing fingerprints
 curl "https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://yike.ng&relation=delegate_permission/common.handle_all_urls"
 ```
+
+**If users still see “Running in Chrome”:** Digital Asset Links are failing on their installed build, or the APK was signed with a key not listed in `public/.well-known/assetlinks.json`. Rebuild the TWA (`npm run twa:build` or `twa/build-release.sh`), upload a new AAB to Play Console, and confirm Play App Signing SHA-256 is in assetlinks.
 
 Or use [Statement List Generator](https://developers.google.com/digital-asset-links/tools/generator).
 

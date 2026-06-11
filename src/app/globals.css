@@ -23,7 +23,7 @@ html.yike-boot-splash-enabled #yike-boot-splash {
   opacity: 1;
   pointer-events: auto;
   visibility: visible;
-  animation: yike-boot-splash-fail-open 2.6s ease forwards;
+  animation: yike-boot-splash-fail-open 1.85s ease forwards;
 }
 
 @keyframes yike-boot-splash-fail-open {
@@ -55,70 +55,20 @@ html.yike-boot-splash-enabled #yike-boot-splash {
   position: relative;
   display: grid;
   place-items: center;
-  width: 100%;
-  height: 100dvh;
-  overflow: hidden;
-  background: #031b4e;
-  box-shadow:
-    inset 0 0 8rem rgb(228 181 71 / 8%),
-    inset 0 -9rem 12rem rgb(10 132 78 / 10%);
-}
-
-.yike-boot-splash__mark::before {
-  content: "";
-  position: absolute;
-  inset: -14%;
-  z-index: 2;
-  background: linear-gradient(
-    112deg,
-    rgb(255 255 255 / 0%) 0%,
-    rgb(255 255 255 / 0%) 38%,
-    rgb(255 255 255 / 18%) 45%,
-    rgb(228 181 71 / 30%) 49%,
-    rgb(10 132 78 / 18%) 53%,
-    rgb(255 255 255 / 0%) 62%,
-    rgb(255 255 255 / 0%) 100%
-  );
-  filter: blur(1.5px);
-  mix-blend-mode: screen;
-  opacity: 0;
-  transform: translateX(-62%);
-  animation: yike-boot-property-sweep 1.9s cubic-bezier(0.42, 0, 0.2, 1)
-    infinite;
-  will-change: opacity, transform;
-}
-
-.yike-boot-splash__mark::after {
-  content: "";
-  position: absolute;
-  top: 72%;
-  left: 50%;
-  z-index: 3;
-  width: clamp(18rem, 72vw, 32rem);
-  aspect-ratio: 1;
-  border-radius: 999px;
-  background: radial-gradient(
-    circle,
-    rgb(228 181 71 / 22%),
-    rgb(10 132 78 / 12%) 42%,
-    rgb(228 181 71 / 0%) 68%
-  );
-  mix-blend-mode: screen;
-  opacity: 0.58;
-  transform: translate(-50%, -50%) scale(0.92);
-  animation: yike-boot-listing-pulse 1.85s ease-in-out infinite;
-  will-change: opacity, transform;
+  width: auto;
+  height: auto;
+  background: transparent;
 }
 
 #yike-boot-splash img {
   position: relative;
   z-index: 1;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: clamp(5.5rem, 22vw, 7.5rem);
+  height: auto;
+  object-fit: contain;
   transform-origin: center;
-  animation: yike-boot-splash-breathe 1.65s ease-in-out infinite;
-  will-change: filter, transform;
+  animation: yike-boot-splash-breathe 1.85s ease-in-out infinite;
+  will-change: opacity, transform;
 }
 
 .yike-boot-splash__recovery {
@@ -177,45 +127,13 @@ html.yike-boot-splash-enabled #yike-boot-splash {
 @keyframes yike-boot-splash-breathe {
   0%,
   100% {
-    filter: brightness(0.98) saturate(1.02)
-      drop-shadow(0 0 0 rgb(228 181 71 / 0%));
+    opacity: 0.92;
     transform: scale(1);
   }
 
   50% {
-    filter: brightness(1.07) saturate(1.08)
-      drop-shadow(0 0 18px rgb(228 181 71 / 24%));
-    transform: scale(1.01);
-  }
-}
-
-@keyframes yike-boot-property-sweep {
-  0% {
-    opacity: 0;
-    transform: translateX(-62%);
-  }
-
-  35%,
-  56% {
-    opacity: 0.58;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateX(62%);
-  }
-}
-
-@keyframes yike-boot-listing-pulse {
-  0%,
-  100% {
-    opacity: 0.32;
-    transform: translate(-50%, -50%) scale(0.88);
-  }
-
-  50% {
-    opacity: 0.66;
-    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    transform: scale(1.04);
   }
 }
 
@@ -228,17 +146,13 @@ html.yike-boot-splash-enabled #yike-boot-splash {
 
 html.yike-boot-splash-disabled #yike-boot-splash,
 #yike-boot-splash.yike-boot-splash--out,
-#yike-boot-splash.yike-boot-splash--out img,
-#yike-boot-splash.yike-boot-splash--out .yike-boot-splash__mark::before,
-#yike-boot-splash.yike-boot-splash--out .yike-boot-splash__mark::after {
+#yike-boot-splash.yike-boot-splash--out img {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html.yike-boot-splash-enabled #yike-boot-splash,
-  #yike-boot-splash img,
-  .yike-boot-splash__mark::before,
-  .yike-boot-splash__mark::after {
+  #yike-boot-splash img {
     animation: none;
   }
 }
@@ -643,6 +557,15 @@ body {
   background: linear-gradient(180deg, #021428 0%, #031b4e 55%, #052654 100%);
   color: #f0f4fa;
   padding-bottom: calc(var(--bottom-nav-stack) + 1rem);
+}
+
+/* Installed PWA / Android TWA — native shell affordances only */
+html.yike-app-mode {
+  overscroll-behavior-y: none;
+}
+
+html.yike-app-mode body {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Installed PWA / Android TWA — keep bottom nav clean, no website footer */
