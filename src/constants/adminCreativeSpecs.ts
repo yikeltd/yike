@@ -29,10 +29,11 @@ export const MOBILE_HEADER_BANNER_SPEC: AdminCreativeSpec = {
 export const EMAIL_TRANSACTIONAL_SPEC: AdminCreativeSpec = {
   designSize: "160 × 160 px",
   aspectRatio: "1 : 1",
-  displaySize: "80 × 80 px in email (40 px in preview)",
+  displaySize: "80 × 80 px in email",
   preset: "square",
   format: ADMIN_UPLOAD_FORMAT,
-  notes: "Design at 2× for retina; stored as 80×80 WebP.",
+  notes:
+    "Design at 160×160 px for retina display. Stored as optimized 160×160 WebP and displayed at 80×80 in email.",
 };
 
 /** Website ad_placements slots — matches on-site aspect classes. */

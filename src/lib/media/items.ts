@@ -34,9 +34,9 @@ export function displayUrl(item: PropertyMediaItem): string {
   return item.image_url || item.webp_url || "";
 }
 
-/** Card / rail thumbnail — smaller variant for fast loads. */
+/** Card / rail thumbnail — medium variant for sharp cards without full large weight. */
 export function cardDisplayUrl(item: PropertyMediaItem): string {
-  return item.thumbnail_url || item.webp_url || item.image_url || "";
+  return item.webp_url || item.image_url || item.thumbnail_url || "";
 }
 
 /** Build items from legacy media_urls array. */

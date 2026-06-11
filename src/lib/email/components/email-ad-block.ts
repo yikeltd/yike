@@ -24,8 +24,8 @@ export function buildEmailAdBlock(ad: EmailAdInput): string {
           <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:block;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td width="52" valign="middle" style="padding:8px 0 8px 10px;">
-                  <img src="${escapeHtml(imageUrl)}" width="40" height="40" alt="${alt}" style="display:block;width:40px;height:40px;border:0;border-radius:10px;object-fit:cover;" />
+                <td width="96" valign="middle" style="padding:8px 0 8px 10px;">
+                  <img src="${escapeHtml(imageUrl)}" width="80" height="80" alt="${alt}" style="display:block;width:80px;height:80px;border:0;border-radius:10px;object-fit:cover;" />
                 </td>
                 <td valign="middle" style="padding:8px 10px 8px 8px;">
                   <p class="email-muted" style="margin:0 0 2px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${t.muted};line-height:1.2;">

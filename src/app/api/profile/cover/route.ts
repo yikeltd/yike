@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getTrustedAdminClient } from "@/lib/supabase/admin";
+import { compressProfileCover } from "@/lib/images/compress-image";
 import {
   buildCoverStoragePaths,
-  optimizeCoverImage,
   resolveImageMime,
 } from "@/lib/media/image";
 import { PROFILE_MEDIA_LIMITS } from "@/lib/media/constants";
@@ -220,7 +220,7 @@ export async function POST(request: Request) {
 
     let optimized;
     try {
-      optimized = await optimizeCoverImage(buffer, focalY);
+      optimized = await compressProfileCover(buffer, focalY);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not process image";
       return NextResponse.json({ error: message }, { status: 400 });

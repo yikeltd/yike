@@ -6,7 +6,7 @@ import { handleAdminImageUpload } from "@/lib/media/admin-upload-handler";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-/** Email ad chip uploads — square 80×80 WebP. */
+/** Email ad chip uploads — square 160×160 WebP (displayed at 80×80 in email). */
 export async function POST(request: Request) {
   const auth = await requireAdminApi();
   const res = await handleAdminImageUpload(request, { preset: "square", folder: "email" });

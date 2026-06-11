@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { optimizeUploadedImage, buildStoragePaths, resolveImageMime } from "@/lib/media/image";
+import { compressPropertyPhoto } from "@/lib/images/compress-image";
+import { buildStoragePaths, resolveImageMime } from "@/lib/media/image";
 import { validateVideoUpload } from "@/lib/media/video";
 import { ALLOWED_IMAGE_TYPES } from "@/lib/media/constants";
 import { friendlyStorageError } from "@/lib/media/storage-errors";
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const optimized = await optimizeUploadedImage(buffer);
+    const optimized = await compressPropertyPhoto(buffer);
     const paths = buildStoragePaths(propertyId, index);
 
     const uploads = [

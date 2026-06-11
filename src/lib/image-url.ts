@@ -7,7 +7,7 @@ export function optimizeListingImageUrl(src: string, width = 720): string {
 
     if (url.hostname.includes("unsplash.com")) {
       url.searchParams.set("w", String(width));
-      url.searchParams.set("q", width <= 480 ? "75" : "82");
+      url.searchParams.set("q", width <= 480 ? "82" : "88");
       url.searchParams.set("auto", "format");
       url.searchParams.set("fit", "crop");
       url.searchParams.set("crop", "entropy");
@@ -43,7 +43,7 @@ function optimizeSupabaseStorageUrl(url: URL, width: number): string {
   if (renderPath !== path) {
     url.pathname = renderPath;
     url.searchParams.set("width", String(width));
-    url.searchParams.set("quality", width <= 420 ? "82" : width <= 820 ? "84" : "86");
+    url.searchParams.set("quality", width <= 420 ? "86" : width <= 820 ? "88" : "90");
     url.searchParams.set("format", "webp");
     return url.toString();
   }

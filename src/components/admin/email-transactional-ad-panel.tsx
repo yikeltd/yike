@@ -186,7 +186,7 @@ export function EmailTransactionalAdPanel({
                 href={linkUrl || "#"}
                 className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-white p-2.5 no-underline"
               >
-                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg">
+                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
                   <Image src={imageUrl} alt={altText || title || "Sponsored"} fill className="object-cover" unoptimized />
                 </div>
                 <div className="min-w-0 flex-1">

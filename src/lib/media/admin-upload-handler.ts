@@ -6,11 +6,9 @@ import {
   MEDIA_LIMITS,
   type ImagePreset,
 } from "@/lib/media/constants";
-import {
-  optimizeImagePreset,
-  readImageUploadBuffer,
-  resolveImageMime,
-} from "@/lib/media/image";
+import { compressAdminPresetImage } from "@/lib/images/compress-image";
+import { readImageUploadBuffer, resolveImageMime } from "@/lib/media/image";
+import { friendlyAdminStorageError } from "@/lib/media/storage-errors";
 import { AD_CREATIVES_BUCKET, storeWebpObject } from "@/lib/media/store-webp";
 
 const PRESETS = new Set(Object.keys(IMAGE_PRESET_SIZES));
@@ -77,7 +75,7 @@ export async function handleAdminImageUpload(
 
   let processed;
   try {
-    processed = await optimizeImagePreset(buffer, preset);
+    processed = await compressAdminPresetImage(buffer, preset);
   } catch {
     return NextResponse.json({ error: "Could not process image" }, { status: 400 });
   }
@@ -101,12 +99,10 @@ export async function handleAdminImageUpload(
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Upload failed";
-    const hint =
-      message.toLowerCase().includes("bucket") ||
-      message.toLowerCase().includes("not found")
-        ? " — run migration ad_creatives_bucket on Supabase"
-        : "";
     console.error("[admin/media/upload-image]", message);
-    return NextResponse.json({ error: `${message}${hint}` }, { status: 500 });
+    return NextResponse.json(
+      { error: friendlyAdminStorageError(message) },
+      { status: 500 }
+    );
   }
 }

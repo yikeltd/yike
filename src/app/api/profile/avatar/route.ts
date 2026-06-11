@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getTrustedAdminClient } from "@/lib/supabase/admin";
+import { compressProfileAvatar } from "@/lib/images/compress-image";
 import {
   assertAvatarOutputSize,
-  optimizeProfileAvatarImage,
   buildAvatarStoragePaths,
   resolveImageMime,
 } from "@/lib/media/image";
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     let optimized;
     try {
-      optimized = await optimizeProfileAvatarImage(buffer);
+      optimized = await compressProfileAvatar(buffer);
       assertAvatarOutputSize(optimized);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not process image";

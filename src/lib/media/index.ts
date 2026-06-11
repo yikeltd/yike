@@ -27,3 +27,13 @@ export {
 } from "./constants";
 export { storeWebpObject, AD_CREATIVES_BUCKET } from "./store-webp";
 export { handleAdminImageUpload } from "./admin-upload-handler";
+export {
+  compressImage,
+  compressImageBuffer,
+  compressAdminPresetImage,
+  compressPropertyPhoto,
+  compressProfileAvatar,
+  compressProfileCover,
+  compressContextFromPreset,
+  type CompressImageContext,
+} from "@/lib/images/compress-image";

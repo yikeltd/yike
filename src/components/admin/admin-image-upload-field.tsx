@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 import type { AdminCreativeSpec } from "@/constants/adminCreativeSpecs";
-import { ADMIN_UPLOAD_FORMAT } from "@/constants/adminCreativeSpecs";
 import type { ImagePreset } from "@/lib/media/constants";
 import { AdminCreativeSizeCallout } from "@/components/admin/admin-creative-size-callout";
 import { Button } from "@/components/ui/button";
@@ -66,9 +65,7 @@ export function AdminImageUploadField({
       ) : null}
       {hint ? (
         <p className="mb-2 text-xs text-muted">{hint}</p>
-      ) : !sizeSpec ? null : (
-        <p className="mb-2 text-xs text-muted">{ADMIN_UPLOAD_FORMAT}</p>
-      )}
+      ) : null}
       <input
         ref={fileRef}
         type="file"
