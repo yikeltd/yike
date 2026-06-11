@@ -2,6 +2,7 @@ import { requireServerClient } from "@/lib/supabase/require-client";
 import { createOtpDbClient } from "@/lib/otp/rpc";
 import { getSendchampConfigSummary } from "@/lib/notifications/providers/sendchamp";
 import { EnvHealthPanel } from "@/components/admin/env-health-panel";
+import { SafeHavenHealthPanel } from "@/components/admin/safehaven-health-panel";
 import {
   AdminPageHeader,
   MetricCard,
@@ -47,6 +48,8 @@ export default async function TechDashboardPage() {
       </div>
 
       <EnvHealthPanel />
+
+      <SafeHavenHealthPanel />
 
       <section className="grid gap-4 lg:grid-cols-2">
         <ErrorList title="Latest OTP errors" items={(recentOtpErrors.data ?? []).map((e) => ({ id: e.id, label: `${e.phone} — ${e.error_message ?? e.channel ?? "failed"}`, time: e.created_at }))} />

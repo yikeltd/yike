@@ -1073,3 +1073,63 @@ export interface SiteBanner {
   created_at: string;
   updated_at: string;
 }
+
+export interface SafehavenVirtualAccount {
+  id: string;
+  user_id: string;
+  provider: string;
+  provider_reference: string | null;
+  account_number: string | null;
+  account_name: string | null;
+  bank_name: string | null;
+  bank_code: string | null;
+  status: "pending" | "active" | "failed" | "closed";
+  raw_response: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SafehavenTransaction {
+  id: string;
+  user_id: string | null;
+  virtual_account_id: string | null;
+  provider_reference: string | null;
+  transaction_reference: string | null;
+  type: string | null;
+  direction: string | null;
+  amount: number;
+  fee: number;
+  currency: string;
+  status: "pending" | "successful" | "failed" | "reversed" | "disputed";
+  narration: string | null;
+  raw_response: Record<string, unknown> | null;
+  occurred_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SafehavenWebhookEvent {
+  id: string;
+  event_id: string | null;
+  provider_reference: string | null;
+  event_type: string | null;
+  payload: Record<string, unknown>;
+  headers: Record<string, unknown> | null;
+  status: "received" | "processed" | "failed" | "duplicate";
+  processed_at: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+export interface SafehavenProviderLog {
+  id: string;
+  action: string;
+  status: string;
+  provider_reference: string | null;
+  request_summary: Record<string, unknown> | null;
+  response_summary: Record<string, unknown> | null;
+  error_code: string | null;
+  error_message: string | null;
+  duration_ms: number | null;
+  created_at: string;
+}
