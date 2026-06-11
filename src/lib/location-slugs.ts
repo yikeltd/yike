@@ -1,5 +1,5 @@
 import { nigeriaLocations } from "@/constants/nigeriaLocations";
-import { getLgasForState } from "@/constants/nigeriaLgas";
+import { getLgasForState, NIGERIA_LGAS_BY_STATE } from "@/constants/nigeriaLgas";
 
 export function toSlug(value: string): string {
   return value
@@ -68,11 +68,20 @@ const LGA_ALIASES: Record<string, ResolvedLga> = {
   },
 };
 
-function registerCity(city: string, state: string) {
-  const slug = toSlug(city);
+function registerCityEntry(city: string, state: string) {
+  let slug = toSlug(city);
+  const existing = citySlugIndex.get(slug);
+  if (existing) {
+    if (existing.city === city && existing.state === state) return;
+    slug = `${toSlug(city)}-${toSlug(state)}`;
+  }
   if (!citySlugIndex.has(slug)) {
     citySlugIndex.set(slug, { city, state, slug });
   }
+}
+
+function registerCity(city: string, state: string) {
+  registerCityEntry(city, state);
 }
 
 function registerArea(city: string, state: string, area: string) {
@@ -133,6 +142,12 @@ function buildSlugIndexes() {
   for (const [key, alias] of Object.entries(LGA_ALIASES)) {
     lgaSlugIndex.set(key, alias);
   }
+
+  for (const [state, lgas] of Object.entries(NIGERIA_LGAS_BY_STATE)) {
+    for (const lga of lgas) {
+      registerCityEntry(lga, state);
+    }
+  }
 }
 
 buildSlugIndexes();
@@ -152,6 +167,24 @@ export function getSeoCityPaths(): { citySlug: string }[] {
   const slugs = new Set<string>(Object.keys(CITY_ALIASES));
   for (const key of citySlugIndex.keys()) slugs.add(key);
   return [...slugs].map((citySlug) => ({ citySlug }));
+}
+
+export type SeoCityEntry = ResolvedCity;
+
+/** All indexed cities/LGAs grouped by state — for SEO directories. */
+export function getSeoCitiesGroupedByState(): { state: string; cities: SeoCityEntry[] }[] {
+  const byState = new Map<string, SeoCityEntry[]>();
+  for (const entry of citySlugIndex.values()) {
+    const list = byState.get(entry.state) ?? [];
+    list.push(entry);
+    byState.set(entry.state, list);
+  }
+  return [...byState.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([state, cities]) => ({
+      state,
+      cities: cities.sort((a, b) => a.city.localeCompare(b.city)),
+    }));
 }
 
 export function resolveStateSlug(slug: string): string | null {

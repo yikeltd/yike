@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { legacyLocationRedirect } from "@/lib/legacy-location-redirect";
 import { logMiddlewareFailure } from "@/lib/middleware/log-failure";
 import { seoHubRedirect } from "@/lib/seo/hub-redirect";
+import { intentInCityRewrite } from "@/lib/seo/intent-in-city-middleware";
 import {
   staticPathRedirect,
   trailingSlashRedirect,
@@ -38,6 +39,20 @@ async function handleMiddleware(request: NextRequest): Promise<NextResponse> {
     const [path, query] = staticTarget.split("?");
     url.pathname = path ?? staticTarget;
     url.search = query ? `?${query}` : request.nextUrl.search;
+    return NextResponse.redirect(url, 308);
+  }
+
+  const intentRewrite = intentInCityRewrite(pathname);
+  if (intentRewrite) {
+    const url = request.nextUrl.clone();
+    url.pathname = intentRewrite;
+    return NextResponse.rewrite(url);
+  }
+
+  const intentCanonical = pathname.match(/^\/intent\/(rent|buy|land)\/([^/]+)\/?$/);
+  if (intentCanonical) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${intentCanonical[1]}-in-${intentCanonical[2]}`;
     return NextResponse.redirect(url, 308);
   }
 

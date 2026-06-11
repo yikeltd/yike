@@ -24,6 +24,16 @@ import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
 import { PopularLocalSearches } from "./popular-local-searches";
 import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
 import { partitionAreaListings } from "@/lib/seo/area-listings";
+import {
+  intentHeroVibe,
+  intentHubPath,
+  intentInCityPath,
+  intentLabel,
+  intentListingsHeading,
+  intentSearchHref,
+  siblingIntentLinks,
+  type SeoListingIntent,
+} from "@/lib/seo/intent-in-city";
 import { SeoAreaRails } from "./seo-area-rails";
 
 export function SeoLandingPage({
@@ -34,8 +44,10 @@ export function SeoLandingPage({
   neighborhood,
   neighborhoodSlug,
   propertyType,
+  intent,
   pageUrl,
   metaDescription,
+  h1Override,
   introParagraphs,
   faqs,
   listings,
@@ -48,18 +60,24 @@ export function SeoLandingPage({
   neighborhood?: string;
   neighborhoodSlug?: string;
   propertyType?: SeoPropertyType;
+  intent?: SeoListingIntent;
   pageUrl: string;
   metaDescription: string;
+  h1Override?: string;
   introParagraphs: string[];
   faqs: SeoFaq[];
   listings: Property[];
   isDemo?: boolean;
 }) {
-  const h1 = seoH1(level, city, neighborhood, propertyType);
+  const h1 = h1Override ?? seoH1(level, city, neighborhood, propertyType);
   const breadcrumbs: BreadcrumbItem[] = [
     { label: "Home", href: "/" },
-    { label: "Houses", href: "/search" },
-    { label: city, href: `/houses/${citySlug}` },
+    intent
+      ? { label: intentLabel(intent), href: intentHubPath(intent) }
+      : { label: "Houses", href: "/search" },
+    ...(intent
+      ? [{ label: city, href: intentInCityPath(intent, citySlug) }]
+      : [{ label: city, href: `/houses/${citySlug}` }]),
   ];
   if (neighborhood && neighborhoodSlug) {
     breadcrumbs.push({
@@ -81,12 +99,17 @@ export function SeoLandingPage({
   if (propertyType?.dbValue) searchParams.set("property_type", propertyType.dbValue);
   if (propertyType?.bedrooms) searchParams.set("beds", String(propertyType.bedrooms));
   if (propertyType?.listingType) searchParams.set("type", propertyType.listingType);
+  if (intent === "buy") {
+    searchParams.set("type", "sale");
+    searchParams.set("hub", "buy");
+  }
+  if (intent === "land") searchParams.set("hub", "land_sale");
 
   const nearbyCities = TRENDING_CITIES.filter((c) => c.slug !== citySlug)
     .slice(0, 6)
     .map((c) => ({
-      label: `Houses in ${c.name}`,
-      href: `/houses/${c.slug}`,
+      label: intent ? `${intentLabel(intent)} in ${c.name}` : `Houses in ${c.name}`,
+      href: intent ? intentInCityPath(intent, c.slug) : `/houses/${c.slug}`,
     }));
 
   const popular = popularLocalSearches(
@@ -98,10 +121,19 @@ export function SeoLandingPage({
   const helpUrl = buildSeoHelpWhatsAppUrl(city, neighborhood);
   const helpLabel = seoHelpLabel(city, neighborhood);
   const sections = partitionAreaListings(listings);
-  const searchHref = `/search?${searchParams.toString()}`;
+  const searchHref = intent
+    ? intentSearchHref(intent, city)
+    : `/search?${searchParams.toString()}`;
+  const intentSiblings = intent ? siblingIntentLinks(citySlug, city, intent) : [];
+
+  const listingsTitle = intent
+    ? intentListingsHeading(intent, city, listings.length)
+    : listings.length > 0
+      ? `${listings.length} home${listings.length === 1 ? "" : "s"} in this area`
+      : "Homes in this area";
 
   return (
-    <div className="lg:pb-12">
+    <div className="mx-auto max-w-7xl px-3 pb-12 pt-4 lg:px-8 lg:pb-16 lg:pt-6">
       <SeoStructuredData
         pageUrl={pageUrl}
         pageName={h1}
@@ -116,7 +148,13 @@ export function SeoLandingPage({
       <SeoHero
         h1={h1}
         description={metaDescription}
-        vibe={level === "city" ? personality.vibe : undefined}
+        vibe={
+          intent
+            ? intentHeroVibe(intent, state)
+            : level === "city"
+              ? personality.vibe
+              : undefined
+        }
       />
 
       <article className="prose-yike max-w-3xl space-y-4 text-sm leading-relaxed text-muted lg:text-base">
@@ -127,11 +165,7 @@ export function SeoLandingPage({
 
       <section className="mt-10">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-bold text-navy lg:text-xl">
-            {listings.length > 0
-              ? `${listings.length} home${listings.length === 1 ? "" : "s"} in this area`
-              : "Homes in this area"}
-          </h2>
+          <h2 className="text-lg font-bold text-navy lg:text-xl">{listingsTitle}</h2>
           <Link
             href={searchHref}
             className="text-sm font-bold text-gold-dark hover:underline"
@@ -167,7 +201,14 @@ export function SeoLandingPage({
 
       <PopularLocalSearches title="Popular searches" links={popular} />
 
-      {level === "city" && (
+      {intentSiblings.length > 0 ? (
+        <InternalLinkGrid
+          title={`More property options in ${city}`}
+          links={intentSiblings}
+        />
+      ) : null}
+
+      {level === "city" && !intent && (
         <RelatedAreas city={city} citySlug={citySlug} limit={12} />
       )}
 

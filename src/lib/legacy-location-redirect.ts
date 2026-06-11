@@ -4,12 +4,15 @@ import {
   resolveCitySlug,
 } from "@/lib/location-slugs";
 import { RESERVED_PATH_PREFIXES } from "@/lib/public-routes";
+import { isIntentInCityPath } from "@/lib/seo/intent-in-city";
 
 /**
  * Legacy SEO URLs like /enugu or /aba/ogbor-hill → /houses/...
  * Unknown short paths → /search (avoid generic 404 dead-ends).
  */
 export function legacyLocationRedirect(pathname: string): string | null {
+  if (isIntentInCityPath(pathname)) return null;
+
   const parts = pathname.split("/").filter(Boolean);
   if (parts.length === 0) return null;
 

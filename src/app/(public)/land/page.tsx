@@ -10,6 +10,9 @@ import { LAND_FAQS } from "@/constants/pageContent";
 import { SITE_NAME } from "@/lib/constants";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
+import { IntentCityDirectory } from "@/components/seo/intent-city-directory";
+import { intentInCityPath } from "@/lib/seo/intent-in-city";
+import { toSlug } from "@/lib/location-slugs";
 
 export const metadata = {
   title: `Land for Sale in Nigeria | ${SITE_NAME}`,
@@ -18,12 +21,12 @@ export const metadata = {
 };
 
 const GROWTH_AREAS = [
-  { label: "Ajah / Sangotedo", city: "Lagos", href: "/houses/lagos/ajah" },
-  { label: "Lugbe / Kubwa", city: "Abuja", href: "/houses/abuja/lugbe" },
-  { label: "Asaba outskirts", city: "Asaba", href: "/houses/asaba" },
-  { label: "Enugu extensions", city: "Enugu", href: "/houses/enugu" },
-  { label: "Uyo corridors", city: "Uyo", href: "/houses/uyo" },
-  { label: "Abeokuta / Olomore", city: "Abeokuta", href: "/search?hub=land_sale&city=Abeokuta" },
+  { label: "Land in Lagos", city: "Lagos", href: intentInCityPath("land", "lagos") },
+  { label: "Land in Abuja", city: "Abuja", href: intentInCityPath("land", "abuja") },
+  { label: "Land in Asaba", city: "Asaba", href: intentInCityPath("land", "asaba") },
+  { label: "Land in Enugu", city: "Enugu", href: intentInCityPath("land", "enugu") },
+  { label: "Land in Uyo", city: "Uyo", href: intentInCityPath("land", "uyo") },
+  { label: "Land in Abeokuta", city: "Abeokuta", href: intentInCityPath("land", toSlug("Abeokuta")) },
 ];
 
 function RailFallback() {
@@ -100,6 +103,8 @@ export default function LandPage() {
           ))}
         </div>
       </section>
+
+      <IntentCityDirectory intent="land" />
 
       <div className="mx-auto max-w-7xl px-3 lg:px-8">
         <section className="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-900/30 dark:bg-amber-950/20">

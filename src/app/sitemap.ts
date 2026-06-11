@@ -6,6 +6,8 @@ import {
   getHousesNeighborhoodParams,
   getHousesPropertyTypeParams,
 } from "@/lib/seo/paths";
+import { intentInCityPath } from "@/lib/seo/intent-in-city";
+import { getAllSeoCitySlugs } from "@/lib/seo/paths";
 import { getAllBlogSlugs } from "@/constants/blogTopics";
 
 const PROPERTY_CHUNK_SIZE = 500;
@@ -68,6 +70,17 @@ function mainSitemapEntries(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 0.9,
     });
+  }
+
+  const intentSlugs = getAllSeoCitySlugs();
+  for (const intent of ["rent", "buy", "land"] as const) {
+    for (const city of intentSlugs) {
+      entries.push({
+        url: `${SITE_URL}${intentInCityPath(intent, city)}`,
+        changeFrequency: "weekly",
+        priority: intent === "rent" ? 0.9 : 0.86,
+      });
+    }
   }
 
   for (const { city, neighborhood } of getHousesNeighborhoodParams()) {

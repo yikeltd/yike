@@ -1,5 +1,7 @@
 import { POPULAR_AREAS } from "@/constants/popularAreas";
 import { TRENDING_CITIES } from "@/constants/trendingCities";
+import { intentInCityPath } from "@/lib/seo/intent-in-city";
+import { toSlug } from "@/lib/location-slugs";
 
 export type PopularSearchLink = { label: string; href: string };
 
@@ -64,13 +66,13 @@ function citiesAsLinks(
     if (mode === "buy") {
       return {
         label: `Buy in ${name}`,
-        href: citySearchHref(name, { hub: "buy" }),
+        href: meta?.buyInPath ?? intentInCityPath("buy", toSlug(name)),
       };
     }
     if (mode === "land") {
       return {
         label: `Land in ${name}`,
-        href: `/land?city=${encodeURIComponent(name)}`,
+        href: meta?.landInPath ?? intentInCityPath("land", toSlug(name)),
       };
     }
     if (mode === "shortlet") {
@@ -80,8 +82,8 @@ function citiesAsLinks(
       };
     }
     return {
-      label: `Houses in ${name}`,
-      href: meta?.seoPath ?? citySearchHref(name, { type: "rent" }),
+      label: `Rent in ${name}`,
+      href: meta?.rentInPath ?? intentInCityPath("rent", toSlug(name)),
     };
   });
 }

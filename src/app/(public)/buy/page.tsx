@@ -8,9 +8,11 @@ import { CtaBanner } from "@/components/pages/cta-banner";
 import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { BUY_FAQS } from "@/constants/pageContent";
 import { TRENDING_CITIES } from "@/constants/trendingCities";
+import { toSlug } from "@/lib/location-slugs";
 import { SITE_NAME } from "@/lib/constants";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
+import { IntentCityDirectory } from "@/components/seo/intent-city-directory";
 
 export const metadata = {
   title: `Buy Property in Nigeria | ${SITE_NAME}`,
@@ -89,10 +91,10 @@ export default function BuyPage() {
             return (
               <Link
                 key={city}
-                href={`/search?hub=buy&city=${encodeURIComponent(city)}`}
+                href={meta?.buyInPath ?? `/buy-in-${toSlug(city)}`}
                 className="pressable rounded-2xl bg-white p-5 shadow-float ring-1 ring-black/[0.04]"
               >
-                <p className="font-bold text-navy">{city}</p>
+                <p className="font-bold text-navy">Buy in {city}</p>
                 <p className="mt-1 text-sm text-muted">
                   {meta?.tagline ?? "Browse sale listings"}
                 </p>
@@ -101,6 +103,8 @@ export default function BuyPage() {
           })}
         </div>
       </section>
+
+      <IntentCityDirectory intent="buy" />
 
       <div className="mx-auto max-w-7xl px-3 lg:px-8">
         <section className="mt-10 rounded-2xl border border-gold/20 bg-navy p-6 text-white lg:p-8">

@@ -14,7 +14,7 @@ import {
 import { getAllBlogSlugs } from "@/constants/blogTopics";
 
 /** Priority cities — major markets first */
-const PRIORITY_CITY_SLUGS = [
+export const PRIORITY_CITY_SLUGS = [
   ...new Set([
     ...TRENDING_CITIES.map((c) => c.slug),
     "lagos",
@@ -40,14 +40,29 @@ const PRIORITY_CITY_SLUGS = [
   ]),
 ];
 
-const MAX_CITIES = 55;
+/** Pre-rendered at build — remaining cities resolve on demand. */
+const MAX_STATIC_CITY_PAGES = 48;
 const MAX_NEIGHBORHOODS = 320;
 const MAX_PROPERTY_TYPE_PAGES = 380;
 
-export function getHousesCityParams(): { city: string }[] {
+const PRIORITY_SET = new Set(PRIORITY_CITY_SLUGS);
+
+export function getAllSeoCitySlugs(): string[] {
   const fromIndex = getSeoCityPaths().map((p) => p.citySlug);
   const merged = [...new Set([...PRIORITY_CITY_SLUGS, ...fromIndex])];
-  return merged.slice(0, MAX_CITIES).map((city) => ({ city }));
+  merged.sort((a, b) => {
+    const ap = PRIORITY_SET.has(a) ? 0 : 1;
+    const bp = PRIORITY_SET.has(b) ? 0 : 1;
+    if (ap !== bp) return ap - bp;
+    return a.localeCompare(b);
+  });
+  return merged;
+}
+
+export function getHousesCityParams(): { city: string }[] {
+  return getAllSeoCitySlugs()
+    .slice(0, MAX_STATIC_CITY_PAGES)
+    .map((city) => ({ city }));
 }
 
 function neighborhoodPriority(citySlug: string, areaSlug: string): number {
@@ -130,20 +145,23 @@ export function getBlogParams(): { slug: string }[] {
 
 export function countSeoPages(): {
   cities: number;
+  intentCities: number;
   neighborhoods: number;
   propertyTypes: number;
   blog: number;
   total: number;
 } {
-  const cities = getHousesCityParams().length;
+  const cities = getAllSeoCitySlugs().length;
+  const intentCities = cities * 3;
   const neighborhoods = getHousesNeighborhoodParams().length;
   const propertyTypes = getHousesPropertyTypeParams().length;
   const blog = getAllBlogSlugs().length;
   return {
     cities,
+    intentCities,
     neighborhoods,
     propertyTypes,
     blog,
-    total: cities + neighborhoods + propertyTypes + blog,
+    total: cities + intentCities + neighborhoods + propertyTypes + blog,
   };
 }

@@ -1,50 +1,64 @@
 import { fromSlug, resolveAreaSlug, resolveCitySlug } from "@/lib/location-slugs";
-
-const HUB_QUERY: Record<string, string> = {
-  buy: "type=buy",
-  shops: "property_type=shop",
-  land: "hub=land_sale",
-};
+import { intentInCityPath, type SeoListingIntent } from "@/lib/seo/intent-in-city";
 
 /**
- * SEO-friendly hub URLs → programmatic /houses/* pages.
- * /rent/aba → /houses/aba
- * /buy/enugu → /houses/enugu?type=buy
- * Unknown city slugs → /search with city hint
+ * Legacy hub URLs → canonical /rent-in-{city} pages.
+ * /rent/aba → /rent-in-aba
+ * /buy/enugu → /buy-in-enugu
+ * /land/owerri → /land-in-owerri
  */
 export function seoHubRedirect(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
   if (parts.length < 2) return null;
 
   const hub = parts[0]!;
-  if (!["rent", "buy", "shops", "land"].includes(hub)) return null;
+  const intentHubs: Record<string, SeoListingIntent | null> = {
+    rent: "rent",
+    buy: "buy",
+    land: "land",
+    shops: null,
+  };
+  if (!(hub in intentHubs)) return null;
 
-  const query = HUB_QUERY[hub];
-  const appendQuery = (path: string) =>
-    query ? `${path}?${query}` : path;
-
-  if (parts.length === 2) {
+  const intent = intentHubs[hub];
+  if (intent && parts.length === 2) {
     const citySlug = parts[1]!;
     if (resolveCitySlug(citySlug)) {
-      return appendQuery(`/houses/${citySlug}`);
+      return intentInCityPath(intent, citySlug);
     }
-    return `/search?city=${encodeURIComponent(fromSlug(citySlug))}`;
+    const params = new URLSearchParams({ city: fromSlug(citySlug) });
+    if (intent === "buy") {
+      params.set("type", "sale");
+      params.set("hub", "buy");
+    } else if (intent === "land") {
+      params.set("hub", "land_sale");
+    } else {
+      params.set("type", "rent");
+    }
+    return `/search?${params.toString()}`;
   }
 
-  if (parts.length === 3) {
+  if (hub === "shops" && parts.length === 2) {
+    const citySlug = parts[1]!;
+    if (resolveCitySlug(citySlug)) {
+      return `/houses/${citySlug}?property_type=shop`;
+    }
+    return `/search?city=${encodeURIComponent(fromSlug(citySlug))}&property_type=shop`;
+  }
+
+  if (parts.length === 3 && intent) {
     const [citySlug, areaSlug] = parts.slice(1);
     if (citySlug && areaSlug && resolveAreaSlug(citySlug, areaSlug)) {
-      return appendQuery(`/houses/${citySlug}/${areaSlug}`);
-    }
-    if (citySlug && resolveCitySlug(citySlug)) {
-      return appendQuery(`/houses/${citySlug}`);
-    }
-    if (citySlug) {
-      const params = new URLSearchParams({
-        city: fromSlug(citySlug),
-      });
-      if (areaSlug) params.set("area", fromSlug(areaSlug));
-      return `/search?${params.toString()}`;
+      const params = new URLSearchParams();
+      if (intent === "buy") {
+        params.set("type", "sale");
+        params.set("hub", "buy");
+      } else if (intent === "land") {
+        params.set("hub", "land_sale");
+      } else {
+        params.set("type", "rent");
+      }
+      return `/houses/${citySlug}/${areaSlug}?${params.toString()}`;
     }
   }
 

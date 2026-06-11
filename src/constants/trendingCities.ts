@@ -12,7 +12,18 @@ export type TrendingCity = {
   tagline: string;
   href: string;
   seoPath: string;
+  rentInPath: string;
+  buyInPath: string;
+  landInPath: string;
 };
+
+function intentPaths(slug: string) {
+  return {
+    rentInPath: `/rent-in-${slug}`,
+    buyInPath: `/buy-in-${slug}`,
+    landInPath: `/land-in-${slug}`,
+  };
+}
 
 export const TRENDING_CITIES: TrendingCity[] = [
   {
@@ -24,6 +35,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "Rentals, shortlets & sales",
     href: "/search?city=Lagos",
     seoPath: "/houses/lagos",
+    ...intentPaths("lagos"),
   },
   {
     name: "Abuja",
@@ -34,6 +46,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "Homes in the capital",
     href: "/search?city=Abuja",
     seoPath: "/houses/abuja",
+    ...intentPaths("abuja"),
   },
   {
     name: "Port Harcourt",
@@ -44,6 +57,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "GRA, Woji & more",
     href: "/search?city=Port%20Harcourt",
     seoPath: "/houses/port-harcourt",
+    ...intentPaths("port-harcourt"),
   },
   {
     name: "Enugu",
@@ -54,6 +68,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "Coal City homes",
     href: "/search?city=Enugu",
     seoPath: "/houses/enugu",
+    ...intentPaths("enugu"),
   },
   {
     name: "Aba",
@@ -64,6 +79,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "Affordable verified rentals",
     href: "/search?city=Aba",
     seoPath: "/houses/aba",
+    ...intentPaths("aba"),
   },
   {
     name: "Owerri",
@@ -74,6 +90,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "Shortlets & family homes",
     href: "/search?city=Owerri",
     seoPath: "/houses/owerri",
+    ...intentPaths("owerri"),
   },
   {
     name: "Uyo",
@@ -84,6 +101,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "Ewet Housing & beyond",
     href: "/search?city=Uyo",
     seoPath: "/houses/uyo",
+    ...intentPaths("uyo"),
   },
   {
     name: "Benin City",
@@ -94,6 +112,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "Student & family areas",
     href: "/search?city=Benin%20City",
     seoPath: "/houses/benin-city",
+    ...intentPaths("benin-city"),
   },
   {
     name: "Ibadan",
@@ -104,6 +123,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "Bodija, UI & Akobo",
     href: "/search?city=Ibadan",
     seoPath: "/houses/ibadan",
+    ...intentPaths("ibadan"),
   },
   {
     name: "Asaba",
@@ -114,6 +134,7 @@ export const TRENDING_CITIES: TrendingCity[] = [
     tagline: "Delta State capital",
     href: "/search?city=Asaba",
     seoPath: "/houses/asaba",
+    ...intentPaths("asaba"),
   },
 ];
 

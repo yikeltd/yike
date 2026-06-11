@@ -1,4 +1,5 @@
 import { toSlug } from "@/lib/location-slugs";
+import { intentInCityPath } from "@/lib/seo/intent-in-city";
 
 /** Local long-tail links — unique per page, not thin duplicates. */
 export function popularLocalSearches(
@@ -19,11 +20,11 @@ export function popularLocalSearches(
   };
 
   return [
+    { label: `Rent in ${city}`, href: intentInCityPath("rent", citySlug) },
+    { label: `Buy in ${city}`, href: intentInCityPath("buy", citySlug) },
+    { label: `Land in ${city}`, href: intentInCityPath("land", citySlug) },
     { label: `2 bedroom in ${areaLabel}`, href: qs({ beds: "2", type: "rent" }) },
     { label: `Self contain ${areaLabel}`, href: qs({ property_type: "self_contain", type: "rent" }) },
-    { label: `Mini flat ${areaLabel}`, href: qs({ property_type: "mini_flat", type: "rent" }) },
-    { label: `Shops in ${areaLabel}`, href: qs({ property_type: "shop" }) },
-    { label: `Land in ${city}`, href: `/land?city=${encodeURIComponent(city)}` },
     { label: `All homes in ${areaLabel}`, href: `${base}` },
   ];
 }

@@ -13,6 +13,7 @@ import { TRENDING_CITIES } from "@/constants/trendingCities";
 import { SITE_NAME } from "@/lib/constants";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
+import { IntentCityDirectory } from "@/components/seo/intent-city-directory";
 
 export const metadata = {
   title: `Rent a Home in Nigeria | ${SITE_NAME}`,
@@ -52,14 +53,16 @@ export default function RentPage() {
           {TRENDING_CITIES.slice(0, 8).map((c) => (
             <Link
               key={c.slug}
-              href={`/search?type=rent&city=${encodeURIComponent(c.searchCity)}`}
+              href={c.rentInPath}
               className="pressable rounded-full bg-white px-4 py-2 text-sm font-semibold text-navy shadow-float hover:bg-gold/10"
             >
-              {c.name}
+              Rent in {c.name}
             </Link>
           ))}
         </div>
       </section>
+
+      <IntentCityDirectory intent="rent" />
 
       <NeighborhoodChips title="Popular rental areas" />
 
