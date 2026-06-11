@@ -125,19 +125,22 @@ export function SellerProfileHeader({
         </div>
       </div>
 
-      {/* Desktop: left overlap */}
-      <div className="relative hidden px-6 pb-6 lg:block">
-        <div className="-mt-16 flex items-end gap-5">
-          <div className="shrink-0">
+      {/* Desktop: breathing room below cover before profile row */}
+      <div className="hidden lg:block lg:h-2 xl:h-3 2xl:h-3" aria-hidden />
+
+      {/* Desktop: left overlap — avatar overlaps cover; details sit in white area below */}
+      <div className="relative hidden px-6 pb-6 lg:block lg:px-8 xl:px-8 2xl:px-10">
+        <div className="flex items-start gap-5 xl:gap-6">
+          <div className="-mt-16 shrink-0 lg:-mt-16 xl:-mt-16 2xl:-mt-16">
             {avatarSlot ?? (
               <AvatarCircle displayName={displayName} logo={logo} size="xl" />
             )}
           </div>
-          <div className="min-w-0 flex-1 pb-1">
+          <div className="min-w-0 flex-1 pt-6 lg:pt-7 xl:pt-8 2xl:pt-9">
             {subtitle ? (
               <p className="text-xs font-bold uppercase tracking-wider text-muted">{subtitle}</p>
             ) : null}
-            <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3 xl:gap-4">
               <div className="min-w-0">
                 <h1 className="text-2xl font-bold tracking-tight text-navy xl:text-3xl">
                   {displayName}
