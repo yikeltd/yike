@@ -10,6 +10,8 @@ import { join } from "node:path";
 const ROOT = join(import.meta.dirname, "..");
 const SITE = "https://yike.ng";
 const PACKAGE = "com.yike.app";
+const STAFF_PACKAGE = "ng.yike.staff";
+const LAUNCH_URL = `${SITE}/`;
 const ASSETLINKS_URL = `${SITE}/.well-known/assetlinks.json`;
 const DAL_URL = `https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=${encodeURIComponent(SITE)}&relation=delegate_permission/common.handle_all_urls`;
 
@@ -50,6 +52,13 @@ async function main() {
     process.exit(1);
   }
 
+  const staff = assetlinks.find((e) => e.target?.package_name === STAFF_PACKAGE);
+  if (!staff) {
+    console.error(`Missing package ${STAFF_PACKAGE} in assetlinks.json`);
+    process.exit(1);
+  }
+  console.log(`Packages in assetlinks.json: ✓ ${PACKAGE}, ✓ ${STAFF_PACKAGE}`);
+
   const hosted = yike.target.sha256_cert_fingerprints.map((f) => f.toUpperCase());
   console.log(`\nHosted fingerprints for ${PACKAGE}:`);
   hosted.forEach((f) => console.log(`  • ${f}`));
@@ -69,6 +78,15 @@ async function main() {
   console.log(
     "\nPlay App Signing SHA-256 must also be in assetlinks.json (Play Console → App integrity → App signing key certificate)."
   );
+
+  const wwwHead = await fetch("https://www.yike.ng/.well-known/assetlinks.json", {
+    method: "HEAD",
+    redirect: "manual",
+  });
+  console.log(
+    `\nwww redirect: ${wwwHead.status === 308 ? "✓ www → apex (308)" : `✗ unexpected ${wwwHead.status}`}`
+  );
+  console.log(`TWA launch URL (manifest): ${LAUNCH_URL}`);
 
   const dal = await (await fetch(DAL_URL)).json();
   const appStatements = (dal.statements ?? []).filter(

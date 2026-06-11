@@ -23,6 +23,9 @@ html.yike-boot-splash-enabled #yike-boot-splash {
   opacity: 1;
   pointer-events: auto;
   visibility: visible;
+}
+
+html.yike-app-mode.yike-boot-splash-enabled #yike-boot-splash {
   animation: yike-boot-splash-fail-open 2.6s ease forwards;
 }
 
@@ -56,32 +59,18 @@ html.yike-boot-splash-enabled #yike-boot-splash {
   display: grid;
   place-items: center;
   width: 100%;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   background: #031b4e;
 }
 
 #yike-boot-splash img {
   position: relative;
   z-index: 1;
-  width: clamp(5.5rem, 22vw, 7.5rem);
-  height: auto;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   transform-origin: center;
-  animation: yike-boot-splash-breathe 2s ease-in-out infinite;
-  will-change: opacity, transform;
-}
-
-@keyframes yike-boot-splash-breathe {
-  0%,
-  100% {
-    opacity: 0.88;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.03);
-  }
 }
 
 .yike-boot-splash__recovery {
