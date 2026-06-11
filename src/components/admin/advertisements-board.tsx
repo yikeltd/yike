@@ -10,6 +10,8 @@ import {
   type AdvertisementDurationPlan,
   type AdvertisementPlacement,
 } from "@/lib/advertisements/constants";
+import { SPONSORED_AD_CREATIVE_SPECS } from "@/constants/adminCreativeSpecs";
+import { AdminCreativeSizeCallout } from "@/components/admin/admin-creative-size-callout";
 import { useRevenueCatalog } from "@/hooks/use-revenue-catalog";
 import { advertisementVariantKey } from "@/lib/revenue-pricing/keys";
 import { getCatalogPrice } from "@/lib/revenue-pricing/catalog-utils";
@@ -147,6 +149,8 @@ export function AdvertisementsBoard() {
     placement as AdvertisementPlacement,
     durationPlan as AdvertisementDurationPlan
   );
+  const sponsoredSpecs =
+    SPONSORED_AD_CREATIVE_SPECS[placement as AdvertisementPlacement];
 
   return (
     <div className="space-y-6">
@@ -250,6 +254,22 @@ export function AdvertisementsBoard() {
           <p className="text-sm font-semibold text-navy">
             Price: {formatPrice(previewPrice, "total", "rent")}
           </p>
+          {sponsoredSpecs ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">
+                  Desktop image
+                </p>
+                <AdminCreativeSizeCallout spec={sponsoredSpecs.desktop} />
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">
+                  Mobile image (optional)
+                </p>
+                <AdminCreativeSizeCallout spec={sponsoredSpecs.mobile} />
+              </div>
+            </div>
+          ) : null}
           <div className="flex flex-wrap gap-3">
             <label className="cursor-pointer rounded-xl border border-dashed border-border px-4 py-3 text-sm font-semibold text-navy">
               {imageUrl ? "Desktop image uploaded" : "Upload desktop image"}

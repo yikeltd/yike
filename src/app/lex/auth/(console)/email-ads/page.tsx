@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { EmailTransactionalAdPanel } from "@/components/admin/email-transactional-ad-panel";
-import { EMAIL_AD_PLACEMENT_KEY } from "@/lib/email/ad-marker";
-import { getPlacementByKey } from "@/lib/ads";
+import { ensureEmailAdPlacement } from "@/lib/ads/ensure-placements";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function AdminEmailAdsPage() {
-  const placement = await getPlacementByKey(EMAIL_AD_PLACEMENT_KEY);
+  const placement = await ensureEmailAdPlacement();
 
   return (
     <div className="space-y-6">
@@ -17,12 +16,6 @@ export default async function AdminEmailAdsPage() {
         {!isSupabaseConfigured() && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Supabase env vars required to save email ads.
-          </p>
-        )}
-        {!placement && isSupabaseConfigured() && (
-          <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Email placement not seeded yet. Run migration{" "}
-            <code className="text-navy">20250718120000_email_ad_placement</code>.
           </p>
         )}
       </div>

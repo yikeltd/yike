@@ -30,7 +30,9 @@ export default async function AdminBannersPage({
       <div>
         <h1 className="text-2xl font-bold text-navy">Mobile header banners</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted">
-          Compact promo strip below the mobile header. {total} banners.
+          Compact promo strip below the mobile header. {total} banners. Optional
+          thumb: design <strong className="text-navy">160×160 px</strong> (1:1)
+          — displays at 40×40.
         </p>
         {!isSupabaseConfigured() && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">

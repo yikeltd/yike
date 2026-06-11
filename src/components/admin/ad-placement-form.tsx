@@ -6,6 +6,8 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { AD_PLACEMENT_META } from "@/constants/adPlacements";
+import { getAdPlacementCreativeSpec } from "@/constants/adminCreativeSpecs";
+import { AdminCreativeSizeCallout } from "@/components/admin/admin-creative-size-callout";
 import type { AdPlacement } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -30,6 +32,9 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
   const meta = AD_PLACEMENT_META[
     placement.placement_key as keyof typeof AD_PLACEMENT_META
   ];
+  const creativeSpec = getAdPlacementCreativeSpec(
+    placement.placement_key as keyof typeof AD_PLACEMENT_META
+  );
 
   const isHotspot = placement.placement_key.startsWith("home_hotspot_");
 
@@ -117,6 +122,9 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
           {meta && (
             <p className="mt-1 max-w-xl text-sm text-muted">{meta.hint}</p>
           )}
+          <div className="mt-3 max-w-xl">
+            <AdminCreativeSizeCallout spec={creativeSpec} />
+          </div>
         </div>
         <span
           className={`rounded-full px-3 py-1 text-xs font-bold ${
@@ -139,7 +147,7 @@ export function AdPlacementForm({ placement }: { placement: AdPlacement }) {
             />
             <AdminImageUploadField
               label="Creative image"
-              hint="JPG, PNG, or HEIC — saved as compressed WebP."
+              sizeSpec={creativeSpec}
               value={imageUrl}
               onChange={setImageUrl}
               preset={imagePreset}

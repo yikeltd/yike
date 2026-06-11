@@ -11,7 +11,8 @@ export default async function AdminAdsPage() {
       <div>
         <h1 className="text-2xl font-bold text-navy">Ad placements</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted">
-          Website slots below. For the compact sponsor on{" "}
+          Website slots below — each slot shows recommended design dimensions.
+          For the compact sponsor on{" "}
           <strong className="text-navy">all transactional emails</strong>, use{" "}
           <Link href="/lex/auth/email-ads" className="font-semibold text-navy underline">
             Email ads

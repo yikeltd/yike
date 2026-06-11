@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import { useDestructiveAction } from "@/components/admin/destructive-action-modal";
+import { MOBILE_HEADER_BANNER_SPEC } from "@/constants/adminCreativeSpecs";
 import { MOBILE_HEADER_PLACEMENT } from "@/constants/siteBanners";
+import { AdminCreativeSizeCallout } from "@/components/admin/admin-creative-size-callout";
 import type { SiteBanner } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -159,6 +161,9 @@ export function SiteBannerManager({ banners }: { banners: SiteBanner[] }) {
           Shown on mobile only, below the header. Higher priority wins when
           multiple are active.
         </p>
+        <div className="mt-3 max-w-xl">
+          <AdminCreativeSizeCallout spec={MOBILE_HEADER_BANNER_SPEC} />
+        </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <Input
@@ -183,10 +188,11 @@ export function SiteBannerManager({ banners }: { banners: SiteBanner[] }) {
           <div className="sm:col-span-2">
             <AdminImageUploadField
               label="Banner image (optional)"
-              hint="Compressed to WebP on upload — or use title/message only."
+              hint="Or use title/message only — image is optional."
+              sizeSpec={MOBILE_HEADER_BANNER_SPEC}
               value={imageUrl}
               onChange={setImageUrl}
-              preset="banner"
+              preset="square"
               folder="site-banners"
               disabled={!!busy}
             />

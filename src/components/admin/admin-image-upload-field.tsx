@@ -2,7 +2,10 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
+import type { AdminCreativeSpec } from "@/constants/adminCreativeSpecs";
+import { ADMIN_UPLOAD_FORMAT } from "@/constants/adminCreativeSpecs";
 import type { ImagePreset } from "@/lib/media/constants";
+import { AdminCreativeSizeCallout } from "@/components/admin/admin-creative-size-callout";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -12,6 +15,7 @@ type Props = {
   folder: string;
   label?: string;
   hint?: string;
+  sizeSpec?: AdminCreativeSpec;
   disabled?: boolean;
 };
 
@@ -23,6 +27,7 @@ export function AdminImageUploadField({
   folder,
   label = "Image",
   hint,
+  sizeSpec,
   disabled,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -54,7 +59,16 @@ export function AdminImageUploadField({
   return (
     <div>
       <p className="mb-2 text-xs font-semibold text-muted">{label}</p>
-      {hint ? <p className="mb-2 text-xs text-muted">{hint}</p> : null}
+      {sizeSpec ? (
+        <div className="mb-2">
+          <AdminCreativeSizeCallout spec={sizeSpec} />
+        </div>
+      ) : null}
+      {hint ? (
+        <p className="mb-2 text-xs text-muted">{hint}</p>
+      ) : !sizeSpec ? null : (
+        <p className="mb-2 text-xs text-muted">{ADMIN_UPLOAD_FORMAT}</p>
+      )}
       <input
         ref={fileRef}
         type="file"

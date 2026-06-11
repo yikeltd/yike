@@ -4,6 +4,7 @@ import { requireAdminApi } from "@/lib/admin/api-auth";
 import { writeAuditLog } from "@/lib/admin/audit";
 import { EMAIL_AD_PLACEMENT_KEY } from "@/lib/email/ad-marker";
 import { buildEmailAdBlock } from "@/lib/email/components/email-ad-block";
+import { ensureEmailAdPlacement } from "@/lib/ads/ensure-placements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AdPlacement } from "@/types/database";
 
@@ -18,17 +19,7 @@ export async function GET() {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
 
-  const { data, error } = await admin
-    .from("ad_placements")
-    .select("*")
-    .eq("placement_key", EMAIL_AD_PLACEMENT_KEY)
-    .maybeSingle();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const placement = (data as AdPlacement | null) ?? null;
+  const placement = await ensureEmailAdPlacement();
   const previewHtml = placement?.image_url
     ? buildEmailAdBlock(placement)
     : "";
@@ -76,15 +67,30 @@ export async function PATCH(req: Request) {
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await admin
+  let { data, error } = await admin
     .from("ad_placements")
     .update(payload)
     .eq("placement_key", EMAIL_AD_PLACEMENT_KEY)
     .select("*")
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) {
+    await ensureEmailAdPlacement();
+    const retry = await admin
+      .from("ad_placements")
+      .update(payload)
+      .eq("placement_key", EMAIL_AD_PLACEMENT_KEY)
+      .select("*")
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
+
+  if (error || !data) {
+    return NextResponse.json(
+      { error: error?.message ?? "Email placement unavailable" },
+      { status: 500 }
+    );
   }
 
   const hdrs = await headers();

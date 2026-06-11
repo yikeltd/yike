@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { AdPlacement } from "@/types/database";
+import { EMAIL_TRANSACTIONAL_SPEC } from "@/constants/adminCreativeSpecs";
+import { AdminCreativeSizeCallout } from "@/components/admin/admin-creative-size-callout";
 import { AdminImageUploadField } from "@/components/admin/admin-image-upload-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,6 +93,9 @@ export function EmailTransactionalAdPanel({
             Compact promo under the headline on every user email (OTP, welcome, listings).
             Upload image, set link, schedule, go live — turn off anytime.
           </p>
+          <div className="mt-3 max-w-xl">
+            <AdminCreativeSizeCallout spec={EMAIL_TRANSACTIONAL_SPEC} />
+          </div>
         </div>
         <span
           className={`rounded-full px-3 py-1 text-xs font-bold ${
@@ -121,8 +126,8 @@ export function EmailTransactionalAdPanel({
             />
 
             <AdminImageUploadField
-              label="Square image (80×80 WebP)"
-              hint="Any JPG/PNG/HEIC — compressed automatically on upload."
+              label="Sponsor image"
+              sizeSpec={EMAIL_TRANSACTIONAL_SPEC}
               value={imageUrl}
               onChange={setImageUrl}
               preset="square"

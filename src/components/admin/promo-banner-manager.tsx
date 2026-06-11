@@ -2,10 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PROMO_BANNER_PLACEMENT_SPECS } from "@/constants/adminCreativeSpecs";
 import {
   BANNER_CAMPAIGN_LABELS,
   BANNER_PLACEMENTS,
   DEFAULT_PREMIUM_TRUST_BANNER,
+  type SiteBannerPlacement,
 } from "@/constants/siteBanners";
 import {
   BANNER_CAMPAIGN_TYPES,
@@ -225,6 +227,17 @@ export function PromoBannerManager({ banners }: { banners: SiteBanner[] }) {
                 </option>
               ))}
             </select>
+            {PROMO_BANNER_PLACEMENT_SPECS[placement as SiteBannerPlacement] ? (
+              <p className="mt-2 rounded-xl border border-gold/30 bg-gold/5 px-3 py-2 text-xs text-navy">
+                <span className="font-bold">Layout: </span>
+                {PROMO_BANNER_PLACEMENT_SPECS[placement as SiteBannerPlacement].layout}
+                {PROMO_BANNER_PLACEMENT_SPECS[placement as SiteBannerPlacement].notes ? (
+                  <span className="mt-1 block text-muted">
+                    {PROMO_BANNER_PLACEMENT_SPECS[placement as SiteBannerPlacement].notes}
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
           </label>
           <Input placeholder="Headline" value={title} onChange={(e) => setTitle(e.target.value)} />
           <Input placeholder="CTA text" value={ctaText} onChange={(e) => setCtaText(e.target.value)} />
