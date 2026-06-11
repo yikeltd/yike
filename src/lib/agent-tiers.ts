@@ -62,13 +62,13 @@ export function canListProperties(
 }
 
 export function getListingLimit(
-  profile: AgentProfileSlice | null | undefined
+  profile: (AgentProfileSlice & { subscription_plan_code?: string | null }) | null | undefined
 ): number | null {
   if (!profile) return UNVERIFIED_AGENT_LISTING_LIMIT;
+  if (profile.subscription_plan_code === "developer") return null;
   if (profile.listing_limit !== null && profile.listing_limit !== undefined) {
     return profile.listing_limit;
   }
-  if (isVerifiedAgentProfile(profile)) return null;
   return UNVERIFIED_AGENT_LISTING_LIMIT;
 }
 

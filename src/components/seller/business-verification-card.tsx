@@ -4,10 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ShieldCheck, Upload } from "lucide-react";
 import type { Profile, SellerVerification } from "@/types/database";
-import {
-  BUSINESS_VERIFICATION_FEE_NGN,
-  SELLER_VERIFICATION_COPY,
-} from "@/lib/seller-verification/constants";
+import { SELLER_VERIFICATION_COPY } from "@/lib/seller-verification/constants";
+import { useCatalogPrice } from "@/hooks/use-revenue-catalog";
+import { DEFAULT_REVENUE_PRICING } from "@/lib/revenue-pricing/defaults";
 import {
   getSellerTrustLevel,
   isBusinessSellerType,
@@ -28,6 +27,13 @@ export function BusinessVerificationCard({ profile }: { profile: Profile }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const catalogFee = useCatalogPrice("verification_fee", "standard");
+  const verificationFee =
+    catalogFee ??
+    DEFAULT_REVENUE_PRICING.find(
+      (i) => i.product === "verification_fee" && i.variant_key === "standard"
+    )?.amount ??
+    0;
 
   const businessType = isBusinessSellerType(profile);
   const [rcBn, setRcBn] = useState(profile.cac_number ?? "");
@@ -198,7 +204,7 @@ export function BusinessVerificationCard({ profile }: { profile: Profile }) {
         <div className="mt-4 space-y-3 border-t border-border pt-4">
           <p className="text-xs text-muted">
             {SELLER_VERIFICATION_COPY.businessFeeLabel} ·{" "}
-            {formatPrice(BUSINESS_VERIFICATION_FEE_NGN, "total", "rent")}
+            {formatPrice(verificationFee, "total", "rent")}
           </p>
 
           {businessType ? (

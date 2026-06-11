@@ -4,6 +4,8 @@ import { runTrustQualityBatch } from "@/lib/trust/recalculate";
 import { archiveDueListings } from "@/lib/trust/listing-staleness";
 import { expireStaleVerificationReports } from "@/lib/verification/report-expiry";
 import { expireDueFeaturedPromotions } from "@/lib/featured-promotions/service";
+import { expireDueAdvertisements } from "@/lib/advertisements/service";
+import { expireDueSubscriptions } from "@/lib/subscriptions/service";
 
 export const runtime = "nodejs";
 
@@ -35,6 +37,8 @@ export async function GET(request: Request) {
   const archivedListings = await archiveDueListings(admin);
   const expiredReports = await expireStaleVerificationReports(admin);
   const featuredExpiry = await expireDueFeaturedPromotions(admin);
+  const expiredAdvertisements = await expireDueAdvertisements(admin);
+  const expiredSubscriptions = await expireDueSubscriptions(admin);
 
   if (expireError) {
     return NextResponse.json(
@@ -50,6 +54,8 @@ export async function GET(request: Request) {
     expiredReports,
     featuredExpiredListings: featuredExpiry.expiredListings,
     featuredExpiredPromotions: featuredExpiry.expiredPromotions,
+    expiredAdvertisements,
+    expiredSubscriptions,
     ...trust,
   });
 }

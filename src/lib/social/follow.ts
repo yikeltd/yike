@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isFollowingUser } from "./stats";
 import { isSocialRateLimited, logSocialAction } from "./rate-limit";
 import { notifySellerFollowed } from "./notify";
+import { captureListingLead } from "@/lib/listing-leads/capture";
 
 export type FollowToggleResult =
   | { ok: true; following: boolean }
@@ -67,6 +68,20 @@ export async function toggleProfileFollow(
     sellerId: params.followedId,
     followerId: params.followerId,
     followerName: params.followerName,
+  });
+  const { data: followedProfile } = await admin
+    .from("profiles")
+    .select("account_type")
+    .eq("id", params.followedId)
+    .single();
+  const accountType = followedProfile?.account_type as string | undefined;
+  void captureListingLead(admin, {
+    sellerId: params.followedId,
+    leadUserId: params.followerId,
+    leadType: "follow",
+    leadUserDisplay: params.followerName,
+    profilePage:
+      accountType === "agency" ? "agency" : accountType === "developer" ? "developer" : null,
   });
 
   return { ok: true, following: true };

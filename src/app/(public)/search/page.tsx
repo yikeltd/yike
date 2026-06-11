@@ -15,6 +15,7 @@ import { hasActiveFilters } from "@/lib/search-filters";
 import { hubLabel } from "@/constants/listingTypes";
 import { propertyTypeLabel } from "@/lib/utils";
 import { getActiveAd } from "@/lib/ads";
+import { getSponsoredAd } from "@/lib/advertisements/public";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
@@ -79,7 +80,10 @@ export default async function SearchPage({
       feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   }
 
-  const feedAd = await getActiveAd("search_feed_mid");
+  const [sponsoredSearchAd, feedAd] = await Promise.all([
+    getSponsoredAd("search_results"),
+    getActiveAd("search_feed_mid"),
+  ]);
 
   const label = [
     params.hub ? hubLabel(params.hub) : null,
@@ -161,7 +165,8 @@ export default async function SearchPage({
               <PropertyFeed
                 properties={feedItems}
                 isDemo={isDemo}
-                midFeedAd={feedAd}
+                sponsoredAd={sponsoredSearchAd}
+                midFeedAd={sponsoredSearchAd ? null : feedAd}
                 feedAdInsertAfter={5}
                 adPlacementKey="search_feed_mid"
               />
@@ -173,7 +178,8 @@ export default async function SearchPage({
                 <PropertyFeed
                   properties={nearbyItems}
                   isDemo={isDemo}
-                  midFeedAd={feedAd}
+                  sponsoredAd={sponsoredSearchAd}
+                  midFeedAd={sponsoredSearchAd ? null : feedAd}
                   feedAdInsertAfter={5}
                   adPlacementKey="search_feed_mid"
                 />

@@ -18,6 +18,7 @@ import { parseSearchParams } from "@/lib/properties";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
+import { SponsoredAdSlot } from "@/components/ads/sponsored-ad-slot";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
 import { HOME_SEO_SEARCH_LINKS } from "@/lib/home/popular-search-links";
 import { BRAND_OG_IMAGE, BRAND_OG_IMAGE_WEBP } from "@/lib/share-images";
@@ -177,6 +178,10 @@ export default async function HomePage({
         <HomeSearchHero initial={initial} trustedAgents={trustedAgents} />
       </Suspense>
 
+      <Suspense fallback={null}>
+        <SponsoredAdSlot placement="homepage_top" className="pt-3" compact />
+      </Suspense>
+
       <Suspense fallback={<SectionFallback />}>
         <HomeHotPicksSections />
       </Suspense>
@@ -187,6 +192,10 @@ export default async function HomePage({
 
       <Suspense fallback={<SectionFallback />}>
         <HomeFeaturedSection />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SponsoredAdSlot placement="homepage_middle" className="py-3" />
       </Suspense>
 
       <Suspense fallback={null}>

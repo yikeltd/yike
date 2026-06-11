@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isSocialRateLimited, logSocialAction } from "./rate-limit";
 import { notifyListingLiked } from "./notify";
+import { captureListingLead } from "@/lib/listing-leads/capture";
 
 export type ListingLikeToggleResult =
   | { ok: true; liked: boolean; likeCount: number }
@@ -75,6 +76,13 @@ export async function toggleListingLike(
         likerId: params.userId,
         listingId: params.listingId,
         listingTitle: listing.title ?? "your listing",
+      });
+      void captureListingLead(admin, {
+        listingId: params.listingId,
+        sellerId: listing.agent_id as string,
+        leadUserId: params.userId,
+        leadType: "save",
+        listingTitle: listing.title ?? undefined,
       });
     }
   }

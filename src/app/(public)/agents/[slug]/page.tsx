@@ -12,6 +12,7 @@ import { isDemoProperty } from "@/lib/mock-listings";
 import { AlertTriangle } from "lucide-react";
 import { AgentReviewsSection } from "@/components/reviews/agent-reviews-section";
 import { PublicSellerProfileHeader } from "@/components/agent/public-seller-profile-header";
+import { AgencyDeveloperProfileSections } from "@/components/agent/agency-developer-profile-sections";
 import { getSession } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { getProfileSocialStats } from "@/lib/social/stats";
@@ -70,6 +71,8 @@ export default async function AgentProfilePage({
             socialStats={socialStats}
             viewerId={viewer?.id}
           />
+
+          <AgencyDeveloperProfileSections agent={agent} listings={listings} />
 
           <AgentReviewsSection
             agentId={agentId}

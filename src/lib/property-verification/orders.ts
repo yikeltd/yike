@@ -2,9 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PropertyVerificationOrder } from "@/types/database";
 import {
   isPackageId,
-  packageAmount,
   type PropertyVerificationPackageId,
 } from "@/lib/property-verification/packages";
+import { packageAmount } from "@/lib/property-verification/pricing";
 import { createStaffOpsAlert } from "@/lib/verification/ops-alerts";
 import { appendTrustTimeline } from "@/lib/trust/operations/timeline";
 import { grantTrustBadge } from "@/lib/trust/operations/badges";
@@ -62,7 +62,10 @@ export async function createPaidVerificationOrder(
   }
 
   const now = new Date().toISOString();
-  const amount = packageAmount(input.packageType);
+  const amount = await packageAmount(admin, input.packageType);
+  if (amount == null) {
+    return { ok: false, error: "Package pricing unavailable", code: "pricing_unavailable" };
+  }
   const verificationRef = orderReference();
 
   const { data: order, error } = await admin

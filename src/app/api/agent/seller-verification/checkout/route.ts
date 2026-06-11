@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canListProperties } from "@/lib/agent-tiers";
-import { BUSINESS_VERIFICATION_FEE_NGN } from "@/lib/seller-verification/constants";
+import { getRevenuePrice } from "@/lib/revenue-pricing/service";
 import {
   createBusinessVerificationFromPayment,
   hasBlockingBusinessVerification,
@@ -92,6 +92,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: docError }, { status: 400 });
   }
 
+  const verificationAmount = await getRevenuePrice(admin, "verification_fee", "standard");
+  if (verificationAmount == null) {
+    return NextResponse.json({ error: friendlyPublicError("unavailable") }, { status: 503 });
+  }
+
   const paymentsLive = isFeaturedPaymentsEnabled() && isPaystackConfigured();
 
   if (!paymentsLive) {
@@ -116,7 +121,7 @@ export async function POST(request: Request) {
   const order = await createPaymentOrder(admin, {
     userId: user.id,
     orderType: "verification_fee",
-    amount: BUSINESS_VERIFICATION_FEE_NGN,
+    amount: verificationAmount,
     metadata: {
       documents: {
         ...documents,
@@ -136,7 +141,7 @@ export async function POST(request: Request) {
     orderId: order.id,
     reference: order.reference,
     authorizationUrl: init.authorizationUrl,
-    amount: BUSINESS_VERIFICATION_FEE_NGN,
+    amount: verificationAmount,
     paymentsLive: true,
   });
 }

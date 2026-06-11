@@ -4,14 +4,14 @@ import {
   BOOST_PROMOTION_SCORE,
   BOOST_PROMOTION_TYPE,
   FEATURED_PROMOTION_TYPE,
-  boostPriceForPlan,
-  featuredPriceForDays,
   isFeaturedDurationDays,
   type BoostPlanId,
   type FeaturedDurationDays,
   type FeaturedPromotionStatus,
   type PromotionType,
 } from "@/lib/featured-promotions/constants";
+import { boostVariantKey, featuredVariantKey } from "@/lib/revenue-pricing/keys";
+import { getRevenuePrice } from "@/lib/revenue-pricing/service";
 import { generatePromotionReference } from "@/lib/featured-promotions/reference";
 import { logPaymentAudit } from "@/lib/payments/audit";
 
@@ -110,7 +110,14 @@ export async function createFeaturedPromotion(
     };
   }
 
-  const amount = featuredPriceForDays(input.durationDays);
+  const amount = await getRevenuePrice(
+    admin,
+    "featured_listing",
+    featuredVariantKey(input.durationDays)
+  );
+  if (amount == null) {
+    return { ok: false, error: "Featured pricing unavailable" };
+  }
   const promotionReference = generatePromotionReference("FP");
 
   const { data, error } = await admin
@@ -160,7 +167,10 @@ export async function createBoostPromotion(
   }
 
   const plan = input.plan === "hours24" ? { durationHours: 24, durationDays: 0 } : { durationHours: null, durationDays: 7 };
-  const amount = boostPriceForPlan(input.plan);
+  const amount = await getRevenuePrice(admin, "boost_listing", boostVariantKey(input.plan));
+  if (amount == null) {
+    return { ok: false, error: "Boost pricing unavailable" };
+  }
   const promotionReference = generatePromotionReference("BP");
 
   const { data, error } = await admin

@@ -315,6 +315,9 @@ export interface Profile {
   is_banned: boolean;
   plan: "free" | "pro" | "agency";
   plan_expires_at: string | null;
+  subscription_plan_code?: string | null;
+  founding_member?: boolean;
+  lead_insights_until?: string | null;
   availability_status?: AgentAvailabilityStatus;
   availability_updated_at?: string | null;
   is_verified_agent?: boolean;
@@ -1045,6 +1048,68 @@ export interface AgentVerification {
   created_at: string;
 }
 
+export type AdvertisementPlacement =
+  | "homepage_top"
+  | "homepage_middle"
+  | "search_results";
+
+export type AdvertisementStatus =
+  | "draft"
+  | "pending"
+  | "active"
+  | "paused"
+  | "expired";
+
+export interface Advertisement {
+  id: string;
+  title: string;
+  advertiser_name: string;
+  advertiser_type: string | null;
+  image_url: string;
+  mobile_image_url: string | null;
+  destination_url: string;
+  placement: AdvertisementPlacement;
+  status: AdvertisementStatus;
+  starts_at: string | null;
+  expires_at: string | null;
+  amount: number;
+  duration_plan: string | null;
+  payment_order_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type SubscriptionPlanCode = "free" | "pro_agent" | "agency" | "developer";
+
+export type UserSubscriptionStatus = "active" | "expired" | "cancelled" | "pending";
+
+export interface SubscriptionPlanRow {
+  id: string;
+  name: string;
+  plan_code: SubscriptionPlanCode;
+  monthly_price: number;
+  active_listing_limit: number | null;
+  features: Record<string, unknown>;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserSubscriptionRow {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: UserSubscriptionStatus;
+  starts_at: string | null;
+  expires_at: string | null;
+  payment_reference: string | null;
+  payment_order_id: string | null;
+  founding_price_locked: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AdPlacement {
   id: string;
   placement_key: string;
@@ -1093,7 +1158,9 @@ export type PaymentOrderType =
   | "boost_listing"
   | "property_verification"
   | "verification_fee"
-  | "subscription";
+  | "advertisement"
+  | "subscription"
+  | "lead_insights";
 
 export type PaymentOrderStatus =
   | "pending"

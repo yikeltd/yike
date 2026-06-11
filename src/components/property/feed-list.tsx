@@ -1,20 +1,22 @@
 "use client";
 
-import type { Property } from "@/types/database";
-import type { AdPlacement } from "@/types/database";
+import type { Property, AdPlacement, Advertisement } from "@/types/database";
 import type { AdPlacementKey } from "@/constants/adPlacements";
 import { PropertyCard } from "./property-card";
 import { AdFeedInsert } from "@/components/ads/ad-feed-insert";
+import { SponsoredFeedInsert } from "@/components/ads/sponsored-feed-insert";
 
 export function FeedList({
   properties,
   midFeedAd,
+  sponsoredAd,
   insertAfter = 4,
   adPlacementKey = "home_feed_mid",
   trackFeaturedAnalytics = false,
 }: {
   properties: Property[];
   midFeedAd?: AdPlacement | null;
+  sponsoredAd?: Advertisement | null;
   insertAfter?: number;
   adPlacementKey?: AdPlacementKey;
   trackFeaturedAnalytics?: boolean;
@@ -31,11 +33,16 @@ export function FeedList({
               : undefined
           }
         >
-          {midFeedAd && i === insertAfter && (
+          {sponsoredAd && i === insertAfter ? (
+            <div className="mb-5 animate-fade-up">
+              <SponsoredFeedInsert ad={sponsoredAd} />
+            </div>
+          ) : null}
+          {!sponsoredAd && midFeedAd && i === insertAfter ? (
             <div className="mb-5 animate-fade-up">
               <AdFeedInsert ad={midFeedAd} placementKey={adPlacementKey} />
             </div>
-          )}
+          ) : null}
           <div
             className={i < 4 ? "animate-fade-up" : undefined}
             style={

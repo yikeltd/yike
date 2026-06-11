@@ -6,6 +6,7 @@ import { fulfillBoostListingOrder } from "@/lib/payments/fulfillment/boost-listi
 import { fulfillFeaturedListingOrder } from "@/lib/payments/fulfillment/featured-listing";
 import { fulfillPropertyVerificationOrder } from "@/lib/payments/fulfillment/property-verification";
 import { fulfillVerificationFeeOrder } from "@/lib/payments/fulfillment/verification-fee";
+import { fulfillAdvertisementOrder } from "@/lib/payments/fulfillment/advertisement";
 import { resolvePaymentProvider } from "@/lib/payments/providers";
 import { generatePaymentReference } from "@/lib/payments/reference";
 import type {
@@ -276,6 +277,45 @@ async function fulfillOrder(
 
   if (order.order_type === "verification_fee") {
     const result = await fulfillVerificationFeeOrder(admin, order);
+    if (!result.ok) return { ok: false, error: result.error };
+
+    return {
+      ok: true,
+      order,
+      alreadyFulfilled: result.alreadyFulfilled,
+    };
+  }
+
+  if (order.order_type === "advertisement") {
+    const result = await fulfillAdvertisementOrder(admin, order);
+    if (!result.ok) return { ok: false, error: result.error };
+
+    return {
+      ok: true,
+      order,
+      alreadyFulfilled: result.alreadyFulfilled,
+    };
+  }
+
+  if (order.order_type === "subscription") {
+    const { fulfillSubscriptionOrder } = await import(
+      "@/lib/payments/fulfillment/subscription"
+    );
+    const result = await fulfillSubscriptionOrder(admin, order);
+    if (!result.ok) return { ok: false, error: result.error };
+
+    return {
+      ok: true,
+      order,
+      alreadyFulfilled: result.alreadyFulfilled,
+    };
+  }
+
+  if (order.order_type === "lead_insights") {
+    const { fulfillLeadInsightsOrder } = await import(
+      "@/lib/payments/fulfillment/lead-insights"
+    );
+    const result = await fulfillLeadInsightsOrder(admin, order);
     if (!result.ok) return { ok: false, error: result.error };
 
     return {

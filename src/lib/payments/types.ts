@@ -3,7 +3,9 @@ export type PaymentOrderType =
   | "boost_listing"
   | "property_verification"
   | "verification_fee"
-  | "subscription";
+  | "advertisement"
+  | "subscription"
+  | "lead_insights";
 
 export type PaymentOrderStatus =
   | "pending"

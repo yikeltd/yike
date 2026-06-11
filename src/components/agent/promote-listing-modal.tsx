@@ -9,6 +9,9 @@ import {
   type FeaturedDurationDays,
   type PromotionType,
 } from "@/lib/featured-promotions/constants";
+import { useRevenueCatalog } from "@/hooks/use-revenue-catalog";
+import { boostVariantKey, featuredVariantKey } from "@/lib/revenue-pricing/keys";
+import { getCatalogPrice } from "@/lib/revenue-pricing/catalog-utils";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +35,21 @@ export function PromoteListingModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PromoteResult | null>(null);
+  const catalog = useRevenueCatalog();
+
+  function featuredAmount(days: FeaturedDurationDays): number {
+    return (
+      getCatalogPrice(catalog, "featured_listing", featuredVariantKey(days)) ??
+      FEATURED_PRICING[days].amount
+    );
+  }
+
+  function boostAmount(planId: BoostPlanId): number {
+    return (
+      getCatalogPrice(catalog, "boost_listing", boostVariantKey(planId)) ??
+      BOOST_PRICING[planId].amount
+    );
+  }
 
   async function handleContinue(promotionType: PromotionType) {
     setBusy(true);
@@ -148,7 +166,7 @@ export function PromoteListingModal({
                     >
                       <span className="text-sm font-semibold text-navy">{tier.label}</span>
                       <span className="text-sm font-bold text-navy">
-                        {formatPrice(tier.amount, "total", listing.listing_type)}
+                        {formatPrice(featuredAmount(days), "total", listing.listing_type)}
                       </span>
                     </button>
                   );
@@ -187,7 +205,7 @@ export function PromoteListingModal({
                     >
                       <span className="text-sm font-semibold text-navy">{tier.label}</span>
                       <span className="text-sm font-bold text-navy">
-                        {formatPrice(tier.amount, "total", listing.listing_type)}
+                        {formatPrice(boostAmount(planId), "total", listing.listing_type)}
                       </span>
                     </button>
                   );

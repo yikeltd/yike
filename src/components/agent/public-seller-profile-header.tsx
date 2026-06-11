@@ -10,6 +10,8 @@ import {
   SellerTypeBadge,
   VerifiedBadge,
 } from "@/components/ui/badge";
+import { SubscriptionPlanBadge } from "@/components/subscriptions/subscription-plan-badge";
+import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
 import { isVerifiedAgent } from "@/lib/utils";
 import { isResponsiveAgent } from "@/lib/agent-response";
 
@@ -58,6 +60,9 @@ export function PublicSellerProfileHeader({
           {sellerType ? <SellerTypeBadge type={sellerType} /> : null}
           {verified ? <VerifiedBadge /> : null}
           {responsive ? <ResponsiveBadge size="sm" /> : null}
+          <SubscriptionPlanBadge
+            planCode={agent.subscription_plan_code as SubscriptionPlanCode | null}
+          />
           {isDeveloper && agent.developer_verified ? <DeveloperBadge /> : null}
           {isAgency && (agent.agency_verified || agent.company_verified) ? (
             <AgencyBadge />

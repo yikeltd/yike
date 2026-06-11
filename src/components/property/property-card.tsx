@@ -141,6 +141,17 @@ export function PropertyCard({
         city: property.city,
         source: "account",
       });
+      void fetch("/api/listing-leads/capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadType: "save",
+          listingId: property.id,
+          sellerId: property.agent_id,
+          listingTitle: property.title,
+          sourcePage: typeof window !== "undefined" ? window.location.pathname : "",
+        }),
+      });
     }
     setSaving(false);
   }

@@ -7,7 +7,7 @@ import {
   type SellerVerificationDocuments,
   validateBusinessVerificationDocuments,
 } from "@/lib/seller-verification/levels";
-import { BUSINESS_VERIFICATION_FEE_NGN } from "@/lib/seller-verification/constants";
+import { getRevenuePrice } from "@/lib/revenue-pricing/service";
 
 export type SellerVerificationActionResult =
   | { ok: true; verification: SellerVerification }
@@ -102,13 +102,14 @@ export async function createBusinessVerificationFromPayment(
     return { ok: false, error: error?.message ?? "Could not create verification request" };
   }
 
+  const auditAmount = await getRevenuePrice(admin, "verification_fee", "standard");
   logPaymentAudit({
     action: "verification_request_created",
     actorId: input.userId,
     targetId: data.id as string,
     targetUserId: input.userId,
     metadata: {
-      amount: BUSINESS_VERIFICATION_FEE_NGN,
+      amount: auditAmount,
       payment_order_id: input.paymentOrderId || null,
     },
   });

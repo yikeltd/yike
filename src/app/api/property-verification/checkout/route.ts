@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { packageAmount, isPackageId } from "@/lib/property-verification/packages";
+import { isPackageId } from "@/lib/property-verification/packages";
+import { packageAmount } from "@/lib/property-verification/pricing";
 import { createPaidVerificationOrder } from "@/lib/property-verification/orders";
 import { isFeaturedPaymentsEnabled } from "@/lib/feature-flags";
 import { isPaystackConfigured } from "@/lib/payments/config";
@@ -64,7 +65,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "This request is already paid" }, { status: 409 });
   }
 
-  const amount = packageAmount(packageType);
+  const amount = await packageAmount(admin, packageType);
+  if (amount == null) {
+    return NextResponse.json({ error: "Package pricing unavailable" }, { status: 503 });
+  }
   const userId = user?.id ?? verificationRequest.requester_user_id;
   if (!userId) {
     return NextResponse.json(

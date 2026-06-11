@@ -11,6 +11,9 @@ import { ProfilePageClient } from "@/components/profile/profile-page-client";
 import type { Property } from "@/types/database";
 import { offsetDaysIso } from "@/lib/time";
 import { getProfileSocialStats } from "@/lib/social/stats";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getActiveUserSubscription } from "@/lib/subscriptions/service";
+import { PLAN_DISPLAY } from "@/lib/subscriptions/constants";
 
 function formatMemberSince(iso: string): string {
   try {
@@ -36,12 +39,14 @@ export default async function ProfilePage() {
   const canList = canListProperties(profile);
   const limit = getListingLimit(profile);
 
+  const admin = createAdminClient();
   const [
     { data: listings },
     { count: savedCount },
     { count: leadsCount },
     { count: verificationCount },
     socialStats,
+    activeSubscription,
   ] = await Promise.all([
       supabase
         .from("properties")
@@ -63,6 +68,7 @@ export default async function ProfilePage() {
         .select("*", { count: "exact", head: true })
         .eq("requester_user_id", user.id),
       getProfileSocialStats(supabase, user.id),
+      admin ? getActiveUserSubscription(admin, user.id) : Promise.resolve(null),
     ]);
 
   const rows = (listings ?? []) as Pick<Property, "status" | "expires_at">[];
@@ -93,6 +99,13 @@ export default async function ProfilePage() {
       verificationRequestsCount={verificationCount ?? 0}
       memberSince={formatMemberSince(profile.created_at)}
       socialStats={socialStats}
+      subscriptionPlanLabel={
+        activeSubscription?.plan
+          ? PLAN_DISPLAY[activeSubscription.plan.plan_code].label
+          : null
+      }
+      subscriptionExpiresAt={activeSubscription?.expires_at ?? null}
+      foundingMember={profile.founding_member ?? false}
     />
   );
 }

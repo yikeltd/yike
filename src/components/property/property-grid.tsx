@@ -1,9 +1,9 @@
-import type { Property } from "@/types/database";
-import type { AdPlacement } from "@/types/database";
+import type { Property, AdPlacement, Advertisement } from "@/types/database";
 import type { AdPlacementKey } from "@/constants/adPlacements";
 import { PropertyCard } from "./property-card";
 import { FeedList } from "./feed-list";
 import { AdFeedInsert } from "@/components/ads/ad-feed-insert";
+import { SponsoredFeedInsert } from "@/components/ads/sponsored-feed-insert";
 import { EmptyStateRich } from "./empty-state-rich";
 
 export function PropertyGrid({
@@ -11,6 +11,7 @@ export function PropertyGrid({
   emptyMessage = "No homes match yet — try a nearby area or wider budget.",
   showCount,
   midFeedAd,
+  sponsoredAd,
   feedAdInsertAfter = 4,
   adPlacementKey = "home_feed_mid",
   emptyCity,
@@ -26,6 +27,7 @@ export function PropertyGrid({
   isDemo?: boolean;
   trackFeaturedAnalytics?: boolean;
   midFeedAd?: AdPlacement | null;
+  sponsoredAd?: Advertisement | null;
   feedAdInsertAfter?: number;
   adPlacementKey?: AdPlacementKey;
   emptyCity?: string;
@@ -66,11 +68,16 @@ export function PropertyGrid({
       <div className="hidden lg:grid lg:grid-cols-3 lg:gap-7 xl:gap-9">
         {properties.map((p, i) => (
           <div key={p.id} className="contents">
-            {midFeedAd && i === feedAdInsertAfter && (
+            {sponsoredAd && i === feedAdInsertAfter ? (
+              <div className="col-span-3 animate-fade-up">
+                <SponsoredFeedInsert ad={sponsoredAd} />
+              </div>
+            ) : null}
+            {!sponsoredAd && midFeedAd && i === feedAdInsertAfter ? (
               <div className="col-span-3 animate-fade-up">
                 <AdFeedInsert ad={midFeedAd} placementKey={adPlacementKey} />
               </div>
-            )}
+            ) : null}
             <div
               className={i < 4 ? "animate-fade-up" : undefined}
               style={
@@ -91,6 +98,7 @@ export function PropertyGrid({
         <FeedList
           properties={properties}
           midFeedAd={midFeedAd}
+          sponsoredAd={sponsoredAd}
           insertAfter={feedAdInsertAfter}
           adPlacementKey={adPlacementKey}
           trackFeaturedAnalytics={trackFeaturedAnalytics}

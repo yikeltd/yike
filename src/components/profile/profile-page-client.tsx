@@ -34,6 +34,10 @@ import {
   getTrustStatusChip,
   shouldShowTrustCenter,
 } from "@/lib/verification/trust-center";
+import { SellerAnalyticsPanel } from "@/components/subscriptions/seller-analytics-panel";
+import { SubscriptionRenewCard } from "@/components/subscriptions/subscription-renew-card";
+import { SubscriptionPlanBadge } from "@/components/subscriptions/subscription-plan-badge";
+import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
 
 export function ProfilePageClient({
   profile,
@@ -50,6 +54,9 @@ export function ProfilePageClient({
   verificationRequestsCount = 0,
   memberSince,
   socialStats = { followersCount: 0, listingLikesCount: 0 },
+  subscriptionPlanLabel = null,
+  subscriptionExpiresAt = null,
+  foundingMember = false,
 }: {
   profile: Profile;
   email: string;
@@ -65,6 +72,9 @@ export function ProfilePageClient({
   verificationRequestsCount?: number;
   memberSince: string;
   socialStats?: ProfileSocialStats;
+  subscriptionPlanLabel?: string | null;
+  subscriptionExpiresAt?: string | null;
+  foundingMember?: boolean;
 }) {
   const displayName = profile.full_name ?? profile.username ?? "Your profile";
   const isLister = canList;
@@ -86,6 +96,10 @@ export function ProfilePageClient({
         badges={
           <>
             {showAgentBadge(profile, verified) ? <VerifiedBadge /> : null}
+            <SubscriptionPlanBadge
+              planCode={profile.subscription_plan_code as SubscriptionPlanCode | null}
+              size="md"
+            />
             {sellerType ? <SellerTypeBadge type={sellerType} /> : null}
             {roleLabel && !sellerType ? (
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
@@ -158,12 +172,24 @@ export function ProfilePageClient({
             className="col-span-2"
           />
         </section>
-      ) : (
+      ) : null}
+
+      {isLister && subscriptionPlanLabel ? (
+        <SubscriptionRenewCard
+          planLabel={subscriptionPlanLabel}
+          expiresAt={subscriptionExpiresAt}
+          foundingMember={foundingMember}
+        />
+      ) : null}
+
+      {isLister ? <SellerAnalyticsPanel /> : null}
+
+      {!isLister ? (
         <ProfileUserActivityStats
           savedCount={savedCount}
           verificationRequestsCount={verificationRequestsCount}
         />
-      )}
+      ) : null}
 
       <section className="space-y-2">
         <p className="px-1 text-xs font-bold uppercase tracking-wider text-muted">Quick actions</p>
@@ -193,6 +219,12 @@ export function ProfilePageClient({
               href="/agent/verification"
               icon={ShieldCheck}
               title="Verification center"
+            />
+            <ActionLink
+              href="/pricing"
+              icon={Sparkles}
+              title="Plans & upgrades"
+              subtitle="More listings, analytics, branding"
             />
             {(profile.account_type === "agency" ||
               profile.account_type === "developer" ||

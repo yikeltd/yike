@@ -24,6 +24,7 @@ import type {
   ListingType,
   PaymentPeriod,
 } from "@/types/database";
+import { captureListingLead } from "@/lib/listing-leads/capture";
 
 export const runtime = "nodejs";
 
@@ -185,6 +186,17 @@ export async function POST(request: Request) {
         .then(({ error }) => {
           if (error) console.warn("[leads/track] attribution update failed", error.message);
         });
+
+      void captureListingLead(admin, {
+        listingId,
+        sellerId: agentId,
+        leadUserId: userId,
+        leadType: leadType === "call" ? "call" : "whatsapp",
+        sourcePage,
+        placement: body.placement ? String(body.placement) : null,
+        legacyLeadId: logResult.leadId,
+        listingTitle: title,
+      });
     }
   }
 

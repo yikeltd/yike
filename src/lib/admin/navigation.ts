@@ -40,16 +40,19 @@ export const TRUST_SECTION_TABS: SectionTab[] = [
 ];
 
 export const PROMOTIONS_SECTION_TABS: SectionTab[] = [
+  { href: adminPath("advertising"), label: "Advertising" },
   { href: adminPath("featured"), label: "Featured" },
   { href: adminPath("premium-deals"), label: "Premium" },
   { href: adminPath("hot-picks"), label: "Hot Picks" },
-  { href: adminPath("ads"), label: "Ads" },
+  { href: adminPath("ads"), label: "Ads (legacy)" },
   { href: adminPath("banners"), label: "Banners" },
   { href: adminPath("promo-banners"), label: "Promo Banners" },
 ];
 
 export const REVENUE_SECTION_TABS: SectionTab[] = [
   { href: adminPath("revenue/overview"), label: "Overview" },
+  { href: adminPath("revenue/pricing"), label: "Pricing" },
+  { href: adminPath("subscriptions"), label: "Subscriptions" },
   { href: adminPath("revenue/featured-listings"), label: "Featured Listings" },
 ];
 
@@ -164,10 +167,29 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
         keywords: ["payments", "revenue", "paystack"],
       },
       {
+        href: adminPath("revenue/pricing"),
+        label: "Revenue Pricing",
+        segment: "revenue/pricing",
+        emphasis: "primary",
+        keywords: ["pricing", "featured", "boost", "subscription", "ads"],
+      },
+      {
         href: adminPath("revenue/featured-listings"),
         label: "Featured Listings",
         segment: "revenue/featured-listings",
         keywords: ["promotion", "featured", "monetization", "orders"],
+      },
+      {
+        href: adminPath("subscriptions"),
+        label: "Subscriptions",
+        segment: "subscriptions",
+        keywords: ["mrr", "pro agent", "agency", "developer", "renewal"],
+      },
+      {
+        href: adminPath("listing-leads"),
+        label: "Listing Leads",
+        segment: "listing-leads",
+        keywords: ["leads", "insights", "conversion"],
       },
     ],
   },
@@ -175,6 +197,13 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
     id: "promotions",
     label: "Promotions",
     items: [
+      {
+        href: adminPath("advertising"),
+        label: "Advertising",
+        segment: "advertising",
+        emphasis: "primary",
+        keywords: ["sponsored", "banner", "monetization", "ads"],
+      },
       {
         href: adminPath("featured"),
         label: "Featured Listings",

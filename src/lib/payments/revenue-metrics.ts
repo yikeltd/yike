@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getAdvertisingDashboardMetrics,
+  type TopPerformingAd,
+} from "@/lib/advertisements/service";
+import { getSubscriptionDashboardMetrics } from "@/lib/subscriptions/service";
 
 export type RevenueOverviewMetrics = {
   todayRevenue: number;
@@ -14,6 +19,16 @@ export type RevenueOverviewMetrics = {
   propertyVerificationCompleted: number;
   propertyVerificationPending: number;
   propertyVerificationAvgCompletionHours: number | null;
+  advertisingRevenue: number;
+  activeAds: number;
+  adsExpiringSoon: number;
+  topPerformingAds: TopPerformingAd[];
+  subscriptionRevenue: number;
+  activeSubscribers: number;
+  subscriptionMrr: number;
+  subscriptionsExpiringSoon: number;
+  leadInsightsRevenue: number;
+  leadInsightsSubscribers: number;
   pendingPayments: number;
   successfulPayments: number;
   failedPayments: number;
@@ -93,6 +108,11 @@ export async function getRevenueOverviewMetrics(
     propertyVerificationCompleted,
     propertyVerificationPending,
     propertyVerificationAvgCompletionHours,
+    advertisingRevenue,
+    advertisingDashboard,
+    subscriptionDashboard,
+    leadInsightsRevenue,
+    leadInsightsSubscribers,
     pendingCount,
     processingCount,
     successfulPayments,
@@ -111,6 +131,11 @@ export async function getRevenueOverviewMetrics(
     countPropertyVerificationOrders(admin, ["completed"]),
     countPropertyVerificationOrders(admin, ["paid", "assigned", "in_progress"]),
     avgPropertyVerificationCompletionHours(admin),
+    sumSuccessfulRevenue(admin, d30, "advertisement"),
+    getAdvertisingDashboardMetrics(admin),
+    getSubscriptionDashboardMetrics(admin),
+    sumSuccessfulRevenue(admin, d30, "lead_insights"),
+    countLeadInsightsSubscribers(admin),
     countByStatus(admin, "pending"),
     countByStatus(admin, "processing"),
     countByStatus(admin, "successful"),
@@ -131,6 +156,16 @@ export async function getRevenueOverviewMetrics(
     propertyVerificationCompleted,
     propertyVerificationPending,
     propertyVerificationAvgCompletionHours,
+    advertisingRevenue,
+    activeAds: advertisingDashboard.activeAds,
+    adsExpiringSoon: advertisingDashboard.adsExpiringSoon,
+    topPerformingAds: advertisingDashboard.topPerformingAds,
+    subscriptionRevenue: subscriptionDashboard.subscriptionRevenue30d,
+    activeSubscribers: subscriptionDashboard.activeSubscribers,
+    subscriptionMrr: subscriptionDashboard.mrr,
+    subscriptionsExpiringSoon: subscriptionDashboard.expiringSoon,
+    leadInsightsRevenue,
+    leadInsightsSubscribers,
     pendingPayments: pendingCount + processingCount,
     successfulPayments,
     failedPayments,
@@ -145,6 +180,15 @@ async function countPropertyVerificationOrders(
     .from("property_verification_orders")
     .select("id", { count: "exact", head: true })
     .in("status", statuses);
+
+  return count ?? 0;
+}
+
+async function countLeadInsightsSubscribers(admin: SupabaseClient): Promise<number> {
+  const { count } = await admin
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .gt("lead_insights_until", new Date().toISOString());
 
   return count ?? 0;
 }

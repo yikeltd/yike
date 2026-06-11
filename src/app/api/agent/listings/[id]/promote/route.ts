@@ -126,10 +126,17 @@ export async function POST(req: Request, ctx: RouteCtx) {
   const orderType: PaymentOrderType =
     promotionType === "boost" ? "boost_listing" : "featured_listing";
 
+  const { getSubscriptionDiscountRate, applyDiscount } = await import(
+    "@/lib/subscriptions/discounts"
+  );
+  const discountProduct = promotionType === "boost" ? "boost" : "featured";
+  const discountRate = await getSubscriptionDiscountRate(admin, user.id, discountProduct);
+  const chargedAmount = applyDiscount(Number(result.promotion.amount), discountRate);
+
   const order = await createPaymentOrder(admin, {
     userId: user.id,
     orderType,
-    amount: Number(result.promotion.amount),
+    amount: chargedAmount,
     currency: result.promotion.currency,
     entityId: result.promotion.id,
     provider: "paystack",

@@ -91,6 +91,36 @@ export function RevenueOverviewPanel() {
             : "—"
         }
       />
+      <MetricCard label="Advertising revenue (30d)" value={money(metrics.advertisingRevenue)} />
+      <MetricCard label="Active ads" value={String(metrics.activeAds)} />
+      <MetricCard
+        label="Upcoming expiry"
+        value={String(metrics.adsExpiringSoon)}
+        sub="Active ads ending within 7 days"
+      />
+      <MetricCard
+        label="Top performing ad"
+        value={
+          metrics.topPerformingAds[0]
+            ? `${metrics.topPerformingAds[0].clicks} clicks`
+            : "—"
+        }
+        sub={
+          metrics.topPerformingAds[0]
+            ? `${metrics.topPerformingAds[0].title} · ${metrics.topPerformingAds[0].ctr}% CTR`
+            : "No impressions yet"
+        }
+      />
+      <MetricCard label="Subscription revenue (30d)" value={money(metrics.subscriptionRevenue)} />
+      <MetricCard label="Active subscribers" value={String(metrics.activeSubscribers)} />
+      <MetricCard label="MRR" value={money(metrics.subscriptionMrr)} />
+      <MetricCard
+        label="Subscriptions expiring soon"
+        value={String(metrics.subscriptionsExpiringSoon)}
+        sub="Within 7 days"
+      />
+      <MetricCard label="Lead Insights revenue (30d)" value={money(metrics.leadInsightsRevenue)} />
+      <MetricCard label="Lead Insights subscribers" value={String(metrics.leadInsightsSubscribers)} />
     </div>
   );
 }

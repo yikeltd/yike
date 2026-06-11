@@ -1,5 +1,4 @@
-import type { Property } from "@/types/database";
-import type { AdPlacement } from "@/types/database";
+import type { Property, AdPlacement, Advertisement } from "@/types/database";
 import type { AdPlacementKey } from "@/constants/adPlacements";
 import { PropertyGrid } from "./property-grid";
 import { EmptyStateRich } from "./empty-state-rich";
@@ -11,6 +10,7 @@ export function PropertyFeed({
   showCount,
   isDemo,
   midFeedAd,
+  sponsoredAd,
   feedAdInsertAfter = 5,
   adPlacementKey = "search_feed_mid",
   emptyCity,
@@ -26,6 +26,7 @@ export function PropertyFeed({
   showCount?: boolean;
   isDemo?: boolean;
   midFeedAd?: AdPlacement | null;
+  sponsoredAd?: Advertisement | null;
   feedAdInsertAfter?: number;
   adPlacementKey?: AdPlacementKey;
   emptyCity?: string;
@@ -57,6 +58,7 @@ export function PropertyFeed({
       showCount={showCount}
       isDemo={isDemo}
       midFeedAd={midFeedAd}
+      sponsoredAd={sponsoredAd}
       feedAdInsertAfter={feedAdInsertAfter}
       adPlacementKey={adPlacementKey}
       emptyCity={emptyCity}

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRevenueCatalog } from "@/hooks/use-revenue-catalog";
+import { getCatalogPrice } from "@/lib/revenue-pricing/catalog-utils";
+import { DEFAULT_REVENUE_PRICING } from "@/lib/revenue-pricing/defaults";
 import { Check, Globe2, ShieldCheck } from "lucide-react";
 import {
   PROPERTY_VERIFICATION_PACKAGES,
@@ -21,6 +24,17 @@ export function PropertyVerificationPackages({
 }) {
   const [busy, setBusy] = useState<PropertyVerificationPackageId | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const catalog = useRevenueCatalog();
+
+  function packagePrice(id: PropertyVerificationPackageId): number {
+    return (
+      getCatalogPrice(catalog, "property_verification", id) ??
+      DEFAULT_REVENUE_PRICING.find(
+        (i) => i.product === "property_verification" && i.variant_key === id
+      )?.amount ??
+      0
+    );
+  }
 
   async function choosePackage(packageType: PropertyVerificationPackageId) {
     setBusy(packageType);
@@ -85,7 +99,7 @@ export function PropertyVerificationPackages({
                 ) : null}
                 <h2 className="text-lg font-bold text-navy">{pkg.label}</h2>
                 <p className="mt-1 text-2xl font-bold tabular-nums text-navy">
-                  {formatPrice(pkg.amount, "total", "rent")}
+                  {formatPrice(packagePrice(id), "total", "rent")}
                 </p>
                 <p className="mt-1 text-xs text-muted">SLA: {pkg.sla}</p>
                 <p className="mt-2 text-xs font-semibold text-gold-dark">{pkg.target}</p>
