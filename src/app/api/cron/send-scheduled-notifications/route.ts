@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { processDueScheduledCampaigns } from "@/lib/notifications/admin/send";
+import { processDueScheduledEmails } from "@/lib/email/scheduled-jobs";
 import { writeAuditLog } from "@/lib/admin/audit";
 
 export const runtime = "nodejs";
@@ -25,7 +26,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
 
-  const { processed, results } = await processDueScheduledCampaigns(admin);
+  const [{ processed, results }, scheduledEmails] = await Promise.all([
+    processDueScheduledCampaigns(admin),
+    processDueScheduledEmails(admin),
+  ]);
 
   for (const row of results) {
     await writeAuditLog({
@@ -42,5 +46,10 @@ export async function GET(request: Request) {
     });
   }
 
-  return NextResponse.json({ ok: true, processed, results });
+  return NextResponse.json({
+    ok: true,
+    processed,
+    results,
+    scheduledEmails,
+  });
 }
