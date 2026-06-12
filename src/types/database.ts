@@ -325,6 +325,7 @@ export interface Profile {
   plan_expires_at: string | null;
   subscription_plan_code?: string | null;
   starter_plan_started_at?: string | null;
+  welcome_email_sent_at?: string | null;
   founding_member?: boolean;
   lead_insights_until?: string | null;
   availability_status?: AgentAvailabilityStatus;

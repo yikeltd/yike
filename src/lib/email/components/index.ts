@@ -3,7 +3,11 @@ export { buildEmailHeader } from "./header";
 export { buildEmailFooter } from "./footer";
 export { buildAppDownloadRow } from "./app-download";
 export { buildOtpBlock } from "./otp-block";
-export { buildCtaButton, buildFallbackLink } from "./cta-button";
+export {
+  buildCtaButton,
+  buildOutlineCtaButton,
+  buildFallbackLink,
+} from "./cta-button";
 export { buildInfoCard } from "./info-card";
 export { buildAlertBlock } from "./alert-block";
 export { buildSupportSection } from "./support-section";

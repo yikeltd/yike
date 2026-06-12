@@ -24,6 +24,25 @@ export function buildCtaButton(params: CtaButtonParams): string {
   `.trim();
 }
 
+/** Secondary CTA — navy outline, pairs with gold primary button. */
+export function buildOutlineCtaButton(params: CtaButtonParams): string {
+  const align = params.align ?? "center";
+  const margin = align === "center" ? "12px auto 0" : "12px 0 0";
+
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${align}" style="margin:${margin};">
+      <tr>
+        <td align="center" class="email-cta-outline" style="border-radius:10px;border:2px solid ${t.navy};background:${t.white};">
+          <a href="${params.href}" target="_blank" rel="noopener noreferrer"
+             style="display:inline-block;padding:14px 28px;font-family:${t.fontFamily};font-size:15px;font-weight:700;color:${t.navy};text-decoration:none;border-radius:10px;mso-padding-alt:0;">
+            ${params.label}
+          </a>
+        </td>
+      </tr>
+    </table>
+  `.trim();
+}
+
 export function buildFallbackLink(params: {
   label: string;
   href: string;

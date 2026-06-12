@@ -7,6 +7,7 @@ import {
   confirmReviewerEmail,
 } from "@/lib/auth/signup-rpc";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
+import { scheduleFounderWelcomeEmail } from "@/lib/email/scheduled-jobs";
 import type { SignupPendingRow } from "./rpc";
 import { emailConfirmUser, signupPendingDelete } from "./rpc";
 
@@ -146,5 +147,13 @@ export async function finalizeSignupAfterOtp(
   }
 
   await signupPendingDelete(db, pending.email);
+
+  void scheduleFounderWelcomeEmail(admin, {
+    userId,
+    email: pending.email,
+  }).catch((err) => {
+    console.error("[signup] schedule founder welcome failed:", err);
+  });
+
   return { ok: true, userId };
 }

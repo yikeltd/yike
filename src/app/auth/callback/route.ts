@@ -1,4 +1,5 @@
 import { sendWelcomeEmail } from "@/lib/email";
+import { scheduleFounderWelcomeEmail } from "@/lib/email/scheduled-jobs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
@@ -31,6 +32,12 @@ export async function GET(request: Request) {
               email: data.user.email,
               fullName: profile?.full_name ?? data.user.user_metadata?.full_name ?? "",
               userId: data.user.id,
+            });
+            void scheduleFounderWelcomeEmail(admin, {
+              userId: data.user.id,
+              email: data.user.email,
+            }).catch((err) => {
+              console.error("[auth/callback] schedule founder welcome failed:", err);
             });
           }
         }

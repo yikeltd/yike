@@ -16,6 +16,10 @@ import { buildPasswordResetEmailHtml } from "./password-reset";
 import { buildReportReceivedEmailHtml } from "./report-received";
 import { buildVerificationEmailHtml } from "./verification";
 import { buildWelcomeEmailHtml } from "./welcome";
+import {
+  buildFounderWelcomeEmailHtml,
+  FOUNDER_WELCOME_SUBJECT,
+} from "./welcome-founder";
 import { buildCareerApplicationReceivedEmailHtml } from "./career-application";
 import { buildCareerFollowUpEmailHtml } from "./career-follow-up";
 import { buildStaffOnboardingEmailHtml, staffOnboardingEmailSubject } from "./staff-onboarding";
@@ -32,6 +36,10 @@ export {
 export type { EmailOtpPurpose } from "./email-otp";
 export { buildVerificationEmailHtml } from "./verification";
 export { buildWelcomeEmailHtml } from "./welcome";
+export {
+  buildFounderWelcomeEmailHtml,
+  FOUNDER_WELCOME_SUBJECT,
+} from "./welcome-founder";
 export { buildAdminAlertEmailHtml } from "./admin-alert";
 export { buildPasswordResetEmailHtml } from "./password-reset";
 export {
@@ -61,6 +69,7 @@ export const EMAIL_PREVIEW_SAMPLES = {
   otpSignup: { fullName: "Ada Okafor", code: "482916" },
   otpLogin: { fullName: "Ada Okafor", code: "739104" },
   welcome: { fullName: "Ada Okafor" },
+  founderWelcome: { fullName: "Ada Okafor", username: "adaokafor" },
   passwordReset: {
     fullName: "Ada Okafor",
     resetUrl: `${SITE_URL}/auth/callback?token=sample-reset-link`,
@@ -162,6 +171,12 @@ export function buildAllEmailPreviews(adHtml?: string): Array<{
           name: "Welcome",
           subject: "Welcome to Yike",
           html: buildWelcomeEmailHtml(s.welcome),
+        },
+        {
+          id: "founder_welcome",
+          name: "Founder welcome (delayed)",
+          subject: FOUNDER_WELCOME_SUBJECT,
+          html: buildFounderWelcomeEmailHtml(s.founderWelcome),
         },
         {
           id: "password_reset",

@@ -95,6 +95,8 @@ export function emailSubjectForType(type: EmailType): string {
       return "Yike Application Follow-up";
     case "staff_onboarding":
       return "Welcome to Yike Crew";
+    case "founder_welcome":
+      return "Welcome to Yike ❤️";
     default:
       return "Yike notification";
   }

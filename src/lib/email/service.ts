@@ -14,6 +14,8 @@ import {
   buildReportReceivedEmailHtml,
   buildVerificationEmailHtml,
   buildWelcomeEmailHtml,
+  buildFounderWelcomeEmailHtml,
+  FOUNDER_WELCOME_SUBJECT,
   buildCareerApplicationReceivedEmailHtml,
   buildCareerFollowUpEmailHtml,
   buildStaffOnboardingEmailHtml,
@@ -134,6 +136,32 @@ export async function sendWelcomeEmail(
     subject: emailSubjectForType("welcome"),
     html: buildWelcomeEmailHtml({ fullName: params.fullName }),
     idempotencyKey: `welcome/${params.userId}`,
+  });
+}
+
+export async function sendFounderWelcomeEmail(
+  admin: SupabaseClient,
+  params: {
+    email: string;
+    fullName?: string | null;
+    username?: string | null;
+    userId: string;
+  }
+): Promise<EmailResult> {
+  const already = await hasSentEmail(admin, params.email, "founder_welcome");
+  if (already) {
+    return { ok: true, message: EMAIL_USER_MESSAGES.verificationSent };
+  }
+
+  return sendEmail(admin, {
+    email: params.email,
+    type: "founder_welcome",
+    subject: FOUNDER_WELCOME_SUBJECT,
+    html: buildFounderWelcomeEmailHtml({
+      fullName: params.fullName,
+      username: params.username,
+    }),
+    idempotencyKey: `founder-welcome/${params.userId}`,
   });
 }
 

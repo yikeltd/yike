@@ -18,7 +18,8 @@ export type EmailType =
   | "account_notification"
   | "career_application_received"
   | "career_follow_up_requested"
-  | "staff_onboarding";
+  | "staff_onboarding"
+  | "founder_welcome";
 
 export type ProviderResult<T = void> =
   | { ok: true; data?: T }
