@@ -35,6 +35,7 @@ import {
   shouldShowTrustCenter,
 } from "@/lib/verification/trust-center";
 import { SellerAnalyticsPanel } from "@/components/subscriptions/seller-analytics-panel";
+import { PlansUpgradeCard } from "@/components/subscriptions/plans-upgrade-card";
 import { SubscriptionRenewCard } from "@/components/subscriptions/subscription-renew-card";
 import { SubscriptionPlanBadge } from "@/components/subscriptions/subscription-plan-badge";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
@@ -125,10 +126,37 @@ export function ProfilePageClient({
           role="status"
         >
           <p className="font-medium">{statusMessage}</p>
-          <Link href="/agent/profile-setup" className="mt-1 inline-block text-xs font-semibold text-navy">
-            Complete profile →
+          <Link
+            href="/agent/verification"
+            prefetch
+            className="mt-1 inline-block text-xs font-semibold text-navy"
+          >
+            Complete setup →
           </Link>
         </div>
+      ) : null}
+
+      {isLister ? (
+        <section
+          className={cn(
+            "grid gap-3",
+            showTrust ? "sm:grid-cols-2" : "grid-cols-1"
+          )}
+        >
+          {showTrust ? (
+            <TrustCenterCard
+              profile={profile}
+              verified={verified}
+              className="h-full"
+            />
+          ) : null}
+          <PlansUpgradeCard
+            planLabel={subscriptionPlanLabel}
+            className="h-full"
+          />
+        </section>
+      ) : showTrust ? (
+        <TrustCenterCard profile={profile} verified={verified} />
       ) : null}
 
       {isLister ? (
@@ -215,17 +243,6 @@ export function ProfilePageClient({
             <ActionLink href="/agent/notifications" icon={Bell} title="Notifications" />
             <ActionLink href="/agent/followers" icon={Users} title="Followers" />
             <ActionLink href="/agent/following" icon={Users} title="Following" />
-            <ActionLink
-              href="/agent/verification"
-              icon={ShieldCheck}
-              title="Verification center"
-            />
-            <ActionLink
-              href="/pricing"
-              icon={Sparkles}
-              title="Plans & upgrades"
-              subtitle="More listings, analytics, branding"
-            />
             {(profile.account_type === "agency" ||
               profile.account_type === "developer" ||
               profile.company_name) && (
@@ -251,10 +268,6 @@ export function ProfilePageClient({
           </>
         )}
       </section>
-
-      {showTrust ? (
-        <TrustCenterCard profile={profile} verified={verified} />
-      ) : null}
 
       <ProfileAccountActions email={email} />
     </div>
@@ -316,6 +329,7 @@ function ActionLink({
   return (
     <Link
       href={href}
+      prefetch
       className={cn(
         "pressable flex items-center gap-3 rounded-2xl px-4 py-3.5",
         primary && "bg-primary text-white",

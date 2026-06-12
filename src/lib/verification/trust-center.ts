@@ -92,7 +92,7 @@ export function getTrustProgressItems(
     id: "profile_photo",
     label: "Profile photo",
     status: profile.avatar_url ? "complete" : "optional",
-    href: "/agent",
+    href: "/agent#profile-photo",
     group: "listing_setup",
   });
 

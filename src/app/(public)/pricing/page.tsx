@@ -30,14 +30,21 @@ export default async function PricingPage() {
           Free listings remain. Subscriptions unlock more active slots, business verification, analytics,
           and agency or developer branding — no forced upgrade.
         </p>
-        {!session ? (
+        {session ? (
+          <Link
+            href="/agent/plans"
+            className="mt-4 inline-flex text-sm font-semibold text-navy underline-offset-2 hover:underline"
+          >
+            Open your plans page →
+          </Link>
+        ) : (
           <Link
             href="/auth/signup"
             className="mt-4 inline-flex text-sm font-semibold text-navy underline-offset-2 hover:underline"
           >
             Create a free account →
           </Link>
-        ) : null}
+        )}
       </header>
 
       <PricingPlans

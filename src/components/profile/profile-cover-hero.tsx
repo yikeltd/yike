@@ -50,15 +50,17 @@ export function ProfileCoverHero({
       badges={badges}
       bio={profile.company_bio}
       avatarSlot={
-        <AvatarUpload
-          userId={profile.id}
-          email={email}
-          name={profile.full_name}
-          username={profile.username}
-          avatarUrl={profile.avatar_url}
-          size="xl"
-          className="!h-24 !w-24 rounded-full border-4 border-white ring-2 ring-[#1877F2]/80 lg:!h-28 lg:!w-28"
-        />
+        <div id="profile-photo" className="scroll-mt-24">
+          <AvatarUpload
+            userId={profile.id}
+            email={email}
+            name={profile.full_name}
+            username={profile.username}
+            avatarUrl={profile.avatar_url}
+            size="xl"
+            className="!h-24 !w-24 rounded-full border-4 border-white ring-2 ring-[#1877F2]/80 lg:!h-28 lg:!w-28"
+          />
+        </div>
       }
       coverControls={
         editable ? (

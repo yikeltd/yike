@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { VerificationWizard } from "@/components/agent/verification-wizard";
-import { ListingSetupCard } from "@/components/profile/listing-setup-card";
 import { PhoneVerificationCard } from "@/components/profile/phone-verification-card";
+import { TrustCenterCard } from "@/components/profile/trust-center-card";
+import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
+import Link from "next/link";
 import type { AgentVerification, Profile } from "@/types/database";
 
 export default function AgentVerificationPage() {
@@ -48,16 +50,27 @@ export default function AgentVerificationPage() {
     return <p className="pt-8 text-sm text-muted">Profile not found.</p>;
   }
 
+  const verified = isVerifiedAgentProfile(profile);
+
   return (
     <div className="mx-auto max-w-lg space-y-6 pt-4 pb-8">
       <div>
-        <h1 className="text-xl font-bold text-navy">Account setup</h1>
+        <Link href="/agent" className="text-xs font-semibold text-gold-dark hover:underline">
+          ← Back to profile
+        </Link>
+        <h1 className="mt-2 text-xl font-bold text-navy">Account & verification</h1>
         <p className="mt-1 text-sm text-muted">
-          Listing setup unlocks posting. The verified agent badge below is separate and optional.
+          Finish listing setup to post properties. Verified badge and company checks are optional
+          upgrades below.
         </p>
       </div>
 
-      <ListingSetupCard profile={profile} onVerified={() => void reload()} />
+      <TrustCenterCard
+        profile={profile}
+        verified={verified}
+        defaultExpanded
+        showVerificationHubLink={false}
+      />
 
       <PhoneVerificationCard profile={profile} onVerified={() => void reload()} />
 

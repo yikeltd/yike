@@ -50,7 +50,7 @@ export function SellerAnalyticsPanel({ className }: { className?: string }) {
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-navy">Seller analytics · 30 days</h2>
         {!advanced ? (
-          <Link href="/pricing" className="text-xs font-semibold text-gold">
+          <Link href="/agent/plans" prefetch className="text-xs font-semibold text-gold">
             Upgrade for advanced
           </Link>
         ) : null}

@@ -77,7 +77,7 @@ export function SellerLeadsDashboard() {
             CSV export.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <Link href="/pricing" className="text-xs font-bold text-navy underline">
+            <Link href="/agent/plans" prefetch className="text-xs font-bold text-navy underline">
               View plans
             </Link>
             <button

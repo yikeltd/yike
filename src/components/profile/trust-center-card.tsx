@@ -95,7 +95,7 @@ function TrustRow({ item, compact }: { item: TrustProgressItem; compact?: boolea
         {label}
       </span>
       {item.status !== "complete" && item.href ? (
-        <Link href={item.href} className="text-xs font-semibold text-gold-dark">
+        <Link href={item.href} prefetch className="text-xs font-semibold text-gold-dark">
           Continue
         </Link>
       ) : null}
@@ -107,10 +107,14 @@ export function TrustCenterCard({
   profile,
   verified,
   defaultExpanded = false,
+  className,
+  showVerificationHubLink = true,
 }: {
   profile: Profile;
   verified: boolean;
   defaultExpanded?: boolean;
+  className?: string;
+  showVerificationHubLink?: boolean;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const chip = getTrustStatusChip(profile, verified);
@@ -129,7 +133,12 @@ export function TrustCenterCard({
   const allDone = listingIncomplete.length === 0;
 
   return (
-    <section className="rounded-2xl border border-border bg-elevated shadow-float">
+    <section
+      className={cn(
+        "rounded-2xl border border-border bg-elevated shadow-float",
+        className
+      )}
+    >
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
@@ -144,7 +153,7 @@ export function TrustCenterCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-navy">Account setup</p>
+            <p className="text-sm font-bold text-navy">Account & verification</p>
             <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
               {chip.label}
             </span>
@@ -202,21 +211,23 @@ export function TrustCenterCard({
             </details>
           ) : null}
 
-          {next && next.status === "action_needed" && next.href ? (
-            <Link
-              href={next.href}
-              className="pressable mt-3 flex items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy"
-            >
-              <ShieldCheck className="h-4 w-4" />
-              Continue verification
-            </Link>
-          ) : next?.status === "under_review" ? (
+          {showVerificationHubLink ? (
             <Link
               href="/agent/verification"
-              className="pressable mt-3 flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-navy"
+              prefetch
+              className={cn(
+                "pressable mt-3 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold",
+                next && next.status === "action_needed"
+                  ? "bg-gold text-navy"
+                  : "border border-border text-navy"
+              )}
             >
-              <BadgeCheck className="h-4 w-4 text-gold-dark" />
-              View status
+              <ShieldCheck className="h-4 w-4" />
+              {next && next.status === "action_needed"
+                ? "Continue setup"
+                : next?.status === "under_review"
+                  ? "View verification status"
+                  : "Open verification center"}
             </Link>
           ) : null}
 

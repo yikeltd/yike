@@ -66,7 +66,7 @@ export default async function NewListingPage() {
           <p className="font-medium">Listing limit reached</p>
           <p className="mt-1 text-xs">{LISTING_LIMIT_REACHED_MESSAGE}</p>
           <div className="mt-2 flex flex-wrap gap-3">
-            <Link href="/pricing" className="inline-flex text-xs font-semibold text-navy">
+            <Link href="/agent/plans" prefetch className="inline-flex text-xs font-semibold text-navy">
               View plans →
             </Link>
             <Link href="/agent/verification" className="inline-flex text-xs font-semibold text-navy">

@@ -94,6 +94,7 @@ export function PricingPlans({
                 {isFree ? (
                   <Link
                     href={isLoggedIn ? "/agent/listings/new" : "/auth/signup"}
+                    prefetch
                     className="pressable flex w-full items-center justify-center rounded-xl bg-surface px-4 py-2.5 text-sm font-bold text-navy"
                   >
                     {isLoggedIn ? "Continue free" : "Sign up free"}
