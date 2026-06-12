@@ -21,6 +21,7 @@ export async function GET() {
       plans: fallbackPlans,
       foundingOfferActive: true,
       currentPlanLabel: "Free",
+      currentPlanCode: "free",
     });
   }
 
@@ -35,9 +36,11 @@ export async function GET() {
     isSubscriptionPlanCode(plan.plan_code)
   );
 
-  const currentPlanLabel = activeSubscription?.plan
-    ? getPlanDisplayLabel(activeSubscription.plan.plan_code)
-    : "Free";
+  const currentPlanCode =
+    activeSubscription?.plan && isSubscriptionPlanCode(activeSubscription.plan.plan_code)
+      ? activeSubscription.plan.plan_code
+      : ("free" as const);
+  const currentPlanLabel = getPlanDisplayLabel(currentPlanCode);
 
   return NextResponse.json({
     plans: validPlans.map((plan) => ({
@@ -48,5 +51,6 @@ export async function GET() {
     })),
     foundingOfferActive: offers.founding_subscription_offer,
     currentPlanLabel,
+    currentPlanCode,
   });
 }

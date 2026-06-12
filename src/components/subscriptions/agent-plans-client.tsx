@@ -19,6 +19,7 @@ type PlansPayload = {
   plans?: PlanRow[];
   foundingOfferActive?: boolean;
   currentPlanLabel?: string;
+  currentPlanCode?: SubscriptionPlanCode;
   error?: string;
 };
 
@@ -30,6 +31,7 @@ export function AgentPlansClient() {
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [foundingOfferActive, setFoundingOfferActive] = useState(true);
   const [currentPlanLabel, setCurrentPlanLabel] = useState("Free");
+  const [currentPlanCode, setCurrentPlanCode] = useState<SubscriptionPlanCode>("free");
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +57,11 @@ export function AgentPlansClient() {
         setPlans(rows);
         setFoundingOfferActive(data.foundingOfferActive ?? true);
         setCurrentPlanLabel(data.currentPlanLabel ?? "Free");
+        setCurrentPlanCode(
+          data.currentPlanCode && isSubscriptionPlanCode(data.currentPlanCode)
+            ? data.currentPlanCode
+            : "free"
+        );
       } catch {
         if (!cancelled) setLoadError(true);
       } finally {
@@ -77,9 +84,14 @@ export function AgentPlansClient() {
         <p className="mt-1 text-sm text-muted">
           More active listings, analytics, and branding — upgrade only when you need to scale.
         </p>
-        <p className="mt-2 text-xs font-semibold text-navy">
-          Current plan: {loading ? "…" : currentPlanLabel}
-        </p>
+        {!loading ? (
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-elevated px-3 py-1 text-xs font-semibold text-navy">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
+            Current plan: {currentPlanLabel}
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-muted">Loading your plan…</p>
+        )}
       </div>
 
       {upgraded ? (
@@ -108,6 +120,7 @@ export function AgentPlansClient() {
           plans={plans}
           foundingOfferActive={foundingOfferActive}
           isLoggedIn
+          currentPlanCode={currentPlanCode}
         />
       )}
     </div>
