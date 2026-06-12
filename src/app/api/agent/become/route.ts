@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
-import { isPhoneVerificationRequired } from "@/lib/feature-flags";
 import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
 import { getAmbassadorRefFromCookies } from "@/lib/ambassador/cookie";
 import { isEmailVerified } from "@/lib/auth";
@@ -186,13 +185,6 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ ok: true, alreadyAgent: true });
-  }
-
-  if (isPhoneVerificationRequired() && !profile.phone_verified) {
-    return NextResponse.json(
-      { error: "Verify your phone number first" },
-      { status: 400 }
-    );
   }
 
   if (!isEmailVerified(user, { email_verified: profile.email_verified })) {

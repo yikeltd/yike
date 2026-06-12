@@ -4,6 +4,11 @@ import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { permanentRedirect } from "next/navigation";
 import { resolvePropertyRoute } from "@/lib/properties";
+import { getSession, getProfile, isAdmin } from "@/lib/auth";
+import {
+  canPreviewOwnerListing,
+  isListingUnderReview,
+} from "@/lib/listing-lifecycle";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { getAgentRecentLeadsCount } from "@/lib/leads/queries";
 import {
@@ -128,8 +133,21 @@ export default async function PropertyDetailPage({
     return <ListingUnavailable property={null} reason="missing" />;
   }
 
+  const viewer = await getSession();
+  const viewerProfile = viewer ? await getProfile(viewer.id) : null;
+  const viewerCtx = viewer
+    ? {
+        userId: viewer.id,
+        isAdmin: viewerProfile ? isAdmin(viewerProfile.role) : false,
+      }
+    : null;
+  const isOwner = viewer?.id === property.agent_id;
   const isExpired = new Date(property.expires_at) <= new Date();
-  if (property.status !== "approved" || isExpired) {
+  const isPubliclyVisible = property.status === "approved" && !isExpired;
+  const previewMode =
+    !isPubliclyVisible && canPreviewOwnerListing(property, viewerCtx);
+
+  if (!isPubliclyVisible && !previewMode) {
     return (
       <ListingUnavailable
         property={property}
@@ -165,7 +183,7 @@ export default async function PropertyDetailPage({
 
   return (
     <div className="safe-bottom-detail lg:pb-0">
-      <ListingStructuredData property={property} />
+      {isPubliclyVisible ? <ListingStructuredData property={property} /> : null}
       <PropertyViewTracker propertyId={property.id} property={property} slug={slug} />
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10 lg:pt-8">
@@ -178,6 +196,39 @@ export default async function PropertyDetailPage({
               title={property.title}
             />
           </div>
+
+          {previewMode ? (
+            <div className="mx-4 mt-3 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 lg:mx-0">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-navy">
+                    {isListingUnderReview(property)
+                      ? "Under review"
+                      : property.status === "rejected"
+                        ? "Not published"
+                        : "Unpublished"}
+                  </p>
+                  {isOwner && isListingUnderReview(property) ? (
+                    <p className="mt-0.5 text-xs text-muted">
+                      Your listing is being checked before it goes live.
+                    </p>
+                  ) : isOwner && property.status === "rejected" ? (
+                    <p className="mt-0.5 text-xs text-muted">
+                      Update and resubmit when you are ready.
+                    </p>
+                  ) : null}
+                </div>
+                {isOwner ? (
+                  <Link
+                    href={`/agent/listings/${property.id}/edit`}
+                    className="pressable shrink-0 rounded-lg bg-gold px-4 py-2 text-xs font-bold text-navy"
+                  >
+                    Edit listing
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
           <ListingGallery
             images={images}
             title={property.title}
@@ -219,9 +270,16 @@ export default async function PropertyDetailPage({
                 contactClicks={property.contact_clicks}
                 className="mt-2 block"
               />
-              <h1 className="mt-2.5 text-lg font-semibold leading-snug text-foreground lg:text-2xl">
-                {property.title}
-              </h1>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <h1 className="text-lg font-semibold leading-snug text-foreground lg:text-2xl">
+                  {property.title}
+                </h1>
+                {previewMode && isListingUnderReview(property) ? (
+                  <span className="rounded-full bg-gold/20 px-2.5 py-0.5 text-xs font-bold text-gold-dark">
+                    Under review
+                  </span>
+                ) : null}
+              </div>
               <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-muted lg:text-base">
                 <MapPin className="h-4 w-4 shrink-0 text-gold" />
                 {property.area}, {property.city}

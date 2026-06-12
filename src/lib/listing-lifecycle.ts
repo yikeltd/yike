@@ -138,6 +138,37 @@ export function isExpiringSoon(
   return days > 0 && days <= withinDays;
 }
 
+/** Listing awaiting staff moderation before public visibility. */
+export function isListingUnderReview(
+  property: Pick<Property, "status">
+): boolean {
+  return property.status === "pending" || property.status === "flagged";
+}
+
+export function canPreviewListingUnderReview(
+  property: Pick<Property, "status" | "agent_id">,
+  viewer: { userId: string; isAdmin: boolean } | null
+): boolean {
+  if (!viewer || !isListingUnderReview(property)) return false;
+  return viewer.userId === property.agent_id || viewer.isAdmin;
+}
+
+const OWNER_PREVIEW_STATUSES = new Set<Property["status"]>([
+  "pending",
+  "flagged",
+  "rejected",
+  "hidden",
+]);
+
+/** Owner/admin preview for non-public listings (under review, rejected, draft). */
+export function canPreviewOwnerListing(
+  property: Pick<Property, "status" | "agent_id">,
+  viewer: { userId: string; isAdmin: boolean } | null
+): boolean {
+  if (!viewer || !OWNER_PREVIEW_STATUSES.has(property.status)) return false;
+  return viewer.userId === property.agent_id || viewer.isAdmin;
+}
+
 export function maskBankAccount(account: string | null | undefined): string {
   const digits = String(account ?? "").replace(/\D/g, "");
   if (digits.length < 6) return "••••••";

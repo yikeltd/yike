@@ -285,6 +285,7 @@ export interface Profile {
   username: string | null;
   email: string | null;
   phone: string | null;
+  normalized_phone?: string | null;
   phone_verified: boolean;
   email_verified: boolean;
   whatsapp: string | null;

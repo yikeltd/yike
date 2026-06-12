@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { EmailOtpModal } from "@/components/auth/email-otp-modal";
@@ -11,8 +11,9 @@ import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  canRequestPhoneOtp,
+  isBasicPhoneFormat,
   normalizeNigerianPhone,
+  normalizePhoneForDuplicateCheck,
 } from "@/lib/phone";
 import {
   isStrongPassword,
@@ -23,14 +24,9 @@ import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
 import { friendlySignupError } from "@/lib/auth-errors";
-import { isPhoneOtpEnabledClient, isWhatsappOtpEnabledClient } from "@/lib/feature-flags";
-import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
-import { CheckCircle2, Loader2, MessageSquareText, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PASSWORD_PLACEHOLDER = "••••••••";
-
-type OtpChannel = "sms" | "whatsapp";
 
 type PendingSignup = {
   email: string;
@@ -38,6 +34,16 @@ type PendingSignup = {
   fullName: string;
   username: string;
 };
+
+async function checkSignupDuplicates(email: string, phone: string) {
+  const res = await fetch("/api/auth/signup/check-duplicates", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, phone }),
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as { emailExists?: boolean; phoneExists?: boolean };
+}
 
 export function SignupForm({
   agentNote,
@@ -47,8 +53,6 @@ export function SignupForm({
   nextPath?: string;
 }) {
   const router = useRouter();
-  const phoneOtpEnabled = isPhoneOtpEnabledClient();
-  const whatsappOtpEnabled = isWhatsappOtpEnabledClient();
 
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
@@ -60,125 +64,54 @@ export function SignupForm({
   const [mathChallenge] = useState(createMathChallenge);
   const [mathAnswer, setMathAnswer] = useState("");
 
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
-  const [channelModalOpen, setChannelModalOpen] = useState(false);
-  const [codeSentFlash, setCodeSentFlash] = useState(false);
-  const [codeSentMessage, setCodeSentMessage] = useState("");
-  const [whatsappFailedHint, setWhatsappFailedHint] = useState(false);
-
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
   const [pendingSignup, setPendingSignup] = useState<PendingSignup | null>(null);
+  const dupeCheckRef = useRef(0);
 
-  const normalizedPhone = useMemo(() => normalizeNigerianPhone(phone), [phone]);
+  const normalizedPhone = useMemo(() => {
+    const intl = normalizePhoneForDuplicateCheck(phone);
+    return intl ? `0${intl.slice(3)}` : normalizeNigerianPhone(phone);
+  }, [phone]);
   const reviewerBypass = useMemo(
     () => isReviewerAccountEmail(email),
     [email]
   );
-  const phoneOtpRequired = phoneOtpEnabled && !reviewerBypass;
-  const optionalWhatsappOtp = whatsappOtpEnabled && !phoneOtpRequired;
-  const showVerifyPhone =
-    phoneOtpRequired && canRequestPhoneOtp(normalizedPhone);
-  const showOptionalWhatsapp =
-    optionalWhatsappOtp && canRequestPhoneOtp(normalizedPhone);
+  const phoneValid = isBasicPhoneFormat(phone);
   const mathOk =
     mathAnswer.trim() !== "" &&
     Number(mathAnswer) === mathChallenge.a + mathChallenge.b;
 
+  const runDuplicateCheck = useCallback(
+    async (emailValue: string, phoneValue: string) => {
+      const checkId = ++dupeCheckRef.current;
+      const trimmedEmail = emailValue.trim().toLowerCase();
+      const trimmedPhone = phoneValue.trim();
+
+      if (trimmedEmail.includes("@")) {
+        const result = await checkSignupDuplicates(trimmedEmail, "");
+        if (checkId !== dupeCheckRef.current || !result) return;
+        setEmailError(result.emailExists ? "Email already in use" : "");
+      }
+
+      if (trimmedPhone && isBasicPhoneFormat(trimmedPhone)) {
+        const result = await checkSignupDuplicates("", trimmedPhone);
+        if (checkId !== dupeCheckRef.current || !result) return;
+        setPhoneError(result.phoneExists ? "Number already in use" : "");
+      }
+    },
+    []
+  );
+
   useEffect(() => {
-    if (!channelModalOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !sendingOtp) setChannelModalOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [channelModalOpen, sendingOtp, codeSentFlash]);
-
-  function openChannelModal() {
-    setCodeSentFlash(false);
-    setCodeSentMessage("");
-    setWhatsappFailedHint(false);
-    setChannelModalOpen(true);
-  }
-
-  async function sendOtp(channel: OtpChannel) {
-    setSendingOtp(true);
-    setError("");
-    const res = await fetch("/api/auth/phone/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalizedPhone, channel }),
-    });
-    const data = await res.json();
-    setSendingOtp(false);
-    if (!res.ok) {
-      if (data.code === "phone_otp_disabled") {
-        setError("Continue with email to access Yike.");
-        setChannelModalOpen(false);
-        return;
-      }
-      if (data.code === "whatsapp_failed" || data.code === "provider_auth_failed") {
-        if (optionalWhatsappOtp) {
-          setError(WHATSAPP_VERIFY_COPY.providerUnavailable);
-        } else {
-          setWhatsappFailedHint(true);
-          setError("");
-        }
-        setChannelModalOpen(false);
-        return;
-      }
-      setError(
-        optionalWhatsappOtp
-          ? WHATSAPP_VERIFY_COPY.providerUnavailable
-          : "Continue with email to access Yike."
-      );
-      setChannelModalOpen(false);
-      return;
-    }
-    setCodeSentMessage(
-      data.message ??
-        (data.channel === "whatsapp"
-          ? "Verification code sent to WhatsApp."
-          : "Verification code sent by SMS.")
-    );
-    setCodeSentFlash(true);
-    setOtpSent(true);
-    setPhoneVerified(false);
-    setPhoneVerificationToken("");
-    setOtp("");
-    window.setTimeout(() => {
-      setCodeSentFlash(false);
-      setChannelModalOpen(false);
-    }, 5000);
-  }
-
-  async function verifyOtp() {
-    setVerifyingOtp(true);
-    setError("");
-    const res = await fetch("/api/auth/phone/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalizedPhone, code: otp }),
-    });
-    const data = await res.json();
-    setVerifyingOtp(false);
-    if (!res.ok) {
-      setError(data.error ?? "Incorrect code");
-      return;
-    }
-    setPhoneVerified(true);
-    setPhoneVerificationToken(data.phoneVerificationToken);
-  }
+    const timer = window.setTimeout(() => {
+      void runDuplicateCheck(email, phone);
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [email, phone, runDuplicateCheck]);
 
   async function finishSignupSession(creds: PendingSignup) {
     const supabase = createClient();
@@ -213,8 +146,15 @@ export function SignupForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (phoneOtpRequired && (!phoneVerified || !phoneVerificationToken)) {
-      setError("Verify your phone number before creating an account");
+    setEmailError("");
+    setPhoneError("");
+
+    if (!phone.trim()) {
+      setPhoneError("Enter your phone number");
+      return;
+    }
+    if (!phoneValid) {
+      setPhoneError("Enter a valid phone number");
       return;
     }
     if (!isStrongPassword(password)) {
@@ -234,6 +174,16 @@ export function SignupForm({
       return;
     }
 
+    const dupeResult = await checkSignupDuplicates(email, phone);
+    if (dupeResult?.emailExists) {
+      setEmailError("Email already in use");
+      return;
+    }
+    if (dupeResult?.phoneExists) {
+      setPhoneError("Number already in use");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -244,15 +194,10 @@ export function SignupForm({
         fullName,
         username,
         email,
-        phone: normalizedPhone || undefined,
+        phone: normalizedPhone,
         password,
         confirmPassword,
         pin,
-        phoneVerificationToken: reviewerBypass
-          ? "reviewer-bypass"
-          : phoneOtpRequired
-            ? phoneVerificationToken
-            : undefined,
         mathA: mathChallenge.a,
         mathB: mathChallenge.b,
         mathAnswer: Number(mathAnswer),
@@ -271,8 +216,12 @@ export function SignupForm({
     setLoading(false);
 
     if (!res.ok) {
-      if (data.code === "account_exists") {
-        setError("An account already exists with this email. Please sign in.");
+      if (data.code === "email_exists" || data.code === "account_exists") {
+        setEmailError("Email already in use");
+        return;
+      }
+      if (data.code === "phone_exists") {
+        setPhoneError("Number already in use");
         return;
       }
       if (data.code === "account_deleted") {
@@ -310,9 +259,11 @@ export function SignupForm({
   const canSubmit =
     !loading &&
     mathOk &&
+    phoneValid &&
+    !emailError &&
+    !phoneError &&
     isStrongPassword(password) &&
-    password === confirmPassword &&
-    (!phoneOtpRequired || phoneVerified);
+    password === confirmPassword;
 
   return (
     <>
@@ -351,11 +302,20 @@ export function SignupForm({
               type="email"
               placeholder="email@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError("");
+              }}
               required
-              className="h-12 rounded-xl"
+              className={cn(
+                "h-12 rounded-xl",
+                emailError && "ring-2 ring-red-400/50"
+              )}
               autoComplete="email"
             />
+            {emailError ? (
+              <p className="mt-1 text-xs text-danger">{emailError}</p>
+            ) : null}
           </Field>
 
           <Field label="Username">
@@ -373,146 +333,27 @@ export function SignupForm({
             />
           </Field>
 
-          {phoneOtpEnabled ? (
-            <Field label="Phone number">
-              <div className="flex items-center gap-2">
-                <Input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="08012345678"
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(normalizeNigerianPhone(e.target.value));
-                    setPhoneVerified(false);
-                    setOtpSent(false);
-                    setOtp("");
-                  }}
-                  required
-                  maxLength={11}
-                  className="h-12 min-w-0 flex-1 rounded-xl"
-                  autoComplete="tel"
-                />
-                {phoneVerified ? (
-                  <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="h-5 w-5" />
-                    Verified
-                  </span>
-                ) : showVerifyPhone ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-12 shrink-0 px-4"
-                    onClick={openChannelModal}
-                    disabled={sendingOtp}
-                  >
-                    Verify phone
-                  </Button>
-                ) : null}
-              </div>
-              {otpSent && !phoneVerified && (
-                <div className="mt-2 flex items-center gap-2">
-                  <Input
-                    inputMode="numeric"
-                    placeholder="Code"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    maxLength={6}
-                    className="h-12 min-w-0 flex-1 rounded-xl tracking-widest"
-                  />
-                  {otp.length === 6 && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-12 shrink-0 px-4"
-                      onClick={verifyOtp}
-                      disabled={verifyingOtp}
-                    >
-                      {verifyingOtp ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Verify"
-                      )}
-                    </Button>
-                  )}
-                </div>
+          <Field label="Phone">
+            <Input
+              type="tel"
+              inputMode="tel"
+              placeholder="08012345678"
+              value={phone}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                if (phoneError) setPhoneError("");
+              }}
+              required
+              className={cn(
+                "h-12 rounded-xl",
+                phoneError && "ring-2 ring-red-400/50"
               )}
-            </Field>
-          ) : (
-            <Field
-              label="Phone number"
-            >
-              <div className="flex items-center gap-2">
-                <Input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="08012345678"
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(normalizeNigerianPhone(e.target.value));
-                    setPhoneVerified(false);
-                    setOtpSent(false);
-                    setOtp("");
-                  }}
-                  maxLength={11}
-                  className="h-12 min-w-0 flex-1 rounded-xl"
-                  autoComplete="tel"
-                />
-                {phoneVerified ? (
-                  <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="h-5 w-5" />
-                    Verified
-                  </span>
-                ) : showOptionalWhatsapp ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-12 shrink-0 px-3 text-xs sm:px-4 sm:text-sm"
-                    onClick={openChannelModal}
-                    disabled={sendingOtp}
-                  >
-                    Send code on WhatsApp
-                  </Button>
-                ) : null}
-              </div>
-              {optionalWhatsappOtp && showOptionalWhatsapp && !phoneVerified && !otpSent ? (
-                <p className="mt-2 text-xs leading-relaxed text-muted">
-                  {WHATSAPP_VERIFY_COPY.beforeSend}
-                </p>
-              ) : null}
-              {otpSent && !phoneVerified && (
-                <div className="mt-2 space-y-2">
-                  <p className="text-xs text-muted">{WHATSAPP_VERIFY_COPY.afterSend}</p>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      inputMode="numeric"
-                      placeholder="Code"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      maxLength={6}
-                      className="h-12 min-w-0 flex-1 rounded-xl tracking-widest"
-                    />
-                    {otp.length === 6 && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-12 shrink-0 px-4"
-                        onClick={verifyOtp}
-                        disabled={verifyingOtp}
-                      >
-                        {verifyingOtp ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "Verify"
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </Field>
-          )}
+              autoComplete="tel"
+            />
+            {phoneError ? (
+              <p className="mt-1 text-xs text-danger">{phoneError}</p>
+            ) : null}
+          </Field>
 
           <Field label="Password">
             <PasswordInput
@@ -578,46 +419,16 @@ export function SignupForm({
             />
           </div>
 
-          {error && (
+          {error ? (
             <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger dark:bg-red-500/15 dark:text-red-300">
               {error}
             </p>
-          )}
+          ) : null}
 
           <Button type="submit" fullWidth size="lg" disabled={!canSubmit}>
             {loading ? "Creating account…" : "Create account"}
           </Button>
         </form>
-
-        {phoneOtpEnabled ? (
-          <PhoneChannelModal
-            open={channelModalOpen}
-            sending={sendingOtp}
-            codeSent={codeSentFlash}
-            codeSentMessage={codeSentMessage}
-            whatsappFailedHint={whatsappFailedHint}
-            onClose={() => {
-              if (sendingOtp) return;
-              setCodeSentFlash(false);
-              setWhatsappFailedHint(false);
-              setChannelModalOpen(false);
-            }}
-            onSelect={sendOtp}
-          />
-        ) : optionalWhatsappOtp ? (
-          <WhatsappSignupModal
-            open={channelModalOpen}
-            sending={sendingOtp}
-            codeSent={codeSentFlash}
-            codeSentMessage={codeSentMessage}
-            onClose={() => {
-              if (sendingOtp) return;
-              setCodeSentFlash(false);
-              setChannelModalOpen(false);
-            }}
-            onSend={() => sendOtp("whatsapp")}
-          />
-        ) : null}
       </AuthShell>
 
       {pendingSignup && (
@@ -633,226 +444,6 @@ export function SignupForm({
         />
       )}
     </>
-  );
-}
-
-function WhatsAppIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-    </svg>
-  );
-}
-
-function WhatsappSignupModal({
-  open,
-  sending,
-  codeSent,
-  codeSentMessage,
-  onClose,
-  onSend,
-}: {
-  open: boolean;
-  sending: boolean;
-  codeSent: boolean;
-  codeSentMessage: string;
-  onClose: () => void;
-  onSend: () => void;
-}) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/50"
-        aria-label="Close"
-        onClick={() => {
-          if (!sending) onClose();
-        }}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="whatsapp-signup-title"
-        className="relative w-full max-w-sm rounded-2xl border border-navy/10 bg-white p-6 shadow-[0_20px_50px_rgba(3,27,78,0.18)]"
-      >
-        {codeSent ? (
-          <div className="text-center">
-            <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">Code sent</p>
-            <p
-              id="whatsapp-signup-title"
-              className="mt-2 text-sm leading-relaxed text-muted"
-            >
-              {codeSentMessage || WHATSAPP_VERIFY_COPY.afterSend}
-            </p>
-            <Button type="button" variant="outline" fullWidth className="mt-4" onClick={onClose}>
-              Close
-            </Button>
-          </div>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={sending}
-              className="absolute right-3 top-3 rounded-lg p-1 text-muted hover:text-foreground disabled:opacity-50"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <p
-              id="whatsapp-signup-title"
-              className="pr-8 text-center text-xl font-extrabold tracking-tight text-navy"
-            >
-              WhatsApp verification
-            </p>
-            <p className="mb-5 mt-2 text-center text-sm font-medium leading-relaxed text-navy/70">
-              {WHATSAPP_VERIFY_COPY.beforeSend}
-            </p>
-            <button
-              type="button"
-              onClick={onSend}
-              disabled={sending}
-              className="pressable flex min-h-[52px] w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] text-base font-bold text-white shadow-[0_4px_14px_rgba(37,211,102,0.35)] transition-colors hover:bg-[#1fb855] disabled:opacity-60"
-            >
-              {sending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  <WhatsAppIcon className="h-6 w-6 shrink-0" />
-                  {WHATSAPP_VERIFY_COPY.primaryButton}
-                </>
-              )}
-            </button>
-            <p className="mt-4 text-center text-xs text-muted">
-              Optional — you can continue with email if WhatsApp is unavailable.
-            </p>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function PhoneChannelModal({
-  open,
-  sending,
-  codeSent,
-  codeSentMessage,
-  whatsappFailedHint,
-  onClose,
-  onSelect,
-}: {
-  open: boolean;
-  sending: boolean;
-  codeSent: boolean;
-  codeSentMessage: string;
-  whatsappFailedHint?: boolean;
-  onClose: () => void;
-  onSelect: (channel: OtpChannel) => void;
-}) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/50"
-        aria-label="Close"
-        onClick={() => {
-          if (!sending) onClose();
-        }}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="phone-channel-title"
-        className="relative w-full max-w-sm rounded-2xl border border-navy/10 bg-white p-6 shadow-[0_20px_50px_rgba(3,27,78,0.18)]"
-      >
-        {codeSent ? (
-          <div className="text-center">
-            <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-              Code sent
-            </p>
-            <p
-              id="phone-channel-title"
-              className="mt-2 text-sm leading-relaxed text-muted"
-            >
-              {codeSentMessage || "Check your phone for the verification code."}
-            </p>
-            <p className="mt-2 text-xs text-muted">This closes automatically in a few seconds.</p>
-            <Button
-              type="button"
-              variant="outline"
-              fullWidth
-              className="mt-4"
-              onClick={onClose}
-            >
-              Close
-            </Button>
-          </div>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={sending}
-              className="absolute right-3 top-3 rounded-lg p-1 text-muted hover:text-foreground disabled:opacity-50"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <p
-              id="phone-channel-title"
-              className="pr-8 text-center text-xl font-extrabold tracking-tight text-navy"
-            >
-              Receive code via
-            </p>
-            <p className="mb-5 mt-2 text-center text-sm font-medium leading-relaxed text-navy/70">
-              SMS is the most reliable option right now. WhatsApp may be unavailable.
-            </p>
-            {whatsappFailedHint && (
-              <p className="mb-3 rounded-xl bg-amber-500/10 px-3 py-2 text-center text-sm font-medium text-amber-800 dark:text-amber-200">
-                WhatsApp is unavailable. Try SMS — you can tap SMS right away.
-              </p>
-            )}
-            <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => onSelect("sms")}
-                disabled={sending}
-                className="pressable flex min-h-[52px] w-full items-center justify-center gap-3 rounded-xl bg-[#E4B547] text-base font-bold text-[#031B4E] shadow-[0_4px_14px_rgba(228,181,71,0.4)] transition-colors hover:bg-[#d9a83a] disabled:opacity-60"
-              >
-                {sending ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-navy" />
-                ) : (
-                  <>
-                    <MessageSquareText className="h-6 w-6 shrink-0 stroke-[2.25px]" />
-                    SMS
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => onSelect("whatsapp")}
-                disabled={sending}
-                className="pressable flex min-h-[52px] w-full items-center justify-center gap-3 rounded-xl bg-[#25D366] text-base font-bold text-white shadow-[0_4px_14px_rgba(37,211,102,0.35)] transition-colors hover:bg-[#1fb855] disabled:opacity-60"
-              >
-                {sending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <>
-                    <WhatsAppIcon className="h-6 w-6 shrink-0" />
-                    WhatsApp
-                  </>
-                )}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
   );
 }
 

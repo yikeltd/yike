@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canRequestPhoneOtp, normalizeNigerianPhone } from "@/lib/phone";
 import { sendWhatsappVerificationCode } from "@/lib/whatsapp-verification/service";
-import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
 
 export const runtime = "nodejs";
@@ -64,6 +63,5 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     message: result.message,
-    hint: WHATSAPP_VERIFY_COPY.beforeSend,
   });
 }

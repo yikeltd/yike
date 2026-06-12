@@ -11,6 +11,7 @@ import { PAGE_IMAGERY } from "@/constants/pageImagery";
 import { RENT_FAQS } from "@/constants/pageContent";
 import { TRENDING_CITIES } from "@/constants/trendingCities";
 import { SITE_NAME } from "@/lib/constants";
+import { pageCanonical } from "@/lib/seo/utils";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 import { IntentCityDirectory } from "@/components/seo/intent-city-directory";
@@ -19,6 +20,7 @@ export const metadata = {
   title: `Rent a Home in Nigeria | ${SITE_NAME}`,
   description:
     "Find verified rentals — self contains, flats and family homes. Compare prices and contact agents on WhatsApp.",
+  alternates: { canonical: pageCanonical("/rent") },
 };
 
 function RailFallback() {

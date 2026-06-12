@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { VerificationWizard } from "@/components/agent/verification-wizard";
 import { ListingSetupCard } from "@/components/profile/listing-setup-card";
+import { PhoneVerificationCard } from "@/components/profile/phone-verification-card";
 import type { AgentVerification, Profile } from "@/types/database";
 
 export default function AgentVerificationPage() {
@@ -57,6 +58,8 @@ export default function AgentVerificationPage() {
       </div>
 
       <ListingSetupCard profile={profile} onVerified={() => void reload()} />
+
+      <PhoneVerificationCard profile={profile} onVerified={() => void reload()} />
 
       <VerificationWizard
         profile={profile}

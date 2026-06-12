@@ -79,6 +79,13 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
         emphasis: "primary",
         keywords: ["home", "hq", "command", "dashboard"],
       },
+      {
+        href: adminPath("analytics"),
+        label: "CEO Analytics",
+        segment: "analytics",
+        emphasis: "primary",
+        keywords: ["revenue", "metrics", "ceo", "control tower", "analytics"],
+      },
     ],
   },
   {

@@ -114,7 +114,6 @@ export const metadata: Metadata = {
     images: [ogImage],
   },
   manifest: "/manifest.json",
-  alternates: { canonical: SITE_URL },
   robots: { index: true, follow: true },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION,

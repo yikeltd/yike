@@ -32,7 +32,6 @@ export function BecomeAgentCard({
   emailVerified,
 }: {
   profile: Profile;
-  phoneVerified?: boolean;
   emailVerified: boolean;
 }) {
   const router = useRouter();

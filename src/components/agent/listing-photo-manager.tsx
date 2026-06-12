@@ -41,8 +41,11 @@ import { friendlyStorageError } from "@/lib/media/storage-errors";
 import { SUBMIT_TIMEOUT_MESSAGE } from "@/lib/fetch-timeout";
 import { cn } from "@/lib/utils";
 
-const MAX_CONCURRENT = 3;
-const UPLOAD_TIMEOUT_MS = 45_000;
+const MAX_CONCURRENT = 2;
+const UPLOAD_TIMEOUT_MS = 75_000;
+const MAX_AUTO_RETRIES = 2;
+const RETRY_BACKOFF_MS = [1_000, 2_000] as const;
+const UPLOAD_PAUSED_MESSAGE = "Upload paused. Tap retry to continue.";
 
 export type ListingPhotoManagerHandle = {
   waitForUploads: (opts: {
@@ -82,15 +85,32 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
     const [error, setError] = useState("");
     const [dragOver, setDragOver] = useState(false);
     const [activeUploads, setActiveUploads] = useState(0);
-    const queueRef = useRef<{ id: string; index: number }[]>([]);
+    const queueRef = useRef<{ id: string; index: number; attempt: number }[]>([]);
     const fileMapRef = useRef<Map<string, File>>(new Map());
+    const retryCountRef = useRef<Map<string, number>>(new Map());
     const runningRef = useRef(0);
     const itemsRef = useRef(items);
+
+    function failedCount(list: ListingPhotoItem[]): number {
+      return list.filter((i) => i.upload_status === "error").length;
+    }
+
+    function syncUploadError(list: ListingPhotoItem[]) {
+      const failed = failedCount(list);
+      if (failed === 0) {
+        setError("");
+        return;
+      }
+      setError(
+        `${failed} photo${failed === 1 ? "" : "s"} could not upload. Retry or remove failed photos.`
+      );
+    }
 
     useEffect(() => {
       itemsRef.current = items;
       const done = countReady(items);
       onUploadProgress?.(done, items.length);
+      syncUploadError(items);
     }, [items, onUploadProgress]);
 
     function updateItems(
@@ -101,7 +121,20 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
       onChange(next);
     }
 
-    async function uploadJob(job: { id: string; index: number }) {
+    function scheduleRetry(job: { id: string; index: number; attempt: number }) {
+      const current = retryCountRef.current.get(job.id) ?? job.attempt;
+      if (current >= MAX_AUTO_RETRIES) return false;
+      const nextAttempt = current + 1;
+      retryCountRef.current.set(job.id, nextAttempt);
+      const delay = RETRY_BACKOFF_MS[nextAttempt - 1] ?? 2_000;
+      window.setTimeout(() => {
+        queueRef.current.push({ ...job, attempt: nextAttempt });
+        void pumpQueue();
+      }, delay);
+      return true;
+    }
+
+    async function uploadJob(job: { id: string; index: number; attempt: number }) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
       try {
@@ -134,36 +167,41 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
         };
 
         if (!res.ok) {
-          updateItems((prev) =>
-            prev.map((item) =>
+          if (scheduleRetry(job)) return;
+          updateItems((prev) => {
+            const next = prev.map((item) =>
               item.id === job.id
                 ? {
                     ...item,
                     upload_status: "error" as const,
                     upload_error: friendlyStorageError(
-                      json.error ?? "Photo upload failed. Please remove the failed photo or retry."
+                      json.error ?? UPLOAD_PAUSED_MESSAGE
                     ),
                   }
                 : item
-            )
-          );
+            );
+            syncUploadError(next);
+            return next;
+          });
           return;
         }
 
         const { url, medium, thumbnail } = json;
         if (!url || !medium || !thumbnail) {
-          updateItems((prev) =>
-            prev.map((item) =>
+          if (scheduleRetry(job)) return;
+          updateItems((prev) => {
+            const next = prev.map((item) =>
               item.id === job.id
                 ? {
                     ...item,
                     upload_status: "error" as const,
-                    upload_error:
-                      "Photo upload failed. Please remove the failed photo or retry.",
+                    upload_error: UPLOAD_PAUSED_MESSAGE,
                   }
                 : item
-            )
-          );
+            );
+            syncUploadError(next);
+            return next;
+          });
           return;
         }
 
@@ -194,26 +232,26 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
           );
         });
       } catch (e) {
+        if (scheduleRetry(job)) return;
         const aborted = e instanceof Error && e.name === "AbortError";
         const message = aborted
-          ? "Photo upload timed out. Please retry or remove this photo."
+          ? UPLOAD_PAUSED_MESSAGE
           : e instanceof Error
             ? e.message
-            : "Photo upload failed. Please remove the failed photo or retry.";
-        updateItems((prev) =>
-          prev.map((item) =>
+            : UPLOAD_PAUSED_MESSAGE;
+        updateItems((prev) => {
+          const next = prev.map((item) =>
             item.id === job.id
               ? {
                   ...item,
                   upload_status: "error" as const,
-                  upload_error: friendlyPublicError(
-                    message,
-                    "Photo upload failed. Please remove the failed photo or retry."
-                  ),
+                  upload_error: friendlyPublicError(message, UPLOAD_PAUSED_MESSAGE),
                 }
               : item
-          )
-        );
+          );
+          syncUploadError(next);
+          return next;
+        });
       } finally {
         clearTimeout(timeoutId);
         runningRef.current -= 1;
@@ -283,22 +321,28 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
           small_warning: result.prepared.smallWarning,
         });
         fileMapRef.current.set(id, result.prepared.file);
+        retryCountRef.current.set(id, 0);
         queueRef.current.push({
           id,
           index: Date.now() + startIndex + result.i + Math.floor(Math.random() * 1000),
+          attempt: 0,
         });
       }
 
       if (failures.length > 0) {
-        setError(
+        const prepError =
           failures.length === fileList.length
             ? friendlyPublicError(failures[0], UPLOAD_ERROR_FALLBACK)
-            : `${failures.length} photo${failures.length === 1 ? "" : "s"} skipped — ${friendlyPublicError(failures[0], UPLOAD_ERROR_FALLBACK)}`
-        );
+            : `${failures.length} photo${failures.length === 1 ? "" : "s"} skipped — ${friendlyPublicError(failures[0], UPLOAD_ERROR_FALLBACK)}`;
+        setError(prepError);
       }
 
       if (pending.length > 0) {
-        updateItems((prev) => [...prev, ...pending]);
+        updateItems((prev) => {
+          const next = [...prev, ...pending];
+          if (failures.length === 0) syncUploadError(next);
+          return next;
+        });
         void pumpQueue();
       }
     }
@@ -318,11 +362,15 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
       const item = items.find((i) => i.id === id);
       if (item?.local_preview) revokeListingPreview(item.local_preview);
       fileMapRef.current.delete(id);
-      onChange(removeMediaItem(items, id) as ListingPhotoItem[]);
+      retryCountRef.current.delete(id);
+      const next = removeMediaItem(items, id) as ListingPhotoItem[];
+      syncUploadError(next);
+      onChange(next);
     }
 
     function retryUpload(id: string) {
       if (!fileMapRef.current.has(id)) return;
+      retryCountRef.current.set(id, MAX_AUTO_RETRIES);
       updateItems((prev) =>
         prev.map((item) =>
           item.id === id
@@ -333,8 +381,32 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
       queueRef.current.push({
         id,
         index: Date.now() + Math.floor(Math.random() * 1000),
+        attempt: MAX_AUTO_RETRIES + 1,
       });
       void pumpQueue();
+    }
+
+    function retryAllFailed() {
+      const failed = itemsRef.current.filter((i) => i.upload_status === "error");
+      for (const item of failed) {
+        retryUpload(item.id);
+      }
+    }
+
+    function removeAllFailed() {
+      const failedIds = itemsRef.current
+        .filter((i) => i.upload_status === "error")
+        .map((i) => i.id);
+      if (failedIds.length === 0) return;
+      for (const id of failedIds) {
+        const item = itemsRef.current.find((i) => i.id === id);
+        if (item?.local_preview) revokeListingPreview(item.local_preview);
+        fileMapRef.current.delete(id);
+        retryCountRef.current.delete(id);
+      }
+      const next = itemsRef.current.filter((i) => !failedIds.includes(i.id));
+      syncUploadError(next);
+      onChange(next);
     }
 
     function confirmAllLabels() {
@@ -401,10 +473,9 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
 
     const uploading = activeUploads > 0;
     const readyCount = countReady(items);
+    const failedPhotos = items.filter((i) => i.upload_status === "error");
     const uploadProgressLabel =
-      uploading && items.length > 0
-        ? `Uploading ${readyCount + 1} of ${items.length} photos…`
-        : null;
+      uploading && items.length > 0 ? "Uploading photos…" : null;
 
     return (
       <div className="space-y-4">
@@ -447,8 +518,26 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
               <span className="text-xs font-semibold text-gold-dark">{uploadProgressLabel}</span>
             ) : null}
           </label>
-          {error ? (
-            <p className="mt-2 text-center text-sm font-medium text-danger">{error}</p>
+          {failedPhotos.length > 0 && error ? (
+            <div className="mt-2 space-y-2 text-center">
+              <p className="text-sm font-medium text-danger">{error}</p>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={retryAllFailed}
+                  className="text-xs font-bold text-gold-dark underline"
+                >
+                  Retry failed photos
+                </button>
+                <button
+                  type="button"
+                  onClick={removeAllFailed}
+                  className="text-xs font-bold text-muted underline"
+                >
+                  Remove failed photos
+                </button>
+              </div>
+            </div>
           ) : null}
           {readyCount === 1 ? (
             <p className="mt-2 text-center text-sm font-medium text-danger">
@@ -549,7 +638,7 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
                             onClick={() => retryUpload(item.id)}
                             className="text-[10px] font-bold text-gold-dark underline"
                           >
-                            Retry upload
+                            Retry failed photos
                           </button>
                         </div>
                       ) : null}

@@ -87,3 +87,13 @@ export function legacyAreaCanonical(citySlug: string, areaSlug: string) {
 export function propertyCanonical(slugOrId: string) {
   return `${SITE_URL}/properties/${slugOrId}`;
 }
+
+export function agentCanonical(slug: string) {
+  return `${SITE_URL}/agents/${slug}`;
+}
+
+/** Per-page canonical for static public routes in the sitemap. */
+export function pageCanonical(path: string) {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return normalized === "/" ? SITE_URL : `${SITE_URL}${normalized}`;
+}

@@ -48,7 +48,7 @@ export async function prepareListingUpload(file: File): Promise<PreparedListingP
   const smallWarning =
     bitmap.width < MEDIA_LIMITS.minSharpWidth &&
     bitmap.height < MEDIA_LIMITS.minSharpHeight;
-  const maxEdge = MEDIA_LIMITS.clientMaxLongEdge;
+  const maxEdge = 1800;
   const scale = Math.min(1, maxEdge / longEdge);
   const w = Math.max(1, Math.round(bitmap.width * scale));
   const h = Math.max(1, Math.round(bitmap.height * scale));
@@ -77,7 +77,7 @@ export async function prepareListingUpload(file: File): Promise<PreparedListingP
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error("Could not process photo."))),
       "image/jpeg",
-      0.9
+      0.85
     );
   });
 

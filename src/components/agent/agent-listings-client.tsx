@@ -7,7 +7,12 @@ import { useRouter } from "next/navigation";
 import type { ListingPromotion, Property } from "@/types/database";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
-import { isListingExpired, isListingPubliclyActive } from "@/lib/listing-lifecycle";
+import {
+  isListingExpired,
+  isListingPubliclyActive,
+  isListingUnderReview,
+} from "@/lib/listing-lifecycle";
+import { propertyPath } from "@/lib/property-url";
 import {
   clearListingDraft,
   draftDisplayLabel,
@@ -178,12 +183,19 @@ export function AgentListingsClient({
               day: "numeric",
               month: "short",
             });
+            const previewListing =
+              isListingUnderReview(p) ||
+              p.status === "rejected" ||
+              p.status === "hidden";
+            const listingHref = previewListing
+              ? propertyPath(p)
+              : `/agent/listings/${p.id}/edit`;
             return (
               <li
                 key={p.id}
                 className="card-shadow rounded-xl border border-border p-3"
               >
-                <div className="flex gap-3">
+                <Link href={listingHref} className="flex gap-3 pressable">
                   <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
                     <Image
                       src={p.media_urls[0] ?? "/placeholder-property.svg"}
@@ -194,12 +206,7 @@ export function AgentListingsClient({
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <Link
-                      href={`/agent/listings/${p.id}/edit`}
-                      className="font-medium line-clamp-1 hover:underline"
-                    >
-                      {p.title}
-                    </Link>
+                    <p className="font-medium line-clamp-1">{p.title}</p>
                     <p className="text-sm text-muted">
                       {formatPrice(Number(p.price), p.payment_period, p.listing_type)}
                     </p>
@@ -253,7 +260,7 @@ export function AgentListingsClient({
                       ) : null}
                     </div>
                   </div>
-                </div>
+                </Link>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {featuredListingsEnabled && p.status === "approved" && !expired && (
                     <ActionBtn

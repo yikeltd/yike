@@ -716,13 +716,18 @@ export function ListingForm({
       });
       logListingSubmit({ stage: "photo_upload_completed", userId: agentId, photoCount: mediaItems.length });
 
+      const failedUploads = mediaItems.filter((i) => i.upload_status === "error").length;
       if (uploadWait && !uploadWait.ok) {
         const uploadErr = uploadWait.error ?? "";
-        setError(
-          uploadErr.includes("taking too long")
-            ? uploadErr
-            : "Some photos could not upload. Please retry or remove the failed photos."
-        );
+        if (failedUploads > 0) {
+          setError(
+            uploadErr.includes("taking too long")
+              ? uploadErr
+              : "Some photos could not upload. Please retry or remove the failed photos."
+          );
+        } else {
+          setError(uploadErr || "Wait for photos to finish uploading.");
+        }
         logListingSubmit({
           stage: "photo_upload_failed",
           userId: agentId,
@@ -807,8 +812,11 @@ export function ListingForm({
       const { media_items, media_urls } = buildMediaPayload();
 
       if (media_urls.length < MIN_LISTING_IMAGES) {
+        const failed = mediaItems.filter((i) => i.upload_status === "error").length;
         setError(
-          "Some photos could not upload. Please retry or remove the failed photos."
+          failed > 0
+            ? "Some photos could not upload. Please retry or remove the failed photos."
+            : "Minimum is 2 photos."
         );
         return;
       }

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { SITE_NAME } from "@/lib/constants";
+import { pageCanonical } from "@/lib/seo/utils";
 import { getAboutMarketPulse } from "@/lib/about-market-pulse";
 import { getMarketplaceStats } from "@/lib/marketplace-stats";
 import { POPULAR_AREAS } from "@/constants/popularAreas";
@@ -22,6 +23,7 @@ export const metadata = {
   title: `About ${SITE_NAME}`,
   description:
     "Making property discovery in Nigeria more trustworthy, visual and stress-free. Browse verified listings and contact agents on WhatsApp.",
+  alternates: { canonical: pageCanonical("/about") },
 };
 
 const ABOUT_FEATURED_AREAS = POPULAR_AREAS.filter((area) =>

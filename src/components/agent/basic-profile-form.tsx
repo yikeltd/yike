@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { FieldLabel } from "@/components/ui/field-label";
 import { NIGERIAN_STATES } from "@/lib/constants";
-import { normalizeNigerianPhone } from "@/lib/phone";
+import { normalizeNigerianPhone, canRequestPhoneOtp } from "@/lib/phone";
 import { isBusinessAccount, isDeveloperAccount } from "@/lib/profile/basic-listing-profile";
 import type { Profile } from "@/types/database";
 import { friendlyPublicError, PUBLIC_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 import { Upload } from "lucide-react";
-import { WhatsAppVerifyField } from "@/components/profile/whatsapp-verify-field";
 
 export function BasicProfileForm({ profile }: { profile: Profile }) {
   const router = useRouter();
@@ -65,12 +64,24 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
     setLoading(true);
     setError("");
 
+    const normalizedPhone = phone.trim() ? normalizeNigerianPhone(phone) : "";
+    if (isBusiness && !normalizedPhone) {
+      setError("Phone number is required.");
+      setLoading(false);
+      return;
+    }
+    if (normalizedPhone && !canRequestPhoneOtp(normalizedPhone)) {
+      setError("Use a valid Nigerian phone number.");
+      setLoading(false);
+      return;
+    }
+
     const payload = isBusiness
       ? {
           companyName,
           fullName: contactName,
           cacDocumentPath: cacDocumentPath || undefined,
-          phone: normalizeNigerianPhone(phone),
+          phone: normalizedPhone,
           residentialAddress,
           residentialArea,
           residentialCity,
@@ -79,7 +90,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
       : {
           fullName,
           dateOfBirth,
-          phone: phone.trim() ? normalizeNigerianPhone(phone) : undefined,
+          phone: normalizedPhone || undefined,
           residentialAddress,
           residentialArea,
           residentialCity,
@@ -142,14 +153,19 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
               className="h-12 rounded-xl"
             />
           </div>
-          <WhatsAppVerifyField
-            profile={profile}
-            label="WhatsApp / Phone Number"
-            required
-            value={phone}
-            onChange={setPhone}
-            onVerified={() => router.refresh()}
-          />
+          <div>
+            <FieldLabel>WhatsApp / Phone Number</FieldLabel>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
+              required
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={11}
+              placeholder="08012345678"
+              className="h-12 rounded-xl"
+            />
+          </div>
           <div>
             <FieldLabel>Address</FieldLabel>
             <Input
@@ -183,13 +199,18 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
               className="h-12 rounded-xl"
             />
           </div>
-          <WhatsAppVerifyField
-            profile={profile}
-            label="WhatsApp / Phone Number"
-            value={phone}
-            onChange={setPhone}
-            onVerified={() => router.refresh()}
-          />
+          <div>
+            <FieldLabel>WhatsApp / Phone Number</FieldLabel>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(normalizeNigerianPhone(e.target.value))}
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={11}
+              placeholder="08012345678"
+              className="h-12 rounded-xl"
+            />
+          </div>
           <div>
             <FieldLabel>Street Address</FieldLabel>
             <Input

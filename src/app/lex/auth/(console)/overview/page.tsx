@@ -142,6 +142,25 @@ export default async function AdminOverviewPage() {
         />
       ) : null}
 
+      {isOwner ? (
+        <section className="rounded-2xl border border-gold/30 bg-gradient-to-r from-navy to-[#052560] p-4 text-white">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-gold">CEO control tower</h2>
+              <p className="mt-1 text-sm text-white/85">
+                Listings, users, revenue streams, top markets, and conversion rates
+              </p>
+            </div>
+            <Link
+              href={adminPath("analytics")}
+              className="pressable rounded-xl bg-gold px-4 py-2 text-sm font-bold text-navy"
+            >
+              Open analytics
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       {isOwner ? <AdminActionQueue badges={badges} /> : null}
 
       {isOwner ? (

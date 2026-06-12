@@ -4,7 +4,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { optimizeUploadedImage } from "@/lib/media/image";
 import { ALLOWED_IMAGE_TYPES } from "@/lib/media/constants";
 import { friendlyStorageError } from "@/lib/media/storage-errors";
-import { isPhoneVerificationRequired } from "@/lib/feature-flags";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -39,11 +38,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  if (isPhoneVerificationRequired() && !profile.phone_verified) {
-    return NextResponse.json({ error: "Verify your phone first" }, { status: 400 });
-  }
-
-  const status = profile.verification_status;
   if (status === "approved" || status === "verified") {
     return NextResponse.json({ error: "Already verified" }, { status: 400 });
   }

@@ -53,6 +53,37 @@ export async function getSitemapPropertyEntries(
   return mockSitemapEntries(limit);
 }
 
+export type SitemapAgentEntry = { slug: string; updated_at?: string };
+
+/** Public seller profiles with a slug — active, not suspended/deleted. */
+export async function getSitemapAgentEntries(limit = 2000): Promise<SitemapAgentEntry[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const admin = isAdminClientConfigured()
+    ? await createVerifiedAdminClient()
+    : null;
+  if (!admin) return [];
+
+  const { data } = await admin
+    .from("profiles")
+    .select("public_slug, updated_at")
+    .not("public_slug", "is", null)
+    .neq("profile_status", "deleted")
+    .neq("profile_status", "suspended")
+    .in("role", ["agent", "agent_unverified", "agent_verified", "user"])
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  const rows = (data ?? []) as { public_slug: string | null; updated_at: string }[];
+
+  return rows
+    .filter((r) => r.public_slug)
+    .map((r) => ({
+      slug: r.public_slug as string,
+      updated_at: r.updated_at,
+    }));
+}
+
 /** @deprecated use getSitemapPropertyEntries */
 export async function getSitemapPropertyIds(limit = 5000): Promise<string[]> {
   const entries = await getSitemapPropertyEntries(limit);

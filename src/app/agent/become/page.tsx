@@ -26,7 +26,6 @@ export default async function BecomeAgentPage() {
     <div className="mx-auto max-w-lg px-3 pt-4 pb-8">
       <BecomeAgentCard
         profile={profile}
-        phoneVerified={profile.phone_verified}
         emailVerified={isEmailVerified(user, profile)}
       />
     </div>

@@ -331,7 +331,7 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
           <label className="block text-sm">
             <span className="font-semibold text-navy">Bedrooms</span>
             <Input
-              type="number"
+              inputMode="numeric"
               value={form.bedrooms}
               onChange={(e) => setForm({ ...form, bedrooms: e.target.value })}
               className="mt-1"
@@ -340,7 +340,7 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
           <label className="block text-sm">
             <span className="font-semibold text-navy">Bathrooms</span>
             <Input
-              type="number"
+              inputMode="numeric"
               value={form.bathrooms}
               onChange={(e) => setForm({ ...form, bathrooms: e.target.value })}
               className="mt-1"

@@ -174,7 +174,7 @@ export function WhatsAppVerificationModal({
               disabled={loading}
               onClick={() => void sendCode(phone || resolvedPhone)}
             >
-              {loading ? "Sending…" : WHATSAPP_VERIFY_COPY.primaryButton}
+              {loading ? "Sending…" : "Send WhatsApp code"}
             </Button>
             <button
               type="button"
@@ -212,8 +212,8 @@ export function WhatsAppVerificationModal({
 
         {step === "code" && (
           <div className="mt-4 space-y-3">
-            {info ? <p className="text-xs text-muted">{info}</p> : null}
-            <p className="text-xs text-muted">{WHATSAPP_VERIFY_COPY.senderHelper}</p>
+            {info ? <p className="text-sm text-muted">{info}</p> : null}
+            <p className="text-[11px] text-muted/80">{WHATSAPP_VERIFY_COPY.senderHelper}</p>
             <Input
               inputMode="numeric"
               value={code}

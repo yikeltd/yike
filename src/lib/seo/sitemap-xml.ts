@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
-import { getSitemapPropertyEntries } from "@/lib/seo/sitemap-data";
+import {
+  getSitemapAgentEntries,
+  getSitemapPropertyEntries,
+} from "@/lib/seo/sitemap-data";
 import {
   getHousesCityParams,
   getHousesNeighborhoodParams,
@@ -84,10 +87,14 @@ function staticSitemapEntries(): SitemapUrlEntry[] {
     { path: "/hotel", changeFrequency: "weekly", priority: 0.75 },
     { path: "/shortlet", changeFrequency: "weekly", priority: 0.75 },
     { path: "/blog", changeFrequency: "weekly", priority: 0.75 },
+    { path: "/pricing", changeFrequency: "monthly", priority: 0.7 },
   ];
+
+  const buildDate = new Date().toISOString().slice(0, 10);
 
   return staticRoutes.map(({ path, changeFrequency: changefreq, priority }) => ({
     loc: `${SITE_URL}${path}`,
+    lastmod: path === "" ? buildDate : undefined,
     changefreq,
     priority,
   }));
@@ -142,9 +149,23 @@ function seoSitemapEntries(): SitemapUrlEntry[] {
   return entries;
 }
 
+function dedupeSitemapUrls(entries: SitemapUrlEntry[]): SitemapUrlEntry[] {
+  const seen = new Set<string>();
+  const out: SitemapUrlEntry[] = [];
+  for (const entry of entries) {
+    if (seen.has(entry.loc)) continue;
+    seen.add(entry.loc);
+    out.push(entry);
+  }
+  return out;
+}
+
 /** All public URLs for /sitemap.xml — approved listings + SEO pages, no auth/admin. */
 export async function getAllSitemapUrls(): Promise<SitemapUrlEntry[]> {
-  const propertyEntries = await getSitemapPropertyEntries(MAX_PROPERTY_URLS);
+  const [propertyEntries, agentEntries] = await Promise.all([
+    getSitemapPropertyEntries(MAX_PROPERTY_URLS),
+    getSitemapAgentEntries(),
+  ]);
 
   const propertyUrls: SitemapUrlEntry[] = propertyEntries.map((entry) => ({
     loc: `${SITE_URL}/properties/${entry.path}`,
@@ -155,5 +176,19 @@ export async function getAllSitemapUrls(): Promise<SitemapUrlEntry[]> {
     priority: 0.82,
   }));
 
-  return [...staticSitemapEntries(), ...seoSitemapEntries(), ...propertyUrls];
+  const agentUrls: SitemapUrlEntry[] = agentEntries.map((entry) => ({
+    loc: `${SITE_URL}/agents/${entry.slug}`,
+    lastmod: entry.updated_at
+      ? new Date(entry.updated_at).toISOString().slice(0, 10)
+      : undefined,
+    changefreq: "weekly",
+    priority: 0.74,
+  }));
+
+  return dedupeSitemapUrls([
+    ...staticSitemapEntries(),
+    ...seoSitemapEntries(),
+    ...agentUrls,
+    ...propertyUrls,
+  ]);
 }

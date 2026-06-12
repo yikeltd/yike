@@ -114,6 +114,8 @@ async function handleMiddleware(request: NextRequest): Promise<NextResponse> {
     }
   }
 
+  response.headers.set("x-yike-pathname", pathname);
+
   return response;
 }
 

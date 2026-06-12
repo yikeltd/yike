@@ -94,7 +94,7 @@ export async function finalizeSignupAfterOtp(
     pinHash: pending.pin_hash,
     phone: pending.phone ?? "",
     fullName: pending.full_name,
-    phoneVerified: pending.phone_verified,
+    phoneVerified: pending.phone_verified ?? false,
   });
 
   if (!profileOk) {
@@ -111,7 +111,7 @@ export async function finalizeSignupAfterOtp(
       pinHash: pending.pin_hash,
       phone: pending.phone ?? "",
       fullName: pending.full_name,
-      phoneVerified: pending.phone_verified,
+      phoneVerified: pending.phone_verified ?? false,
     });
     if (!retry) {
       return { ok: false, error: "Could not finish account setup" };

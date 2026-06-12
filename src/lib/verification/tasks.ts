@@ -1,5 +1,4 @@
 import { isAgentRole } from "@/lib/agent-tiers";
-import { isWhatsappProfileVerificationEnabled } from "@/lib/feature-flags";
 import { isWhatsappNumberVerified } from "@/lib/whatsapp-verification/profile";
 import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
 import type { VerificationControlConfig } from "./config";
@@ -34,7 +33,7 @@ export function getRequiredVerificationTasks(
 
   const isLister = isAgentRole(profile.role);
   const needsEmail = config?.email_verification_required !== false;
-  const needsWhatsApp = isWhatsappProfileVerificationEnabled();
+  const needsWhatsApp = escalationActions.includes("require_whatsapp_review");
   const needsBank =
     config?.bank_verification_required ||
     escalationActions.includes("require_bank_verification");

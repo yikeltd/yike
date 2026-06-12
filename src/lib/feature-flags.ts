@@ -46,9 +46,9 @@ export function isEmailOtpEnabled(): boolean {
   return envFlag("ENABLE_EMAIL_OTP", true);
 }
 
-/** Whether signup/agent flows may block on phone_verified. */
+/** Signup no longer blocks on phone OTP — WhatsApp verification is contextual only. */
 export function isPhoneVerificationRequired(): boolean {
-  return isPhoneOtpEnabled();
+  return false;
 }
 
 /** Client bundle — mirrors ENABLE_PHONE_OTP for signup UI. */

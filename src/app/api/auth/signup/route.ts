@@ -3,7 +3,6 @@ import { hashClientIp, hashUserAgent } from "@/lib/auth-email-otp/request-meta";
 import { createConfirmedAuthUser } from "@/lib/auth-email-otp/create-user";
 import {
   createAuthEmailOtpDbClient,
-  emailIsRegistered,
   signupPendingGet,
   signupPendingUpsert,
 } from "@/lib/auth-email-otp/rpc";
@@ -13,14 +12,14 @@ import {
   confirmReviewerEmail,
   isUsernameAvailable,
 } from "@/lib/auth/signup-rpc";
-import { createOtpDbClient, otpFindVerified } from "@/lib/otp/rpc";
-import { normalizeNigerianPhone } from "@/lib/phone";
+import {
+  isBasicPhoneFormat,
+  normalizeNigerianPhone,
+  normalizePhoneForDuplicateCheck,
+} from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
 import { passwordPolicyError } from "@/lib/password-policy";
-import {
-  isEmailOtpEnabled,
-  isPhoneOtpEnabled,
-} from "@/lib/feature-flags";
+import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { validateMathChallenge } from "@/lib/signup-math-challenge";
 import { isProductionEnv } from "@/lib/env";
@@ -52,7 +51,6 @@ export async function POST(request: Request) {
   const password = String(body.password ?? "");
   const confirmPassword = String(body.confirmPassword ?? "");
   const pin = String(body.pin ?? "");
-  const phoneVerificationToken = String(body.phoneVerificationToken ?? "").trim();
   const mathA = Number(body.mathA);
   const mathB = Number(body.mathB);
   const mathAnswer = Number(body.mathAnswer);
@@ -92,22 +90,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "PIN must be exactly 6 digits" }, { status: 400 });
   }
 
-  const otpDb = createOtpDbClient();
   const reviewerBypass = isReviewerAccountEmail(email);
-  const phoneOtpRequired = isPhoneOtpEnabled() && !reviewerBypass;
 
-  if (phoneOtpRequired) {
-    if (!phone) {
-      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
-    }
-    const otpRow = otpDb
-      ? await otpFindVerified(otpDb, phone, phoneVerificationToken)
-      : null;
-
-    if (!otpRow) {
-      return NextResponse.json({ error: "Verify your phone number first" }, { status: 400 });
-    }
+  if (!phone) {
+    return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
   }
+  if (!isBasicPhoneFormat(phoneRaw)) {
+    return NextResponse.json({ error: "Enter a valid phone number" }, { status: 400 });
+  }
+
+  const normalizedForStorage = normalizePhoneForDuplicateCheck(phoneRaw);
+  const phoneLocal = normalizedForStorage
+    ? `0${normalizedForStorage.slice(3)}`
+    : phone;
 
   const usernameFree = await isUsernameAvailable(username);
   if (usernameFree === null) {
@@ -118,21 +113,30 @@ export async function POST(request: Request) {
   }
 
   const pendingSignup = await signupPendingGet(db, email);
-  const registeredEmail = await emailIsRegistered(db, email);
-  if (registeredEmail === null) {
-    console.error("[auth/signup] email registration check failed");
+
+  const { data: dupeData, error: dupeError } = await db.rpc("yike_check_signup_duplicates", {
+    p_token: process.env.YIKE_OTP_SERVER_TOKEN?.trim() ?? "",
+    p_email: email,
+    p_phone: phoneRaw,
+  });
+  if (dupeError) {
+    console.error("[auth/signup] duplicate check failed:", dupeError.message);
     return NextResponse.json(
       { error: AUTH_USER_MESSAGES.signupUnavailable },
       { status: 503 }
     );
   }
 
-  if (registeredEmail && !pendingSignup) {
+  const dupes = (dupeData ?? {}) as { emailExists?: boolean; phoneExists?: boolean };
+  if (dupes.emailExists && !pendingSignup) {
     return NextResponse.json(
-      {
-        error: "An account already exists with this email. Please sign in.",
-        code: "account_exists",
-      },
+      { error: "Email already in use", code: "email_exists" },
+      { status: 409 }
+    );
+  }
+  if (dupes.phoneExists && (!pendingSignup || pendingSignup.phone !== phoneLocal)) {
+    return NextResponse.json(
+      { error: "Number already in use", code: "phone_exists" },
       { status: 409 }
     );
   }
@@ -160,7 +164,7 @@ export async function POST(request: Request) {
       email,
       password,
       fullName,
-      phone,
+      phone: phoneLocal,
       username,
     });
 
@@ -172,7 +176,7 @@ export async function POST(request: Request) {
       userId: created.userId,
       username,
       pinHash,
-      phone,
+      phone: phoneLocal,
       fullName,
       phoneVerified: true,
     });
@@ -189,7 +193,7 @@ export async function POST(request: Request) {
         userId: created.userId,
         referralCode,
         userEmail: email,
-        userPhone: phone,
+        userPhone: phoneLocal,
       });
     }
 
@@ -206,9 +210,9 @@ export async function POST(request: Request) {
     email,
     username,
     fullName,
-    phone,
+    phone: phoneLocal,
     pinHash,
-    phoneVerified: phoneOtpRequired,
+    phoneVerified: false,
     expiresAt: pendingExpires,
   });
 

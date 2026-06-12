@@ -4,7 +4,7 @@ import {
   isWhatsappOtpProviderSendchamp,
   isWhatsappProfileVerificationEnabled,
 } from "@/lib/feature-flags";
-import { toInternationalNigerianPhone } from "@/lib/phone";
+import { normalizePhoneForDuplicateCheck, toInternationalNigerianPhone } from "@/lib/phone";
 import {
   confirmSendchampVerification,
   createSendchampWhatsappVerification,
@@ -115,11 +115,13 @@ export async function sendWhatsappVerificationCode(
   }
 
   if (params.updateProfilePhone !== false) {
+    const normalizedPhone = normalizePhoneForDuplicateCheck(params.phoneLocal);
     await admin
       .from("profiles")
       .update({
         whatsapp: params.phoneLocal,
         phone: params.phoneLocal,
+        normalized_phone: normalizedPhone,
         whatsapp_verification_status: "pending" as WhatsappVerificationStatus,
         whatsapp_verification_requested_at: new Date().toISOString(),
       })
@@ -244,6 +246,20 @@ export async function verifyWhatsappCode(
     .update({ status: "verified", consumed_at: now })
     .eq("id", session.id);
 
+  const { data: verifiedProfile } = await admin
+    .from("profiles")
+    .select("phone, whatsapp")
+    .eq("id", params.userId)
+    .maybeSingle();
+
+  const phoneLocal =
+    (verifiedProfile?.whatsapp as string | null) ??
+    (verifiedProfile?.phone as string | null) ??
+    "";
+  const normalizedPhone = phoneLocal
+    ? normalizePhoneForDuplicateCheck(phoneLocal)
+    : null;
+
   await admin
     .from("profiles")
     .update({
@@ -252,6 +268,13 @@ export async function verifyWhatsappCode(
       whatsapp_verification_reference: null,
       whatsapp_verification_attempts: 0,
       phone_verified: true,
+      ...(phoneLocal
+        ? {
+            whatsapp: phoneLocal,
+            phone: phoneLocal,
+            normalized_phone: normalizedPhone,
+          }
+        : {}),
     })
     .eq("id", params.userId);
 
@@ -268,11 +291,13 @@ export async function resetWhatsappVerificationOnNumberChange(
   const normalizedPrev = previousPhone.trim();
   if (!normalizedNew || normalizedNew === normalizedPrev) return;
 
+  const normalizedPhone = normalizePhoneForDuplicateCheck(normalizedNew);
   await admin
     .from("profiles")
     .update({
       whatsapp: normalizedNew,
       phone: normalizedNew,
+      normalized_phone: normalizedPhone,
       whatsapp_verified_at: null,
       whatsapp_verification_status: "unverified",
       whatsapp_verification_reference: null,

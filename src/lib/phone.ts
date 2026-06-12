@@ -36,3 +36,20 @@ export function normalizeWhatsappInput(input: string): string {
   if (intl) return `0${intl.slice(3)}`;
   return normalizeNigerianPhone(input);
 }
+
+/**
+ * Canonical 234XXXXXXXXXX for duplicate checks.
+ * Treats 080…, 80…, +234…, and 234… as the same number.
+ */
+export function normalizePhoneForDuplicateCheck(input: string): string | null {
+  const digits = input.replace(/\D/g, "");
+  if (digits.startsWith("234") && digits.length === 13) return digits;
+  if (digits.length === 11 && digits.startsWith("0")) return `234${digits.slice(1)}`;
+  if (digits.length === 10) return `234${digits}`;
+  return null;
+}
+
+/** Basic signup phone format — digits only, Nigerian lengths. */
+export function isBasicPhoneFormat(input: string): boolean {
+  return normalizePhoneForDuplicateCheck(input) !== null;
+}

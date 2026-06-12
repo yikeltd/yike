@@ -81,9 +81,7 @@ export function WhatsAppVerifyField({
           <p className="mt-1 text-xs text-amber-800">{WHATSAPP_VERIFY_COPY.adminRequired}</p>
         ) : null}
         {verifyActive && !verified ? (
-          <p className="mt-1 text-xs text-muted">
-            Required to list on Yike — tap Verify to receive a code on WhatsApp.
-          </p>
+          <p className="mt-1 text-xs text-muted">{WHATSAPP_VERIFY_COPY.profileDescription}</p>
         ) : null}
       </div>
 

@@ -16,6 +16,7 @@ import { AgencyDeveloperProfileSections } from "@/components/agent/agency-develo
 import { getSession } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { getProfileSocialStats } from "@/lib/social/stats";
+import { agentCanonical } from "@/lib/seo/utils";
 
 export async function generateMetadata({
   params,
@@ -26,9 +27,15 @@ export async function generateMetadata({
   const { agent, redirectTo } = await resolveAgentRoute(slug);
   if (redirectTo || !agent) return { title: "Agent | Yike" };
   const name = agent.company_name?.trim() || agent.full_name?.trim() || "Agent";
+  const canonicalSlug = agent.public_slug ?? slug;
   return {
     title: `${name} | Yike`,
     description: `Browse verified property listings from ${name} on Yike.ng`,
+    alternates: { canonical: agentCanonical(canonicalSlug) },
+    robots:
+      agent.profile_status === "suspended" || agent.profile_status === "deleted"
+        ? { index: false, follow: false }
+        : { index: true, follow: true },
   };
 }
 
