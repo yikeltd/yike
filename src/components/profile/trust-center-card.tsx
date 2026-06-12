@@ -125,9 +125,6 @@ export function TrustCenterCard({
             style={{ width: `${percent}%` }}
           />
         </div>
-        <p className="mt-2 text-xs text-muted">
-          {allDone ? "Profile complete." : "Complete your profile to build trust."}
-        </p>
         <Link
           href={SETUP_HREF}
           prefetch

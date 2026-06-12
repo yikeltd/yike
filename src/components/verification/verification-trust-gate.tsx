@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, ShieldCheck } from "lucide-react";
-import {
-  VERIFICATION_GATE_SUBTEXT,
-  VERIFICATION_GATE_TITLE,
-} from "@/lib/copy/user-messages";
+import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import type { VerificationTask } from "@/lib/verification/tasks";
 
 type Props = {
@@ -22,6 +19,14 @@ export function VerificationTrustGate({
 }: Props) {
   const pending = tasks.filter((t) => t.required && !t.complete);
   const next = pending[0];
+  const isWhatsApp = next?.id === "whatsapp";
+  const title = isWhatsApp
+    ? WHATSAPP_VERIFY_COPY.listingGate
+    : next?.label ?? "Complete your profile";
+  const href = isWhatsApp ? "/agent/verification" : verificationHref;
+  const actionLabel = isWhatsApp
+    ? WHATSAPP_VERIFY_COPY.profileTitle
+    : "Continue";
 
   return (
     <div
@@ -33,18 +38,13 @@ export function VerificationTrustGate({
           <ShieldCheck className="h-4 w-4" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-navy">{VERIFICATION_GATE_TITLE}</p>
-          {next ? (
-            <p className="mt-0.5 text-xs text-muted">Next: {next.label}</p>
-          ) : (
-            <p className="mt-0.5 text-xs text-muted">{VERIFICATION_GATE_SUBTEXT}</p>
-          )}
-          {!hideActions ? (
+          <p className="text-sm font-semibold text-navy">{title}</p>
+          {!hideActions && next ? (
             <Link
-              href={verificationHref}
+              href={href}
               className="pressable mt-2 inline-flex items-center gap-1 text-xs font-semibold text-gold-dark"
             >
-              Complete profile
+              {actionLabel}
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           ) : null}

@@ -1,16 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
 import type { Profile } from "@/types/database";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import {
   isWhatsappNumberVerified,
   isWhatsappVerificationFeatureActive,
+  getWhatsappNumber,
 } from "@/lib/whatsapp-verification/profile";
 import { WhatsAppVerificationModal } from "@/components/profile/whatsapp-verify-modal";
-import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
-import { formatWhatsappDisplay } from "@/lib/phone";
+import { VerificationOptionCard } from "@/components/verification/verification-option-card";
 
 export function PhoneVerificationCard({
   profile,
@@ -22,26 +21,23 @@ export function PhoneVerificationCard({
   const [modalOpen, setModalOpen] = useState(false);
   const active = isWhatsappVerificationFeatureActive(profile);
   const verified = isWhatsappNumberVerified(profile);
-  const displayPhone = formatWhatsappDisplay(getWhatsappNumber(profile));
 
-  if (!active || verified) return null;
+  if (!active && !verified) return null;
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setModalOpen(true)}
-        className="pressable flex w-full items-center gap-3 rounded-2xl border border-border bg-elevated p-4 text-left shadow-float"
-      >
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-navy">{WHATSAPP_VERIFY_COPY.profileTitle}</p>
-          <p className="mt-0.5 text-xs text-muted">{WHATSAPP_VERIFY_COPY.profileDescription}</p>
-          {displayPhone !== "—" ? (
-            <p className="mt-2 text-sm font-semibold text-foreground">{displayPhone}</p>
-          ) : null}
-        </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-      </button>
+      <VerificationOptionCard
+        title={WHATSAPP_VERIFY_COPY.cardTitle}
+        status={
+          verified
+            ? WHATSAPP_VERIFY_COPY.verifiedStatus
+            : WHATSAPP_VERIFY_COPY.notVerifiedStatus
+        }
+        statusVariant={verified ? "success" : "neutral"}
+        actionLabel={verified ? undefined : WHATSAPP_VERIFY_COPY.profileTitle}
+        onAction={verified ? undefined : () => setModalOpen(true)}
+        disabled={verified}
+      />
 
       <WhatsAppVerificationModal
         open={modalOpen}
@@ -52,3 +48,6 @@ export function PhoneVerificationCard({
     </>
   );
 }
+
+/** @deprecated use PhoneVerificationCard */
+export const WhatsAppVerificationCard = PhoneVerificationCard;

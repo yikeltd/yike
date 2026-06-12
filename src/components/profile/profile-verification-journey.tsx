@@ -42,7 +42,7 @@ export function ProfileVerificationJourney({
         href="/agent/verification"
         className="mt-3 inline-block text-xs font-semibold text-gold-dark"
       >
-        {verified ? "Manage verification →" : "Get verified badge →"}
+        {verified ? "Manage verification →" : "Verification →"}
       </Link>
     </section>
   );

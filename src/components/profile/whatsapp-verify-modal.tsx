@@ -10,7 +10,6 @@ import {
   normalizeWhatsappInput,
 } from "@/lib/phone";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
-import { cn } from "@/lib/utils";
 
 type Step = "intro" | "update" | "code";
 
@@ -20,7 +19,6 @@ export type WhatsAppVerificationModalProps = {
   onOpenChange?: (open: boolean) => void;
   initialPhone?: string;
   phoneNumber?: string;
-  reason?: string;
   onVerified?: () => void;
   onNumberUpdated?: (phone: string) => void;
 };
@@ -31,7 +29,6 @@ export function WhatsAppVerificationModal({
   onOpenChange,
   initialPhone,
   phoneNumber,
-  reason,
   onVerified,
   onNumberUpdated,
 }: WhatsAppVerificationModalProps) {
@@ -41,7 +38,6 @@ export function WhatsAppVerificationModal({
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
 
   const setOpen = (next: boolean) => {
     if (!next) onClose?.();
@@ -54,7 +50,6 @@ export function WhatsAppVerificationModal({
       setStep("intro");
       setCode("");
       setError("");
-      setInfo("");
     }
   }, [open, resolvedPhone]);
 
@@ -104,7 +99,6 @@ export function WhatsAppVerificationModal({
 
     setPhone(normalized);
     onNumberUpdated?.(normalized);
-    setInfo(WHATSAPP_VERIFY_COPY.afterSend);
     setStep("code");
   }
 
@@ -149,9 +143,9 @@ export function WhatsAppVerificationModal({
               {WHATSAPP_VERIFY_COPY.modalTitle}
             </h2>
             <p className="mt-1 text-sm text-muted">{WHATSAPP_VERIFY_COPY.modalBody}</p>
-            {reason ? (
-              <p className="mt-2 text-xs font-medium text-navy">{reason}</p>
-            ) : null}
+            <p className="mt-1.5 text-[11px] text-muted/80">
+              {WHATSAPP_VERIFY_COPY.modalHelper}
+            </p>
           </div>
           <button
             type="button"
@@ -174,7 +168,7 @@ export function WhatsAppVerificationModal({
               disabled={loading}
               onClick={() => void sendCode(phone || resolvedPhone)}
             >
-              {loading ? "Sending…" : "Send WhatsApp code"}
+              {loading ? "Sending…" : WHATSAPP_VERIFY_COPY.sendCodeButton}
             </Button>
             <button
               type="button"
@@ -189,7 +183,7 @@ export function WhatsAppVerificationModal({
 
         {step === "update" && (
           <div className="mt-4 space-y-3">
-            <label className="text-xs font-semibold text-navy">WhatsApp Number</label>
+            <label className="text-xs font-semibold text-navy">WhatsApp number</label>
             <Input
               type="tel"
               inputMode="tel"
@@ -205,15 +199,13 @@ export function WhatsAppVerificationModal({
               disabled={loading}
               onClick={() => void sendCode(phone)}
             >
-              {loading ? "Sending…" : "Update and send code"}
+              {loading ? "Sending…" : WHATSAPP_VERIFY_COPY.sendCodeButton}
             </Button>
           </div>
         )}
 
         {step === "code" && (
           <div className="mt-4 space-y-3">
-            {info ? <p className="text-sm text-muted">{info}</p> : null}
-            <p className="text-[11px] text-muted/80">{WHATSAPP_VERIFY_COPY.senderHelper}</p>
             <Input
               inputMode="numeric"
               value={code}
@@ -228,15 +220,15 @@ export function WhatsAppVerificationModal({
               disabled={loading}
               onClick={() => void verifyCode()}
             >
-              {loading ? "Verifying…" : WHATSAPP_VERIFY_COPY.verifyNumber}
+              {loading ? "Verifying…" : WHATSAPP_VERIFY_COPY.verifyButton}
             </Button>
             <button
               type="button"
-              className={cn("text-xs font-semibold text-navy underline")}
+              className="w-full text-xs font-semibold text-navy underline"
               disabled={loading}
               onClick={() => void sendCode(phone)}
             >
-              Resend code
+              {WHATSAPP_VERIFY_COPY.resendCode}
             </button>
           </div>
         )}

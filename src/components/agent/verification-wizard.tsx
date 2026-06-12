@@ -4,24 +4,24 @@ import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NIGERIAN_STATES } from "@/lib/constants";
-import { VerifiedBadge } from "@/components/ui/badge";
 import {
   Camera,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck,
   User,
 } from "lucide-react";
 import Link from "next/link";
 import { friendlyPublicError, PUBLIC_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 import { cn } from "@/lib/utils";
 import { yikeVerificationWhatsAppLink } from "@/lib/agent-verification";
+import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
+import { VerificationOptionCard } from "@/components/verification/verification-option-card";
 import type { AgentVerification, Profile } from "@/types/database";
 
 const STEPS = [
   { id: 1, title: "Personal", icon: User },
-  { id: 2, title: "NIN", icon: ShieldCheck },
+  { id: 2, title: "NIN", icon: CheckCircle2 },
   { id: 3, title: "Selfie", icon: Camera },
   { id: 4, title: "Review", icon: CheckCircle2 },
 ] as const;
@@ -132,13 +132,12 @@ export function VerificationWizard({
 
   if (isVerified) {
     return (
-      <div className="rounded-2xl border border-border bg-elevated px-4 py-4 text-center">
-        <VerifiedBadge />
-        <p className="mt-2 text-sm font-semibold text-navy">Verified agent badge</p>
-        <p className="mt-1 text-xs text-muted">
-          Unlimited listings and priority ranking unlocked.
-        </p>
-      </div>
+      <VerificationOptionCard
+        title={WHATSAPP_VERIFY_COPY.agentBadgeTitle}
+        status={WHATSAPP_VERIFY_COPY.agentBadgeVerified}
+        statusVariant="success"
+        disabled
+      />
     );
   }
 
@@ -147,45 +146,36 @@ export function VerificationWizard({
     profile.verification_status === "pending"
   ) {
     return (
-      <div className="rounded-2xl border border-border bg-elevated shadow-float">
-        <div className="px-4 py-4">
-          <div className="flex items-start gap-3">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-navy">Verified agent badge</p>
-              <p className="mt-0.5 text-xs text-muted">
-                Higher visibility and stronger trust signals.
-              </p>
-              <span className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-900">
-                Under review
-              </span>
-              <p className="mt-2 text-xs text-muted">
-                We&apos;ll contact you on WhatsApp if needed.
-              </p>
-            </div>
+      <div className="space-y-2">
+        <VerificationOptionCard
+          title={WHATSAPP_VERIFY_COPY.agentBadgeTitle}
+          status={WHATSAPP_VERIFY_COPY.agentBadgeUnderReview}
+          statusVariant="pending"
+          actionLabel={showDetails ? undefined : "View options"}
+          onAction={showDetails ? undefined : () => setShowDetails(true)}
+          disabled={showDetails}
+        />
+        {showDetails ? (
+          <div className="space-y-2 rounded-2xl border border-border bg-elevated px-4 py-3 text-xs text-muted">
+            <p>Review usually takes 1–2 business days.</p>
+            <p>We&apos;ll reach you on WhatsApp if we need anything.</p>
+            <Link
+              href={yikeVerificationWhatsAppLink()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex font-semibold text-navy"
+            >
+              Contact support →
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShowDetails(false)}
+              className="block text-xs font-semibold text-muted"
+            >
+              Close
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowDetails((v) => !v)}
-            className="mt-3 text-xs font-semibold text-gold-dark"
-          >
-            {showDetails ? "Hide details" : "What happens next?"}
-          </button>
-          {showDetails ? (
-            <div className="mt-2 space-y-2 rounded-xl bg-surface px-3 py-2 text-xs text-muted">
-              <p>Review usually takes 1–2 business days.</p>
-              <p>Keep your registered WhatsApp available for a short verification call if requested.</p>
-              <Link
-                href={yikeVerificationWhatsAppLink()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex font-semibold text-navy"
-              >
-                Contact support on WhatsApp →
-              </Link>
-            </div>
-          ) : null}
-        </div>
+        ) : null}
       </div>
     );
   }
@@ -196,30 +186,31 @@ export function VerificationWizard({
 
   if (!expanded) {
     return (
-      <button
-        type="button"
-        onClick={() => setExpanded(true)}
-        className="pressable flex w-full items-center gap-3 rounded-2xl border border-border bg-elevated p-4 text-left shadow-float"
-      >
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-navy">Verified agent badge</p>
-          <p className="mt-0.5 text-xs text-muted">
-            Optional — unlock higher visibility, ranking, and unlimited listings.
-          </p>
-        </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-      </button>
+      <VerificationOptionCard
+        title={WHATSAPP_VERIFY_COPY.agentBadgeTitle}
+        status={WHATSAPP_VERIFY_COPY.agentBadgeOptional}
+        statusVariant="neutral"
+        actionLabel="View options"
+        onAction={() => setExpanded(true)}
+      />
     );
   }
 
   return (
     <div className="space-y-4 rounded-2xl border border-border bg-elevated shadow-float">
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <p className="text-sm font-semibold text-navy">Verified agent badge</p>
+        <div>
+          <p className="text-sm font-semibold text-navy">
+            {WHATSAPP_VERIFY_COPY.agentBadgeTitle}
+          </p>
+          <p className="mt-0.5 text-xs text-muted">
+            {WHATSAPP_VERIFY_COPY.agentBadgeDescription}
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="text-xs font-semibold text-muted hover:text-navy"
+          className="shrink-0 text-xs font-semibold text-muted hover:text-navy"
         >
           Close
         </button>

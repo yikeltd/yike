@@ -24,7 +24,7 @@ export function mustVerifyWhatsappBeforeListing(profile: Partial<Profile>): bool
 }
 
 export function whatsappVerifyBadgeLabel(profile: Partial<Profile>): string | null {
-  if (isWhatsappNumberVerified(profile)) return "Verified";
+  if (isWhatsappNumberVerified(profile)) return "WhatsApp verified";
   if (profile.whatsapp_verification_status === "admin_required") {
     return "Required";
   }

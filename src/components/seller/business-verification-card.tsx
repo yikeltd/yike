@@ -129,12 +129,8 @@ export function BusinessVerificationCard({ profile }: { profile: Profile }) {
   if (trustLevel === "business") {
     return (
       <div className="rounded-2xl border border-gold/30 bg-gold/5 p-4">
-        <div className="flex items-center gap-2">
-          <SellerTrustBadge level="business" size="md" />
-        </div>
-        <p className="mt-2 text-sm text-muted">
-          Your business profile has been reviewed by Yike.
-        </p>
+        <SellerTrustBadge level="business" size="md" />
+        <p className="mt-2 text-xs font-medium text-emerald-800">Business verified</p>
       </div>
     );
   }
@@ -145,6 +141,34 @@ export function BusinessVerificationCard({ profile }: { profile: Profile }) {
     rejected &&
     verification.review_notes?.toLowerCase().includes("additional information");
 
+  if (!open && !pending && !rejected) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="pressable flex w-full items-center gap-3 rounded-2xl border border-border bg-white p-4 text-left shadow-sm"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navy/5">
+            <ShieldCheck className="h-5 w-5 text-navy" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-navy">Business</p>
+            <p className="mt-0.5 text-xs text-muted">
+              {pending
+                ? "Under review"
+                : trustLevel === "basic"
+                  ? "Optional"
+                  : "Complete profile first"}
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-navy">View options</span>
+        </button>
+        {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
+      </>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
@@ -152,23 +176,36 @@ export function BusinessVerificationCard({ profile }: { profile: Profile }) {
           <ShieldCheck className="h-5 w-5 text-navy" />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="font-bold text-navy">Business Verified</h2>
-          <p className="mt-1 text-sm text-muted">
-            Stand out with a reviewed business badge. Yike reviews your documents — not legal
-            ownership.
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-bold text-navy">Business</h2>
+            {!pending ? (
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-xs font-semibold text-muted"
+              >
+                Close
+              </button>
+            ) : null}
+          </div>
+          {open ? (
+            <p className="mt-1 text-sm text-muted">
+              Stand out with a reviewed business badge. Yike reviews your documents — not legal
+              ownership.
+            </p>
+          ) : null}
           {trustLevel === "basic" ? (
             <p className="mt-2 text-xs text-emerald-700">
-              You have Basic Verified ({SELLER_VERIFICATION_COPY.verifiedLabel}).
+              Basic verified ({SELLER_VERIFICATION_COPY.verifiedLabel}).
             </p>
-          ) : (
+          ) : open ? (
             <p className="mt-2 text-xs text-amber-800">
               Complete email, WhatsApp, and profile setup for Basic Verified first.
               <Link href="/agent/profile-setup" className="ml-1 font-semibold text-navy">
                 Complete profile →
               </Link>
             </p>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -190,17 +227,7 @@ export function BusinessVerificationCard({ profile }: { profile: Profile }) {
 
       {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
 
-      {!pending && (
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="mt-4 w-full rounded-xl bg-gold py-3 text-sm font-bold text-navy pressable"
-        >
-          {SELLER_VERIFICATION_COPY.businessCta}
-        </button>
-      )}
-
-      {open ? (
+      {open && !pending ? (
         <div className="mt-4 space-y-3 border-t border-border pt-4">
           <p className="text-xs text-muted">
             {SELLER_VERIFICATION_COPY.businessFeeLabel} ·{" "}

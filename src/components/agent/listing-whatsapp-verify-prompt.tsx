@@ -9,7 +9,6 @@ import {
   isWhatsappNumberVerified,
   mustVerifyWhatsappBeforeListing,
 } from "@/lib/whatsapp-verification/profile";
-import { formatWhatsappDisplay } from "@/lib/phone";
 import { WhatsAppVerificationModal } from "@/components/profile/whatsapp-verify-modal";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 
@@ -18,44 +17,22 @@ export function ListingWhatsappVerifyPrompt({ profile }: { profile: Profile }) {
   const needsVerification =
     mustVerifyWhatsappBeforeListing(profile) && !isWhatsappNumberVerified(profile);
   const [open, setOpen] = useState(needsVerification);
-  const [dismissed, setDismissed] = useState(false);
 
   if (!needsVerification) return null;
 
-  const phone = getWhatsappNumber(profile);
-
   return (
     <>
-      {!open || dismissed ? (
-        <div className="rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-navy">
-          <p className="font-semibold">{WHATSAPP_VERIFY_COPY.listingPrompt}</p>
-          {phone ? (
-            <p className="mt-1 text-xs text-muted">{formatWhatsappDisplay(phone)}</p>
-          ) : null}
-          <Button
-            type="button"
-            size="sm"
-            className="mt-3"
-            onClick={() => {
-              setDismissed(false);
-              setOpen(true);
-            }}
-          >
-            Verify WhatsApp
-          </Button>
-        </div>
-      ) : (
-        <p className="text-sm text-muted">Verify your WhatsApp to start listing…</p>
-      )}
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-elevated px-4 py-3 shadow-float">
+        <p className="text-sm font-semibold text-navy">{WHATSAPP_VERIFY_COPY.listingGate}</p>
+        <Button type="button" size="sm" onClick={() => setOpen(true)}>
+          {WHATSAPP_VERIFY_COPY.profileTitle}
+        </Button>
+      </div>
 
       <WhatsAppVerificationModal
         open={open}
-        onOpenChange={(next) => {
-          setOpen(next);
-          if (!next) setDismissed(true);
-        }}
-        phoneNumber={phone}
-        reason={WHATSAPP_VERIFY_COPY.listingPrompt}
+        onOpenChange={setOpen}
+        phoneNumber={getWhatsappNumber(profile)}
         onVerified={() => router.refresh()}
       />
     </>

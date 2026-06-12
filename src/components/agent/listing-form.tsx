@@ -1069,7 +1069,6 @@ export function ListingForm({
         open={whatsappModalOpen}
         onOpenChange={setWhatsappModalOpen}
         phoneNumber={whatsappPhone}
-        reason={WHATSAPP_VERIFY_COPY.listingPrompt}
         onNumberUpdated={setWhatsappPhone}
         onVerified={() => {
           const retry = afterWhatsappVerifyRef.current;

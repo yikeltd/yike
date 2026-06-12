@@ -70,13 +70,10 @@ export function WhatsAppVerifyField({
             <Button
               type="button"
               variant="outline"
-              className="h-auto min-h-12 shrink-0 flex-col items-start rounded-xl px-4 py-2.5 text-left"
+              className="h-12 shrink-0 rounded-xl px-4"
               onClick={() => setModalOpen(true)}
             >
-              <span className="text-sm font-semibold">{WHATSAPP_VERIFY_COPY.profileTitle}</span>
-              <span className="text-[11px] font-normal text-muted">
-                {WHATSAPP_VERIFY_COPY.profileDescription}
-              </span>
+              {WHATSAPP_VERIFY_COPY.profileTitle}
             </Button>
           ) : null}
         </div>

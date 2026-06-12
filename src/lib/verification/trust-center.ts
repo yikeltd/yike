@@ -123,7 +123,7 @@ export function getTrustProgressItems(
     if (verified) {
       items.push({
         id: "agent_badge",
-        label: "Verified agent badge",
+        label: "Verified Agent",
         status: "complete",
         href: "/agent/verification",
         group: "trust_upgrade",
@@ -133,8 +133,8 @@ export function getTrustProgressItems(
         id: "agent_badge",
         label:
           profile.verification_status === "pending"
-            ? "Verified agent badge (under review)"
-            : "Verified agent badge",
+            ? "Verified Agent (under review)"
+            : "Verified Agent",
         status:
           profile.verification_status === "pending" ? "under_review" : "optional",
         href: "/agent/verification",

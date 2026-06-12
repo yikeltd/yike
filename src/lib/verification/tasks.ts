@@ -52,7 +52,7 @@ export function getRequiredVerificationTasks(
   if (needsWhatsApp || escalationActions.includes("require_whatsapp_review")) {
     tasks.push({
       id: "whatsapp",
-      label: "Verify WhatsApp number",
+      label: "Verify WhatsApp",
       complete: isWhatsappNumberVerified(profile),
       required: true,
     });
