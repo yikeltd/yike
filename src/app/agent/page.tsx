@@ -11,9 +11,16 @@ import { ProfilePageClient } from "@/components/profile/profile-page-client";
 import type { Property } from "@/types/database";
 import { offsetDaysIso } from "@/lib/time";
 import { getProfileSocialStats } from "@/lib/social/stats";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveUserSubscription } from "@/lib/subscriptions/service";
-import { PLAN_DISPLAY } from "@/lib/subscriptions/constants";
+import { getPlanDisplayLabel } from "@/lib/subscriptions/constants";
+import { tryCreateAdminClient } from "@/lib/supabase/admin";
+
+function subscriptionExpiresInDays(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const expiresMs = new Date(iso).getTime();
+  if (Number.isNaN(expiresMs)) return null;
+  return Math.ceil((expiresMs - Date.now()) / 86_400_000);
+}
 
 function formatMemberSince(iso: string): string {
   try {
@@ -39,7 +46,7 @@ export default async function ProfilePage() {
   const canList = canListProperties(profile);
   const limit = getListingLimit(profile);
 
-  const admin = createAdminClient();
+  const admin = tryCreateAdminClient();
   const [
     { data: listings },
     { count: savedCount },
@@ -101,10 +108,10 @@ export default async function ProfilePage() {
       socialStats={socialStats}
       subscriptionPlanLabel={
         activeSubscription?.plan
-          ? PLAN_DISPLAY[activeSubscription.plan.plan_code].label
+          ? getPlanDisplayLabel(activeSubscription.plan.plan_code)
           : null
       }
-      subscriptionExpiresAt={activeSubscription?.expires_at ?? null}
+      subscriptionExpiresInDays={subscriptionExpiresInDays(activeSubscription?.expires_at)}
       foundingMember={profile.founding_member ?? false}
     />
   );

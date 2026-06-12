@@ -249,3 +249,13 @@ export async function probeSupabaseAdmin(): Promise<{
 export function isAdminClientConfigured(): boolean {
   return Boolean(supabaseUrl() && adminKeyCandidates().length > 0);
 }
+
+/** Returns null instead of throwing when admin env is missing or misconfigured. */
+export function tryCreateAdminClient(): SupabaseClient | null {
+  try {
+    if (!isAdminClientConfigured()) return null;
+    return createAdminClient();
+  } catch {
+    return null;
+  }
+}

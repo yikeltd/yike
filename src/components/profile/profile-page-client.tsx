@@ -51,7 +51,7 @@ export function ProfilePageClient({
   memberSince,
   socialStats = { followersCount: 0, listingLikesCount: 0 },
   subscriptionPlanLabel = null,
-  subscriptionExpiresAt = null,
+  subscriptionExpiresInDays = null,
 }: {
   profile: Profile;
   email: string;
@@ -68,7 +68,7 @@ export function ProfilePageClient({
   memberSince: string;
   socialStats?: ProfileSocialStats;
   subscriptionPlanLabel?: string | null;
-  subscriptionExpiresAt?: string | null;
+  subscriptionExpiresInDays?: number | null;
   foundingMember?: boolean;
 }) {
   const displayName = profile.full_name ?? profile.username ?? "Your profile";
@@ -136,7 +136,7 @@ export function ProfilePageClient({
               planLabel={subscriptionPlanLabel}
               activeCount={activeCount}
               limit={limit}
-              expiresAt={subscriptionExpiresAt}
+              expiresInDays={subscriptionExpiresInDays}
             />
           </DashboardSection>
 

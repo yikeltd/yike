@@ -113,6 +113,22 @@ export function isSubscriptionPlanCode(value: string): value is SubscriptionPlan
   return PLAN_CODES.includes(value as SubscriptionPlanCode);
 }
 
+export function getPlanDisplayLabel(code: string): string {
+  return isSubscriptionPlanCode(code) ? PLAN_DISPLAY[code].label : "Free";
+}
+
+export function buildFallbackSubscriptionPlans(): Array<{
+  plan_code: SubscriptionPlanCode;
+  monthly_price: number;
+  active_listing_limit: number | null;
+}> {
+  return PLAN_CODES.map((code) => ({
+    plan_code: code,
+    monthly_price: PLAN_DISPLAY[code].monthlyPrice,
+    active_listing_limit: PLAN_DISPLAY[code].listingLimit,
+  }));
+}
+
 export function isPaidPlan(code: SubscriptionPlanCode): boolean {
   return code !== "free";
 }

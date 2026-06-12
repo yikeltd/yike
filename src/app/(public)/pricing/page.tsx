@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { tryCreateAdminClient } from "@/lib/supabase/admin";
 import { listActivePlans } from "@/lib/subscriptions/service";
 import { getRevenueOffers } from "@/lib/revenue-pricing/service";
 import { PricingPlans } from "@/components/subscriptions/pricing-plans";
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PricingPage() {
-  const admin = createAdminClient();
+  const admin = tryCreateAdminClient();
   const session = await getSession();
   const plans = admin ? await listActivePlans(admin) : [];
   const offers = admin ? await getRevenueOffers(admin) : { founding_subscription_offer: true };

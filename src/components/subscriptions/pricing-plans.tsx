@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
-import { PLAN_DISPLAY } from "@/lib/subscriptions/constants";
+import { PLAN_DISPLAY, isSubscriptionPlanCode } from "@/lib/subscriptions/constants";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +64,7 @@ export function PricingPlans({
 
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
         {plans.map((plan) => {
+          if (!isSubscriptionPlanCode(plan.plan_code)) return null;
           const display = PLAN_DISPLAY[plan.plan_code];
           const isFree = plan.plan_code === "free";
           const highlighted = plan.plan_code === "pro_agent";

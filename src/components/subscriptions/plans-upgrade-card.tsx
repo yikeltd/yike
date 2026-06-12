@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const PLANS_HREF = "/agent/plans";
@@ -10,25 +10,19 @@ export function PlansUpgradeCard({
   planLabel,
   activeCount,
   limit,
-  expiresAt,
+  expiresInDays,
   className,
 }: {
   planLabel?: string | null;
   activeCount: number;
   limit: number | null;
-  expiresAt?: string | null;
+  expiresInDays?: number | null;
   className?: string;
 }) {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const planName = planLabel ?? "Free Plan";
   const limitLabel = limit == null ? "∞" : String(limit);
-
-  const daysLeft =
-    expiresAt != null
-      ? Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000)
-      : null;
-  const showRenew = daysLeft != null && daysLeft <= 14 && planLabel;
+  const showRenew = expiresInDays != null && expiresInDays <= 14 && planLabel;
 
   async function renew() {
     setBusy(true);
@@ -50,13 +44,13 @@ export function PlansUpgradeCard({
         <span className="rounded-full bg-navy px-2.5 py-0.5 text-[10px] font-bold text-white">
           {planName}
         </span>
-        <button
-          type="button"
-          onClick={() => router.push(PLANS_HREF)}
+        <Link
+          href={PLANS_HREF}
+          prefetch
           className="pressable rounded-lg border border-navy/15 px-2.5 py-1 text-[11px] font-bold text-navy"
         >
           Upgrade
-        </button>
+        </Link>
       </div>
       <p className="mt-2.5 text-xl font-bold tabular-nums text-navy">
         {activeCount}
@@ -66,7 +60,7 @@ export function PlansUpgradeCard({
       {showRenew ? (
         <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
           <p className="text-[11px] text-muted">
-            Expires in {daysLeft}d
+            Expires in {expiresInDays}d
           </p>
           <button
             type="button"

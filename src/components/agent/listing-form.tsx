@@ -58,6 +58,8 @@ import {
 } from "@/lib/listing-quality";
 import { PriceConfirmDialog } from "@/components/agent/price-confirm-dialog";
 import { ValueDriverPicker } from "@/components/agent/value-driver-picker";
+import { ListingWritingAssist } from "@/components/agent/listing-writing-assist";
+import type { ListingWritingContext } from "@/lib/listing-writing-assist";
 import { softenListingTitle } from "@/lib/title-normalize";
 import type { PriceAnalysisResult } from "@/lib/pricing/types";
 import {
@@ -72,9 +74,7 @@ import {
 } from "@/lib/listing-field-rules";
 import {
   amenitiesSectionLabel,
-  buildSuggestedTitle,
   descriptionPlaceholder,
-  descriptionTip,
   listingStepSubheading,
   listingStepTitle,
   locationCopy,
@@ -273,20 +273,33 @@ export function ListingForm({
     () => valueDriverCategoriesFor(listingType, propertyType),
     [listingType, propertyType]
   );
-  const suggestedTitle = useMemo(
-    () =>
-      buildSuggestedTitle({
-        listingType,
-        propertyType,
-        bedrooms,
-        area,
-        city,
-      }),
-    [listingType, propertyType, bedrooms, area, city]
-  );
   const titleHint = useMemo(
     () => titleFieldHint(listingType, propertyType),
     [listingType, propertyType]
+  );
+  const writingContext = useMemo<ListingWritingContext>(
+    () => ({
+      listingType,
+      propertyType,
+      bedrooms,
+      bathrooms,
+      city,
+      area,
+      state,
+      amenities,
+      valueDriverKeys,
+    }),
+    [
+      listingType,
+      propertyType,
+      bedrooms,
+      bathrooms,
+      city,
+      area,
+      state,
+      amenities,
+      valueDriverKeys,
+    ]
   );
 
   useEffect(() => {
@@ -1191,14 +1204,13 @@ export function ListingForm({
               placeholder={titlePlaceholder(listingType, propertyType)}
               required
             />
-            {suggestedTitle && !title.trim() ? (
-              <button
-                type="button"
-                onClick={() => setTitle(suggestedTitle)}
-                className="text-left text-xs font-semibold text-gold-dark underline"
-              >
-                Suggested: {suggestedTitle}
-              </button>
+            {!isEdit ? (
+              <ListingWritingAssist
+                field="title"
+                value={title}
+                onChange={setTitle}
+                context={writingContext}
+              />
             ) : null}
             {titleHint ? <p className="text-xs text-muted">{titleHint}</p> : null}
             {!land ? (
@@ -1357,9 +1369,12 @@ export function ListingForm({
               rows={3}
             />
             {!isEdit ? (
-              <p className="text-xs text-muted">
-                {descriptionTip(listingType, propertyType)}
-              </p>
+              <ListingWritingAssist
+                field="description"
+                value={description}
+                onChange={setDescription}
+                context={writingContext}
+              />
             ) : null}
             <Input
               value={videoUrl}
