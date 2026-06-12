@@ -2,16 +2,17 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { useStandaloneApp } from "@/hooks/use-standalone-app";
 import {
   Bell,
   Bookmark,
   List,
   MessageCircle,
   PlusCircle,
-  Search,
   ShieldCheck,
   Users,
 } from "lucide-react";
+import { openYikeSupportWhatsApp } from "@/lib/support";
 import type { Profile } from "@/types/database";
 import type { ProfileSocialStats } from "@/lib/social/types";
 import { ProfileCoverHero } from "@/components/profile/profile-cover-hero";
@@ -31,6 +32,7 @@ import { SellerAnalyticsPanel } from "@/components/subscriptions/seller-analytic
 import { PlansUpgradeCard } from "@/components/subscriptions/plans-upgrade-card";
 import { SubscriptionPlanBadge } from "@/components/subscriptions/subscription-plan-badge";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
+import { cn } from "@/lib/utils";
 
 export function ProfilePageClient({
   profile,
@@ -70,8 +72,10 @@ export function ProfilePageClient({
   subscriptionExpiresInDays?: number | null;
   foundingMember?: boolean;
 }) {
+  const { isApp } = useStandaloneApp();
   const displayName = profile.full_name ?? profile.username ?? "Your profile";
   const isLister = canList;
+  const openSupport = () => openYikeSupportWhatsApp(undefined, { preferSameTab: isApp });
   const roleLabel = profileRoleLabel(profile, verified);
   const sellerType = getSellerType(profile);
   const statusMessage = accountStatusMessage(profile);
@@ -80,6 +84,10 @@ export function ProfilePageClient({
     canList: isLister,
     totalListings,
   });
+  const showCompanyQuickAction =
+    profile.account_type === "agency" ||
+    profile.account_type === "developer" ||
+    Boolean(profile.company_name);
 
   return (
     <div className="space-y-5 pb-4">
@@ -175,11 +183,16 @@ export function ProfilePageClient({
               <QuickAction href="/agent/leads" icon={MessageCircle} label="Leads" />
               <QuickAction href="/agent/notifications" icon={Bell} label="Notifications" />
               <QuickAction href="/agent/followers" icon={Users} label="Followers" />
-              {(profile.account_type === "agency" ||
-                profile.account_type === "developer" ||
-                profile.company_name) && (
+              <QuickAction
+                icon={MessageCircle}
+                label="Get Help"
+                subtitle="Contact support"
+                onClick={openSupport}
+                className={showCompanyQuickAction ? undefined : "col-span-2"}
+              />
+              {showCompanyQuickAction ? (
                 <QuickAction href="/agent/company" icon={ShieldCheck} label="Company" />
-              )}
+              ) : null}
             </div>
           </DashboardSection>
         </>
@@ -198,28 +211,25 @@ export function ProfilePageClient({
           </DashboardSection>
           <DashboardSection title="Quick actions">
             <div className="grid grid-cols-2 gap-2">
-              <QuickAction href="/saved" icon={Bookmark} label="Saved homes" />
-              <QuickAction href="/search" icon={Search} label="Find a home" />
-              <QuickAction href="/agent/notifications" icon={Bell} label="Notifications" />
+              <QuickAction href="/agent/become" icon={PlusCircle} label="List a Property" />
+              <QuickAction href="/saved" icon={Bookmark} label="Saved Homes" />
               <QuickAction
-                href="/property-verification/requests"
+                href="/property-verification"
                 icon={ShieldCheck}
-                label="Inquiries"
+                label="Verify Property"
               />
-              <Link
-                href="/agent/become"
-                prefetch
-                className="pressable col-span-2 flex items-center justify-center gap-2 rounded-2xl border border-navy/20 bg-elevated px-4 py-3.5 text-sm font-bold text-navy shadow-sm"
-              >
-                <PlusCircle className="h-5 w-5" />
-                List a property
-              </Link>
+              <QuickAction
+                icon={MessageCircle}
+                label="Get Help"
+                subtitle="Contact support"
+                onClick={openSupport}
+              />
             </div>
           </DashboardSection>
         </>
       )}
 
-      <ProfileAccountActions email={email} canList={isLister} />
+      <ProfileAccountActions email={email} canList={isLister} onGetHelp={openSupport} />
     </div>
   );
 }
@@ -245,19 +255,43 @@ function QuickAction({
   href,
   icon: Icon,
   label,
+  subtitle,
+  onClick,
+  className: extraClassName,
 }: {
-  href: string;
+  href?: string;
   icon: typeof List;
   label: string;
+  subtitle?: string;
+  onClick?: () => void;
+  className?: string;
 }) {
-  return (
-    <Link
-      href={href}
-      prefetch
-      className="pressable flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border bg-elevated px-3 py-3.5 text-center shadow-float"
-    >
-      <Icon className="h-5 w-5 text-navy" />
+  const className = cn(
+    "pressable flex min-h-[5.25rem] flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-elevated px-3 py-3.5 text-center shadow-float",
+    extraClassName
+  );
+
+  const content = (
+    <>
+      <Icon className="h-5 w-5 text-navy" aria-hidden />
       <span className="text-xs font-semibold text-navy">{label}</span>
+      {subtitle ? (
+        <span className="text-[10px] font-medium leading-tight text-muted">{subtitle}</span>
+      ) : null}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href ?? "#"} prefetch className={className}>
+      {content}
     </Link>
   );
 }

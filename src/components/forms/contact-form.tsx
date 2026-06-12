@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { MessageCircle, Mail, MapPin, Phone } from "lucide-react";
-import { YIKE_SUPPORT_PHONE_DISPLAY, YIKE_SUPPORT_WHATSAPP } from "@/lib/constants";
-import { whatsAppDeepLink } from "@/lib/whatsapp";
+import { YIKE_SUPPORT_PHONE_DISPLAY } from "@/lib/constants";
+import { getYikeSupportWhatsAppUrl } from "@/lib/support";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import {
@@ -14,7 +14,7 @@ import {
 export function WhatsAppSupportCard() {
   return (
     <a
-      href={whatsAppDeepLink(YIKE_SUPPORT_WHATSAPP, "Hi Yike, I need support.")}
+      href={getYikeSupportWhatsAppUrl()}
       target="_blank"
       rel="noopener noreferrer"
       className="pressable flex items-center gap-3 rounded-2xl bg-[#25D366]/10 p-4 text-sm font-semibold text-navy ring-1 ring-[#25D366]/20"
