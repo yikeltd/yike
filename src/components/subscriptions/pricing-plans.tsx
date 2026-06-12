@@ -43,9 +43,9 @@ export function PricingPlans({
       return;
     }
     if (data.authorizationUrl) {
-      window.location.href = data.authorizationUrl;
+      window.location.assign(data.authorizationUrl);
     } else {
-      window.location.href = "/agent?upgraded=1";
+      window.location.assign("/agent?upgraded=1");
     }
   }
 

@@ -139,7 +139,7 @@ export function AdvertisementsBoard() {
       return;
     }
     if (data.authorizationUrl) {
-      window.location.href = data.authorizationUrl;
+      window.location.assign(data.authorizationUrl);
       return;
     }
     void load();

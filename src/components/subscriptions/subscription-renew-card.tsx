@@ -14,6 +14,7 @@ export function SubscriptionRenewCard({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [now] = useState(() => Date.now());
 
   async function renew() {
     setBusy(true);
@@ -26,7 +27,7 @@ export function SubscriptionRenewCard({
       return;
     }
     if (data.authorizationUrl) {
-      window.location.href = data.authorizationUrl;
+      window.location.assign(data.authorizationUrl);
     } else {
       window.location.reload();
     }
@@ -35,7 +36,7 @@ export function SubscriptionRenewCard({
   if (!expiresAt) return null;
 
   const exp = new Date(expiresAt);
-  const daysLeft = Math.ceil((exp.getTime() - Date.now()) / 86_400_000);
+  const daysLeft = Math.ceil((exp.getTime() - now) / 86_400_000);
 
   return (
     <div className="rounded-2xl border border-border bg-white p-4">

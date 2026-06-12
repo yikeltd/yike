@@ -18,6 +18,10 @@ type ModerateAction =
   | "rented"
   | "pending";
 
+function featureUntilIso(days: number) {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 export function ListingActions({
   propertyId,
   title,
@@ -106,7 +110,7 @@ export function ListingActions({
   async function featureListing() {
     setBusy("feature");
     setMessage("");
-    const featuredUntil = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    const featuredUntil = featureUntilIso(14);
     const res = await fetch(`/api/admin/listings/${propertyId}/feature`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -127,7 +131,7 @@ export function ListingActions({
     router.refresh();
   }
 
-  function ActionBtn({
+  function renderActionButton({
     label,
     actionKey,
     onClick,
@@ -211,76 +215,76 @@ export function ListingActions({
           compact ? "" : "gap-2"
         )}
       >
-        {showApprove ? (
-          <ActionBtn
-            label="Approve"
-            actionKey="approve"
-            variant="gold"
-            onClick={() => void moderate("approve")}
-          />
-        ) : null}
-        {showReject ? (
-          <ActionBtn
-            label="Reject"
-            actionKey="reject"
-            variant="danger"
-            onClick={() => void moderate("reject")}
-          />
-        ) : null}
-        {showHide ? (
-          <ActionBtn
-            label="Hide"
-            actionKey="hide"
-            onClick={() => void moderate("hide")}
-          />
-        ) : null}
-        {showRented ? (
-          <ActionBtn
-            label="Rented"
-            actionKey="rented"
-            onClick={() => void moderate("rented")}
-          />
-        ) : null}
-        {showRequeue ? (
-          <ActionBtn
-            label="Re-queue"
-            actionKey="pending"
-            onClick={() => void moderate("pending")}
-          />
-        ) : null}
-        {showFeature ? (
-          <ActionBtn
-            label="Feature"
-            actionKey="feature"
-            variant="navy"
-            onClick={() => void featureListing()}
-          />
-        ) : null}
+        {showApprove
+          ? renderActionButton({
+              label: "Approve",
+              actionKey: "approve",
+              variant: "gold",
+              onClick: () => void moderate("approve"),
+            })
+          : null}
+        {showReject
+          ? renderActionButton({
+              label: "Reject",
+              actionKey: "reject",
+              variant: "danger",
+              onClick: () => void moderate("reject"),
+            })
+          : null}
+        {showHide
+          ? renderActionButton({
+              label: "Hide",
+              actionKey: "hide",
+              onClick: () => void moderate("hide"),
+            })
+          : null}
+        {showRented
+          ? renderActionButton({
+              label: "Rented",
+              actionKey: "rented",
+              onClick: () => void moderate("rented"),
+            })
+          : null}
+        {showRequeue
+          ? renderActionButton({
+              label: "Re-queue",
+              actionKey: "pending",
+              onClick: () => void moderate("pending"),
+            })
+          : null}
+        {showFeature
+          ? renderActionButton({
+              label: "Feature",
+              actionKey: "feature",
+              variant: "navy",
+              onClick: () => void featureListing(),
+            })
+          : null}
       </div>
 
       <details className="text-[11px]">
         <summary className="cursor-pointer font-bold text-gold-dark">More actions</summary>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
-          <ActionBtn
-            label="Hold"
-            actionKey="hold"
-            onClick={() => void reviewAction("hold")}
-          />
-          <ActionBtn
-            label="Flag"
-            actionKey="flag"
-            onClick={() => void moderate("flag")}
-          />
-          <ActionBtn
-            label="Rank lower"
-            actionKey="approve_rank_lower"
-            onClick={() => void reviewAction("approve_rank_lower")}
-          />
-          <ActionBtn
-            label="Ask update"
-            actionKey="request_edits"
-            onClick={() => void moderate("request_edits")}
-          />
+          {renderActionButton({
+            label: "Hold",
+            actionKey: "hold",
+            onClick: () => void reviewAction("hold"),
+          })}
+          {renderActionButton({
+            label: "Flag",
+            actionKey: "flag",
+            onClick: () => void moderate("flag"),
+          })}
+          {renderActionButton({
+            label: "Rank lower",
+            actionKey: "approve_rank_lower",
+            onClick: () => void reviewAction("approve_rank_lower"),
+          })}
+          {renderActionButton({
+            label: "Ask update",
+            actionKey: "request_edits",
+            onClick: () => void moderate("request_edits"),
+          })}
         </div>
       </details>
 

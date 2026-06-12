@@ -341,6 +341,7 @@ export function ListingForm({
       dismissDraftForNewListing();
     }
     setListingType(listingTypeValue);
+    setPaymentPeriod(defaultPaymentPeriodForListingType(listingTypeValue));
     if (nextPropertyType) {
       setPropertyType(nextPropertyType);
     } else {

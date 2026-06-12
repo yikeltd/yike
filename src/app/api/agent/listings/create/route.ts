@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isEmailVerified } from "@/lib/auth";
@@ -18,6 +19,7 @@ type Body = {
 };
 
 const LISTER_ROLES = new Set([
+  "agent",
   "agent_unverified",
   "agent_verified",
   "admin",
@@ -94,11 +96,30 @@ function stripOptionalFields(row: Record<string, unknown>): Record<string, unkno
   return out;
 }
 
+function publicListingError(error: string, code?: string): string {
+  if (error === "listing_owner_required") {
+    return "Your session expired. Please log in again.";
+  }
+  if (error === "listing_status_escalation_denied") {
+    return "Your listing has been submitted for review.";
+  }
+  if (error.toLowerCase().includes("listing limit reached")) {
+    return "Listing limit reached.";
+  }
+  if (code === "23514") {
+    return "Some listing details are invalid. Please review and submit again.";
+  }
+  if (code === "42501" || error.toLowerCase().includes("row-level security")) {
+    return "Your session expired. Please log in again.";
+  }
+  return "Could not save listing. Please try again.";
+}
+
 async function insertListing(
-  admin: ReturnType<typeof createAdminClient>,
+  client: SupabaseClient,
   row: Record<string, unknown>
 ): Promise<{ id: string } | { error: string; code?: string }> {
-  const { data, error } = await admin
+  const { data, error } = await client
     .from("properties")
     .insert(row)
     .select("id")
@@ -196,7 +217,7 @@ export async function POST(request: Request) {
   const fullRow = stripOptionalFields({ ...minimal, ...pricingFields });
 
   if (listingId) {
-    const { data: updated, error: updateError } = await admin
+    const { data: updated, error: updateError } = await supabase
       .from("properties")
       .update(fullRow)
       .eq("id", listingId)
@@ -236,14 +257,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Listing limit reached." }, { status: 400 });
   }
 
-  let result = await insertListing(admin, fullRow);
+  let result = await insertListing(supabase, fullRow);
   if ("error" in result) {
     logStage("listing_insert_retry", {
       userId: user.id,
       message: result.error,
       code: result.code,
     });
-    result = await insertListing(admin, minimal);
+    result = await insertListing(supabase, minimal);
   }
 
   if ("error" in result) {
@@ -254,7 +275,7 @@ export async function POST(request: Request) {
       durationMs: Date.now() - startedAt,
     });
     return NextResponse.json(
-      { error: "Could not save listing. Please try again." },
+      { error: publicListingError(result.error, result.code), code: result.code },
       { status: 500 }
     );
   }

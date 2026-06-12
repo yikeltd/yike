@@ -123,12 +123,13 @@ export function SellerLeadsDashboard() {
           ))}
         </nav>
         {access?.hasExport ? (
-          <a
-            href="/api/agent/listing-leads/export"
+          <button
+            type="button"
+            onClick={() => window.location.assign("/api/agent/listing-leads/export")}
             className="rounded-lg bg-navy px-3 py-1.5 text-xs font-bold text-white"
           >
             Export CSV
-          </a>
+          </button>
         ) : null}
       </div>
 

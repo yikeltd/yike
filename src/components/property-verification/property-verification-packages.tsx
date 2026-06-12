@@ -55,10 +55,12 @@ export function PropertyVerificationPackages({
       return;
     }
     if (data.authorizationUrl) {
-      window.location.href = data.authorizationUrl;
+      window.location.assign(data.authorizationUrl);
       return;
     }
-    window.location.href = `/property-verification/requests/${requestId}?paid=1&ref=${encodeURIComponent(data.verificationReference ?? reference ?? "")}`;
+    window.location.assign(
+      `/property-verification/requests/${requestId}?paid=1&ref=${encodeURIComponent(data.verificationReference ?? reference ?? "")}`
+    );
   }
 
   return (
