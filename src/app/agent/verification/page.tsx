@@ -58,19 +58,14 @@ export default function AgentVerificationPage() {
         <Link href="/agent" className="text-xs font-semibold text-gold-dark hover:underline">
           ← Back to profile
         </Link>
-        <h1 className="mt-2 text-xl font-bold text-navy">Account & verification</h1>
+        <h1 className="mt-2 text-xl font-bold text-navy">Account setup</h1>
         <p className="mt-1 text-sm text-muted">
-          Finish listing setup to post properties. Verified badge and company checks are optional
-          upgrades below.
+          Complete the steps below to list properties. Verified badge and company checks are
+          optional.
         </p>
       </div>
 
-      <TrustCenterCard
-        profile={profile}
-        verified={verified}
-        defaultExpanded
-        showVerificationHubLink={false}
-      />
+      <TrustCenterCard profile={profile} verified={verified} variant="detail" />
 
       <PhoneVerificationCard profile={profile} onVerified={() => void reload()} />
 

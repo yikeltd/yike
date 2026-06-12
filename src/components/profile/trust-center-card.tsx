@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   Check,
-  ChevronDown,
   ChevronRight,
   Circle,
   Clock,
@@ -23,6 +21,8 @@ import {
   type TrustProgressItem,
 } from "@/lib/verification/trust-center";
 import { yikeVerificationWhatsAppLink } from "@/lib/agent-verification";
+
+const SETUP_HREF = "/agent/verification";
 
 function StatusIcon({ status }: { status: TrustItemStatus }) {
   switch (status) {
@@ -105,17 +105,14 @@ function TrustRow({ item, compact }: { item: TrustProgressItem; compact?: boolea
 export function TrustCenterCard({
   profile,
   verified,
-  defaultExpanded = false,
+  variant = "summary",
   className,
-  showVerificationHubLink = true,
 }: {
   profile: Profile;
   verified: boolean;
-  defaultExpanded?: boolean;
+  variant?: "summary" | "detail";
   className?: string;
-  showVerificationHubLink?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
   const chip = getTrustStatusChip(profile, verified);
   const items = getTrustProgressItems(profile, verified);
   const percent = trustProgressPercent(items);
@@ -128,11 +125,48 @@ export function TrustCenterCard({
     (i) => i.status === "action_needed" || i.status === "under_review"
   );
   const completed = items.filter((i) => i.status === "complete");
-
   const allDone = listingIncomplete.length === 0;
-  const needsAction = Boolean(
-    next && (next.status === "action_needed" || next.status === "under_review")
-  );
+
+  if (variant === "summary") {
+    return (
+      <section
+        className={cn(
+          "rounded-2xl border border-border bg-elevated px-4 py-3.5 shadow-float",
+          className
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <ProgressRing percent={percent} />
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-navy">
+              {percent}%
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-bold text-navy">Account setup</p>
+              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
+                {chip.label}
+              </span>
+            </div>
+            {nextMessage && !allDone ? (
+              <p className="mt-0.5 line-clamp-2 text-xs text-muted">{nextMessage}</p>
+            ) : allDone ? (
+              <p className="mt-0.5 text-xs text-muted">All required steps complete.</p>
+            ) : null}
+          </div>
+        </div>
+        <Link
+          href={SETUP_HREF}
+          prefetch
+          className="pressable mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy"
+        >
+          <ShieldCheck className="h-4 w-4" />
+          {allDone ? "View account setup" : "Continue setup"}
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -141,12 +175,7 @@ export function TrustCenterCard({
         className
       )}
     >
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="pressable flex w-full items-center gap-3 px-4 py-3.5 text-left"
-        aria-expanded={expanded}
-      >
+      <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
         <div className="relative">
           <ProgressRing percent={percent} />
           <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-navy">
@@ -155,113 +184,74 @@ export function TrustCenterCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-navy">Account & verification</p>
+            <p className="text-sm font-bold text-navy">Account setup</p>
             <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
               {chip.label}
             </span>
           </div>
           {nextMessage && !allDone ? (
-            <p className="mt-0.5 line-clamp-2 text-xs text-muted">{nextMessage}</p>
+            <p className="mt-0.5 text-xs text-muted">{nextMessage}</p>
           ) : allDone ? (
-            <p className="mt-0.5 text-xs text-muted">All set.</p>
+            <p className="mt-0.5 text-xs text-muted">All required steps complete.</p>
           ) : null}
         </div>
-        {!expanded && needsAction && showVerificationHubLink ? (
-          <Link
-            href={next?.href ?? "/agent/verification"}
-            prefetch
-            onClick={(e) => e.stopPropagation()}
-            className="shrink-0 rounded-full bg-gold px-3 py-1.5 text-[11px] font-bold text-navy"
-          >
-            Continue
-          </Link>
-        ) : (
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 shrink-0 text-muted transition-transform",
-              expanded && "rotate-180"
-            )}
-          />
-        )}
-      </button>
+      </div>
 
-      {expanded ? (
-        <div className="border-t border-border px-4 py-3">
-          {listingItems.length > 0 ? (
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
-                Listing setup
-              </p>
-              <ul className="mt-2 space-y-2">
-                {listingItems.map((item) => (
-                  <TrustRow key={item.id} item={item} />
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {trustItems.length > 0 ? (
-            <div className={cn(listingItems.length > 0 && "mt-4")}>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
-                Trust upgrade
-              </p>
-              <p className="mt-0.5 text-xs text-muted">Optional — verified badge and company checks.</p>
-              <ul className="mt-2 space-y-1.5">
-                {trustItems.map((item) => (
-                  <TrustRow key={item.id} item={item} />
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {completed.length > 0 && listingIncomplete.length === 0 ? (
-            <details className="mt-3">
-              <summary className="cursor-pointer text-xs font-semibold text-muted">
-                Completed ({completed.length})
-              </summary>
-              <ul className="mt-2 space-y-1.5">
-                {completed.map((item) => (
-                  <TrustRow key={item.id} item={item} compact />
-                ))}
-              </ul>
-            </details>
-          ) : null}
-
-          {showVerificationHubLink ? (
-            <Link
-              href="/agent/verification"
-              prefetch
-              className={cn(
-                "pressable mt-3 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold",
-                next && next.status === "action_needed"
-                  ? "bg-gold text-navy"
-                  : "border border-border text-navy"
-              )}
-            >
-              <ShieldCheck className="h-4 w-4" />
-              {next && next.status === "action_needed"
-                ? "Continue setup"
-                : next?.status === "under_review"
-                  ? "View verification status"
-                  : "Open verification center"}
-            </Link>
-          ) : null}
-
-          <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-surface px-3 py-2">
-            <p className="text-xs text-muted">Need help?</p>
-            <Link
-              href={yikeVerificationWhatsAppLink("Hi Yike, I need help with my account verification.")}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-navy"
-            >
-              <MessageCircle className="h-3.5 w-3.5 text-[#25D366]" />
-              Chat support
-              <ChevronRight className="h-3 w-3 text-muted" />
-            </Link>
+      <div className="px-4 py-3">
+        {listingItems.length > 0 ? (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+              Required to list
+            </p>
+            <ul className="mt-2 space-y-2">
+              {listingItems.map((item) => (
+                <TrustRow key={item.id} item={item} />
+              ))}
+            </ul>
           </div>
+        ) : null}
+
+        {trustItems.length > 0 ? (
+          <div className={cn(listingItems.length > 0 && "mt-4")}>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+              Optional upgrades
+            </p>
+            <p className="mt-0.5 text-xs text-muted">Verified badge and company checks.</p>
+            <ul className="mt-2 space-y-1.5">
+              {trustItems.map((item) => (
+                <TrustRow key={item.id} item={item} />
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {completed.length > 0 && listingIncomplete.length === 0 ? (
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs font-semibold text-muted">
+              Completed ({completed.length})
+            </summary>
+            <ul className="mt-2 space-y-1.5">
+              {completed.map((item) => (
+                <TrustRow key={item.id} item={item} compact />
+              ))}
+            </ul>
+          </details>
+        ) : null}
+
+        <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-surface px-3 py-2">
+          <p className="text-xs text-muted">Need help?</p>
+          <Link
+            href={yikeVerificationWhatsAppLink("Hi Yike, I need help with my account setup.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-navy"
+          >
+            <MessageCircle className="h-3.5 w-3.5 text-[#25D366]" />
+            Chat support
+            <ChevronRight className="h-3 w-3 text-muted" />
+          </Link>
         </div>
-      ) : null}
+      </div>
     </section>
   );
 }

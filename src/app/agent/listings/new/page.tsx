@@ -69,8 +69,8 @@ export default async function NewListingPage() {
             <Link href="/agent/plans" prefetch className="inline-flex text-xs font-semibold text-navy">
               View plans →
             </Link>
-            <Link href="/agent/verification" className="inline-flex text-xs font-semibold text-navy">
-              Verification center →
+            <Link href="/agent/verification" prefetch className="inline-flex text-xs font-semibold text-navy">
+              Account setup →
             </Link>
           </div>
         </div>
