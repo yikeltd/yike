@@ -47,7 +47,7 @@ export function PlansUpgradeCard({
         <Link
           href={PLANS_HREF}
           prefetch
-          className="pressable rounded-lg border border-navy/15 px-2.5 py-1 text-[11px] font-bold text-navy"
+          className="pressable rounded-lg bg-gold px-3 py-1 text-[11px] font-bold text-navy shadow-sm"
         >
           Upgrade
         </Link>
