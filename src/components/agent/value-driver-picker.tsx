@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ValueDriverCategory } from "@/constants/valueDrivers";
 import {
   MAX_VALUE_DRIVER_SELECTIONS,
   VALUE_DRIVER_CATEGORIES,
@@ -13,12 +14,19 @@ export function ValueDriverPicker({
   selected,
   onChange,
   disabled,
+  categories,
 }: {
   selected: string[];
   onChange: (keys: string[]) => void;
   disabled?: boolean;
+  categories?: ValueDriverCategory[];
 }) {
   const grouped = useMemo(() => valueDriversByCategory(), []);
+  const visibleCategories = useMemo(() => {
+    if (!categories?.length) return VALUE_DRIVER_CATEGORIES;
+    const allowed = new Set(categories);
+    return VALUE_DRIVER_CATEGORIES.filter((cat) => allowed.has(cat.id));
+  }, [categories]);
   const atLimit = selected.length >= MAX_VALUE_DRIVER_SELECTIONS;
   const [openCats, setOpenCats] = useState<Set<string>>(new Set());
 
@@ -46,7 +54,7 @@ export function ValueDriverPicker({
       <p className="text-xs text-muted">
         {selected.length}/{MAX_VALUE_DRIVER_SELECTIONS} selected · optional
       </p>
-      {VALUE_DRIVER_CATEGORIES.map((cat) => {
+      {visibleCategories.map((cat) => {
         const items = grouped.get(cat.id) ?? [];
         if (items.length === 0) return null;
         const open = openCats.has(cat.id);

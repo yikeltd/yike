@@ -1,3 +1,9 @@
+import type { ListingTypeValue } from "@/constants/listingTypes";
+import {
+  isCommercialProperty,
+  isLandProperty,
+} from "@/lib/listing-field-rules";
+
 /** Room / area labels for listing photos and motion swipe story order. */
 export const ROOM_LABELS = [
   "Exterior",
@@ -55,6 +61,127 @@ export const DEFAULT_UPLOAD_LABEL_SEQUENCE: RoomLabel[] = [
   "Other",
 ];
 
+const LAND_UPLOAD_LABEL_SEQUENCE: RoomLabel[] = [
+  "Land View",
+  "Street View",
+  "Gate",
+  "Compound",
+  "Exterior",
+  "Other",
+];
+
+const COMMERCIAL_SHOP_UPLOAD_LABEL_SEQUENCE: RoomLabel[] = [
+  "Shop Front",
+  "Exterior",
+  "Street View",
+  "Office Space",
+  "Compound",
+  "Parking Space",
+  "Other",
+];
+
+const COMMERCIAL_OFFICE_UPLOAD_LABEL_SEQUENCE: RoomLabel[] = [
+  "Office Space",
+  "Exterior",
+  "Parking Space",
+  "Compound",
+  "Street View",
+  "Other",
+];
+
+const SHORTLET_UPLOAD_LABEL_SEQUENCE: RoomLabel[] = [
+  "Exterior",
+  "Living Room",
+  "Kitchen",
+  "Master Bedroom",
+  "Bathroom",
+  "Balcony",
+  "Other",
+];
+
+const LAND_PHOTO_LABELS: RoomLabel[] = [
+  "Land View",
+  "Street View",
+  "Gate",
+  "Compound",
+  "Exterior",
+  "Other",
+];
+
+const COMMERCIAL_PHOTO_LABELS: RoomLabel[] = [
+  "Shop Front",
+  "Office Space",
+  "Exterior",
+  "Street View",
+  "Parking Space",
+  "Compound",
+  "Gate",
+  "Other",
+];
+
+const SHORTLET_PHOTO_LABELS: RoomLabel[] = [
+  "Exterior",
+  "Living Room",
+  "Kitchen",
+  "Master Bedroom",
+  "Bedroom",
+  "Bathroom",
+  "Balcony",
+  "Compound",
+  "Other",
+];
+
+const RESIDENTIAL_PHOTO_LABELS: RoomLabel[] = [
+  "Exterior",
+  "Parlor",
+  "Living Room",
+  "Kitchen",
+  "Dining Area",
+  "Master Bedroom",
+  "Bedroom",
+  "Bathroom",
+  "Balcony",
+  "Compound",
+  "Parking Space",
+  "Gate",
+  "Other",
+];
+
+export function uploadLabelSequenceForContext(
+  propertyType?: string,
+  listingType?: ListingTypeValue
+): RoomLabel[] {
+  if (propertyType && isLandProperty(propertyType)) {
+    return LAND_UPLOAD_LABEL_SEQUENCE;
+  }
+  if (propertyType && isCommercialProperty(propertyType)) {
+    if (propertyType === "shop" || propertyType === "plaza") {
+      return COMMERCIAL_SHOP_UPLOAD_LABEL_SEQUENCE;
+    }
+    return COMMERCIAL_OFFICE_UPLOAD_LABEL_SEQUENCE;
+  }
+  if (listingType === "shortlet") {
+    return SHORTLET_UPLOAD_LABEL_SEQUENCE;
+  }
+  return DEFAULT_UPLOAD_LABEL_SEQUENCE;
+}
+
+export function photoLabelsForContext(
+  propertyType?: string,
+  listingType?: ListingTypeValue
+): readonly RoomLabel[] {
+  if (propertyType && isLandProperty(propertyType)) {
+    return LAND_PHOTO_LABELS;
+  }
+  if (propertyType && isCommercialProperty(propertyType)) {
+    return COMMERCIAL_PHOTO_LABELS;
+  }
+  if (listingType === "shortlet") {
+    return SHORTLET_PHOTO_LABELS;
+  }
+  return RESIDENTIAL_PHOTO_LABELS;
+}
+
 /** Labels that should not be auto-selected as cover. */
 export const POOR_COVER_LABELS = new Set<string>([
   "Bathroom",
@@ -78,11 +205,13 @@ export function storyOrderForLabel(label?: string | null): number {
   return ROOM_STORY_ORDER[label] ?? 50;
 }
 
-export function suggestLabelForIndex(index: number): RoomLabel {
-  return (
-    DEFAULT_UPLOAD_LABEL_SEQUENCE[index] ??
-    DEFAULT_UPLOAD_LABEL_SEQUENCE[DEFAULT_UPLOAD_LABEL_SEQUENCE.length - 1]
-  );
+export function suggestLabelForIndex(
+  index: number,
+  propertyType?: string,
+  listingType?: ListingTypeValue
+): RoomLabel {
+  const sequence = uploadLabelSequenceForContext(propertyType, listingType);
+  return sequence[index] ?? sequence[sequence.length - 1];
 }
 
 export function fallbackPhotoLabel(index: number): string {

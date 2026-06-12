@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ListingDraftBanner } from "./listing-draft-banner";
@@ -19,7 +19,7 @@ import { ListingAmenitiesPicker } from "./listing-amenities-picker";
 import { transparencyToExtras } from "./listing-transparency-fields";
 import { extrasToFeeFormState } from "@/lib/rent-breakdown";
 import { ListingInlineFees } from "./listing-inline-fees";
-import { MIN_LISTING_IMAGES, MAX_LISTING_IMAGES, PAYMENT_PERIODS } from "@/lib/constants";
+import { MIN_LISTING_IMAGES, MAX_LISTING_IMAGES } from "@/lib/constants";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
 import {
   defaultPaymentPeriodForListingType,
@@ -70,6 +70,24 @@ import {
   isLandProperty,
   showRoomFields,
 } from "@/lib/listing-field-rules";
+import {
+  amenitiesSectionLabel,
+  buildSuggestedTitle,
+  descriptionPlaceholder,
+  descriptionTip,
+  listingStepSubheading,
+  listingStepTitle,
+  locationCopy,
+  paymentPeriodLabel,
+  paymentPeriodsForListingType,
+  priceFieldCopy,
+  titleFieldHint,
+  titlePlaceholder,
+  validatePriceMessage,
+  validateTitleMessage,
+  valueDriverCategoriesFor,
+  valueDriversSectionTitle,
+} from "@/lib/listing-form-copy";
 import { cn } from "@/lib/utils";
 import { parseNairaAmount } from "@/lib/naira-input";
 import {
@@ -239,15 +257,48 @@ export function ListingForm({
   const commercial = isCommercialProperty(propertyType);
   const noRoomCounts = land || commercial;
 
+  const paymentPeriodOptions = useMemo(
+    () => paymentPeriodsForListingType(listingType),
+    [listingType]
+  );
+  const priceCopy = useMemo(
+    () => priceFieldCopy(listingType, paymentPeriod),
+    [listingType, paymentPeriod]
+  );
+  const locationHints = useMemo(
+    () => locationCopy(listingType, propertyType),
+    [listingType, propertyType]
+  );
+  const valueDriverCategories = useMemo(
+    () => valueDriverCategoriesFor(listingType, propertyType),
+    [listingType, propertyType]
+  );
+  const suggestedTitle = useMemo(
+    () =>
+      buildSuggestedTitle({
+        listingType,
+        propertyType,
+        bedrooms,
+        area,
+        city,
+      }),
+    [listingType, propertyType, bedrooms, area, city]
+  );
+  const titleHint = useMemo(
+    () => titleFieldHint(listingType, propertyType),
+    [listingType, propertyType]
+  );
+
   useEffect(() => {
     setPropertyType((prev) => {
       const options = propertyTypesForListingType(listingType);
       if (options.some((o) => o.value === prev)) return prev;
       return options[0]?.value ?? prev;
     });
+    const allowed = paymentPeriodsForListingType(listingType).map((p) => p.value);
     setPaymentPeriod((prev) => {
-      const def = defaultPaymentPeriodForListingType(listingType);
-      return prev || def;
+      if (prev && allowed.includes(prev as (typeof allowed)[number])) return prev;
+      return defaultPaymentPeriodForListingType(listingType);
     });
   }, [listingType]);
 
@@ -371,7 +422,9 @@ export function ListingForm({
   function editSectionHeading(n: number) {
     if (!isEdit) return null;
     return (
-      <h2 className="text-sm font-bold text-navy">{STEPS[n - 1].title}</h2>
+      <h2 className="text-sm font-bold text-navy">
+        {listingStepTitle(n, listingType, propertyType)}
+      </h2>
     );
   }
 
@@ -380,10 +433,10 @@ export function ListingForm({
       if (!listingType) return "Choose what you are listing.";
     }
     if (n === 2) {
-      if (!title.trim()) return "Add a short title for your listing.";
+      if (!title.trim()) return validateTitleMessage(listingType, propertyType);
       if (!propertyType) return "Choose a property type.";
       const p = parseNairaAmount(price);
-      if (!p) return "Enter a real price in ₦.";
+      if (!p) return validatePriceMessage(listingType, paymentPeriod);
     }
     if (n === 3) {
       if (!city.trim()) return "Pick a city or area from search.";
@@ -1045,7 +1098,7 @@ export function ListingForm({
             ))}
           </div>
           <p className="mb-2 text-xs font-semibold text-muted">
-            Step {step} of 4 · {STEPS[step - 1].title}
+            Step {step} of 4 · {listingStepTitle(step, listingType, propertyType)}
           </p>
         </>
       ) : null}
@@ -1127,12 +1180,27 @@ export function ListingForm({
         {showStep(2) && (
           <section className={cn("space-y-4", isEdit && "rounded-2xl border border-navy/8 bg-elevated p-4")}>
             {editSectionHeading(2)}
+            {!isEdit ? (
+              <p className="text-xs text-muted">
+                {listingStepSubheading(listingType, propertyType)}
+              </p>
+            ) : null}
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. 2-bed flat in Ogbor Hill"
+              placeholder={titlePlaceholder(listingType, propertyType)}
               required
             />
+            {suggestedTitle && !title.trim() ? (
+              <button
+                type="button"
+                onClick={() => setTitle(suggestedTitle)}
+                className="text-left text-xs font-semibold text-gold-dark underline"
+              >
+                Suggested: {suggestedTitle}
+              </button>
+            ) : null}
+            {titleHint ? <p className="text-xs text-muted">{titleHint}</p> : null}
             {!land ? (
               <ListingPropertyTypePicker
                 listingType={listingType}
@@ -1143,11 +1211,11 @@ export function ListingForm({
               <p className="text-xs text-muted">Land listing — add plot details below if helpful.</p>
             )}
             <NairaInput
-              label="Price (₦)"
+              label={priceCopy.label}
               value={price}
               onChange={setPrice}
               required
-              placeholder="e.g. 1,500,000 or 1.5m"
+              placeholder={priceCopy.placeholder}
             />
             {parseNairaAmount(price) ? (
               <ListingInlineFees
@@ -1187,7 +1255,7 @@ export function ListingForm({
               </div>
             ) : commercial ? (
               <div>
-                <FieldLabel>Features (optional)</FieldLabel>
+                <FieldLabel>{amenitiesSectionLabel(listingType, propertyType)}</FieldLabel>
                 <ListingAmenitiesPicker
                   listingType={listingType}
                   propertyType={propertyType}
@@ -1197,12 +1265,12 @@ export function ListingForm({
               </div>
             ) : null}
             <div>
-              <FieldLabel>Payment period</FieldLabel>
+              <FieldLabel>{paymentPeriodLabel(listingType)}</FieldLabel>
               <Select
                 value={paymentPeriod}
                 onChange={(e) => setPaymentPeriod(e.target.value)}
               >
-                {PAYMENT_PERIODS.map((p) => (
+                {paymentPeriodOptions.map((p) => (
                   <option key={p.value} value={p.value}>
                     {p.label}
                   </option>
@@ -1233,6 +1301,10 @@ export function ListingForm({
               onAreaChange={setArea}
               initialLandmark={initial?.landmark}
               initialAddressHint={initial?.address_hint}
+              searchPlaceholder={locationHints.searchPlaceholder}
+              landmarkPlaceholder={locationHints.landmarkPlaceholder}
+              addressHintPlaceholder={locationHints.addressHintPlaceholder}
+              hint={locationHints.hint}
             />
           </section>
         )}
@@ -1244,12 +1316,14 @@ export function ListingForm({
               ref={photoManagerRef}
               items={mediaItems}
               onChange={setMediaItems}
+              listingType={listingType}
+              propertyType={propertyType}
             />
 
             {!commercial ? (
               <details className="rounded-xl border border-navy/10 bg-surface/40">
                 <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
-                  Amenities (optional)
+                  {amenitiesSectionLabel(listingType, propertyType)}
                 </summary>
                 <div className="border-t border-navy/8 px-3 pb-3 pt-2">
                   <ListingAmenitiesPicker
@@ -1264,13 +1338,14 @@ export function ListingForm({
 
             <details className="rounded-xl border border-navy/10 bg-surface/40">
               <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
-                Why this property stands out (optional)
+                {valueDriversSectionTitle(listingType, propertyType)}
               </summary>
               <div className="border-t border-navy/8 px-3 pb-3 pt-2">
                 <ValueDriverPicker
                   selected={valueDriverKeys}
                   onChange={setValueDriverKeys}
                   disabled={loading}
+                  categories={valueDriverCategories}
                 />
               </div>
             </details>
@@ -1278,13 +1353,12 @@ export function ListingForm({
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Short description (optional)"
+              placeholder={descriptionPlaceholder(listingType, propertyType)}
               rows={3}
             />
             {!isEdit ? (
               <p className="text-xs text-muted">
-                Tip: You can add rooms, location, price details, and nearby landmarks to get better
-                responses.
+                {descriptionTip(listingType, propertyType)}
               </p>
             ) : null}
             <Input

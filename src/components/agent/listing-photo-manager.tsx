@@ -17,8 +17,10 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import type { ListingTypeValue } from "@/constants/listingTypes";
 import { MIN_LISTING_IMAGES, MAX_LISTING_IMAGES } from "@/lib/constants";
-import { ROOM_LABELS } from "@/lib/media/labels";
+import { photoLabelsForContext } from "@/lib/media/labels";
+import { photoManagerCopy } from "@/lib/listing-form-copy";
 import {
   applyDefaultLabels,
   createMediaItemFromUpload,
@@ -60,6 +62,8 @@ type Props = {
   items: ListingPhotoItem[];
   onChange: (items: ListingPhotoItem[]) => void;
   onUploadProgress?: (done: number, total: number) => void;
+  listingType?: ListingTypeValue;
+  propertyType?: string;
 };
 
 function newPendingId(index: number): string {
@@ -79,9 +83,18 @@ function countPending(items: ListingPhotoItem[], queueLen: number, running: numb
 
 export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
   function ListingPhotoManager(
-    { propertyId = "draft", items, onChange, onUploadProgress },
+    {
+      propertyId = "draft",
+      items,
+      onChange,
+      onUploadProgress,
+      listingType = "rent",
+      propertyType = "flat",
+    },
     ref
   ) {
+    const photoLabels = photoLabelsForContext(propertyType, listingType);
+    const photoCopy = photoManagerCopy(listingType, propertyType);
     const [error, setError] = useState("");
     const [dragOver, setDragOver] = useState(false);
     const [activeUploads, setActiveUploads] = useState(0);
@@ -221,6 +234,8 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
                     width: json.width,
                     height: json.height,
                     blur_data_url: json.blur_data_url,
+                    propertyType,
+                    listingType,
                   }),
                   id: item.id,
                   room_label: item.room_label,
@@ -314,6 +329,8 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
             index: startIndex + result.i,
             width: result.prepared.width,
             height: result.prepared.height,
+            propertyType,
+            listingType,
           }),
           id,
           local_preview: result.prepared.previewUrl,
@@ -410,7 +427,11 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
     }
 
     function confirmAllLabels() {
-      onChange(sortMediaItemsForStory(applyDefaultLabels(items)) as ListingPhotoItem[]);
+      onChange(
+        sortMediaItemsForStory(
+          applyDefaultLabels(items, propertyType, listingType)
+        ) as ListingPhotoItem[]
+      );
     }
 
     useImperativeHandle(ref, () => ({
@@ -513,7 +534,7 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
               <Upload className="h-8 w-8 text-navy" />
             )}
             <span className="text-sm font-bold text-navy">Add photos</span>
-            <span className="text-xs text-muted">Tap to pick or drag photos here</span>
+            <span className="text-xs text-muted">{photoCopy.uploadHint}</span>
             {uploadProgressLabel ? (
               <span className="text-xs font-semibold text-gold-dark">{uploadProgressLabel}</span>
             ) : null}
@@ -566,7 +587,7 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
                   className="pressable inline-flex items-center gap-1 rounded-full bg-gold/15 px-3 py-1.5 text-xs font-bold text-navy"
                 >
                   <Check className="h-3.5 w-3.5" />
-                  Sort story
+                  {photoCopy.sortStoryLabel}
                 </button>
               </div>
             </div>
@@ -616,8 +637,8 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
                         className="w-full rounded-lg border-0 bg-elevated px-2 py-2 text-xs font-semibold text-foreground disabled:opacity-60"
                         aria-label={`Label for photo ${index + 1}`}
                       >
-                        <option value="">Room label…</option>
-                        {ROOM_LABELS.map((label) => (
+                        <option value="">{photoCopy.labelPlaceholder}</option>
+                        {photoLabels.map((label) => (
                           <option key={label} value={label}>
                             {label}
                           </option>

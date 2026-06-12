@@ -15,6 +15,10 @@ export function ListingLocationSearch({
   onAreaChange,
   initialLandmark,
   initialAddressHint,
+  searchPlaceholder = "City, area, estate, or LGA",
+  landmarkPlaceholder = "Nearest landmark",
+  addressHintPlaceholder = "Private note, not shown publicly",
+  hint = null,
 }: {
   state: string;
   city: string;
@@ -24,6 +28,10 @@ export function ListingLocationSearch({
   onAreaChange: (value: string) => void;
   initialLandmark?: string | null;
   initialAddressHint?: string | null;
+  searchPlaceholder?: string;
+  landmarkPlaceholder?: string;
+  addressHintPlaceholder?: string;
+  hint?: string | null;
 }) {
   const hasSelection = Boolean(state && city);
   const [searchOpen, setSearchOpen] = useState(!hasSelection);
@@ -57,13 +65,15 @@ export function ListingLocationSearch({
       <input type="hidden" name="city" value={city} />
       <input type="hidden" name="area" value={area} />
 
+      {hint ? <p className="text-xs text-muted">{hint}</p> : null}
+
       {searchOpen ? (
         <div className="relative">
           <FieldLabel>Location</FieldLabel>
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="City, area, estate, or LGA"
+            placeholder={searchPlaceholder}
             autoComplete="off"
           />
           {suggestions.length > 0 && query.trim().length >= 2 ? (
@@ -143,7 +153,7 @@ export function ListingLocationSearch({
         <Input
           name="landmark"
           defaultValue={initialLandmark ?? ""}
-          placeholder="Nearest landmark"
+          placeholder={landmarkPlaceholder}
         />
       </div>
       <div>
@@ -151,7 +161,7 @@ export function ListingLocationSearch({
         <Input
           name="address_hint"
           defaultValue={initialAddressHint ?? ""}
-          placeholder="Private note, not shown publicly"
+          placeholder={addressHintPlaceholder}
         />
       </div>
     </div>

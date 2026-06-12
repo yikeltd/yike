@@ -1,3 +1,4 @@
+import type { ListingTypeValue } from "@/constants/listingTypes";
 import type { Property, PropertyMediaItem } from "@/types/database";
 import {
   fallbackPhotoLabel,
@@ -128,6 +129,8 @@ export function createMediaItemFromUpload(input: {
   width?: number;
   height?: number;
   blur_data_url?: string;
+  propertyType?: string;
+  listingType?: ListingTypeValue;
 }): PropertyMediaItem {
   return {
     id: newMediaId(),
@@ -135,7 +138,11 @@ export function createMediaItemFromUpload(input: {
     webp_url: input.medium || input.url,
     thumbnail_url: input.thumbnail,
     blur_data_url: input.blur_data_url,
-    room_label: suggestLabelForIndex(input.index),
+    room_label: suggestLabelForIndex(
+      input.index,
+      input.propertyType,
+      input.listingType
+    ),
     sort_order: input.index,
     width: input.width,
     height: input.height,
@@ -192,10 +199,15 @@ export function buildMotionSlides(property: Property): MotionSlideFrame[] {
   });
 }
 
-export function applyDefaultLabels(items: PropertyMediaItem[]): PropertyMediaItem[] {
+export function applyDefaultLabels(
+  items: PropertyMediaItem[],
+  propertyType?: string,
+  listingType?: ListingTypeValue
+): PropertyMediaItem[] {
   return items.map((item, i) => ({
     ...item,
-    room_label: item.room_label || suggestLabelForIndex(i),
+    room_label:
+      item.room_label || suggestLabelForIndex(i, propertyType, listingType),
     sort_order: i,
   }));
 }
