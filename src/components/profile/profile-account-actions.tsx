@@ -143,7 +143,7 @@ export function ProfileAccountActions({
           <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger">{error}</p>
         ) : null}
 
-        <div className="space-y-1">
+        <div className="grid grid-cols-2 auto-rows-fr gap-1.5 md:grid-cols-4 md:gap-2">
           <AccountRow
             icon={UserRound}
             label="Edit profile"
@@ -268,7 +268,7 @@ function AccountRow({
   disabled?: boolean;
 }) {
   const className = cn(
-    "yike-card yike-card-interactive pressable flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors",
+    "yike-card yike-card-interactive pressable flex min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-center transition-colors md:min-h-[4.5rem]",
     active
       ? "yike-selected bg-navy/[0.03]"
       : "hover:border-navy/15"
@@ -276,8 +276,8 @@ function AccountRow({
 
   const inner = (
     <>
-      <Icon className="h-3.5 w-3.5 shrink-0 text-navy" />
-      <span className="text-xs font-semibold text-navy">{label}</span>
+      <Icon className="h-4 w-4 shrink-0 text-navy" aria-hidden />
+      <span className="text-[11px] font-semibold leading-tight text-navy">{label}</span>
     </>
   );
 

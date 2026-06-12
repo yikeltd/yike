@@ -90,6 +90,12 @@ export function ProfilePageClient({
     profile.account_type === "developer" ||
     Boolean(profile.company_name);
 
+  const primaryCtaClass =
+    "yike-btn-primary pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2 text-sm font-bold text-white md:col-span-3";
+
+  const quickGridClass =
+    "grid grid-cols-2 auto-rows-fr gap-1.5 md:grid-cols-3 md:gap-2";
+
   return (
     <div className="space-y-4 pb-4">
       <ProfileCoverHero
@@ -171,11 +177,11 @@ export function ProfilePageClient({
           </DashboardSection>
 
           <DashboardSection title="Quick actions">
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className={quickGridClass}>
               <Link
                 href="/agent/listings/new"
                 prefetch
-                className="yike-btn-primary pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2.5 text-sm font-bold text-white"
+                className={primaryCtaClass}
               >
                 <PlusCircle className="h-4 w-4" />
                 List a property
@@ -188,7 +194,7 @@ export function ProfilePageClient({
                 icon={MessageCircle}
                 label="Get Help"
                 onClick={openSupport}
-                className={showCompanyQuickAction ? undefined : "col-span-2"}
+                className={showCompanyQuickAction ? undefined : "col-span-2 md:col-span-1"}
               />
               {showCompanyQuickAction ? (
                 <QuickAction href="/agent/company" icon={ShieldCheck} label="Company" />
@@ -210,11 +216,11 @@ export function ProfilePageClient({
             />
           </DashboardSection>
           <DashboardSection title="Quick actions">
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 auto-rows-fr gap-1.5 md:grid-cols-4 md:gap-2">
               <Link
                 href="/agent/become"
                 prefetch
-                className="yike-btn-primary pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2.5 text-sm font-bold text-white"
+                className="yike-btn-primary pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2 text-sm font-bold text-white md:col-span-4"
               >
                 <PlusCircle className="h-4 w-4" />
                 List a Property
@@ -270,7 +276,7 @@ function QuickAction({
   className?: string;
 }) {
   const className = cn(
-    "yike-card yike-card-interactive pressable flex min-h-[4.25rem] flex-col items-center justify-center gap-0.5 px-2.5 py-2.5 text-center",
+    "yike-card yike-card-interactive pressable flex min-h-[4.25rem] flex-col items-center justify-center gap-0.5 px-2 py-2.5 text-center md:min-h-[4.5rem]",
     extraClassName
   );
 
