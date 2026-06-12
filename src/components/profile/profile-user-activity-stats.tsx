@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Eye, Heart, Search, ShieldCheck } from "lucide-react";
 import { getRecentlyViewed } from "@/lib/recently-viewed";
 import { getRecentSearches } from "@/lib/search-recent";
+import { cn } from "@/lib/utils";
 
 function StatCard({
   icon: Icon,
@@ -20,11 +21,11 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="pressable rounded-2xl border border-border bg-elevated p-4 shadow-float"
+      className="yike-card yike-card-compact yike-card-interactive pressable flex flex-col"
     >
-      <Icon className="h-4 w-4 text-gold-dark" />
-      <p className="mt-3 text-xl font-bold text-navy">{value}</p>
-      <p className="text-xs text-muted">{label}</p>
+      <Icon className="h-3.5 w-3.5 text-gold-dark" />
+      <p className="mt-1.5 text-lg font-bold leading-none tabular-nums text-navy">{value}</p>
+      <p className="mt-0.5 text-[10px] leading-tight text-muted">{label}</p>
     </Link>
   );
 }
@@ -48,7 +49,7 @@ export function ProfileUserActivityStats({
   }, []);
 
   return (
-    <section className="grid grid-cols-2 gap-3">
+    <section className={cn("grid grid-cols-2 gap-1.5")}>
       <StatCard icon={Heart} label="Saved homes" value={String(savedCount)} href="/saved" />
       <StatCard icon={Eye} label="Viewed homes" value={String(viewedCount)} href="/search" />
       <StatCard icon={Search} label="Recent searches" value={String(searchCount)} href="/search" />

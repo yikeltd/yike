@@ -136,7 +136,7 @@ export function WhatsAppVerificationModal({
       aria-modal="true"
       aria-labelledby="wa-verify-title"
     >
-      <div className="w-full max-w-md rounded-2xl border border-border bg-elevated p-5 shadow-xl">
+      <div className="w-full max-w-md rounded-xl border border-border bg-elevated p-4 shadow-xl">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 id="wa-verify-title" className="text-lg font-bold text-navy">

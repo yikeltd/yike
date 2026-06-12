@@ -107,19 +107,19 @@ export function TrustCenterCard({
     return (
       <section
         className={cn(
-          "rounded-2xl border border-border bg-elevated px-3.5 py-3 shadow-float",
+          "yike-card yike-card-compact",
           className
         )}
       >
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-bold text-navy">Profile completion — {percent}%</p>
+          <p className="text-sm font-bold leading-tight text-navy">Profile — {percent}%</p>
           {!allDone ? (
-            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
+            <span className={cn("yike-status-pill", chipClasses(chip.tone))}>
               {chip.label}
             </span>
           ) : null}
         </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-navy/10">
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-navy/10">
           <div
             className="h-full rounded-full bg-navy transition-all duration-500"
             style={{ width: `${percent}%` }}
@@ -128,7 +128,7 @@ export function TrustCenterCard({
         <Link
           href={SETUP_HREF}
           prefetch
-          className="pressable mt-2.5 flex w-full items-center justify-center rounded-xl bg-navy px-4 py-2 text-sm font-semibold text-white"
+          className="yike-cta-glow pressable mt-2 flex w-full items-center justify-center rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white"
         >
           Continue
         </Link>
@@ -139,18 +139,18 @@ export function TrustCenterCard({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-border bg-elevated shadow-float",
+        "yike-card",
         className
       )}
     >
-      <div className="border-b border-border px-4 py-3.5">
+      <div className="border-b border-border px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-bold text-navy">Profile completion — {percent}%</p>
-          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
+          <p className="text-sm font-bold leading-tight text-navy">Profile — {percent}%</p>
+          <span className={cn("yike-status-pill", chipClasses(chip.tone))}>
             {chip.label}
           </span>
         </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-navy/10">
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-navy/10">
           <div
             className="h-full rounded-full bg-navy transition-all duration-500"
             style={{ width: `${percent}%` }}
@@ -158,13 +158,13 @@ export function TrustCenterCard({
         </div>
       </div>
 
-      <div className="px-4 py-3">
+      <div className="px-3 py-2.5">
         {listingItems.length > 0 ? (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-navy/60">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-navy/55">
               Required to list
             </p>
-            <ul className="mt-2 space-y-2">
+            <ul className="mt-1.5 space-y-1.5">
               {listingItems.map((item) => (
                 <TrustRow key={item.id} item={item} />
               ))}

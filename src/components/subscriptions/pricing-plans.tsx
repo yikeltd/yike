@@ -123,9 +123,10 @@ export function PricingPlans({
             <article
               key={plan.plan_code}
               className={cn(
-                "relative flex flex-col overflow-hidden rounded-2xl border",
+                "relative flex flex-col overflow-hidden rounded-xl border",
                 theme.card,
-                plan.plan_code === "pro_agent" && "xl:z-10"
+                plan.plan_code === "pro_agent" && "xl:z-10 yike-neon-selected",
+                isCurrent && "yike-neon-selected"
               )}
             >
               {isCurrent ? (
@@ -134,7 +135,7 @@ export function PricingPlans({
                 </span>
               ) : null}
 
-              <div className={cn("px-4 pb-3 pt-4", theme.header)}>
+              <div className={cn("px-3 pb-2.5 pt-3", theme.header)}>
                 <div className="flex items-start justify-between gap-2 pr-16">
                   <div
                     className={cn(

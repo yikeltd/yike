@@ -6,11 +6,11 @@ import { cn } from "@/lib/utils";
 
 type StatusVariant = "neutral" | "success" | "warning" | "pending";
 
-const statusClasses: Record<StatusVariant, string> = {
-  neutral: "text-muted",
-  success: "text-emerald-700",
-  warning: "text-amber-800",
-  pending: "text-amber-800",
+const statusPillClass: Record<StatusVariant, string> = {
+  neutral: "yike-status-pill yike-status-pill--neutral",
+  success: "yike-status-pill yike-status-pill--success",
+  warning: "yike-status-pill yike-status-pill--pending",
+  pending: "yike-status-pill yike-status-pill--pending",
 };
 
 export function VerificationOptionCard({
@@ -34,24 +34,26 @@ export function VerificationOptionCard({
 }) {
   const interactive = Boolean((onAction || href) && actionLabel && !disabled);
   const classNames = cn(
-    "flex w-full items-center gap-3 rounded-2xl border border-border bg-elevated p-4 text-left shadow-float",
-    interactive && "pressable",
-    disabled && !interactive && "opacity-90",
+    "yike-card yike-card-compact flex w-full items-center gap-2.5 text-left",
+    interactive && "yike-card-interactive pressable cursor-pointer",
+    disabled && !interactive && "opacity-95",
     className
   );
 
   const content = (
     <>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-navy">{title}</p>
-        <p className={cn("mt-0.5 text-xs font-medium", statusClasses[statusVariant])}>
-          {status}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold leading-tight text-navy">{title}</p>
+          <span className={cn(statusPillClass[statusVariant], "shrink-0")}>{status}</span>
+        </div>
+        {actionLabel && interactive ? (
+          <p className="mt-1 text-[11px] font-semibold leading-tight text-navy/80">
+            {actionLabel}
+          </p>
+        ) : null}
       </div>
-      {actionLabel ? (
-        <span className="shrink-0 text-xs font-semibold text-navy">{actionLabel}</span>
-      ) : null}
-      {interactive ? <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden /> : null}
+      {interactive ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden /> : null}
     </>
   );
 

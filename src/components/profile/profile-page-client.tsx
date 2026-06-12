@@ -91,7 +91,7 @@ export function ProfilePageClient({
     Boolean(profile.company_name);
 
   return (
-    <div className="space-y-5 pb-4">
+    <div className="space-y-4 pb-4">
       <ProfileCoverHero
         profile={profile}
         email={email}
@@ -127,7 +127,7 @@ export function ProfilePageClient({
 
       {statusMessage ? (
         <div
-          className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-2.5 text-sm text-amber-950"
+          className="yike-card rounded-xl border-amber-200/60 bg-amber-50/80 px-3 py-2 text-sm text-amber-950"
           role="status"
         >
           <p className="font-medium">{statusMessage}</p>
@@ -171,13 +171,13 @@ export function ProfilePageClient({
           </DashboardSection>
 
           <DashboardSection title="Quick actions">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               <Link
                 href="/agent/listings/new"
                 prefetch
-                className="pressable col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-navy px-4 py-3.5 text-sm font-bold text-white shadow-float"
+                className="yike-cta-glow pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2.5 text-sm font-bold text-white"
               >
-                <PlusCircle className="h-5 w-5" />
+                <PlusCircle className="h-4 w-4" />
                 List a property
               </Link>
               <QuickAction href="/agent/listings" icon={List} label="My listings" />
@@ -210,13 +210,13 @@ export function ProfilePageClient({
             />
           </DashboardSection>
           <DashboardSection title="Quick actions">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               <Link
                 href="/agent/become"
                 prefetch
-                className="pressable col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-navy px-4 py-3.5 text-sm font-bold text-white shadow-float"
+                className="yike-cta-glow pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2.5 text-sm font-bold text-white"
               >
-                <PlusCircle className="h-5 w-5" />
+                <PlusCircle className="h-4 w-4" />
                 List a Property
               </Link>
               <QuickAction href="/saved" icon={Bookmark} label="Saved Homes" />
@@ -245,7 +245,7 @@ function DashboardSection({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-2">
+    <section className="space-y-1.5">
       <h2 className="px-0.5 text-[11px] font-bold uppercase tracking-wider text-navy/70">
         {title}
       </h2>
@@ -270,14 +270,14 @@ function QuickAction({
   className?: string;
 }) {
   const className = cn(
-    "pressable flex min-h-[5.25rem] flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-elevated px-3 py-3.5 text-center shadow-float",
+    "yike-card yike-card-interactive pressable flex min-h-[4.25rem] flex-col items-center justify-center gap-0.5 px-2.5 py-2.5 text-center",
     extraClassName
   );
 
   const content = (
     <>
-      <Icon className="h-5 w-5 text-navy" aria-hidden />
-      <span className="text-xs font-semibold text-navy">{label}</span>
+      <Icon className="h-4 w-4 text-navy" aria-hidden />
+      <span className="text-[11px] font-semibold leading-tight text-navy">{label}</span>
       {subtitle ? (
         <span className="text-[10px] font-medium leading-tight text-muted">{subtitle}</span>
       ) : null}

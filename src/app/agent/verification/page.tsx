@@ -50,7 +50,7 @@ export default function AgentVerificationPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-4 pt-4 pb-8">
+    <div className="mx-auto max-w-lg space-y-3 pt-4 pb-8">
       <div>
         <Link href="/agent" className="text-xs font-semibold text-gold-dark hover:underline">
           ← Back to profile
@@ -58,7 +58,7 @@ export default function AgentVerificationPage() {
         <h1 className="mt-2 text-xl font-bold text-navy">Verification</h1>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <PhoneVerificationCard profile={profile} onVerified={() => void reload()} />
         <ProfileVerificationCard profile={profile} />
         <VerificationWizard

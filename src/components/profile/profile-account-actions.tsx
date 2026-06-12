@@ -131,7 +131,7 @@ export function ProfileAccountActions({
   return (
     <>
       {sensitiveActionModals}
-      <section className="space-y-2.5">
+      <section className="space-y-2">
         <h2 className="px-0.5 text-[11px] font-bold uppercase tracking-wider text-navy/70">
           Account
         </h2>
@@ -143,7 +143,7 @@ export function ProfileAccountActions({
           <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger">{error}</p>
         ) : null}
 
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <AccountRow
             icon={UserRound}
             label="Edit profile"
@@ -268,16 +268,16 @@ function AccountRow({
   disabled?: boolean;
 }) {
   const className = cn(
-    "pressable flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
+    "yike-card yike-card-interactive pressable flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors",
     active
-      ? "border-navy/20 bg-navy/5"
-      : "border-border bg-elevated hover:border-navy/15"
+      ? "yike-neon-selected bg-navy/[0.03]"
+      : "hover:border-navy/15"
   );
 
   const inner = (
     <>
-      <Icon className="h-4 w-4 shrink-0 text-navy" />
-      <span className="text-sm font-semibold text-navy">{label}</span>
+      <Icon className="h-3.5 w-3.5 shrink-0 text-navy" />
+      <span className="text-xs font-semibold text-navy">{label}</span>
     </>
   );
 

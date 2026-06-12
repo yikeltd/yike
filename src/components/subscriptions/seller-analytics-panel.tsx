@@ -20,18 +20,18 @@ function Metric({
   const inner = (
     <div
       className={cn(
-        "relative rounded-xl border border-border bg-white px-3 py-2.5",
-        href && "pressable"
+        "yike-card yike-card-compact relative",
+        href && "yike-card-interactive pressable"
       )}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-navy/55">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-navy/50">{label}</p>
       {locked ? (
-        <div className="mt-1 flex items-center gap-1.5">
-          <Lock className="h-3.5 w-3.5 text-muted" aria-hidden />
+        <div className="mt-0.5 flex items-center gap-1">
+          <Lock className="h-3 w-3 text-muted" aria-hidden />
           <span className="text-sm font-bold text-muted blur-[2px] select-none">00</span>
         </div>
       ) : (
-        <p className="mt-1 text-lg font-bold tabular-nums text-navy">{value}</p>
+        <p className="mt-0.5 text-base font-bold leading-tight tabular-nums text-navy">{value}</p>
       )}
     </div>
   );
@@ -74,7 +74,7 @@ export function SellerAnalyticsPanel({
   const advanced = data?.hasAdvanced ?? false;
 
   return (
-    <section className={cn("space-y-2.5", className)}>
+    <section className={cn("space-y-2", className)}>
       <div className="flex items-center justify-between gap-2 px-0.5">
         <h2 className="text-[11px] font-bold uppercase tracking-wider text-navy/70">
           Analytics (30d)
@@ -88,7 +88,7 @@ export function SellerAnalyticsPanel({
 
       {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         <Metric label="Active listings" value={activeCount} href="/agent/listings" />
         <Metric label="Pending review" value={pending} href="/agent/listings" />
         <Metric label="Inquiries" value={leadsCount} href="/agent/leads" />
@@ -97,7 +97,7 @@ export function SellerAnalyticsPanel({
 
       {data ? (
         <>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             <Metric label="Views" value={data.listingViews} locked={!advanced} />
             <Metric label="Leads" value={data.leadsGenerated} locked={!advanced} />
             <Metric label="Saves" value={data.saves} locked={!advanced} />
@@ -113,7 +113,7 @@ export function SellerAnalyticsPanel({
           </button>
 
           {advancedOpen ? (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               <Metric label="WhatsApp" value={data.whatsappClicks} locked={!advanced} />
               <Metric label="Calls" value={data.callClicks} locked={!advanced} />
               <Metric label="Followers" value={data.followers} href="/agent/followers" />

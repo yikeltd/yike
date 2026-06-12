@@ -27,19 +27,19 @@ export function BillingTermPicker({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-sm",
+        "yike-card overflow-hidden",
         className
       )}
     >
-      <div className="border-b border-border/80 bg-gradient-to-r from-surface/80 to-white px-4 py-3.5 sm:px-5">
-        <h3 className="text-sm font-bold text-navy">Billing Period</h3>
-        <p className="mt-1 text-xs leading-relaxed text-muted">
+      <div className="border-b border-border/80 bg-gradient-to-r from-surface/70 to-white px-3 py-2.5 sm:px-4">
+        <h3 className="text-sm font-bold leading-tight text-navy">Billing Period</h3>
+        <p className="mt-0.5 text-[11px] leading-snug text-muted">
           Choose a plan duration
           {maxDiscount > 0 ? " and save more on longer terms." : "."}
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 p-3 sm:gap-3 sm:p-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 p-2.5 sm:gap-2 sm:p-3 lg:grid-cols-4">
         {activeTerms.map((term) => {
           const selected = value === term.months;
           const title = formatBillingOptionTitle(term);
@@ -52,10 +52,10 @@ export function BillingTermPicker({
               type="button"
               onClick={() => onChange(term.months)}
               className={cn(
-                "pressable relative flex min-h-[5.25rem] flex-col items-center justify-center rounded-xl border px-2 py-3 text-center transition-all sm:min-h-[5.5rem] sm:px-3",
+                "pressable relative flex min-h-[4.25rem] flex-col items-center justify-center rounded-lg border px-2 py-2.5 text-center transition-all sm:min-h-[4.5rem] sm:px-2.5",
                 selected
-                  ? "border-navy bg-navy text-white shadow-md ring-2 ring-navy/15"
-                  : "border-border bg-elevated/50 text-navy hover:border-navy/25 hover:bg-white"
+                  ? "yike-neon-selected border-navy bg-navy text-white"
+                  : "border-border/80 bg-elevated/50 text-navy hover:border-navy/20 hover:bg-white"
               )}
             >
               <span

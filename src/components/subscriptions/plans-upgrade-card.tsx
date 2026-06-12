@@ -36,29 +36,29 @@ export function PlansUpgradeCard({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-border bg-elevated px-3.5 py-3 shadow-float",
+        "yike-card yike-card-compact",
         className
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="rounded-full bg-navy px-2.5 py-0.5 text-[10px] font-bold text-white">
+        <span className="yike-status-pill yike-status-pill--neutral bg-navy px-2 py-0.5 text-[10px] font-bold text-white">
           {planName}
         </span>
         <Link
           href={PLANS_HREF}
           prefetch
-          className="pressable rounded-lg bg-gold px-3 py-1 text-[11px] font-bold text-navy shadow-sm"
+          className="pressable rounded-md bg-gold px-2.5 py-0.5 text-[10px] font-bold text-navy"
         >
           Upgrade
         </Link>
       </div>
-      <p className="mt-2.5 text-xl font-bold tabular-nums text-navy">
+      <p className="mt-2 text-lg font-bold leading-tight tabular-nums text-navy">
         {activeCount}
-        <span className="text-base font-semibold text-muted"> / {limitLabel}</span>
-        <span className="ml-1.5 text-xs font-medium text-muted">listings used</span>
+        <span className="text-sm font-semibold text-muted"> / {limitLabel}</span>
+        <span className="ml-1 text-[10px] font-medium text-muted">listings</span>
       </p>
       {showRenew ? (
-        <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
+        <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-border pt-1.5">
           <p className="text-[11px] text-muted">
             Expires in {expiresInDays}d
           </p>

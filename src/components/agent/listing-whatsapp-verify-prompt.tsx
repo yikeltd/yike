@@ -22,7 +22,7 @@ export function ListingWhatsappVerifyPrompt({ profile }: { profile: Profile }) {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-elevated px-4 py-3 shadow-float">
+      <div className="yike-card yike-card-compact flex items-center justify-between gap-2.5">
         <p className="text-sm font-semibold text-navy">{WHATSAPP_VERIFY_COPY.listingGate}</p>
         <Button type="button" size="sm" onClick={() => setOpen(true)}>
           {WHATSAPP_VERIFY_COPY.profileTitle}
