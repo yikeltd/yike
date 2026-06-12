@@ -186,7 +186,6 @@ export function ProfilePageClient({
               <QuickAction
                 icon={MessageCircle}
                 label="Get Help"
-                subtitle="Contact support"
                 onClick={openSupport}
                 className={showCompanyQuickAction ? undefined : "col-span-2"}
               />
@@ -221,7 +220,6 @@ export function ProfilePageClient({
               <QuickAction
                 icon={MessageCircle}
                 label="Get Help"
-                subtitle="Contact support"
                 onClick={openSupport}
               />
             </div>
@@ -229,7 +227,7 @@ export function ProfilePageClient({
         </>
       )}
 
-      <ProfileAccountActions email={email} canList={isLister} onGetHelp={openSupport} />
+      <ProfileAccountActions email={email} canList={isLister} />
     </div>
   );
 }

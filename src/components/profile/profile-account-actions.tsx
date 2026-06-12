@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { KeyRound, LogOut, Mail, MessageCircle, Trash2, UserRound } from "lucide-react";
-import { openYikeSupportWhatsApp } from "@/lib/support";
+import { KeyRound, LogOut, Mail, Trash2, UserRound } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useSensitiveActionGate } from "@/components/auth/use-sensitive-action-gate";
 import { Button } from "@/components/ui/button";
@@ -16,11 +15,9 @@ import { cn } from "@/lib/utils";
 export function ProfileAccountActions({
   email,
   canList = false,
-  onGetHelp,
 }: {
   email: string;
   canList?: boolean;
-  onGetHelp?: () => void;
 }) {
   const router = useRouter();
   const { signOut } = useAuth();
@@ -169,11 +166,6 @@ export function ProfileAccountActions({
               setError("");
             }}
             active={panel === "email"}
-          />
-          <AccountRow
-            icon={MessageCircle}
-            label="Get help"
-            onClick={() => (onGetHelp ? onGetHelp() : openYikeSupportWhatsApp())}
           />
           <AccountRow
             icon={LogOut}

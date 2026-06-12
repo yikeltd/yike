@@ -1,6 +1,5 @@
 import type { Profile } from "@/types/database";
 import { isAgentRole } from "@/lib/agent-tiers";
-import { isListingSellerAccountType } from "@/lib/profile/seller-account-types";
 import { shouldShowTrustCenter } from "@/lib/verification/trust-center";
 
 export type SellerDashboardContextInput = {
@@ -13,9 +12,7 @@ export function hasSellerDashboardContext(
   profile: Profile,
   ctx: SellerDashboardContextInput
 ): boolean {
-  if (profile.verification_required) return true;
   if (ctx.canList || isAgentRole(profile.role)) return true;
-  if (isListingSellerAccountType(profile.account_type)) return true;
   if (ctx.totalListings > 0) return true;
   if (profile.listing_rules_accepted_at) return true;
   return false;
