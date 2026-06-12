@@ -175,7 +175,7 @@ export function ProfilePageClient({
               <Link
                 href="/agent/listings/new"
                 prefetch
-                className="yike-cta-glow pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2.5 text-sm font-bold text-white"
+                className="yike-btn-primary pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2.5 text-sm font-bold text-white"
               >
                 <PlusCircle className="h-4 w-4" />
                 List a property
@@ -214,7 +214,7 @@ export function ProfilePageClient({
               <Link
                 href="/agent/become"
                 prefetch
-                className="yike-cta-glow pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2.5 text-sm font-bold text-white"
+                className="yike-btn-primary pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2.5 text-sm font-bold text-white"
               >
                 <PlusCircle className="h-4 w-4" />
                 List a Property

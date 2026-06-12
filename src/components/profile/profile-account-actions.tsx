@@ -270,7 +270,7 @@ function AccountRow({
   const className = cn(
     "yike-card yike-card-interactive pressable flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors",
     active
-      ? "yike-neon-selected bg-navy/[0.03]"
+      ? "yike-selected bg-navy/[0.03]"
       : "hover:border-navy/15"
   );
 

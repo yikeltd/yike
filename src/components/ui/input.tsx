@@ -8,7 +8,7 @@ export const Input = forwardRef<
   <input
     ref={ref}
     className={cn(
-      "h-12 w-full rounded-xl bg-surface px-4 text-sm outline-none transition-all placeholder:text-muted focus:ring-2 focus:ring-gold/35",
+      "yike-focus h-12 w-full rounded-xl border border-transparent bg-surface px-4 text-sm outline-none transition-all placeholder:text-muted",
       className
     )}
     {...props}
@@ -23,7 +23,7 @@ export const Select = forwardRef<
   <select
     ref={ref}
     className={cn(
-      "h-12 w-full appearance-none rounded-xl bg-surface px-4 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-gold/35",
+      "yike-focus h-12 w-full appearance-none rounded-xl border border-transparent bg-surface px-4 text-sm font-medium outline-none transition-all",
       className
     )}
     {...props}
@@ -40,7 +40,7 @@ export const Textarea = forwardRef<
   <textarea
     ref={ref}
     className={cn(
-      "min-h-[100px] w-full rounded-xl bg-surface px-4 py-3 text-sm outline-none transition-all placeholder:text-muted focus:ring-2 focus:ring-gold/35",
+      "yike-focus min-h-[100px] w-full rounded-xl border border-transparent bg-surface px-4 py-3 text-sm outline-none transition-all placeholder:text-muted",
       className
     )}
     {...props}

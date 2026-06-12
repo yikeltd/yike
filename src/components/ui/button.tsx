@@ -7,7 +7,7 @@ type Size = "sm" | "md" | "lg";
 const variants: Record<Variant, string> = {
   accent:
     "bg-gold text-navy font-semibold hover:bg-gold-dark active:scale-[0.98] shadow-sm",
-  navy: "bg-navy text-white hover:bg-navy-light active:scale-[0.98]",
+  navy: "bg-navy text-white hover:bg-navy-light active:scale-[0.98] yike-btn-primary",
   secondary: "bg-surface text-foreground hover:bg-border/50",
   outline:
     "border border-border bg-background text-foreground hover:border-gold/60 hover:bg-surface",

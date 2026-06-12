@@ -125,8 +125,8 @@ export function PricingPlans({
               className={cn(
                 "relative flex flex-col overflow-hidden rounded-xl border",
                 theme.card,
-                plan.plan_code === "pro_agent" && "xl:z-10 yike-neon-selected",
-                isCurrent && "yike-neon-selected"
+                plan.plan_code === "pro_agent" && "xl:z-10",
+                isCurrent && "yike-selected"
               )}
             >
               {isCurrent ? (

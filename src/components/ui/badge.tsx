@@ -39,7 +39,7 @@ export function VerifiedBadge({
           setOpen((v) => !v);
         }}
         className={cn(
-          "inline-flex items-center gap-1 rounded-full bg-gold font-bold text-navy shadow-glow-gold",
+          "inline-flex items-center gap-1 rounded-full border border-gold/25 bg-gold font-bold text-navy shadow-glow-gold",
           size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
           className
         )}

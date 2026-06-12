@@ -128,7 +128,7 @@ export function TrustCenterCard({
         <Link
           href={SETUP_HREF}
           prefetch
-          className="yike-cta-glow pressable mt-2 flex w-full items-center justify-center rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white"
+          className="yike-btn-primary pressable mt-2 flex w-full items-center justify-center rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white"
         >
           Continue
         </Link>

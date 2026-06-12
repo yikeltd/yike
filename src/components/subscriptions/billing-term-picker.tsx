@@ -54,8 +54,8 @@ export function BillingTermPicker({
               className={cn(
                 "pressable relative flex min-h-[4.25rem] flex-col items-center justify-center rounded-lg border px-2 py-2.5 text-center transition-all sm:min-h-[4.5rem] sm:px-2.5",
                 selected
-                  ? "yike-neon-selected border-navy bg-navy text-white"
-                  : "border-border/80 bg-elevated/50 text-navy hover:border-navy/20 hover:bg-white"
+                  ? "yike-selected border-navy bg-navy text-white"
+                  : "border-[var(--border-glass)] bg-elevated/80 text-navy hover:border-[var(--border-glass-strong)] hover:bg-white"
               )}
             >
               <span
