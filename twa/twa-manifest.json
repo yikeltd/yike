@@ -21,8 +21,8 @@
     "path": "./android.keystore",
     "alias": "yike"
   },
-  "appVersionName": "1.0.16",
-  "appVersionCode": 17,
+  "appVersionName": "1.0.17",
+  "appVersionCode": 18,
   "shortcuts": [
     {
       "name": "Swipe homes",
@@ -64,5 +64,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": ["standalone", "fullscreen"],
-  "appVersion": "1.0.16"
+  "appVersion": "1.0.17"
 }
