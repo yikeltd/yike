@@ -8,10 +8,12 @@ export function parseFeeValue(
   if (mode === "negotiable" || mode === "landlord" || mode === "not_fixed") {
     return undefined;
   }
-  const s = raw.trim().replace(/[₦,\s]/g, "");
+  const trimmed = raw.trim();
+  const s = trimmed.replace(/[₦,\s]/g, "");
   if (!s) return undefined;
-  if (mode === "percent") {
-    const n = parseFloat(s.replace("%", ""));
+  if (mode === "percent" || trimmed.includes("%")) {
+    const match = s.match(/(\d+(?:\.\d+)?)\s*%/);
+    const n = match ? parseFloat(match[1]) : parseFloat(s.replace("%", ""));
     return Number.isFinite(n) && n > 0 ? n : undefined;
   }
   return parseNairaAmount(s) ?? undefined;

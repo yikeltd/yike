@@ -65,9 +65,20 @@ function feeFieldFromExtras(
     mode: keyof ListingExtras;
     amount: keyof ListingExtras;
     percent: keyof ListingExtras;
+    text?: keyof ListingExtras;
   }
 ): EditableFeeField {
   const mode = (extras[keys.mode] as FeeTransparencyMode | undefined) ?? "exact";
+  const savedText = keys.text
+    ? String(extras[keys.text] ?? "").trim()
+    : "";
+  if (savedText) {
+    return {
+      raw: savedText,
+      mode: savedText.includes("%") ? "percent" : mode,
+    };
+  }
+
   const amount = extras[keys.amount] as number | undefined;
   const percent = extras[keys.percent] as number | undefined;
 
@@ -97,6 +108,7 @@ export function extrasToFeeFormState(extras: ListingExtras): {
       mode: keyof ListingExtras;
       amount: keyof ListingExtras;
       percent: keyof ListingExtras;
+      text?: keyof ListingExtras;
     }
   ) {
     const field = feeFieldFromExtras(extras, keys);
@@ -108,36 +120,43 @@ export function extrasToFeeFormState(extras: ListingExtras): {
     mode: "agency_fee_mode",
     amount: "agency_fee",
     percent: "agency_fee_percent",
+    text: "agency_fee_text",
   });
   load("caution_fee", {
     mode: "caution_fee_mode",
     amount: "caution_deposit",
     percent: "caution_fee_percent",
+    text: "caution_fee_text",
   });
   load("agreement_fee", {
     mode: "agreement_fee_mode",
     amount: "agreement_fee",
     percent: "agreement_fee_percent",
+    text: "agreement_fee_text",
   });
   load("service_charge", {
     mode: "service_charge_mode",
     amount: "service_charge",
     percent: "service_charge_percent",
+    text: "service_charge_text",
   });
   load("legal_fee", {
     mode: "legal_fee_mode",
     amount: "legal_fee",
     percent: "legal_fee_percent",
+    text: "legal_fee_text",
   });
   load("cleaning_fee", {
     mode: "cleaning_fee_mode",
     amount: "cleaning_fee",
     percent: "cleaning_fee",
+    text: "cleaning_fee_text",
   });
   load("caution_deposit", {
     mode: "caution_deposit_mode",
     amount: "caution_deposit",
     percent: "caution_deposit",
+    text: "caution_deposit_text",
   });
 
   return { values, modes };
@@ -173,26 +192,31 @@ export function extrasToMoveInEditableState(property: Property): MoveInEditableS
       mode: "agency_fee_mode",
       amount: "agency_fee",
       percent: "agency_fee_percent",
+      text: "agency_fee_text",
     }),
     caution: feeFieldFromExtras(extras, {
       mode: "caution_fee_mode",
       amount: "caution_deposit",
       percent: "caution_fee_percent",
+      text: "caution_fee_text",
     }),
     agreement: feeFieldFromExtras(extras, {
       mode: "agreement_fee_mode",
       amount: "agreement_fee",
       percent: "agreement_fee_percent",
+      text: "agreement_fee_text",
     }),
     serviceCharge: feeFieldFromExtras(extras, {
       mode: "service_charge_mode",
       amount: "service_charge",
       percent: "service_charge_percent",
+      text: "service_charge_text",
     }),
     legal: feeFieldFromExtras(extras, {
       mode: "legal_fee_mode",
       amount: "legal_fee",
       percent: "legal_fee_percent",
+      text: "legal_fee_text",
     }),
   };
 }
@@ -211,6 +235,14 @@ function resolveFeeAmount(
   const mode = field.raw.includes("%") ? "percent" : field.mode;
   const n = parseFeeValue(field.raw, mode);
   if (n == null || n <= 0) {
+    if (field.raw.trim()) {
+      return {
+        amount: 0,
+        labelSuffix: "",
+        flexible: true,
+        flexNote: field.raw.trim(),
+      };
+    }
     return { amount: 0, labelSuffix: "", flexible: false };
   }
   if (mode === "percent") {
@@ -329,11 +361,13 @@ function addShortletFees(property: Property, price: number): MoveInBreakdown | n
     mode: "cleaning_fee_mode",
     amount: "cleaning_fee",
     percent: "cleaning_fee",
+    text: "cleaning_fee_text",
   });
   const caution = feeFieldFromExtras(extras, {
     mode: "caution_deposit_mode",
     amount: "caution_deposit",
     percent: "caution_deposit",
+    text: "caution_deposit_text",
   });
 
   for (const [label, field] of [

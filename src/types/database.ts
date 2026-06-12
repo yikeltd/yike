@@ -251,6 +251,13 @@ export interface ListingExtras {
   cleaning_fee_mode?: FeeTransparencyMode;
   caution_deposit?: number;
   caution_deposit_mode?: FeeTransparencyMode;
+  agency_fee_text?: string;
+  caution_fee_text?: string;
+  agreement_fee_text?: string;
+  service_charge_text?: string;
+  legal_fee_text?: string;
+  cleaning_fee_text?: string;
+  caution_deposit_text?: string;
   fees_flexible_note?: string;
 }
 

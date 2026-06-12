@@ -47,6 +47,11 @@ export function formatAmountOrPercentTyping(raw: string): string {
   return formatSalaryTyping(raw);
 }
 
+/** Fee fields — keep letters, %, /, etc. No digit-only stripping while typing. */
+export function formatFlexibleFeeTyping(raw: string): string {
+  return raw.slice(0, 120);
+}
+
 /** Keep digits only for controlled state. */
 export function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");

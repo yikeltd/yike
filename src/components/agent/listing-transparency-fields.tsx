@@ -2,7 +2,7 @@
 
 import type { FeeTransparencyMode, ListingExtras } from "@/types/database";
 import { parseFeeValue } from "@/lib/listing-fee-parse";
-import { formatAmountOrPercentTyping } from "@/lib/naira-input";
+import { formatFlexibleFeeTyping } from "@/lib/naira-input";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -140,11 +140,13 @@ function FeeRow({
       </div>
       {needsInput ? (
         <Input
+          type="text"
           value={value}
           onChange={(e) =>
-            onValueChange(field.key, formatAmountOrPercentTyping(e.target.value))
+            onValueChange(field.key, formatFlexibleFeeTyping(e.target.value))
           }
           placeholder={field.placeholder}
+          inputMode="text"
           className="mt-2 h-10 rounded-xl"
         />
       ) : (
@@ -162,6 +164,15 @@ export function transparencyToExtras(
 ): ListingExtras {
   const extras: ListingExtras = {};
   const flex = new Set<FeeTransparencyMode>(["negotiable", "landlord", "not_fixed"]);
+  const textFields: Record<FeeKey, keyof ListingExtras> = {
+    agency_fee: "agency_fee_text",
+    caution_fee: "caution_fee_text",
+    agreement_fee: "agreement_fee_text",
+    service_charge: "service_charge_text",
+    legal_fee: "legal_fee_text",
+    cleaning_fee: "cleaning_fee_text",
+    caution_deposit: "caution_deposit_text",
+  };
 
   function apply(
     key: FeeKey,
@@ -172,10 +183,14 @@ export function transparencyToExtras(
     percentField?: keyof ListingExtras
   ) {
     (extras as Record<string, FeeTransparencyMode>)[modeField as string] = mode;
-    if (!flex.has(mode)) {
-      const n = parseFeeValue(raw, mode);
+    const trimmed = raw.trim();
+    if (!flex.has(mode) && trimmed) {
+      (extras as Record<string, string>)[textFields[key] as string] = trimmed;
+      const parseMode = trimmed.includes("%") ? "percent" : mode;
+      const n = parseFeeValue(trimmed, parseMode);
       if (n != null) {
-        const targetField = mode === "percent" && percentField ? percentField : valueField;
+        const targetField =
+          parseMode === "percent" && percentField ? percentField : valueField;
         (extras as Record<string, number>)[targetField as string] = n;
       }
     }

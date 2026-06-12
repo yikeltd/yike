@@ -10,7 +10,7 @@ import {
   type MoveInEditableState,
 } from "@/lib/rent-breakdown";
 import { Button } from "@/components/ui/button";
-import { formatAmountOrPercentTyping } from "@/lib/naira-input";
+import { formatFlexibleFeeTyping } from "@/lib/naira-input";
 import { X, Copy, Share2 } from "lucide-react";
 
 function formatAmount(amount: number) {
@@ -223,9 +223,9 @@ function FeeField({
       <div className="relative mt-1">
         <input
           type="text"
-          inputMode="decimal"
+          inputMode="text"
           value={value}
-          onChange={(e) => onChange(formatAmountOrPercentTyping(e.target.value))}
+          onChange={(e) => onChange(formatFlexibleFeeTyping(e.target.value))}
           placeholder={value.includes("%") ? "10%" : "300,000"}
           className="h-10 w-full rounded-xl border border-surface bg-surface/50 px-3 pr-14 text-sm font-semibold text-foreground"
         />
