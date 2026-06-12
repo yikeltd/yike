@@ -71,6 +71,7 @@ export function SignupForm({
   const [phoneError, setPhoneError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
+  const [redirectingAfterVerify, setRedirectingAfterVerify] = useState(false);
   const [pendingSignup, setPendingSignup] = useState<PendingSignup | null>(null);
   const dupeCheckRef = useRef(0);
 
@@ -116,6 +117,7 @@ export function SignupForm({
   }, [email, phone, runDuplicateCheck]);
 
   async function finishSignupSession(creds: PendingSignup) {
+    setRedirectingAfterVerify(true);
     const supabase = createClient();
     const { data: signInData, error: signInError } =
       await supabase.auth.signInWithPassword({
@@ -124,6 +126,7 @@ export function SignupForm({
       });
 
     if (signInError) {
+      setRedirectingAfterVerify(false);
       setError("Account created — sign in with your email and password.");
       return;
     }
@@ -138,12 +141,14 @@ export function SignupForm({
       });
     }
 
-    setEmailVerifyOpen(false);
+    const destination = nextPath ?? "/profile";
     const resumed = await resumePendingAuthIntent(router, {
-      fallbackPath: nextPath ?? "/profile",
+      fallbackPath: destination,
       emailVerified: true,
     });
-    if (!resumed) router.refresh();
+    if (!resumed) {
+      router.replace(destination);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -270,7 +275,8 @@ export function SignupForm({
 
   return (
     <>
-      <AuthShell
+      {!redirectingAfterVerify && (
+        <AuthShell
         title="Create your Yike account"
         compact
         footer={
@@ -434,16 +440,18 @@ export function SignupForm({
           </Button>
         </form>
       </AuthShell>
+      )}
 
       {pendingSignup && (
         <EmailOtpModal
-          open={emailVerifyOpen}
+          open={emailVerifyOpen || redirectingAfterVerify}
           email={pendingSignup.email}
           fullName={pendingSignup.fullName}
           purpose="signup"
           password={pendingSignup.password}
           autoSend={false}
           initialCodeSent
+          redirecting={redirectingAfterVerify}
           onVerified={() => finishSignupSession(pendingSignup)}
         />
       )}

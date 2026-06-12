@@ -30,12 +30,14 @@ export function EmailOtpModal({
   onVerified,
   autoSend = true,
   initialCodeSent = false,
+  redirecting = false,
 }: {
   open: boolean;
   email: string;
   fullName?: string;
   purpose?: EmailOtpPurpose;
   password?: string;
+  redirecting?: boolean;
   onClose?: () => void;
   onVerified: (data: EmailOtpVerifyResponse) => void | Promise<void>;
   autoSend?: boolean;
@@ -207,7 +209,7 @@ export function EmailOtpModal({
         )}
         {success && (
           <p className="mt-4 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
-            {success}
+            {redirecting ? "Taking you to your dashboard…" : success}
           </p>
         )}
 
