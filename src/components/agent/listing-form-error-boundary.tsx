@@ -21,17 +21,19 @@ export class ListingFormErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-6 text-center">
-          <p className="font-semibold text-navy">Could not load listing form</p>
+        <div className="yike-card rounded-2xl border-amber-200/60 bg-amber-50/80 px-4 py-6 text-center">
+          <p className="font-semibold text-navy">
+            Something went wrong loading the listing form.
+          </p>
           <p className="mt-2 text-sm text-muted">
-            Something went wrong. Your progress may still be saved as a draft.
+            Your draft may still be saved locally. Reload to try again.
           </p>
           <Button
             type="button"
             className="mt-4"
-            onClick={() => this.setState({ error: null })}
+            onClick={() => window.location.reload()}
           >
-            Try again
+            Reload
           </Button>
         </div>
       );

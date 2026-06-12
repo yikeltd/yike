@@ -154,7 +154,13 @@ type ListingFormProps = {
   activeCount?: number;
   listingLimit?: number | null;
   listingFormAd?: AdPlacement | null;
-  profile?: Pick<Profile, "whatsapp" | "phone"> | null;
+  profile?: Pick<
+    Profile,
+    | "whatsapp"
+    | "phone"
+    | "whatsapp_verification_status"
+    | "whatsapp_verified_at"
+  > | null;
 };
 
 async function syncValueDrivers(listingId: string, driverKeys: string[]) {
@@ -200,11 +206,13 @@ export function ListingForm({
   const [listingType, setListingType] = useState<ListingTypeValue>(
     (initial?.listing_type as ListingTypeValue) ?? "rent"
   );
-  const [propertyType, setPropertyType] = useState(
-    initial?.property_type ??
-      propertyTypesForListingType("rent")[0]?.value ??
-      "flat"
-  );
+  const [propertyType, setPropertyType] = useState(() => {
+    if (initial?.property_type) return initial.property_type;
+    const options = propertyTypesForListingType(
+      (initial?.listing_type as ListingTypeValue) ?? "rent"
+    );
+    return options[0]?.value ?? "flat";
+  });
   const [title, setTitle] = useState(initial?.title ?? "");
   const [price, setPrice] = useState(initial?.price ? String(initial.price) : "");
   const [paymentPeriod, setPaymentPeriod] = useState<string>(
@@ -306,7 +314,7 @@ export function ListingForm({
     setPropertyType((prev) => {
       const options = propertyTypesForListingType(listingType);
       if (options.some((o) => o.value === prev)) return prev;
-      return options[0]?.value ?? prev;
+      return options[0]?.value ?? "flat";
     });
     const allowed = paymentPeriodsForListingType(listingType).map((p) => p.value);
     setPaymentPeriod((prev) => {
@@ -420,7 +428,7 @@ export function ListingForm({
       setPropertyType(nextPropertyType);
     } else {
       const options = propertyTypesForListingType(listingTypeValue);
-      setPropertyType(options[0]?.value ?? propertyType);
+      setPropertyType(options[0]?.value ?? "flat");
     }
     if (!isEdit && autoAdvance && step === 1) {
       setError("");

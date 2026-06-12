@@ -16,7 +16,7 @@ export function ListingWhatsappVerifyPrompt({ profile }: { profile: Profile }) {
   const router = useRouter();
   const needsVerification =
     mustVerifyWhatsappBeforeListing(profile) && !isWhatsappNumberVerified(profile);
-  const [open, setOpen] = useState(needsVerification);
+  const [open, setOpen] = useState(false);
 
   if (!needsVerification) return null;
 

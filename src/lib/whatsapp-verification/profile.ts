@@ -17,7 +17,7 @@ export function isWhatsappNumberVerified(profile: Partial<Profile>): boolean {
 }
 
 export function mustVerifyWhatsappBeforeListing(profile: Partial<Profile>): boolean {
-  if (!isWhatsappProfileVerificationEnabled()) return false;
+  if (!isWhatsappVerificationFeatureActive(profile)) return false;
   if (isWhatsappNumberVerified(profile)) return false;
   if (profile.whatsapp_verification_status === "admin_required") return true;
   return true;
@@ -36,6 +36,7 @@ export function whatsappVerifyBadgeLabel(profile: Partial<Profile>): string | nu
 export function isWhatsappVerificationFeatureActive(
   profile: Partial<Profile>
 ): boolean {
+  if (isWhatsappProfileVerificationEnabled()) return true;
   const raw = process.env.NEXT_PUBLIC_ENABLE_WHATSAPP_OTP?.trim().toLowerCase();
   if (raw === "true" || raw === "1" || raw === "yes") return true;
   if (profile.whatsapp_verification_status || profile.whatsapp_verified_at) return true;

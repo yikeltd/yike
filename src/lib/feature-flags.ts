@@ -33,7 +33,8 @@ export function isWhatsappOtpProviderSendchamp(): boolean {
 
 /** Profile + listing WhatsApp number verification. */
 export function isWhatsappProfileVerificationEnabled(): boolean {
-  return isWhatsappOtpEnabled() && isWhatsappOtpProviderSendchamp();
+  if (isWhatsappOtpEnabled() && isWhatsappOtpProviderSendchamp()) return true;
+  return isWhatsappOtpEnabledClient();
 }
 
 /** Signup optional WhatsApp OTP (does not require ENABLE_PHONE_OTP). */
