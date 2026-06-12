@@ -29,15 +29,28 @@ export type TrustStatusChip = {
   tone: "neutral" | "success" | "warning" | "premium";
 };
 
+export function isListingSetupComplete(profile: Profile, verified: boolean): boolean {
+  const listingItems = getTrustProgressItems(profile, verified).filter(
+    (item) => item.group === "listing_setup"
+  );
+  return !listingItems.some(
+    (item) => item.status === "action_needed" || item.status === "under_review"
+  );
+}
+
 export function getTrustStatusChip(
   profile: Profile,
   verified: boolean
 ): TrustStatusChip {
   const status = profile.verification_status;
   const level = effectiveTrustLevel(profile);
+  const setupComplete = isListingSetupComplete(profile, verified);
 
-  if (verified || profile.verified_badge) {
+  if ((verified || profile.verified_badge) && setupComplete) {
     return { label: "Premium verified", tone: "premium" };
+  }
+  if ((verified || profile.verified_badge) && !setupComplete) {
+    return { label: "Finish setup", tone: "warning" };
   }
   if (status === "pending" && profile.verified_badge) {
     return { label: "Under review", tone: "warning" };
@@ -184,6 +197,5 @@ export function shouldShowTrustCenter(
   const incomplete = items.some(
     (i) => i.status === "action_needed" || i.status === "under_review"
   );
-  const isLister = isAgentRole(profile.role);
-  return incomplete || isLister || Boolean(profile.verification_required);
+  return incomplete || Boolean(profile.verification_required);
 }

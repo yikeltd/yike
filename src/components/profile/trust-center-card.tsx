@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BadgeCheck,
   Check,
   ChevronDown,
   ChevronRight,
@@ -131,6 +130,9 @@ export function TrustCenterCard({
   const completed = items.filter((i) => i.status === "complete");
 
   const allDone = listingIncomplete.length === 0;
+  const needsAction = Boolean(
+    next && (next.status === "action_needed" || next.status === "under_review")
+  );
 
   return (
     <section
@@ -164,9 +166,23 @@ export function TrustCenterCard({
             <p className="mt-0.5 text-xs text-muted">All set.</p>
           ) : null}
         </div>
-        <ChevronDown
-          className={cn("h-4 w-4 shrink-0 text-muted transition-transform", expanded && "rotate-180")}
-        />
+        {!expanded && needsAction && showVerificationHubLink ? (
+          <Link
+            href={next?.href ?? "/agent/verification"}
+            prefetch
+            onClick={(e) => e.stopPropagation()}
+            className="shrink-0 rounded-full bg-gold px-3 py-1.5 text-[11px] font-bold text-navy"
+          >
+            Continue
+          </Link>
+        ) : (
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted transition-transform",
+              expanded && "rotate-180"
+            )}
+          />
+        )}
       </button>
 
       {expanded ? (

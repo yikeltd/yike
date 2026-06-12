@@ -1,17 +1,30 @@
 import Link from "next/link";
 import { requireAuth } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { listActivePlans } from "@/lib/subscriptions/service";
+import { listActivePlans, getActiveUserSubscription } from "@/lib/subscriptions/service";
 import { getRevenueOffers } from "@/lib/revenue-pricing/service";
 import { PricingPlans } from "@/components/subscriptions/pricing-plans";
+import { PLAN_DISPLAY } from "@/lib/subscriptions/constants";
 
-export default async function AgentPlansPage() {
-  await requireAuth("/auth/login?next=/agent/plans");
+export default async function AgentPlansPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ upgraded?: string }>;
+}) {
+  const user = await requireAuth("/auth/login?next=/agent/plans");
+  const { upgraded } = await searchParams;
   const admin = createAdminClient();
-  const plans = admin ? await listActivePlans(admin) : [];
-  const offers = admin
-    ? await getRevenueOffers(admin)
-    : { founding_subscription_offer: true };
+  const [plans, offers, activeSubscription] = await Promise.all([
+    admin ? listActivePlans(admin) : Promise.resolve([]),
+    admin
+      ? getRevenueOffers(admin)
+      : Promise.resolve({ founding_subscription_offer: true }),
+    admin ? getActiveUserSubscription(admin, user.id) : Promise.resolve(null),
+  ]);
+
+  const currentPlanLabel = activeSubscription?.plan
+    ? PLAN_DISPLAY[activeSubscription.plan.plan_code].label
+    : "Free";
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pt-4 pb-8">
@@ -23,7 +36,16 @@ export default async function AgentPlansPage() {
         <p className="mt-1 text-sm text-muted">
           More active listings, analytics, and branding — upgrade only when you need to scale.
         </p>
+        <p className="mt-2 text-xs font-semibold text-navy">
+          Current plan: {currentPlanLabel}
+        </p>
       </div>
+
+      {upgraded === "1" ? (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Upgrade complete. Your new plan benefits are now active.
+        </p>
+      ) : null}
 
       {plans.length === 0 ? (
         <p className="rounded-2xl border border-border bg-elevated px-4 py-6 text-sm text-muted">

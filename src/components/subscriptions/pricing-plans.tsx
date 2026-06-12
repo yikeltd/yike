@@ -45,7 +45,7 @@ export function PricingPlans({
     if (data.authorizationUrl) {
       window.location.assign(data.authorizationUrl);
     } else {
-      window.location.assign("/agent?upgraded=1");
+      window.location.assign("/agent/plans?upgraded=1");
     }
   }
 
