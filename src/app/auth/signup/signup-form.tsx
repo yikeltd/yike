@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { EmailOtpModal } from "@/components/auth/email-otp-modal";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
+import { PinChecklist } from "@/components/auth/pin-checklist";
 import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import {
   isStrongPassword,
   PASSWORD_MIN_LENGTH,
 } from "@/lib/password-policy";
+import { pinPolicyError } from "@/lib/pin-policy";
 import { createMathChallenge } from "@/lib/signup-math-challenge";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
@@ -169,8 +171,9 @@ export function SignupForm({
       setError("Solve the addition check below your PIN");
       return;
     }
-    if (!/^\d{6}$/.test(pin)) {
-      setError("PIN must be exactly 6 digits");
+    const pinError = pinPolicyError(pin);
+    if (pinError) {
+      setError(pinError);
       return;
     }
 
@@ -397,6 +400,7 @@ export function SignupForm({
               autoComplete="off"
               revealLabel="PIN"
             />
+            <PinChecklist pin={pin} />
           </Field>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">

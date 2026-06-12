@@ -98,6 +98,7 @@ export default async function ProfilePage() {
       verified={verified}
       activeCount={activeCount}
       pending={pending}
+      totalListings={rows.length}
       limit={limit}
       savedCount={savedCount ?? 0}
       expiringSoon={expiringSoon}

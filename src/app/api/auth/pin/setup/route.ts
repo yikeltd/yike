@@ -3,6 +3,7 @@ import { resetPinFailuresForUser } from "@/lib/auth/pin-lockout";
 import { logAuthSecurityEvent } from "@/lib/auth/security-events";
 import { getAuthenticatedUserId, getRequestMeta } from "@/lib/auth/session-state";
 import { hashPin } from "@/lib/pin";
+import { pinPolicyError } from "@/lib/pin-policy";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -18,8 +19,9 @@ export async function POST(request: Request) {
   const password = String(body.password ?? "");
   const { ip, userAgent } = await getRequestMeta(request);
 
-  if (!/^\d{6}$/.test(pin)) {
-    return NextResponse.json({ error: "PIN must be 6 digits." }, { status: 400 });
+  const pinError = pinPolicyError(pin);
+  if (pinError) {
+    return NextResponse.json({ error: pinError }, { status: 400 });
   }
 
   const supabase = await createClient();

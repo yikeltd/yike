@@ -13,6 +13,7 @@ export default async function ProfileSetupPage({
   });
   const { next } = await searchParams;
   const nextPath = next?.startsWith("/") ? next : "/agent/listings/new";
+  const listingFlow = nextPath.includes("/listings/");
 
   if (hasBasicListingProfile(profile)) {
     redirect(nextPath);
@@ -21,12 +22,16 @@ export default async function ProfileSetupPage({
   return (
     <div className="mx-auto max-w-lg space-y-4 px-3 pt-4 pb-8">
       <div>
-        <h1 className="text-xl font-bold text-navy">Your profile</h1>
+        <h1 className="text-xl font-bold text-navy">
+          {listingFlow ? "Before you list" : "Your profile"}
+        </h1>
         <p className="mt-1 text-sm text-muted">
-          Personal details for listing — separate from the verified agent badge.
+          {listingFlow
+            ? "Add a few details — then you can continue with your listing."
+            : "Personal details for listing — separate from the verified agent badge."}
         </p>
       </div>
-      <BasicProfileForm profile={profile} />
+      <BasicProfileForm profile={profile} nextPath={nextPath} />
     </div>
   );
 }

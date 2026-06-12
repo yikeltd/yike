@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { PinPad } from "./pin-login-panel";
 import { Button } from "@/components/ui/button";
 import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
+import { pinPolicyError } from "@/lib/pin-policy";
 
 export function PinSetupModal({
   open,
@@ -105,6 +106,12 @@ export function PinSetupModal({
             onChange={(v) => (step === "enter" ? setPin(v) : setConfirm(v))}
             onComplete={(code) => {
               if (step === "enter") {
+                const pinError = pinPolicyError(code);
+                if (pinError) {
+                  setError(pinError);
+                  reset();
+                  return;
+                }
                 setStep("confirm");
                 return;
               }

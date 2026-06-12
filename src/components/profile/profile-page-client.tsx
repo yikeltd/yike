@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
-  BadgeCheck,
   Bell,
   Bookmark,
   List,
@@ -26,10 +25,8 @@ import {
   profileRoleLabel,
   showAgentBadge,
 } from "@/lib/profile-display";
-import {
-  getTrustStatusChip,
-  shouldShowTrustCenter,
-} from "@/lib/verification/trust-center";
+import { getTrustStatusChip } from "@/lib/verification/trust-center";
+import { shouldShowTrustCenterOnDashboard } from "@/lib/verification/seller-dashboard-context";
 import { SellerAnalyticsPanel } from "@/components/subscriptions/seller-analytics-panel";
 import { PlansUpgradeCard } from "@/components/subscriptions/plans-upgrade-card";
 import { SubscriptionPlanBadge } from "@/components/subscriptions/subscription-plan-badge";
@@ -42,6 +39,7 @@ export function ProfilePageClient({
   verified,
   activeCount,
   pending,
+  totalListings = 0,
   limit,
   savedCount,
   expiringSoon = 0,
@@ -59,6 +57,7 @@ export function ProfilePageClient({
   verified: boolean;
   activeCount: number;
   pending: number;
+  totalListings?: number;
   limit: number | null;
   savedCount: number;
   expiringSoon?: number;
@@ -77,7 +76,10 @@ export function ProfilePageClient({
   const sellerType = getSellerType(profile);
   const statusMessage = accountStatusMessage(profile);
   const trustChip = getTrustStatusChip(profile, verified);
-  const showTrust = shouldShowTrustCenter(profile, verified);
+  const showTrust = shouldShowTrustCenterOnDashboard(profile, verified, {
+    canList: isLister,
+    totalListings,
+  });
 
   return (
     <div className="space-y-5 pb-4">
@@ -188,27 +190,30 @@ export function ProfilePageClient({
               <TrustCenterCard profile={profile} verified={verified} />
             </DashboardSection>
           ) : null}
-          <ProfileUserActivityStats
-            savedCount={savedCount}
-            verificationRequestsCount={verificationRequestsCount}
-          />
+          <DashboardSection title="Your activity">
+            <ProfileUserActivityStats
+              savedCount={savedCount}
+              verificationRequestsCount={verificationRequestsCount}
+            />
+          </DashboardSection>
           <DashboardSection title="Quick actions">
             <div className="grid grid-cols-2 gap-2">
+              <QuickAction href="/saved" icon={Bookmark} label="Saved homes" />
+              <QuickAction href="/search" icon={Search} label="Find a home" />
+              <QuickAction href="/agent/notifications" icon={Bell} label="Notifications" />
+              <QuickAction
+                href="/property-verification/requests"
+                icon={ShieldCheck}
+                label="Inquiries"
+              />
               <Link
                 href="/agent/become"
                 prefetch
-                className="pressable col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-navy px-4 py-3.5 text-sm font-bold text-white"
+                className="pressable col-span-2 flex items-center justify-center gap-2 rounded-2xl border border-navy/20 bg-elevated px-4 py-3.5 text-sm font-bold text-navy shadow-sm"
               >
-                <BadgeCheck className="h-5 w-5" />
+                <PlusCircle className="h-5 w-5" />
                 List a property
               </Link>
-              <QuickAction href="/saved" icon={Bookmark} label="Saved homes" />
-              <QuickAction href="/search" icon={Search} label="Find a home" />
-              <QuickAction
-                href="/property-verification"
-                icon={ShieldCheck}
-                label="Verify property"
-              />
             </div>
           </DashboardSection>
         </>

@@ -12,7 +12,13 @@ import type { Profile } from "@/types/database";
 import { friendlyPublicError, PUBLIC_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 import { Upload } from "lucide-react";
 
-export function BasicProfileForm({ profile }: { profile: Profile }) {
+export function BasicProfileForm({
+  profile,
+  nextPath = "/agent/profile-setup/complete",
+}: {
+  profile: Profile;
+  nextPath?: string;
+}) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const isBusiness = isBusinessAccount(profile.account_type);
@@ -111,7 +117,7 @@ export function BasicProfileForm({ profile }: { profile: Profile }) {
       return;
     }
 
-    router.push("/agent/profile-setup/complete");
+    router.push(nextPath);
     router.refresh();
   }
 

@@ -1,4 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { pinPolicyError } from "@/lib/pin-policy";
 
 const SALT_BYTES = 16;
 const KEY_LEN = 64;
@@ -20,8 +21,9 @@ function pepperedPin(pin: string, usePepper: boolean): string {
 }
 
 export function hashPin(pin: string): string {
-  if (!/^\d{6}$/.test(pin)) {
-    throw new Error("PIN must be exactly 6 digits");
+  const policyError = pinPolicyError(pin);
+  if (policyError) {
+    throw new Error(policyError);
   }
   const salt = randomBytes(SALT_BYTES);
   const hash = scryptSync(pepperedPin(pin, true), salt, KEY_LEN, {

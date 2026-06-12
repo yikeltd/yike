@@ -18,6 +18,7 @@ import {
   normalizePhoneForDuplicateCheck,
 } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
+import { pinPolicyError } from "@/lib/pin-policy";
 import { passwordPolicyError } from "@/lib/password-policy";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
@@ -86,8 +87,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Passwords do not match" }, { status: 400 });
   }
 
-  if (!/^\d{6}$/.test(pin)) {
-    return NextResponse.json({ error: "PIN must be exactly 6 digits" }, { status: 400 });
+  const pinError = pinPolicyError(pin);
+  if (pinError) {
+    return NextResponse.json({ error: pinError }, { status: 400 });
   }
 
   const reviewerBypass = isReviewerAccountEmail(email);
@@ -146,8 +148,9 @@ export async function POST(request: Request) {
   let pinHash: string;
   try {
     pinHash = hashPin(pin);
-  } catch {
-    return NextResponse.json({ error: "Invalid PIN" }, { status: 400 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid PIN";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
   if (reviewerBypass) {
