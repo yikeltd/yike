@@ -19,6 +19,7 @@ type ProfileCoverHeroProps = {
   badges: ReactNode;
   socialStats?: ProfileSocialStats;
   editable?: boolean;
+  showSocialStats?: boolean;
 };
 
 export function ProfileCoverHero({
@@ -29,6 +30,7 @@ export function ProfileCoverHero({
   badges,
   socialStats,
   editable = true,
+  showSocialStats = true,
 }: ProfileCoverHeroProps) {
   const [coverUrl, setCoverUrl] = useState(getProfileCoverUrl(profile));
   const [coverPositionY, setCoverPositionY] = useState(getProfileCoverPositionY(profile));
@@ -44,8 +46,8 @@ export function ProfileCoverHero({
       displayName={displayName}
       username={profile.username}
       coverProfile={coverProfile}
-      socialStats={socialStats}
-      showSocialLinks={editable}
+      socialStats={showSocialStats ? socialStats : undefined}
+      showSocialLinks={editable && showSocialStats}
       memberSince={memberSince}
       badges={badges}
       bio={profile.company_bio}

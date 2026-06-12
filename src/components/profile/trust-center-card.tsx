@@ -7,13 +7,10 @@ import {
   Circle,
   Clock,
   MessageCircle,
-  ShieldCheck,
 } from "lucide-react";
 import type { Profile } from "@/types/database";
 import { cn } from "@/lib/utils";
 import {
-  getNextStepMessage,
-  getNextTrustStep,
   getTrustProgressItems,
   getTrustStatusChip,
   trustProgressPercent,
@@ -50,29 +47,6 @@ function chipClasses(tone: ReturnType<typeof getTrustStatusChip>["tone"]) {
   }
 }
 
-function ProgressRing({ percent }: { percent: number }) {
-  const r = 18;
-  const c = 2 * Math.PI * r;
-  const offset = c - (percent / 100) * c;
-  return (
-    <svg width="44" height="44" viewBox="0 0 44 44" className="shrink-0 -rotate-90">
-      <circle cx="22" cy="22" r={r} fill="none" stroke="currentColor" strokeWidth="3" className="text-black/5" />
-      <circle
-        cx="22"
-        cy="22"
-        r={r}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={offset}
-        className="text-gold transition-all duration-500"
-      />
-    </svg>
-  );
-}
-
 function TrustRow({ item, compact }: { item: TrustProgressItem; compact?: boolean }) {
   const label =
     item.status === "complete"
@@ -94,7 +68,7 @@ function TrustRow({ item, compact }: { item: TrustProgressItem; compact?: boolea
         {label}
       </span>
       {item.status !== "complete" && item.href ? (
-        <Link href={item.href} prefetch className="text-xs font-semibold text-gold-dark">
+        <Link href={item.href} prefetch className="text-xs font-semibold text-navy">
           Continue
         </Link>
       ) : null}
@@ -116,9 +90,6 @@ export function TrustCenterCard({
   const chip = getTrustStatusChip(profile, verified);
   const items = getTrustProgressItems(profile, verified);
   const percent = trustProgressPercent(items);
-  const next = getNextTrustStep(items);
-  const nextMessage = getNextStepMessage(profile, next);
-
   const listingItems = items.filter((i) => i.group === "listing_setup");
   const trustItems = items.filter((i) => i.group === "trust_upgrade");
   const listingIncomplete = listingItems.filter(
@@ -131,38 +102,33 @@ export function TrustCenterCard({
     return (
       <section
         className={cn(
-          "rounded-2xl border border-border bg-elevated px-4 py-3.5 shadow-float",
+          "rounded-2xl border border-border bg-elevated px-3.5 py-3 shadow-float",
           className
         )}
       >
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <ProgressRing percent={percent} />
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-navy">
-              {percent}%
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-bold text-navy">Profile completion — {percent}%</p>
+          {!allDone ? (
+            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
+              {chip.label}
             </span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-bold text-navy">Account & verification</p>
-              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
-                {chip.label}
-              </span>
-            </div>
-            {nextMessage && !allDone ? (
-              <p className="mt-0.5 line-clamp-2 text-xs text-muted">{nextMessage}</p>
-            ) : allDone ? (
-              <p className="mt-0.5 text-xs text-muted">All required steps complete.</p>
-            ) : null}
-          </div>
+          ) : null}
         </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-navy/10">
+          <div
+            className="h-full rounded-full bg-navy transition-all duration-500"
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          {allDone ? "Profile complete." : "Complete your profile to build trust."}
+        </p>
         <Link
           href={SETUP_HREF}
           prefetch
-          className="pressable mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy"
+          className="pressable mt-2.5 flex w-full items-center justify-center rounded-xl bg-navy px-4 py-2 text-sm font-semibold text-white"
         >
-          <ShieldCheck className="h-4 w-4" />
-          {allDone ? "View account setup" : "Continue setup"}
+          Continue
         </Link>
       </section>
     );
@@ -175,32 +141,25 @@ export function TrustCenterCard({
         className
       )}
     >
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
-        <div className="relative">
-          <ProgressRing percent={percent} />
-          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-navy">
-            {percent}%
+      <div className="border-b border-border px-4 py-3.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-bold text-navy">Profile completion — {percent}%</p>
+          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
+            {chip.label}
           </span>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-navy">Account & verification</p>
-            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
-              {chip.label}
-            </span>
-          </div>
-          {nextMessage && !allDone ? (
-            <p className="mt-0.5 text-xs text-muted">{nextMessage}</p>
-          ) : allDone ? (
-            <p className="mt-0.5 text-xs text-muted">All required steps complete.</p>
-          ) : null}
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-navy/10">
+          <div
+            className="h-full rounded-full bg-navy transition-all duration-500"
+            style={{ width: `${percent}%` }}
+          />
         </div>
       </div>
 
       <div className="px-4 py-3">
         {listingItems.length > 0 ? (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-navy/60">
               Required to list
             </p>
             <ul className="mt-2 space-y-2">
@@ -213,10 +172,9 @@ export function TrustCenterCard({
 
         {trustItems.length > 0 ? (
           <div className={cn(listingItems.length > 0 && "mt-4")}>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-navy/60">
               Optional upgrades
             </p>
-            <p className="mt-0.5 text-xs text-muted">Verified badge and company checks.</p>
             <ul className="mt-2 space-y-1.5">
               {trustItems.map((item) => (
                 <TrustRow key={item.id} item={item} />

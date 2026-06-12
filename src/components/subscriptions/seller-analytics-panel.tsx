@@ -2,26 +2,62 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Lock } from "lucide-react";
 import type { SellerAnalyticsSummary } from "@/lib/subscriptions/analytics";
 import { cn } from "@/lib/utils";
 
-function Stat({ label, value, muted }: { label: string; value: number; muted?: boolean }) {
-  return (
+function Metric({
+  label,
+  value,
+  locked,
+  href,
+}: {
+  label: string;
+  value: number;
+  locked?: boolean;
+  href?: string;
+}) {
+  const inner = (
     <div
       className={cn(
-        "rounded-xl border border-border bg-white px-3 py-3",
-        muted && "opacity-60"
+        "relative rounded-xl border border-border bg-white px-3 py-2.5",
+        href && "pressable"
       )}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 text-xl font-bold text-navy tabular-nums">{value}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-navy/55">{label}</p>
+      {locked ? (
+        <div className="mt-1 flex items-center gap-1.5">
+          <Lock className="h-3.5 w-3.5 text-muted" aria-hidden />
+          <span className="text-sm font-bold text-muted blur-[2px] select-none">00</span>
+        </div>
+      ) : (
+        <p className="mt-1 text-lg font-bold tabular-nums text-navy">{value}</p>
+      )}
     </div>
   );
+
+  if (href && !locked) {
+    return <Link href={href}>{inner}</Link>;
+  }
+  return inner;
 }
 
-export function SellerAnalyticsPanel({ className }: { className?: string }) {
+export function SellerAnalyticsPanel({
+  className,
+  activeCount,
+  pending,
+  leadsCount,
+  savedCount,
+}: {
+  className?: string;
+  activeCount: number;
+  pending: number;
+  leadsCount: number;
+  savedCount: number;
+}) {
   const [data, setData] = useState<SellerAnalyticsSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -35,39 +71,57 @@ export function SellerAnalyticsPanel({ className }: { className?: string }) {
     })();
   }, []);
 
-  if (error) {
-    return <p className={cn("text-sm text-danger", className)}>{error}</p>;
-  }
-
-  if (!data) {
-    return <p className={cn("text-sm text-muted", className)}>Loading analytics…</p>;
-  }
-
-  const advanced = data.hasAdvanced;
+  const advanced = data?.hasAdvanced ?? false;
 
   return (
-    <section className={cn("space-y-3", className)}>
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-bold text-navy">Seller analytics · 30 days</h2>
+    <section className={cn("space-y-2.5", className)}>
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <h2 className="text-[11px] font-bold uppercase tracking-wider text-navy/70">
+          Analytics (30d)
+        </h2>
         {!advanced ? (
-          <Link href="/agent/plans" prefetch className="text-xs font-semibold text-gold">
-            Upgrade for advanced
+          <Link href="/agent/plans" prefetch className="text-[11px] font-semibold text-navy">
+            Upgrade for advanced analytics
           </Link>
         ) : null}
       </div>
+
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
+
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="Listing views" value={data.listingViews} muted={!advanced && data.listingViews > 0} />
-        <Stat label="WhatsApp" value={data.whatsappClicks} muted={!advanced} />
-        <Stat label="Calls" value={data.callClicks} muted={!advanced} />
-        <Stat label="Saves" value={data.saves} muted={!advanced} />
-        <Stat label="Followers" value={data.followers} />
-        <Stat label="Listing likes" value={data.listingLikes} />
-        <Stat label="Leads" value={data.leadsGenerated} muted={!advanced} />
+        <Metric label="Active listings" value={activeCount} href="/agent/listings" />
+        <Metric label="Pending review" value={pending} href="/agent/listings" />
+        <Metric label="Inquiries" value={leadsCount} href="/agent/leads" />
+        <Metric label="Saved homes" value={savedCount} href="/saved" />
       </div>
-      {!advanced ? (
-        <p className="text-xs text-muted">
-          Basic plan shows summary counts. Pro and above unlock full breakdowns.
-        </p>
+
+      {data ? (
+        <>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Metric label="Views" value={data.listingViews} locked={!advanced} />
+            <Metric label="Leads" value={data.leadsGenerated} locked={!advanced} />
+            <Metric label="Saves" value={data.saves} locked={!advanced} />
+            <Metric label="Likes" value={data.listingLikes} />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            className="text-[11px] font-semibold text-muted hover:text-navy"
+          >
+            {advancedOpen ? "Hide" : "Show"} channel breakdown
+          </button>
+
+          {advancedOpen ? (
+            <div className="grid grid-cols-3 gap-2">
+              <Metric label="WhatsApp" value={data.whatsappClicks} locked={!advanced} />
+              <Metric label="Calls" value={data.callClicks} locked={!advanced} />
+              <Metric label="Followers" value={data.followers} href="/agent/followers" />
+            </div>
+          ) : null}
+        </>
+      ) : !error ? (
+        <p className="text-xs text-muted">Loading analytics…</p>
       ) : null}
     </section>
   );

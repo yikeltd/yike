@@ -1,18 +1,16 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   BadgeCheck,
   Bell,
   Bookmark,
-  ChevronRight,
-  Heart,
   List,
   MessageCircle,
   PlusCircle,
   Search,
   ShieldCheck,
-  Sparkles,
   Users,
 } from "lucide-react";
 import type { Profile } from "@/types/database";
@@ -23,9 +21,7 @@ import { ProfileAccountActions } from "@/components/profile/profile-account-acti
 import { ProfileUserActivityStats } from "@/components/profile/profile-user-activity-stats";
 import { TrustCenterCard } from "@/components/profile/trust-center-card";
 import { accountStatusMessage } from "@/lib/account-control";
-import { cn } from "@/lib/utils";
 import {
-  formatListingSlots,
   getSellerType,
   profileRoleLabel,
   showAgentBadge,
@@ -36,7 +32,6 @@ import {
 } from "@/lib/verification/trust-center";
 import { SellerAnalyticsPanel } from "@/components/subscriptions/seller-analytics-panel";
 import { PlansUpgradeCard } from "@/components/subscriptions/plans-upgrade-card";
-import { SubscriptionRenewCard } from "@/components/subscriptions/subscription-renew-card";
 import { SubscriptionPlanBadge } from "@/components/subscriptions/subscription-plan-badge";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
 
@@ -57,7 +52,6 @@ export function ProfilePageClient({
   socialStats = { followersCount: 0, listingLikesCount: 0 },
   subscriptionPlanLabel = null,
   subscriptionExpiresAt = null,
-  foundingMember = false,
 }: {
   profile: Profile;
   email: string;
@@ -84,16 +78,16 @@ export function ProfilePageClient({
   const statusMessage = accountStatusMessage(profile);
   const trustChip = getTrustStatusChip(profile, verified);
   const showTrust = shouldShowTrustCenter(profile, verified);
-  const slotsLabel = formatListingSlots(activeCount, limit, verified);
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-5 pb-4">
       <ProfileCoverHero
         profile={profile}
         email={email}
         displayName={displayName}
         memberSince={memberSince}
         socialStats={socialStats}
+        showSocialStats={!isLister}
         badges={
           <>
             {showAgentBadge(profile, verified) ? <VerifiedBadge /> : null}
@@ -126,225 +120,139 @@ export function ProfilePageClient({
           role="status"
         >
           <p className="font-medium">{statusMessage}</p>
-          <Link
-            href="/agent/verification"
-            prefetch
-            className="mt-1 inline-block text-xs font-semibold text-navy"
-          >
-            Complete setup →
-          </Link>
         </div>
       ) : null}
 
       {isLister ? (
-        <section className="grid grid-cols-2 gap-3">
-          <StatCard icon={Heart} label="Saved homes" value={String(savedCount)} href="/saved" />
-          <StatCard
-            icon={List}
-            label="Active listings"
-            value={String(activeCount)}
-            href="/agent/listings"
-          />
-          <StatCard icon={ShieldCheck} label="Pending review" value={String(pending)} href="/agent/listings" />
-          <StatCard
-            icon={MessageCircle}
-            label="Inquiries"
-            value={leadsCount > 0 ? String(leadsCount) : "0"}
-            href="/agent/leads"
-          />
-          {expiringSoon > 0 && (
-            <StatCard
-              icon={Sparkles}
-              label="Expiring soon"
-              value={String(expiringSoon)}
-              href="/agent/listings"
-            />
-          )}
-          {expiredCount > 0 && (
-            <StatCard
-              icon={List}
-              label="Expired"
-              value={String(expiredCount)}
-              href="/agent/listings"
-            />
-          )}
-          <StatCard
-            icon={List}
-            label="Listing slots"
-            value={slotsLabel}
-            href="/agent/listings"
-            smallValue
-            className="col-span-2"
-          />
-        </section>
-      ) : null}
-
-      {isLister && subscriptionPlanLabel ? (
-        <SubscriptionRenewCard
-          planLabel={subscriptionPlanLabel}
-          expiresAt={subscriptionExpiresAt}
-          foundingMember={foundingMember}
-        />
-      ) : null}
-
-      {isLister ? (
-        <section
-          className={cn(
-            "grid gap-3",
-            showTrust ? "sm:grid-cols-2" : "grid-cols-1"
-          )}
-        >
+        <>
           {showTrust ? (
-            <TrustCenterCard
-              profile={profile}
-              verified={verified}
-              className="h-full"
-            />
+            <DashboardSection title="Profile & verification">
+              <TrustCenterCard profile={profile} verified={verified} />
+            </DashboardSection>
           ) : null}
-          <PlansUpgradeCard
-            planLabel={subscriptionPlanLabel}
-            className="h-full"
+
+          <DashboardSection title="Plan & listings">
+            <PlansUpgradeCard
+              planLabel={subscriptionPlanLabel}
+              activeCount={activeCount}
+              limit={limit}
+              expiresAt={subscriptionExpiresAt}
+            />
+          </DashboardSection>
+
+          <DashboardSection title="Performance">
+            <SellerAnalyticsPanel
+              activeCount={activeCount}
+              pending={pending}
+              leadsCount={leadsCount}
+              savedCount={savedCount}
+            />
+            {(expiringSoon > 0 || expiredCount > 0) && (
+              <p className="px-0.5 text-xs text-muted">
+                {expiringSoon > 0 ? `${expiringSoon} listing${expiringSoon === 1 ? "" : "s"} expiring soon. ` : ""}
+                {expiredCount > 0 ? `${expiredCount} expired.` : ""}
+                {" "}
+                <Link href="/agent/listings" className="font-semibold text-navy">
+                  Manage listings
+                </Link>
+              </p>
+            )}
+          </DashboardSection>
+
+          <DashboardSection title="Quick actions">
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/agent/listings/new"
+                prefetch
+                className="pressable col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-navy px-4 py-3.5 text-sm font-bold text-white shadow-float"
+              >
+                <PlusCircle className="h-5 w-5" />
+                List a property
+              </Link>
+              <QuickAction href="/agent/listings" icon={List} label="My listings" />
+              <QuickAction href="/agent/leads" icon={MessageCircle} label="Leads" />
+              <QuickAction href="/agent/notifications" icon={Bell} label="Notifications" />
+              <QuickAction href="/agent/followers" icon={Users} label="Followers" />
+              {(profile.account_type === "agency" ||
+                profile.account_type === "developer" ||
+                profile.company_name) && (
+                <QuickAction href="/agent/company" icon={ShieldCheck} label="Company" />
+              )}
+            </div>
+          </DashboardSection>
+        </>
+      ) : (
+        <>
+          {showTrust ? (
+            <DashboardSection title="Profile & verification">
+              <TrustCenterCard profile={profile} verified={verified} />
+            </DashboardSection>
+          ) : null}
+          <ProfileUserActivityStats
+            savedCount={savedCount}
+            verificationRequestsCount={verificationRequestsCount}
           />
-        </section>
-      ) : showTrust ? (
-        <TrustCenterCard profile={profile} verified={verified} />
-      ) : null}
-
-      {isLister ? <SellerAnalyticsPanel /> : null}
-
-      {!isLister ? (
-        <ProfileUserActivityStats
-          savedCount={savedCount}
-          verificationRequestsCount={verificationRequestsCount}
-        />
-      ) : null}
-
-      <section className="space-y-2">
-        <p className="px-1 text-xs font-bold uppercase tracking-wider text-muted">Quick actions</p>
-        {isLister ? (
-          <>
-            <ActionLink
-              href="/agent/listings/new"
-              icon={PlusCircle}
-              title="List a property"
-              subtitle="Post a new home on Yike"
-              primary
-            />
-            <ActionLink href="/agent/listings" icon={List} title="My listings" />
-            {expiringSoon > 0 && (
-              <ActionLink
-                href="/agent/listings"
-                icon={Sparkles}
-                title={`Renew ${expiringSoon} expiring`}
-                accent
+          <DashboardSection title="Quick actions">
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/agent/become"
+                prefetch
+                className="pressable col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-navy px-4 py-3.5 text-sm font-bold text-white"
+              >
+                <BadgeCheck className="h-5 w-5" />
+                List a property
+              </Link>
+              <QuickAction href="/saved" icon={Bookmark} label="Saved homes" />
+              <QuickAction href="/search" icon={Search} label="Find a home" />
+              <QuickAction
+                href="/property-verification"
+                icon={ShieldCheck}
+                label="Verify property"
               />
-            )}
-            <ActionLink href="/agent/leads" icon={MessageCircle} title="Inquiries & leads" />
-            <ActionLink href="/agent/notifications" icon={Bell} title="Notifications" />
-            <ActionLink href="/agent/followers" icon={Users} title="Followers" />
-            <ActionLink href="/agent/following" icon={Users} title="Following" />
-            {(profile.account_type === "agency" ||
-              profile.account_type === "developer" ||
-              profile.company_name) && (
-              <ActionLink href="/agent/company" icon={ShieldCheck} title="Company profile" />
-            )}
-          </>
-        ) : (
-          <>
-            <ActionLink href="/saved" icon={Bookmark} title="Saved homes" />
-            <ActionLink href="/search" icon={Search} title="Find a home" />
-            <ActionLink
-              href="/property-verification"
-              icon={ShieldCheck}
-              title="Verify a property"
-            />
-            <ActionLink
-              href="/agent/become"
-              icon={BadgeCheck}
-              title="List a property"
-              subtitle="Unlock listing on Yike"
-              accent
-            />
-          </>
-        )}
-      </section>
+            </div>
+          </DashboardSection>
+        </>
+      )}
 
-      <ProfileAccountActions email={email} />
+      <ProfileAccountActions email={email} canList={isLister} />
     </div>
   );
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  href,
-  smallValue,
-  className,
+function DashboardSection({
+  title,
+  children,
 }: {
-  icon: typeof Heart;
-  label: string;
-  value: string;
-  href: string;
-  smallValue?: boolean;
-  className?: string;
+  title: string;
+  children: ReactNode;
 }) {
   return (
-    <Link
-      href={href}
-      className={cn(
-        "pressable rounded-2xl border border-border bg-elevated p-4 shadow-float",
-        className
-      )}
-    >
-      <Icon className="h-4 w-4 text-gold-dark" />
-      <p
-        className={cn(
-          "mt-3 font-bold text-navy",
-          smallValue ? "text-sm leading-snug" : "text-xl"
-        )}
-      >
-        {value}
-      </p>
-      <p className="text-xs text-muted">{label}</p>
-    </Link>
+    <section className="space-y-2">
+      <h2 className="px-0.5 text-[11px] font-bold uppercase tracking-wider text-navy/70">
+        {title}
+      </h2>
+      {children}
+    </section>
   );
 }
 
-function ActionLink({
+function QuickAction({
   href,
   icon: Icon,
-  title,
-  subtitle,
-  primary,
-  accent,
+  label,
 }: {
   href: string;
-  icon: typeof PlusCircle;
-  title: string;
-  subtitle?: string;
-  primary?: boolean;
-  accent?: boolean;
+  icon: typeof List;
+  label: string;
 }) {
   return (
     <Link
       href={href}
       prefetch
-      className={cn(
-        "pressable flex items-center gap-3 rounded-2xl px-4 py-3.5",
-        primary && "bg-primary text-white",
-        accent && !primary && "border border-gold/35 bg-gold/10 text-navy",
-        !primary && !accent && "border border-border bg-elevated"
-      )}
+      className="pressable flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border bg-elevated px-3 py-3.5 text-center shadow-float"
     >
-      <Icon className={cn("h-5 w-5 shrink-0", primary ? "text-white" : "text-gold-dark")} />
-      <div className="min-w-0 flex-1">
-        <span className="font-semibold">{title}</span>
-        {subtitle ? (
-          <p className={cn("text-xs", primary ? "text-white/75" : "text-muted")}>{subtitle}</p>
-        ) : null}
-      </div>
-      <ChevronRight className={cn("h-4 w-4 shrink-0", primary ? "text-white/60" : "text-muted")} />
+      <Icon className="h-5 w-5 text-navy" />
+      <span className="text-xs font-semibold text-navy">{label}</span>
     </Link>
   );
 }

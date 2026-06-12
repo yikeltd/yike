@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { KeyRound, LogOut, Mail, Trash2 } from "lucide-react";
+import { KeyRound, LogOut, Mail, Trash2, UserRound } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useSensitiveActionGate } from "@/components/auth/use-sensitive-action-gate";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,13 @@ import { PasswordInput } from "@/components/auth/password-input";
 import { OtpCodeInput } from "@/components/auth/otp-code-input";
 import { cn } from "@/lib/utils";
 
-export function ProfileAccountActions({ email }: { email: string }) {
+export function ProfileAccountActions({
+  email,
+  canList = false,
+}: {
+  email: string;
+  canList?: boolean;
+}) {
   const router = useRouter();
   const { signOut } = useAuth();
   const { gateSensitiveAction, sensitiveActionModals } = useSensitiveActionGate(email);
@@ -25,6 +31,8 @@ export function ProfileAccountActions({ email }: { email: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  const editProfileHref = canList ? "/agent/profile-setup" : "/agent";
 
   function resetForms() {
     setPanel(null);
@@ -123,8 +131,10 @@ export function ProfileAccountActions({ email }: { email: string }) {
   return (
     <>
       {sensitiveActionModals}
-      <section className="space-y-3">
-        <p className="px-1 text-xs font-bold uppercase tracking-wider text-muted">Account</p>
+      <section className="space-y-2.5">
+        <h2 className="px-0.5 text-[11px] font-bold uppercase tracking-wider text-navy/70">
+          Account
+        </h2>
 
         {message ? (
           <p className="rounded-xl bg-gold/10 px-3 py-2 text-sm font-medium text-navy">{message}</p>
@@ -133,8 +143,13 @@ export function ProfileAccountActions({ email }: { email: string }) {
           <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-danger">{error}</p>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <AccountTile
+        <div className="space-y-1.5">
+          <AccountRow
+            icon={UserRound}
+            label="Edit profile"
+            href={editProfileHref}
+          />
+          <AccountRow
             icon={KeyRound}
             label="Change password"
             onClick={() => {
@@ -142,9 +157,8 @@ export function ProfileAccountActions({ email }: { email: string }) {
               setError("");
             }}
             active={panel === "password"}
-            variant="navy"
           />
-          <AccountTile
+          <AccountRow
             icon={Mail}
             label="Change email"
             onClick={() => {
@@ -152,25 +166,13 @@ export function ProfileAccountActions({ email }: { email: string }) {
               setError("");
             }}
             active={panel === "email"}
-            variant="navy"
           />
-          <AccountTile
+          <AccountRow
             icon={LogOut}
             label={loggingOut ? "Logging out…" : "Log out"}
             onClick={() => void handleSignOut()}
-            variant="outline"
             disabled={loggingOut}
           />
-          <Link
-            href="/account/delete"
-            className={cn(
-              "pressable flex flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-4 text-center",
-              "border-danger/25 bg-danger/5 text-danger"
-            )}
-          >
-            <Trash2 className="h-5 w-5" />
-            <span className="text-xs font-bold leading-tight">Delete account</span>
-          </Link>
         </div>
 
         {panel === "password" ? (
@@ -231,43 +233,65 @@ export function ProfileAccountActions({ email }: { email: string }) {
           </form>
         ) : null}
 
-        <p className="truncate px-1 text-xs text-muted">{email}</p>
+        <p className="truncate px-0.5 text-xs text-muted">{email}</p>
+      </section>
+
+      <section className="mt-4 border-t border-danger/15 pt-4">
+        <h2 className="px-0.5 text-[11px] font-bold uppercase tracking-wider text-danger/80">
+          Danger zone
+        </h2>
+        <Link
+          href="/account/delete"
+          className="pressable mt-2 flex items-center gap-2 rounded-xl border border-danger/25 bg-danger/5 px-3.5 py-3 text-sm font-semibold text-danger"
+        >
+          <Trash2 className="h-4 w-4 shrink-0" />
+          Delete account
+        </Link>
       </section>
     </>
   );
 }
 
-function AccountTile({
+function AccountRow({
   icon: Icon,
   label,
+  href,
   onClick,
   active,
-  variant,
   disabled,
 }: {
   icon: typeof KeyRound;
   label: string;
-  onClick: () => void;
+  href?: string;
+  onClick?: () => void;
   active?: boolean;
-  variant: "navy" | "outline";
   disabled?: boolean;
 }) {
+  const className = cn(
+    "pressable flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors",
+    active
+      ? "border-navy/20 bg-navy/5"
+      : "border-border bg-elevated hover:border-navy/15"
+  );
+
+  const inner = (
+    <>
+      <Icon className="h-4 w-4 shrink-0 text-navy" />
+      <span className="text-sm font-semibold text-navy">{label}</span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} prefetch className={className}>
+        {inner}
+      </Link>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "pressable flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-4 text-center transition-colors",
-        variant === "navy" &&
-          (active
-            ? "bg-gold text-navy shadow-glow-gold"
-            : "bg-navy text-white shadow-float"),
-        variant === "outline" && "border border-navy/12 bg-elevated text-navy"
-      )}
-    >
-      <Icon className={cn("h-5 w-5", variant === "navy" && !active && "text-gold")} />
-      <span className="text-xs font-bold leading-tight">{label}</span>
+    <button type="button" onClick={onClick} disabled={disabled} className={className}>
+      {inner}
     </button>
   );
 }
