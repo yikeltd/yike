@@ -54,6 +54,7 @@ export function VerificationWizard({
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<FormState>({
@@ -193,13 +194,35 @@ export function VerificationWizard({
     verification?.status === "rejected" ||
     profile.verification_status === "rejected";
 
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="pressable flex w-full items-center gap-3 rounded-2xl border border-border bg-elevated p-4 text-left shadow-float"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-navy">Verified agent badge</p>
+          <p className="mt-0.5 text-xs text-muted">
+            Optional — unlock higher visibility, ranking, and unlimited listings.
+          </p>
+        </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+      </button>
+    );
+  }
+
   return (
     <div className="space-y-4 rounded-2xl border border-border bg-elevated shadow-float">
-      <div className="border-b border-border px-4 py-3">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <p className="text-sm font-semibold text-navy">Verified agent badge</p>
-        <p className="mt-0.5 text-xs text-muted">
-          Optional — unlock higher visibility, ranking, and unlimited listings.
-        </p>
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="text-xs font-semibold text-muted hover:text-navy"
+        >
+          Close
+        </button>
       </div>
 
       {rejected && (

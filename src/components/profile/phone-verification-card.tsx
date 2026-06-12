@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronRight } from "lucide-react";
 import type { Profile } from "@/types/database";
-import { Button } from "@/components/ui/button";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import {
   isWhatsappNumberVerified,
@@ -28,20 +28,20 @@ export function PhoneVerificationCard({
 
   return (
     <>
-      <section className="rounded-2xl border border-border bg-elevated p-4 shadow-float">
-        <h2 className="text-sm font-bold text-navy">{WHATSAPP_VERIFY_COPY.profileTitle}</h2>
-        <p className="mt-1 text-xs text-muted">{WHATSAPP_VERIFY_COPY.profileDescription}</p>
-        {displayPhone !== "—" ? (
-          <p className="mt-3 text-sm font-semibold text-foreground">{displayPhone}</p>
-        ) : null}
-        <Button
-          type="button"
-          className="mt-3 w-full"
-          onClick={() => setModalOpen(true)}
-        >
-          {WHATSAPP_VERIFY_COPY.primaryButton}
-        </Button>
-      </section>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="pressable flex w-full items-center gap-3 rounded-2xl border border-border bg-elevated p-4 text-left shadow-float"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-navy">{WHATSAPP_VERIFY_COPY.profileTitle}</p>
+          <p className="mt-0.5 text-xs text-muted">{WHATSAPP_VERIFY_COPY.profileDescription}</p>
+          {displayPhone !== "—" ? (
+            <p className="mt-2 text-sm font-semibold text-foreground">{displayPhone}</p>
+          ) : null}
+        </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+      </button>
 
       <WhatsAppVerificationModal
         open={modalOpen}

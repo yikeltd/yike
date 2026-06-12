@@ -70,18 +70,18 @@ export function WhatsAppVerifyField({
             <Button
               type="button"
               variant="outline"
-              className="h-12 shrink-0 rounded-xl px-4"
+              className="h-auto min-h-12 shrink-0 flex-col items-start rounded-xl px-4 py-2.5 text-left"
               onClick={() => setModalOpen(true)}
             >
-              Verify
+              <span className="text-sm font-semibold">{WHATSAPP_VERIFY_COPY.profileTitle}</span>
+              <span className="text-[11px] font-normal text-muted">
+                {WHATSAPP_VERIFY_COPY.profileDescription}
+              </span>
             </Button>
           ) : null}
         </div>
         {verifyActive && !verified && profile.whatsapp_verification_status === "admin_required" ? (
           <p className="mt-1 text-xs text-amber-800">{WHATSAPP_VERIFY_COPY.adminRequired}</p>
-        ) : null}
-        {verifyActive && !verified ? (
-          <p className="mt-1 text-xs text-muted">{WHATSAPP_VERIFY_COPY.profileDescription}</p>
         ) : null}
       </div>
 

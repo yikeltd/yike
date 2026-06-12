@@ -94,7 +94,7 @@ export function getTrustProgressItems(
   if (isWhatsappVerificationFeatureActive(profile)) {
     items.push({
       id: "whatsapp",
-      label: "Phone verified",
+      label: "WhatsApp verified",
       status: isWhatsappNumberVerified(profile) ? "complete" : "action_needed",
       href: "/agent/verification",
       group: "listing_setup",
@@ -168,7 +168,7 @@ export function getNextStepMessage(
     case "email":
       return "Verify your email to continue.";
     case "whatsapp":
-      return "Verify your phone number to unlock seller actions.";
+      return "Verify your WhatsApp to unlock seller actions.";
     case "profile_complete":
       return "Add your name, address, and date of birth.";
     case "profile_photo":

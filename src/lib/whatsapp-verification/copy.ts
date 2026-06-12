@@ -14,7 +14,7 @@ export const WHATSAPP_VERIFY_COPY = {
   senderHelper: "Code sent via our verification provider.",
   listingPrompt: "Verify your WhatsApp number to continue listing on Yike.",
   adminRequired: "WhatsApp verification required by Yike trust team.",
-  profileTitle: "Verify phone number",
+  profileTitle: "Verify WhatsApp",
   profileDescription:
-    "Verify your phone number to improve trust and unlock seller actions.",
+    "Verify your WhatsApp to improve trust and unlock seller actions.",
 } as const;

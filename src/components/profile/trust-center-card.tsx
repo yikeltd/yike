@@ -3,10 +3,8 @@
 import Link from "next/link";
 import {
   Check,
-  ChevronRight,
   Circle,
   Clock,
-  MessageCircle,
 } from "lucide-react";
 import type { Profile } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -17,7 +15,6 @@ import {
   type TrustItemStatus,
   type TrustProgressItem,
 } from "@/lib/verification/trust-center";
-import { yikeVerificationWhatsAppLink } from "@/lib/agent-verification";
 
 const SETUP_HREF = "/agent/verification";
 
@@ -81,17 +78,25 @@ export function TrustCenterCard({
   verified,
   variant = "summary",
   className,
+  hideItemIds = [],
+  showOptionalUpgrades = false,
 }: {
   profile: Profile;
   verified: boolean;
   variant?: "summary" | "detail";
   className?: string;
+  hideItemIds?: string[];
+  showOptionalUpgrades?: boolean;
 }) {
   const chip = getTrustStatusChip(profile, verified);
-  const items = getTrustProgressItems(profile, verified);
+  const items = getTrustProgressItems(profile, verified).filter(
+    (item) => !hideItemIds.includes(item.id)
+  );
   const percent = trustProgressPercent(items);
   const listingItems = items.filter((i) => i.group === "listing_setup");
-  const trustItems = items.filter((i) => i.group === "trust_upgrade");
+  const trustItems = showOptionalUpgrades
+    ? items.filter((i) => i.group === "trust_upgrade")
+    : [];
   const listingIncomplete = listingItems.filter(
     (i) => i.status === "action_needed" || i.status === "under_review"
   );
@@ -196,19 +201,6 @@ export function TrustCenterCard({
           </details>
         ) : null}
 
-        <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-surface px-3 py-2">
-          <p className="text-xs text-muted">Need help?</p>
-          <Link
-            href={yikeVerificationWhatsAppLink("Hi Yike, I need help with my account setup.")}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-navy"
-          >
-            <MessageCircle className="h-3.5 w-3.5 text-[#25D366]" />
-            Chat support
-            <ChevronRight className="h-3 w-3 text-muted" />
-          </Link>
-        </div>
       </div>
     </section>
   );

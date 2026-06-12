@@ -60,12 +60,16 @@ export default function AgentVerificationPage() {
         </Link>
         <h1 className="mt-2 text-xl font-bold text-navy">Account & verification</h1>
         <p className="mt-1 text-sm text-muted">
-          Complete the steps below to list properties. Verified badge and company checks are
-          optional.
+          Complete the required steps to list on Yike.
         </p>
       </div>
 
-      <TrustCenterCard profile={profile} verified={verified} variant="detail" />
+      <TrustCenterCard
+        profile={profile}
+        verified={verified}
+        variant="detail"
+        hideItemIds={["whatsapp", "agent_badge", "company"]}
+      />
 
       <PhoneVerificationCard profile={profile} onVerified={() => void reload()} />
 
