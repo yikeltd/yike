@@ -66,6 +66,7 @@ import {
   type ListingDraft,
 } from "@/lib/listing-draft";
 import {
+  isCommercialProperty,
   isLandProperty,
   showRoomFields,
 } from "@/lib/listing-field-rules";
@@ -235,6 +236,8 @@ export function ListingForm({
   const listingPlan = initial?.listing_plan ?? "free";
   const showRooms = showRoomFields(propertyType, listingType);
   const land = isLandProperty(propertyType);
+  const commercial = isCommercialProperty(propertyType);
+  const noRoomCounts = land || commercial;
 
   useEffect(() => {
     setPropertyType((prev) => {
@@ -247,6 +250,13 @@ export function ListingForm({
       return prev || def;
     });
   }, [listingType]);
+
+  useEffect(() => {
+    if (!commercial) return;
+    setBedrooms("");
+    setBathrooms("");
+    setToilets("");
+  }, [commercial, propertyType]);
 
   const buildDraft = useCallback((): ListingDraft => {
     return {
@@ -858,9 +868,9 @@ export function ListingForm({
         description: description || null,
         listing_type: listingType,
         property_type: propertyType,
-        bedrooms: land ? 0 : Number(bedrooms || 0),
-        bathrooms: land ? 0 : Number(bathrooms || 0),
-        toilets: land ? 0 : Number(toilets || 0),
+        bedrooms: noRoomCounts ? 0 : Number(bedrooms || 0),
+        bathrooms: noRoomCounts ? 0 : Number(bathrooms || 0),
+        toilets: noRoomCounts ? 0 : Number(toilets || 0),
         price: priceNum,
         payment_period: paymentPeriod,
         state,
@@ -900,7 +910,7 @@ export function ListingForm({
             property_type: propertyType,
             listing_type: listingType,
             price: priceNum,
-            bedrooms: land ? 0 : Number(bedrooms || 0),
+            bedrooms: noRoomCounts ? 0 : Number(bedrooms || 0),
           }),
           timeoutMs: PRICING_ANALYZE_TIMEOUT_MS,
         });
@@ -1175,6 +1185,16 @@ export function ListingForm({
                   />
                 </div>
               </div>
+            ) : commercial ? (
+              <div>
+                <FieldLabel>Features (optional)</FieldLabel>
+                <ListingAmenitiesPicker
+                  listingType={listingType}
+                  propertyType={propertyType}
+                  selected={amenities}
+                  onChange={setAmenities}
+                />
+              </div>
             ) : null}
             <div>
               <FieldLabel>Payment period</FieldLabel>
@@ -1226,19 +1246,21 @@ export function ListingForm({
               onChange={setMediaItems}
             />
 
-            <details className="rounded-xl border border-navy/10 bg-surface/40">
-              <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
-                Amenities (optional)
-              </summary>
-              <div className="border-t border-navy/8 px-3 pb-3 pt-2">
-                <ListingAmenitiesPicker
-                  listingType={listingType}
-                  propertyType={propertyType}
-                  selected={amenities}
-                  onChange={setAmenities}
-                />
-              </div>
-            </details>
+            {!commercial ? (
+              <details className="rounded-xl border border-navy/10 bg-surface/40">
+                <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">
+                  Amenities (optional)
+                </summary>
+                <div className="border-t border-navy/8 px-3 pb-3 pt-2">
+                  <ListingAmenitiesPicker
+                    listingType={listingType}
+                    propertyType={propertyType}
+                    selected={amenities}
+                    onChange={setAmenities}
+                  />
+                </div>
+              </details>
+            ) : null}
 
             <details className="rounded-xl border border-navy/10 bg-surface/40">
               <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-navy">

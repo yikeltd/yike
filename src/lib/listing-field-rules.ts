@@ -35,6 +35,7 @@ export function isCommercialProperty(value: string): boolean {
 
 export function showRoomFields(propertyType: string, listingType: ListingTypeValue): boolean {
   if (isLandProperty(propertyType)) return false;
+  if (isCommercialProperty(propertyType)) return false;
   if (listingType === "sale" && isLandProperty(propertyType)) return false;
   return true;
 }
@@ -64,7 +65,12 @@ const PRIMARY_AMENITIES: AmenityId[] = [
 
 const SHORTLET_AMENITIES: AmenityId[] = ["furnished", "wifi", "ac", "serviced"];
 
-const COMMERCIAL_AMENITIES: AmenityId[] = ["parking", "security", "generator"];
+const COMMERCIAL_AMENITIES: AmenityId[] = [
+  "has_toilet",
+  "parking",
+  "security",
+  "generator",
+];
 
 const LAND_AMENITIES: AmenityId[] = ["gated_estate", "security"];
 

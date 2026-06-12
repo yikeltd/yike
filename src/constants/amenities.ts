@@ -14,7 +14,8 @@ export type AmenityId =
   | "ac"
   | "serviced"
   | "boys_quarters"
-  | "water_heater";
+  | "water_heater"
+  | "has_toilet";
 
 export type AmenityDef = {
   id: AmenityId;
@@ -37,6 +38,7 @@ export const NIGERIAN_AMENITIES: AmenityDef[] = [
   { id: "serviced", label: "Serviced", shortLabel: "Serviced" },
   { id: "boys_quarters", label: "Boys quarters", shortLabel: "BQ" },
   { id: "water_heater", label: "Water heater", shortLabel: "Heater" },
+  { id: "has_toilet", label: "Has toilet", shortLabel: "Toilet" },
 ];
 
 const amenityMap = new Map(NIGERIAN_AMENITIES.map((a) => [a.id, a]));
