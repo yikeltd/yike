@@ -7,9 +7,11 @@ import {
   activateSubscriptionFromPayment,
 } from "@/lib/subscriptions/service";
 import {
+  calculateSubscriptionBilling,
   isPaidPlan,
+  isSubscriptionBillingMonths,
   isSubscriptionPlanCode,
-  SUBSCRIPTION_DURATION_DAYS,
+  type SubscriptionBillingMonths,
 } from "@/lib/subscriptions/constants";
 import { isFeaturedPaymentsEnabled } from "@/lib/feature-flags";
 import { isPaystackConfigured } from "@/lib/payments/config";
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
 
-  let body: { planCode?: string } = {};
+  let body: { planCode?: string; billingMonths?: number } = {};
   try {
     body = await request.json();
   } catch {
@@ -43,6 +45,10 @@ export async function POST(request: Request) {
   }
 
   const planCode = String(body.planCode ?? "").trim();
+  const rawBillingMonths = Number(body.billingMonths);
+  const billingMonths: SubscriptionBillingMonths = isSubscriptionBillingMonths(rawBillingMonths)
+    ? rawBillingMonths
+    : 1;
   if (!isSubscriptionPlanCode(planCode) || !isPaidPlan(planCode)) {
     return NextResponse.json({ error: "Choose a paid plan" }, { status: 400 });
   }
@@ -77,13 +83,15 @@ export async function POST(request: Request) {
 
   const paymentsLive = isFeaturedPaymentsEnabled() && isPaystackConfigured();
 
+  const billing = calculateSubscriptionBilling(plan.monthly_price, billingMonths);
+
   if (!paymentsLive) {
     const result = await activateSubscriptionFromPayment(admin, {
       userId: user.id,
       planCode,
       paymentOrderId: "",
       paymentReference: `offline-${user.id.slice(0, 8)}`,
-      durationDays: SUBSCRIPTION_DURATION_DAYS,
+      durationDays: billing.durationDays,
     });
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
@@ -94,11 +102,13 @@ export async function POST(request: Request) {
   const order = await createPaymentOrder(admin, {
     userId: user.id,
     orderType: "subscription",
-    amount: plan.monthly_price,
+    amount: billing.total,
     entityId: plan.id,
     metadata: {
       plan_code: planCode,
-      duration_days: SUBSCRIPTION_DURATION_DAYS,
+      duration_days: billing.durationDays,
+      billing_months: billing.months,
+      discount_percent: billing.discountPercent,
       user_id: user.id,
     },
   });
@@ -113,7 +123,9 @@ export async function POST(request: Request) {
     ok: true,
     authorizationUrl: init.authorizationUrl,
     reference: order.reference,
-    amount: plan.monthly_price,
+    amount: billing.total,
+    billingMonths: billing.months,
+    discountPercent: billing.discountPercent,
     paymentsLive: true,
   });
 }

@@ -4,6 +4,47 @@ export type SubscriptionStatus = "active" | "expired" | "cancelled" | "pending";
 
 export const SUBSCRIPTION_DURATION_DAYS = 30;
 
+export type SubscriptionBillingMonths = 1 | 3 | 6 | 12;
+
+export const SUBSCRIPTION_BILLING_TERMS: {
+  months: SubscriptionBillingMonths;
+  label: string;
+  shortLabel: string;
+  discountPercent: number;
+}[] = [
+  { months: 1, label: "1 month", shortLabel: "Monthly", discountPercent: 0 },
+  { months: 3, label: "3 months", shortLabel: "3 mo", discountPercent: 10 },
+  { months: 6, label: "6 months", shortLabel: "6 mo", discountPercent: 20 },
+  { months: 12, label: "12 months", shortLabel: "12 mo", discountPercent: 30 },
+];
+
+export function isSubscriptionBillingMonths(value: number): value is SubscriptionBillingMonths {
+  return value === 1 || value === 3 || value === 6 || value === 12;
+}
+
+export function calculateSubscriptionBilling(
+  monthlyPrice: number,
+  months: SubscriptionBillingMonths
+) {
+  const term =
+    SUBSCRIPTION_BILLING_TERMS.find((t) => t.months === months) ??
+    SUBSCRIPTION_BILLING_TERMS[0];
+  const subtotal = monthlyPrice * term.months;
+  const total = Math.round(subtotal * (1 - term.discountPercent / 100));
+  const savings = subtotal - total;
+  const durationDays = term.months * SUBSCRIPTION_DURATION_DAYS;
+
+  return {
+    months: term.months,
+    discountPercent: term.discountPercent,
+    subtotal,
+    total,
+    savings,
+    durationDays,
+    effectiveMonthly: Math.round(total / term.months),
+  };
+}
+
 export const PLAN_CODES: SubscriptionPlanCode[] = [
   "free",
   "pro_agent",

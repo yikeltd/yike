@@ -4,11 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { Building2, Home, Layers, Sparkles } from "lucide-react";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
+import { BillingTermPicker } from "@/components/subscriptions/billing-term-picker";
 import {
   PLAN_CARD_THEME,
   PLAN_DISPLAY,
+  calculateSubscriptionBilling,
   formatListingLimit,
   isSubscriptionPlanCode,
+  type SubscriptionBillingMonths,
 } from "@/lib/subscriptions/constants";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -39,6 +42,7 @@ export function PricingPlans({
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [billingMonths, setBillingMonths] = useState<SubscriptionBillingMonths>(1);
 
   async function checkout(planCode: SubscriptionPlanCode) {
     if (planCode === "free") return;
@@ -48,7 +52,7 @@ export function PricingPlans({
     const res = await fetch("/api/subscriptions/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planCode }),
+      body: JSON.stringify({ planCode, billingMonths }),
     });
     const data = (await res.json()) as { authorizationUrl?: string; error?: string };
     setBusy(null);
@@ -77,6 +81,10 @@ export function PricingPlans({
 
       {error ? <p className="text-sm text-danger">{error}</p> : null}
 
+      {paidPlans.length > 0 ? (
+        <BillingTermPicker value={billingMonths} onChange={setBillingMonths} />
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
         {plans.map((plan) => {
           if (!isSubscriptionPlanCode(plan.plan_code)) return null;
@@ -89,6 +97,9 @@ export function PricingPlans({
             plan.active_listing_limit != null
               ? formatListingLimit(plan.active_listing_limit)
               : "∞";
+          const billing = !isFree
+            ? calculateSubscriptionBilling(plan.monthly_price, billingMonths)
+            : null;
 
           return (
             <article
@@ -144,10 +155,31 @@ export function PricingPlans({
                   <span className="text-xs font-medium text-muted">active listings</span>
                 </div>
 
-                <p className="text-2xl font-bold text-navy tabular-nums">
-                  {isFree ? "₦0" : formatPrice(plan.monthly_price, "total", "rent")}
-                  {!isFree ? <span className="text-sm font-medium text-muted"> / mo</span> : null}
-                </p>
+                {isFree ? (
+                  <p className="text-2xl font-bold text-navy tabular-nums">₦0</p>
+                ) : billing && billingMonths > 1 ? (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted line-through tabular-nums">
+                      {formatPrice(billing.subtotal, "total", "rent")} list
+                    </p>
+                    <p className="text-2xl font-bold text-navy tabular-nums">
+                      {formatPrice(billing.total, "total", "rent")}
+                      <span className="text-sm font-medium text-muted">
+                        {" "}
+                        / {billingMonths} mo
+                      </span>
+                    </p>
+                    <p className="text-[11px] font-semibold text-gold-dark">
+                      Save {formatPrice(billing.savings, "total", "rent")} ·{" "}
+                      {formatPrice(billing.effectiveMonthly, "total", "rent")}/mo effective
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold text-navy tabular-nums">
+                    {formatPrice(plan.monthly_price, "total", "rent")}
+                    <span className="text-sm font-medium text-muted"> / mo</span>
+                  </p>
+                )}
                 <p className="mt-0.5 text-[11px] text-muted">{display.tagline}</p>
 
                 <ul className="mt-4 flex-1 space-y-2 border-t border-border/60 pt-4 text-sm text-navy/90">
@@ -185,7 +217,9 @@ export function PricingPlans({
                         ? "Current plan"
                         : busy === plan.plan_code
                           ? "Starting…"
-                          : `Upgrade to ${display.label}`}
+                          : billingMonths > 1
+                            ? `Pay ${billing?.total ? formatPrice(billing.total, "total", "rent") : ""} · ${billingMonths} mo`
+                            : `Upgrade to ${display.label}`}
                     </button>
                   ) : (
                     <Link
@@ -206,7 +240,8 @@ export function PricingPlans({
       </div>
 
       <p className="text-center text-xs text-muted">
-        Free listings always available. Upgrade only when you need more scale — renew manually each month.
+        Free listings always available. Longer billing saves more — no auto-renewal; you choose when to
+        pay again.
       </p>
 
       {paidPlans.length > 0 ? (
