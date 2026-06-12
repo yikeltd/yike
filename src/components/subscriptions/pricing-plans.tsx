@@ -223,7 +223,7 @@ export function PricingPlans({
                     </button>
                   ) : (
                     <Link
-                      href="/auth/signup?next=/pricing"
+                      href="/auth/signup?next=/agent/plans"
                       className={cn(
                         "pressable flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold",
                         theme.cta

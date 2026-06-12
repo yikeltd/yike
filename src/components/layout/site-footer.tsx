@@ -17,6 +17,7 @@ const explore = [
   { href: "/land", label: "Land for sale" },
   { href: "/browse", label: "Swipe homes" },
   { href: "/post-property", label: "List property" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/request-property", label: "Request a home" },
   { href: "/blog", label: "Rental guides" },
 ];

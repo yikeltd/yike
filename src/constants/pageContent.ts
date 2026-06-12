@@ -186,3 +186,30 @@ export const CONTACT_FAQS = [
     a: "Email hello@yike.ng for sponsored placement enquiries. Acceptance is at our discretion; rates and formats may vary.",
   },
 ];
+
+export const PRICING_FAQS = [
+  {
+    q: "Do I have to pay to list on Yike?",
+    a: "No. The Free plan includes active listings so you can start without a subscription. Upgrade only when you need more slots, analytics, or branding.",
+  },
+  {
+    q: "What do I get on a paid plan?",
+    a: "More active listing slots, advanced analytics, business verification on eligible tiers, discounts on Featured and Boost, and agency or developer profile tools where applicable.",
+  },
+  {
+    q: "How does multi-month billing work?",
+    a: "Pay upfront for 3, 6, or 12 months and save 10%, 20%, or 30% respectively. Your plan stays active for the full term — we do not auto-charge when it ends.",
+  },
+  {
+    q: "Can I switch plans later?",
+    a: "Yes. When your term ends or you need more capacity, choose a new plan from your account. Founding launch pricing may apply to early subscribers where noted.",
+  },
+  {
+    q: "Who are subscriptions for?",
+    a: "Agents, agencies, and developers listing property on Yike. Renters and casual browsers do not need a seller plan.",
+  },
+  {
+    q: "Will prices change?",
+    a: "We may adjust plans as Yike grows. Prices on this page reflect current public rates; existing subscribers on locked founding pricing keep their rate for the paid term.",
+  },
+];
