@@ -11,6 +11,11 @@ import {
   type SubscriptionPlanCode,
   type SubscriptionStatus,
 } from "@/lib/subscriptions/constants";
+import {
+  getStarterListingLimit,
+  getStarterPlanAdminMetrics,
+  getStarterPlanMonth,
+} from "@/lib/subscriptions/starter-plan";
 
 export type SubscriptionPlan = {
   id: string;
@@ -222,13 +227,27 @@ async function syncProfileForPlan(
 }
 
 async function revertProfileToFree(admin: SupabaseClient, userId: string): Promise<void> {
-  const freePlan = await getPlanByCode(admin, "free");
   const now = new Date().toISOString();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("starter_plan_started_at, subscription_plan_code, created_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const hadPaid =
+    profile?.subscription_plan_code &&
+    profile.subscription_plan_code !== "free";
+  const starterStartedAt = hadPaid
+    ? now
+    : (profile?.starter_plan_started_at ?? profile?.created_at ?? now);
+  const listingLimit = getStarterListingLimit(getStarterPlanMonth(starterStartedAt));
+
   await admin
     .from("profiles")
     .update({
       subscription_plan_code: "free",
-      listing_limit: freePlan?.active_listing_limit ?? 5,
+      starter_plan_started_at: starterStartedAt,
+      listing_limit: listingLimit,
       listing_limit_reason: "subscription:free",
       listing_limit_updated_at: now,
       updated_at: now,
@@ -380,13 +399,22 @@ export async function getSubscriptionDashboardMetrics(admin: SupabaseClient): Pr
   mrr: number;
   expiringSoon: number;
   subscriptionRevenue30d: number;
+  starterAccounts: number;
+  starterAtCap: number;
+  starterMonth2OrLater: number;
+  paidUpgrades30d: number;
 }> {
   const d30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const soon = new Date();
   soon.setDate(soon.getDate() + 7);
 
-  const [{ count: activeSubscribers }, { data: activeSubs }, { data: revenueRows }, { count: expiringSoon }] =
-    await Promise.all([
+  const [
+    { count: activeSubscribers },
+    { data: activeSubs },
+    { data: revenueRows },
+    { count: expiringSoon },
+    starterMetrics,
+  ] = await Promise.all([
       admin
         .from("user_subscriptions")
         .select("id", { count: "exact", head: true })
@@ -408,7 +436,8 @@ export async function getSubscriptionDashboardMetrics(admin: SupabaseClient): Pr
         .not("expires_at", "is", null)
         .lte("expires_at", soon.toISOString())
         .gt("expires_at", new Date().toISOString()),
-    ]);
+    getStarterPlanAdminMetrics(admin),
+  ]);
 
   const mrr = (activeSubs ?? []).reduce((sum, row) => {
     const plan = (row as { plan?: { monthly_price?: number } }).plan;
@@ -425,5 +454,6 @@ export async function getSubscriptionDashboardMetrics(admin: SupabaseClient): Pr
     mrr,
     expiringSoon: expiringSoon ?? 0,
     subscriptionRevenue30d,
+    ...starterMetrics,
   };
 }

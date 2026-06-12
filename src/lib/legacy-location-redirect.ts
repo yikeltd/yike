@@ -8,7 +8,7 @@ import { isIntentInCityPath } from "@/lib/seo/intent-in-city";
 
 /**
  * Legacy SEO URLs like /enugu or /aba/ogbor-hill → /houses/...
- * Unknown short paths → /search (avoid generic 404 dead-ends).
+ * Only redirects on confident city/area matches — unknown paths fall through to Next.js routing.
  */
 export function legacyLocationRedirect(pathname: string): string | null {
   if (isIntentInCityPath(pathname)) return null;
@@ -27,7 +27,7 @@ export function legacyLocationRedirect(pathname: string): string | null {
       return `/houses/${slug}`;
     }
 
-    return "/search";
+    return null;
   }
 
   if (parts.length === 2) {
@@ -47,7 +47,7 @@ export function legacyLocationRedirect(pathname: string): string | null {
       return `/search?${params.toString()}`;
     }
 
-    return "/search";
+    return null;
   }
 
   if (parts.length >= 3) {
@@ -65,7 +65,7 @@ export function legacyLocationRedirect(pathname: string): string | null {
       return `/search?${params.toString()}`;
     }
 
-    return "/search";
+    return null;
   }
 
   return null;

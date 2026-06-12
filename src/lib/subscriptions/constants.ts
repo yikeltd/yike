@@ -67,12 +67,12 @@ export const PLAN_DISPLAY: Record<
   }
 > = {
   free: {
-    label: "Free",
-    tagline: "Start listing with trust basics",
+    label: "Starter",
+    tagline: "Designed for getting started.",
     monthlyPrice: 0,
     listingLimit: 5,
     highlights: [
-      "5 active listings",
+      "Room to list as you begin",
       "Basic Verified",
       "Basic analytics",
     ],
@@ -150,7 +150,7 @@ export const PLAN_CARD_THEME: Record<
 > = {
   free: {
     badge: "Starter",
-    audience: "Try Yike at no cost",
+    audience: "Designed for getting started.",
     header: "bg-slate-100 border-b border-border",
     headerText: "text-navy",
     headerMuted: "text-muted",
@@ -203,7 +203,7 @@ export function isSubscriptionPlanCode(value: string): value is SubscriptionPlan
 }
 
 export function getPlanDisplayLabel(code: string): string {
-  return isSubscriptionPlanCode(code) ? PLAN_DISPLAY[code].label : "Free";
+  return isSubscriptionPlanCode(code) ? PLAN_DISPLAY[code].label : "Starter";
 }
 
 export function buildFallbackSubscriptionPlans(): Array<{

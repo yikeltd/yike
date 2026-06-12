@@ -35,7 +35,7 @@ export function AgentPlansClient() {
   const [loadError, setLoadError] = useState(false);
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [foundingOfferActive, setFoundingOfferActive] = useState(true);
-  const [currentPlanLabel, setCurrentPlanLabel] = useState("Free");
+  const [currentPlanLabel, setCurrentPlanLabel] = useState("Starter");
   const [currentPlanCode, setCurrentPlanCode] = useState<SubscriptionPlanCode>("free");
   const [billingTerms, setBillingTerms] = useState<BillingTerm[]>(DEFAULT_BILLING_TERMS);
 
@@ -62,7 +62,7 @@ export function AgentPlansClient() {
 
         setPlans(rows);
         setFoundingOfferActive(data.foundingOfferActive ?? true);
-        setCurrentPlanLabel(data.currentPlanLabel ?? "Free");
+        setCurrentPlanLabel(data.currentPlanLabel ?? "Starter");
         setCurrentPlanCode(
           data.currentPlanCode && isSubscriptionPlanCode(data.currentPlanCode)
             ? data.currentPlanCode

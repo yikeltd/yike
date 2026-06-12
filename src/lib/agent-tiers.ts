@@ -1,4 +1,8 @@
 import type { Profile, Property } from "@/types/database";
+import {
+  getStarterListingLimitForProfile,
+  isOnStarterPlan,
+} from "@/lib/subscriptions/starter-plan";
 import { computeListingQualityScore } from "@/lib/listing-quality";
 import {
   isAgentReachable,
@@ -23,6 +27,11 @@ export type AgentProfileSlice = Pick<
 > & {
   ranking_score?: number;
 };
+
+export type ListingLimitProfile = Pick<
+  Profile,
+  "listing_limit" | "subscription_plan_code" | "starter_plan_started_at" | "created_at"
+>;
 
 const LISTER_ROLES = new Set([
   "agent",
@@ -62,10 +71,13 @@ export function canListProperties(
 }
 
 export function getListingLimit(
-  profile: (AgentProfileSlice & { subscription_plan_code?: string | null }) | null | undefined
+  profile: Partial<ListingLimitProfile> | null | undefined
 ): number | null {
   if (!profile) return UNVERIFIED_AGENT_LISTING_LIMIT;
   if (profile.subscription_plan_code === "developer") return null;
+  if (isOnStarterPlan(profile)) {
+    return getStarterListingLimitForProfile(profile);
+  }
   if (profile.listing_limit !== null && profile.listing_limit !== undefined) {
     return profile.listing_limit;
   }

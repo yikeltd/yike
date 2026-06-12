@@ -2,7 +2,11 @@
 
 import { cn } from "@/lib/utils";
 import type { BillingTerm } from "@/lib/subscriptions/billing-terms";
-import { maxBillingDiscount } from "@/lib/subscriptions/billing-terms";
+import {
+  formatBillingOptionSubtitle,
+  formatBillingOptionTitle,
+  maxBillingDiscount,
+} from "@/lib/subscriptions/billing-terms";
 
 export function BillingTermPicker({
   terms,
@@ -21,22 +25,26 @@ export function BillingTermPicker({
   if (!activeTerms.length) return null;
 
   return (
-    <div
+    <section
       className={cn(
-        "rounded-2xl border border-border bg-elevated px-4 py-3.5 shadow-sm",
+        "overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-sm",
         className
       )}
     >
-      <p className="text-xs font-bold uppercase tracking-wide text-navy">Billing period</p>
-      <p className="mt-0.5 text-[11px] text-muted">
-        {maxDiscount > 0
-          ? `Pay upfront — save up to ${maxDiscount}% on longer terms.`
-          : "Choose how long you want your plan to run."}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="border-b border-border/80 bg-gradient-to-r from-surface/80 to-white px-4 py-3.5 sm:px-5">
+        <h3 className="text-sm font-bold text-navy">Billing Period</h3>
+        <p className="mt-1 text-xs leading-relaxed text-muted">
+          Choose a plan duration
+          {maxDiscount > 0 ? " and save more on longer terms." : "."}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5 p-3 sm:gap-3 sm:p-4 lg:grid-cols-4">
         {activeTerms.map((term) => {
           const selected = value === term.months;
-          const hasDiscount = term.discountPercent > 0;
+          const title = formatBillingOptionTitle(term);
+          const subtitle = formatBillingOptionSubtitle(term);
+          const hasSavings = term.discountPercent > 0;
 
           return (
             <button
@@ -44,29 +52,46 @@ export function BillingTermPicker({
               type="button"
               onClick={() => onChange(term.months)}
               className={cn(
-                "pressable relative flex min-w-[4.5rem] flex-col items-center rounded-xl border px-3 py-2 text-center transition-colors",
+                "pressable relative flex min-h-[5.25rem] flex-col items-center justify-center rounded-xl border px-2 py-3 text-center transition-all sm:min-h-[5.5rem] sm:px-3",
                 selected
-                  ? "border-gold bg-gold text-navy shadow-sm"
-                  : "border-border bg-white text-navy hover:border-gold/40"
+                  ? "border-navy bg-navy text-white shadow-md ring-2 ring-navy/15"
+                  : "border-border bg-elevated/50 text-navy hover:border-navy/25 hover:bg-white"
               )}
             >
-              <span className="text-xs font-bold">{term.shortLabel}</span>
-              {hasDiscount ? (
+              <span
+                className={cn(
+                  "text-sm font-bold leading-tight",
+                  selected ? "text-white" : "text-navy"
+                )}
+              >
+                {title}
+              </span>
+              <span
+                className={cn(
+                  "mt-1.5 text-[11px] font-medium leading-tight",
+                  selected
+                    ? hasSavings
+                      ? "text-gold"
+                      : "text-white/75"
+                    : hasSavings
+                      ? "text-gold-dark"
+                      : "text-muted"
+                )}
+              >
+                {subtitle}
+              </span>
+              {hasSavings && !selected ? (
                 <span
-                  className={cn(
-                    "mt-0.5 text-[10px] font-semibold",
-                    selected ? "text-navy/80" : "text-gold-dark"
-                  )}
+                  className="absolute right-2 top-2 rounded-full bg-gold/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold-dark"
+                  aria-hidden
                 >
                   −{term.discountPercent}%
                 </span>
-              ) : (
-                <span className="mt-0.5 text-[10px] text-muted">Standard</span>
-              )}
+              ) : null}
             </button>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

@@ -63,16 +63,10 @@ export default async function NewListingPage() {
         <ListingWhatsappVerifyPrompt profile={profile} />
       ) : atLimit ? (
         <div className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
-          <p className="font-medium">Listing limit reached</p>
-          <p className="mt-1 text-xs">{LISTING_LIMIT_REACHED_MESSAGE}</p>
-          <div className="mt-2 flex flex-wrap gap-3">
-            <Link href="/agent/plans" prefetch className="inline-flex text-xs font-semibold text-navy">
-              View plans →
-            </Link>
-            <Link href="/agent/verification" prefetch className="inline-flex text-xs font-semibold text-navy">
-              Account setup →
-            </Link>
-          </div>
+          <p className="font-medium">{LISTING_LIMIT_REACHED_MESSAGE}</p>
+          <Link href="/agent/plans" prefetch className="mt-2 inline-flex text-xs font-semibold text-navy">
+            View plans →
+          </Link>
         </div>
       ) : (
         <ListingFormErrorBoundary>

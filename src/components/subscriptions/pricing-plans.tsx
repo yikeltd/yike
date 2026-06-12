@@ -216,7 +216,11 @@ export function PricingPlans({
                         isCurrent ? theme.ctaMuted : theme.cta
                       )}
                     >
-                      {isLoggedIn ? (isCurrent ? "Current plan" : "Continue free") : "Sign up free"}
+                      {isLoggedIn
+                        ? isCurrent
+                          ? "Current plan"
+                          : "Continue with Starter"
+                        : "Sign up free"}
                     </Link>
                   ) : isLoggedIn ? (
                     <button

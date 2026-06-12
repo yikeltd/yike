@@ -21,7 +21,7 @@ export async function GET() {
     return NextResponse.json({
       plans: fallbackPlans,
       foundingOfferActive: true,
-      currentPlanLabel: "Free",
+      currentPlanLabel: "Starter",
       currentPlanCode: "free",
       billingTerms: DEFAULT_BILLING_TERMS,
     });

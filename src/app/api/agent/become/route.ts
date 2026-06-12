@@ -197,6 +197,9 @@ export async function POST(request: Request) {
   const result = await applyAgentUpgrade(admin, user.id, {
     role: "agent_unverified",
     listing_limit: UNVERIFIED_AGENT_LISTING_LIMIT,
+    subscription_plan_code: "free",
+    starter_plan_started_at: rulesAcceptedAt,
+    listing_limit_reason: "subscription:free",
     verified_badge: false,
     account_type: accountType,
     verification_status: "not_started",

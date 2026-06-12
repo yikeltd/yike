@@ -3,7 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isEmailVerified } from "@/lib/auth";
-import { UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
+import { getListingLimit } from "@/lib/agent-tiers";
+import { LISTING_LIMIT_REACHED_MESSAGE } from "@/lib/copy/user-messages";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
 import { mustVerifyWhatsappBeforeListing } from "@/lib/whatsapp-verification/profile";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
@@ -104,7 +105,7 @@ function publicListingError(error: string, code?: string): string {
     return "Your listing has been submitted for review.";
   }
   if (error.toLowerCase().includes("listing limit reached")) {
-    return "Listing limit reached.";
+    return LISTING_LIMIT_REACHED_MESSAGE;
   }
   if (code === "23514") {
     return "Some listing details are invalid. Please review and submit again.";
@@ -160,7 +161,7 @@ export async function POST(request: Request) {
   const { data: profile, error: profileError } = await admin
     .from("profiles")
     .select(
-      "role, email_verified, is_banned, listing_limit, whatsapp, phone, whatsapp_verified_at, whatsapp_verification_status"
+      "role, email_verified, is_banned, listing_limit, subscription_plan_code, starter_plan_started_at, created_at, whatsapp, phone, whatsapp_verified_at, whatsapp_verification_status"
     )
     .eq("id", user.id)
     .single();
@@ -246,15 +247,15 @@ export async function POST(request: Request) {
     // Stale pending id — fall through to fresh insert
   }
 
-  const limit = profile.listing_limit ?? UNVERIFIED_AGENT_LISTING_LIMIT;
+  const limit = getListingLimit(profile);
   const { count: activeCount } = await admin
     .from("properties")
     .select("id", { count: "exact", head: true })
     .eq("agent_id", user.id)
     .in("status", ["pending", "approved", "flagged"]);
 
-  if ((activeCount ?? 0) >= limit) {
-    return NextResponse.json({ error: "Listing limit reached." }, { status: 400 });
+  if (limit !== null && (activeCount ?? 0) >= limit) {
+    return NextResponse.json({ error: LISTING_LIMIT_REACHED_MESSAGE }, { status: 400 });
   }
 
   let result = await insertListing(supabase, fullRow);

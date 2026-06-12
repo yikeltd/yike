@@ -29,7 +29,7 @@ export const ACCOUNT_PENDING_VERIFICATION_MESSAGE =
   "Your account is under review. Contact support if you need help.";
 
 export const LISTING_LIMIT_REACHED_MESSAGE =
-  "You've reached your listing limit. Get verified or contact us to upgrade.";
+  "You've reached your current listing limit.";
 
 export const ACCOUNT_REVIEW_BLOCKS_MESSAGE =
   "Your account is under review. Contact support for help.";

@@ -14,10 +14,27 @@ export type BillingTerm = {
 
 export const DEFAULT_BILLING_TERMS: BillingTerm[] = [
   { id: "default-1", months: 1, label: "1 month", shortLabel: "Monthly", discountPercent: 0, active: true, sortOrder: 10 },
-  { id: "default-3", months: 3, label: "3 months", shortLabel: "3 mo", discountPercent: 10, active: true, sortOrder: 20 },
-  { id: "default-6", months: 6, label: "6 months", shortLabel: "6 mo", discountPercent: 20, active: true, sortOrder: 30 },
-  { id: "default-12", months: 12, label: "12 months", shortLabel: "12 mo", discountPercent: 30, active: true, sortOrder: 40 },
+  { id: "default-3", months: 3, label: "3 months", shortLabel: "3 Months", discountPercent: 10, active: true, sortOrder: 20 },
+  { id: "default-6", months: 6, label: "6 months", shortLabel: "6 Months", discountPercent: 20, active: true, sortOrder: 30 },
+  { id: "default-12", months: 12, label: "12 months", shortLabel: "12 Months", discountPercent: 30, active: true, sortOrder: 40 },
 ];
+
+/** Consistent billing chip title (web + mobile). */
+export function formatBillingOptionTitle(term: BillingTerm): string {
+  if (term.months === 1) return "Monthly";
+  if (term.months === 3) return "3 Months";
+  if (term.months === 6) return "6 Months";
+  if (term.months === 12) return "12 Months";
+  return term.label.replace(/\bmonth\b/i, "Months").replace(/\bmo\b/i, "Months");
+}
+
+/** Secondary line under billing option title. */
+export function formatBillingOptionSubtitle(term: BillingTerm): string {
+  if (term.discountPercent > 0) {
+    return `Save ${Number.isInteger(term.discountPercent) ? term.discountPercent : term.discountPercent.toFixed(1).replace(/\.0$/, "")}%`;
+  }
+  return "Standard";
+}
 
 function mapBillingTermRow(row: Record<string, unknown>): BillingTerm {
   return {

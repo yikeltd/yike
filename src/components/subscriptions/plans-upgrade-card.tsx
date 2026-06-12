@@ -20,7 +20,7 @@ export function PlansUpgradeCard({
   className?: string;
 }) {
   const [busy, setBusy] = useState(false);
-  const planName = planLabel ?? "Free Plan";
+  const planName = planLabel ?? "Starter Plan";
   const limitLabel = limit == null ? "∞" : String(limit);
   const showRenew = expiresInDays != null && expiresInDays <= 14 && planLabel;
 

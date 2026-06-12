@@ -19,6 +19,10 @@ type Metrics = {
   mrr: number;
   expiringSoon: number;
   subscriptionRevenue30d: number;
+  starterAccounts?: number;
+  starterAtCap?: number;
+  starterMonth2OrLater?: number;
+  paidUpgrades30d?: number;
 };
 
 export function SubscriptionsBoard() {
@@ -51,23 +55,45 @@ export function SubscriptionsBoard() {
   return (
     <div className="space-y-6">
       {metrics ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-border bg-white px-4 py-3">
-            <p className="text-xs text-muted">Subscription revenue (30d)</p>
-            <p className="text-xl font-bold text-navy">{money(metrics.subscriptionRevenue30d)}</p>
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-border bg-white px-4 py-3">
+              <p className="text-xs text-muted">Subscription revenue (30d)</p>
+              <p className="text-xl font-bold text-navy">{money(metrics.subscriptionRevenue30d)}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-white px-4 py-3">
+              <p className="text-xs text-muted">Active subscribers</p>
+              <p className="text-xl font-bold text-navy">{metrics.activeSubscribers}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-white px-4 py-3">
+              <p className="text-xs text-muted">MRR</p>
+              <p className="text-xl font-bold text-navy">{money(metrics.mrr)}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-white px-4 py-3">
+              <p className="text-xs text-muted">Renewals due (7d)</p>
+              <p className="text-xl font-bold text-navy">{metrics.expiringSoon}</p>
+            </div>
           </div>
-          <div className="rounded-xl border border-border bg-white px-4 py-3">
-            <p className="text-xs text-muted">Active subscribers</p>
-            <p className="text-xl font-bold text-navy">{metrics.activeSubscribers}</p>
-          </div>
-          <div className="rounded-xl border border-border bg-white px-4 py-3">
-            <p className="text-xs text-muted">MRR</p>
-            <p className="text-xl font-bold text-navy">{money(metrics.mrr)}</p>
-          </div>
-          <div className="rounded-xl border border-border bg-white px-4 py-3">
-            <p className="text-xs text-muted">Renewals due (7d)</p>
-            <p className="text-xl font-bold text-navy">{metrics.expiringSoon}</p>
-          </div>
+          {metrics.starterAccounts != null ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-border bg-white px-4 py-3">
+                <p className="text-xs text-muted">Starter accounts</p>
+                <p className="text-xl font-bold text-navy">{metrics.starterAccounts}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-white px-4 py-3">
+                <p className="text-xs text-muted">Starter at listing cap</p>
+                <p className="text-xl font-bold text-navy">{metrics.starterAtCap ?? 0}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-white px-4 py-3">
+                <p className="text-xs text-muted">Starter month 2+</p>
+                <p className="text-xl font-bold text-navy">{metrics.starterMonth2OrLater ?? 0}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-white px-4 py-3">
+                <p className="text-xs text-muted">Paid upgrades (30d)</p>
+                <p className="text-xl font-bold text-navy">{metrics.paidUpgrades30d ?? 0}</p>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

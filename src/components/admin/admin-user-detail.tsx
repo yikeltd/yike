@@ -4,7 +4,8 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import type { Profile } from "@/types/database";
 import { normalizeAccountStatus } from "@/lib/account-control";
-import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
+import { getListingLimit, isVerifiedAgentProfile } from "@/lib/agent-tiers";
+import { resolveStarterPlanInfo } from "@/lib/subscriptions/starter-plan";
 import { AdminAccountTypeControl } from "@/components/admin/admin-account-type-control";
 import { AdminListingLimitControl } from "@/components/admin/admin-listing-limit-control";
 import {
@@ -66,6 +67,8 @@ export function AdminUserDetail({
   supportViewSession?: SupportViewSession | null;
 }) {
   const [tab, setTab] = useState<TabId>("overview");
+  const starterInfo = resolveStarterPlanInfo(profile);
+  const effectiveListingLimit = getListingLimit(profile);
   const accountStatus = normalizeAccountStatus(profile);
   const isAgent =
     profile.role === "agent_unverified" ||
@@ -215,9 +218,32 @@ export function AdminUserDetail({
               <div>
                 <dt className="text-muted">Listing limit</dt>
                 <dd className="font-medium">
-                  {profile.listing_limit ?? (isVerifiedAgentProfile(profile) ? "Unlimited" : "5 (default)")}
+                  {effectiveListingLimit != null
+                    ? effectiveListingLimit
+                    : isVerifiedAgentProfile(profile)
+                      ? "Unlimited"
+                      : "5 (default)"}
                 </dd>
               </div>
+              {starterInfo.isStarter ? (
+                <>
+                  <div>
+                    <dt className="text-muted">Starter plan month</dt>
+                    <dd className="font-medium">Month {starterInfo.month}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">Active listings</dt>
+                    <dd className="font-medium">
+                      {stats.active_listing_count} / {starterInfo.listingLimit}
+                    </dd>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <dt className="text-muted">Active listings</dt>
+                  <dd className="font-medium">{stats.active_listing_count}</dd>
+                </div>
+              )}
               <div>
                 <dt className="text-muted">Joined</dt>
                 <dd className="font-medium">
