@@ -9,6 +9,7 @@ import {
   List,
   MessageCircle,
   PlusCircle,
+  Search,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -210,18 +211,22 @@ export function ProfilePageClient({
           </DashboardSection>
           <DashboardSection title="Quick actions">
             <div className="grid grid-cols-2 gap-2">
-              <QuickAction href="/agent/become" icon={PlusCircle} label="List a Property" />
+              <Link
+                href="/agent/become"
+                prefetch
+                className="pressable col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-navy px-4 py-3.5 text-sm font-bold text-white shadow-float"
+              >
+                <PlusCircle className="h-5 w-5" />
+                List a Property
+              </Link>
               <QuickAction href="/saved" icon={Bookmark} label="Saved Homes" />
+              <QuickAction href="/search" icon={Search} label="Find a Home" />
               <QuickAction
                 href="/property-verification"
                 icon={ShieldCheck}
                 label="Verify Property"
               />
-              <QuickAction
-                icon={MessageCircle}
-                label="Get Help"
-                onClick={openSupport}
-              />
+              <QuickAction icon={MessageCircle} label="Get Help" onClick={openSupport} />
             </div>
           </DashboardSection>
         </>
