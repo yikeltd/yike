@@ -2,7 +2,7 @@ import {
   DEFAULT_BILLING_TERMS,
   findBillingTerm,
   type BillingTerm,
-} from "@/lib/subscriptions/billing-terms";
+} from "@/lib/subscriptions/billing-terms.shared";
 
 export type SubscriptionPlanCode = "free" | "pro_agent" | "agency" | "developer";
 
@@ -10,14 +10,14 @@ export type SubscriptionStatus = "active" | "expired" | "cancelled" | "pending";
 
 export const SUBSCRIPTION_DURATION_DAYS = 30;
 
-export type { BillingTerm } from "@/lib/subscriptions/billing-terms";
+export type { BillingTerm } from "@/lib/subscriptions/billing-terms.shared";
 export {
   DEFAULT_BILLING_TERMS,
   DEFAULT_BILLING_TERMS as SUBSCRIPTION_BILLING_TERMS,
   calculateSubscriptionBilling,
   findBillingTerm,
   maxBillingDiscount,
-} from "@/lib/subscriptions/billing-terms";
+} from "@/lib/subscriptions/billing-terms.shared";
 
 /** @deprecated Use dynamic billing terms from the API — kept for typing convenience. */
 export type SubscriptionBillingMonths = number;

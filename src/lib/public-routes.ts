@@ -1,6 +1,6 @@
 /**
  * Top-level path segments that must never be treated as legacy city slugs in middleware.
- * When adding a new `src/app/**/your-route/page.tsx` at the root, add `your-route` here.
+ * When adding a new top-level route under src/app, add its segment here.
  * Unknown segments are no longer redirected to /search — they fall through to Next.js routing.
  */
 export const PUBLIC_STATIC_SEGMENTS = new Set([

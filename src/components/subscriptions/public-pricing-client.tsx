@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   DEFAULT_BILLING_TERMS,
   type BillingTerm,
-} from "@/lib/subscriptions/billing-terms";
+} from "@/lib/subscriptions/billing-terms.shared";
 import {
   isSubscriptionPlanCode,
   type SubscriptionPlanCode,

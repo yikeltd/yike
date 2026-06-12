@@ -5,8 +5,11 @@ import Link from "next/link";
 import { Building2, Home, Layers, Sparkles } from "lucide-react";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
 import { BillingTermPicker } from "@/components/subscriptions/billing-term-picker";
-import type { BillingTerm } from "@/lib/subscriptions/billing-terms";
-import { DEFAULT_BILLING_TERMS, calculateSubscriptionBilling } from "@/lib/subscriptions/billing-terms";
+import type { BillingTerm } from "@/lib/subscriptions/billing-terms.shared";
+import {
+  DEFAULT_BILLING_TERMS,
+  calculateSubscriptionBilling,
+} from "@/lib/subscriptions/billing-terms.shared";
 import {
   PLAN_CARD_THEME,
   PLAN_DISPLAY,
