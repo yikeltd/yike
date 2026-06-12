@@ -9,8 +9,10 @@ import type {
   RevenuePricingCatalog,
   RevenuePricingItem,
   RevenueProduct,
+  SubscriptionBillingTermRow,
   SubscriptionPlanPricing,
 } from "@/lib/revenue-pricing/types";
+import { DEFAULT_BILLING_TERMS, listBillingTerms } from "@/lib/subscriptions/billing-terms";
 
 function mapItem(row: Record<string, unknown>): RevenuePricingItem {
   return {
@@ -42,14 +44,16 @@ async function fetchCatalogFromDb(
     itemsQuery = itemsQuery.eq("active", true);
   }
 
-  const [{ data: items }, { data: offers }, { data: subscriptions }] = await Promise.all([
-    itemsQuery,
-    admin.from("revenue_offers").select("*").eq("id", true).maybeSingle(),
-    admin
-      .from("subscription_plans")
-      .select("id, name, plan_code, monthly_price, active_listing_limit, features, status")
-      .order("monthly_price", { ascending: true }),
-  ]);
+  const [{ data: items }, { data: offers }, { data: subscriptions }, billingTerms] =
+    await Promise.all([
+      itemsQuery,
+      admin.from("revenue_offers").select("*").eq("id", true).maybeSingle(),
+      admin
+        .from("subscription_plans")
+        .select("id, name, plan_code, monthly_price, active_listing_limit, features, status")
+        .order("monthly_price", { ascending: true }),
+      listBillingTerms(admin, { includeInactive }),
+    ]);
 
   const mappedItems = (items ?? []).map((r) => mapItem(r as Record<string, unknown>));
 
@@ -66,7 +70,32 @@ async function fetchCatalogFromDb(
         }
       : DEFAULT_REVENUE_OFFERS,
     subscriptions: (subscriptions ?? []) as SubscriptionPlanPricing[],
+    billingTerms: billingTerms.map(
+      (term): SubscriptionBillingTermRow => ({
+        id: term.id,
+        months: term.months,
+        label: term.label,
+        short_label: term.shortLabel,
+        discount_percent: term.discountPercent,
+        active: term.active,
+        sort_order: term.sortOrder,
+        updated_at: new Date().toISOString(),
+      })
+    ),
   };
+}
+
+function defaultBillingTermRows(): SubscriptionBillingTermRow[] {
+  return DEFAULT_BILLING_TERMS.map((term) => ({
+    id: term.id,
+    months: term.months,
+    label: term.label,
+    short_label: term.shortLabel,
+    discount_percent: term.discountPercent,
+    active: term.active,
+    sort_order: term.sortOrder,
+    updated_at: new Date().toISOString(),
+  }));
 }
 
 export async function getRevenuePricingCatalog(
@@ -89,6 +118,7 @@ export const getCachedPublicRevenueCatalog = unstable_cache(
         })),
         offers: DEFAULT_REVENUE_OFFERS,
         subscriptions: [],
+        billingTerms: defaultBillingTermRows(),
       } satisfies RevenuePricingCatalog;
     }
     return fetchCatalogFromDb(admin, false);

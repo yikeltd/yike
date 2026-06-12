@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  DEFAULT_BILLING_TERMS,
+  type BillingTerm,
+} from "@/lib/subscriptions/billing-terms";
+import {
   isSubscriptionPlanCode,
   type SubscriptionPlanCode,
 } from "@/lib/subscriptions/constants";
@@ -18,6 +22,7 @@ type PlansPayload = {
   plans?: PlanRow[];
   foundingOfferActive?: boolean;
   currentPlanCode?: SubscriptionPlanCode;
+  billingTerms?: BillingTerm[];
 };
 
 export function PublicPricingClient({ isLoggedIn }: { isLoggedIn: boolean }) {
@@ -26,6 +31,7 @@ export function PublicPricingClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [foundingOfferActive, setFoundingOfferActive] = useState(true);
   const [currentPlanCode, setCurrentPlanCode] = useState<SubscriptionPlanCode | null>(null);
+  const [billingTerms, setBillingTerms] = useState<BillingTerm[]>(DEFAULT_BILLING_TERMS);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +62,9 @@ export function PublicPricingClient({ isLoggedIn }: { isLoggedIn: boolean }) {
             : isLoggedIn
               ? "free"
               : null
+        );
+        setBillingTerms(
+          data.billingTerms?.length ? data.billingTerms : DEFAULT_BILLING_TERMS
         );
       } catch {
         if (!cancelled) setLoadError(true);
@@ -109,6 +118,7 @@ export function PublicPricingClient({ isLoggedIn }: { isLoggedIn: boolean }) {
         foundingOfferActive={foundingOfferActive}
         isLoggedIn={isLoggedIn}
         currentPlanCode={currentPlanCode}
+        billingTerms={billingTerms}
       />
     </div>
   );

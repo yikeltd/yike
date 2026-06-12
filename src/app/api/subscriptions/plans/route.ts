@@ -9,6 +9,7 @@ import {
   isSubscriptionPlanCode,
 } from "@/lib/subscriptions/constants";
 import { getRevenueOffers } from "@/lib/revenue-pricing/service";
+import { DEFAULT_BILLING_TERMS, listBillingTerms } from "@/lib/subscriptions/billing-terms";
 
 export const runtime = "nodejs";
 
@@ -22,14 +23,16 @@ export async function GET() {
       foundingOfferActive: true,
       currentPlanLabel: "Free",
       currentPlanCode: "free",
+      billingTerms: DEFAULT_BILLING_TERMS,
     });
   }
 
   const session = await getSession();
-  const [plans, offers, activeSubscription] = await Promise.all([
+  const [plans, offers, activeSubscription, billingTerms] = await Promise.all([
     listActivePlans(admin),
     getRevenueOffers(admin),
     session ? getActiveUserSubscription(admin, session.id) : Promise.resolve(null),
+    listBillingTerms(admin),
   ]);
 
   const validPlans = (plans.length ? plans : fallbackPlans).filter((plan) =>
@@ -52,5 +55,6 @@ export async function GET() {
     foundingOfferActive: offers.founding_subscription_offer,
     currentPlanLabel,
     currentPlanCode,
+    billingTerms,
   });
 }

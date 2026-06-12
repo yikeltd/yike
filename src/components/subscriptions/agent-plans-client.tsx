@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
+  DEFAULT_BILLING_TERMS,
+  type BillingTerm,
+} from "@/lib/subscriptions/billing-terms";
+import {
   isSubscriptionPlanCode,
   type SubscriptionPlanCode,
 } from "@/lib/subscriptions/constants";
@@ -20,6 +24,7 @@ type PlansPayload = {
   foundingOfferActive?: boolean;
   currentPlanLabel?: string;
   currentPlanCode?: SubscriptionPlanCode;
+  billingTerms?: BillingTerm[];
   error?: string;
 };
 
@@ -32,6 +37,7 @@ export function AgentPlansClient() {
   const [foundingOfferActive, setFoundingOfferActive] = useState(true);
   const [currentPlanLabel, setCurrentPlanLabel] = useState("Free");
   const [currentPlanCode, setCurrentPlanCode] = useState<SubscriptionPlanCode>("free");
+  const [billingTerms, setBillingTerms] = useState<BillingTerm[]>(DEFAULT_BILLING_TERMS);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +67,9 @@ export function AgentPlansClient() {
           data.currentPlanCode && isSubscriptionPlanCode(data.currentPlanCode)
             ? data.currentPlanCode
             : "free"
+        );
+        setBillingTerms(
+          data.billingTerms?.length ? data.billingTerms : DEFAULT_BILLING_TERMS
         );
       } catch {
         if (!cancelled) setLoadError(true);
@@ -121,6 +130,7 @@ export function AgentPlansClient() {
           foundingOfferActive={foundingOfferActive}
           isLoggedIn
           currentPlanCode={currentPlanCode}
+          billingTerms={billingTerms}
         />
       )}
     </div>

@@ -1,20 +1,25 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import {
-  SUBSCRIPTION_BILLING_TERMS,
-  type SubscriptionBillingMonths,
-} from "@/lib/subscriptions/constants";
+import type { BillingTerm } from "@/lib/subscriptions/billing-terms";
+import { maxBillingDiscount } from "@/lib/subscriptions/billing-terms";
 
 export function BillingTermPicker({
+  terms,
   value,
   onChange,
   className,
 }: {
-  value: SubscriptionBillingMonths;
-  onChange: (months: SubscriptionBillingMonths) => void;
+  terms: BillingTerm[];
+  value: number;
+  onChange: (months: number) => void;
   className?: string;
 }) {
+  const activeTerms = terms.filter((term) => term.active);
+  const maxDiscount = maxBillingDiscount(activeTerms);
+
+  if (!activeTerms.length) return null;
+
   return (
     <div
       className={cn(
@@ -24,16 +29,18 @@ export function BillingTermPicker({
     >
       <p className="text-xs font-bold uppercase tracking-wide text-navy">Billing period</p>
       <p className="mt-0.5 text-[11px] text-muted">
-        Pay upfront — save 10%, 20%, or 30% on longer terms.
+        {maxDiscount > 0
+          ? `Pay upfront — save up to ${maxDiscount}% on longer terms.`
+          : "Choose how long you want your plan to run."}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        {SUBSCRIPTION_BILLING_TERMS.map((term) => {
+        {activeTerms.map((term) => {
           const selected = value === term.months;
           const hasDiscount = term.discountPercent > 0;
 
           return (
             <button
-              key={term.months}
+              key={term.id}
               type="button"
               onClick={() => onChange(term.months)}
               className={cn(

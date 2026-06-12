@@ -6,13 +6,12 @@ import {
   canSubscribe,
   activateSubscriptionFromPayment,
 } from "@/lib/subscriptions/service";
+import { isPaidPlan, isSubscriptionPlanCode } from "@/lib/subscriptions/constants";
 import {
   calculateSubscriptionBilling,
-  isPaidPlan,
-  isSubscriptionBillingMonths,
-  isSubscriptionPlanCode,
-  type SubscriptionBillingMonths,
-} from "@/lib/subscriptions/constants";
+  findBillingTerm,
+  listBillingTerms,
+} from "@/lib/subscriptions/billing-terms";
 import { isFeaturedPaymentsEnabled } from "@/lib/feature-flags";
 import { isPaystackConfigured } from "@/lib/payments/config";
 import {
@@ -46,9 +45,6 @@ export async function POST(request: Request) {
 
   const planCode = String(body.planCode ?? "").trim();
   const rawBillingMonths = Number(body.billingMonths);
-  const billingMonths: SubscriptionBillingMonths = isSubscriptionBillingMonths(rawBillingMonths)
-    ? rawBillingMonths
-    : 1;
   if (!isSubscriptionPlanCode(planCode) || !isPaidPlan(planCode)) {
     return NextResponse.json({ error: "Choose a paid plan" }, { status: 400 });
   }
@@ -81,9 +77,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Plan not found" }, { status: 404 });
   }
 
-  const paymentsLive = isFeaturedPaymentsEnabled() && isPaystackConfigured();
+  const billingTerms = await listBillingTerms(admin);
+  const billingMonths = findBillingTerm(billingTerms, rawBillingMonths)?.months ?? billingTerms[0]?.months ?? 1;
+  const billing = calculateSubscriptionBilling(plan.monthly_price, billingMonths, billingTerms);
 
-  const billing = calculateSubscriptionBilling(plan.monthly_price, billingMonths);
+  const paymentsLive = isFeaturedPaymentsEnabled() && isPaystackConfigured();
 
   if (!paymentsLive) {
     const result = await activateSubscriptionFromPayment(admin, {

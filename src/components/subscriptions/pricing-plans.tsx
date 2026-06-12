@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Building2, Home, Layers, Sparkles } from "lucide-react";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
 import { BillingTermPicker } from "@/components/subscriptions/billing-term-picker";
+import type { BillingTerm } from "@/lib/subscriptions/billing-terms";
+import { DEFAULT_BILLING_TERMS, calculateSubscriptionBilling } from "@/lib/subscriptions/billing-terms";
 import {
   PLAN_CARD_THEME,
   PLAN_DISPLAY,
-  calculateSubscriptionBilling,
   formatListingLimit,
   isSubscriptionPlanCode,
-  type SubscriptionBillingMonths,
 } from "@/lib/subscriptions/constants";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -34,15 +34,26 @@ export function PricingPlans({
   foundingOfferActive,
   isLoggedIn,
   currentPlanCode = null,
+  billingTerms = DEFAULT_BILLING_TERMS,
 }: {
   plans: PlanRow[];
   foundingOfferActive: boolean;
   isLoggedIn: boolean;
   currentPlanCode?: SubscriptionPlanCode | null;
+  billingTerms?: BillingTerm[];
 }) {
+  const activeBillingTerms = billingTerms.filter((term) => term.active);
+  const defaultBillingMonths = activeBillingTerms[0]?.months ?? 1;
+
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [billingMonths, setBillingMonths] = useState<SubscriptionBillingMonths>(1);
+  const [billingMonths, setBillingMonths] = useState(defaultBillingMonths);
+
+  useEffect(() => {
+    if (!activeBillingTerms.some((term) => term.months === billingMonths)) {
+      setBillingMonths(defaultBillingMonths);
+    }
+  }, [activeBillingTerms, billingMonths, defaultBillingMonths]);
 
   async function checkout(planCode: SubscriptionPlanCode) {
     if (planCode === "free") return;
@@ -81,8 +92,12 @@ export function PricingPlans({
 
       {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-      {paidPlans.length > 0 ? (
-        <BillingTermPicker value={billingMonths} onChange={setBillingMonths} />
+      {paidPlans.length > 0 && activeBillingTerms.length > 0 ? (
+        <BillingTermPicker
+          terms={billingTerms}
+          value={billingMonths}
+          onChange={setBillingMonths}
+        />
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch">
@@ -98,7 +113,7 @@ export function PricingPlans({
               ? formatListingLimit(plan.active_listing_limit)
               : "∞";
           const billing = !isFree
-            ? calculateSubscriptionBilling(plan.monthly_price, billingMonths)
+            ? calculateSubscriptionBilling(plan.monthly_price, billingMonths, billingTerms)
             : null;
 
           return (

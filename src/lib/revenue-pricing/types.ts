@@ -36,8 +36,20 @@ export type SubscriptionPlanPricing = {
   status: string;
 };
 
+export type SubscriptionBillingTermRow = {
+  id: string;
+  months: number;
+  label: string;
+  short_label: string;
+  discount_percent: number;
+  active: boolean;
+  sort_order: number;
+  updated_at: string;
+};
+
 export type RevenuePricingCatalog = {
   items: RevenuePricingItem[];
   offers: RevenueOffers;
   subscriptions: SubscriptionPlanPricing[];
+  billingTerms: SubscriptionBillingTermRow[];
 };
