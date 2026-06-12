@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const PLANS_HREF = "/agent/plans";
 
 export function PlansUpgradeCard({
   planLabel,
@@ -11,12 +13,14 @@ export function PlansUpgradeCard({
   planLabel?: string | null;
   className?: string;
 }) {
+  const router = useRouter();
+
   return (
-    <Link
-      href="/agent/plans"
-      prefetch
+    <button
+      type="button"
+      onClick={() => router.push(PLANS_HREF)}
       className={cn(
-        "pressable flex h-full items-center gap-3 rounded-2xl border border-border bg-elevated px-4 py-3.5 shadow-float",
+        "pressable flex h-full w-full items-center gap-3 rounded-2xl border border-border bg-elevated px-4 py-3.5 text-left shadow-float",
         className
       )}
     >
@@ -31,6 +35,6 @@ export function PlansUpgradeCard({
         )}
       </div>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted" />
-    </Link>
+    </button>
   );
 }

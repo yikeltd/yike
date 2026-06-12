@@ -137,29 +137,6 @@ export function ProfilePageClient({
       ) : null}
 
       {isLister ? (
-        <section
-          className={cn(
-            "grid gap-3",
-            showTrust ? "sm:grid-cols-2" : "grid-cols-1"
-          )}
-        >
-          {showTrust ? (
-            <TrustCenterCard
-              profile={profile}
-              verified={verified}
-              className="h-full"
-            />
-          ) : null}
-          <PlansUpgradeCard
-            planLabel={subscriptionPlanLabel}
-            className="h-full"
-          />
-        </section>
-      ) : showTrust ? (
-        <TrustCenterCard profile={profile} verified={verified} />
-      ) : null}
-
-      {isLister ? (
         <section className="grid grid-cols-2 gap-3">
           <StatCard icon={Heart} label="Saved homes" value={String(savedCount)} href="/saved" />
           <StatCard
@@ -208,6 +185,29 @@ export function ProfilePageClient({
           expiresAt={subscriptionExpiresAt}
           foundingMember={foundingMember}
         />
+      ) : null}
+
+      {isLister ? (
+        <section
+          className={cn(
+            "grid gap-3",
+            showTrust ? "sm:grid-cols-2" : "grid-cols-1"
+          )}
+        >
+          {showTrust ? (
+            <TrustCenterCard
+              profile={profile}
+              verified={verified}
+              className="h-full"
+            />
+          ) : null}
+          <PlansUpgradeCard
+            planLabel={subscriptionPlanLabel}
+            className="h-full"
+          />
+        </section>
+      ) : showTrust ? (
+        <TrustCenterCard profile={profile} verified={verified} />
       ) : null}
 
       {isLister ? <SellerAnalyticsPanel /> : null}

@@ -144,7 +144,7 @@ export function TrustCenterCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-bold text-navy">Account setup</p>
+              <p className="text-sm font-bold text-navy">Account & verification</p>
               <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
                 {chip.label}
               </span>
@@ -184,7 +184,7 @@ export function TrustCenterCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-navy">Account setup</p>
+            <p className="text-sm font-bold text-navy">Account & verification</p>
             <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", chipClasses(chip.tone))}>
               {chip.label}
             </span>

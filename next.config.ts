@@ -114,6 +114,8 @@ const nextConfig: NextConfig = {
       { source: "/swipe", destination: "/browse", permanent: true },
       { source: "/list", destination: "/agent/become", permanent: true },
       { source: "/list-property", destination: "/agent/become", permanent: true },
+      { source: "/agent/pricing", destination: "/agent/plans", permanent: false },
+      { source: "/plans", destination: "/agent/plans", permanent: false },
       { source: "/request-home", destination: "/request-property", permanent: true },
       { source: "/cookie-policy", destination: "/cookies", permanent: true },
       { source: "/legal", destination: "/privacy", permanent: true },
