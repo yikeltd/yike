@@ -117,3 +117,5 @@ vercel deploy --prod
 ## License
 
 Private — Yike.ng
+
+<!-- coolify-webhook-verify 2026-07-20 -->
