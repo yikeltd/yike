@@ -152,7 +152,7 @@ export async function sendAuthEmailOtp(
       };
     }
     console.error(
-      "[auth-email-otp] RESEND_API_KEY missing in production — set in Vercel env"
+      "[auth-email-otp] RESEND_API_KEY missing in production — set in Coolify env"
     );
     return { ok: false, error: EMAIL_OTP_USER_MESSAGES.sendFailed, status: 503 };
   }

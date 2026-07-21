@@ -8,9 +8,7 @@ function authorizeCron(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   const auth = request.headers.get("authorization");
-  const cronHeader =
-    request.headers.get("x-cron-secret") ??
-    request.headers.get("x-vercel-cron-secret");
+  const cronHeader = request.headers.get("x-cron-secret");
   return auth === `Bearer ${secret}` || cronHeader === secret;
 }
 

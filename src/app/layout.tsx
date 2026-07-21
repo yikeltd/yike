@@ -6,7 +6,6 @@ import { BRAND_OG_IMAGE, BRAND_OG_IMAGE_WEBP } from "@/lib/share-images";
 import { brand, colors } from "@/lib/design/tokens";
 import { StructuredData } from "@/components/seo/structured-data";
 import { PwaRegister } from "@/components/pwa/register";
-import { Analytics } from "@vercel/analytics/react";
 import { Suspense } from "react";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -224,7 +223,6 @@ export default function RootLayout({
             <UserActivitySync />
             <PendingIntentHandler />
           </AuthProvider>
-          <Analytics />
           <PwaRegister />
         </ThemeProvider>
       </body>

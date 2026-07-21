@@ -14,7 +14,7 @@ function authorized(request: Request): boolean {
   const auth = request.headers.get("authorization");
   if (auth === `Bearer ${secret}`) return true;
   const header =
-    request.headers.get("x-cron-secret") ?? request.headers.get("x-vercel-cron-secret");
+    request.headers.get("x-cron-secret");
   return header === secret;
 }
 

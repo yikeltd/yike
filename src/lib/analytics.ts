@@ -1,7 +1,5 @@
 "use client";
 
-import { track as vercelTrack } from "@vercel/analytics";
-
 const QUEUE_KEY = "yike_analytics_queue";
 const MAX_QUEUE = 50;
 
@@ -33,19 +31,13 @@ export type AnalyticsProps = Record<
   string | number | boolean | undefined
 >;
 
-/** Lightweight event tracking — Vercel Analytics + local queue for debugging. */
+/** Lightweight event tracking — local queue for debugging and future first-party analytics. */
 export function trackEvent(name: AnalyticsEvent, props?: AnalyticsProps) {
   if (typeof window === "undefined") return;
 
   const payload = Object.fromEntries(
     Object.entries(props ?? {}).filter(([, v]) => v !== undefined)
   ) as Record<string, string | number | boolean>;
-
-  try {
-    vercelTrack(name, payload);
-  } catch {
-    /* analytics optional */
-  }
 
   try {
     const prev = JSON.parse(

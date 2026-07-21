@@ -68,7 +68,7 @@ async function DatabaseUnavailable({
           ))}
         </dl>
         <p className="mt-3 text-xs text-amber-900">
-          Confirm Vercel Production has NEXT_PUBLIC_SUPABASE_URL and
+          Confirm Coolify production has NEXT_PUBLIC_SUPABASE_URL and
           SUPABASE_SERVICE_ROLE_KEY from the same Supabase project, then redeploy production.
         </p>
       </div>

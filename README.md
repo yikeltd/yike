@@ -19,7 +19,7 @@ Product direction is locked in `.cursor/rules/yike-product-direction.mdc` — do
 
 - **Next.js** (App Router) + TypeScript + Tailwind CSS
 - **Supabase** — Auth, Postgres, Storage
-- **Vercel** — deployment target
+- **Coolify (Hetzner)** — production deployment via Docker
 - **PWA-ready** — `manifest.json` + mobile viewport
 
 ## Features (MVP)
@@ -72,30 +72,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Deploy to Vercel
+## Deploy to Coolify
 
-**GitHub:** [yikeltd/yike](https://github.com/yikeltd/yike) · **Vercel:** [yikeprojects/yike](https://vercel.com/yikeprojects/yike) · **Production:** [yike.ng](https://yike.ng)
+**GitHub:** [yikeltd/yike](https://github.com/yikeltd/yike) · **Production:** [yike.ng](https://yike.ng) · **Deploy:** Coolify ([docs/engineering/DEPLOYMENT_STANDARD.md](docs/engineering/DEPLOYMENT_STANDARD.md))
 
-Push to `main` → Vercel production deploys automatically (Git integration). Other branches and PRs get preview URLs.
+Push to `main` → Coolify builds and deploys automatically via GitHub App webhook.
 
-### Environment variables (Vercel → yike → Settings → Environment Variables)
+### Environment variables (Coolify → yike application)
 
 | Key | Scope |
 |-----|--------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Production, Preview, Development |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production, Preview, Development |
-| `SUPABASE_SERVICE_ROLE_KEY` | Production, Preview, Development (secret) |
-| `SENDCHAMP_API_KEY` | Production, Preview (secret) |
-| `RESEND_API_KEY` | Production, Preview (secret) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Production |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production |
+| `SUPABASE_SERVICE_ROLE_KEY` | Production (secret) |
+| `SENDCHAMP_API_KEY` | Production (secret) |
+| `RESEND_API_KEY` | Production (secret) |
+| `CRON_SECRET` | Production (secret) |
 
 See `.env.example` for all keys. Supabase: [API settings](https://supabase.com/dashboard/project/hlpojfurfldvcxfxhveg/settings/api).
-
-### Local deploy (optional)
-
-```bash
-vercel link    # team: yike-ng, project: yike
-vercel deploy --prod
-```
 
 ## Routes
 

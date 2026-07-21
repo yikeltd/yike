@@ -5,6 +5,5 @@ export function isProductionEnv(): boolean {
   if (appEnv === "development" || appEnv === "preview" || appEnv === "staging") {
     return false;
   }
-  if (process.env.VERCEL_ENV === "production") return true;
   return process.env.NODE_ENV === "production";
 }

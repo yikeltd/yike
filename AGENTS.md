@@ -4,7 +4,7 @@ Read `.cursor/rules/yike-product-direction.mdc` before any change. Direction is 
 
 ## Quick reference
 
-- **Stack:** Next.js App Router, TypeScript, Tailwind, Supabase, Vercel
+- **Stack:** Next.js App Router, TypeScript, Tailwind, Supabase, Coolify (Hetzner)
 - **Colors:** Navy `#031B4E` · Gold `#E4B547`
 - **Logo:** `public/images/logo.webp`
 - **Media:** `src/lib/media/` — all uploads must use the optimization pipeline
@@ -18,14 +18,14 @@ npm run build  # production check before deploy
 node scripts/optimize-brand-assets.mjs   # regenerate favicons from logo.png
 ```
 
-**Local preview:** Start `npm run dev` at the beginning of UI work and open the affected routes locally before publishing to Vercel.
+**Local preview:** Start `npm run dev` at the beginning of UI work and open the affected routes locally before pushing to Coolify.
 
 ## Deploy
 
-- **GitHub:** `yikeltd/yike` · **Vercel team:** `yikeprojects` · **project:** `yike`
-- Push to `main` → Vercel production deploy automatically (Git integration — no manual step)
-- Preview deploys on other branches / PRs
-- Env vars: see `.env.example` (set in Vercel → Settings → Environment Variables)
+- **GitHub:** `yikeltd/yike` · **Production:** `yike.ng` · **Coolify:** `control.stankings.com`
+- Push to `main` → Coolify production deploy via GitHub App webhook
+- Env vars: see `.env.example` (set in Coolify application environment)
+- Docs: `docs/engineering/DEPLOYMENT_STANDARD.md`, `docs/engineering/PLATFORM_STANDARD.md`
 - **Agent rule:** When work is done, commit all related changes and push to `origin/main` — do not leave the tree dirty or unpushed unless the founder says to hold. See `.cursor/rules/ship-everything.mdc`.
 
 ## Supabase

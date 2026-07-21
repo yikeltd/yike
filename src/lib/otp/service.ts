@@ -152,7 +152,7 @@ export async function sendPhoneOtp(
     const sendchamp = getSendchampConfigSummary();
     const envHint =
       sendchamp.configured === false && sendchamp.supabaseKeyRejected
-        ? "Sendchamp API key looks like a Supabase key — fix SENDCHAMP_PUBLIC_KEY in Vercel"
+        ? "Sendchamp API key looks like a Supabase key — fix SENDCHAMP_PUBLIC_KEY in Coolify"
         : "Sendchamp not configured";
 
     if (!isProductionEnv()) {

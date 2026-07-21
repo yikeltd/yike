@@ -9,10 +9,7 @@ function envFlag(name: string, defaultValue: boolean): boolean {
 }
 
 export function getSiteBaseUrl(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    process.env.VERCEL_URL?.trim() ||
-    "https://yike.ng";
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://yike.ng";
   const withProtocol = raw.startsWith("http") ? raw : `https://${raw}`;
   return withProtocol.replace(/\/$/, "");
 }

@@ -8,6 +8,7 @@ import {
   MetricCard,
 } from "@/components/admin/dashboard/admin-ui";
 import { offsetDaysIso } from "@/lib/time";
+import { getDeployCommitShort, getDeployEnvironment } from "@/lib/deploy-metadata";
 
 export default async function TechDashboardPage() {
   const supabase = await requireServerClient();
@@ -44,7 +45,7 @@ export default async function TechDashboardPage() {
         <MetricCard label="Supabase" value="Connected" variant="success" />
         <MetricCard label="OTP failure rate" value={`${otpFailRate}%`} href="/lex/tech/otp" variant={otpFailRate > 5 ? "danger" : "default"} />
         <MetricCard label="Email failure rate" value={`${emailFailRate}%`} href="/lex/tech/email" variant={emailFailRate > 5 ? "danger" : "default"} />
-        <MetricCard label="Deployment" value={process.env.VERCEL_ENV ?? "local"} sub={process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev"} />
+        <MetricCard label="Deployment" value={getDeployEnvironment()} sub={getDeployCommitShort("dev").slice(0, 7)} />
       </div>
 
       <EnvHealthPanel />
