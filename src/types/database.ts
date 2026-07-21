@@ -1,3 +1,5 @@
+export type AssetType = "PROPERTY" | "AUTO";
+
 export type UserRole =
   | "user"
   | "agent_unverified"
