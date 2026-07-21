@@ -1,0 +1,22 @@
+# Coolify scheduled jobs (UTC)
+
+Configure in Coolify as a cron sidecar or scheduled task. Each job calls the app with:
+
+```bash
+curl -fsS -H "Authorization: Bearer $CRON_SECRET" "$YIKE_CRON_BASE_URL/api/cron/<path>"
+```
+
+Set `YIKE_CRON_BASE_URL` to the internal Docker service URL (e.g. `http://yike:3000`) or public URL for smoke tests.
+
+| Schedule (UTC) | Path |
+|----------------|------|
+| `0 0 * * *` | `/api/cron/ambassador-ops` |
+| `0 3 * * *` | `/api/cron/listing-operations` |
+| `0 4 * * *` | `/api/cron/trust-quality` |
+| `0 5 * * *` | `/api/cron/market-intelligence` |
+| `0 6 * * *` | `/api/cron/outcome-intelligence` |
+| `0 7 * * *` | `/api/cron/send-scheduled-notifications` |
+
+Also configure `/api/cron/send-scheduled-emails` if enabled in your environment.
+
+Authorization: `Authorization: Bearer <CRON_SECRET>` or header `x-cron-secret: <CRON_SECRET>`.
