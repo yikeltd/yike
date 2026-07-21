@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
+  CORPORATE,
   COMPANY_DISPLAY_NAME,
   COMPANY_EMAIL,
   COMPANY_RC,
@@ -22,10 +23,10 @@ const explore = [
   { href: "/blog", label: "Rental guides" },
 ];
 
-const company = [
+const company: { href: string; label: string; external?: boolean }[] = [
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
-  { href: "/careers", label: "Careers" },
+  { href: CORPORATE.careersUrl, label: "Careers", external: true },
   { href: "/verify-agent", label: "Verify as agent" },
   { href: "/why-verified", label: "Why verified" },
   { href: "/safety", label: "Safety tips" },
@@ -103,12 +104,22 @@ export function SiteFooter() {
             <ul className="mt-3 space-y-2">
               {company.map((l) => (
                 <li key={l.href}>
-                  <Link
-                    href={l.href}
-                    className="text-sm text-white/90 transition-colors hover:text-[#e4b547]"
-                  >
-                    {l.label}
-                  </Link>
+                  {l.external ? (
+                    <a
+                      href={l.href}
+                      className="text-sm text-white/90 transition-colors hover:text-[#e4b547]"
+                      rel="noopener noreferrer"
+                    >
+                      {l.label}
+                    </a>
+                  ) : (
+                    <Link
+                      href={l.href}
+                      className="text-sm text-white/90 transition-colors hover:text-[#e4b547]"
+                    >
+                      {l.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -140,10 +151,11 @@ export function SiteFooter() {
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="max-w-3xl space-y-3">
               <p className="text-xs leading-relaxed text-white/80">
-                © {year} {COMPANY_DISPLAY_NAME} All rights reserved.
+                © {year} {CORPORATE.legalName}. All rights reserved.
               </p>
               <p className="text-xs leading-relaxed text-white/75">
-                {COMPANY_DISPLAY_NAME} · {COMPANY_RC}
+                {SITE_NAME} is a product of {CORPORATE.legalName}. {COMPANY_DISPLAY_NAME} ·{" "}
+                {COMPANY_RC}
               </p>
               <p className="text-xs leading-relaxed text-white/75">
                 {SITE_NAME} is an online listing platform only. We do not own

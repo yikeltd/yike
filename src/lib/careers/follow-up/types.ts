@@ -11,6 +11,22 @@ export type FollowUpQuestionType =
   | "yes_no"
   | "rating";
 
+/** Admin follow-up editor — question type picker labels. */
+export const FOLLOW_UP_QUESTION_TYPES: {
+  value: FollowUpQuestionType;
+  label: string;
+}[] = [
+  { value: "short_text", label: "Short text" },
+  { value: "long_text", label: "Long text" },
+  { value: "multiple_choice", label: "Multiple choice" },
+  { value: "salary", label: "Salary" },
+  { value: "availability_date", label: "Availability" },
+  { value: "years_experience", label: "Years of experience" },
+  { value: "portfolio", label: "Portfolio / link" },
+  { value: "yes_no", label: "Yes / No" },
+  { value: "rating", label: "Rating scale" },
+];
+
 export type FollowUpQuestion = {
   id: string;
   label: string;

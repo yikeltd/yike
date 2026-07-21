@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SITE_NAME, SITE_URL, COMPANY_LEGAL_NAME, COMPANY_RC } from "@/lib/constants";
+import { SITE_NAME, SITE_URL, CORPORATE, COMPANY_LEGAL_NAME, COMPANY_RC } from "@/lib/constants";
 import {
   LegalCallout,
   LegalDocument,
@@ -16,7 +16,8 @@ export default function TermsPage() {
     <LegalDocument title="Terms of Service" lastUpdated="6 June 2026">
       <LegalCallout>
         By using {SITE_NAME} at {SITE_URL}, you agree to these Terms.{" "}
-        {COMPANY_LEGAL_NAME} ({COMPANY_RC}) operates the platform.
+        {COMPANY_LEGAL_NAME} ({COMPANY_RC}) operates the platform as a product of{" "}
+        {CORPORATE.legalName}.
       </LegalCallout>
 
       <LegalSection title="1. Who we are">
