@@ -5,6 +5,7 @@ import { CareerJobForm } from "@/components/admin/career-job-form";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { adminPath } from "@/lib/admin-paths";
 import { parseAdminPage } from "@/lib/admin/pagination";
+import { STANKINGS_CAREERS_URL } from "@/lib/constants";
 import type { JobRow } from "@/lib/careers/constants";
 import { categoryLabel, jobTypeLabel } from "@/lib/careers/constants";
 
@@ -37,7 +38,7 @@ export default async function AdminCareersPage({
         <div>
           <h1 className="text-2xl font-bold text-navy">Careers</h1>
           <p className="mt-2 text-sm text-muted">
-            Publish roles and review applications — smart defaults handle the rest.
+            Historical roles and applications — public recruitment is centralized at Stankings.
           </p>
         </div>
         <Link
@@ -87,12 +88,12 @@ export default async function AdminCareersPage({
                 </div>
                 {job.status === "published" && (
                   <a
-                    href={`/careers/${job.slug}`}
+                    href={STANKINGS_CAREERS_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-3 inline-block text-xs font-semibold text-gold-dark hover:underline"
                   >
-                    View public page ↗
+                    View careers at Stankings ↗
                   </a>
                 )}
               </article>

@@ -109,7 +109,26 @@ const nextConfig: NextConfig = {
         destination: "https://yike.ng/:path*",
         permanent: true,
       },
-      { source: "/home", destination: "/", permanent: true },
+      {
+        source: "/careers",
+        destination: "https://stankings.com/career",
+        permanent: true,
+      },
+      {
+        source: "/careers/:path*",
+        destination: "https://stankings.com/career",
+        permanent: true,
+      },
+      {
+        source: "/career",
+        destination: "https://stankings.com/career",
+        permanent: true,
+      },
+      {
+        source: "/career/:path*",
+        destination: "https://stankings.com/career",
+        permanent: true,
+      },
       { source: "/swipe-homes", destination: "/browse", permanent: true },
       { source: "/swipe", destination: "/browse", permanent: true },
       { source: "/list", destination: "/agent/become", permanent: true },

@@ -15,6 +15,7 @@ export const PUBLIC_STATIC_SEGMENTS = new Set([
   "blog",
   "browse",
   "buy",
+  "career",
   "careers",
   "contact",
   "cookie-policy",

@@ -2,11 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import type { FollowUpQuestion, FollowUpQuestionType } from "@/lib/careers/follow-up/types";
-import type { FollowUpGenerationInput } from "@/lib/careers/follow-up/types";
+import {
+  FOLLOW_UP_QUESTION_TYPES,
+  type FollowUpGenerationInput,
+  type FollowUpQuestion,
+  type FollowUpQuestionType,
+} from "@/lib/careers/follow-up/types";
 import { generateFollowUpQuestions } from "@/lib/careers/follow-up/generate-questions";
 import { resolveInitialFollowUpQuestions } from "@/lib/careers/follow-up/resolve-questions";
-import { QUESTION_TYPES } from "@/components/careers/follow-up-form";
 import { cn } from "@/lib/utils";
 
 const SEND_TIMEOUT_MS = 25_000;
@@ -204,7 +207,7 @@ export function SendFollowUpModal({
                     }
                     className="rounded-lg border border-navy/10 px-3 py-2 text-xs"
                   >
-                    {QUESTION_TYPES.map((t) => (
+                    {FOLLOW_UP_QUESTION_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
                         {t.label}
                       </option>

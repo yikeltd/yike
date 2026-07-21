@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SITE_NAME, SITE_URL, COMPANY_LEGAL_NAME, COMPANY_RC, COMPANY_EMAIL } from "@/lib/constants";
+import { SITE_NAME, SITE_URL, CORPORATE, COMPANY_LEGAL_NAME, COMPANY_RC, COMPANY_EMAIL } from "@/lib/constants";
 import {
   LegalCallout,
   LegalDocument,
@@ -15,8 +15,8 @@ export default function PrivacyPage() {
   return (
     <LegalDocument title="Privacy Policy" lastUpdated="6 June 2026">
       <LegalCallout>
-        {COMPANY_LEGAL_NAME} ({COMPANY_RC}) operates {SITE_NAME} at {SITE_URL}.
-        This policy explains how we handle personal data under the Nigeria Data
+        {COMPANY_LEGAL_NAME} ({COMPANY_RC}) operates {SITE_NAME} at {SITE_URL} as a product of{" "}
+        {CORPORATE.legalName}. This policy explains how we handle personal data under the Nigeria Data
         Protection Act 2023 (NDPA).
       </LegalCallout>
 
