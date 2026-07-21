@@ -83,7 +83,6 @@ function staticSitemapEntries(): SitemapUrlEntry[] {
     { path: "/become-a-field-verifier", changeFrequency: "monthly", priority: 0.6 },
     { path: "/become-a-legal-partner", changeFrequency: "monthly", priority: 0.6 },
     { path: "/become-an-ambassador", changeFrequency: "monthly", priority: 0.6 },
-    { path: "/careers", changeFrequency: "weekly", priority: 0.65 },
     { path: "/hotel", changeFrequency: "weekly", priority: 0.75 },
     { path: "/shortlet", changeFrequency: "weekly", priority: 0.75 },
     { path: "/blog", changeFrequency: "weekly", priority: 0.75 },
