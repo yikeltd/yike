@@ -12,7 +12,21 @@ export async function POST(request: Request) {
   const token = otpServerToken();
   const db = createAuthEmailOtpDbClient();
   if (!token || !db) {
-    return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+    console.error("[auth/signup/check-duplicates] runtime unavailable", {
+      otpToken: Boolean(token),
+      otpDbClient: Boolean(db),
+    });
+    return NextResponse.json(
+      {
+        error: "Unavailable",
+        code: "auth_runtime_unavailable",
+        checks: {
+          yikeOtpServerToken: Boolean(token),
+          otpDbClient: Boolean(db),
+        },
+      },
+      { status: 503 },
+    );
   }
 
   const body = await request.json().catch(() => ({}));

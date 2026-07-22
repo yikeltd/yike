@@ -12,12 +12,14 @@ const PRODUCTION_REQUIRED = [
   "SUPABASE_SERVICE_ROLE_KEY",
   "NEXT_PUBLIC_SITE_URL",
   "CRON_SECRET",
+  "YIKE_OTP_SERVER_TOKEN",
 ] as const;
 
 const PRODUCTION_RECOMMENDED = [
   "RESEND_API_KEY",
   "SENDCHAMP_WEBHOOK_SECRET",
   "APP_ENV",
+  "GIT_COMMIT_SHA",
 ] as const;
 
 function present(name: string): boolean {

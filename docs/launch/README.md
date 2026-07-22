@@ -5,6 +5,7 @@ Operational pack for **Property Marketplace** launch. Complements
 
 | Doc | Purpose |
 |-----|---------|
+| [P0_HOMEPAGE_SIGNUP_INCIDENT.md](./P0_HOMEPAGE_SIGNUP_INCIDENT.md) | P0: homepage vs deploy + signup 503 |
 | [PRODUCTION_UAT_CERTIFICATION.md](./PRODUCTION_UAT_CERTIFICATION.md) | Post-migration UAT + GO/NO-GO |
 | [ENTERPRISE_MARKETPLACE_SPRINT_III_LAUNCH_CERTIFICATION.md](./ENTERPRISE_MARKETPLACE_SPRINT_III_LAUNCH_CERTIFICATION.md) | Final pre-prod certification (hold commit/migration) |
 | [ENTERPRISE_MARKETPLACE_SPRINT_II_REPORT.md](./ENTERPRISE_MARKETPLACE_SPRINT_II_REPORT.md) | Sprint II completion (pre-migration) |
