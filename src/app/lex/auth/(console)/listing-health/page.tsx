@@ -3,25 +3,32 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminPagination } from "@/components/admin/admin-pagination";
 import { TrustQualityBatchButton } from "@/components/admin/trust-quality-controls";
 import { parseAdminPage, ADMIN_PAGE_SIZE } from "@/lib/admin/pagination";
-import { propertyPath } from "@/lib/property-url";
+import { listingPath } from "@/lib/marketplace/listing-path";
+import { normalizeAssetType } from "@/lib/marketplace/listings";
 import type { Property } from "@/types/database";
 
 export default async function AdminListingHealthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; vertical?: string }>;
 }) {
   const params = await searchParams;
   const { page, from } = parseAdminPage(params);
+  const vertical =
+    params.vertical === "vehicle"
+      ? "vehicle"
+      : params.vertical === "property"
+        ? "property"
+        : "all";
   const admin = createAdminClient();
   if (!admin) {
     return <p className="text-muted">Database unavailable.</p>;
   }
 
-  const { data, count } = await admin
+  let query = admin
     .from("properties")
     .select(
-      "id, title, city, area, status, listing_health_score, listing_quality_flags, listing_activity_status",
+      "id, title, city, area, status, slug, asset_type, listing_health_score, listing_quality_flags, listing_activity_status",
       { count: "exact" }
     )
     .eq("status", "approved")
@@ -29,6 +36,12 @@ export default async function AdminListingHealthPage({
     .lte("listing_health_score", 65)
     .order("listing_health_score", { ascending: true })
     .range(from, from + ADMIN_PAGE_SIZE - 1);
+  if (vertical === "vehicle") query = query.eq("asset_type", "VEHICLE");
+  if (vertical === "property") {
+    query = query.or("asset_type.eq.PROPERTY,asset_type.is.null");
+  }
+
+  const { data, count } = await query;
 
   const total = count ?? 0;
   const rows = (data ?? []) as Property[];
@@ -41,6 +54,31 @@ export default async function AdminListingHealthPage({
           <p className="text-sm text-muted">
             Low-quality approved listings · {total} need attention
           </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+            {(
+              [
+                ["all", "All"],
+                ["property", "Property"],
+                ["vehicle", "Vehicles"],
+              ] as const
+            ).map(([key, label]) => (
+              <Link
+                key={key}
+                href={
+                  key === "all"
+                    ? "/lex/auth/listing-health"
+                    : `/lex/auth/listing-health?vertical=${key}`
+                }
+                className={
+                  vertical === key
+                    ? "rounded-full bg-navy px-3 py-1 text-white"
+                    : "rounded-full border border-navy/15 px-3 py-1 text-navy"
+                }
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
         </div>
         <TrustQualityBatchButton />
       </div>
@@ -55,13 +93,17 @@ export default async function AdminListingHealthPage({
           const flags = Array.isArray(row.listing_quality_flags)
             ? (row.listing_quality_flags as string[])
             : [];
+          const isVehicle = normalizeAssetType(row.asset_type) === "VEHICLE";
           return (
             <li
               key={row.id}
               className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm"
             >
+              <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted">
+                {isVehicle ? "Vehicle" : "Property"}
+              </div>
               <Link
-                href={propertyPath(row)}
+                href={listingPath(row)}
                 className="font-semibold text-navy hover:underline"
               >
                 {row.title}
@@ -82,6 +124,12 @@ export default async function AdminListingHealthPage({
                   ))}
                 </ul>
               )}
+              <Link
+                href={`/lex/auth/listings/${row.id}`}
+                className="mt-2 inline-block text-xs font-semibold text-gold-dark"
+              >
+                Moderate in Lex →
+              </Link>
             </li>
           );
         })}

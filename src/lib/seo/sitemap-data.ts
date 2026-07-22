@@ -2,22 +2,33 @@ import { createVerifiedAdminClient, isAdminClientConfigured } from "@/lib/supaba
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isProductionEnv } from "@/lib/env";
 import { MOCK_LISTINGS } from "@/lib/mock-listings";
-import { propertyPublicSlug } from "@/lib/property-slugs";
+import { listingPath } from "@/lib/marketplace/listing-path";
+import { normalizeAssetType } from "@/lib/marketplace/listings";
 
-function mockSitemapEntries(limit: number): SitemapPropertyEntry[] {
+function mockSitemapEntries(limit: number): SitemapListingEntry[] {
   if (isProductionEnv() || isSupabaseConfigured()) return [];
   return MOCK_LISTINGS.slice(0, limit).map((p) => ({
-    path: propertyPublicSlug(p),
+    path: listingPath({
+      id: p.id,
+      slug: p.slug,
+      asset_type: normalizeAssetType(
+        (p as { asset_type?: string }).asset_type,
+      ),
+    }),
     updated_at: p.updated_at,
   }));
 }
 
-export type SitemapPropertyEntry = { path: string; updated_at?: string };
+/** Absolute marketplace path (e.g. /properties/… or /vehicles/…). */
+export type SitemapListingEntry = { path: string; updated_at?: string };
 
-/** Build-safe property paths for sitemap (slug preferred). */
+/** @deprecated alias — use SitemapListingEntry */
+export type SitemapPropertyEntry = SitemapListingEntry;
+
+/** Build-safe listing paths for sitemap (canonical listingPath). */
 export async function getSitemapPropertyEntries(
   limit = 5000
-): Promise<SitemapPropertyEntry[]> {
+): Promise<SitemapListingEntry[]> {
   if (!isSupabaseConfigured()) {
     return mockSitemapEntries(limit);
   }
@@ -31,7 +42,7 @@ export async function getSitemapPropertyEntries(
 
   const { data } = await admin
     .from("properties")
-    .select("id, slug, updated_at")
+    .select("id, slug, updated_at, asset_type")
     .eq("status", "approved")
     .gt("expires_at", new Date().toISOString())
     .order("updated_at", { ascending: false })
@@ -41,11 +52,16 @@ export async function getSitemapPropertyEntries(
     id: string;
     slug: string | null;
     updated_at: string;
+    asset_type?: string | null;
   }[];
 
   if (rows.length > 0) {
     return rows.map((r) => ({
-      path: r.slug ?? r.id,
+      path: listingPath({
+        id: r.id,
+        slug: r.slug,
+        asset_type: r.asset_type,
+      }),
       updated_at: r.updated_at,
     }));
   }

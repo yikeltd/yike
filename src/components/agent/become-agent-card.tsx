@@ -25,6 +25,11 @@ const ACCOUNT_TYPES: { id: AccountType; label: string; hint: string }[] = [
     label: "Developer",
     hint: "Real estate developers and property development companies",
   },
+  {
+    id: "dealer",
+    label: "Vehicle dealer",
+    hint: "Car / vehicle dealership storefront",
+  },
 ];
 
 export function BecomeAgentCard({

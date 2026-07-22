@@ -27,6 +27,7 @@ import {
   buildStateBrowseHref,
   resolveSearchResults,
 } from "@/lib/search-fallback";
+import { MarketplaceVerticalSwitcher } from "@/components/marketplace/vertical-switcher";
 
 export const metadata: Metadata = {
   title: `Search Homes in Nigeria`,
@@ -115,6 +116,9 @@ export default async function SearchPage({
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
       <PrefSync />
+      <div className="px-3 pt-3">
+        <MarketplaceVerticalSwitcher active="property" />
+      </div>
       <Suspense fallback={<ResultsFallback />}>
         <SearchResultsChrome
           resultCount={exactCount}

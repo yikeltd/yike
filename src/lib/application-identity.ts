@@ -9,6 +9,9 @@ export const APPLICATION_IDENTITY = {
   defaultDomain: "https://yike.ng",
   healthEndpoint: "/api/public-health",
   supportContact: "hello@yike.ng",
+  supabaseProjectRef: "hlpojfurfldvcxfxhveg",
+  supabaseOrganization: "Stankings Group",
+  supabaseEnvironment: "production",
 } as const;
 
 export type ApplicationIdentity = typeof APPLICATION_IDENTITY & {

@@ -35,7 +35,7 @@ import { optimizeListingImageUrl } from "@/lib/image-url";
 import { ListingFreshness, getListingFreshness } from "./listing-freshness";
 import { AmenityChips } from "./amenity-chips";
 import { formatMoveInHint } from "@/lib/rent-breakdown";
-import { propertyPath } from "@/lib/property-url";
+import { listingPath } from "@/lib/marketplace/listing-path";
 import { AgentListingChip } from "./agent-listing-chip";
 import { ListingLikeButton } from "@/components/social/listing-like-button";
 import {
@@ -74,7 +74,7 @@ export function PropertyCard({
     property.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
   const hasAgent = !!agent?.id;
   const isDemo = isDemoProperty(property.id);
-  const href = propertyPath(property);
+  const href = listingPath(property);
   const featuredActive = isFeaturedActive(property);
 
   useEffect(() => {

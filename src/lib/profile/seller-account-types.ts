@@ -11,6 +11,7 @@ export const LISTING_SELLER_ACCOUNT_TYPES: {
   { value: "landlord", label: "Landlord" },
   { value: "agency", label: "Company" },
   { value: "developer", label: "Developer" },
+  { value: "dealer", label: "Dealer" },
 ];
 
 const LISTING_SELLER_SET = new Set<AccountType>(
@@ -37,6 +38,7 @@ export function accountTypeToSellerType(
   if (accountType === "developer") return "developer";
   if (accountType === "landlord") return "landlord";
   if (accountType === "agent") return "agent";
+  if (accountType === "dealer") return "agent";
   if (accountType === "individual") return "individual";
   return null;
 }

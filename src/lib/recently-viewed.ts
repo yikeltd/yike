@@ -11,6 +11,9 @@ export type RecentlyViewedItem = {
   area: string;
   priceLabel: string;
   viewedAt: number;
+  /** Public href — defaults to /properties/{id} for legacy entries */
+  href?: string;
+  assetType?: "PROPERTY" | "VEHICLE";
 };
 
 export function getRecentlyViewed(): RecentlyViewedItem[] {

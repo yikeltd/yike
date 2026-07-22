@@ -30,6 +30,7 @@ const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   agency: "Agency",
   developer: "Developer",
   landlord: "Landlord",
+  dealer: "Dealer",
   city_ambassador: "City Ambassador",
   field_verifier: "Field Verifier",
   legal_partner: "Legal Partner",

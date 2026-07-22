@@ -16,7 +16,12 @@ import { cn } from "@/lib/utils";
 export default async function AdminListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string; agent?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    page?: string;
+    agent?: string;
+    vertical?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const tabs = ["pending", "approved", "hidden", "rejected"] as const;
@@ -24,6 +29,7 @@ export default async function AdminListingsPage({
     redirect(adminListingsPath("pending"));
   }
   const status = sp.status;
+  const vertical = sp.vertical === "vehicle" ? "vehicle" : sp.vertical === "property" ? "property" : "all";
   const { page, from, to } = parseAdminPage(sp);
   const supabase = await requireServerClient();
 
@@ -38,12 +44,16 @@ export default async function AdminListingsPage({
     .range(from, to);
 
   if (sp.agent) query = query.eq("agent_id", sp.agent);
+  if (vertical === "vehicle") query = query.eq("asset_type", "VEHICLE");
+  if (vertical === "property") {
+    query = query.or("asset_type.eq.PROPERTY,asset_type.is.null");
+  }
 
   const { data, count } = await query;
   const listings = (data ?? []) as (Property & { agent: Profile })[];
   const total = count ?? 0;
 
-  const pageParams = { status, agent: sp.agent };
+  const pageParams = { status, agent: sp.agent, vertical: vertical === "all" ? undefined : vertical };
 
   return (
     <div className="space-y-6 pb-8">
@@ -52,6 +62,30 @@ export default async function AdminListingsPage({
           Moderate listings
         </h1>
         <p className="text-sm text-muted">{total} in queue</p>
+        <div className="mt-2 flex flex-wrap gap-2 text-sm">
+          {(
+            [
+              ["all", "All"],
+              ["property", "Property"],
+              ["vehicle", "Vehicles"],
+            ] as const
+          ).map(([key, label]) => (
+            <Link
+              key={key}
+              href={adminListingsPath(status, {
+                ...(sp.agent ? { agent: sp.agent } : {}),
+                ...(key !== "all" ? { vertical: key } : {}),
+              })}
+              className={
+                vertical === key || (key === "all" && vertical === "all")
+                  ? "font-bold text-gold-dark"
+                  : "text-muted hover:text-navy"
+              }
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
         <Link
           href="/lex/auth/listings/review"
           className="mt-2 inline-block text-sm font-bold text-gold-dark hover:underline"

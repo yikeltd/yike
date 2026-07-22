@@ -31,6 +31,9 @@ if [[ ! -d supabase/migrations ]]; then
   exit 1
 fi
 
+echo "Verifying Supabase project identity..."
+node scripts/verify-supabase-project.mjs --require-linked
+
 echo "Linking Supabase project ${PROJECT_REF}..."
 supabase link --project-ref "$PROJECT_REF" --yes
 

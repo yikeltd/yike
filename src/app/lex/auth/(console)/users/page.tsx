@@ -23,6 +23,7 @@ const FILTERS: AdminUserFilter[] = [
   "landlords",
   "developers",
   "companies",
+  "dealers",
   "staff",
   "missing_profile",
   "suspended",

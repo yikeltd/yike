@@ -61,6 +61,7 @@ async function queryPublicPropertiesRows(
     .select(PUBLIC_SELECT)
     .eq("status", "approved")
     .gt("expires_at", new Date().toISOString())
+    .or("asset_type.eq.PROPERTY,asset_type.is.null")
     .order("created_at", { ascending: false })
     .limit(Math.min(Math.max(limit + 12, limit * 2), 60));
 

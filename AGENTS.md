@@ -34,3 +34,10 @@ node scripts/optimize-brand-assets.mjs   # regenerate favicons from logo.png
 - **Migrations:** `supabase/migrations/` — apply **only new** files (SQL Editor on production, or `npm run db:push` locally). Do not re-run migrations already on production.
 - **Check status:** `npm run db:status` (requires linked CLI)
 - Admin console (private): `/lex` — staff login · `/lex/auth` command center · `/lex/support` · `/lex/tech`. Seed admin: `SUPABASE_SERVICE_ROLE_KEY=... npm run admin:ensure`
+
+## Architecture baseline
+
+- Audit approved 2026-07-22 — Yike is the **Stankings Marketplace Platform**
+- Docs: `docs/architecture/ECOSYSTEM_ALIGNMENT.md`, `PASSPORT_INTEGRATION_READINESS.md`, `docs/launch/`
+- Launch gates: `src/lib/launch-mode/` — Vehicles pending until Passport prep complete
+- Do **not** rebuild Passport, Trust Engine, or Payments (BayRight) inside Yike

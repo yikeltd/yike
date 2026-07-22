@@ -106,6 +106,31 @@ export function CeoDashboard({ metrics }: { metrics: CeoDashboardMetrics }) {
             href={adminPath("listings")}
           />
           <MetricCard
+            label="Property · today"
+            value={metrics.supply.propertyToday}
+            href={`${adminPath("listings")}?vertical=property`}
+          />
+          <MetricCard
+            label="Vehicles · today"
+            value={metrics.supply.vehicleToday}
+            href={`${adminPath("listings")}?vertical=vehicle`}
+          />
+          <MetricCard
+            label="Property · month"
+            value={metrics.supply.propertyThisMonth}
+            href={`${adminPath("listings")}?vertical=property`}
+          />
+          <MetricCard
+            label="Vehicles · month"
+            value={metrics.supply.vehicleThisMonth}
+            href={`${adminPath("listings")}?vertical=vehicle`}
+          />
+          <MetricCard
+            label="Dealers"
+            value={metrics.supply.dealersTotal}
+            href={`${adminPath("users")}?filter=dealers`}
+          />
+          <MetricCard
             label="New users today"
             value={metrics.users.newToday}
             href={adminPath("users")}
@@ -162,9 +187,13 @@ export function CeoDashboard({ metrics }: { metrics: CeoDashboardMetrics }) {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid gap-4 lg:grid-cols-3">
         <RankList title="Top cities" items={metrics.topCities} />
-        <RankList title="Top categories" items={metrics.topCategories} />
+        <RankList title="Top property categories" items={metrics.topCategories} />
+        <RankList
+          title="Top vehicle categories"
+          items={metrics.topVehicleCategories}
+        />
       </section>
 
       <section>

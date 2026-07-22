@@ -12,7 +12,8 @@ import {
   isListingPubliclyActive,
   isListingUnderReview,
 } from "@/lib/listing-lifecycle";
-import { propertyPath } from "@/lib/property-url";
+import { listingPath } from "@/lib/marketplace/listing-path";
+import { normalizeAssetType } from "@/lib/marketplace/listings";
 import {
   clearListingDraft,
   draftDisplayLabel,
@@ -20,6 +21,13 @@ import {
   loadListingDraft,
   type ListingDraft,
 } from "@/lib/listing-draft";
+import {
+  clearVehicleDraft,
+  loadVehicleDraft,
+  vehicleDraftLabel,
+  type VehicleDraft,
+} from "@/lib/marketplace/vehicle-draft";
+import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { cn } from "@/lib/utils";
 import { PromoteListingModal } from "@/components/agent/promote-listing-modal";
 import { isBoostedActive, isFeaturedActive } from "@/lib/agent-tiers";
@@ -45,10 +53,13 @@ export function AgentListingsClient({
   const [tab, setTab] = useState<Tab>("all");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [localDraft, setLocalDraft] = useState<ListingDraft | null>(null);
+  const [vehicleDraft, setVehicleDraft] = useState<VehicleDraft | null>(null);
   const [promoteListing, setPromoteListing] = useState<Property | null>(null);
+  const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
 
   useEffect(() => {
     setLocalDraft(loadListingDraft(agentId));
+    setVehicleDraft(loadVehicleDraft(agentId));
   }, [agentId]);
 
   const filtered = useMemo(() => {
@@ -94,11 +105,18 @@ export function AgentListingsClient({
 
   return (
     <div className="space-y-4 px-3 pt-2 pb-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold">My listings</h1>
-        <Link href="/agent/listings/new" className="text-sm font-medium text-primary">
-          + Add listing
-        </Link>
+        <div className="flex flex-wrap gap-2 text-sm font-medium">
+          <Link href="/agent/listings/new" className="text-primary">
+            + Property
+          </Link>
+          {vehiclesOn ? (
+            <Link href="/agent/listings/new/vehicle" className="text-primary">
+              + Vehicle
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <nav className="hide-scrollbar flex gap-1 overflow-x-auto rounded-xl border border-navy/10 bg-white p-1">
@@ -116,6 +134,31 @@ export function AgentListingsClient({
           </button>
         ))}
       </nav>
+
+      {tab === "all" && vehicleDraft && vehiclesOn ? (
+        <div className="card-shadow rounded-xl border border-navy/15 bg-navy/5 p-3">
+          <p className="font-medium line-clamp-1">{vehicleDraftLabel(vehicleDraft)}</p>
+          <p className="text-sm text-muted">Vehicle draft — not submitted</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/agent/listings/new/vehicle"
+              className="rounded-lg bg-gold px-3 py-1.5 text-xs font-bold text-navy"
+            >
+              Continue vehicle draft
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                clearVehicleDraft(agentId);
+                setVehicleDraft(null);
+              }}
+              className="rounded-lg bg-surface px-3 py-1.5 text-xs font-bold text-danger"
+            >
+              Delete draft
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {tab === "all" && localDraft ? (
         <div className="card-shadow rounded-xl border border-gold/30 bg-gold/5 p-3">
@@ -187,8 +230,10 @@ export function AgentListingsClient({
               isListingUnderReview(p) ||
               p.status === "rejected" ||
               p.status === "hidden";
+            const isVehicle = normalizeAssetType(p.asset_type) === "VEHICLE";
+            const publicHref = listingPath(p);
             const listingHref = previewListing
-              ? propertyPath(p)
+              ? publicHref
               : `/agent/listings/${p.id}/edit`;
             return (
               <li
@@ -211,6 +256,9 @@ export function AgentListingsClient({
                       {formatPrice(Number(p.price), p.payment_period, p.listing_type)}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-navy/8 px-2 py-0.5 text-[10px] font-bold uppercase text-navy">
+                        {isVehicle ? "Vehicle" : "Property"}
+                      </span>
                       <StatusBadge status={p.status} />
                       {expired ? (
                         <span className="text-[10px] font-bold text-amber-700">Expired</span>
@@ -272,11 +320,13 @@ export function AgentListingsClient({
                   )}
                   {p.status === "approved" && !expired && (
                     <>
-                      <ActionBtn
-                        disabled={busyId === p.id}
-                        onClick={() => runAction(p.id, "mark_rented")}
-                        label="Rented"
-                      />
+                      {!isVehicle ? (
+                        <ActionBtn
+                          disabled={busyId === p.id}
+                          onClick={() => runAction(p.id, "mark_rented")}
+                          label="Rented"
+                        />
+                      ) : null}
                       <ActionBtn
                         disabled={busyId === p.id}
                         onClick={() => runAction(p.id, "mark_sold")}
@@ -304,6 +354,12 @@ export function AgentListingsClient({
                       label="Archive"
                     />
                   )}
+                  <Link
+                    href={publicHref}
+                    className="rounded-lg bg-surface px-3 py-1.5 text-xs font-bold text-navy"
+                  >
+                    View
+                  </Link>
                   <Link
                     href={`/agent/listings/${p.id}/edit`}
                     className="rounded-lg bg-surface px-3 py-1.5 text-xs font-bold text-navy"

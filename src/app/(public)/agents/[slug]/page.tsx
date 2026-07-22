@@ -17,6 +17,11 @@ import { getSession } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { getProfileSocialStats } from "@/lib/social/stats";
 import { agentCanonical } from "@/lib/seo/utils";
+import { normalizeAssetType } from "@/lib/marketplace/listings";
+import { VehicleCard } from "@/components/marketplace/vehicle-card";
+import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { PassportReadinessNotice } from "@/components/marketplace/passport-readiness";
+import { MarketplaceSafetyNotice } from "@/components/marketplace/safety-notice";
 
 export async function generateMetadata({
   params,
@@ -27,10 +32,16 @@ export async function generateMetadata({
   const { agent, redirectTo } = await resolveAgentRoute(slug);
   if (redirectTo || !agent) return { title: "Agent | Yike" };
   const name = agent.company_name?.trim() || agent.full_name?.trim() || "Agent";
+  const roleLabel =
+    agent.account_type === "dealer"
+      ? "dealer"
+      : agent.account_type === "agency"
+        ? "agency"
+        : "seller";
   const canonicalSlug = agent.public_slug ?? slug;
   return {
     title: `${name} | Yike`,
-    description: `Browse verified property listings from ${name} on Yike.ng`,
+    description: `Browse marketplace listings from ${name} (${roleLabel}) on Yike.ng`,
     alternates: { canonical: agentCanonical(canonicalSlug) },
     robots:
       agent.profile_status === "suspended" || agent.profile_status === "deleted"
@@ -60,6 +71,14 @@ export default async function AgentProfilePage({
   const isDemo = listings.every((p) => isDemoProperty(p.id));
   const suspended = agent.profile_status === "suspended";
   const showListings = !suspended && agent.profile_status !== "deleted";
+  const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
+  const propertyListings = listings.filter(
+    (p) => normalizeAssetType(p.asset_type) === "PROPERTY",
+  );
+  const vehicleListings = listings.filter(
+    (p) => normalizeAssetType(p.asset_type) === "VEHICLE",
+  );
+  const isDealer = agent.account_type === "dealer";
 
   return (
     <div className="space-y-6 px-3 pt-2 pb-8 lg:px-0 lg:pt-8">
@@ -79,6 +98,12 @@ export default async function AgentProfilePage({
             viewerId={viewer?.id}
           />
 
+          <PassportReadinessNotice accountType={agent.account_type} />
+
+          <MarketplaceSafetyNotice
+            vertical={isDealer ? "dealer" : "seller"}
+          />
+
           <AgencyDeveloperProfileSections agent={agent} listings={listings} />
 
           <AgentReviewsSection
@@ -87,15 +112,46 @@ export default async function AgentProfilePage({
           />
 
           {showListings && (
-            <section>
-              <h2 className="mb-3 px-1 text-sm font-bold text-navy lg:text-base">
-                Active listings
-              </h2>
-              <PropertyFeed
-                properties={listings}
-                isDemo={isDemo}
-                emptyMessage="No active listings from this agent right now."
-              />
+            <section className="space-y-6">
+              {isDealer ? (
+                <p className="rounded-xl border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-semibold text-navy">
+                  Dealer storefront — inventory below. Passport verification will
+                  strengthen trust when Stankings activates it.
+                </p>
+              ) : null}
+              {propertyListings.length > 0 ? (
+                <div>
+                  <h2 className="mb-3 px-1 text-sm font-bold text-navy lg:text-base">
+                    Properties ({propertyListings.length})
+                  </h2>
+                  <PropertyFeed
+                    properties={propertyListings}
+                    isDemo={isDemo}
+                    emptyMessage="No active property listings."
+                  />
+                </div>
+              ) : null}
+              {vehiclesOn && vehicleListings.length > 0 ? (
+                <div>
+                  <h2 className="mb-3 px-1 text-sm font-bold text-navy lg:text-base">
+                    Vehicles ({vehicleListings.length})
+                  </h2>
+                  <ul className="grid gap-4 sm:grid-cols-2">
+                    {vehicleListings.map((v) => (
+                      <li key={v.id}>
+                        <VehicleCard vehicle={v} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {propertyListings.length === 0 &&
+              (!vehiclesOn || vehicleListings.length === 0) ? (
+                <p className="text-sm text-muted">
+                  No active listings from this {isDealer ? "dealer" : "seller"} right
+                  now.
+                </p>
+              ) : null}
             </section>
           )}
         </div>

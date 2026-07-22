@@ -20,6 +20,11 @@ export type CeoDashboardMetrics = {
   supply: {
     listingsToday: number;
     listingsThisMonth: number;
+    propertyToday: number;
+    propertyThisMonth: number;
+    vehicleToday: number;
+    vehicleThisMonth: number;
+    dealersTotal: number;
   };
   users: {
     newToday: number;
@@ -36,6 +41,7 @@ export type CeoDashboardMetrics = {
   };
   topCities: RankedCount[];
   topCategories: RankedCount[];
+  topVehicleCategories: RankedCount[];
   conversion: {
     viewToInquiryRate: number;
     whatsappFunnelRate: number;
@@ -99,13 +105,19 @@ async function countProfilesSince(
 async function countPropertiesSince(
   admin: SupabaseClient,
   sinceIso: string,
-  status?: string
+  status?: string,
+  assetType?: "PROPERTY" | "VEHICLE"
 ): Promise<number> {
   let query = admin
     .from("properties")
     .select("*", { count: "exact", head: true })
     .gte("created_at", sinceIso);
   if (status) query = query.eq("status", status);
+  if (assetType === "VEHICLE") {
+    query = query.eq("asset_type", "VEHICLE");
+  } else if (assetType === "PROPERTY") {
+    query = query.or("asset_type.eq.PROPERTY,asset_type.is.null");
+  }
   const { count } = await query;
   return count ?? 0;
 }
@@ -193,6 +205,11 @@ export async function getCeoDashboardMetrics(
   const [
     listingsToday,
     listingsThisMonth,
+    propertyToday,
+    propertyThisMonth,
+    vehicleToday,
+    vehicleThisMonth,
+    dealersTotal,
     newUsersToday,
     newUsersThisMonth,
     newAgentsThisMonth,
@@ -210,10 +227,20 @@ export async function getCeoDashboardMetrics(
     funnelLeads,
     cityRows,
     categoryRows,
+    vehicleCategoryRows,
     engagementRows,
   ] = await Promise.all([
     countPropertiesSince(admin, todayStart),
     countPropertiesSince(admin, monthStart),
+    countPropertiesSince(admin, todayStart, undefined, "PROPERTY"),
+    countPropertiesSince(admin, monthStart, undefined, "PROPERTY"),
+    countPropertiesSince(admin, todayStart, undefined, "VEHICLE"),
+    countPropertiesSince(admin, monthStart, undefined, "VEHICLE"),
+    admin
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("account_type", "dealer")
+      .then((r) => r.count ?? 0),
     countProfilesSince(admin, todayStart, CONSUMER_ROLES),
     countProfilesSince(admin, monthStart, CONSUMER_ROLES),
     countProfilesSince(admin, monthStart, [
@@ -248,7 +275,15 @@ export async function getCeoDashboardMetrics(
       .from("properties")
       .select("property_type")
       .eq("status", "approved")
+      .or("asset_type.eq.PROPERTY,asset_type.is.null")
       .not("property_type", "is", null)
+      .limit(5000),
+    admin
+      .from("properties")
+      .select("auto_category")
+      .eq("status", "approved")
+      .eq("asset_type", "VEHICLE")
+      .not("auto_category", "is", null)
       .limit(5000),
     admin.from("properties").select("views_count, contact_clicks").eq("status", "approved"),
   ]);
@@ -262,6 +297,11 @@ export async function getCeoDashboardMetrics(
     supply: {
       listingsToday,
       listingsThisMonth,
+      propertyToday,
+      propertyThisMonth,
+      vehicleToday,
+      vehicleThisMonth,
+      dealersTotal,
     },
     users: {
       newToday: newUsersToday,
@@ -283,6 +323,12 @@ export async function getCeoDashboardMetrics(
     topCategories: aggregateCounts(
       (categoryRows.data ?? []).map((r) => ({ key: r.property_type as string })),
       (key) => getPropertyCategoryLabel(key)
+    ),
+    topVehicleCategories: aggregateCounts(
+      (vehicleCategoryRows.data ?? []).map((r) => ({
+        key: r.auto_category as string,
+      })),
+      (key) => key.replace(/_/g, " ")
     ),
     conversion: {
       viewToInquiryRate: pct(totalClicks, totalViews),

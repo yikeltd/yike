@@ -51,7 +51,7 @@ export function SavedHub({ properties }: { properties: Property[] }) {
       {tab === "saved" && (
         <PropertyFeed
           properties={properties}
-          emptyMessage="No saved listings yet. Tap the heart on any home."
+          emptyMessage="No saved listings yet. Tap the heart on any property or vehicle."
         />
       )}
 
@@ -91,13 +91,13 @@ export function SavedHub({ properties }: { properties: Property[] }) {
         <div className="grid gap-3 sm:grid-cols-2">
           {recent.length === 0 ? (
             <p className="col-span-full rounded-2xl bg-surface p-6 text-center text-sm text-muted">
-              Homes you view will appear here for quick access.
+              Listings you view will appear here for quick access.
             </p>
           ) : (
             recent.map((v) => (
               <Link
                 key={v.id}
-                href={`/properties/${v.id}`}
+                href={v.href || `/properties/${v.id}`}
                 className="pressable flex gap-3 rounded-xl bg-elevated p-3 shadow-sm"
               >
                 <div

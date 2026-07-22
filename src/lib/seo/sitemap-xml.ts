@@ -60,6 +60,7 @@ function staticSitemapEntries(): SitemapUrlEntry[] {
   }> = [
     { path: "", changeFrequency: "daily", priority: 1 },
     { path: "/search", changeFrequency: "daily", priority: 0.95 },
+    { path: "/vehicles", changeFrequency: "daily", priority: 0.94 },
     { path: "/rent", changeFrequency: "daily", priority: 0.9 },
     { path: "/buy", changeFrequency: "daily", priority: 0.9 },
     { path: "/land", changeFrequency: "daily", priority: 0.9 },
@@ -167,14 +168,17 @@ export async function getAllSitemapUrls(): Promise<SitemapUrlEntry[]> {
     getSitemapAgentEntries(),
   ]);
 
-  const propertyUrls: SitemapUrlEntry[] = propertyEntries.map((entry) => ({
-    loc: `${SITE_URL}/properties/${entry.path}`,
-    lastmod: entry.updated_at
-      ? new Date(entry.updated_at).toISOString().slice(0, 10)
-      : undefined,
-    changefreq: "daily",
-    priority: 0.82,
-  }));
+  const propertyUrls: SitemapUrlEntry[] = propertyEntries.map((entry) => {
+    const path = entry.path.startsWith("/") ? entry.path : `/${entry.path}`;
+    return {
+      loc: `${SITE_URL}${path}`,
+      lastmod: entry.updated_at
+        ? new Date(entry.updated_at).toISOString().slice(0, 10)
+        : undefined,
+      changefreq: "daily" as const,
+      priority: path.startsWith("/vehicles/") ? 0.83 : 0.82,
+    };
+  });
 
   const agentUrls: SitemapUrlEntry[] = agentEntries.map((entry) => ({
     loc: `${SITE_URL}/agents/${entry.slug}`,

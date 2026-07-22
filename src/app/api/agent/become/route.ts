@@ -18,6 +18,7 @@ const ALLOWED_ACCOUNT_TYPES = new Set<AccountType>([
   "agency",
   "landlord",
   "developer",
+  "dealer",
 ]);
 
 const LISTER_ROLES = new Set<UserRole>([

@@ -12,4 +12,6 @@ Infrastructure **frozen**. Coolify only. Ship product.
 | Logging | [LOGGING_STANDARD.md](./LOGGING_STANDARD.md) |
 | Identity | [PROJECT_IDENTITY.md](./PROJECT_IDENTITY.md) |
 
+Ecosystem / launch ops: `docs/architecture/ECOSYSTEM_ALIGNMENT.md`, `docs/launch/`.
+
 No new deployment platforms without founder approval.

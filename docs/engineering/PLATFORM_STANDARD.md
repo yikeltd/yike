@@ -49,6 +49,17 @@ Hetzner (shared host, per-product containers)
 | Yike | `docs/engineering/DEPLOYMENT_STANDARD.md` | `GET /api/public-health` |
 | BayRight | `docs/coolify-deployment.md` | `GET /api/health` |
 
+## Yike ecosystem alignment
+
+Marketplace role, ownership boundaries, and Passport prep:
+
+- `docs/architecture/ECOSYSTEM_ALIGNMENT.md`
+- `docs/architecture/PLATFORM_RESPONSIBILITIES.md`
+- `docs/architecture/PASSPORT_INTEGRATION_READINESS.md`
+- `docs/launch/` (ops checklists)
+
+CI: GitHub Actions workflow `.github/workflows/pr-checks.yml` (lint · typecheck · build).
+
 ## Deployment metadata (standard)
 
 See `src/lib/deploy-metadata.ts`. Health: `GET /api/public-health`.

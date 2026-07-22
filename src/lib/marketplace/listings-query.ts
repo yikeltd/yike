@@ -4,6 +4,7 @@ import type {
   MarketplaceListingRow,
   SearchListingsResult,
 } from "@/lib/search/types";
+import { normalizeAssetType } from "@/lib/marketplace/listings";
 
 const LISTING_SELECT = `
   id,
@@ -29,9 +30,13 @@ const LISTING_SELECT = `
 
 export type { ListingFeedParams };
 
+/**
+ * Marketplace feed over the `listings` SSOT view.
+ * Falls back to empty on missing migration / view errors.
+ */
 export async function queryListingFeed(
   client: SupabaseClient,
-  params: ListingFeedParams = {}
+  params: ListingFeedParams = {},
 ): Promise<SearchListingsResult> {
   const page = Math.max(1, params.page ?? 1);
   const limit = Math.min(Math.max(params.limit ?? 12, 1), 48);
@@ -45,7 +50,10 @@ export async function queryListingFeed(
     .order("created_at", { ascending: false })
     .range(from, to);
 
-  if (params.assetType) query = query.eq("asset_type", params.assetType);
+  if (params.assetType) {
+    const asset = normalizeAssetType(params.assetType);
+    query = query.eq("asset_type", asset);
+  }
   if (params.autoCategory) query = query.eq("auto_category", params.autoCategory);
   if (params.state) query = query.ilike("state", `%${params.state}%`);
   if (params.city) query = query.ilike("city", `%${params.city}%`);
@@ -53,7 +61,7 @@ export async function queryListingFeed(
   if (params.maxPrice != null) query = query.lte("price", params.maxPrice);
   if (params.q) {
     query = query.or(
-      `title.ilike.%${params.q}%,description.ilike.%${params.q}%,city.ilike.%${params.q}%`
+      `title.ilike.%${params.q}%,description.ilike.%${params.q}%,city.ilike.%${params.q}%`,
     );
   }
   if (params.moderationApprovedOnly !== false) {
@@ -68,7 +76,10 @@ export async function queryListingFeed(
     return { items: [], total: 0, page, limit, hasMore: false };
   }
 
-  const items = (data ?? []) as MarketplaceListingRow[];
+  const items = ((data ?? []) as MarketplaceListingRow[]).map((row) => ({
+    ...row,
+    asset_type: normalizeAssetType(row.asset_type),
+  }));
   const total = count ?? items.length;
 
   return {

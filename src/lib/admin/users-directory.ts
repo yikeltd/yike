@@ -9,6 +9,7 @@ export type AdminUserFilter =
   | "landlords"
   | "developers"
   | "companies"
+  | "dealers"
   | "staff"
   | "missing_profile"
   | "suspended"
@@ -32,6 +33,7 @@ export type AdminDirectoryRow = {
     | "landlord"
     | "developer"
     | "company"
+    | "dealer"
     | "staff"
     | "ghost";
   email_verified: boolean | null;
@@ -69,6 +71,7 @@ function classifyProfile(row: {
   if (accountType === "landlord") return "landlord";
   if (accountType === "developer") return "developer";
   if (accountType === "agency") return "company";
+  if (accountType === "dealer") return "dealer";
   if (accountType === "agent") return "agent";
   if (AGENT_ROLES.includes(role as (typeof AGENT_ROLES)[number])) return "agent";
   if (row.company_name?.trim()) return "company";
@@ -91,6 +94,8 @@ function matchesFilter(row: AdminDirectoryRow, filter: AdminUserFilter): boolean
       return row.account_kind === "developer";
     case "companies":
       return row.account_kind === "company";
+    case "dealers":
+      return row.account_kind === "dealer";
     case "staff":
       return row.account_kind === "staff";
     case "missing_profile":

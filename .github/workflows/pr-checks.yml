@@ -1,0 +1,43 @@
+name: PR Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: pr-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-gates:
+    name: Install · Lint · Typecheck · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      # Build-time public placeholders — Coolify injects real values at deploy
+      NEXT_PUBLIC_SUPABASE_URL: https://hlpojfurfldvcxfxhveg.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      NEXT_PUBLIC_SITE_URL: https://yike.ng
+      APP_ENV: ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build

@@ -1,4 +1,7 @@
-export type AssetType = "PROPERTY" | "AUTO";
+export type AssetType = "PROPERTY" | "VEHICLE";
+
+/** @deprecated Use VEHICLE */
+export type LegacyAutoAssetType = "AUTO";
 
 export type UserRole =
   | "user"
@@ -151,6 +154,7 @@ export type AccountType =
   | "agency"
   | "developer"
   | "landlord"
+  | "dealer"
   | "city_ambassador"
   | "field_verifier"
   | "legal_partner"
@@ -560,6 +564,26 @@ export interface SupportViewSessionRow {
 export interface Property {
   id: string;
   agent_id: string;
+  /** Marketplace vertical — PROPERTY (default) | VEHICLE */
+  asset_type?: AssetType;
+  auto_category?: string | null;
+  vehicle_condition?: string | null;
+  attributes?: Record<string, unknown> | null;
+  make?: string | null;
+  model?: string | null;
+  year?: number | null;
+  trim?: string | null;
+  transmission?: string | null;
+  fuel_type?: string | null;
+  mileage?: number | null;
+  vin?: string | null;
+  exterior_color?: string | null;
+  interior_color?: string | null;
+  body_type?: string | null;
+  drivetrain?: string | null;
+  engine?: string | null;
+  registration_status?: string | null;
+  financing_available?: boolean;
   slug: string | null;
   slug_locked: boolean;
   seo_title: string | null;

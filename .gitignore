@@ -26,7 +26,16 @@
 .cursor/
 scripts/.seed-*.sql
 yike.txt
+
+# secrets & key material — never commit
 *.pem
+*.cer
+*.p12
+*.pfx
+*.key
+safehaven-keys/
+**/privatekey.pem
+**/publickey.cer
 
 # debug
 npm-debug.log*
@@ -41,7 +50,7 @@ yarn-error.log*
 # supabase local
 supabase/.temp/
 
-# vercel
+# vercel (legacy — Coolify only)
 .vercel
 
 # typescript

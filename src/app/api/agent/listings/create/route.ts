@@ -218,9 +218,42 @@ export async function POST(request: Request) {
   const fullRow = stripOptionalFields({ ...minimal, ...pricingFields });
 
   if (listingId) {
+    const { data: existing } = await supabase
+      .from("properties")
+      .select("id, status, extras")
+      .eq("id", listingId)
+      .eq("agent_id", user.id)
+      .maybeSingle();
+
+    const stayLive = existing?.status === "approved";
+    const prevExtras =
+      existing?.extras &&
+      typeof existing.extras === "object" &&
+      !Array.isArray(existing.extras)
+        ? (existing.extras as Record<string, unknown>)
+        : {};
+    const updateRow = {
+      ...fullRow,
+      status: stayLive ? "approved" : "pending",
+      extras: {
+        ...prevExtras,
+        ...(typeof fullRow.extras === "object" &&
+        fullRow.extras &&
+        !Array.isArray(fullRow.extras)
+          ? (fullRow.extras as Record<string, unknown>)
+          : {}),
+        ...(stayLive
+          ? {
+              content_review_requested: true,
+              content_review_at: new Date().toISOString(),
+            }
+          : {}),
+      },
+    };
+
     const { data: updated, error: updateError } = await supabase
       .from("properties")
-      .update(fullRow)
+      .update(updateRow)
       .eq("id", listingId)
       .eq("agent_id", user.id)
       .select("id")
@@ -231,6 +264,7 @@ export async function POST(request: Request) {
         userId: user.id,
         listingId: updated.id,
         mode: "update",
+        softLive: stayLive,
         durationMs: Date.now() - startedAt,
       });
       return NextResponse.json({ ok: true, listingId: updated.id });
