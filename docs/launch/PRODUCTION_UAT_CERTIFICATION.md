@@ -38,18 +38,18 @@ UAT listing cleaned up — no leftover public inventory.
 | `profiles.account_type` includes `dealer` | PASS |
 | Migration listed local+remote | `20260722180232` synced |
 
-### HTTP smoke (pre-/post-deploy) — PARTIAL
+### HTTP smoke (post-Coolify deploy) — PASS
 
 | Endpoint | HTTP | Notes |
 |----------|------|-------|
-| `/api/public-health` | 200 | `status=ok` · commit still reports `local` (Coolify SHA env not wired / prior build) |
-| `/` `/search` `/vehicles` `/sitemap.xml` | 200 | Live |
-| Sitemap `/vehicles` URLs | Pending new build | Current sitemap lacks `/vehicles` index entry — expected until Coolify deploys `67338ed3` |
-| New Vehicles UI copy | Pending new build | HTML does not yet show Sprint III strings |
+| `/api/public-health` | 200 | Coolify metadata present (`platform=coolify`); `commit` still null — wire `COOLIFY_SOURCE_COMMIT` / `GIT_COMMIT_SHA` when convenient |
+| `/vehicles` | 200 | Shows “Yike Marketplace” / “Sell a vehicle” |
+| `/sitemap.xml` | 200 | Includes `https://yike.ng/vehicles` |
+| `/` `/search` | 200 | Live |
 
-### App UI lifecycle (Create → Lex → Public → Soft edit) — PENDING DEPLOY
+### App UI lifecycle (Create → Lex → Public → Soft edit) — READY FOR FOUNDER UAT
 
-Requires Coolify production deploy of `67338ed3`. DB path is certified; browser/Lex path remains founder UAT after deploy.
+Coolify is serving the marketplace build. Browser/Lex lifecycle remains the founder sign-off before public Vehicle announcement.
 
 ---
 
@@ -97,11 +97,11 @@ Requires Coolify production deploy of `67338ed3`. DB path is certified; browser/
 - [x] Apply `20260722180232_marketplace_listings_ssot.sql`
 - [x] Confirm `listings` view + vehicle columns + dealer account type
 - [x] DB lifecycle UAT (Vehicle) PASS
-- [ ] Coolify production deploy of `67338ed3` (webhook may still be catching up)
+- [x] Coolify production deploy live (`/vehicles` + sitemap entry verified 2026-07-22)
 - [ ] Browser UAT: Property create → Lex → public → soft edit → archive
 - [ ] Browser UAT: Vehicle create → Lex → `/vehicles/[slug]` → save/share → soft edit
-- [ ] Confirm sitemap includes `/vehicles` and vehicle detail URLs
-- [ ] Confirm `/api/public-health` commit SHA matches deploy (set `COOLIFY_SOURCE_COMMIT` / `GIT_COMMIT_SHA` if missing)
+- [x] Confirm sitemap includes `/vehicles`
+- [ ] Optional: set `COOLIFY_SOURCE_COMMIT` / `GIT_COMMIT_SHA` so health reports the SHA
 - [ ] Public announcement of Vehicle marketplace (only after browser UAT)
 
 ---
@@ -113,16 +113,16 @@ Requires Coolify production deploy of `67338ed3`. DB path is certified; browser/
 | Listings SSOT migration | **GO** — applied and verified |
 | Property marketplace (data layer) | **GO** — no regression observed; columns backfilled |
 | Vehicle marketplace (data layer) | **GO** — lifecycle certified in DB |
-| Coolify app deploy / UI UAT | **CONDITIONAL** — waiting for `67338ed3` to go live |
+| Coolify app deploy | **GO** — `/vehicles` + sitemap verified live |
+| Browser / Lex UI UAT | **PENDING** founder sign-off |
 | Public Vehicle launch messaging | **HOLD** until browser UAT PASS |
-| Overall | **CONDITIONAL GO** — proceed with Coolify deploy confirmation, then founder browser UAT, then Vehicle public launch |
+| Overall | **CONDITIONAL GO** — data + deploy certified; founder browser UAT then Vehicle public launch |
 
 ### Immediate next actions
 
-1. Confirm Coolify production rebuild for `yikeltd/yike@67338ed3` on [control.stankings.com](https://control.stankings.com).
-2. Re-check `https://yike.ng/vehicles` for “Sell a vehicle” / vertical switcher.
-3. Run Lex UI approve on a real agent-created vehicle.
-4. After browser UAT PASS → enable public Vehicle launch communication.
+1. Run Lex UI approve on a real agent-created vehicle at `https://yike.ng/vehicles`.
+2. Complete Property + Vehicle browser lifecycle UAT.
+3. After browser UAT PASS → enable public Vehicle launch communication.
 
 ### Note on conflicting local branch
 
