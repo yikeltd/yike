@@ -13,8 +13,8 @@ Idempotent script that inserts **sample** property + vehicle inventory for disco
 | Kind | Count | Notes |
 |------|------:|-------|
 | Sellers | 4 | Private, Verified Seller, Dealer, Agency |
-| Properties | 10+ | Nationwide city mix; rent/sale/land/shop/office |
-| Vehicles | 10+ | Camry, Corolla, RX350, Prado, Hilux, Accord, C300… |
+| Properties | 18+ | Nationwide city mix; rent/sale/land/shop/office |
+| Vehicles | 14+ | Camry, Corolla, RX350, Prado, Hilux, Accord, C300… |
 
 Every listing is tagged:
 

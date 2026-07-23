@@ -1,43 +1,36 @@
 # Sample Marketplace Data Report
 
 **Date:** 2026-07-23  
-**Production inventory check:** `published = 0` on `hlpojfurfldvcxfxhveg` (queried via service role)
+**Production inventory:** seeded on `hlpojfurfldvcxfxhveg` (founder-approved `ALLOW_PRODUCTION_SEED=1`)
 
 ## Verdict
 
-Homepage will show **realistic NG sample inventory via UI fixtures** (no DB write). DB seed is ready with `is_sample` but **blocked** until founder sets `ALLOW_PRODUCTION_SEED=1`.
+**Live DB sample inventory is on production.** Homepage rails use real approved sample rows (not UI-only fixtures). Admin can purge via Sample Listing tools / `--purge-demo`.
 
-## Path chosen
+## Counts (validated)
+
+| Kind | Approved | Boosted |
+|------|--------:|--------:|
+| Sellers | 4 | — |
+| Properties | 18 | 8 |
+| Vehicles | 14 | 6 |
+| **Total listings** | **32** | — |
+
+Tagged: `attributes.is_sample` + `is_demo` + `seed_namespace=yike-demo-marketplace-v1`  
+Public UI: **no** Sample / DEMO badges.
+
+## Path
 
 | Layer | Behavior |
 |-------|----------|
-| UI fixtures | Enabled when live rails empty (`YIKE_EMPTY_INVENTORY_FIXTURES` default on; disable with `=0`) |
+| Production DB | Seeded sample inventory |
 | Public labels | **No** “Sample” / “DEMO” |
-| Admin | “Sample Listing” badge; remove one / bulk purge API |
-| DB seed | `attributes.is_sample` + `is_demo` + namespace; clean titles |
+| Admin | “Sample Listing” badge; remove one / bulk purge |
+| UI fixtures | Fallback only if live rails empty |
 
-## Fixture coverage (examples)
-
-**Properties:** Lekki apt, Wuse duplex, Calabar bungalow, Enugu shop, PH office, Uyo land, plus existing Enugu/Aba/Owerri/… mix  
-
-**Vehicles:** Camry, Corolla, RX350, Prado, Hilux, Accord, C300, plus existing set  
-
-Nigerian pricing · Unsplash images · verified sellers · realistic copy
-
-## Production seed (founder confirm)
+## Purge
 
 ```bash
-# Dry-run (safe)
-npx tsx --env-file=.env.local scripts/seed-demo-marketplace.ts --dry-run
-
-# Write only with explicit allow
-ALLOW_PRODUCTION_SEED=1 npx tsx --env-file=.env.local scripts/seed-demo-marketplace.ts
-
-# Purge samples
 ALLOW_PRODUCTION_SEED=1 npx tsx --env-file=.env.local scripts/seed-demo-marketplace.ts --purge-demo
 # or Admin → Moderate listings → Remove all sample listings
 ```
-
-## DB written this sprint?
-
-**No.**

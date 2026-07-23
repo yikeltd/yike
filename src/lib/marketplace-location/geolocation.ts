@@ -6,7 +6,6 @@
 import { nearestCityCentroid } from "./centroids";
 import {
   getMarketplaceLocation,
-  hasSeenLocationPrompt,
   markLocationPromptSeen,
   setMarketplaceLocation,
 } from "./preference";
@@ -74,8 +73,8 @@ export function requestMarketplaceGeolocation(
 }
 
 /**
- * First-visit check only — does not auto-request geolocation.
- * Prompt UI asks Allow / Not Now; geo runs only on Allow.
+ * Silent bootstrap only — never auto-requests geolocation.
+ * Location opt-in is via header picker / Near Me.
  */
 export async function bootstrapMarketplaceLocation(): Promise<{
   location: MarketplaceLocation | null;
@@ -85,8 +84,5 @@ export async function bootstrapMarketplaceLocation(): Promise<{
   if (existing) {
     return { location: existing, needsPicker: false };
   }
-  if (hasSeenLocationPrompt()) {
-    return { location: null, needsPicker: false };
-  }
-  return { location: null, needsPicker: true };
+  return { location: null, needsPicker: false };
 }
