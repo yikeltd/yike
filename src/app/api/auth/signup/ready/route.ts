@@ -51,7 +51,7 @@ export async function GET() {
       },
       hint: ready
         ? null
-        : "Coolify must set YIKE_OTP_SERVER_TOKEN (matches DB yike_internal_config.otp_server_token) and SUPABASE_SERVICE_ROLE_KEY for project hlpojfurfldvcxfxhveg.",
+        : "Signup dependencies missing — check Coolify server env (OTP token, Supabase service role, site URL).",
     },
     {
       status: ready ? 200 : 503,

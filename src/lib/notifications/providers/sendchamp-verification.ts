@@ -4,7 +4,7 @@ import {
   sendchampErrorMessage,
   type SendchampEnvelope,
 } from "./sendchamp-response";
-import { looksLikeSupabaseKey } from "./sendchamp-keys";
+import { looksLikeSupabaseKey, resolveSmsSender } from "./sendchamp-keys";
 import { toSendchampPhone } from "./sendchamp";
 
 const DEFAULT_BASE_URL = "https://api.sendchamp.com/api/v1";
@@ -93,7 +93,7 @@ export function isSendchampVerificationConfigured(): boolean {
   return getApiKeys().length > 0;
 }
 
-/** Sendchamp generates and delivers the OTP (in_app_token: false). */
+/** Sendchamp generates and delivers the OTP (in_app_token: false). Defaults to SMS. */
 export async function createSendchampWhatsappVerification(params: {
   phoneIntl: string;
   purpose: SendchampVerificationPurpose;
@@ -105,9 +105,9 @@ export async function createSendchampWhatsappVerification(params: {
   const channel =
     process.env.SENDCHAMP_OTP_CHANNEL?.trim().toLowerCase() ||
     process.env.WHATSAPP_OTP_CHANNEL?.trim().toLowerCase() ||
-    "whatsapp";
+    "sms";
 
-  const result = await post("/verification/create", {
+  const body: Record<string, unknown> = {
     channel,
     token_type: "numeric",
     token_length: otpLength(),
@@ -120,7 +120,14 @@ export async function createSendchampWhatsappVerification(params: {
       purpose: params.purpose,
     },
     in_app_token: false,
-  });
+  };
+
+  // SMS requires approved sender ID (e.g. YIKE).
+  if (channel === "sms") {
+    body.sender = resolveSmsSender(process.env.SENDCHAMP_SMS_SENDER ?? "YIKE");
+  }
+
+  const result = await post("/verification/create", body);
 
   if (!result.ok) {
     return {

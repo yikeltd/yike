@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { Button } from "@/components/ui/button";
 
 function VerifyEmailFallback() {
@@ -19,7 +20,7 @@ function VerifyEmailFallback() {
 function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/";
+  const next = safeNextPath(searchParams.get("next"), "/");
   const [email, setEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
   const [message, setMessage] = useState("");

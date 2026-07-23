@@ -1,13 +1,31 @@
 import { sendWelcomeEmail } from "@/lib/email";
 import { scheduleFounderWelcomeEmail } from "@/lib/email/scheduled-jobs";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
+import { SITE_URL } from "@/lib/constants";
+import { tryCreateAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+function resolveSiteOrigin(): string {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "").trim();
+  if (!raw) return SITE_URL;
+  try {
+    const url = new URL(raw.includes("://") ? raw : `https://${raw}`);
+    const host = url.hostname.toLowerCase();
+    if (host === "yike.ng" || host === "www.yike.ng" || host === "localhost") {
+      return `${url.protocol}//${url.host}`;
+    }
+  } catch {
+    /* fall through */
+  }
+  return SITE_URL;
+}
+
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = safeNextPath(searchParams.get("next"), "/");
+  const siteOrigin = resolveSiteOrigin();
 
   if (code) {
     const supabase = await createClient();
@@ -26,7 +44,7 @@ export async function GET(request: Request) {
           .eq("id", data.user.id);
 
         if (!profile?.email_verified && data.user.email) {
-          const admin = createAdminClient();
+          const admin = tryCreateAdminClient();
           if (admin) {
             await sendWelcomeEmail(admin, {
               email: data.user.email,
@@ -45,5 +63,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return NextResponse.redirect(`${siteOrigin}${next}`);
 }

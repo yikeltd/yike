@@ -1,6 +1,7 @@
 import { requireAgentLister } from "@/lib/auth";
 import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
 import { BasicProfileForm } from "@/components/agent/basic-profile-form";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { redirect } from "next/navigation";
 
 export default async function ProfileSetupPage({
@@ -12,7 +13,7 @@ export default async function ProfileSetupPage({
     skipProfileSetup: true,
   });
   const { next } = await searchParams;
-  const nextPath = next?.startsWith("/") ? next : "/agent/listings/new";
+  const nextPath = safeNextPath(next, "/agent/listings/new");
   const listingFlow = nextPath.includes("/listings/");
 
   if (hasBasicListingProfile(profile)) {

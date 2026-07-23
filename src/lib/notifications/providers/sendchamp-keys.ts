@@ -31,11 +31,11 @@ export function resolveSmsSender(raw?: string): string {
   if (invalid) {
     if (trimmed) {
       console.warn(
-        "[sendchamp] Invalid SENDCHAMP_SMS_SENDER — use approved ID like Yike:",
+        "[sendchamp] Invalid SENDCHAMP_SMS_SENDER — use approved ID like YIKE:",
         trimmed.slice(0, 24)
       );
     }
-    return "Yike";
+    return "YIKE";
   }
   return trimmed;
 }
@@ -55,7 +55,7 @@ export function auditSendchampEnv(): string[] {
   const smsRaw = process.env.SENDCHAMP_SMS_SENDER?.trim();
   if (smsRaw && resolveSmsSender(smsRaw) !== smsRaw) {
     warnings.push(
-      `SENDCHAMP_SMS_SENDER is invalid ("${smsRaw.slice(0, 20)}…") — must be approved sender like Yike`
+      `SENDCHAMP_SMS_SENDER is invalid ("${smsRaw.slice(0, 20)}…") — must be approved sender like YIKE`
     );
   }
 

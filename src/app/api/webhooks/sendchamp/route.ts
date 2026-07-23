@@ -1,11 +1,23 @@
+import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import {
   handleSendchampWebhook,
   parseSendchampWebhook,
 } from "@/lib/notifications/providers/sendchamp-webhook";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { tryCreateAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
+
+function secretsEqual(a: string, b: string): boolean {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  if (left.length !== right.length) return false;
+  try {
+    return timingSafeEqual(left, right);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Fail closed: missing webhook secret rejects all POSTs.
@@ -17,14 +29,14 @@ function isAuthorized(request: Request): boolean {
 
   const url = new URL(request.url);
   const querySecret = url.searchParams.get("secret");
-  if (querySecret && querySecret === secret) return true;
+  if (querySecret && secretsEqual(querySecret, secret)) return true;
 
   const headerSecret =
     request.headers.get("x-yike-webhook-secret") ??
     request.headers.get("x-sendchamp-webhook-secret") ??
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
-  return Boolean(headerSecret) && headerSecret === secret;
+  return Boolean(headerSecret) && secretsEqual(headerSecret, secret);
 }
 
 /** Health check for Sendchamp dashboard URL verification. */
@@ -55,7 +67,7 @@ export async function POST(request: Request) {
   const payload = parseSendchampWebhook(body);
 
   if (payload) {
-    const admin = createAdminClient();
+    const admin = tryCreateAdminClient();
     if (admin) {
       try {
         await handleSendchampWebhook(admin, payload);

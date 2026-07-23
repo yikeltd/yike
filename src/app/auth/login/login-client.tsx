@@ -22,6 +22,7 @@ import {
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
 import { getDefaultConsolePath, isStaffRole } from "@/lib/admin/roles";
 import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 import type { UserRole } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,7 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
   const forcePassword = searchParams.get("mode") === "password" || searchParams.get("switch") === "1";
   const resetPin = searchParams.get("resetPin") === "1";
   const sessionReason = searchParams.get("reason");
-  const next = nextParam ?? "/";
+  const next = safeNextPath(nextParam, "/");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

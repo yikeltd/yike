@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { tryCreateAdminClient } from "@/lib/supabase/admin";
 import { isPaystackConfigured } from "@/lib/payments/config";
 import {
   handlePaystackWebhook,
@@ -9,8 +9,12 @@ import {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  // Fail closed: do not acknowledge webhooks when payments are offline.
   if (!isPaystackConfigured()) {
-    return NextResponse.json({ ok: true, skipped: true });
+    return NextResponse.json(
+      { error: "Paystack not configured" },
+      { status: 503 },
+    );
   }
 
   const rawBody = await request.text();
@@ -21,9 +25,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const admin = createAdminClient();
+  const admin = tryCreateAdminClient();
   if (!admin) {
-    return NextResponse.json({ ok: true, recorded: false });
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
 
   try {
@@ -37,7 +41,7 @@ export async function POST(request: Request) {
       fulfilled: result.fulfilled ?? false,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Webhook failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[paystack webhook]", error);
+    return NextResponse.json({ error: "Webhook failed" }, { status: 500 });
   }
 }
