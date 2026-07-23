@@ -33,7 +33,7 @@ Marketplace launch candidate shipped: inventory-first home, seller trust/onboard
 | Item | Value |
 |------|-------|
 | Branch | `main` |
-| Commit | _(filled after push — see Launch Readiness Report)_ |
+| Commit | `7172aa7314ee3f91c6cb810219af07435869298f` (`7172aa73`) |
 | Push | `origin/main` |
 | Coolify | Auto-deploy from `main` (confirm in control.stankings.com) |
 
