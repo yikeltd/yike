@@ -1,9 +1,10 @@
 /**
- * Idempotent demo marketplace inventory seed — TEST DATA ONLY.
+ * Idempotent sample marketplace inventory seed.
  *
  * Safety:
  *   - Refuses production project `hlpojfurfldvcxfxhveg` unless ALLOW_PRODUCTION_SEED=1
- *   - Tags every row with attributes.is_demo + title prefix `[DEMO]`
+ *   - Tags every row with attributes.is_sample + attributes.is_demo + seed_namespace
+ *   - Public titles have NO [DEMO] prefix (admin UI shows "Sample Listing")
  *   - Upserts by stable demo UUIDs only (never overwrites non-demo listings)
  *   - Demo media uses Unsplash placeholders (not scraped copyrighted assets)
  *
@@ -12,6 +13,9 @@
  *   SUPABASE_URL=https://gyxemepnrkwxocgzfbeo.supabase.co \
  *     SUPABASE_SERVICE_ROLE_KEY=... \
  *     npx tsx scripts/seed-demo-marketplace.ts
+ *
+ * Production launch inventory (founder must confirm):
+ *   ALLOW_PRODUCTION_SEED=1 npx tsx --env-file=.env.local scripts/seed-demo-marketplace.ts
  *
  * Flags:
  *   --dry-run         Print plan + safety checks; no writes
@@ -25,8 +29,13 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const PRODUCTION_REF = "hlpojfurfldvcxfxhveg";
 const SEED_NAMESPACE = "yike-demo-marketplace-v1";
+/** @deprecated kept for purge of legacy rows that still carry the prefix */
 const DEMO_PREFIX = "[DEMO]";
 const DEMO_PASSWORD = "YikeDemoSeed2026!";
+
+function publicSampleTitle(title: string): string {
+  return title.replace(/^\[DEMO\]\s*/i, "").trim();
+}
 
 type SellerKind = "private" | "verified" | "dealer" | "agency";
 
@@ -779,14 +788,15 @@ function daysFromNow(days: number): string {
 }
 
 function withDemoTitle(title: string): string {
-  return title.startsWith(DEMO_PREFIX) ? title : `${DEMO_PREFIX} ${title}`;
+  // Public titles stay clean; admin detects samples via attributes.is_sample
+  return publicSampleTitle(title);
 }
 
 function mediaItems(images: string[], kind: "property" | "vehicle"): DemoMedia[] {
   return images.map((image_url, index) => ({
     id: `demo-media-${kind}-${index + 1}`,
     image_url,
-    alt_text: `${DEMO_PREFIX} ${kind} media ${index + 1}`,
+    alt_text: `Sample ${kind} media ${index + 1}`,
     sort_order: index,
     is_cover: index === 0,
   }));
@@ -821,7 +831,7 @@ function propertyRow(p: DemoProperty) {
     agent_id: p.sellerId,
     asset_type: "PROPERTY",
     title: withDemoTitle(p.title),
-    description: `${p.description}\n\n${DEMO_PREFIX} seed · ${SEED_NAMESPACE}`,
+    description: p.description,
     listing_type: p.listing_type,
     property_type: p.property_type,
     bedrooms: p.bedrooms,
@@ -852,6 +862,7 @@ function propertyRow(p: DemoProperty) {
     },
     attributes: {
       is_demo: true,
+      is_sample: true,
       seed_namespace: SEED_NAMESPACE,
       demo_media: true,
       tier: p.tier,
@@ -873,7 +884,7 @@ function vehicleRow(v: DemoVehicle) {
     agent_id: v.sellerId,
     asset_type: "VEHICLE",
     title: withDemoTitle(v.title),
-    description: `${v.description}\n\n${DEMO_PREFIX} seed · ${SEED_NAMESPACE}`,
+    description: v.description,
     listing_type: "sale",
     property_type: null,
     bedrooms: 0,
@@ -916,6 +927,7 @@ function vehicleRow(v: DemoVehicle) {
     financing_available: false,
     attributes: {
       is_demo: true,
+      is_sample: true,
       seed_namespace: SEED_NAMESPACE,
       demo_media: true,
       vertical: "vehicle",

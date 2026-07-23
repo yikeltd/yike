@@ -74,7 +74,7 @@ type Props = {
   propertyRails: PropertyRails;
   vehicleRails: VehicleRails;
   marketplaceLocation?: { city: string; state?: string } | null;
-  /** Dev-only: live inventory empty — UI fixtures marked [DEMO]. */
+  /** Empty-inventory UI fixtures (no public DEMO badge). */
   showingDemoFixtures?: boolean;
   /** Smart homepage ads — only non-null slots render. */
   homepageAds?: Partial<Record<HomepageAdSlot, Advertisement | null>>;
@@ -183,10 +183,11 @@ export function HomeMarketplaceExperience({
   propertyRails,
   vehicleRails,
   marketplaceLocation = null,
-  showingDemoFixtures = false,
+  showingDemoFixtures: _showingDemoFixtures = false,
   homepageAds = {},
   trustedAgents,
 }: Props) {
+  void _showingDemoFixtures;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -333,10 +334,6 @@ export function HomeMarketplaceExperience({
   const stateLabel = marketplaceLocation?.state ?? null;
   const totallyEmpty = !hasAnyInventory(rails);
 
-  // Demo banner: never in production builds (client + server gate).
-  const showDemoBanner =
-    showingDemoFixtures && process.env.NODE_ENV === "development";
-
   return (
     <div>
       <h1 className="sr-only">
@@ -366,18 +363,6 @@ export function HomeMarketplaceExperience({
 
       {/* Shared inventory rails — all breakpoints */}
       <div className="mx-auto max-w-7xl px-3 pt-2 lg:px-6 lg:pt-6 xl:px-8">
-        {showDemoBanner ? (
-          <div
-            role="status"
-            className="mb-3 rounded-lg border border-gold/40 bg-gold/15 px-3 py-2 text-center text-[11px] font-semibold text-navy sm:text-xs"
-          >
-            [DEMO] Local preview fixtures — not live inventory · no database writes
-            {marketplaceLocation?.city
-              ? ` · location: ${marketplaceLocation.city}`
-              : ""}
-          </div>
-        ) : null}
-
         {totallyEmpty ? (
           <section className="pb-4">
             <EmptyRail
@@ -390,7 +375,7 @@ export function HomeMarketplaceExperience({
           <>
             {/* 1. Featured Near You */}
             {featuredNearItems.length > 0 ? (
-              <section className="pb-4 lg:pb-6">
+              <section className="rounded-2xl bg-gradient-to-b from-white to-[#F7F8FC] px-1 pb-4 pt-1 sm:px-2 lg:pb-6">
                 <SectionHeader
                   title={featuredNearTitle}
                   href={featuredCopy.href}
@@ -413,7 +398,7 @@ export function HomeMarketplaceExperience({
               ? vehicleRails.recent.items
               : propertyRails.recent.items
             ).length > 0 ? (
-              <section className="pb-4 lg:pb-6">
+              <section className="rounded-2xl bg-[#EEF1F7]/70 px-1 py-4 sm:px-2 lg:py-6">
                 <SectionHeader
                   title={recentCopy.title}
                   href={recentCopy.href}
@@ -436,7 +421,7 @@ export function HomeMarketplaceExperience({
               ? vehicleRails.luxury.items
               : propertyRails.luxury.items
             ).length > 0 ? (
-              <section className="pb-4 lg:pb-6">
+              <section className="rounded-2xl bg-gradient-to-b from-white via-gold/[0.04] to-white px-1 py-4 sm:px-2 lg:py-6">
                 <SectionHeader
                   title={luxuryCopy.title}
                   href={luxuryCopy.href}
@@ -469,7 +454,7 @@ export function HomeMarketplaceExperience({
               if (recommendedItems.length === 0) return null;
               const copy = useTrending ? trendingCopy : nationwideCopy;
               return (
-                <section className="pb-4 lg:pb-6">
+                <section className="rounded-2xl bg-[#F4F6FA] px-1 py-4 sm:px-2 lg:py-6">
                   <SectionHeader
                     title={useTrending ? "Recommended" : "Recommended for you"}
                     href={copy.href}
@@ -493,7 +478,7 @@ export function HomeMarketplaceExperience({
         <HomeFeaturedLocations
           items={locations}
           title="Popular Cities"
-          className="pb-4"
+          className="pb-4 pt-2"
         />
 
         <div className="pb-3 pt-1 lg:pb-4">

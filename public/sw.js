@@ -1,6 +1,6 @@
-const SHELL_CACHE = "yike-shell-v32";
+const SHELL_CACHE = "yike-shell-v33";
 const IMAGE_CACHE = "yike-images-v6";
-const LISTING_CACHE = "yike-listings-v4";
+const LISTING_CACHE = "yike-listings-v5";
 const CACHE_PREFIX = "yike-";
 
 const SHELL = [
@@ -14,6 +14,19 @@ const SHELL = [
 
 const ACTIVE_CACHES = new Set([SHELL_CACHE, IMAGE_CACHE, LISTING_CACHE]);
 const IMAGE_HOSTS = ["images.unsplash.com", "supabase.co"];
+
+/** Document paths safe to keep for offline revisit (HTML shell). */
+const WARM_DOCUMENT_PATHS = new Set([
+  "/",
+  "/offline",
+  "/buy",
+  "/rent",
+  "/land",
+  "/vehicles",
+  "/search",
+  "/saved",
+  "/safety",
+]);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -47,6 +60,63 @@ function isListingImage(url) {
   return IMAGE_HOSTS.some((host) => url.hostname.includes(host));
 }
 
+function shouldWarmDocument(pathname) {
+  if (WARM_DOCUMENT_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/properties/")) return true;
+  if (pathname.startsWith("/vehicles/")) return true;
+  if (pathname.startsWith("/agents/")) return true;
+  return false;
+}
+
+/** Prefer exact match, then same pathname (ignore search), then homepage. */
+async function matchCachedDocument(request) {
+  const url = new URL(request.url);
+  const cachesToSearch = [LISTING_CACHE, SHELL_CACHE];
+
+  for (const name of cachesToSearch) {
+    const cache = await caches.open(name);
+    const exact = await cache.match(request);
+    if (exact) return exact;
+
+    const byPath = await cache.match(url.pathname);
+    if (byPath) return byPath;
+
+    if (url.pathname === "/" || url.pathname === "") {
+      const home = await cache.match("/");
+      if (home) return home;
+    }
+  }
+
+  // Last-chance: any matching entry across all caches
+  const anyExact = await caches.match(request);
+  if (anyExact) return anyExact;
+  const anyPath = await caches.match(url.pathname);
+  if (anyPath) return anyPath;
+  if (url.pathname === "/" || url.pathname === "") {
+    return (await caches.match("/")) || null;
+  }
+  return null;
+}
+
+async function cacheDocumentResponse(request, response) {
+  if (!response || !response.ok) return;
+  const url = new URL(request.url);
+  if (!shouldWarmDocument(url.pathname)) return;
+
+  try {
+    const cache = await caches.open(LISTING_CACHE);
+    await cache.put(request, response.clone());
+    // Stable key without query — homepage warm cache for offline reopen
+    if (url.search) {
+      await cache.put(url.pathname, response.clone());
+    } else if (url.pathname === "/") {
+      await cache.put("/", response.clone());
+    }
+  } catch {
+    /* quota / opaque — ignore */
+  }
+}
+
 self.addEventListener("message", (event) => {
   const data = event.data;
   if (!data) return;
@@ -62,7 +132,17 @@ self.addEventListener("message", (event) => {
     caches.open(LISTING_CACHE).then(async (cache) => {
       try {
         const res = await fetch(data.url);
-        if (res.ok) await cache.put(data.url, res);
+        if (res.ok) {
+          await cache.put(data.url, res.clone());
+          try {
+            const u = new URL(data.url, self.location.origin);
+            if (u.origin === self.location.origin) {
+              await cache.put(u.pathname, res.clone());
+            }
+          } catch {
+            /* ignore */
+          }
+        }
       } catch {
         /* offline — ignore */
       }
@@ -92,11 +172,18 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin !== self.location.origin) return;
 
+  // Document navigations: network-first, warm-cache fallback, /offline last
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request, { cache: "no-store" })
-        .then((res) => res)
-        .catch(async () => {
+      (async () => {
+        try {
+          const res = await fetch(event.request, { cache: "no-store" });
+          await cacheDocumentResponse(event.request, res);
+          return res;
+        } catch {
+          const cached = await matchCachedDocument(event.request);
+          if (cached) return cached;
+
           return (
             (await caches.match("/offline")) ||
             new Response("Offline", {
@@ -104,7 +191,8 @@ self.addEventListener("fetch", (event) => {
               headers: { "Content-Type": "text/plain; charset=utf-8" },
             })
           );
-        })
+        }
+      })()
     );
     return;
   }

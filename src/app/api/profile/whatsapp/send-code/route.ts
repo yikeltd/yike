@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
   if (!canRequestPhoneOtp(phoneLocal)) {
     return NextResponse.json(
-      { error: "Enter a valid Nigerian WhatsApp number (e.g. 08035143299)." },
+      { error: "Enter a valid Nigerian WhatsApp number (e.g. 08103514329)." },
       { status: 400 }
     );
   }

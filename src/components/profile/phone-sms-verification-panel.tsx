@@ -149,7 +149,7 @@ export function PhoneSmsVerificationPanel({
             inputMode="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="08035143299 or +2348035143299"
+            placeholder="08103514329 or +2348103514329"
             className="h-11 rounded-xl"
             autoComplete="tel"
           />

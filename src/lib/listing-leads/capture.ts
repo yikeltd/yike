@@ -19,6 +19,8 @@ export type CaptureListingLeadInput = {
   legacyLeadId?: string | null;
   leadUserDisplay?: string | null;
   listingTitle?: string | null;
+  /** Extra attribution (UTM, device, city, etc.) */
+  metadataExtra?: Record<string, unknown> | null;
 };
 
 const DEDUPE_MINUTES = 15;
@@ -56,7 +58,9 @@ export async function captureListingLead(
   });
 
   const now = new Date().toISOString();
-  const metadata: Record<string, unknown> = {};
+  const metadata: Record<string, unknown> = {
+    ...(input.metadataExtra ?? {}),
+  };
   if (input.leadUserDisplay) metadata.lead_display = input.leadUserDisplay;
   if (input.listingTitle) metadata.listing_title = input.listingTitle;
 

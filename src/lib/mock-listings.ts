@@ -19,6 +19,16 @@ export function isDemoProperty(id: string) {
   return id.startsWith("demo-");
 }
 
+/** Sample / UI-fixture listing — admin-visible; never show "Sample" on public UI. */
+export function isSampleListing(
+  property: { id: string; attributes?: Record<string, unknown> | null },
+): boolean {
+  if (isDemoProperty(property.id)) return true;
+  const attrs = property.attributes;
+  if (!attrs || typeof attrs !== "object") return false;
+  return attrs.is_sample === true || attrs.is_demo === true;
+}
+
 export function getMockPropertyById(id: string): Property | null {
   return MOCK_LISTINGS.find((p) => p.id === id) ?? null;
 }

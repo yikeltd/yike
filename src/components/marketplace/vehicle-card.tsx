@@ -82,11 +82,6 @@ export function VehicleCard({
                 sizes="(max-width: 640px) 46vw, (max-width: 1024px) 25vw, (max-width: 1536px) 14vw, 12vw"
               />
             ) : null}
-            {isDemo ? (
-              <span className="absolute left-1.5 top-1.5 z-10 rounded bg-navy px-1.5 py-0.5 text-[9px] font-bold text-gold">
-                DEMO
-              </span>
-            ) : null}
           </div>
         </Link>
 
@@ -150,11 +145,7 @@ export function VehicleCard({
             />
           ) : null}
           <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-1">
-            {isDemo ? (
-              <span className="rounded bg-navy px-1.5 py-0.5 text-[9px] font-bold text-gold">
-                DEMO
-              </span>
-            ) : featured ? (
+            {featured ? (
               <span className="rounded bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
                 Feat
               </span>
@@ -165,11 +156,6 @@ export function VehicleCard({
                 title="Verified"
               >
                 ✓
-              </span>
-            ) : null}
-            {isDemo && featured ? (
-              <span className="rounded bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
-                Feat
               </span>
             ) : null}
           </div>

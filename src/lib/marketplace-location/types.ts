@@ -8,7 +8,8 @@ export type MarketplaceLocationSource =
   | "manual"
   | "search"
   | "inferred"
-  | "cookie";
+  | "cookie"
+  | "locale";
 
 export type MarketplaceLocation = {
   state: string;

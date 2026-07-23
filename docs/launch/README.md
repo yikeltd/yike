@@ -7,6 +7,14 @@ Operational pack for **Property Marketplace** launch. Complements
 
 | Doc | Purpose |
 |-----|---------|
+| [PRODUCTION_LAUNCH_READINESS_REPORT.md](./PRODUCTION_LAUNCH_READINESS_REPORT.md) | Polish sprint GO + founder actions |
+| [PRODUCTION_CODE_AUDIT_REPORT.md](./PRODUCTION_CODE_AUDIT_REPORT.md) | Code audit (hold commit) |
+| [AUTHENTICATION_VALIDATION_REPORT.md](./AUTHENTICATION_VALIDATION_REPORT.md) | Auth paths validation |
+| [HOMEPAGE_VISUAL_POLISH_REPORT.md](./HOMEPAGE_VISUAL_POLISH_REPORT.md) | Homepage depth polish |
+| [SAMPLE_MARKETPLACE_DATA_REPORT.md](./SAMPLE_MARKETPLACE_DATA_REPORT.md) | Fixtures + seed (no prod write) |
+| [WHATSAPP_LEAD_TRACKING_REPORT.md](./WHATSAPP_LEAD_TRACKING_REPORT.md) | Lead ref + UTM attribution |
+| [PERFORMANCE_AUDIT_REPORT.md](./PERFORMANCE_AUDIT_REPORT.md) | Light perf pass |
+| [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md) | Sprint security delta |
 | [LAUNCH_READINESS_REPORT.md](./LAUNCH_READINESS_REPORT.md) | GO/NO-GO + gates |
 | [PRODUCTION_DEPLOYMENT_REPORT.md](./PRODUCTION_DEPLOYMENT_REPORT.md) | Migrations, build, deploy |
 | [SMOKE_TEST_REPORT.md](./SMOKE_TEST_REPORT.md) | Local + prod smoke |
@@ -72,6 +80,10 @@ Operational pack for **Property Marketplace** launch. Complements
 | [PHONE_INPUT_VALIDATION_REPORT.md](./PHONE_INPUT_VALIDATION_REPORT.md) | Local 11-digit Nigerian signup phone |
 | [SMS_NORMALIZATION_REPORT.md](./SMS_NORMALIZATION_REPORT.md) | 0803… → 234… for SMS / duplicates |
 | [SIGNUP_PIN_PHONE_PRODUCTION_READINESS.md](./SIGNUP_PIN_PHONE_PRODUCTION_READINESS.md) | GO after review — hold commit |
+| [OFFLINE_EXPERIENCE_REPORT.md](./OFFLINE_EXPERIENCE_REPORT.md) | Warm homepage + compact offline banner — **hold commit** |
+| [CACHE_VALIDATION_REPORT.md](./CACHE_VALIDATION_REPORT.md) | SW document warm-cache / `/` before `/offline` |
+| [PWA_VALIDATION_REPORT.md](./PWA_VALIDATION_REPORT.md) | SW v33 + cold-start `/offline` validation |
+| [OFFLINE_PRODUCTION_READINESS.md](./OFFLINE_PRODUCTION_READINESS.md) | GO after review — hold commit |
 | [P0_HOMEPAGE_SIGNUP_INCIDENT.md](./P0_HOMEPAGE_SIGNUP_INCIDENT.md) | P0: homepage vs deploy + signup 503 |
 | [PRODUCTION_UAT_CERTIFICATION.md](./PRODUCTION_UAT_CERTIFICATION.md) | Post-migration UAT + GO/NO-GO |
 | [ENTERPRISE_MARKETPLACE_SPRINT_III_LAUNCH_CERTIFICATION.md](./ENTERPRISE_MARKETPLACE_SPRINT_III_LAUNCH_CERTIFICATION.md) | Final pre-prod certification (hold commit/migration) |

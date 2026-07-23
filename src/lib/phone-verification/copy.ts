@@ -30,7 +30,7 @@ export const PHONE_VERIFY_COPY = {
   phoneLabel: "Phone number",
   codeLabel: "Verification code",
   codePlaceholder: "6-digit code",
-  invalidPhone: "Enter a valid Nigerian number (e.g. 08035143299).",
+  invalidPhone: "Enter a valid Nigerian number (e.g. 08103514329).",
   invalidCode: "Enter the 6-digit code from your SMS.",
   verified: "Phone verified. You can continue listing.",
   providerUnavailable:

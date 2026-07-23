@@ -118,7 +118,7 @@ Use placeholders only below.
 | `APP_ENV` | Recommended | `production` | Production posture |
 | `ENABLE_VEHICLE_MARKETPLACE` | Recommended | `true` | Vehicles in marketplace |
 | `YIKE_LAUNCH_MODE` | Optional | `true` | Hides deferred surfaces |
-| `YIKE_WHATSAPP_NUMBER` | Recommended | `2348035143299` | Lead gateway line |
+| `YIKE_WHATSAPP_NUMBER` | Recommended | `2348103514329` | Lead gateway line |
 | `YIKE_LEAD_GATEWAY_ENABLED` | Recommended | `true` | WhatsApp-first leads |
 | `ENABLE_FEATURED_LISTINGS` | Optional | `true` | Featured UI |
 | `NEXT_PUBLIC_ENABLE_FEATURED_LISTINGS` | Optional | `true` | Client mirror |

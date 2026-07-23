@@ -292,11 +292,6 @@ export function PropertyCard({
               width={480}
               className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
-            {isDemo ? (
-              <span className="absolute left-1.5 top-1.5 z-10 rounded bg-navy px-1.5 py-0.5 text-[9px] font-bold text-gold">
-                DEMO
-              </span>
-            ) : null}
           </div>
         </Link>
 

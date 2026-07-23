@@ -32,6 +32,7 @@ export function ListingActions({
   agentWhatsapp,
   agentPhone,
   compact,
+  isSample = false,
 }: {
   propertyId: string;
   title?: string;
@@ -42,6 +43,8 @@ export function ListingActions({
   agentWhatsapp?: string | null;
   agentPhone?: string | null;
   compact?: boolean;
+  /** Admin-only: sample / demo seed listing */
+  isSample?: boolean;
 }) {
   const router = useRouter();
   const { requirePin, pinModal } = usePinGate();
@@ -128,6 +131,24 @@ export function ListingActions({
       return;
     }
     setMessage("Featured");
+    router.refresh();
+  }
+
+  async function removeSample() {
+    setBusy("remove_sample");
+    setMessage("");
+    const res = await fetch("/api/admin/sample-listings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "one", listingId: propertyId }),
+    });
+    const body = (await res.json()) as { error?: string; deleted?: number };
+    setBusy(null);
+    if (!res.ok) {
+      setMessage(body.error ?? "Could not remove sample");
+      return;
+    }
+    setMessage(body.deleted ? "Sample removed" : "Not a sample");
     router.refresh();
   }
 
@@ -258,6 +279,14 @@ export function ListingActions({
               actionKey: "feature",
               variant: "navy",
               onClick: () => void featureListing(),
+            })
+          : null}
+        {isSample
+          ? renderActionButton({
+              label: "Remove sample",
+              actionKey: "remove_sample",
+              variant: "danger",
+              onClick: () => void removeSample(),
             })
           : null}
       </div>

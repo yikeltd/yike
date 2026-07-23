@@ -10,6 +10,7 @@ import { whatsAppDeepLink } from "@/lib/whatsapp";
 import { COOLDOWN_USER_MESSAGE } from "@/lib/leads/operations-types";
 import { markListingContacted } from "@/lib/recently-contacted";
 import { logFunnelEvent } from "@/lib/analytics/whatsapp-funnel";
+import { collectLeadClientAttribution } from "@/lib/leads/client-attribution";
 import type { LeadType } from "./types";
 
 export type TrackLeadInput = {
@@ -82,12 +83,22 @@ export async function trackLeadAndRedirect(
     agentId: input.agentId,
   });
 
+  const attribution = collectLeadClientAttribution();
+
   const res = await fetch("/api/leads/track", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ...input,
       guestId: getGuestId(),
+      sourceCampaign: input.sourceCampaign ?? attribution.sourceCampaign,
+      utmSource: attribution.utmSource,
+      utmMedium: attribution.utmMedium,
+      utmCampaign: attribution.utmCampaign,
+      utmContent: attribution.utmContent,
+      utmTerm: attribution.utmTerm,
+      referral: attribution.referral,
+      device: attribution.device,
     }),
   });
 
@@ -163,6 +174,7 @@ function buildFallbackRedirect(input: TrackLeadInput): TrackLeadResult | undefin
       publicListingCode: ref,
       publicAgentCode: "inquiry",
       listingUrl,
+      yikeReference: ref,
     });
     return {
       ok: true,

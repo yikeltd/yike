@@ -11,6 +11,8 @@ import { ChevronLeft, ChevronRight, Navigation, X } from "lucide-react";
 import { getAllCitiesForState } from "@/constants/nigeriaAllCities";
 import { getStateDisplayLabel, getStates } from "@/lib/constants";
 import {
+  applySilentLocationFallback,
+  getMarketplaceLocation,
   isNationwideMarketplaceLocation,
   markLocationPromptSeen,
   requestMarketplaceGeolocation,
@@ -35,8 +37,9 @@ type Props = {
 type View = "root" | "state";
 
 /**
- * Marketplace location bottom sheet — Near Me / Nationwide / State → City.
+ * Marketplace location picker — bottom sheet on mobile, floating card on desktop.
  * Portaled to document.body so sticky header backdrop-filter never traps it.
+ * Near Me failures fall back silently (no permission-error friction).
  */
 export function MarketplaceLocationPicker({
   open,
@@ -49,7 +52,6 @@ export function MarketplaceLocationPicker({
   const [view, setView] = useState<View>("root");
   const [state, setState] = useState(initialState);
   const [geoBusy, setGeoBusy] = useState(false);
-  const [geoError, setGeoError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
 
@@ -64,7 +66,6 @@ export function MarketplaceLocationPicker({
     }
     setView("root");
     setState(initialState);
-    setGeoError(null);
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
   }, [open, initialState, initialCity]);
@@ -104,15 +105,18 @@ export function MarketplaceLocationPicker({
 
   async function selectNearMe() {
     setGeoBusy(true);
-    setGeoError(null);
+    const prior = current ?? getMarketplaceLocation();
     const result = await requestMarketplaceGeolocation();
     setGeoBusy(false);
     if (!result.ok) {
-      setGeoError(
-        result.reason === "denied"
-          ? "Location permission denied — pick a state below."
-          : "Couldn't detect location — pick a state below.",
-      );
+      const fallback = applySilentLocationFallback(prior);
+      trackEvent("search", {
+        placement: "marketplace_location_near_me_fallback",
+        reason: result.reason,
+        city: fallback?.city || "",
+        state: fallback?.state || "",
+      });
+      finish(fallback);
       return;
     }
     trackEvent("search", {
@@ -163,7 +167,7 @@ export function MarketplaceLocationPicker({
 
   const sheet = (
     <div
-      className="fixed inset-0 z-[200] flex items-end justify-center"
+      className="fixed inset-0 z-[220] flex items-end justify-center sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="marketplace-location-title"
@@ -180,16 +184,19 @@ export function MarketplaceLocationPicker({
 
       <div
         className={cn(
-          "relative z-10 flex max-h-[min(82dvh,600px)] w-full max-w-lg flex-col rounded-t-[1.35rem] border border-navy/10 bg-white shadow-[0_-12px_48px_-12px_rgba(2,20,51,0.35)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-          "pb-[max(0.5rem,env(safe-area-inset-bottom))]",
-          visible ? "translate-y-0" : "translate-y-full",
+          "relative z-10 flex max-h-[min(82dvh,600px)] w-full max-w-lg flex-col border border-navy/10 bg-white shadow-[0_-12px_48px_-12px_rgba(2,20,51,0.35)] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "rounded-t-[1.35rem] pb-[max(0.5rem,env(safe-area-inset-bottom))]",
+          "sm:rounded-2xl sm:shadow-[0_24px_64px_-16px_rgba(2,20,51,0.4)] sm:pb-2",
+          visible
+            ? "translate-y-0 opacity-100 sm:scale-100"
+            : "translate-y-full opacity-0 sm:translate-y-4 sm:scale-[0.98]",
         )}
       >
-        <div className="flex shrink-0 justify-center pt-2.5 pb-1" aria-hidden>
+        <div className="flex shrink-0 justify-center pt-2.5 pb-1 sm:hidden" aria-hidden>
           <span className="h-1 w-10 rounded-full bg-navy/15" />
         </div>
 
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-navy/5 px-4 pb-3 pt-1">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-navy/5 px-4 pb-3 pt-1 sm:pt-3">
           <div className="flex min-w-0 items-center gap-2">
             {view === "state" ? (
               <button
@@ -238,12 +245,6 @@ export function MarketplaceLocationPicker({
                 label="Nationwide"
                 hint="Nigeria"
               />
-
-              {geoError ? (
-                <p className="px-3 py-1.5 text-[11px] font-medium text-amber-800">
-                  {geoError}
-                </p>
-              ) : null}
 
               <div
                 className="mx-3 my-2 border-t border-navy/10"

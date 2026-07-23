@@ -211,11 +211,17 @@ export function HomeCategoryRail({
           const Icon = item.icon;
           const disabled = item.href === "#";
           const chipClass = cn(
-            "pressable inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+            "pressable inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:-translate-y-0.5",
             onHero
               ? "border-white/16 bg-white/8 text-white/85 hover:bg-white/14"
-              : "border-navy/10 bg-surface/80 text-navy/75 hover:border-gold/35 hover:text-navy",
-            disabled && "cursor-default"
+              : item.id === "jobs"
+                ? "border-sky-200/80 bg-sky-50 text-sky-900/80 hover:border-sky-300"
+                : item.id === "services"
+                  ? "border-emerald-200/80 bg-emerald-50 text-emerald-900/80 hover:border-emerald-300"
+                  : item.id === "electronics"
+                    ? "border-violet-200/70 bg-violet-50 text-violet-900/80 hover:border-violet-300"
+                    : "border-navy/10 bg-surface/80 text-navy/75 hover:border-gold/35 hover:text-navy",
+            disabled && "cursor-default hover:translate-y-0"
           );
 
           const chipBody = (

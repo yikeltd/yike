@@ -7,15 +7,21 @@ export function buildYikeInquiryMessage(input: {
   publicListingCode: string;
   publicAgentCode: string;
   listingUrl: string;
+  enquiryReference?: string;
 }): string {
-  return `Hello Yike, I am interested in this property.
-
-Property: ${input.listingTitle.trim()}
-List ID: ${input.publicListingCode}
-Agent ID: ${input.publicAgentCode}
-Link: ${input.listingUrl}
-
-Please connect me with the agent.`;
+  const ref = input.enquiryReference?.trim();
+  const lines = [
+    "Hello Yike, I am interested in this property.",
+    "",
+    `Property: ${input.listingTitle.trim()}`,
+    `List ID: ${input.publicListingCode}`,
+    `Agent ID: ${input.publicAgentCode}`,
+  ];
+  if (ref) {
+    lines.push(`Enquiry ref: ${ref}`);
+  }
+  lines.push(`Link: ${input.listingUrl}`, "", "Please connect me with the agent.");
+  return lines.join("\n");
 }
 
 export function buildYikeWhatsAppInquiryUrl(input: {
@@ -24,6 +30,7 @@ export function buildYikeWhatsAppInquiryUrl(input: {
   publicAgentCode: string;
   listingUrl: string;
   phone?: string;
+  enquiryReference?: string;
 }): string {
   const number = normalizeWhatsApp(input.phone ?? yikeWhatsAppNumber() ?? YIKE_SUPPORT_WHATSAPP);
   const text = buildYikeInquiryMessage(input);
@@ -35,18 +42,22 @@ export function buildAgentHandoffMessage(input: {
   listingTitle: string;
   publicListingCode: string;
   listingUrl: string;
+  enquiryReference?: string;
 }): string {
-  return `Hello ${input.agentName.trim()},
-
-I saw this property on Yike and I'm interested.
-
-Property:
-${input.listingTitle.trim()}
-
-List ID:
-${input.publicListingCode}
-
-When can I inspect it?`;
+  const ref = input.enquiryReference?.trim();
+  const lines = [
+    `Hello ${input.agentName.trim()},`,
+    "",
+    "I saw this listing on Yike and I'm interested.",
+    "",
+    `Property: ${input.listingTitle.trim()}`,
+    `List ID: ${input.publicListingCode}`,
+  ];
+  if (ref) {
+    lines.push(`Enquiry ref: ${ref}`);
+  }
+  lines.push(`Link: ${input.listingUrl}`, "", "When can I inspect it?");
+  return lines.join("\n");
 }
 
 export function buildAgentHandoffUrl(input: {
@@ -56,6 +67,7 @@ export function buildAgentHandoffUrl(input: {
   listingTitle: string;
   publicListingCode: string;
   listingUrl: string;
+  enquiryReference?: string;
 }): string {
   const raw = input.agentWhatsapp?.trim() || input.agentPhone?.trim();
   const message = buildAgentHandoffMessage({
@@ -63,6 +75,7 @@ export function buildAgentHandoffUrl(input: {
     listingTitle: input.listingTitle,
     publicListingCode: input.publicListingCode,
     listingUrl: input.listingUrl,
+    enquiryReference: input.enquiryReference,
   });
 
   if (!raw) {
@@ -71,6 +84,7 @@ export function buildAgentHandoffUrl(input: {
       publicListingCode: input.publicListingCode,
       publicAgentCode: "support",
       listingUrl: input.listingUrl,
+      enquiryReference: input.enquiryReference,
     });
   }
 
@@ -81,6 +95,7 @@ export function buildAgentHandoffUrl(input: {
       publicListingCode: input.publicListingCode,
       publicAgentCode: "support",
       listingUrl: input.listingUrl,
+      enquiryReference: input.enquiryReference,
     });
   }
 

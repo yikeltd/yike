@@ -51,6 +51,11 @@ export {
 } from "./geolocation";
 
 export {
+  localeMarketplaceHint,
+  applySilentLocationFallback,
+} from "./silent-fallback";
+
+export {
   featuredRailCopy,
   recentRailCopy,
   trendingRailCopy,

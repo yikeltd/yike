@@ -72,7 +72,6 @@ export default async function VehiclesPage({
 
   const vehicleDemo = withEmptyInventoryDemoFixtures(vehicles, "vehicle", 24);
   vehicles = vehicleDemo.items;
-  const showingDemoFixtures = vehicleDemo.isDemo;
 
   if (sort === "price_asc") {
     vehicles = [...vehicles].sort((a, b) => Number(a.price) - Number(b.price));
@@ -166,15 +165,6 @@ export default async function VehiclesPage({
         saveLabel={saveLabel}
         saveHref={saveHref}
       />
-
-      {showingDemoFixtures && process.env.NODE_ENV === "development" ? (
-        <div
-          role="status"
-          className="mb-4 rounded-lg border border-gold/40 bg-gold/15 px-3 py-2 text-center text-[11px] font-semibold text-navy sm:text-xs"
-        >
-          [DEMO] Local preview fixtures — not live inventory · no database writes
-        </div>
-      ) : null}
 
       <form className="mb-5 space-y-3 rounded-2xl border border-navy/8 bg-white p-3 shadow-sm sm:p-4">
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">

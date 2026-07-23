@@ -1,17 +1,17 @@
 /**
- * Local UI-only demo inventory for founder visual review.
+ * UI-only sample marketplace inventory for empty rails.
  *
  * - Never writes to Supabase
- * - Only activates in non-production when live rails are empty
- * - Titles prefixed with [DEMO]; ids start with `demo-` (see isDemoProperty)
+ * - Activates when live inventory is empty (dev + production launch feel)
+ * - Public UI: no "Sample" / "DEMO" labels
+ * - Ids start with `demo-` (see isDemoProperty / isSampleListing) so taps stay read-only
+ * - Admin can detect via attributes.is_sample / is_demo
  * - Shapes mirror scripts/seed-demo-marketplace.ts
  */
 
 import type { Profile, Property } from "@/types/database";
-import { isProductionEnv } from "@/lib/env";
 import { isBoostedActive, isFeaturedActive } from "@/lib/agent-tiers";
 
-const DEMO_PREFIX = "[DEMO]";
 const SEED_NAMESPACE = "yike-demo-marketplace-v1";
 
 const unsplash = (photoId: string) =>
@@ -51,8 +51,8 @@ function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86_400_000).toISOString();
 }
 
-function withDemoTitle(title: string): string {
-  return title.startsWith(DEMO_PREFIX) ? title : `${DEMO_PREFIX} ${title}`;
+function withPublicTitle(title: string): string {
+  return title.replace(/^\[DEMO\]\s*/i, "").trim();
 }
 
 function demoAgent(
@@ -84,7 +84,7 @@ function demoAgent(
 const AGENTS = [
   demoAgent({
     id: "demo-agent-private",
-    full_name: "Demo Private Seller",
+    full_name: "Chinedu Okoro",
     phone: "08031110001",
     agent_type: "independent",
     verification_status: "not_started",
@@ -94,21 +94,21 @@ const AGENTS = [
   }),
   demoAgent({
     id: "demo-agent-verified",
-    full_name: "Demo Verified Seller",
+    full_name: "Amina Bello",
     phone: "08031110002",
     agent_type: "independent",
     trust_score: 96,
   }),
   demoAgent({
     id: "demo-agent-dealer",
-    full_name: "Demo Auto Dealer NG",
+    full_name: "Lagos Auto Hub",
     phone: "08031110003",
     agent_type: "agency",
     trust_score: 94,
   }),
   demoAgent({
     id: "demo-agent-agency",
-    full_name: "Demo Homes Agency",
+    full_name: "Prime Nest Homes",
     phone: "08031110004",
     agent_type: "agency",
     trust_score: 98,
@@ -357,6 +357,126 @@ const PROPERTY_SEEDS: PropSeed[] = [
     photos: PROPERTY_PHOTOS.slice(0, 5),
     daysAgo: 8,
   },
+  {
+    id: "demo-mp-prop-lekki-01",
+    agent: 3,
+    title: "Luxury 2-bed apartment — Lekki Phase 1",
+    description:
+      "Waterfront-facing apartment with 24/7 power, fitted kitchen, and estate security in Lekki Phase 1.",
+    listing_type: "rent",
+    property_type: "flat_2",
+    bedrooms: 2,
+    bathrooms: 2,
+    price: 6_500_000,
+    payment_period: "yearly",
+    state: "Lagos",
+    city: "Lagos",
+    area: "Lekki Phase 1",
+    landmark: "Close to Admiralty Way",
+    boosted: true,
+    photos: PROPERTY_PHOTOS.slice(0, 4),
+    daysAgo: 1,
+  },
+  {
+    id: "demo-mp-prop-wuse-01",
+    agent: 1,
+    title: "4-bed duplex — Wuse 2 Abuja",
+    description:
+      "Executive duplex in Wuse 2 with BQ, borehole, and covered parking.",
+    listing_type: "rent",
+    property_type: "detached_duplex",
+    bedrooms: 4,
+    bathrooms: 4,
+    price: 12_000_000,
+    payment_period: "yearly",
+    state: "FCT",
+    city: "Abuja",
+    area: "Wuse 2",
+    landmark: "Near Wuse Market",
+    boosted: true,
+    photos: PROPERTY_PHOTOS.slice(1, 5),
+    daysAgo: 2,
+  },
+  {
+    id: "demo-mp-prop-calabar-01",
+    agent: 1,
+    title: "3-bed bungalow — State Housing Calabar",
+    description:
+      "Quiet bungalow in State Housing Estate with tiled floors and fenced compound.",
+    listing_type: "rent",
+    property_type: "bungalow",
+    bedrooms: 3,
+    bathrooms: 2,
+    price: 1_800_000,
+    payment_period: "yearly",
+    state: "Cross River",
+    city: "Calabar",
+    area: "State Housing",
+    landmark: "Near Cultural Centre",
+    boosted: false,
+    photos: PROPERTY_PHOTOS.slice(2, 6),
+    daysAgo: 3,
+  },
+  {
+    id: "demo-mp-prop-enugu-shop-01",
+    agent: 3,
+    title: "Lock-up shop — Ogui Road Enugu",
+    description:
+      "Busy frontage shop on Ogui Road — prepaid meter, rolling shutter, and storage loft.",
+    listing_type: "lease",
+    property_type: "shop",
+    bedrooms: 0,
+    bathrooms: 1,
+    price: 1_200_000,
+    payment_period: "yearly",
+    state: "Enugu",
+    city: "Enugu",
+    area: "Ogui",
+    landmark: "Opposite Shoprite axis",
+    boosted: true,
+    photos: PROPERTY_PHOTOS.slice(6, 9),
+    daysAgo: 2,
+  },
+  {
+    id: "demo-mp-prop-ph-office-01",
+    agent: 3,
+    title: "Open-plan office — Trans Amadi PH",
+    description:
+      "Furnished open-plan office with AC, parking for 4 cars, and fibre-ready cabling.",
+    listing_type: "lease",
+    property_type: "office",
+    bedrooms: 0,
+    bathrooms: 2,
+    price: 3_800_000,
+    payment_period: "yearly",
+    state: "Rivers",
+    city: "Port Harcourt",
+    area: "Trans Amadi",
+    landmark: "Near Industrial Layout gate",
+    boosted: false,
+    photos: PROPERTY_PHOTOS.slice(7, 10),
+    daysAgo: 4,
+  },
+  {
+    id: "demo-mp-prop-uyo-land-01",
+    agent: 1,
+    title: "Half plot of land — Shelter Afrique Uyo",
+    description:
+      "Dry half plot with survey plan available. Ideal for duplex build.",
+    listing_type: "sale",
+    property_type: "land",
+    bedrooms: 0,
+    bathrooms: 0,
+    price: 18_500_000,
+    payment_period: "total",
+    state: "Akwa Ibom",
+    city: "Uyo",
+    area: "Shelter Afrique",
+    landmark: "Close to Ibom Tropicana",
+    boosted: true,
+    photos: PROPERTY_PHOTOS.slice(8, 10),
+    daysAgo: 5,
+  },
 ];
 
 const VEHICLE_SEEDS: VehSeed[] = [
@@ -533,6 +653,94 @@ const VEHICLE_SEEDS: VehSeed[] = [
     photos: VEHICLE_PHOTOS.slice(6, 9),
     daysAgo: 8,
   },
+  {
+    id: "demo-mp-veh-corolla-01",
+    agent: 2,
+    title: "Toyota Corolla 2019 — reliable sedan",
+    description:
+      "Tokunbo Corolla with chilled AC, reverse camera, and clean service booklet.",
+    price: 11_200_000,
+    state: "Lagos",
+    city: "Lagos",
+    area: "Surulere",
+    auto_category: "car",
+    make: "Toyota",
+    model: "Corolla",
+    year: 2019,
+    transmission: "automatic",
+    fuel_type: "petrol",
+    mileage: 54_200,
+    vehicle_condition: "foreign_used",
+    boosted: true,
+    photos: VEHICLE_PHOTOS.slice(0, 3),
+    daysAgo: 1,
+  },
+  {
+    id: "demo-mp-veh-prado-01",
+    agent: 2,
+    title: "Toyota Land Cruiser Prado 2016 — SUV",
+    description:
+      "Rugged Prado with 4WD, leather seats, and recent suspension service.",
+    price: 28_500_000,
+    state: "FCT",
+    city: "Abuja",
+    area: "Gwarinpa",
+    auto_category: "suv",
+    make: "Toyota",
+    model: "Prado",
+    year: 2016,
+    transmission: "automatic",
+    fuel_type: "petrol",
+    mileage: 92_000,
+    vehicle_condition: "foreign_used",
+    boosted: true,
+    photos: VEHICLE_PHOTOS.slice(4, 7),
+    daysAgo: 2,
+  },
+  {
+    id: "demo-mp-veh-hilux-01",
+    agent: 2,
+    title: "Toyota Hilux 2018 — double cab",
+    description:
+      "Work-ready Hilux with canopy, bull bar, and strong engine compression.",
+    price: 22_800_000,
+    state: "Rivers",
+    city: "Port Harcourt",
+    area: "Rumuokoro",
+    auto_category: "truck",
+    make: "Toyota",
+    model: "Hilux",
+    year: 2018,
+    transmission: "manual",
+    fuel_type: "diesel",
+    mileage: 78_500,
+    vehicle_condition: "nigerian_used",
+    boosted: false,
+    photos: VEHICLE_PHOTOS.slice(9, 10).concat(VEHICLE_PHOTOS.slice(1, 3)),
+    daysAgo: 3,
+  },
+  {
+    id: "demo-mp-veh-accord-01",
+    agent: 1,
+    title: "Honda Accord 2017 — sport sedan",
+    description:
+      "Sharp Accord with sunroof, keyless entry, and freshly done alignment.",
+    price: 9_750_000,
+    state: "Enugu",
+    city: "Enugu",
+    area: "New Haven",
+    auto_category: "car",
+    make: "Honda",
+    model: "Accord",
+    year: 2017,
+    transmission: "automatic",
+    fuel_type: "petrol",
+    mileage: 81_300,
+    vehicle_condition: "foreign_used",
+    boosted: true,
+    photos: VEHICLE_PHOTOS.slice(2, 5),
+    daysAgo: 2,
+  },
 ];
 
 function baseListingFields(opts: {
@@ -590,7 +798,7 @@ function baseListingFields(opts: {
     slug_locked: false,
     seo_title: null,
     seo_description: null,
-    title: withDemoTitle(opts.title),
+    title: withPublicTitle(opts.title),
     description: opts.description,
     price: opts.price,
     state: opts.state,
@@ -615,6 +823,7 @@ function baseListingFields(opts: {
     updated_at: daysAgo(opts.daysAgo),
     attributes: {
       is_demo: true,
+      is_sample: true,
       seed_namespace: SEED_NAMESPACE,
       ui_fixture: true,
     },
@@ -691,19 +900,24 @@ export const DEMO_UI_PROPERTIES: Property[] = PROPERTY_SEEDS.map(toProperty);
 export const DEMO_UI_VEHICLES: Property[] = VEHICLE_SEEDS.map(toVehicle);
 
 /**
- * Demo UI fixtures + banners — development only.
- * Hidden when: production env, NODE_ENV !== development, or YIKE_DISABLE_DEMO_UI=1.
+ * Empty-inventory UI fixtures — allowed in production when live rails are empty.
+ * Disable with YIKE_DISABLE_DEMO_UI=1 or YIKE_EMPTY_INVENTORY_FIXTURES=0.
+ * Never writes to the database.
  */
-export function canUseDevDemoUiFixtures(): boolean {
+export function canUseEmptyInventoryFixtures(): boolean {
   if (process.env.YIKE_DISABLE_DEMO_UI === "1") return false;
-  if (isProductionEnv()) return false;
-  if (process.env.NODE_ENV !== "development") return false;
+  if (process.env.YIKE_EMPTY_INVENTORY_FIXTURES === "0") return false;
   return true;
 }
 
+/** @deprecated use canUseEmptyInventoryFixtures */
+export function canUseDevDemoUiFixtures(): boolean {
+  return canUseEmptyInventoryFixtures();
+}
+
 /**
- * When live inventory is empty in development, return demo cards.
- * Never mixes into a non-empty live result; never runs in production.
+ * When live inventory is empty, return sample cards that look production-ready.
+ * Never mixes into a non-empty live result; never writes to the database.
  */
 export function withEmptyInventoryDemoFixtures(
   live: Property[],
@@ -713,7 +927,7 @@ export function withEmptyInventoryDemoFixtures(
   if (live.length > 0) {
     return { items: live.slice(0, limit), isDemo: false };
   }
-  if (!canUseDevDemoUiFixtures()) {
+  if (!canUseEmptyInventoryFixtures()) {
     return { items: [], isDemo: false };
   }
   const source = kind === "vehicle" ? DEMO_UI_VEHICLES : DEMO_UI_PROPERTIES;

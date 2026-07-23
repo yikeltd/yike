@@ -26,7 +26,7 @@ export function buildGatewayInquiryMessage(input: {
   publicListingCode: string;
   publicAgentCode: string;
   listingUrl: string;
-  /** @deprecated internal only — do not put in public message */
+  /** Enquiry reference shown naturally in the prefilled message */
   yikeReference?: string;
   listingId?: string;
   agentId?: string;
@@ -38,17 +38,18 @@ export function buildGatewayInquiryMessage(input: {
   bedrooms?: number;
   propertyType?: string | null;
 }): string {
+  const ref = input.yikeReference?.trim();
   const lines = [
     "Hello Yike, I am interested in this property.",
     "",
     `Property: ${input.propertyTitle.trim()}`,
     `List ID: ${input.publicListingCode}`,
     `Agent ID: ${input.publicAgentCode}`,
-    `Link: ${input.listingUrl}`,
-    "",
-    "Please connect me with the agent.",
   ];
-
+  if (ref) {
+    lines.push(`Enquiry ref: ${ref}`);
+  }
+  lines.push(`Link: ${input.listingUrl}`, "", "Please connect me with the agent.");
   return lines.join("\n");
 }
 
@@ -65,6 +66,7 @@ export function buildDirectAgentInquiryMessage(input: {
     listingTitle: input.propertyTitle,
     publicListingCode: input.publicListingCode,
     listingUrl: input.listingUrl,
+    enquiryReference: input.yikeReference,
   });
 }
 
@@ -88,6 +90,7 @@ export function buildAgentHandoffMessage(input: {
     listingTitle: input.propertyTitle,
     publicListingCode: input.publicListingCode,
     listingUrl: input.listingUrl,
+    enquiryReference: input.yikeReference,
   });
 }
 

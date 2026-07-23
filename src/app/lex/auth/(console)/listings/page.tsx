@@ -11,6 +11,8 @@ import { propertyPath } from "@/lib/property-url";
 import type { Property, Profile } from "@/types/database";
 import Link from "next/link";
 import Image from "next/image";
+import { SampleBulkPurgeButton } from "@/components/admin/sample-bulk-purge-button";
+import { isSampleListing } from "@/lib/mock-listings";
 import { cn } from "@/lib/utils";
 
 export default async function AdminListingsPage({
@@ -92,6 +94,7 @@ export default async function AdminListingsPage({
         >
           Open bulk review →
         </Link>
+        <SampleBulkPurgeButton />
       </div>
       <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
         {tabs.map((s) => (
@@ -132,6 +135,7 @@ export default async function AdminListingsPage({
                 {listings.map((p) => {
                   const thumb = p.media_urls[0];
                   const pubPath = propertyPath(p);
+                  const sample = isSampleListing(p);
                   return (
                     <tr
                       key={p.id}
@@ -154,8 +158,15 @@ export default async function AdminListingsPage({
                               />
                             ) : null}
                           </span>
-                          <span className="line-clamp-2 max-w-[220px]">
-                            {p.title}
+                          <span className="min-w-0">
+                            <span className="line-clamp-2 max-w-[220px] block">
+                              {p.title}
+                            </span>
+                            {sample ? (
+                              <span className="mt-1 inline-block rounded bg-navy/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold">
+                                Sample Listing
+                              </span>
+                            ) : null}
                           </span>
                         </Link>
                       </td>
@@ -200,6 +211,7 @@ export default async function AdminListingsPage({
                           agentName={p.agent?.full_name ?? undefined}
                           agentWhatsapp={p.agent?.whatsapp}
                           agentPhone={p.agent?.phone}
+                          isSample={sample}
                           agentVerified={
                             !!(
                               p.agent?.verified_badge ||

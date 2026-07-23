@@ -276,6 +276,7 @@ async function runLeadRouting(
       propertyTitle: input.title,
       publicListingCode: listCode ?? "pending",
       listingUrl,
+      yikeReference: input.yikeReference,
     });
     return {
       redirectUrl: whatsAppDeepLink(wa ?? "", message),
@@ -289,6 +290,7 @@ async function runLeadRouting(
     publicListingCode: listCode ?? "pending",
     publicAgentCode: agentCode ?? "pending",
     listingUrl,
+    yikeReference: input.yikeReference,
   });
 
   return {

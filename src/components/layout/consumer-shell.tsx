@@ -7,6 +7,8 @@ import { HeaderDesktop } from "./header-desktop";
 import { HeaderMobile } from "./header-mobile";
 import { BottomNavMobile } from "./bottom-nav-mobile";
 import { DesktopWhatsappAdminButton } from "./desktop-whatsapp-admin-button";
+import { OfflineBanner } from "@/components/pwa/offline-banner";
+import { OfflineWarmCache } from "@/components/pwa/offline-warm-cache";
 import type { SiteBanner } from "@/types/database";
 
 export function ConsumerShell({
@@ -27,11 +29,19 @@ export function ConsumerShell({
     isBrowse;
 
   if (hideChrome) {
-    return <main className="flex-1">{children}</main>;
+    return (
+      <>
+        <OfflineBanner />
+        <OfflineWarmCache />
+        <main className="flex-1">{children}</main>
+      </>
+    );
   }
 
   return (
     <>
+      <OfflineBanner />
+      <OfflineWarmCache />
       <HeaderDesktop />
       <HeaderMobile mobileBanner={mobileBanner} />
       <main

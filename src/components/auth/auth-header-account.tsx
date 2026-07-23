@@ -12,6 +12,8 @@ import {
 } from "@/lib/admin/roles";
 import type { Profile, UserRole } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { allowNetworkAction } from "@/lib/pwa/offline-ui";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 function resolveProfileRole(user: User, profile: Profile | null): UserRole | null {
   if (profile?.role) return profile.role;
@@ -39,6 +41,7 @@ export function AuthHeaderAccount({
   variant?: "default" | "desktop";
 }) {
   const { user, profile, loading, openAuth } = useAuth();
+  const online = useOnlineStatus();
 
   if (loading) {
     return (
@@ -140,11 +143,18 @@ export function AuthHeaderAccount({
   return (
     <button
       type="button"
-      onClick={() => openAuth({ type: "profile", redirectPath: "/agent" })}
+      onClick={() => {
+        if (!allowNetworkAction()) return;
+        openAuth({ type: "profile", redirectPath: "/agent" });
+      }}
+      disabled={!online}
+      aria-disabled={!online}
+      title={!online ? "Connect to sign in" : undefined}
       className={cn(
         variant === "desktop"
           ? "pressable rounded-xl px-2 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface/80"
           : "pressable rounded-xl border border-surface px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-gold/40",
+        !online && "pointer-events-none opacity-55",
         className
       )}
     >

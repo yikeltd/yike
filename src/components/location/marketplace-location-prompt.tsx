@@ -26,24 +26,21 @@ export function MarketplaceLocationPrompt({
   onDismiss,
 }: Props) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   if (!open) return null;
 
   async function onAllowClick() {
     setBusy(true);
-    setError(null);
     const result = await requestMarketplaceGeolocation();
     setBusy(false);
     if (!result.ok) {
+      // Silent fail — never block homepage with permission friction
       markLocationPromptSeen();
-      setError(
-        result.reason === "denied"
-          ? "Location access was denied. You can change this anytime next to the logo."
-          : "Couldn't detect your location. You can pick a city anytime next to the logo.",
-      );
-      // Soft fail — still dismiss so browsing continues
-      window.setTimeout(() => onDismiss(), 1800);
+      trackEvent("search", {
+        placement: "marketplace_location_prompt_denied",
+        reason: result.reason,
+      });
+      onDismiss();
       return;
     }
     trackEvent("search", {
@@ -90,10 +87,6 @@ export function MarketplaceLocationPrompt({
         <p className="mt-1.5 text-sm leading-relaxed text-muted">
           Allow location access to discover properties and vehicles near you.
         </p>
-
-        {error ? (
-          <p className="mt-3 text-xs font-medium text-amber-800">{error}</p>
-        ) : null}
 
         <div className="mt-5 flex gap-2">
           <button

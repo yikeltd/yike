@@ -25,6 +25,7 @@ import { trackEvent } from "@/lib/analytics";
 import { parseHomeCategory } from "@/lib/home/marketplace-category";
 import { VEHICLE_MAKES } from "@/lib/marketplace/vehicle-makes";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { allowNetworkAction } from "@/lib/pwa/offline-ui";
 import { cn } from "@/lib/utils";
 
 function matchVehicleMake(text: string): string | null {
@@ -117,6 +118,7 @@ export function HeaderUniversalSearch({
   }
 
   function commitSearch(text: string) {
+    if (!allowNetworkAction()) return;
     const trimmed = text.trim();
     const rawParsed = parseSmartSearchQuery(text);
     const makeHit =
@@ -201,6 +203,7 @@ export function HeaderUniversalSearch({
   }
 
   function onSelect(s: SearchSuggestion) {
+    if (!allowNetworkAction()) return;
     if (s.kind === "location") {
       const centroid = resolveCityCentroid(s.match.city, s.match.state);
       setMarketplaceLocation({

@@ -7,7 +7,7 @@ import { listingAvailabilityNotice } from "@/lib/leads/availability";
 import { finalizeLeadRouting } from "@/lib/leads/pipeline";
 import { buildSupportFallbackResult } from "@/lib/leads/fallback";
 import { validateLeadRequest } from "@/lib/leads/validation";
-import { buildLeadAttribution } from "@/lib/leads/attribution";
+import { buildLeadAttribution, buildLeadAttributionMetadata } from "@/lib/leads/attribution";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentRoutingProfile, ListingRoutingContext } from "@/lib/leads/routing-types";
 import type { LeadType } from "@/lib/leads/types";
@@ -169,6 +169,11 @@ export async function POST(request: Request) {
         p_dedupe_key: dedupeKey,
         p_lead_id: logResult.leadId,
       });
+      const campaignFromBody = body.sourceCampaign
+        ? String(body.sourceCampaign)
+        : body.utmCampaign
+          ? String(body.utmCampaign)
+          : null;
       const attribution = buildLeadAttribution({
         sourcePage,
         sourceSurface: body.sourceSurface ? String(body.sourceSurface) : null,
@@ -176,8 +181,19 @@ export async function POST(request: Request) {
           body.sourceListingPosition != null
             ? Number(body.sourceListingPosition)
             : null,
-        sourceCampaign: body.sourceCampaign ? String(body.sourceCampaign) : null,
+        sourceCampaign: campaignFromBody,
         placement: body.placement ? String(body.placement) : undefined,
+      });
+      const attributionMeta = buildLeadAttributionMetadata({
+        utmSource: body.utmSource ? String(body.utmSource) : null,
+        utmMedium: body.utmMedium ? String(body.utmMedium) : null,
+        utmCampaign: body.utmCampaign ? String(body.utmCampaign) : null,
+        utmContent: body.utmContent ? String(body.utmContent) : null,
+        utmTerm: body.utmTerm ? String(body.utmTerm) : null,
+        referral: body.referral ? String(body.referral) : null,
+        device: body.device ? String(body.device) : null,
+        city,
+        listingType,
       });
       void admin
         .from("leads")
@@ -186,6 +202,34 @@ export async function POST(request: Request) {
         .then(({ error }) => {
           if (error) console.warn("[leads/track] attribution update failed", error.message);
         });
+
+      if (Object.keys(attributionMeta).length > 0) {
+        void logLeadEvent({
+          leadId: logResult.leadId,
+          type: "attribution_captured",
+          metadata: attributionMeta,
+        });
+        // Optional first-class columns (migration 20260723192044) — ignore if not applied yet
+        void admin
+          .from("leads")
+          .update({
+            utm_source: attributionMeta.utm_source ?? null,
+            utm_medium: attributionMeta.utm_medium ?? null,
+            utm_campaign: attributionMeta.utm_campaign ?? null,
+            utm_content: attributionMeta.utm_content ?? null,
+            utm_term: attributionMeta.utm_term ?? null,
+            referral: attributionMeta.referral ?? null,
+            device_type: attributionMeta.device ?? null,
+            listing_city: attributionMeta.city ?? null,
+            listing_type: attributionMeta.listing_type ?? null,
+          })
+          .eq("id", logResult.leadId)
+          .then(({ error }) => {
+            if (error && !/column|schema cache/i.test(error.message)) {
+              console.warn("[leads/track] utm columns update", error.message);
+            }
+          });
+      }
 
       void captureListingLead(admin, {
         listingId,
@@ -196,6 +240,11 @@ export async function POST(request: Request) {
         placement: body.placement ? String(body.placement) : null,
         legacyLeadId: logResult.leadId,
         listingTitle: title,
+        metadataExtra: {
+          ...attributionMeta,
+          yike_reference: yikeReference,
+          guest_id: guestId,
+        },
       });
     }
   }

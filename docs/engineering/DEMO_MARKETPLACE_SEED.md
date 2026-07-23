@@ -1,8 +1,8 @@
-# Demo marketplace seed (dev/sandbox only)
+# Demo / sample marketplace seed
 
-Idempotent script that inserts **test-only** property + vehicle inventory for internal discovery testing.
+Idempotent script that inserts **sample** property + vehicle inventory for discovery testing and (optionally) launch feel.
 
-**Never run against production** (`hlpojfurfldvcxfxhveg`) unless you intentionally set `ALLOW_PRODUCTION_SEED=1` (default: refused).
+**Never run against production** (`hlpojfurfldvcxfxhveg`) unless the founder explicitly sets `ALLOW_PRODUCTION_SEED=1` (default: refused).
 
 ## Script
 
@@ -13,17 +13,25 @@ Idempotent script that inserts **test-only** property + vehicle inventory for in
 | Kind | Count | Notes |
 |------|------:|-------|
 | Sellers | 4 | Private, Verified Seller, Dealer, Agency |
-| Properties | 10 | Enugu → Asaba city mix; rent/sale/land; ≥3 boosted |
-| Vehicles | 10 | Toyota…Isuzu mix; sedan/SUV/pickup/bus/moto/truck; ≥3 boosted |
+| Properties | 10+ | Nationwide city mix; rent/sale/land/shop/office |
+| Vehicles | 10+ | Camry, Corolla, RX350, Prado, Hilux, Accord, C300… |
 
 Every listing is tagged:
 
-- Title prefix `[DEMO]`
-- `attributes.is_demo = true`
+- **No public `[DEMO]` title prefix** (clean marketplace titles)
+- `attributes.is_sample = true`
+- `attributes.is_demo = true` (legacy purge compatibility)
 - `attributes.seed_namespace = yike-demo-marketplace-v1`
 - Stable UUIDs (upsert-safe; does not overwrite non-demo rows)
 
-Images use Unsplash placeholders already used by the repo’s mock seed path — marked as demo media in `media_items.alt_text` / attributes.
+**Public UI:** never shows Sample / DEMO badges.  
+**Admin:** shows “Sample Listing”; one-click / bulk remove via `/api/admin/sample-listings` or `--purge-demo`.
+
+Images use Unsplash placeholders.
+
+## Empty production without seeding
+
+If production has **0 published listings**, the app fills homepage rails with **UI-only fixtures** (`src/lib/demo-ui-fixtures.ts`) — no DB writes. Disable with `YIKE_EMPTY_INVENTORY_FIXTURES=0` or `YIKE_DISABLE_DEMO_UI=1`.
 
 ## Safety guards
 
@@ -35,49 +43,26 @@ Images use Unsplash placeholders already used by the repo’s mock seed path —
 ## How to run (sandbox)
 
 ```bash
-# 1) Point env at sandbox (example) or local Supabase — NOT production
 export SUPABASE_URL="https://gyxemepnrkwxocgzfbeo.supabase.co"
 export SUPABASE_SERVICE_ROLE_KEY="<sandbox-service-role>"
 
-# 2) Dry-run (always first)
 npx tsx scripts/seed-demo-marketplace.ts --dry-run
-
-# 3) Seed
 npx tsx scripts/seed-demo-marketplace.ts
-
-# 4) Re-validate discovery counts
 npx tsx scripts/seed-demo-marketplace.ts --validate-only
-
-# Optional: remove demo rows only
 npx tsx scripts/seed-demo-marketplace.ts --purge-demo
 ```
 
-Or via npm:
+## Production (founder confirm only)
 
 ```bash
-npm run seed:demo -- --dry-run
-npm run seed:demo
+# Dry-run first (safe)
+npx tsx --env-file=.env.local scripts/seed-demo-marketplace.ts --dry-run
+
+# Explicit write (founder confirmation required)
+ALLOW_PRODUCTION_SEED=1 npx tsx --env-file=.env.local scripts/seed-demo-marketplace.ts
 ```
-
-## Local Supabase
-
-```bash
-npx supabase start
-export SUPABASE_URL="http://127.0.0.1:54321"
-export SUPABASE_SERVICE_ROLE_KEY="<local service_role from supabase status>"
-npx tsx scripts/seed-demo-marketplace.ts
-```
-
-## Expected validation
-
-After a successful seed against a safe DB:
-
-- Homepage property rails can load `status=approved` + `asset_type=PROPERTY` demo rows
-- `/vehicles` can load `asset_type=VEHICLE` demo rows
-- Search finds `[DEMO]` titles
-- Admin listings console can filter by vertical and see boosted flags
 
 ## Related
 
-- Legacy bulk property SQL/API seed: `scripts/seed-supabase.ts` (different purpose; still respect production caution)
-- Project identity: `docs/engineering/PROJECT_IDENTITY.md`
+- UI fixtures: `src/lib/demo-ui-fixtures.ts`
+- Admin purge: `POST /api/admin/sample-listings`

@@ -9,6 +9,8 @@ import {
   SELLER_CHOOSE_LISTING_PATH,
   SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
+import { allowNetworkAction } from "@/lib/pwa/offline-ui";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import type { Profile } from "@/types/database";
 
 function sellerListDestination(profile: Profile | null | undefined) {
@@ -28,10 +30,12 @@ export function ListPropertyButton({
   asLink?: boolean;
 }) {
   const router = useRouter();
+  const online = useOnlineStatus();
   const { guardAction, user, profile, emailVerified } = useAuth();
 
   function handleClick(e: React.MouseEvent) {
     e.preventDefault();
+    if (!allowNetworkAction()) return;
     guardAction(
       { type: "list_property", redirectPath: SELLER_VERIFY_PATH },
       () => {
@@ -43,14 +47,28 @@ export function ListPropertyButton({
 
   if (asLink) {
     return (
-      <button type="button" onClick={handleClick} className={cn(className)}>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={!online}
+        aria-disabled={!online}
+        title={!online ? "Connect to publish a listing" : undefined}
+        className={cn(className, !online && "pointer-events-none opacity-55")}
+      >
         {children}
       </button>
     );
   }
 
   return (
-    <button type="button" onClick={handleClick} className={cn(className)}>
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={!online}
+      aria-disabled={!online}
+      title={!online ? "Connect to publish a listing" : undefined}
+      className={cn(className, !online && "pointer-events-none opacity-55")}
+    >
       {children}
     </button>
   );

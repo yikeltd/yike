@@ -119,7 +119,7 @@ export function SellerPhoneVerifyRow({
             inputMode="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="08035143299"
+            placeholder="08103514329"
             className="mt-1 h-11 rounded-xl"
             autoComplete="tel"
           />
