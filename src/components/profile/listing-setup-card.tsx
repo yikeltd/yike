@@ -44,7 +44,7 @@ export function ListingSetupCard({
       done: hasBasicListingProfile(profile),
       action: hasBasicListingProfile(profile)
         ? undefined
-        : { label: "Complete profile", href: "/agent/profile-setup" },
+        : { label: "Complete profile", href: "/agent/verify" },
     },
   ];
 

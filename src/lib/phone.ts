@@ -53,3 +53,17 @@ export function normalizePhoneForDuplicateCheck(input: string): string | null {
 export function isBasicPhoneFormat(input: string): boolean {
   return normalizePhoneForDuplicateCheck(input) !== null;
 }
+
+/**
+ * Signup phone input: exactly 11 local digits (0803…), no +234 / spaces / hyphens.
+ * Stricter than isBasicPhoneFormat (which also accepts 10-digit and intl forms).
+ */
+export function isLocalNigerianSignupPhone(input: string): boolean {
+  if (!/^\d{11}$/.test(input)) return false;
+  return isValidNigerianPhone(input);
+}
+
+/** Digits-only local phone input, capped at 11 (signup field). */
+export function digitsOnlyPhoneLocal(input: string, max = 11): string {
+  return input.replace(/\D/g, "").slice(0, max);
+}

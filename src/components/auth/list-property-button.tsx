@@ -4,6 +4,19 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 import { canListProperties } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import {
+  isSellerReadyToList,
+  SELLER_CHOOSE_LISTING_PATH,
+  SELLER_VERIFY_PATH,
+} from "@/lib/seller-trust";
+import type { Profile } from "@/types/database";
+
+function sellerListDestination(profile: Profile | null | undefined) {
+  if (profile && canListProperties(profile) && isSellerReadyToList(profile)) {
+    return SELLER_CHOOSE_LISTING_PATH;
+  }
+  return SELLER_VERIFY_PATH;
+}
 
 export function ListPropertyButton({
   className,
@@ -20,14 +33,10 @@ export function ListPropertyButton({
   function handleClick(e: React.MouseEvent) {
     e.preventDefault();
     guardAction(
-      { type: "list_property", redirectPath: "/post-property" },
+      { type: "list_property", redirectPath: SELLER_VERIFY_PATH },
       () => {
         if (!user || !emailVerified) return;
-        if (profile && canListProperties(profile)) {
-          router.push("/agent/listings/new");
-        } else {
-          router.push("/agent/become");
-        }
+        router.push(sellerListDestination(profile));
       }
     );
   }

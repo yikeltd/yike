@@ -12,6 +12,7 @@ export function SearchResultsChrome({
   currentLabel,
   showEmptySuggestions = false,
   hideSuggestions = false,
+  filtersDefaultOpen = true,
   children,
 }: {
   resultCount: number;
@@ -21,10 +22,13 @@ export function SearchResultsChrome({
   currentLabel?: string;
   showEmptySuggestions?: boolean;
   hideSuggestions?: boolean;
+  filtersDefaultOpen?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <>
+      <SearchRefinePanel defaultOpen={filtersDefaultOpen} className="mt-1" />
+
       <SearchActiveBar
         resultCount={resultCount}
         nearbyCount={nearbyCount}
@@ -33,8 +37,6 @@ export function SearchResultsChrome({
         currentLabel={currentLabel}
         compact
       />
-
-      <SearchRefinePanel defaultOpen={false} />
 
       {children}
 

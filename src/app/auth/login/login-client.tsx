@@ -205,23 +205,27 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
     });
   }
 
+  const signupHref = `/auth/signup${next !== "/profile" ? `?next=${encodeURIComponent(next)}` : ""}`;
+
   return (
     <>
       <AuthShell
-        title={usePin ? undefined : "Sign in to Yike"}
-        compact={Boolean(usePin)}
+        title={usePin ? undefined : "Welcome Back"}
+        subtitle={usePin ? undefined : "Continue where you left off."}
+        compact
+        centered
         belowLegal={belowLegal}
         footer={
           !usePin ? (
-            <p className="text-sm text-muted">
-              Don&apos;t have an account?{" "}
+            <div className="space-y-1 text-sm text-muted">
+              <p>New to Yike?</p>
               <Link
-                href={`/auth/signup${next !== "/profile" ? `?next=${encodeURIComponent(next)}` : ""}`}
+                href={signupHref}
                 className="font-semibold text-gold-dark dark:text-gold"
               >
-                Create one free
+                Create your account
               </Link>
-            </p>
+            </div>
           ) : null
         }
       >
@@ -237,44 +241,43 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
             onUsePassword={() => setShowPasswordForm(true)}
           />
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {info ? (
               <p className="rounded-xl bg-gold/10 px-3 py-2 text-sm text-navy dark:text-gold">
                 {info}
               </p>
             ) : null}
-            <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted">
-                Email or username
-              </label>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold tracking-tight text-foreground">
+                Email Address
+              </p>
               <Input
-                type="text"
+                type="email"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
                 className="h-12 rounded-xl"
-                autoComplete="username"
+                autoComplete="email"
               />
             </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted">
-                Password
-              </label>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold tracking-tight text-foreground">PIN</p>
               <PasswordInput
-                placeholder="Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="h-12 rounded-xl"
                 autoComplete="current-password"
-                revealLabel="password"
+                revealLabel="PIN"
+                inputMode={/^\d*$/.test(password) ? "numeric" : "text"}
               />
-              <div className="mt-2 text-right">
+              <p className="text-xs text-muted">Use your 6-digit PIN to sign in.</p>
+              <div className="pt-0.5 text-right">
                 <Link
                   href="/auth/forgot-password"
-                  className="text-sm font-semibold text-gold-dark hover:underline"
+                  className="text-sm font-semibold text-gold-dark hover:underline dark:text-gold"
                 >
-                  Forgot password?
+                  Forgot PIN?
                 </Link>
               </div>
             </div>
@@ -284,13 +287,13 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
               </p>
             )}
             <Button type="submit" fullWidth size="lg" disabled={loading}>
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? "Signing in…" : "Sign In"}
             </Button>
             {quickUser && !forcePassword && (
               <button
                 type="button"
                 onClick={() => setShowPasswordForm(false)}
-                className="w-full text-sm font-semibold text-gold-dark hover:underline"
+                className="w-full text-sm font-semibold text-gold-dark hover:underline dark:text-gold"
               >
                 Sign in with PIN instead
               </button>

@@ -5,11 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { queryPublicVehicles } from "@/lib/marketplace/listings";
 import { VEHICLE_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
-import { MarketplaceVerticalSwitcher } from "@/components/marketplace/vertical-switcher";
+import { POPULAR_VEHICLE_MAKES } from "@/lib/marketplace/vehicle-makes";
+import { NIGERIAN_STATES } from "@/lib/constants";
+import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
+import { MarketplaceEmptyState } from "@/components/marketplace/marketplace-empty-state";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
+import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { MarketplaceSafetyNotice } from "@/components/marketplace/safety-notice";
-import { SaveSearchButton } from "@/components/search/save-search-button";
 import { isFeaturedActive } from "@/lib/agent-tiers";
+import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
 
 export const metadata: Metadata = {
   title: "Vehicles | Yike Marketplace",
@@ -24,6 +28,11 @@ function first(v: string | string[] | undefined): string | undefined {
 }
 
 const PAGE_SIZE = 24;
+const YEAR_NOW = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: 30 }, (_, i) => YEAR_NOW - i);
+
+const controlClass =
+  "min-h-12 w-full rounded-xl border border-navy/12 bg-white px-3.5 text-base text-navy placeholder:text-navy/40 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30";
 
 export default async function VehiclesPage({
   searchParams,
@@ -35,6 +44,11 @@ export default async function VehiclesPage({
   const sp = await searchParams;
   const sort = first(sp.sort) || "newest";
   const page = Math.max(1, Number(first(sp.page) || "1") || 1);
+  const minYear = first(sp.min_year) ? Number(first(sp.min_year)) : undefined;
+  const maxYear = first(sp.max_year) ? Number(first(sp.max_year)) : undefined;
+  const maxMileage = first(sp.max_mileage)
+    ? Number(first(sp.max_mileage))
+    : undefined;
   const supabase = await createClient();
   let vehicles = supabase
     ? await queryPublicVehicles(supabase, {
@@ -43,14 +57,22 @@ export default async function VehiclesPage({
         city: first(sp.city),
         auto_category: first(sp.category),
         make: first(sp.make),
+        model: first(sp.model),
+        min_year: Number.isFinite(minYear) ? minYear : undefined,
+        max_year: Number.isFinite(maxYear) ? maxYear : undefined,
         min_price: first(sp.min_price) ? Number(first(sp.min_price)) : undefined,
         max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
+        max_mileage: Number.isFinite(maxMileage) ? maxMileage : undefined,
         transmission: first(sp.transmission),
         fuel_type: first(sp.fuel),
         condition: first(sp.condition),
-        limit: 120,
+        limit: 48,
       })
     : [];
+
+  const vehicleDemo = withEmptyInventoryDemoFixtures(vehicles, "vehicle", 24);
+  vehicles = vehicleDemo.items;
+  const showingDemoFixtures = vehicleDemo.isDemo;
 
   if (sort === "price_asc") {
     vehicles = [...vehicles].sort((a, b) => Number(a.price) - Number(b.price));
@@ -59,6 +81,12 @@ export default async function VehiclesPage({
   } else if (sort === "featured") {
     vehicles = [...vehicles].sort(
       (a, b) => Number(isFeaturedActive(b)) - Number(isFeaturedActive(a)),
+    );
+  } else if (sort === "mileage" || first(sp.max_mileage)) {
+    vehicles = [...vehicles].sort(
+      (a, b) =>
+        (Number(a.mileage) || Number.POSITIVE_INFINITY) -
+        (Number(b.mileage) || Number.POSITIVE_INFINITY),
     );
   } else {
     vehicles = [...vehicles].sort(
@@ -83,8 +111,12 @@ export default async function VehiclesPage({
     "state",
     "city",
     "make",
+    "model",
+    "min_year",
+    "max_year",
     "min_price",
     "max_price",
+    "max_mileage",
     "transmission",
     "fuel",
   ] as const) {
@@ -95,6 +127,7 @@ export default async function VehiclesPage({
   const saveLabel = [
     "Vehicles",
     first(sp.category),
+    first(sp.make),
     first(sp.q),
     first(sp.city),
   ]
@@ -108,93 +141,175 @@ export default async function VehiclesPage({
     return s ? `/vehicles?${s}` : "/vehicles";
   }
 
-  return (
-    <main className="mx-auto max-w-6xl px-4 py-6 pb-24">
-      <header className="mb-6">
-        <MarketplaceVerticalSwitcher active="vehicle" />
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-gold">Yike Marketplace</p>
-            <h1 className="text-3xl font-bold text-navy">Vehicles</h1>
-            <p className="mt-1 max-w-xl text-sm text-black/60">
-              Cars, SUVs, trucks, motorcycles, commercial vehicles, and more —
-              reviewed before going live.
-            </p>
-          </div>
-          <SaveSearchButton label={saveLabel} href={saveHref} />
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link
-            href="/agent/listings/new/vehicle"
-            className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-navy"
-          >
-            Sell a vehicle
-          </Link>
-          <Link
-            href="/search"
-            className="rounded-lg border border-navy/15 px-4 py-2 text-sm text-navy"
-          >
-            Browse property
-          </Link>
-        </div>
-      </header>
+  const hasFilters = Boolean(
+    first(sp.q) ||
+      first(sp.category) ||
+      first(sp.condition) ||
+      first(sp.make) ||
+      first(sp.model) ||
+      first(sp.state) ||
+      first(sp.city) ||
+      first(sp.min_year) ||
+      first(sp.max_year) ||
+      first(sp.min_price) ||
+      first(sp.max_price),
+  );
 
-      <form className="mb-4 grid gap-2 rounded-xl border border-black/8 bg-white p-3 sm:grid-cols-6">
-        <input
-          name="q"
-          defaultValue={first(sp.q) ?? ""}
-          placeholder="Search make, model…"
-          className="rounded-lg border border-black/10 px-3 py-2 text-sm sm:col-span-2"
-        />
-        <select
-          name="category"
-          defaultValue={first(sp.category) ?? ""}
-          className="rounded-lg border border-black/10 px-3 py-2 text-sm"
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-5 pb-24">
+      <MarketplaceCategoryHeader
+        vertical="vehicle"
+        title="Vehicles"
+        tagline="Find your next vehicle."
+        sellHref="/agent/listings/new/vehicle"
+        sellLabel="Sell Vehicle"
+        saveLabel={saveLabel}
+        saveHref={saveHref}
+      />
+
+      {showingDemoFixtures && process.env.NODE_ENV === "development" ? (
+        <div
+          role="status"
+          className="mb-4 rounded-lg border border-gold/40 bg-gold/15 px-3 py-2 text-center text-[11px] font-semibold text-navy sm:text-xs"
         >
-          <option value="">All categories</option>
-          {VEHICLE_CATEGORIES.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.plural}
-            </option>
-          ))}
-        </select>
-        <select
-          name="condition"
-          defaultValue={first(sp.condition) ?? ""}
-          className="rounded-lg border border-black/10 px-3 py-2 text-sm"
-        >
-          <option value="">Any condition</option>
-          <option value="new">New</option>
-          <option value="foreign_used">Foreign used</option>
-          <option value="nigerian_used">Nigerian used</option>
-          <option value="certified">Certified</option>
-        </select>
-        <select
-          name="sort"
-          defaultValue={sort}
-          className="rounded-lg border border-black/10 px-3 py-2 text-sm"
-        >
-          <option value="newest">Newest / featured</option>
-          <option value="featured">Featured first</option>
-          <option value="price_asc">Price · low to high</option>
-          <option value="price_desc">Price · high to low</option>
-        </select>
-        <button
-          type="submit"
-          className="rounded-lg bg-navy px-3 py-2 text-sm font-medium text-white"
-        >
-          Apply
-        </button>
+          [DEMO] Local preview fixtures — not live inventory · no database writes
+        </div>
+      ) : null}
+
+      <form className="mb-5 space-y-3 rounded-2xl border border-navy/8 bg-white p-3 shadow-sm sm:p-4">
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+          <input
+            name="q"
+            defaultValue={first(sp.q) ?? ""}
+            placeholder="Search make, model…"
+            className={`${controlClass} lg:col-span-2`}
+            aria-label="Search vehicles"
+          />
+          <select
+            name="category"
+            defaultValue={first(sp.category) ?? ""}
+            className={controlClass}
+            aria-label="Category"
+          >
+            <option value="">Category</option>
+            {VEHICLE_CATEGORIES.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.plural}
+              </option>
+            ))}
+          </select>
+          <select
+            name="condition"
+            defaultValue={first(sp.condition) ?? ""}
+            className={controlClass}
+            aria-label="Condition"
+          >
+            <option value="">Condition</option>
+            <option value="new">New</option>
+            <option value="foreign_used">Foreign used</option>
+            <option value="nigerian_used">Nigerian used</option>
+            <option value="certified">Certified</option>
+          </select>
+        </div>
+
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+          <select
+            name="make"
+            defaultValue={first(sp.make) ?? ""}
+            className={controlClass}
+            aria-label="Make"
+          >
+            <option value="">Make</option>
+            {POPULAR_VEHICLE_MAKES.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <input
+            name="model"
+            defaultValue={first(sp.model) ?? ""}
+            placeholder="Model"
+            className={controlClass}
+            aria-label="Model"
+          />
+          <select
+            name="min_year"
+            defaultValue={first(sp.min_year) ?? ""}
+            className={controlClass}
+            aria-label="Year from"
+          >
+            <option value="">Year from</option>
+            {YEAR_OPTIONS.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+          <select
+            name="state"
+            defaultValue={first(sp.state) ?? ""}
+            className={controlClass}
+            aria-label="Location"
+          >
+            <option value="">Location</option>
+            {NIGERIAN_STATES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+          <input
+            name="min_price"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            defaultValue={first(sp.min_price) ?? ""}
+            placeholder="Min price (₦)"
+            className={controlClass}
+            aria-label="Minimum price"
+          />
+          <input
+            name="max_price"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            defaultValue={first(sp.max_price) ?? ""}
+            placeholder="Max price (₦)"
+            className={controlClass}
+            aria-label="Maximum price"
+          />
+          <select
+            name="sort"
+            defaultValue={sort}
+            className={controlClass}
+            aria-label="Sort"
+          >
+            <option value="newest">Newest</option>
+            <option value="featured">Featured</option>
+            <option value="price_asc">Price · low to high</option>
+            <option value="price_desc">Price · high to low</option>
+          </select>
+          <button
+            type="submit"
+            className="pressable min-h-12 rounded-xl bg-navy px-4 text-base font-bold text-white"
+          >
+            Search
+          </button>
+        </div>
       </form>
 
-      <div className="mb-6">
+      <div className="mb-5">
         <MarketplaceSafetyNotice vertical="vehicle" />
       </div>
 
       {featured.length > 0 && sort !== "price_asc" && sort !== "price_desc" ? (
         <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold text-navy">Featured vehicles</h2>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <h2 className="mb-3 text-lg font-semibold text-navy">Featured</h2>
+          <ul className={BROWSE_GRID_CLASS}>
             {featured.map((v) => (
               <li key={`feat-${v.id}`}>
                 <VehicleCard vehicle={v} />
@@ -205,25 +320,24 @@ export default async function VehiclesPage({
       ) : null}
 
       {pageSlice.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-black/15 px-6 py-16 text-center">
-          <p className="text-lg font-semibold text-navy">No vehicles match</p>
-          <p className="mt-1 text-sm text-black/55">
-            Try fewer filters, or be the first to list in this category.
-          </p>
-          <Link
-            href="/agent/listings/new/vehicle"
-            className="mt-4 inline-block rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-navy"
-          >
-            List a vehicle
-          </Link>
-        </div>
+        <MarketplaceEmptyState
+          title={hasFilters ? "No Vehicles Match" : "No Vehicles Yet"}
+          subtitle={
+            hasFilters
+              ? "Try fewer filters, or list one yourself."
+              : "Be the first to list one."
+          }
+          actionHref="/agent/listings/new/vehicle"
+          actionLabel="Sell Vehicle"
+          secondaryHref={hasFilters ? "/vehicles" : undefined}
+          secondaryLabel={hasFilters ? "Clear filters" : undefined}
+        />
       ) : (
         <>
           <p className="mb-3 text-xs text-muted">
-            Showing {(pageSafe - 1) * PAGE_SIZE + 1}–
-            {Math.min(pageSafe * PAGE_SIZE, total)} of {total}
+            {total} {total === 1 ? "vehicle" : "vehicles"}
           </p>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className={BROWSE_GRID_CLASS}>
             {pageSlice.map((v) => (
               <li key={v.id}>
                 <VehicleCard vehicle={v} />
@@ -235,18 +349,18 @@ export default async function VehiclesPage({
               {pageSafe > 1 ? (
                 <Link
                   href={pageHref(pageSafe - 1)}
-                  className="rounded-lg border border-navy/15 px-3 py-1.5 text-sm text-navy"
+                  className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
                 >
                   Previous
                 </Link>
               ) : null}
               <span className="text-sm text-muted">
-                Page {pageSafe} / {totalPages}
+                {pageSafe} / {totalPages}
               </span>
               {pageSafe < totalPages ? (
                 <Link
                   href={pageHref(pageSafe + 1)}
-                  className="rounded-lg border border-navy/15 px-3 py-1.5 text-sm text-navy"
+                  className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
                 >
                   Next
                 </Link>

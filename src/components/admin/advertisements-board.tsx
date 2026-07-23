@@ -4,9 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import type { Advertisement } from "@/types/database";
 import {
   ADVERTISEMENT_PLACEMENTS,
-  ADVERTISER_TYPE_LABELS,
-  ADVERTISER_TYPES,
+  HOMEPAGE_AD_SLOTS,
   PROHIBITED_AD_CATEGORIES,
+  isHomepageAdSlot,
   type AdvertisementDurationPlan,
   type AdvertisementPlacement,
 } from "@/lib/advertisements/constants";
@@ -23,8 +23,15 @@ type AdRow = Advertisement & {
   metrics?: { impressions: number; clicks: number; ctr: number };
 };
 
+function toDateInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
 export function AdvertisementsBoard() {
-  const [tab, setTab] = useState("draft");
+  const [tab, setTab] = useState("active");
   const [ads, setAds] = useState<AdRow[]>([]);
   const [tabs, setTabs] = useState<Array<{ id: string; label: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -32,16 +39,18 @@ export function AdvertisementsBoard() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const [title, setTitle] = useState("");
-  const [advertiserName, setAdvertiserName] = useState("");
-  const [advertiserType, setAdvertiserType] = useState("developer");
+  const [campaignName, setCampaignName] = useState("");
   const [destinationUrl, setDestinationUrl] = useState("");
-  const [placement, setPlacement] = useState("homepage_top");
-  const [durationPlan, setDurationPlan] = useState("week");
+  const [placement, setPlacement] = useState<AdvertisementPlacement>("homepage_slot_1");
+  const [durationPlan, setDurationPlan] = useState("month");
   const [imageUrl, setImageUrl] = useState("");
-  const [mobileImageUrl, setMobileImageUrl] = useState("");
+  const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
+  const [enabled, setEnabled] = useState(true);
   const [uploading, setUploading] = useState(false);
   const catalog = useRevenueCatalog();
+
+  const isHomepage = isHomepageAdSlot(placement);
 
   function adPrice(p: AdvertisementPlacement, plan: AdvertisementDurationPlan): number {
     const key = advertisementVariantKey(p, plan);
@@ -75,7 +84,7 @@ export function AdvertisementsBoard() {
     void load();
   }, [load]);
 
-  async function uploadImage(file: File, mobile = false) {
+  async function uploadImage(file: File) {
     setUploading(true);
     const form = new FormData();
     form.set("file", file);
@@ -88,8 +97,7 @@ export function AdvertisementsBoard() {
     const data = (await res.json()) as { publicUrl?: string; error?: string };
     setUploading(false);
     if (!res.ok) throw new Error(data.error ?? "Upload failed");
-    if (mobile) setMobileImageUrl(data.publicUrl ?? "");
-    else setImageUrl(data.publicUrl ?? "");
+    setImageUrl(data.publicUrl ?? "");
   }
 
   async function createAd() {
@@ -99,14 +107,19 @@ export function AdvertisementsBoard() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title,
-        advertiserName,
-        advertiserType,
+        campaignName,
+        title: campaignName,
+        advertiserName: campaignName || "Yike",
         destinationUrl,
+        clickUrl: destinationUrl,
         placement,
-        durationPlan,
+        durationPlan: isHomepage ? "month" : durationPlan,
         imageUrl,
-        mobileImageUrl: mobileImageUrl || undefined,
+        bannerImageUrl: imageUrl,
+        startsAt: startsAt || undefined,
+        endsAt: endsAt || undefined,
+        enabled: isHomepage ? enabled : false,
+        adminManaged: isHomepage,
       }),
     });
     setBusyId(null);
@@ -116,21 +129,26 @@ export function AdvertisementsBoard() {
       return;
     }
     setShowForm(false);
-    setTitle("");
-    setAdvertiserName("");
+    setCampaignName("");
     setDestinationUrl("");
     setImageUrl("");
-    setMobileImageUrl("");
+    setStartsAt("");
+    setEndsAt("");
+    setEnabled(true);
     void load();
   }
 
-  async function runAction(id: string, action: string) {
+  async function runAction(
+    id: string,
+    action: string,
+    extra?: Record<string, unknown>,
+  ) {
     setBusyId(id);
     setError(null);
     const res = await fetch(`/api/admin/advertisements/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, ...extra }),
     });
     const data = (await res.json()) as { authorizationUrl?: string; error?: string };
     setBusyId(null);
@@ -146,11 +164,10 @@ export function AdvertisementsBoard() {
   }
 
   const previewPrice = adPrice(
-    placement as AdvertisementPlacement,
-    durationPlan as AdvertisementDurationPlan
+    placement,
+    (isHomepage ? "month" : durationPlan) as AdvertisementDurationPlan,
   );
-  const sponsoredSpecs =
-    SPONSORED_AD_CREATIVE_SPECS[placement as AdvertisementPlacement];
+  const sponsoredSpecs = SPONSORED_AD_CREATIVE_SPECS[placement];
 
   return (
     <div className="space-y-6">
@@ -175,135 +192,146 @@ export function AdvertisementsBoard() {
           onClick={() => setShowForm((v) => !v)}
           className="rounded-xl bg-gold px-4 py-2 text-sm font-bold text-navy"
         >
-          {showForm ? "Close form" : "Create ad"}
+          {showForm ? "Close form" : "New campaign"}
         </button>
       </div>
 
       {showForm ? (
-        <div className="rounded-2xl border border-border bg-white p-5 space-y-4">
-          <h2 className="font-bold text-navy">New sponsored placement</h2>
+        <div className="space-y-4 rounded-2xl border border-border bg-white p-5">
+          <h2 className="font-bold text-navy">Advertisement Manager</h2>
           <p className="text-xs text-muted">
-            Prohibited: {PROHIBITED_AD_CATEGORIES.join(", ").replace(/_/g, " ")}
+            Homepage slots render only when enabled and within dates. Empty slots
+            collapse — no placeholders. Prohibited:{" "}
+            {PROHIBITED_AD_CATEGORIES.join(", ").replace(/_/g, " ")}.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm">
-              <span className="font-medium text-navy">Title</span>
+            <label className="block text-sm sm:col-span-2">
+              <span className="font-medium text-navy">Campaign name</span>
               <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={campaignName}
+                onChange={(e) => setCampaignName(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-border px-3 py-2"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="font-medium text-navy">Advertiser name</span>
-              <input
-                value={advertiserName}
-                onChange={(e) => setAdvertiserName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border px-3 py-2"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="font-medium text-navy">Advertiser type</span>
-              <select
-                value={advertiserType}
-                onChange={(e) => setAdvertiserType(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border px-3 py-2"
-              >
-                {ADVERTISER_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {ADVERTISER_TYPE_LABELS[t]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm">
-              <span className="font-medium text-navy">Destination URL</span>
-              <input
-                value={destinationUrl}
-                onChange={(e) => setDestinationUrl(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border px-3 py-2"
-                placeholder="https://"
+                placeholder="Summer property push"
               />
             </label>
             <label className="block text-sm">
               <span className="font-medium text-navy">Placement</span>
               <select
                 value={placement}
-                onChange={(e) => setPlacement(e.target.value)}
+                onChange={(e) =>
+                  setPlacement(e.target.value as AdvertisementPlacement)
+                }
                 className="mt-1 w-full rounded-lg border border-border px-3 py-2"
               >
-                {Object.entries(ADVERTISEMENT_PLACEMENTS).map(([key, meta]) => (
+                {HOMEPAGE_AD_SLOTS.map((key) => (
                   <option key={key} value={key}>
-                    {meta.label}
+                    {ADVERTISEMENT_PLACEMENTS[key].label}
                   </option>
                 ))}
+                <option value="search_results">
+                  {ADVERTISEMENT_PLACEMENTS.search_results.label}
+                </option>
+                <option value="homepage_top">
+                  {ADVERTISEMENT_PLACEMENTS.homepage_top.label}
+                </option>
+                <option value="homepage_middle">
+                  {ADVERTISEMENT_PLACEMENTS.homepage_middle.label}
+                </option>
               </select>
+              <span className="mt-1 block text-[11px] text-muted">
+                {ADVERTISEMENT_PLACEMENTS[placement]?.hint}
+              </span>
             </label>
             <label className="block text-sm">
-              <span className="font-medium text-navy">Duration</span>
-              <select
-                value={durationPlan}
-                onChange={(e) => setDurationPlan(e.target.value)}
+              <span className="font-medium text-navy">Click URL</span>
+              <input
+                value={destinationUrl}
+                onChange={(e) => setDestinationUrl(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-border px-3 py-2"
-              >
-                <option value="week">1 week</option>
-                <option value="month">1 month</option>
-              </select>
+                placeholder="https://… or /search"
+              />
             </label>
+            <label className="block text-sm">
+              <span className="font-medium text-navy">Start date</span>
+              <input
+                type="date"
+                value={startsAt}
+                onChange={(e) => setStartsAt(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-border px-3 py-2"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium text-navy">End date</span>
+              <input
+                type="date"
+                value={endsAt}
+                onChange={(e) => setEndsAt(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-border px-3 py-2"
+              />
+            </label>
+            {isHomepage ? (
+              <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  onChange={(e) => setEnabled(e.target.checked)}
+                  className="h-4 w-4 rounded border-border"
+                />
+                <span className="font-medium text-navy">Enabled (go live now)</span>
+              </label>
+            ) : (
+              <label className="block text-sm">
+                <span className="font-medium text-navy">Duration (paid)</span>
+                <select
+                  value={durationPlan}
+                  onChange={(e) => setDurationPlan(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2"
+                >
+                  <option value="week">1 week</option>
+                  <option value="month">1 month</option>
+                </select>
+              </label>
+            )}
           </div>
-          <p className="text-sm font-semibold text-navy">
-            Price: {formatPrice(previewPrice, "total", "rent")}
-          </p>
-          {sponsoredSpecs ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div>
-                <p className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">
-                  Desktop image
-                </p>
-                <AdminCreativeSizeCallout spec={sponsoredSpecs.desktop} />
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">
-                  Mobile image (optional)
-                </p>
-                <AdminCreativeSizeCallout spec={sponsoredSpecs.mobile} />
-              </div>
-            </div>
+          {!isHomepage ? (
+            <p className="text-sm font-semibold text-navy">
+              Price: {formatPrice(previewPrice, "total", "rent")}
+            </p>
           ) : null}
-          <div className="flex flex-wrap gap-3">
-            <label className="cursor-pointer rounded-xl border border-dashed border-border px-4 py-3 text-sm font-semibold text-navy">
-              {imageUrl ? "Desktop image uploaded" : "Upload desktop image"}
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadImage(f, false);
-                }}
-              />
-            </label>
-            <label className="cursor-pointer rounded-xl border border-dashed border-border px-4 py-3 text-sm font-semibold text-navy">
-              {mobileImageUrl ? "Mobile image uploaded" : "Upload mobile image (optional)"}
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadImage(f, true);
-                }}
-              />
-            </label>
-          </div>
-          {uploading ? <p className="text-xs text-muted">Uploading…</p> : null}
+          {sponsoredSpecs ? (
+            <AdminCreativeSizeCallout spec={sponsoredSpecs.desktop} />
+          ) : null}
+          <label className="block cursor-pointer rounded-xl border border-dashed border-border px-4 py-3 text-sm font-semibold text-navy">
+            {imageUrl ? "Banner image uploaded ✓" : "Upload banner image"}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void uploadImage(f).catch((err) => {
+                  setError(err instanceof Error ? err.message : "Upload failed");
+                });
+              }}
+            />
+          </label>
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt="Banner preview"
+              className="max-h-28 rounded-lg object-cover"
+              loading="lazy"
+            />
+          ) : null}
+          {uploading ? <p className="text-xs text-muted">Optimizing upload…</p> : null}
           <button
             type="button"
-            disabled={busyId === "create" || !imageUrl}
+            disabled={busyId === "create" || !imageUrl || !campaignName.trim()}
             onClick={() => void createAd()}
             className="rounded-xl bg-navy px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
           >
-            Save as draft
+            {isHomepage && enabled ? "Publish campaign" : "Save campaign"}
           </button>
         </div>
       ) : null}
@@ -319,38 +347,75 @@ export function AdvertisementsBoard() {
           {ads.map((ad) => (
             <li key={ad.id} className="rounded-xl border border-border bg-white p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="font-semibold text-navy">{ad.title}</p>
                   <p className="text-xs text-muted">
-                    {ad.advertiser_name} · {ADVERTISEMENT_PLACEMENTS[ad.placement].label} ·{" "}
-                    {formatPrice(Number(ad.amount), "total", "rent")}
+                    {ADVERTISEMENT_PLACEMENTS[ad.placement]?.label ?? ad.placement}
+                    {ad.destination_url ? ` · ${ad.destination_url}` : ""}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    {ad.metrics?.impressions ?? 0} impressions · {ad.metrics?.clicks ?? 0} clicks ·{" "}
-                    {ad.metrics?.ctr ?? 0}% CTR
+                    {ad.metrics?.impressions ?? 0} impressions · {ad.metrics?.clicks ?? 0}{" "}
+                    clicks · {ad.metrics?.ctr ?? 0}% CTR
                   </p>
-                  {ad.expires_at ? (
-                    <p className="mt-1 text-xs text-amber-800">
-                      Expires {new Date(ad.expires_at).toLocaleDateString("en-NG")}
-                    </p>
-                  ) : null}
+                  <p className="mt-1 text-xs text-muted">
+                    {ad.starts_at
+                      ? `Starts ${toDateInput(ad.starts_at)}`
+                      : "No start date"}
+                    {" · "}
+                    {ad.expires_at
+                      ? `Ends ${toDateInput(ad.expires_at)}`
+                      : "No end date"}
+                  </p>
                 </div>
                 <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-semibold capitalize text-navy">
                   {ad.status}
                 </span>
               </div>
+              {ad.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={ad.image_url}
+                  alt=""
+                  className="mt-3 max-h-20 rounded-lg object-cover"
+                  loading="lazy"
+                />
+              ) : null}
               <div className="mt-3 flex flex-wrap gap-2">
-                {ad.status === "draft" ? (
+                {ad.status === "active" ? (
                   <button
                     type="button"
                     disabled={busyId === ad.id}
-                    onClick={() => void runAction(ad.id, "submit_pending")}
+                    onClick={() =>
+                      void runAction(ad.id, "update_schedule", { enabled: false })
+                    }
+                    className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white"
+                  >
+                    Disable
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busyId === ad.id}
+                    onClick={() =>
+                      void runAction(ad.id, "update_schedule", { enabled: true })
+                    }
+                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+                  >
+                    Enable
+                  </button>
+                )}
+                {ad.status === "active" ? (
+                  <button
+                    type="button"
+                    disabled={busyId === ad.id}
+                    onClick={() => void runAction(ad.id, "pause")}
                     className="rounded-lg bg-surface px-3 py-1.5 text-xs font-semibold text-navy"
                   >
-                    Mark pending
+                    Pause
                   </button>
                 ) : null}
-                {["draft", "pending"].includes(ad.status) ? (
+                {["draft", "pending"].includes(ad.status) &&
+                !isHomepageAdSlot(ad.placement) ? (
                   <button
                     type="button"
                     disabled={busyId === ad.id}
@@ -358,16 +423,6 @@ export function AdvertisementsBoard() {
                     className="rounded-lg bg-gold px-3 py-1.5 text-xs font-bold text-navy"
                   >
                     Pay & activate
-                  </button>
-                ) : null}
-                {ad.status === "active" ? (
-                  <button
-                    type="button"
-                    disabled={busyId === ad.id}
-                    onClick={() => void runAction(ad.id, "pause")}
-                    className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white"
-                  >
-                    Pause
                   </button>
                 ) : null}
               </div>

@@ -13,9 +13,18 @@ import { HomeMobileHero } from "@/components/home/home-mobile-hero";
 import { HomeDesktopHero } from "@/components/home/home-desktop-hero";
 import type { HeroTrustedAgentsConfig } from "@/lib/home/hero-trusted-agents";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
+import {
+  parseHomeCategory,
+  type HomeMarketplaceCategory,
+} from "@/lib/home/marketplace-category";
+import { useState } from "react";
 
 export { type Initial } from "@/lib/home-search-params";
 
+/**
+ * Legacy entry — homepage now uses HomeMarketplaceExperience.
+ * Kept for any remaining call sites that need a standalone hero.
+ */
 export function HomeSearchHero({
   initial,
   trustedAgents,
@@ -26,6 +35,9 @@ export function HomeSearchHero({
   const router = useRouter();
   const searchParams = useSearchParams();
   const desktopWeb = useDesktopWeb();
+  const [category, setCategory] = useState<HomeMarketplaceCategory>(() =>
+    parseHomeCategory(searchParams.get("category")),
+  );
 
   const browseInitial = useMemo(() => {
     const type = searchParams.get("type") ?? initial?.listingType ?? "";
@@ -51,6 +63,10 @@ export function HomeSearchHero({
   }, [searchParams, initial]);
 
   useEffect(() => {
+    setCategory(parseHomeCategory(searchParams.get("category")));
+  }, [searchParams]);
+
+  useEffect(() => {
     if (searchParams.get("focus") === "search") {
       const targetId = desktopWeb ? "home-desktop-search" : "home-search";
       document
@@ -59,7 +75,7 @@ export function HomeSearchHero({
     }
   }, [searchParams, desktopWeb]);
 
-  function handleSearch({ params, label }: BrowseSearchPayload) {
+  function handlePropertySearch({ params, label }: BrowseSearchPayload) {
     trackEvent("search", {
       city: params.get("city") || undefined,
       area: params.get("area") || undefined,
@@ -82,17 +98,35 @@ export function HomeSearchHero({
     router.push(href);
   }
 
+  function handleVehicleSearch({ params, label }: BrowseSearchPayload) {
+    trackEvent("search", {
+      city: params.get("city") || undefined,
+      listing_type: "vehicle",
+      placement: "home_desktop_vehicle_filters",
+    });
+    const qs = params.toString();
+    const href = qs ? `/vehicles?${qs}` : "/vehicles";
+    addRecentSearch({ label, href });
+    router.push(href);
+  }
+
   if (desktopWeb) {
     return (
       <HomeDesktopHero
+        category={category}
+        onCategoryChange={setCategory}
         browseInitial={browseInitial}
         trustedAgents={trustedAgents}
-        onSearch={handleSearch}
+        onPropertySearch={handlePropertySearch}
+        onVehicleSearch={handleVehicleSearch}
       />
     );
   }
 
   return (
-    <HomeMobileHero browseInitial={browseInitial} onSearch={handleSearch} />
+    <HomeMobileHero
+      browseInitial={browseInitial}
+      onSearch={handlePropertySearch}
+    />
   );
 }

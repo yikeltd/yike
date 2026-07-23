@@ -308,8 +308,9 @@ export async function verifyAuthEmailOtp(
     }
 
     const password = String(params.password ?? "");
-    if (password.length < 8) {
-      return { ok: false, error: "Password is required to finish signup.", status: 400 };
+    // PIN-as-password signup uses a 6-digit Auth secret.
+    if (password.length < 6) {
+      return { ok: false, error: "PIN is required to finish signup.", status: 400 };
     }
 
     const admin = await createVerifiedAdminClient();

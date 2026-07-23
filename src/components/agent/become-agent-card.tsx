@@ -12,6 +12,7 @@ import {
   canRequestPhoneOtp,
   normalizeNigerianPhone,
 } from "@/lib/phone";
+import { isPhoneVerifiedForSeller } from "@/lib/seller-trust";
 import { PUBLIC_ERROR_FALLBACK, friendlyPublicError } from "@/lib/copy/public-errors";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +53,7 @@ export function BecomeAgentCard({
   const [error, setError] = useState("");
 
   const identityReady = emailVerified;
+  const phoneReady = isPhoneVerifiedForSeller(profile);
 
   async function becomeAgent() {
     if (!acceptRules) {
@@ -93,7 +95,8 @@ export function BecomeAgentCard({
       <div className="rounded-2xl border border-gold/25 bg-gold/10 p-5">
         <h1 className="text-xl font-bold text-navy">List on Yike</h1>
         <p className="mt-2 text-sm text-foreground">
-          Verify your email, complete your profile, and start listing properties on Yike.
+          Verify email and phone, complete your profile, then list. First listings need Yike
+          review before the Verified Seller badge.
         </p>
       </div>
 
@@ -168,6 +171,17 @@ export function BecomeAgentCard({
               </Link>
             </p>
           )}
+          {emailVerified && !phoneReady && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Verify your phone to start selling.{" "}
+              <Link
+                href="/auth/verify-phone?next=/agent/become"
+                className="font-semibold underline"
+              >
+                Verify phone
+              </Link>
+            </p>
+          )}
           <label className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
@@ -195,7 +209,7 @@ export function BecomeAgentCard({
             <Button
               type="button"
               className="flex-1"
-              disabled={!acceptRules || !identityReady || loading}
+              disabled={!acceptRules || !identityReady || !phoneReady || loading}
               onClick={() => void becomeAgent()}
             >
               {loading ? "Setting up…" : "Continue"}

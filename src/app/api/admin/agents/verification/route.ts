@@ -90,6 +90,9 @@ export async function PATCH(req: Request) {
       verified_badge: true,
       ranking_score: 100,
       verification_required: false,
+      verified_at: now,
+      verified_by: auth.user.id,
+      verification_notes: body.notes?.trim() || null,
     };
 
     if (!agentProfile?.listing_limit_updated_by) {
@@ -109,6 +112,29 @@ export async function PATCH(req: Request) {
       .update({
         verification_status: "rejected",
         verified_badge: false,
+        verification_notes:
+          body.rejection_reason ?? body.notes ?? "Did not meet verification requirements",
+      })
+      .eq("id", body.agent_id);
+  } else if (body.action === "request_info") {
+    verificationUpdate.status = "pending";
+    verificationUpdate.verification_notes =
+      body.notes?.trim() ||
+      body.rejection_reason?.trim() ||
+      "Additional information required.";
+    verificationUpdate.reviewed_at = now;
+    verificationUpdate.reviewed_by = auth.user.id;
+
+    await supabase
+      .from("profiles")
+      .update({
+        verification_status: "pending",
+        verification_required: true,
+        verification_notes:
+          body.notes?.trim() ||
+          body.rejection_reason?.trim() ||
+          "Additional information required.",
+        updated_at: now,
       })
       .eq("id", body.agent_id);
   }
@@ -141,6 +167,7 @@ export async function PATCH(req: Request) {
       method: VERIFICATION_CALL_METHOD,
       whatsapp: VERIFICATION_WHATSAPP_NUMBER,
       call_time: body.call_time,
+      notes: body.notes ?? null,
     },
     ip,
   });

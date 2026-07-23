@@ -50,17 +50,6 @@ export function buildSearchEmptyCopy(params: PropertySearchParams): {
   const area = params.area?.trim();
   const city = params.city?.trim();
   const state = params.state?.trim();
-  const place = area || city || state || "this area";
-  const typeLabel = params.property_type
-    ? propertyTypeLabel(params.property_type).toLowerCase()
-    : params.listing_type === "rent"
-      ? "rentals"
-      : params.listing_type === "sale"
-        ? "properties for sale"
-        : params.hub === "land_sale"
-          ? "land"
-          : "homes";
-
   const typeWord = params.property_type
     ? propertyTypeLabel(params.property_type).toLowerCase()
     : params.listing_type === "rent"
@@ -72,19 +61,17 @@ export function buildSearchEmptyCopy(params: PropertySearchParams): {
           : "listings";
 
   const title = area
-    ? `No ${typeWord} found in ${area} yet`
+    ? `No ${typeWord} in ${area}`
     : city
-      ? `No ${typeWord} found in ${city} yet`
+      ? `No ${typeWord} in ${city}`
       : state
-        ? `No ${typeWord} found in ${state} yet`
-        : `No ${typeWord} match your filters yet`;
+        ? `No ${typeWord} in ${state}`
+        : `No ${typeWord} match`;
 
-  const scope = state || city || "Nigeria";
-  const message = area
-    ? `Try nearby areas in ${scope} or adjust your filters. We'll only show relevant ${typeLabel} in the same region.`
-    : `Try a nearby area in ${scope} or clear filters to browse more ${typeLabel}.`;
-
-  return { title, message };
+  return {
+    title,
+    message: "Try fewer filters, or list one yourself.",
+  };
 }
 
 export function buildStateBrowseHref(params: PropertySearchParams): string {

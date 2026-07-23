@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
   }
 
-  if (password.length >= 8) {
+  if (password.length >= 6) {
     const {
       data: { user },
     } = await supabase.auth.getUser();

@@ -13,9 +13,12 @@ import { cn } from "@/lib/utils";
 export function ListingSaveButton({
   listingId,
   className,
+  compact = false,
 }: {
   listingId: string;
   className?: string;
+  /** Icon-only for dense browse cards. */
+  compact?: boolean;
 }) {
   const { user } = useAuth();
   const [saved, setSaved] = useState(false);
@@ -77,18 +80,31 @@ export function ListingSaveButton({
   return (
     <button
       type="button"
-      onClick={() => void toggle()}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void toggle();
+      }}
       disabled={busy}
       aria-label={saved ? "Remove from saved" : "Save listing"}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-navy/12 bg-white px-3 py-1.5 text-xs font-bold text-navy",
+        compact
+          ? "pressable inline-flex h-7 w-7 items-center justify-center rounded-full text-navy hover:bg-navy/5"
+          : "inline-flex items-center gap-1.5 rounded-full border border-navy/12 bg-white px-3 py-1.5 text-xs font-bold text-navy",
         className,
       )}
     >
       <Heart
-        className={cn("h-4 w-4", saved ? "fill-gold text-gold" : "text-navy/50")}
+        className={cn(
+          compact ? "h-3.5 w-3.5" : "h-4 w-4",
+          saved
+            ? compact
+              ? "fill-red-500 text-red-500"
+              : "fill-gold text-gold"
+            : "text-navy/50"
+        )}
       />
-      {saved ? "Saved" : "Save"}
+      {compact ? null : saved ? "Saved" : "Save"}
     </button>
   );
 }

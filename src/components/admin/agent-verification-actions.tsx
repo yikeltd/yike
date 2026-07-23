@@ -126,6 +126,19 @@ export function AgentVerificationActions({
         <Button size="sm" disabled={busy} onClick={() => requestPin("approve")}>
           Approve verified
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy || !notes.trim()}
+          onClick={() =>
+            void patch({
+              action: "request_info",
+              notes,
+            })
+          }
+        >
+          Request more info
+        </Button>
         <Button size="sm" variant="outline" disabled={busy} onClick={() => requestPin("reject")}>
           Reject
         </Button>

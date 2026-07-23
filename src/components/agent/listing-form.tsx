@@ -547,6 +547,12 @@ export function ListingForm({
       openWhatsappVerification(retry);
       return true;
     }
+    if (data.code === "phone_verification_required" || data.code === "seller_profile_required") {
+      setError("");
+      setLoading(false);
+      window.location.href = "/agent/verify";
+      return true;
+    }
     return false;
   }
 

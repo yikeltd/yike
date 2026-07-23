@@ -18,9 +18,21 @@ import { countAsActiveListing, getListingLimit } from "@/lib/agent-tiers";
 import { getActiveAd } from "@/lib/ads";
 import Link from "next/link";
 import type { Property } from "@/types/database";
+import {
+  mustCompleteSellerVerification,
+  SELLER_VERIFY_PATH,
+} from "@/lib/seller-trust";
+import { redirect } from "next/navigation";
 
 export default async function NewListingPage() {
-  const { user, profile } = await requireAgentLister("/agent/listings/new");
+  const { user, profile } = await requireAgentLister("/agent/listings/new", {
+    skipProfileSetup: true,
+  });
+
+  if (mustCompleteSellerVerification(profile)) {
+    redirect(SELLER_VERIFY_PATH);
+  }
+
   const supabase = await requireServerClient();
 
   const { data } = await supabase
@@ -52,6 +64,9 @@ export default async function NewListingPage() {
             {activeCount} of {limit} listing slots used
           </p>
         )}
+        <p className="mt-1 text-xs text-muted">
+          First listings go to Yike review. Verified Seller badge unlocks after manual approval.
+        </p>
       </div>
 
       {atLimit ? (
@@ -71,10 +86,10 @@ export default async function NewListingPage() {
               <p className="font-medium">Before you publish</p>
               <p className="mt-1 text-xs">{statusMessage}</p>
               <Link
-                href="/agent/profile-setup"
+                href={SELLER_VERIFY_PATH}
                 className="mt-2 inline-flex text-xs font-semibold text-navy"
               >
-                Complete profile →
+                Complete verification →
               </Link>
             </div>
           ) : null}

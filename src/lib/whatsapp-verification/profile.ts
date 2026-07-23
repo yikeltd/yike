@@ -16,11 +16,16 @@ export function isWhatsappNumberVerified(profile: Partial<Profile>): boolean {
   return Boolean(profile.whatsapp_verified_at);
 }
 
+/**
+ * WhatsApp Business number verify — optional future channel.
+ * Hard listing gate is phone SMS (`mustVerifyPhoneBeforeListing`), not WhatsApp.
+ */
 export function mustVerifyWhatsappBeforeListing(profile: Partial<Profile>): boolean {
-  if (!isWhatsappVerificationFeatureActive(profile)) return false;
+  // Only when WhatsApp OTP is explicitly enabled (not SMS-primary mode).
+  if (!isWhatsappProfileVerificationEnabled()) return false;
   if (isWhatsappNumberVerified(profile)) return false;
   if (profile.whatsapp_verification_status === "admin_required") return true;
-  return true;
+  return isWhatsappVerificationFeatureActive(profile);
 }
 
 export function whatsappVerifyBadgeLabel(profile: Partial<Profile>): string | null {

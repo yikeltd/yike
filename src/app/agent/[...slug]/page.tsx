@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 const AGENT_ROUTE_ALIASES: Record<string, string> = {
   plans: "/agent/plans",
   pricing: "/agent/plans",
-  verification: "/agent/verification",
-  "profile-setup": "/agent/profile-setup",
+  verification: "/agent/verify",
+  verify: "/agent/verify",
+  "profile-setup": "/agent/verify",
 };
 
 export default async function AgentCatchAll({

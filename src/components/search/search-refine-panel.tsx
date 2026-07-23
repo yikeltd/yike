@@ -27,9 +27,9 @@ export function SearchRefinePanel({
         className="pressable flex w-full items-center justify-between px-3.5 py-2.5 text-left"
         aria-expanded={open}
       >
-        <span className="flex items-center gap-2 text-sm font-bold text-foreground">
+        <span className="flex items-center gap-2 text-base font-bold text-foreground">
           <SlidersHorizontal className="h-4 w-4 text-gold" />
-          Refine filters
+          Search
         </span>
         <ChevronDown
           className={cn(

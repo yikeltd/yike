@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { hubLabel } from "@/constants/listingTypes";
-import { budgetLabelFromParams, formatSearchFilterSummary } from "@/lib/search-summary";
+import { budgetLabelFromParams } from "@/lib/search-summary";
 import { SaveSearchButton } from "./save-search-button";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,6 @@ export function SearchActiveBar({
 }) {
   const router = useRouter();
   const sp = useSearchParams();
-  const summary = formatSearchFilterSummary(sp);
 
   function removeKey(key: string) {
     const params = new URLSearchParams(sp.toString());
@@ -80,14 +79,11 @@ export function SearchActiveBar({
       )}
     >
       <div className="w-full lg:max-w-7xl lg:mx-auto">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-navy/45">
-          Search results
-        </p>
-        <div className="mt-0.5 flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-bold text-foreground lg:text-base">
             {showingFallback
-              ? `No exact matches · ${nearbyCount} nearby in your area`
-              : `${resultCount} ${resultCount === 1 ? "listing" : "listings"} found`}
+              ? `${nearbyCount} nearby`
+              : `${resultCount} ${resultCount === 1 ? "listing" : "listings"}`}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
             {currentHref && currentLabel ? (
@@ -109,10 +105,6 @@ export function SearchActiveBar({
             ) : null}
           </div>
         </div>
-
-        {summary ? (
-          <p className="mt-1 truncate text-xs text-muted">{summary}</p>
-        ) : null}
 
         {hasFilters ? (
           <div className="hide-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-0.5">

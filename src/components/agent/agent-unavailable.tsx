@@ -24,7 +24,7 @@ export async function AgentUnavailable() {
             Search homes
           </Link>
           <Link
-            href="/agent/become"
+            href="/agent/verify"
             className="inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-white px-5 text-sm font-semibold text-navy"
           >
             <UserPlus className="h-4 w-4" />

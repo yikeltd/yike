@@ -36,7 +36,8 @@ function isAuthorized(request: Request): boolean {
     request.headers.get("x-sendchamp-webhook-secret") ??
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
-  return Boolean(headerSecret) && secretsEqual(headerSecret, secret);
+  if (headerSecret && secretsEqual(headerSecret, secret)) return true;
+  return false;
 }
 
 /** Health check for Sendchamp dashboard URL verification. */

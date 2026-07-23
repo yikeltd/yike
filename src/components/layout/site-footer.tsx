@@ -9,23 +9,26 @@ import {
 } from "@/lib/constants";
 import { brand } from "@/lib/design/tokens";
 import { FollowYike } from "@/components/social/follow-yike";
+
 const explore = [
+  { href: "/search", label: "Property" },
+  { href: "/vehicles", label: "Vehicles" },
   { href: "/explore", label: "Explore" },
   { href: "/rent", label: "Rent" },
   { href: "/buy", label: "Buy" },
   { href: "/shortlet", label: "Shortlet" },
   { href: "/land", label: "Land for sale" },
-  { href: "/browse", label: "Swipe homes" },
-  { href: "/post-property", label: "List property" },
+  { href: "/browse", label: "Swipe" },
+  { href: "/post-property", label: "List on Yike" },
   { href: "/pricing", label: "Pricing" },
   { href: "/request-property", label: "Request a home" },
-  { href: "/blog", label: "Rental guides" },
+  { href: "/blog", label: "Guides" },
 ];
 
 const company = [
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
-  { href: "/careers", label: "Careers" },
+  { href: "/careers", label: "Careers / Jobs" },
   { href: "/verify-agent", label: "Verify as agent" },
   { href: "/why-verified", label: "Why verified" },
   { href: "/safety", label: "Safety tips" },
@@ -59,8 +62,8 @@ export function SiteFooter() {
               <span className="text-lg font-bold text-white">{SITE_NAME}</span>
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/75">
-              Nigeria&apos;s visual housing marketplace. Browse homes, contact
-              agents on WhatsApp, list for free.
+              Nigeria&apos;s trusted marketplace for property and vehicles.
+              Browse listings, contact on WhatsApp, list for free.
             </p>
             <div className="mt-4 space-y-1 text-sm">
               <a
@@ -147,8 +150,9 @@ export function SiteFooter() {
               </p>
               <p className="text-xs leading-relaxed text-white/75">
                 {SITE_NAME} is an online listing platform only. We do not own
-                properties, collect rent, hold deposits, or guarantee listings.
-                Always verify properties in person before payment. Read our{" "}
+                properties or vehicles, collect payments, hold deposits, or
+                guarantee listings. Always verify in person before payment. Read
+                our{" "}
                 <Link
                   href="/disclaimer"
                   className="text-white/85 underline decoration-white/30 underline-offset-2 transition-colors hover:text-[#e4b547]"

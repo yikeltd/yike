@@ -126,6 +126,86 @@ export const SPONSORED_AD_CREATIVE_SPECS: Record<
   AdvertisementPlacement,
   { desktop: AdminCreativeSpec; mobile: AdminCreativeSpec }
 > = {
+  homepage_slot_1: {
+    desktop: {
+      designSize: "1200 × 500 px",
+      aspectRatio: "2.4 : 1",
+      displaySize: "Homepage after Featured (~112–128 px tall)",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+    mobile: {
+      designSize: "880 × 400 px",
+      aspectRatio: "2.2 : 1",
+      displaySize: "Full-width mobile banner",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+  },
+  homepage_slot_2: {
+    desktop: {
+      designSize: "1200 × 500 px",
+      aspectRatio: "2.4 : 1",
+      displaySize: "Homepage after Recently Added",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+    mobile: {
+      designSize: "880 × 400 px",
+      aspectRatio: "2.2 : 1",
+      displaySize: "Full-width mobile banner",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+  },
+  homepage_slot_3: {
+    desktop: {
+      designSize: "1200 × 500 px",
+      aspectRatio: "2.4 : 1",
+      displaySize: "Homepage after Near You",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+    mobile: {
+      designSize: "880 × 400 px",
+      aspectRatio: "2.2 : 1",
+      displaySize: "Full-width mobile banner",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+  },
+  homepage_slot_4: {
+    desktop: {
+      designSize: "1200 × 500 px",
+      aspectRatio: "2.4 : 1",
+      displaySize: "Homepage after Luxury Collection",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+    mobile: {
+      designSize: "880 × 400 px",
+      aspectRatio: "2.2 : 1",
+      displaySize: "Full-width mobile banner",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+  },
+  homepage_slot_5: {
+    desktop: {
+      designSize: "1200 × 500 px",
+      aspectRatio: "2.4 : 1",
+      displaySize: "Homepage after Recommended",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+    mobile: {
+      designSize: "880 × 400 px",
+      aspectRatio: "2.2 : 1",
+      displaySize: "Full-width mobile banner",
+      preset: "banner",
+      format: ADMIN_UPLOAD_FORMAT,
+    },
+  },
   homepage_top: {
     desktop: {
       designSize: "1200 × 500 px",

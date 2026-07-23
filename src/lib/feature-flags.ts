@@ -1,6 +1,7 @@
 /**
  * Launch-safe feature flags for verification channels.
- * Defaults favor email-first auth; phone/SMS/WhatsApp OTP off until re-enabled via env.
+ * Email-first browse; SMS OTP for seller phone verification (founder-approved).
+ * WhatsApp OTP stays off until WhatsApp Business is verified.
  */
 
 function envFlag(name: string, defaultValue: boolean): boolean {
@@ -11,16 +12,21 @@ function envFlag(name: string, defaultValue: boolean): boolean {
   return defaultValue;
 }
 
-/** Master switch — SMS + WhatsApp phone OTP at signup/login. */
+/**
+ * Master switch — phone OTP (seller SMS verification).
+ * Production default: on (Sendchamp SMS / sender YIKE).
+ */
 export function isPhoneOtpEnabled(): boolean {
-  return envFlag("ENABLE_PHONE_OTP", false);
+  return envFlag("ENABLE_PHONE_OTP", true);
 }
 
+/** SMS channel — production primary. Defaults on when phone OTP is enabled. */
 export function isSmsOtpEnabled(): boolean {
-  return envFlag("ENABLE_SMS_OTP", false) && isPhoneOtpEnabled();
+  if (!isPhoneOtpEnabled()) return false;
+  return envFlag("ENABLE_SMS_OTP", true);
 }
 
-/** WhatsApp OTP via Sendchamp — independent of legacy phone OTP master switch. */
+/** WhatsApp OTP via Sendchamp — future channel; off until WA Business ready. */
 export function isWhatsappOtpEnabled(): boolean {
   return envFlag("ENABLE_WHATSAPP_OTP", false);
 }
@@ -52,10 +58,10 @@ export function isPhoneVerificationRequired(): boolean {
   return false;
 }
 
-/** Client bundle — mirrors ENABLE_PHONE_OTP for signup UI. */
+/** Client bundle — mirrors ENABLE_PHONE_OTP for signup / seller UI. */
 export function isPhoneOtpEnabledClient(): boolean {
   const raw = process.env.NEXT_PUBLIC_ENABLE_PHONE_OTP?.trim().toLowerCase();
-  if (!raw) return false;
+  if (!raw) return true;
   return raw === "true" || raw === "1" || raw === "yes";
 }
 
@@ -67,7 +73,7 @@ export function isWhatsappOtpEnabledClient(): boolean {
 }
 
 export function phoneOtpDisabledPublicMessage(): string {
-  return "Continue with email to access Yike.";
+  return "Phone verification is temporarily unavailable. Please try again shortly.";
 }
 
 /** Global gate for direct-to-agent WhatsApp routing (launch default: off). */

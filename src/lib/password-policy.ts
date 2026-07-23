@@ -1,4 +1,8 @@
+import { PIN_RE, pinPolicyError } from "@/lib/pin-policy";
+
 export const PASSWORD_MIN_LENGTH = 8;
+/** Auth secret minimum when the credential is a 6-digit login PIN. */
+export const AUTH_SECRET_MIN_LENGTH = 6;
 
 export const PASSWORD_RULES = {
   minLength: PASSWORD_MIN_LENGTH,
@@ -29,4 +33,17 @@ export function passwordPolicyError(password: string): string | null {
   if (!c.lowercase) return "Password must include a lowercase letter";
   if (!c.number) return "Password must include a number";
   return null;
+}
+
+/** Signup accepts a 6-digit PIN (as Auth password) or a strong legacy password. */
+export function signupCredentialError(password: string): string | null {
+  if (!password) return "PIN is required";
+  if (PIN_RE.test(password) || /^\d+$/.test(password)) {
+    return pinPolicyError(password);
+  }
+  return passwordPolicyError(password);
+}
+
+export function isValidSignupCredential(password: string): boolean {
+  return signupCredentialError(password) === null;
 }

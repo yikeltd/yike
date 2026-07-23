@@ -7,6 +7,10 @@ import {
   getAdMetrics,
   validateAdCreateInput,
 } from "@/lib/advertisements/service";
+import {
+  isDurationPlan,
+  isHomepageAdSlot,
+} from "@/lib/advertisements/constants";
 import type { AdvertisementStatus } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -77,47 +81,99 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
 
-  let body: Record<string, string> = {};
+  let body: Record<string, string | boolean | undefined> = {};
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
+  const placement = String(body.placement ?? "");
+  const adminManaged =
+    body.adminManaged === true ||
+    String(body.adminManaged ?? "") === "true" ||
+    isHomepageAdSlot(placement);
+
+  const title = String(body.title ?? body.campaignName ?? "").trim();
+  const advertiserName = String(
+    body.advertiserName ?? (adminManaged ? title || "Yike" : ""),
+  ).trim();
+  const destinationUrl = String(body.destinationUrl ?? body.clickUrl ?? "").trim();
+  const imageUrl = String(body.imageUrl ?? body.bannerImageUrl ?? "").trim();
+  const durationPlan = String(body.durationPlan ?? (adminManaged ? "month" : ""));
+  const enabled =
+    body.enabled === true ||
+    String(body.enabled ?? "") === "true" ||
+    String(body.enabled ?? "") === "1";
+
   const validationError = validateAdCreateInput({
-    title: String(body.title ?? ""),
-    advertiserName: String(body.advertiserName ?? ""),
-    destinationUrl: String(body.destinationUrl ?? ""),
-    placement: String(body.placement ?? ""),
-    durationPlan: String(body.durationPlan ?? ""),
-    imageUrl: String(body.imageUrl ?? ""),
+    title,
+    advertiserName,
+    destinationUrl,
+    placement,
+    durationPlan,
+    imageUrl,
+    adminManaged,
   });
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
 
-  const amount = await computeAdAmount(admin, body.placement, body.durationPlan);
-  if (amount == null) {
-    return NextResponse.json({ error: "Invalid pricing" }, { status: 400 });
+  let amount = 0;
+  if (!adminManaged) {
+    const priced = await computeAdAmount(admin, placement, durationPlan);
+    if (priced == null) {
+      return NextResponse.json({ error: "Invalid pricing" }, { status: 400 });
+    }
+    amount = priced;
+  } else if (isDurationPlan(durationPlan)) {
+    amount = (await computeAdAmount(admin, placement, durationPlan)) ?? 0;
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
+  let startsAt: string | null = null;
+  let expiresAt: string | null = null;
+
+  if (body.startsAt) {
+    const d = new Date(String(body.startsAt));
+    if (!Number.isNaN(d.getTime())) startsAt = d.toISOString();
+  }
+  if (body.endsAt || body.expiresAt) {
+    const d = new Date(String(body.endsAt ?? body.expiresAt));
+    if (!Number.isNaN(d.getTime())) expiresAt = d.toISOString();
+  }
+
+  let status: AdvertisementStatus = "draft";
+  if (adminManaged && enabled) {
+    status = "active";
+    if (!startsAt) startsAt = nowIso;
+    // Pause any other active ad on this placement
+    await admin
+      .from("advertisements")
+      .update({ status: "paused", updated_at: nowIso })
+      .eq("placement", placement)
+      .eq("status", "active");
+  }
+
   const { data, error } = await admin
     .from("advertisements")
     .insert({
-      title: body.title.trim(),
-      advertiser_name: body.advertiserName.trim(),
-      advertiser_type: body.advertiserType?.trim() || null,
-      image_url: body.imageUrl.trim(),
-      mobile_image_url: body.mobileImageUrl?.trim() || null,
-      destination_url: body.destinationUrl.trim(),
-      placement: body.placement,
-      duration_plan: body.durationPlan,
+      title,
+      advertiser_name: advertiserName,
+      advertiser_type: String(body.advertiserType ?? "").trim() || null,
+      image_url: imageUrl,
+      mobile_image_url: String(body.mobileImageUrl ?? "").trim() || null,
+      destination_url: destinationUrl,
+      placement,
+      duration_plan: isDurationPlan(durationPlan) ? durationPlan : null,
       amount,
-      status: "draft",
+      status,
+      starts_at: startsAt,
+      expires_at: expiresAt,
       created_by: auth.user.id,
-      created_at: now,
-      updated_at: now,
+      created_at: nowIso,
+      updated_at: nowIso,
     })
     .select("*")
     .single();

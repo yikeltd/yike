@@ -16,6 +16,7 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
 import {
   bootSplashArmScript,
+  bootSplashCriticalCss,
   bootSplashHideScript,
   twaSwCleanupScript,
 } from "@/lib/app-mode-inline";
@@ -42,19 +43,19 @@ const ogImage = BRAND_OG_IMAGE;
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Find Real Houses in Nigeria`,
+    default: `${SITE_NAME} — Property & Vehicles Marketplace Nigeria`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_TAGLINE,
   keywords: [
     "Yike",
-    "Nigerian property marketplace",
+    "Nigerian marketplace",
+    "property marketplace Nigeria",
+    "vehicles Nigeria",
+    "cars for sale Nigeria",
     "houses for rent Nigeria",
     "apartments Nigeria",
     "shortlets Lagos",
-    "self contain Owerri",
-    "house in Aba",
-    "apartment in Enugu",
     "verified listings",
     "verified agents",
     "buy house Nigeria",
@@ -98,17 +99,17 @@ export const metadata: Metadata = {
     locale: "en_NG",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — Nigerian Housing Marketplace`,
+    title: `${SITE_NAME} — Property & Vehicles Marketplace`,
     description: SITE_TAGLINE,
     images: [
-      { url: ogImage, width: 1200, height: 630, alt: "Yike — Nigerian housing marketplace", type: "image/png" },
-      { url: BRAND_OG_IMAGE_WEBP, width: 1200, height: 630, alt: "Yike — Nigerian housing marketplace", type: "image/webp" },
+      { url: ogImage, width: 1200, height: 630, alt: "Yike — Nigerian property and vehicles marketplace", type: "image/png" },
+      { url: BRAND_OG_IMAGE_WEBP, width: 1200, height: 630, alt: "Yike — Nigerian property and vehicles marketplace", type: "image/webp" },
     ],
   },
   twitter: {
     card: "summary_large_image",
     site: "@real_yike",
-    title: `${SITE_NAME} — Find Real Houses in Nigeria`,
+    title: `${SITE_NAME} — Property & Vehicles Marketplace Nigeria`,
     description: SITE_TAGLINE,
     images: [ogImage],
   },
@@ -172,21 +173,23 @@ export default function RootLayout({
           media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
         />
         <link rel="apple-touch-startup-image" href="/splash/splash-1080x1920.png" />
+        <style dangerouslySetInnerHTML={{ __html: bootSplashCriticalCss }} />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: bootSplashArmScript }} />
         <script dangerouslySetInnerHTML={{ __html: twaSwCleanupScript }} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
-        <div id="yike-boot-splash" aria-hidden="true">
+        <div id="yike-boot-splash" aria-hidden="true" suppressHydrationWarning>
           <div className="yike-boot-splash__content">
             <div className="yike-boot-splash__mark">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- boot splash; real src armed only in app mode */}
               <img
-                src="/splash/splash-1080x1920.webp"
+                id="yike-boot-splash-img"
                 alt=""
                 width={1080}
                 height={1920}
                 decoding="sync"
+                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
               />
             </div>
             <div className="yike-boot-splash__recovery">

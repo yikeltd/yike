@@ -12,14 +12,15 @@ import {
   confirmReviewerEmail,
   isUsernameAvailable,
 } from "@/lib/auth/signup-rpc";
+import { allocateSignupUsername } from "@/lib/auth/signup-username";
 import {
-  isBasicPhoneFormat,
+  isLocalNigerianSignupPhone,
   normalizeNigerianPhone,
   normalizePhoneForDuplicateCheck,
 } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
-import { pinPolicyError } from "@/lib/pin-policy";
-import { passwordPolicyError } from "@/lib/password-policy";
+import { PIN_RE, pinPolicyError } from "@/lib/pin-policy";
+import { signupCredentialError } from "@/lib/password-policy";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { validateMathChallenge } from "@/lib/signup-math-challenge";
@@ -45,19 +46,28 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const fullName = String(body.fullName ?? "").trim();
-  const username = String(body.username ?? "").trim().toLowerCase();
+  let username = String(body.username ?? "").trim().toLowerCase();
   const email = String(body.email ?? "").trim().toLowerCase();
   const phoneRaw = String(body.phone ?? "").trim();
   const phone = phoneRaw ? normalizeNigerianPhone(phoneRaw) : "";
   const password = String(body.password ?? "");
   const confirmPassword = String(body.confirmPassword ?? "");
-  const pin = String(body.pin ?? "");
+  // PIN-as-password: profile pin defaults to the Auth secret when omitted.
+  const pin = String(body.pin ?? (PIN_RE.test(password) ? password : ""));
+  const acceptedTerms = body.acceptedTerms === true || body.acceptedTerms === "true";
   const mathA = Number(body.mathA);
   const mathB = Number(body.mathB);
   const mathAnswer = Number(body.mathAnswer);
 
-  if (!fullName || !username || !email || !password || !pin) {
+  if (!fullName || !email || !password || !pin) {
     return NextResponse.json({ error: "All required fields must be filled in" }, { status: 400 });
+  }
+
+  if (!acceptedTerms) {
+    return NextResponse.json(
+      { error: "Please agree to the Terms of Service and Privacy Policy" },
+      { status: 400 }
+    );
   }
 
   if (!isEmailOtpEnabled()) {
@@ -71,20 +81,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Incorrect security check — try again" }, { status: 400 });
   }
 
-  if (!USERNAME_RE.test(username)) {
-    return NextResponse.json(
-      { error: "Username: 3–24 letters, numbers, or underscores" },
-      { status: 400 }
-    );
-  }
-
-  const passwordError = passwordPolicyError(password);
-  if (passwordError) {
-    return NextResponse.json({ error: passwordError }, { status: 400 });
+  const credentialError = signupCredentialError(password);
+  if (credentialError) {
+    return NextResponse.json({ error: credentialError }, { status: 400 });
   }
 
   if (password !== confirmPassword) {
-    return NextResponse.json({ error: "Passwords do not match" }, { status: 400 });
+    return NextResponse.json({ error: "PINs do not match" }, { status: 400 });
   }
 
   const pinError = pinPolicyError(pin);
@@ -92,26 +95,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: pinError }, { status: 400 });
   }
 
+  // When PIN is the Auth password, keep profile pin in sync.
+  if (PIN_RE.test(password) && pin !== password) {
+    return NextResponse.json({ error: "PINs do not match" }, { status: 400 });
+  }
+
   const reviewerBypass = isReviewerAccountEmail(email);
 
   if (!phone) {
     return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
   }
-  if (!isBasicPhoneFormat(phoneRaw)) {
-    return NextResponse.json({ error: "Enter a valid phone number" }, { status: 400 });
+  // Local 11-digit only (0803…) — reject +234 / 10-digit / padded intl bypass.
+  if (!isLocalNigerianSignupPhone(phoneRaw) && !isLocalNigerianSignupPhone(phone)) {
+    return NextResponse.json(
+      { error: "Enter a valid 11-digit Nigerian phone number." },
+      { status: 400 }
+    );
   }
 
-  const normalizedForStorage = normalizePhoneForDuplicateCheck(phoneRaw);
+  const normalizedForStorage = normalizePhoneForDuplicateCheck(phone);
   const phoneLocal = normalizedForStorage
     ? `0${normalizedForStorage.slice(3)}`
     : phone;
 
-  const usernameFree = await isUsernameAvailable(username);
-  if (usernameFree === null) {
-    return NextResponse.json({ error: "Could not verify username" }, { status: 503 });
-  }
-  if (!usernameFree) {
-    return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+  if (!username) {
+    const allocated = await allocateSignupUsername(fullName);
+    if (!allocated) {
+      return NextResponse.json({ error: "Could not verify username" }, { status: 503 });
+    }
+    username = allocated;
+  } else if (!USERNAME_RE.test(username)) {
+    return NextResponse.json(
+      { error: "Username: 3–24 letters, numbers, or underscores" },
+      { status: 400 }
+    );
+  } else {
+    const usernameFree = await isUsernameAvailable(username);
+    if (usernameFree === null) {
+      return NextResponse.json({ error: "Could not verify username" }, { status: 503 });
+    }
+    if (!usernameFree) {
+      return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+    }
   }
 
   const pendingSignup = await signupPendingGet(db, email);
@@ -203,8 +228,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       userId: created.userId,
+      username,
       needsEmailVerification: false,
-      message: "Reviewer account ready — sign in with your password.",
+      message: "Reviewer account ready — sign in with your PIN.",
     });
   }
 
@@ -240,6 +266,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
+    username,
     needsEmailVerification: true,
     resume: resumeSignup,
     message: resumeSignup

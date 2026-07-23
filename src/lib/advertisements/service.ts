@@ -5,6 +5,7 @@ import {
   durationDays,
   isAdvertisementPlacement,
   isDurationPlan,
+  isValidAdDestinationUrl,
   type AdvertisementDurationPlan,
   type AdvertisementPlacement,
   type AdvertisementStatus,
@@ -175,20 +176,23 @@ export function validateAdCreateInput(input: {
   advertiserName: string;
   destinationUrl: string;
   placement: string;
-  durationPlan: string;
+  durationPlan?: string;
   imageUrl: string;
+  /** Admin homepage campaigns may omit paid duration. */
+  adminManaged?: boolean;
 }): string | null {
-  if (!input.title.trim()) return "Title is required.";
+  if (!input.title.trim()) return "Campaign name is required.";
   if (!input.advertiserName.trim()) return "Advertiser name is required.";
-  if (!input.imageUrl.trim()) return "Image is required.";
-  if (!input.destinationUrl.trim()) return "Destination URL is required.";
+  if (!input.imageUrl.trim()) return "Banner image is required.";
+  if (!input.destinationUrl.trim()) return "Click URL is required.";
   if (!isAdvertisementPlacement(input.placement)) return "Invalid placement.";
-  if (!isDurationPlan(input.durationPlan)) return "Choose week or month duration.";
-  try {
-    const url = new URL(input.destinationUrl);
-    if (!["http:", "https:"].includes(url.protocol)) return "URL must be http or https.";
-  } catch {
-    return "Enter a valid destination URL.";
+  if (!isValidAdDestinationUrl(input.destinationUrl)) {
+    return "Enter a valid click URL (https://… or /path).";
+  }
+  if (!input.adminManaged) {
+    if (!input.durationPlan || !isDurationPlan(input.durationPlan)) {
+      return "Choose week or month duration.";
+    }
   }
   return null;
 }

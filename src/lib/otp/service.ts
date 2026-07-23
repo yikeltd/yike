@@ -3,10 +3,11 @@ import {
   deliverOtp,
   getSendchampConfigSummary,
   isSendchampConfigured,
+  sendBrandedSmsOtp,
   toSendchampPhone,
 } from "@/lib/notifications/providers/sendchamp";
 import {
-  createSendchampWhatsappVerification,
+  createSendchampVerificationOtp,
   confirmSendchampVerification,
 } from "@/lib/notifications/providers/sendchamp-verification";
 import { isWhatsappOtpProviderSendchamp } from "@/lib/feature-flags";
@@ -143,7 +144,7 @@ export async function sendPhoneOtp(
     };
   }
 
-  const channel: OtpChannel = preferredChannel ?? "whatsapp";
+  const channel: OtpChannel = preferredChannel ?? "sms";
 
   const cooldown = await checkCooldown(db, phone, channel);
   if (cooldown) return cooldown;
@@ -175,9 +176,11 @@ export async function sendPhoneOtp(
 
   if (channel === "whatsapp" && isWhatsappOtpProviderSendchamp()) {
     const phoneIntl = toSendchampPhone(phone);
-    const created = await createSendchampWhatsappVerification({
+    const created = await createSendchampVerificationOtp({
       phoneIntl,
+      channel: "whatsapp",
       purpose: "account_verification",
+      inAppToken: false,
     });
 
     if (!created.ok) {
@@ -222,6 +225,54 @@ export async function sendPhoneOtp(
     };
   }
 
+  // SMS (production default): server OTP → Verification API register → branded SMS.
+  if (channel === "sms") {
+    const phoneIntl = toSendchampPhone(phone);
+    const code = generateOtp();
+    const registered = await createSendchampVerificationOtp({
+      phoneIntl,
+      channel: "sms",
+      purpose: "account_verification",
+      token: code,
+      inAppToken: true,
+    });
+
+    if (registered.ok) {
+      const delivered = await sendBrandedSmsOtp(phoneIntl, code);
+      if (delivered.ok) {
+        const expiresAt = new Date(
+          Date.now() + registered.expiresMinutes * 60_000
+        ).toISOString();
+        const inserted = await otpInsertPending(db, {
+          phone,
+          otpHash: hashOtp(registered.reference),
+          expiresAt,
+          channel: "sms",
+        });
+        if (!inserted) {
+          return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
+        }
+        await otpMarkSent(db, inserted.id, "sms", registered.reference);
+        await otpLogEvent(db, {
+          phone,
+          channel: "sms",
+          status: "sent",
+          expiresAt,
+        });
+        return {
+          ok: true,
+          channel: "sms",
+          message: otpSentMessage("sms"),
+          ...(!isProductionEnv() ? { devOtp: code } : {}),
+        };
+      }
+      console.error("[otp] branded SMS failed after verification register", delivered.error);
+    } else if (registered.code === "provider_auth_failed") {
+      console.error("[otp] provider_auth_failed");
+    }
+    // Fall through to legacy hash + deliverOtp path if Verification API register fails.
+  }
+
   const code = generateOtp();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
 
@@ -240,7 +291,7 @@ export async function sendPhoneOtp(
     };
   }
 
-  const delivered = await deliverOtp(phone, code, preferredChannel);
+  const delivered = await deliverOtp(phone, code, preferredChannel ?? "sms");
 
   if (!delivered.ok) {
     const sanitized = sanitizeOtpError(delivered.error);

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { PropertyCard } from "@/components/property/property-card";
 import type { Property } from "@/types/database";
+import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 
 const SELECT = `
   *,
@@ -79,7 +80,7 @@ export function GuestSavedFeed() {
         </Link>{" "}
         to sync across phones.
       </p>
-      <div className="space-y-4">
+      <div className={BROWSE_GRID_CLASS}>
         {properties.map((p) => (
           <PropertyCard key={p.id} property={p} />
         ))}

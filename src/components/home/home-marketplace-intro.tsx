@@ -6,12 +6,15 @@ import {
   COMPANY_RC,
   YIKE_SUPPORT_PHONE_DISPLAY,
 } from "@/lib/constants";
+import { MarketplaceVerticalSwitcher } from "@/components/marketplace/vertical-switcher";
 
-const QUICK_LINKS = [
+const MARKETPLACE_LINKS = [
   { href: "/rent", label: "Rent" },
   { href: "/buy", label: "Buy" },
   { href: "/land", label: "Land" },
   { href: "/search?property_type=shop", label: "Shops" },
+  { href: "/vehicles", label: "Vehicles" },
+  { href: "/careers", label: "Jobs" },
 ] as const;
 
 const LOCATIONS = ["Lagos", "Abuja", "Aba", "Enugu", "Owerri", "Port Harcourt"];
@@ -20,29 +23,34 @@ export function HomeMarketplaceIntro() {
   return (
     <section
       className="mx-auto max-w-7xl px-3 pt-4 lg:px-6 xl:px-8"
-      aria-label="About Yike"
+      aria-label="About Yike marketplace"
     >
       <div className="rounded-2xl border border-gold/20 bg-white px-4 py-5 shadow-float ring-1 ring-black/[0.04] lg:px-6 lg:py-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1">
             <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-gold-dark">
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-              Nigeria property marketplace
+              Nigeria&apos;s trusted marketplace
             </p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-navy lg:text-3xl">
-              Find Verified Homes Across Nigeria
+              Property &amp; Vehicles across Nigeria
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted lg:text-base">
-              {COMPANY_DISPLAY_NAME} helps Nigerians discover real homes to{" "}
-              <strong className="font-semibold text-foreground">rent</strong>,{" "}
-              <strong className="font-semibold text-foreground">buy</strong>, or{" "}
-              <strong className="font-semibold text-foreground">lease</strong> —
-              including flats, bungalows, land, and shops. Browse listings free,
-              contact agents on WhatsApp, no sign-in required.
+              {COMPANY_DISPLAY_NAME} is a multi-category marketplace —{" "}
+              <strong className="font-semibold text-foreground">homes</strong>,{" "}
+              <strong className="font-semibold text-foreground">land</strong>,{" "}
+              <strong className="font-semibold text-foreground">shops</strong>, and{" "}
+              <strong className="font-semibold text-foreground">vehicles</strong>{" "}
+              with equal prominence. Browse free, contact on WhatsApp, email
+              sign-in only.
             </p>
 
+            <div className="mt-4">
+              <MarketplaceVerticalSwitcher active="property" />
+            </div>
+
             <div className="mt-4 flex flex-wrap gap-2">
-              {QUICK_LINKS.map((link) => (
+              {MARKETPLACE_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}

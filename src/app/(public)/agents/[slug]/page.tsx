@@ -19,6 +19,7 @@ import { getProfileSocialStats } from "@/lib/social/stats";
 import { agentCanonical } from "@/lib/seo/utils";
 import { normalizeAssetType } from "@/lib/marketplace/listings";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
+import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { PassportReadinessNotice } from "@/components/marketplace/passport-readiness";
 import { MarketplaceSafetyNotice } from "@/components/marketplace/safety-notice";
@@ -136,7 +137,7 @@ export default async function AgentProfilePage({
                   <h2 className="mb-3 px-1 text-sm font-bold text-navy lg:text-base">
                     Vehicles ({vehicleListings.length})
                   </h2>
-                  <ul className="grid gap-4 sm:grid-cols-2">
+                  <ul className={BROWSE_GRID_CLASS}>
                     {vehicleListings.map((v) => (
                       <li key={v.id}>
                         <VehicleCard vehicle={v} />

@@ -2,14 +2,19 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 import { MobileHeaderBanner } from "@/components/banners/mobile-header-banner";
-import { HeaderMobileSearch } from "@/components/search/header-mobile-search";
+import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
+import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
 import type { SiteBanner } from "@/types/database";
 
-/** Mobile chrome — logo + compact search on one row. */
+/**
+ * Mobile chrome — Logo | Search (max width) | Location.
+ * Sell lives in bottom nav only.
+ */
 export function HeaderMobile({
   mobileBanner,
 }: {
@@ -26,29 +31,45 @@ export function HeaderMobile({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 lg:hidden",
-        isHome
-          ? "border-b border-white/[0.08] bg-[#021433]/98 shadow-[0_4px_24px_rgba(2,20,51,0.35)]"
-          : "border-b border-surface bg-elevated/95 backdrop-blur-md"
+        "sticky top-0 z-40 border-b border-surface bg-elevated/95 backdrop-blur-md lg:hidden",
       )}
     >
       <div
         className={cn(
-          "flex min-h-12 items-center gap-2 px-3 py-2",
-          isBrowse && "border-b-0"
+          "flex items-center gap-2 px-3",
+          isHome ? "min-h-14 py-2" : "min-h-12 py-2",
+          isBrowse && "border-b-0",
         )}
       >
         <Link href="/" className="shrink-0" aria-label="Yike home">
           <Image
             src={brand.logoSm}
             alt="Yike"
-            width={32}
-            height={32}
+            width={isHome ? 34 : 32}
+            height={isHome ? 34 : 32}
             className="rounded-lg"
             priority
           />
         </Link>
-        <HeaderMobileSearch variant={isHome ? "hero" : "default"} />
+        <Suspense
+          fallback={
+            <div
+              className={cn(
+                "min-w-0 flex-1 rounded-full bg-navy/[0.06]",
+                isHome ? "h-11" : "h-9",
+              )}
+            />
+          }
+        >
+          <HeaderUniversalSearch
+            size={isHome ? "large" : "default"}
+            tone="default"
+            placement="header_mobile"
+          />
+        </Suspense>
+        <Suspense fallback={<div className="h-8 w-16 shrink-0" />}>
+          <MarketplaceLocationIndicator size={isHome ? "sm" : "sm"} />
+        </Suspense>
       </div>
       {mobileBanner && <MobileHeaderBanner banner={mobileBanner} />}
     </header>

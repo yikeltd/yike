@@ -21,7 +21,7 @@ import type { AgentVerification, Profile } from "@/types/database";
 
 const STEPS = [
   { id: 1, title: "Personal", icon: User },
-  { id: 2, title: "NIN", icon: CheckCircle2 },
+  { id: 2, title: "ID", icon: CheckCircle2 },
   { id: 3, title: "Selfie", icon: Camera },
   { id: 4, title: "Review", icon: CheckCircle2 },
 ] as const;
@@ -300,17 +300,18 @@ export function VerificationWizard({
       {step === 2 && (
         <div className="space-y-3 animate-in fade-in duration-200">
           <p className="text-sm text-muted">
-            Enter your 11-digit NIN. Name must match your legal name above.
+            NIN is optional for now. You can add it to speed up review, or skip and continue with
+            selfie + manual Yike check.
           </p>
           <Input
-            placeholder="NIN (11 digits)"
+            placeholder="NIN (11 digits, optional)"
             value={form.nin}
             onChange={(e) => set("nin", e.target.value.replace(/\D/g, "").slice(0, 11))}
             inputMode="numeric"
             maxLength={11}
           />
           <p className="text-xs text-muted">
-            Name on your NIN should match: <strong>{form.fullName || "—"}</strong>
+            If provided, name on NIN should match: <strong>{form.fullName || "—"}</strong>
           </p>
         </div>
       )}
@@ -369,7 +370,8 @@ export function VerificationWizard({
             <span className="text-muted">DOB:</span> {form.dateOfBirth}
           </p>
           <p>
-            <span className="text-muted">NIN:</span> •••••{form.nin.slice(-4)}
+            <span className="text-muted">NIN:</span>{" "}
+            {form.nin ? `•••••${form.nin.slice(-4)}` : "Skipped (manual review)"}
           </p>
           <p>
             <span className="text-muted">Selfie:</span>{" "}
@@ -408,7 +410,7 @@ export function VerificationWizard({
                   !form.state ||
                   !form.city ||
                   !form.dateOfBirth)) ||
-              (step === 2 && form.nin.length !== 11) ||
+              (step === 2 && form.nin.length > 0 && form.nin.length !== 11) ||
               (step === 3 && !form.selfieUrl)
             }
           >

@@ -6,6 +6,10 @@ import {
 import { withDemoFallback } from "@/lib/mock-listings";
 import type { DiscoverHub } from "@/types/database";
 import { PageSection } from "./page-section";
+import {
+  BROWSE_GRID_CLASS,
+  BROWSE_RAIL_CARD_CLASS,
+} from "@/lib/marketplace/browse-grid";
 
 export async function PropertyRail({
   title,
@@ -29,12 +33,10 @@ export async function PropertyRail({
 
   return (
     <PageSection title={title} subtitle={subtitle} href={seeAllHref}>
-      <div className="hide-scrollbar -mx-3 flex gap-3 overflow-x-auto px-3 pb-2 lg:mx-0 lg:gap-4 lg:px-0">
+      {/* Mobile/tablet: horizontal snap rail · Desktop: dense poster grid */}
+      <div className="hide-scrollbar -mx-3 flex gap-2 overflow-x-auto px-3 pb-2 sm:gap-2.5 lg:mx-0 lg:hidden lg:px-0">
         {items.map((p, i) => (
-          <div
-            key={p.id}
-            className="w-[min(88vw,340px)] shrink-0 snap-start lg:w-[300px]"
-          >
+          <div key={p.id} className={BROWSE_RAIL_CARD_CLASS}>
             <PropertyCard
               property={p}
               layout="desktop"
@@ -42,6 +44,17 @@ export async function PropertyRail({
               inline
             />
           </div>
+        ))}
+      </div>
+      <div className={`hidden ${BROWSE_GRID_CLASS} lg:!grid`}>
+        {items.map((p, i) => (
+          <PropertyCard
+            key={p.id}
+            property={p}
+            layout="desktop"
+            priorityImage={i < 6}
+            inline
+          />
         ))}
       </div>
     </PageSection>

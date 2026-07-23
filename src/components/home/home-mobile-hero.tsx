@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { BrowseListingsBlock } from "@/components/search/browse-listings-block";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
+import { HomeCategoryRail } from "@/components/home/home-category-rail";
 import type { Initial } from "@/lib/home-search-params";
 
 const MOBILE_HERO_IMAGE = "/images/hero/yike-city-hero.webp";
@@ -19,7 +20,7 @@ type HomeMobileHeroProps = {
   onSearch: (payload: BrowseSearchPayload) => void;
 };
 
-/** Mobile browser + installed PWA/TWA — city skyline hero with premium search panel. */
+/** Mobile browser + installed PWA/TWA — marketplace hero with category rail. */
 export function HomeMobileHero({ browseInitial, onSearch }: HomeMobileHeroProps) {
   return (
     <div
@@ -43,6 +44,9 @@ export function HomeMobileHero({ browseInitial, onSearch }: HomeMobileHeroProps)
       </div>
 
       <div className="relative z-[2] mx-auto max-w-7xl">
+        <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
+          Nigeria&apos;s trusted marketplace
+        </p>
         <BrowseListingsBlock
           key={
             browseInitial.dealKey +
@@ -53,9 +57,10 @@ export function HomeMobileHero({ browseInitial, onSearch }: HomeMobileHeroProps)
           }
           variant="home-premium"
           initial={browseInitial}
-          title="Find Verified Homes Across Nigeria"
+          title="Find Property & Vehicles Across Nigeria"
           onSearch={onSearch}
         />
+        <HomeCategoryRail variant="hero" />
       </div>
     </div>
   );

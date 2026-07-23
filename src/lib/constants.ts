@@ -1,7 +1,7 @@
 export const SITE_NAME = "Yike";
 export const SITE_URL = "https://yike.ng";
 export const SITE_TAGLINE =
-  "Find real homes in Nigeria — swipe verified listings and chat agents on WhatsApp.";
+  "Nigeria's trusted marketplace — find property and vehicles, verified listings, WhatsApp contact.";
 
 export const COMPANY_LEGAL_NAME = "YIKE LTD";
 export const COMPANY_DISPLAY_NAME = "Yike Ltd.";
@@ -15,12 +15,12 @@ export const YIKE_SUPPORT_WHATSAPP = "2348035143299";
 export const YIKE_SUPPORT_PHONE_DISPLAY = "+234 803 514 3299";
 
 /** @deprecated HomeHeroPitch removed — kept for reference only */
-export const HOME_HERO_HEADLINE = "Discover trusted homes across Nigeria.";
+export const HOME_HERO_HEADLINE = "Property and vehicles across Nigeria.";
 export const HOME_HERO_SUBLINE =
-  "Swipe verified listings and connect with agents on WhatsApp.";
+  "Browse verified listings and connect on WhatsApp.";
 
 export const COMPANY_DESCRIPTION =
-  "Yike is a Nigerian real estate marketplace helping users discover verified apartments, houses, shortlets, land, and commercial properties through a mobile-first browsing experience.";
+  "Yike is Nigeria's trusted multi-category marketplace for property and vehicles — apartments, houses, land, shops, cars, and more — with mobile-first browsing and WhatsApp contact.";
 
 export const SOCIAL_LINKS = {
   facebook: "https://www.facebook.com/realyike/",

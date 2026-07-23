@@ -34,6 +34,7 @@ export function ThemedSelect({
   variant = "default",
   compactLabel,
   searchable,
+  disabled = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -45,6 +46,7 @@ export function ThemedSelect({
   compactLabel?: boolean;
   /** Filter long lists — defaults on when there are more than 8 choices. */
   searchable?: boolean;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -53,6 +55,13 @@ export function ThemedSelect({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (disabled && open) {
+      setOpen(false);
+      setQuery("");
+    }
+  }, [disabled, open]);
 
   const selectableOptions = useMemo(
     () => options.filter(isSelectable),
@@ -101,15 +110,18 @@ export function ThemedSelect({
           "font-semibold",
           "border-white/30 bg-[#f4f6fa] text-navy",
           "shadow-[0_2px_10px_rgb(2_20_51_/20%),inset_0_1px_0_rgb(255_255_255_/90%)]",
-          open
-            ? "border-gold/55 shadow-[0_4px_18px_rgb(2_20_51_/26%)] ring-2 ring-gold/25"
-            : "focus-visible:border-gold/50 focus-visible:shadow-[0_4px_16px_rgb(2_20_51_/22%)] focus-visible:ring-2 focus-visible:ring-gold/20"
+          disabled && "cursor-not-allowed opacity-50",
+          !disabled &&
+            (open
+              ? "border-gold/55 shadow-[0_4px_18px_rgb(2_20_51_/26%)] ring-2 ring-gold/25"
+              : "focus-visible:border-gold/50 focus-visible:shadow-[0_4px_16px_rgb(2_20_51_/22%)] focus-visible:ring-2 focus-visible:ring-gold/20")
         )
       : cn(
           "flex h-10 w-full items-center justify-between gap-1 rounded-xl border px-3 text-left text-xs font-medium outline-none transition-colors",
           "border-navy/10 bg-white text-foreground",
           "focus-visible:ring-2 focus-visible:ring-gold/35",
-          "dark:border-white/10 dark:bg-elevated lg:text-sm"
+          "dark:border-white/10 dark:bg-elevated lg:text-sm",
+          disabled && "cursor-not-allowed opacity-50"
         );
 
   const headerTextClass =
@@ -308,7 +320,12 @@ export function ThemedSelect({
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-haspopup="listbox"
-        onClick={() => setOpen(true)}
+        aria-disabled={disabled}
+        disabled={disabled}
+        onClick={() => {
+          if (disabled) return;
+          setOpen(true);
+        }}
         className={triggerClass}
       >
         <span

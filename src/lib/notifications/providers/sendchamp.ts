@@ -1,4 +1,5 @@
 import type { OtpChannel, ProviderResult } from "../types";
+import { buildSmsOtpMessage } from "@/lib/phone-verification/copy";
 import {
   auditSendchampEnv,
   looksLikeSupabaseKey,
@@ -10,6 +11,7 @@ import {
   sendchampErrorMessage,
   type SendchampEnvelope,
 } from "./sendchamp-response";
+import { otpExpiryMinutes } from "./sendchamp-verification";
 
 const DEFAULT_BASE_URL = "https://api.sendchamp.com/api/v1";
 const FETCH_TIMEOUT_MS = 25_000;
@@ -176,7 +178,7 @@ async function sendVerificationOtp(
     sender,
     token_type: "NUMERIC",
     token_length: 6,
-    expiration_time: 10,
+    expiration_time: otpExpiryMinutes(),
     customer_mobile_number: mobile,
     meta_data: { product: "yike", purpose: "phone_verification" },
     token: code,
@@ -236,7 +238,8 @@ export async function sendWhatsAppText(
   return { ok: true, data: { reference } };
 }
 
-export async function sendOtpSms(
+/** Branded production SMS OTP (sender YIKE) — used by phone-verification provider. */
+export async function sendBrandedSmsOtp(
   phone: string,
   code: string
 ): Promise<ProviderResult<{ reference?: string }>> {
@@ -244,20 +247,33 @@ export async function sendOtpSms(
   if (!config) return { ok: false, error: "Sendchamp not configured" };
 
   const mobile = toSendchampPhone(phone);
-  const message = `Your Yike verification code is ${code}. Valid for 10 minutes. Do not share this code.`;
+  const message = buildSmsOtpMessage(code);
 
-  // Direct SMS with explicit code — most reliable for signup OTP.
   for (const route of ["non_dnd", "dnd"] as const) {
     const direct = await sendSmsMessage(mobile, message, config.smsSender, route);
     if (direct.ok) return direct;
   }
 
+  return { ok: false, error: "SMS delivery failed" };
+}
+
+export async function sendOtpSms(
+  phone: string,
+  code: string
+): Promise<ProviderResult<{ reference?: string }>> {
+  const branded = await sendBrandedSmsOtp(phone, code);
+  if (branded.ok) return branded;
+
+  const config = getConfig();
+  if (!config) return { ok: false, error: "Sendchamp not configured" };
+
+  const mobile = toSendchampPhone(phone);
   for (const channel of ["SMS", "sms"] as const) {
     const verification = await sendVerificationOtp(channel, config.smsSender, mobile, code);
     if (verification.ok) return verification;
   }
 
-  return { ok: false, error: "SMS delivery failed" };
+  return { ok: false, error: branded.error || "SMS delivery failed" };
 }
 
 export async function sendOtpWhatsApp(
@@ -268,7 +284,7 @@ export async function sendOtpWhatsApp(
   if (!config) return { ok: false, error: "Sendchamp not configured" };
 
   const mobile = toSendchampPhone(phone);
-  const message = `Your Yike verification code is ${code}. Valid for 10 minutes. Do not share this code.`;
+  const message = buildSmsOtpMessage(code);
 
   if (!config.whatsappSender) {
     return { ok: false, error: "WhatsApp sender not configured" };
@@ -288,28 +304,15 @@ export async function sendOtpWhatsApp(
   return sendVerificationOtp("WHATSAPP", config.whatsappSender, mobile, code);
 }
 
+/** Prefer SMS (production). WhatsApp only when explicitly requested. */
 export async function deliverOtp(
   phone: string,
   code: string,
   preferred?: OtpChannel
 ): Promise<ProviderResult<{ channel: OtpChannel; reference?: string }>> {
-  if (preferred === "sms") {
-    const sms = await sendOtpSms(phone, code);
-    if (!sms.ok) return sms;
-    return { ok: true, data: { channel: "sms", reference: sms.data?.reference } };
-  }
-
   if (preferred === "whatsapp") {
     const whatsapp = await sendOtpWhatsApp(phone, code);
     if (!whatsapp.ok) return whatsapp;
-    return {
-      ok: true,
-      data: { channel: "whatsapp", reference: whatsapp.data?.reference },
-    };
-  }
-
-  const whatsapp = await sendOtpWhatsApp(phone, code);
-  if (whatsapp.ok) {
     return {
       ok: true,
       data: { channel: "whatsapp", reference: whatsapp.data?.reference },
@@ -320,7 +323,7 @@ export async function deliverOtp(
   if (!sms.ok) {
     return {
       ok: false,
-      error: whatsapp.error || sms.error || "delivery_failed",
+      error: sms.error || "delivery_failed",
     };
   }
   return { ok: true, data: { channel: "sms", reference: sms.data?.reference } };

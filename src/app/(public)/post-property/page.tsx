@@ -1,3 +1,18 @@
+import { getSession, getProfile } from "@/lib/auth";
+import { canListProperties } from "@/lib/utils";
+import { redirect } from "next/navigation";
+import {
+  isSellerReadyToList,
+  SELLER_CHOOSE_LISTING_PATH,
+  SELLER_VERIFY_PATH,
+} from "@/lib/seller-trust";
+import { PageHero } from "@/components/pages/page-hero";
+import { TrustPillars } from "@/components/pages/trust-pillars";
+import { CtaBanner } from "@/components/pages/cta-banner";
+import { PAGE_IMAGERY } from "@/constants/pageImagery";
+import { SITE_NAME } from "@/lib/constants";
+import { ListPropertyNavLink } from "@/components/auth/list-property-button";
+import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -7,16 +22,6 @@ import {
   Camera,
   BadgeCheck,
 } from "lucide-react";
-import { getSession, getProfile } from "@/lib/auth";
-import { canListProperties } from "@/lib/utils";
-import { redirect } from "next/navigation";
-import { PageHero } from "@/components/pages/page-hero";
-import { TrustPillars } from "@/components/pages/trust-pillars";
-import { CtaBanner } from "@/components/pages/cta-banner";
-import { PAGE_IMAGERY } from "@/constants/pageImagery";
-import { SITE_NAME } from "@/lib/constants";
-import { ListPropertyNavLink } from "@/components/auth/list-property-button";
-import { ExploreHubLinks } from "@/components/pages/explore-hub-links";
 
 export const metadata = {
   title: `List Property Free | ${SITE_NAME}`,
@@ -57,11 +62,11 @@ export default async function PostPropertyPage() {
 
   if (user) {
     const profile = await getProfile(user.id);
-    if (profile && canListProperties(profile)) {
-      redirect("/agent/listings/new");
+    if (profile && canListProperties(profile) && isSellerReadyToList(profile)) {
+      redirect(SELLER_CHOOSE_LISTING_PATH);
     }
     if (profile) {
-      redirect("/agent/become");
+      redirect(SELLER_VERIFY_PATH);
     }
   }
 
@@ -97,9 +102,9 @@ export default async function PostPropertyPage() {
           <ul className="mt-4 space-y-3 text-sm text-white/90">
             {[
               "Create one Yike account — renters and listers use the same signup",
-              "Verify your email",
-              "Tap List Property → add your address and date of birth → post",
-              "Optional verified badge later for more trust and visibility",
+              "Verify your email and phone",
+              "Complete a short seller profile → choose Property or Vehicle → list",
+              "Verified Seller badge after Yike manual approval (required to go live)",
               "WhatsApp contact recommended · minimum 2 clear photos · real prices only",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">

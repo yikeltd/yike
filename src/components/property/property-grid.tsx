@@ -1,10 +1,10 @@
 import type { Property, AdPlacement, Advertisement } from "@/types/database";
 import type { AdPlacementKey } from "@/constants/adPlacements";
-import { PropertyCard } from "./property-card";
-import { FeedList } from "./feed-list";
+import { PropertyCard, type PropertyCardVariant } from "./property-card";
 import { AdFeedInsert } from "@/components/ads/ad-feed-insert";
 import { SponsoredFeedInsert } from "@/components/ads/sponsored-feed-insert";
 import { EmptyStateRich } from "./empty-state-rich";
+import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 
 export function PropertyGrid({
   properties,
@@ -20,6 +20,9 @@ export function PropertyGrid({
   emptyPropertyType,
   richEmpty = true,
   trackFeaturedAnalytics = false,
+  cardVariant = "default",
+  priorityCount,
+  gridClassName,
 }: {
   properties: Property[];
   emptyMessage?: string;
@@ -35,6 +38,12 @@ export function PropertyGrid({
   emptyListingType?: string;
   emptyPropertyType?: string;
   richEmpty?: boolean;
+  /** Homepage inventory rails — image-dominant browse cards. */
+  cardVariant?: PropertyCardVariant;
+  /** How many above-the-fold images get priority (default: browse=2, else=6). */
+  priorityCount?: number;
+  /** Override browse density (e.g. homepage desktop premium rails). */
+  gridClassName?: string;
 }) {
   if (properties.length === 0) {
     if (richEmpty) {
@@ -55,54 +64,50 @@ export function PropertyGrid({
     );
   }
 
+  const eager =
+    priorityCount ?? (cardVariant === "browse" ? 2 : 6);
+
   return (
     <div>
       {showCount && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 px-0 lg:px-0">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           <p className="text-sm text-muted">
             <span className="font-bold text-foreground">{properties.length}</span>{" "}
             homes
           </p>
         </div>
       )}
-      <div className="hidden lg:grid lg:grid-cols-3 lg:gap-7 xl:gap-9">
+      <div className={gridClassName ?? BROWSE_GRID_CLASS}>
         {properties.map((p, i) => (
           <div key={p.id} className="contents">
             {sponsoredAd && i === feedAdInsertAfter ? (
-              <div className="col-span-3 animate-fade-up">
+              <div className="col-span-full animate-fade-up">
                 <SponsoredFeedInsert ad={sponsoredAd} />
               </div>
             ) : null}
             {!sponsoredAd && midFeedAd && i === feedAdInsertAfter ? (
-              <div className="col-span-3 animate-fade-up">
+              <div className="col-span-full animate-fade-up">
                 <AdFeedInsert ad={midFeedAd} placementKey={adPlacementKey} />
               </div>
             ) : null}
             <div
-              className={i < 4 ? "animate-fade-up" : undefined}
+              className={i < 8 ? "animate-fade-up" : undefined}
               style={
-                i < 4 ? { animationDelay: `${Math.min(i, 3) * 40}ms` } : undefined
+                i < 8
+                  ? { animationDelay: `${Math.min(i, 7) * 30}ms` }
+                  : undefined
               }
             >
               <PropertyCard
                 property={p}
                 layout="desktop"
-                priorityImage={i < 3}
+                priorityImage={i < eager}
                 trackFeaturedAnalytics={trackFeaturedAnalytics}
+                variant={cardVariant}
               />
             </div>
           </div>
         ))}
-      </div>
-      <div className="lg:hidden">
-        <FeedList
-          properties={properties}
-          midFeedAd={midFeedAd}
-          sponsoredAd={sponsoredAd}
-          insertAfter={feedAdInsertAfter}
-          adPlacementKey={adPlacementKey}
-          trackFeaturedAnalytics={trackFeaturedAnalytics}
-        />
       </div>
     </div>
   );

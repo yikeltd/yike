@@ -11,7 +11,7 @@ export default async function AgentLeadsPage() {
     return (
       <div className="space-y-4 pt-4">
         <p className="text-muted">Become an agent to view leads.</p>
-        <Link href="/agent/become" className="font-semibold text-gold-dark">
+        <Link href="/agent/verify" className="font-semibold text-gold-dark">
           Become an agent →
         </Link>
       </div>

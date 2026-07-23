@@ -7,6 +7,7 @@ import { getAmbassadorRefFromCookies } from "@/lib/ambassador/cookie";
 import { isEmailVerified } from "@/lib/auth";
 import { syncProfileVerificationMeta } from "@/lib/verification/enforcement";
 import { canRequestPhoneOtp, normalizeNigerianPhone } from "@/lib/phone";
+import { isPhoneVerifiedForSeller } from "@/lib/seller-trust";
 import type { AccountType, UserRole } from "@/types/database";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
@@ -32,7 +33,9 @@ const LISTER_ROLES = new Set<UserRole>([
 async function loadOrCreateProfile(admin: SupabaseClient, user: User) {
   const { data: existing } = await admin
     .from("profiles")
-    .select("role, phone_verified, email_verified, is_banned, full_name")
+    .select(
+      "role, phone_verified, email_verified, is_banned, full_name, whatsapp_verification_status, whatsapp_verified_at"
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -53,7 +56,9 @@ async function loadOrCreateProfile(admin: SupabaseClient, user: User) {
       verification_status: "not_started",
       is_banned: false,
     })
-    .select("role, phone_verified, email_verified, is_banned, full_name")
+    .select(
+      "role, phone_verified, email_verified, is_banned, full_name, whatsapp_verification_status, whatsapp_verified_at"
+    )
     .single();
 
   if (error) {
@@ -192,6 +197,17 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Verify your email first" },
       { status: 400 }
+    );
+  }
+
+  if (!isPhoneVerifiedForSeller(profile)) {
+    return NextResponse.json(
+      {
+        error: "Verify your phone to start selling.",
+        code: "phone_verification_required",
+        next: "/agent/verify",
+      },
+      { status: 403 }
     );
   }
 

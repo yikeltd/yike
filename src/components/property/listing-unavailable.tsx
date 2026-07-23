@@ -4,6 +4,7 @@ import { TRENDING_CITIES } from "@/constants/trendingCities";
 import type { Property } from "@/types/database";
 import { getPublicProperties } from "@/lib/properties";
 import { PropertyCard } from "@/components/property/property-card";
+import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 
 type ListingUnavailableProps = {
   property: Property | null;
@@ -86,7 +87,7 @@ export async function ListingUnavailable({
       {filtered.length > 0 && (
         <section className="mt-10">
           <h2 className="text-base font-bold text-navy">Similar homes you can view now</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className={`mt-4 ${BROWSE_GRID_CLASS}`}>
             {filtered.map((p) => (
               <PropertyCard key={p.id} property={p} />
             ))}

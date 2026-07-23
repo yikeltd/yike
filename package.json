@@ -37,6 +37,8 @@
     "lint": "eslint",
     "seed:sql": "node scripts/verify-supabase-project.mjs --require-linked && tsx scripts/seed-supabase.ts --sql",
     "seed": "node scripts/verify-supabase-project.mjs --require-linked && tsx scripts/seed-supabase.ts",
+    "seed:demo": "tsx scripts/seed-demo-marketplace.ts",
+    "seed:demo:dry": "tsx scripts/seed-demo-marketplace.ts --dry-run",
     "domain:dns": "bash scripts/setup-yike-domain-dns.sh",
     "domain:verify": "bash scripts/verify-yike-domain.sh",
     "email:assets": "node scripts/generate-email-assets.mjs && npx tsx scripts/render-email-previews.ts",

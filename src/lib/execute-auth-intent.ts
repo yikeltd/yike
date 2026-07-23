@@ -2,6 +2,11 @@ import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.
 import { createClient } from "@/lib/supabase/client";
 import type { AuthIntent } from "@/lib/auth-intent";
 import { canListProperties } from "@/lib/utils";
+import {
+  isSellerReadyToList,
+  SELLER_CHOOSE_LISTING_PATH,
+  SELLER_VERIFY_PATH,
+} from "@/lib/seller-trust";
 
 export async function executeAuthIntent(
   intent: AuthIntent,
@@ -60,13 +65,19 @@ export async function executeAuthIntent(
       if (!user) break;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role, verification_status, verified_badge, listing_limit, ranking_score")
+        .select(
+          "role, verification_status, verified_badge, listing_limit, ranking_score, phone_verified, whatsapp_verification_status, whatsapp_verified_at, email_verified, date_of_birth, residential_address, office_address, residential_state, seller_profile_completed_at, is_banned, account_status, profile_status"
+        )
         .eq("id", user.id)
         .single();
-      if (profile && canListProperties(profile)) {
-        router.push("/agent/listings/new");
+      if (
+        profile &&
+        canListProperties(profile) &&
+        isSellerReadyToList(profile)
+      ) {
+        router.push(SELLER_CHOOSE_LISTING_PATH);
       } else {
-        router.push("/agent/become");
+        router.push(SELLER_VERIFY_PATH);
       }
       break;
     }

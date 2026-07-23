@@ -305,10 +305,10 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
       },
       {
         href: adminPath("agents"),
-        label: "Agent verification",
+        label: "Seller verification",
         segment: "agents",
         emphasis: "primary",
-        keywords: ["listers", "verify", "nin"],
+        keywords: ["listers", "verify", "nin", "seller", "phone"],
       },
       {
         href: `${adminPath("users")}?filter=agents`,

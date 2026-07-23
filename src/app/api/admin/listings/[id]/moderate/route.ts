@@ -9,6 +9,7 @@ import { saveReviewDecision } from "@/lib/review-memory/memory";
 import { applyReviewTrustImpact } from "@/lib/review-memory/trust-impact";
 import type { ReviewDecisionType } from "@/lib/review-memory/constants";
 import type { Property, PropertyStatus } from "@/types/database";
+import { assertCanPublishListing } from "@/lib/seller-trust";
 
 export const runtime = "nodejs";
 
@@ -74,6 +75,28 @@ export async function POST(req: Request, ctx: RouteCtx) {
 
   if (!existing) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+  }
+
+  if (body.action === "approve" && existing.agent_id) {
+    const { data: seller } = await admin
+      .from("profiles")
+      .select(
+        "email_verified, phone_verified, whatsapp_verification_status, whatsapp_verified_at, verification_status, verified_badge, role, is_banned, account_status, profile_status"
+      )
+      .eq("id", existing.agent_id)
+      .maybeSingle();
+
+    const publishGate = assertCanPublishListing(seller);
+    if (!publishGate.ok) {
+      return NextResponse.json(
+        {
+          error: publishGate.error,
+          code: publishGate.code,
+          hint: "Approve seller verification first, then publish the listing.",
+        },
+        { status: 403 }
+      );
+    }
   }
 
   const now = new Date().toISOString();

@@ -8,6 +8,15 @@ export {
 } from "./vehicle-specs";
 export type { VehicleCategoryId, VehicleSpecField } from "./vehicle-specs";
 export {
+  VEHICLE_MAKES,
+  VEHICLE_MAKE_TYPES,
+  POPULAR_VEHICLE_MAKES,
+  typesForMake,
+  isValidTypeForMake,
+  buildVehicleMakeSelectOptions,
+  buildVehicleTypeSelectOptions,
+} from "./vehicle-makes";
+export {
   queryPublicVehicles,
   getVehicleByIdOrSlug,
   buildVehicleInsertPayload,

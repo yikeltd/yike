@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, MessageCircle, MapPin, BedDouble, Bath, Phone } from "lucide-react";
+import { Heart, MessageCircle, MapPin, BedDouble, Bath, Car } from "lucide-react";
 import type { Property } from "@/types/database";
 import {
   formatPrice,
@@ -9,8 +9,6 @@ import {
   listingTypeLabel,
   cn,
 } from "@/lib/utils";
-import { VerifiedBadge, FeaturedBadge, YikeVerifiedBadge, TrendingBadge, NewListingBadge } from "@/components/ui/badge";
-import { isFeaturedActive } from "@/lib/agent-tiers";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
@@ -18,12 +16,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import {
   openWhatsAppLead,
   trackLeadAndRedirect,
-  type TrackLeadResult,
 } from "@/lib/leads/client";
-import {
-  CallConfirmSheet,
-  CallWhatsAppFallbackSheet,
-} from "./call-routing-sheets";
 import { trackEvent } from "@/lib/analytics";
 import { recordEngagementSave } from "@/lib/engagement";
 import { trackSavedListing } from "@/lib/browse-preferences";
@@ -32,19 +25,27 @@ import { useEffect, useState } from "react";
 import { ListingImage } from "./listing-image";
 import { listingCardImage } from "@/lib/listing-gallery-images";
 import { optimizeListingImageUrl } from "@/lib/image-url";
-import { ListingFreshness, getListingFreshness } from "./listing-freshness";
-import { AmenityChips } from "./amenity-chips";
-import { formatMoveInHint } from "@/lib/rent-breakdown";
 import { listingPath } from "@/lib/marketplace/listing-path";
-import { AgentListingChip } from "./agent-listing-chip";
-import { ListingLikeButton } from "@/components/social/listing-like-button";
+import { ListingDistanceLabel } from "@/components/marketplace/listing-distance-label";
+import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
+import { isFeaturedActive } from "@/lib/agent-tiers";
 import {
   isGuestFavorite,
   toggleGuestFavorite,
 } from "@/lib/guest-favorites";
 import { logFeaturedAnalyticsEvent } from "@/lib/featured-promotions/analytics-client";
+import {
+  deriveSellerBuyerBadge,
+  SELLER_BUYER_BADGE_LABELS,
+} from "@/lib/seller-trust";
 
 export type PropertyCardLayout = "mobile" | "desktop";
+export type PropertyCardVariant = "default" | "browse";
+
+function hasParking(property: Property): boolean {
+  const amenities = property.extras?.amenities ?? [];
+  return amenities.some((a) => /park/i.test(String(a)));
+}
 
 export function PropertyCard({
   property,
@@ -52,30 +53,38 @@ export function PropertyCard({
   priorityImage = false,
   inline,
   trackFeaturedAnalytics = false,
+  variant = "default",
 }: {
   property: Property;
   layout?: PropertyCardLayout;
   priorityImage?: boolean;
   inline?: boolean;
   trackFeaturedAnalytics?: boolean;
+  /** Browse = inventory-first poster card (home rails). */
+  variant?: PropertyCardVariant;
 }) {
+  const isBrowse = variant === "browse";
   const { guardAction, user, isListingSaved, setListingSaved } = useAuth();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [fallbackOpen, setFallbackOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [callResult, setCallResult] = useState<TrackLeadResult | null>(null);
-  const [contactLoading, setContactLoading] = useState<"whatsapp" | "call" | null>(
-    null
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const image = optimizeListingImageUrl(
+    listingCardImage(property),
+    layout === "desktop" ? 360 : 320
   );
-  const image = optimizeListingImageUrl(listingCardImage(property), layout === "desktop" ? 520 : 480);
   const agent = property.agent;
   const verified =
     property.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
+  const sellerBadge = agent ? deriveSellerBuyerBadge(agent) : null;
+  const sellerBadgeLabel = sellerBadge
+    ? SELLER_BUYER_BADGE_LABELS[sellerBadge]
+    : null;
   const hasAgent = !!agent?.id;
   const isDemo = isDemoProperty(property.id);
   const href = listingPath(property);
   const featuredActive = isFeaturedActive(property);
+  const parking = hasParking(property);
 
   useEffect(() => {
     if (!trackFeaturedAnalytics || !featuredActive || isDemo) return;
@@ -93,8 +102,6 @@ export function PropertyCard({
     property.payment_period,
     property.listing_type
   );
-  const moveInHint = formatMoveInHint(property);
-  const amenities = property.extras?.amenities ?? [];
 
   useEffect(() => {
     if (isDemo) return;
@@ -149,7 +156,8 @@ export function PropertyCard({
           listingId: property.id,
           sellerId: property.agent_id,
           listingTitle: property.title,
-          sourcePage: typeof window !== "undefined" ? window.location.pathname : "",
+          sourcePage:
+            typeof window !== "undefined" ? window.location.pathname : "",
         }),
       });
     }
@@ -198,17 +206,15 @@ export function PropertyCard({
   }
 
   const sourcePage =
-    typeof window !== "undefined"
-      ? window.location.pathname
-      : href;
+    typeof window !== "undefined" ? window.location.pathname : href;
 
-  async function runLead(leadType: "whatsapp" | "call") {
+  async function runWhatsApp() {
     if (!agent?.id) return;
-    setContactLoading(leadType);
+    setChatLoading(true);
     const result = await trackLeadAndRedirect({
       listingId: property.id,
       agentId: agent.id,
-      leadType,
+      leadType: "whatsapp",
       sourcePage,
       placement: "card",
       agentName: agent.full_name ?? "Agent",
@@ -223,22 +229,13 @@ export function PropertyCard({
       whatsapp: agent.whatsapp,
       phone: agent.phone,
     });
-    setContactLoading(null);
-    if (leadType === "whatsapp" && result.ok && result.redirectUrl) {
+    setChatLoading(false);
+    if (result.ok && result.redirectUrl) {
       openWhatsAppLead(result);
-      return;
-    }
-    if (leadType === "call" && result.ok) {
-      setCallResult(result);
-      if (result.callAllowed && result.redirectUrl) {
-        setConfirmOpen(true);
-      } else if (result.redirectUrl) {
-        setFallbackOpen(true);
-      }
     }
   }
 
-  function onWhatsAppClick(e: React.MouseEvent) {
+  function onChatClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     guardAction(
@@ -247,216 +244,132 @@ export function PropertyCard({
         listingId: property.id,
         redirectPath: href,
       },
-      () => void runLead("whatsapp")
+      () => void runWhatsApp()
     );
   }
-
-  function onCallClick(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    guardAction(
-      {
-        type: "call",
-        listingId: property.id,
-        redirectPath: href,
-      },
-      () => void runLead("call")
-    );
-  }
-
-  const freshness = getListingFreshness(property.updated_at, {
-    createdAt: property.created_at,
-    lastRefreshedAt: property.last_refreshed_at,
-    viewsCount: property.views_count,
-    verified,
-    contactClicks: property.contact_clicks,
-  });
-
-  const badges = (
-    <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 lg:left-4 lg:top-4">
-      <span className="rounded-full bg-navy/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-        {listingTypeLabel(property.listing_type)}
-      </span>
-      {verified && <VerifiedBadge size="sm" />}
-      {property.yike_verified && <YikeVerifiedBadge size="sm" />}
-      {featuredActive && <FeaturedBadge />}
-      {freshness.showPublicly && freshness.tone === "trending" && <TrendingBadge />}
-      {freshness.showPublicly && freshness.tone === "hot" && (
-        <TrendingBadge label="Popular this week" />
-      )}
-      {freshness.showPublicly && freshness.tone === "new" && !featuredActive && (
-        <NewListingBadge />
-      )}
-    </div>
-  );
-
-  const saveBtn = (
-    <button
-      type="button"
-      onClick={toggleSave}
-      disabled={saving || isDemo}
-      className={cn(
-        "pressable absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm lg:right-4 lg:top-4 lg:h-11 lg:w-11",
-        saving && "opacity-70"
-      )}
-      aria-label="Save"
-    >
-      <Heart
-        className={cn(
-          "h-4 w-4 transition-all lg:h-5 lg:w-5",
-          saved ? "fill-red-500 text-red-500" : "text-navy"
-        )}
-      />
-    </button>
-  );
-
-  const specs =
-    (property.bedrooms > 0 || property.bathrooms > 0) && (
-      <div className="flex gap-3 text-xs font-semibold text-white/90 lg:text-muted">
-        {property.bedrooms > 0 && (
-          <span className="flex items-center gap-1">
-            <BedDouble className="h-3.5 w-3.5" />
-            {property.bedrooms} bed{property.bedrooms > 1 ? "s" : ""}
-          </span>
-        )}
-        {property.bathrooms > 0 && (
-          <span className="flex items-center gap-1">
-            <Bath className="h-3.5 w-3.5" />
-            {property.bathrooms} bath{property.bathrooms > 1 ? "s" : ""}
-          </span>
-        )}
-      </div>
-    );
 
   const imageAlt = listingImageAlt(property);
+  const locationLabel = [property.area, property.city].filter(Boolean).join(", ");
 
-  const contactRow = hasAgent && (
-    <>
-      <div className="flex gap-2.5">
-        <button
-          type="button"
-          onClick={onWhatsAppClick}
-          disabled={contactLoading === "whatsapp"}
-          className="pressable flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-gold text-sm font-bold text-navy shadow-glow-gold disabled:opacity-70 lg:min-h-[44px]"
-        >
-          <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
-          {contactLoading === "whatsapp" ? "Opening…" : "Chat on WhatsApp"}
-        </button>
-        <button
-          type="button"
-          onClick={onCallClick}
-          disabled={contactLoading === "call"}
-          className="pressable flex h-12 min-w-[48px] items-center justify-center rounded-xl bg-surface text-navy disabled:opacity-70 lg:h-11 lg:min-w-[44px]"
-          aria-label="Call agent"
-        >
-          <Phone className="h-4 w-4" />
-        </button>
-      </div>
-      <CallWhatsAppFallbackSheet
-        open={fallbackOpen}
-        onClose={() => setFallbackOpen(false)}
-        onContinueWhatsApp={() => {
-          if (callResult) openWhatsAppLead(callResult);
-          setFallbackOpen(false);
-        }}
-        loading={contactLoading === "whatsapp"}
-      />
-      <CallConfirmSheet
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        onCallNow={() => {
-          if (!callResult?.redirectUrl) return;
-          void fetch("/api/leads/call-opened", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ yikeReference: callResult.yikeReference }),
-          }).catch(() => undefined);
-          window.location.href = callResult.redirectUrl;
-          setConfirmOpen(false);
-        }}
-        onContinueWhatsApp={() => {
-          if (callResult) openWhatsAppLead(callResult);
-          setConfirmOpen(false);
-        }}
-        propertyTitle={property.title}
-        agentName={agent?.full_name ?? "Agent"}
-        loading={contactLoading === "whatsapp"}
-      />
-    </>
-  );
+  const attrs: { icon: typeof BedDouble; label: string }[] = [];
+  if (property.bedrooms > 0) {
+    attrs.push({
+      icon: BedDouble,
+      label: `${property.bedrooms} bd`,
+    });
+  }
+  if (property.bathrooms > 0) {
+    attrs.push({
+      icon: Bath,
+      label: `${property.bathrooms} ba`,
+    });
+  }
+  if (parking) {
+    attrs.push({ icon: Car, label: "Park" });
+  }
 
-  if (layout === "desktop") {
+  /* Inventory-first browse poster — photo · price · title · pin · verified */
+  if (isBrowse) {
     return (
-      <article className="group card-lift overflow-hidden rounded-2xl bg-elevated shadow-float ring-1 ring-black/[0.04] dark:ring-white/[0.08]">
-        <Link href={href} prefetch={!isDemo} className="block" onClick={handleFeaturedNavigate}>
-          <div className="relative aspect-[5/4] overflow-hidden bg-surface">
+      <article className="group relative flex h-full flex-col overflow-hidden rounded-xl bg-transparent">
+        <Link
+          href={href}
+          prefetch={!isDemo}
+          className="block"
+          onClick={handleFeaturedNavigate}
+        >
+          <div
+            className={cn(
+              "relative overflow-hidden rounded-xl bg-navy/5",
+              BROWSE_THUMB_ASPECT,
+            )}
+          >
             <ListingImage
               src={image}
               alt={imageAlt}
               priority={priorityImage}
-              sizes="(max-width: 1280px) 33vw, 420px"
-              width={900}
-              className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+              sizes="(max-width: 640px) 46vw, (max-width: 1024px) 25vw, (max-width: 1536px) 14vw, 12vw"
+              width={480}
+              className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
-            {badges}
-            {saveBtn}
+            {isDemo ? (
+              <span className="absolute left-1.5 top-1.5 z-10 rounded bg-navy px-1.5 py-0.5 text-[9px] font-bold text-gold">
+                DEMO
+              </span>
+            ) : null}
           </div>
         </Link>
-        <div className="space-y-3.5 p-5 lg:p-6">
-          <Link href={href} prefetch={!isDemo} className="block" onClick={handleFeaturedNavigate}>
-            <p className="text-2xl font-bold tabular-nums tracking-tight text-foreground lg:text-[1.65rem]">
+
+        {!isDemo ? (
+          <div className="pointer-events-none absolute right-1.5 top-1.5 z-10">
+            <button
+              type="button"
+              onClick={toggleSave}
+              disabled={saving}
+              className={cn(
+                "pointer-events-auto pressable flex h-7 w-7 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-[2px] transition-opacity",
+                saving && "opacity-70",
+                !saved && "opacity-80 group-hover:opacity-100",
+              )}
+              aria-label={saved ? "Unsave listing" : "Save listing"}
+            >
+              <Heart
+                className={cn(
+                  "h-3.5 w-3.5",
+                  saved ? "fill-red-500 text-red-500" : "text-white",
+                )}
+              />
+            </button>
+          </div>
+        ) : null}
+
+        <div className="flex flex-1 flex-col gap-0 pt-1.5">
+          <Link
+            href={href}
+            prefetch={!isDemo}
+            className="block min-w-0"
+            onClick={handleFeaturedNavigate}
+          >
+            <p className="text-[13px] font-bold tabular-nums leading-tight tracking-tight text-navy sm:text-sm">
               {price}
             </p>
-            {moveInHint && (
-              <p className="mt-1 text-xs font-semibold text-gold-dark">
-                {moveInHint}
-              </p>
-            )}
-            <p className="mt-2 line-clamp-1 text-[15px] font-semibold leading-snug text-foreground/90">
+            <p className="mt-0.5 line-clamp-1 text-[11px] font-semibold leading-snug text-navy sm:text-[12px]">
               {property.title}
             </p>
-            <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-muted">
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-gold" />
-              {property.area}, {property.city}
-            </p>
-            <ListingFreshness
-              updatedAt={property.updated_at}
-              createdAt={property.created_at}
-              lastRefreshedAt={property.last_refreshed_at}
-              viewsCount={property.views_count}
-              verified={verified}
-              contactClicks={property.contact_clicks}
-              className="mt-2.5 block"
-            />
-            {amenities.length > 0 && (
-              <AmenityChips
-                amenities={amenities}
-                max={3}
-                className="mt-3"
-              />
-            )}
+            {locationLabel ? (
+              <p className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-navy/50">
+                <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
+                <span className="line-clamp-1">{locationLabel}</span>
+                <ListingDistanceLabel
+                  city={property.city}
+                  state={property.state}
+                  className="ml-auto shrink-0 tabular-nums text-navy/40"
+                />
+              </p>
+            ) : null}
+            {sellerBadgeLabel ? (
+              <p
+                className={cn(
+                  "mt-0.5 text-[9px] font-bold uppercase tracking-wide",
+                  sellerBadge === "verified_seller"
+                    ? "text-emerald-700"
+                    : sellerBadge === "verification_pending"
+                      ? "text-amber-800"
+                      : "text-navy/45"
+                )}
+              >
+                {sellerBadge === "verified_seller"
+                  ? "✓ Verified"
+                  : sellerBadge === "verification_pending"
+                    ? "⏳ Pending"
+                    : "Unverified"}
+              </p>
+            ) : verified ? (
+              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+                Verified
+              </p>
+            ) : null}
           </Link>
-          {specs && (
-            <div className="flex gap-4 text-xs font-semibold text-muted">
-              {property.bedrooms > 0 && (
-                <span className="flex items-center gap-1">
-                  <BedDouble className="h-3.5 w-3.5" />
-                  {property.bedrooms} beds
-                </span>
-              )}
-              {property.bathrooms > 0 && (
-                <span className="flex items-center gap-1">
-                  <Bath className="h-3.5 w-3.5" />
-                  {property.bathrooms} baths
-                </span>
-              )}
-            </div>
-          )}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {agent ? <AgentListingChip agent={agent} /> : <span />}
-            <ListingLikeButton listingId={property.id} compact />
-          </div>
-          {contactRow}
         </div>
       </article>
     );
@@ -465,65 +378,107 @@ export function PropertyCard({
   return (
     <article
       className={cn(
-        "card-lift overflow-hidden rounded-[1.25rem] bg-elevated shadow-float ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
-        inline ? "" : "mx-2.5 lg:mx-0"
+        "group card-lift relative flex h-full flex-col overflow-hidden rounded-xl bg-elevated shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
+        inline ? "" : ""
       )}
     >
-      <Link href={href} prefetch={!isDemo} className="block pressable" onClick={handleFeaturedNavigate}>
-        <div className="relative aspect-[5/6] overflow-hidden bg-surface sm:aspect-[4/5]">
+      <Link
+        href={href}
+        prefetch={!isDemo}
+        className="block"
+        onClick={handleFeaturedNavigate}
+      >
+        {/* Image ~50–55% of card — fixed aspect for consistent row height */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-surface">
           <ListingImage
             src={image}
             alt={imageAlt}
             priority={priorityImage}
-            sizes="(max-width: 1024px) 94vw, 420px"
-              width={720}
+            sizes="(max-width: 640px) 46vw, (max-width: 1024px) 25vw, (max-width: 1536px) 14vw, 12vw"
+            width={480}
+            className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
-          <div className="gradient-scrim pointer-events-none absolute inset-0" />
-          {badges}
-          {saveBtn}
-          <div className="absolute bottom-0 left-0 right-0 z-10 space-y-2 p-4 pb-5">
-            <p className="text-[clamp(1.5rem,6vw,1.85rem)] font-bold leading-none tracking-tight text-white tabular-nums">
-              {price}
-            </p>
-            {moveInHint && (
-              <p className="text-xs font-semibold text-gold-light">
-                {moveInHint}
-              </p>
-            )}
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-white/95">
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-gold" />
-              <span className="line-clamp-1">
-                {property.area}, {property.city}
+          <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.75rem)] flex-wrap gap-1">
+            <span className="rounded bg-navy/85 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+              {listingTypeLabel(property.listing_type)}
+            </span>
+            {verified ? (
+              <span
+                className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm"
+                title="Verified"
+              >
+                ✓
               </span>
-            </p>
-            <p className="line-clamp-1 text-[13px] font-medium text-white/80">
-              {property.title}
-            </p>
-            {amenities.length > 0 && (
-              <AmenityChips amenities={amenities} max={2} size="sm" />
-            )}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              {specs}
-              <ListingFreshness
-                updatedAt={property.updated_at}
-                createdAt={property.created_at}
-                lastRefreshedAt={property.last_refreshed_at}
-                viewsCount={property.views_count}
-                verified={verified}
-                contactClicks={property.contact_clicks}
-                dark
-                className="shrink-0"
-              />
-            </div>
+            ) : null}
+            {featuredActive ? (
+              <span className="rounded bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
+                Feat
+              </span>
+            ) : null}
           </div>
         </div>
       </Link>
-      <div className="space-y-3 p-4 pt-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {agent ? <AgentListingChip agent={agent} /> : <span />}
-          <ListingLikeButton listingId={property.id} compact />
-        </div>
-        {contactRow}
+
+      {/* Compact overlay CTAs — primary conversion stays on detail */}
+      <div className="pointer-events-none absolute right-1.5 top-1.5 z-10 flex gap-0.5">
+        <button
+          type="button"
+          onClick={toggleSave}
+          disabled={saving || isDemo}
+          className={cn(
+            "pointer-events-auto pressable flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm",
+            saving && "opacity-70"
+          )}
+          aria-label={saved ? "Unsave listing" : "Save listing"}
+        >
+          <Heart
+            className={cn(
+              "h-3.5 w-3.5",
+              saved ? "fill-red-500 text-red-500" : "text-navy/70"
+            )}
+          />
+        </button>
+        {hasAgent && !isDemo ? (
+          <button
+            type="button"
+            onClick={onChatClick}
+            disabled={chatLoading}
+            className="pointer-events-auto pressable flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm disabled:opacity-70"
+            aria-label="Chat on WhatsApp"
+          >
+            <MessageCircle className="h-3.5 w-3.5 text-navy/70" />
+          </button>
+        ) : null}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-0.5 p-2 sm:px-2 sm:pb-2 sm:pt-1.5">
+        <Link
+          href={href}
+          prefetch={!isDemo}
+          className="block min-w-0"
+          onClick={handleFeaturedNavigate}
+        >
+          <p className="text-sm font-bold tabular-nums leading-tight tracking-tight text-foreground sm:text-[15px]">
+            {price}
+          </p>
+          <p className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-foreground/90 sm:text-[13px]">
+            {property.title}
+          </p>
+          <p className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-muted sm:text-[11px]">
+            <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
+            <span className="line-clamp-1">{locationLabel}</span>
+          </p>
+          {attrs.length > 0 ? (
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-muted sm:text-[11px]">
+              {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
+                <span key={label} className="inline-flex items-center gap-0.5">
+                  <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                  {label}
+                </span>
+              ))}
+            </p>
+          ) : null}
+        </Link>
       </div>
     </article>
   );

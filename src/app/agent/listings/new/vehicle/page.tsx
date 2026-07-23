@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { VehicleListingForm } from "@/components/marketplace/vehicle-listing-form";
-import { getSession } from "@/lib/auth";
+import { requireAgentLister } from "@/lib/auth";
+import {
+  mustCompleteSellerVerification,
+  SELLER_VERIFY_PATH,
+} from "@/lib/seller-trust";
 
 export const metadata: Metadata = {
   title: "List a vehicle | Yike",
@@ -12,7 +16,15 @@ export const metadata: Metadata = {
 
 export default async function NewVehicleListingPage() {
   if (!isLaunchFeatureVisible("vehicle_marketplace")) notFound();
-  const user = await getSession();
+
+  const { user, profile } = await requireAgentLister(
+    "/agent/listings/new/vehicle",
+    { skipProfileSetup: true }
+  );
+
+  if (mustCompleteSellerVerification(profile)) {
+    redirect(SELLER_VERIFY_PATH);
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -38,7 +50,7 @@ export default async function NewVehicleListingPage() {
           List property instead
         </Link>
       </div>
-      <VehicleListingForm agentId={user?.id} />
+      <VehicleListingForm agentId={user.id} />
     </main>
   );
 }

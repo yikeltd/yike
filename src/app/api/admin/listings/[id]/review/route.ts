@@ -17,6 +17,7 @@ import {
 import { saveReviewDecision } from "@/lib/review-memory/memory";
 import { applyReviewTrustImpact } from "@/lib/review-memory/trust-impact";
 import type { Property, Profile, PropertyStatus } from "@/types/database";
+import { assertCanPublishListing } from "@/lib/seller-trust";
 
 export const runtime = "nodejs";
 
@@ -193,7 +194,9 @@ export async function POST(req: Request, ctx: RouteCtx) {
     .from("properties")
     .select(
       `*, agent:profiles!properties_agent_id_fkey (
-        id, full_name, verification_status, verified_badge, role
+        id, full_name, verification_status, verified_badge, role,
+        email_verified, phone_verified, whatsapp_verification_status,
+        whatsapp_verified_at, is_banned, account_status, profile_status
       )`
     )
     .eq("id", id)
@@ -210,6 +213,26 @@ export async function POST(req: Request, ctx: RouteCtx) {
 
   let decisionType: ReviewDecisionType =
     body.decisionType ?? "approved";
+
+  const publishesLive = [
+    "approve",
+    "approve_rank_lower",
+    "approve_no_feature",
+  ].includes(body.action);
+
+  if (publishesLive) {
+    const publishGate = assertCanPublishListing(property.agent);
+    if (!publishGate.ok) {
+      return NextResponse.json(
+        {
+          error: publishGate.error,
+          code: publishGate.code,
+          hint: "Approve seller verification first, then publish the listing.",
+        },
+        { status: 403 }
+      );
+    }
+  }
 
   if (body.action === "approve") {
     patch.status = "approved" as PropertyStatus;

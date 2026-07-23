@@ -108,7 +108,7 @@ export function AgentListingsClient({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold">My listings</h1>
         <div className="flex flex-wrap gap-2 text-sm font-medium">
-          <Link href="/agent/listings/new" className="text-primary">
+          <Link href="/agent/listings/choose" className="text-primary">
             + Property
           </Link>
           {vehiclesOn ? (

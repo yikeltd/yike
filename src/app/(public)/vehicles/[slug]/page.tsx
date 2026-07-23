@@ -16,6 +16,7 @@ import { ListingSaveButton } from "@/components/marketplace/listing-save-button"
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { MarketplaceSafetyNotice } from "@/components/marketplace/safety-notice";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
+import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 
@@ -255,7 +256,7 @@ export default async function VehicleDetailPage({ params }: Props) {
       {similar.length > 0 ? (
         <section className="mt-10">
           <h2 className="text-lg font-semibold text-navy">Similar vehicles</h2>
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+          <ul className={`mt-3 ${BROWSE_GRID_CLASS}`}>
             {similar.map((s) => (
               <li key={s.id}>
                 <VehicleCard vehicle={s} />

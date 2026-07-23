@@ -3,11 +3,10 @@
 import { isStrongPin, pinChecks } from "@/lib/pin-policy";
 import { cn } from "@/lib/utils";
 
+/** Soft checklist — avoids revealing weak-PIN detection rules. */
 const RULES = [
   { key: "length" as const, label: "Exactly 6 digits" },
-  { key: "mixOfDigits" as const, label: "At least 3 different numbers" },
-  { key: "maxTwoSame" as const, label: "No digit used more than twice" },
-  { key: "noConsecutiveRun" as const, label: "No three numbers in a row" },
+  { key: "notWeak" as const, label: "Not easy to guess" },
 ];
 
 export function PinChecklist({ pin }: { pin: string }) {

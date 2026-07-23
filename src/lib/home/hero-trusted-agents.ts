@@ -31,9 +31,9 @@ const SAMPLE_AVATARS = [
 /** Fallback until admin selects top-performing agents in platform settings. */
 export function getDefaultHeroTrustedAgentsConfig(): HeroTrustedAgentsConfig {
   return {
-    headlineTop: "Trusted by thousands",
-    headlineBottom: "across Nigeria",
-    overflowLabel: "+2K",
+    headlineTop: "Trusted Across Nigeria",
+    headlineBottom: "2,000+ Buyers & Sellers",
+    overflowLabel: "2K+",
     maxVisible: 4,
     agents: [
       {

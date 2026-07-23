@@ -64,7 +64,7 @@ export function hasBasicListingProfile(
   if (!profile.full_name?.trim()) return false;
   if (!profile.date_of_birth) return false;
   if (!profileStreetAddress(profile)) return false;
-  if (!profile.residential_city?.trim()) return false;
   if (!profile.residential_state?.trim()) return false;
+  // City may live inside the address textarea (Seller Onboarding v1).
   return true;
 }

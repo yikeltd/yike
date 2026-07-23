@@ -5,7 +5,9 @@ import type { AdPlacementKey } from "@/constants/adPlacements";
 import { PropertyCard } from "./property-card";
 import { AdFeedInsert } from "@/components/ads/ad-feed-insert";
 import { SponsoredFeedInsert } from "@/components/ads/sponsored-feed-insert";
+import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 
+/** Dense browse grid (same density as PropertyGrid) — used when a client wrapper is needed. */
 export function FeedList({
   properties,
   midFeedAd,
@@ -22,37 +24,31 @@ export function FeedList({
   trackFeaturedAnalytics?: boolean;
 }) {
   return (
-    <div className="feed-rhythm flex flex-col pb-2">
+    <div className={BROWSE_GRID_CLASS}>
       {properties.map((p, i) => (
-        <div
-          key={p.id}
-          className="feed-item"
-          style={
-            i > 2
-              ? { contentVisibility: "auto", containIntrinsicSize: "520px" }
-              : undefined
-          }
-        >
+        <div key={p.id} className="contents">
           {sponsoredAd && i === insertAfter ? (
-            <div className="mb-5 animate-fade-up">
+            <div className="col-span-full animate-fade-up">
               <SponsoredFeedInsert ad={sponsoredAd} />
             </div>
           ) : null}
           {!sponsoredAd && midFeedAd && i === insertAfter ? (
-            <div className="mb-5 animate-fade-up">
+            <div className="col-span-full animate-fade-up">
               <AdFeedInsert ad={midFeedAd} placementKey={adPlacementKey} />
             </div>
           ) : null}
           <div
-            className={i < 4 ? "animate-fade-up" : undefined}
+            className={i < 8 ? "animate-fade-up" : undefined}
             style={
-              i < 4 ? { animationDelay: `${Math.min(i, 3) * 40}ms` } : undefined
+              i < 8
+                ? { animationDelay: `${Math.min(i, 7) * 30}ms` }
+                : undefined
             }
           >
             <PropertyCard
               property={p}
               layout="mobile"
-              priorityImage={i < 3}
+              priorityImage={i < 4}
               trackFeaturedAnalytics={trackFeaturedAnalytics}
             />
           </div>

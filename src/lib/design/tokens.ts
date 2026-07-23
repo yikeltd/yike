@@ -16,7 +16,7 @@ export const colors = {
 export const brand = {
   name: "Yike",
   domain: "yike.ng",
-  tagline: "The fastest and safest way to find real houses in Nigeria.",
+  tagline: "Nigeria's trusted marketplace for property and vehicles.",
   logo: "/images/logo.webp",
   logoSm: "/images/logo.webp",
   logoFallback: "/images/logo.webp",

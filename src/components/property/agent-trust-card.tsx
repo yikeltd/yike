@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { UserAvatar } from "@/components/profile/user-avatar";
 import type { Profile, PaymentPeriod, ListingType } from "@/types/database";
-import { VerifiedBadge, TrustPill, ResponsiveBadge, DeveloperBadge, AgencyBadge, SellerTypeBadge } from "@/components/ui/badge";
+import { VerifiedBadge, ResponsiveBadge, DeveloperBadge, AgencyBadge, SellerTypeBadge } from "@/components/ui/badge";
+import { SellerTrustBadge } from "@/components/marketplace/seller-trust-badge";
 import { ContactButtons } from "./contact-buttons";
 import { isVerifiedAgent, cn } from "@/lib/utils";
 import {
@@ -90,7 +91,8 @@ export function AgentTrustCard({
         {sellerType ? (
           <SellerTypeBadge type={sellerType} size="sm" />
         ) : null}
-        {verified ? <VerifiedBadge /> : <TrustPill />}
+        <SellerTrustBadge profile={agent} size="sm" />
+        {verified ? <VerifiedBadge /> : null}
         {responsive ? <ResponsiveBadge size="sm" /> : null}
         {isDeveloper && agent.developer_verified ? <DeveloperBadge /> : null}
         {isAgency && agent.agency_verified ? <AgencyBadge /> : null}

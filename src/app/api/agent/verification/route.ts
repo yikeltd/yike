@@ -3,6 +3,7 @@ import { sendAgentVerificationSubmittedEmail } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encryptSensitive } from "@/lib/encryption";
+import { isPhoneVerifiedForSeller } from "@/lib/seller-trust";
 import { validateNinFormat } from "@/lib/verification/nin-provider";
 
 export const runtime = "nodejs";
@@ -59,7 +60,8 @@ export async function POST(request: Request) {
   if (!phone || !email) {
     return NextResponse.json({ error: "Phone and email are required" }, { status: 400 });
   }
-  if (nin.length !== 11) {
+  // NIN optional in Identity v1 — format-check only when provided (future KYC hook).
+  if (nin && nin.length !== 11) {
     return NextResponse.json({ error: "Enter a valid 11-digit NIN" }, { status: 400 });
   }
   if (!selfieUrl.startsWith("http")) {
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
   const { data: profile } = await admin
     .from("profiles")
     .select(
-      "role, verification_status, phone_verified, email_verified, full_name, verified_badge"
+      "role, verification_status, phone_verified, email_verified, full_name, verified_badge, whatsapp_verification_status, whatsapp_verified_at"
     )
     .eq("id", user.id)
     .single();
@@ -86,6 +88,16 @@ export async function POST(request: Request) {
 
   if (!user.email_confirmed_at && !profile.email_verified) {
     return NextResponse.json({ error: "Verify your email first" }, { status: 400 });
+  }
+
+  if (!isPhoneVerifiedForSeller(profile)) {
+    return NextResponse.json(
+      {
+        error: "Verify your phone first",
+        code: "phone_verification_required",
+      },
+      { status: 400 }
+    );
   }
 
   const vStatus = profile.verification_status;
@@ -114,13 +126,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const ninResult = validateNinFormat(nin);
+  const ninResult = nin ? validateNinFormat(nin) : { ok: true as const };
   if (!ninResult.ok) {
     return NextResponse.json({ error: ninResult.error }, { status: 422 });
   }
 
-  const encryptedNin = encryptSensitive(nin);
-  if (!encryptedNin) {
+  const encryptedNin = nin ? encryptSensitive(nin) : null;
+  if (nin && !encryptedNin) {
     return NextResponse.json(
       { error: "Server encryption not configured" },
       { status: 503 }

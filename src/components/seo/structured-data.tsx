@@ -35,6 +35,7 @@ export function StructuredData() {
         },
         knowsAbout: [
           "Nigerian real estate",
+          "Vehicles for sale in Nigeria",
           "Apartments for rent",
           "Houses for sale",
           "Shortlets",

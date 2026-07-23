@@ -7,9 +7,10 @@ export default function AdvertisingPage() {
     <div className="space-y-6">
       <AdminSectionTabs tabs={PROMOTIONS_SECTION_TABS} />
       <section>
-        <h1 className="text-2xl font-bold">Advertising</h1>
+        <h1 className="text-2xl font-bold">Advertisement Manager</h1>
         <p className="text-sm text-muted">
-          Sponsored opportunities — homepage & search. Max one active per placement. Label: Sponsored.
+          Homepage slots 1–5 and search. Active only when enabled and within
+          start/end dates. Empty slots collapse on the homepage — no placeholders.
         </p>
       </section>
       <AdvertisementsBoard />

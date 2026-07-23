@@ -1,13 +1,19 @@
 import { getSession, getProfile, isEmailVerified } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { BecomeAgentCard } from "@/components/agent/become-agent-card";
-import { canListProperties } from "@/lib/agent-tiers";
-import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
+import {
+  isSellerReadyToList,
+  SELLER_CHOOSE_LISTING_PATH,
+  SELLER_VERIFY_PATH,
+} from "@/lib/seller-trust";
 
+/**
+ * Legacy become-seller entry — Seller Verification & Onboarding v1
+ * consolidates this into /agent/verify.
+ */
 export default async function BecomeAgentPage() {
   const user = await getSession();
   if (!user) {
-    redirect("/auth/login?next=/agent/become");
+    redirect(`/auth/login?next=${encodeURIComponent(SELLER_VERIFY_PATH)}`);
   }
 
   const profile = await getProfile(user.id);
@@ -15,19 +21,13 @@ export default async function BecomeAgentPage() {
     redirect("/");
   }
 
-  if (canListProperties(profile)) {
-    if (!hasBasicListingProfile(profile)) {
-      redirect("/agent/profile-setup?next=/agent/listings/new");
-    }
-    redirect("/agent/listings/new");
+  if (!isEmailVerified(user, profile)) {
+    redirect(`/auth/verify-email?next=${encodeURIComponent(SELLER_VERIFY_PATH)}`);
   }
 
-  return (
-    <div className="mx-auto max-w-lg px-3 pt-4 pb-8">
-      <BecomeAgentCard
-        profile={profile}
-        emailVerified={isEmailVerified(user, profile)}
-      />
-    </div>
-  );
+  if (isSellerReadyToList(profile)) {
+    redirect(SELLER_CHOOSE_LISTING_PATH);
+  }
+
+  redirect(SELLER_VERIFY_PATH);
 }

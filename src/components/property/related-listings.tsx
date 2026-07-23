@@ -3,24 +3,38 @@ import { getRelatedSections } from "@/lib/properties";
 import type { Property } from "@/types/database";
 import { PropertyCard } from "./property-card";
 import { NearbyPrefetch } from "./nearby-prefetch";
+import {
+  BROWSE_GRID_CLASS,
+  BROWSE_RAIL_CARD_CLASS,
+} from "@/lib/marketplace/browse-grid";
 
 function PropertyRail({ properties }: { properties: Property[] }) {
   return (
-    <div className="hide-scrollbar flex gap-4 overflow-x-auto px-2 pb-2 snap-x-mandatory lg:grid lg:grid-cols-3 lg:gap-7 lg:overflow-visible lg:px-0 xl:grid-cols-3">
-      {properties.map((p, i) => (
-        <div
-          key={p.id}
-          className="w-[min(88vw,340px)] shrink-0 snap-center lg:w-auto"
-        >
+    <>
+      <div className="hide-scrollbar flex gap-2 overflow-x-auto px-2 pb-2 sm:gap-2.5 lg:hidden">
+        {properties.map((p, i) => (
+          <div key={p.id} className={BROWSE_RAIL_CARD_CLASS}>
+            <PropertyCard
+              property={p}
+              layout="desktop"
+              inline
+              priorityImage={i < 2}
+            />
+          </div>
+        ))}
+      </div>
+      <div className={`hidden ${BROWSE_GRID_CLASS} lg:!grid`}>
+        {properties.map((p, i) => (
           <PropertyCard
+            key={p.id}
             property={p}
             layout="desktop"
             inline
-            priorityImage={i < 2}
+            priorityImage={i < 4}
           />
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 }
 

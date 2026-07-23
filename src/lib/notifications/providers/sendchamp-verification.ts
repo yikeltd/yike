@@ -5,14 +5,17 @@ import {
   type SendchampEnvelope,
 } from "./sendchamp-response";
 import { looksLikeSupabaseKey, resolveSmsSender } from "./sendchamp-keys";
-import { toSendchampPhone } from "./sendchamp";
 
 const DEFAULT_BASE_URL = "https://api.sendchamp.com/api/v1";
 const FETCH_TIMEOUT_MS = 25_000;
 
 export type SendchampVerificationPurpose =
   | "account_verification"
-  | "whatsapp_number_verification";
+  | "whatsapp_number_verification"
+  | "phone_verification"
+  | string;
+
+export type SendchampVerificationChannel = "sms" | "whatsapp" | "email";
 
 function getBaseUrl(): string {
   return process.env.SENDCHAMP_LIVE_BASE_URL?.trim() || DEFAULT_BASE_URL;
@@ -29,16 +32,29 @@ function getApiKeys(): string[] {
   return [...new Set(keys)];
 }
 
-function otpLength(): number {
+export function otpLength(): number {
   const n = Number(process.env.SENDCHAMP_OTP_LENGTH ?? process.env.WHATSAPP_OTP_LENGTH ?? 6);
   return Number.isFinite(n) && n >= 4 && n <= 8 ? n : 6;
 }
 
-function otpExpiryMinutes(): number {
+export function otpExpiryMinutes(): number {
   const n = Number(
     process.env.SENDCHAMP_OTP_EXPIRY_MINUTES ?? process.env.WHATSAPP_OTP_EXPIRY_MINUTES ?? 30
   );
   return Number.isFinite(n) && n >= 5 && n <= 60 ? n : 30;
+}
+
+function resolveChannel(
+  explicit?: SendchampVerificationChannel
+): SendchampVerificationChannel {
+  if (explicit) return explicit;
+  const raw =
+    process.env.SENDCHAMP_OTP_CHANNEL?.trim().toLowerCase() ||
+    process.env.WHATSAPP_OTP_CHANNEL?.trim().toLowerCase() ||
+    "sms";
+  if (raw === "whatsapp" || raw === "wa") return "whatsapp";
+  if (raw === "email") return "email";
+  return "sms";
 }
 
 async function post<T extends Record<string, unknown>>(
@@ -93,25 +109,32 @@ export function isSendchampVerificationConfigured(): boolean {
   return getApiKeys().length > 0;
 }
 
-/** Sendchamp generates and delivers the OTP (in_app_token: false). Defaults to SMS. */
-export async function createSendchampWhatsappVerification(params: {
+/**
+ * Create a Sendchamp Verification OTP session.
+ * - `inAppToken: true` — register OTP for confirm without Sendchamp channel delivery
+ *   (Yike sends branded SMS separately).
+ * - `inAppToken: false` — Sendchamp generates and delivers via channel.
+ */
+export async function createSendchampVerificationOtp(params: {
   phoneIntl: string;
   purpose: SendchampVerificationPurpose;
   email?: string;
+  channel?: SendchampVerificationChannel;
+  /** Server-generated OTP when delivering branded SMS ourselves. */
+  token?: string;
+  inAppToken?: boolean;
 }): Promise<
   | { ok: true; reference: string; expiresMinutes: number }
   | { ok: false; error: string; status: number; code?: "provider_auth_failed" }
 > {
-  const channel =
-    process.env.SENDCHAMP_OTP_CHANNEL?.trim().toLowerCase() ||
-    process.env.WHATSAPP_OTP_CHANNEL?.trim().toLowerCase() ||
-    "sms";
+  const channel = resolveChannel(params.channel);
+  const expiresMinutes = otpExpiryMinutes();
 
   const body: Record<string, unknown> = {
     channel,
     token_type: "numeric",
     token_length: otpLength(),
-    expiration_time: otpExpiryMinutes(),
+    expiration_time: expiresMinutes,
     customer_mobile_number: params.phoneIntl,
     customer_email_address: params.email?.trim() || "",
     meta_data: {
@@ -119,10 +142,14 @@ export async function createSendchampWhatsappVerification(params: {
       brand: "Yike",
       purpose: params.purpose,
     },
-    in_app_token: false,
+    in_app_token: params.inAppToken ?? false,
   };
 
-  // SMS requires approved sender ID (e.g. YIKE).
+  if (params.token) {
+    body.token = params.token;
+  }
+
+  // SMS requires approved sender ID (production: YIKE).
   if (channel === "sms") {
     body.sender = resolveSmsSender(process.env.SENDCHAMP_SMS_SENDER ?? "YIKE");
   }
@@ -143,7 +170,25 @@ export async function createSendchampWhatsappVerification(params: {
     return { ok: false, error: "Sendchamp did not return a verification reference", status: 502 };
   }
 
-  return { ok: true, reference, expiresMinutes: otpExpiryMinutes() };
+  return { ok: true, reference, expiresMinutes };
+}
+
+/**
+ * @deprecated Prefer createSendchampVerificationOtp — kept for WhatsApp profile callers.
+ * Defaults to SENDCHAMP_OTP_CHANNEL (sms).
+ */
+export async function createSendchampWhatsappVerification(params: {
+  phoneIntl: string;
+  purpose: SendchampVerificationPurpose;
+  email?: string;
+}): Promise<
+  | { ok: true; reference: string; expiresMinutes: number }
+  | { ok: false; error: string; status: number; code?: "provider_auth_failed" }
+> {
+  return createSendchampVerificationOtp({
+    ...params,
+    inAppToken: false,
+  });
 }
 
 export async function confirmSendchampVerification(params: {

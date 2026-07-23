@@ -51,7 +51,8 @@ export async function POST(request: Request) {
   const password = String(body.password ?? "");
   const { ip, userAgent } = await getRequestMeta(request);
 
-  if (!identifier || password.length < 8) {
+  // 6-digit PIN is the Auth password for new signups; legacy passwords are longer.
+  if (!identifier || password.length < 6) {
     return NextResponse.json(
       { error: AUTH_USER_MESSAGES.invalidLogin },
       { status: 400 }

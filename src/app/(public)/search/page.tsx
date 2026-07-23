@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { PropertyFeed } from "@/components/property/property-feed";
 import {
@@ -24,10 +23,12 @@ import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
 import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 import {
   buildSearchEmptyCopy,
-  buildStateBrowseHref,
   resolveSearchResults,
 } from "@/lib/search-fallback";
-import { MarketplaceVerticalSwitcher } from "@/components/marketplace/vertical-switcher";
+import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
+import { MarketplaceSafetyNotice } from "@/components/marketplace/safety-notice";
+import { MarketplaceEmptyState } from "@/components/marketplace/marketplace-empty-state";
+import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
 
 export const metadata: Metadata = {
   title: `Search Homes in Nigeria`,
@@ -81,6 +82,16 @@ export default async function SearchPage({
       feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   }
 
+  // Dev-only: when live search is empty, fill with [DEMO] UI fixtures (no DB writes).
+  if (!hasQuery && feedItems.length === 0) {
+    const demo = withEmptyInventoryDemoFixtures([], "property", 24);
+    if (demo.isDemo) {
+      feedItems = demo.items;
+      exactCount = demo.items.length;
+      isDemo = true;
+    }
+  }
+
   const [sponsoredSearchAd, feedAd] = await Promise.all([
     getSponsoredAd("search_results"),
     getActiveAd("search_feed_mid"),
@@ -110,14 +121,25 @@ export default async function SearchPage({
   const helpLabel = helpCity ? seoHelpLabel(helpCity, helpArea) : "";
 
   const emptyCopy = buildSearchEmptyCopy(preloadParams);
-  const stateBrowseHref = buildStateBrowseHref(preloadParams);
   const showingNearby = hasQuery && exactCount === 0 && nearbyItems.length > 0;
+
+  const saveHref = currentHref ?? "/search";
+  const saveLabel = label || "Properties";
 
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
       <PrefSync />
-      <div className="px-3 pt-3">
-        <MarketplaceVerticalSwitcher active="property" />
+      <div className="px-3 pt-4 lg:px-6 xl:px-8">
+        <MarketplaceCategoryHeader
+          vertical="property"
+          title="Properties"
+          tagline="Find your next home."
+          sellHref="/agent/listings/new"
+          sellLabel="Sell Property"
+          saveLabel={saveLabel}
+          saveHref={saveHref}
+          className="mb-3"
+        />
       </div>
       <Suspense fallback={<ResultsFallback />}>
         <SearchResultsChrome
@@ -126,9 +148,14 @@ export default async function SearchPage({
           showingFallback={showingNearby}
           currentHref={currentHref}
           currentLabel={label || undefined}
-          showEmptySuggestions={!hasQuery && feedItems.length === 0}
-          hideSuggestions={hasQuery && exactCount === 0}
+          showEmptySuggestions={false}
+          hideSuggestions
+          filtersDefaultOpen
         >
+          <div className="mb-4 px-3 lg:px-6 xl:px-8">
+            <MarketplaceSafetyNotice vertical="property" />
+          </div>
+
           <AdSlot
             placement="search_top"
             className="mt-2 hidden px-3 lg:block lg:px-6 xl:px-8"
@@ -137,31 +164,21 @@ export default async function SearchPage({
           <section className="mt-2 w-full px-3 lg:px-6 xl:px-8">
             <AdminPromoSlot placement="search_page" variant="inline" className="mb-4" />
             {showingNearby ? (
-              <div className="mb-4 rounded-2xl border border-navy/8 bg-white px-4 py-4 shadow-sm">
-                <p className="text-base font-bold text-navy">{emptyCopy.title}</p>
-                <p className="mt-1 text-sm text-muted">{emptyCopy.message}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link
-                    href={stateBrowseHref}
-                    className="pressable rounded-full bg-gold px-4 py-2 text-xs font-bold text-navy"
-                  >
-                    Browse in {preloadParams.state ?? preloadParams.city ?? "this area"}
-                  </Link>
-                  <Link
-                    href="/search"
-                    className="pressable rounded-full bg-surface px-4 py-2 text-xs font-bold text-navy"
-                  >
-                    Clear filters
-                  </Link>
-                  {currentHref && label ? (
-                    <Link
-                      href={currentHref}
-                      className="pressable rounded-full border border-navy/10 px-4 py-2 text-xs font-bold text-navy"
-                    >
-                      Save this search
-                    </Link>
-                  ) : null}
-                </div>
+              <div className="mb-4">
+                <p className="mb-1 text-sm font-semibold text-navy">
+                  {emptyCopy.title}
+                </p>
+                <p className="mb-3 text-xs text-muted">
+                  Nearby in {preloadParams.state ?? preloadParams.city ?? "your area"}
+                </p>
+                <PropertyFeed
+                  properties={nearbyItems}
+                  isDemo={isDemo}
+                  sponsoredAd={sponsoredSearchAd}
+                  midFeedAd={sponsoredSearchAd ? null : feedAd}
+                  feedAdInsertAfter={5}
+                  adPlacementKey="search_feed_mid"
+                />
               </div>
             ) : null}
 
@@ -174,31 +191,18 @@ export default async function SearchPage({
                 feedAdInsertAfter={5}
                 adPlacementKey="search_feed_mid"
               />
-            ) : showingNearby ? (
-              <div className="space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wide text-muted">
-                  Nearby matches in {preloadParams.state ?? preloadParams.city ?? "your area"}
-                </p>
-                <PropertyFeed
-                  properties={nearbyItems}
-                  isDemo={isDemo}
-                  sponsoredAd={sponsoredSearchAd}
-                  midFeedAd={sponsoredSearchAd ? null : feedAd}
-                  feedAdInsertAfter={5}
-                  adPlacementKey="search_feed_mid"
-                />
-              </div>
-            ) : (
-              <PropertyFeed
-                properties={[]}
-                emptyMessage={emptyCopy.message}
-                emptyCity={params.city ?? preloadParams.city}
-                emptyArea={params.area ?? preloadParams.area}
-                emptyListingType={params.listing_type ?? preloadParams.listing_type}
-                emptyPropertyType={params.property_type ?? preloadParams.property_type}
-                emptyTitle={emptyCopy.title}
-                stateBrowseHref={hasQuery ? stateBrowseHref : undefined}
-                clearFiltersHref={hasQuery ? "/search" : undefined}
+            ) : showingNearby ? null : (
+              <MarketplaceEmptyState
+                title={hasQuery ? emptyCopy.title : "No Properties Yet"}
+                subtitle={
+                  hasQuery
+                    ? "Try fewer filters, or list one yourself."
+                    : "Be the first to list one."
+                }
+                actionHref="/agent/listings/new"
+                actionLabel="Sell Property"
+                secondaryHref={hasQuery ? "/search" : undefined}
+                secondaryLabel={hasQuery ? "Clear filters" : undefined}
               />
             )}
           </section>

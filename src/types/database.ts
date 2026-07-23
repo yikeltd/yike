@@ -300,7 +300,13 @@ export interface Profile {
   phone: string | null;
   normalized_phone?: string | null;
   phone_verified: boolean;
+  phone_verified_at?: string | null;
   email_verified: boolean;
+  seller_profile_completed_at?: string | null;
+  verification_submitted_at?: string | null;
+  verified_at?: string | null;
+  verified_by?: string | null;
+  verification_notes?: string | null;
   whatsapp: string | null;
   whatsapp_verification_status?:
     | "unverified"
@@ -1087,7 +1093,12 @@ export interface AgentVerification {
 export type AdvertisementPlacement =
   | "homepage_top"
   | "homepage_middle"
-  | "search_results";
+  | "search_results"
+  | "homepage_slot_1"
+  | "homepage_slot_2"
+  | "homepage_slot_3"
+  | "homepage_slot_4"
+  | "homepage_slot_5";
 
 export type AdvertisementStatus =
   | "draft"

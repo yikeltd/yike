@@ -82,7 +82,7 @@ export function SearchRefineFilters({ className }: { className?: string }) {
           push({ state: value || null, city: null, area: null });
         }}
         options={stateOptions}
-        placeholder="Any state"
+        placeholder="State"
         ariaLabel="State"
       />
       <ThemedSelect
@@ -96,7 +96,7 @@ export function SearchRefineFilters({ className }: { className?: string }) {
           });
         }}
         options={cityOptionsList}
-        placeholder="Any city"
+        placeholder="City"
         ariaLabel="City"
       />
       <div className="col-span-2 sm:col-span-1">
@@ -109,7 +109,7 @@ export function SearchRefineFilters({ className }: { className?: string }) {
             });
           }}
           options={propertyTypeOptions}
-          placeholder="Any property type"
+          placeholder="Category"
           ariaLabel="Property type"
         />
       </div>
@@ -120,7 +120,7 @@ export function SearchRefineFilters({ className }: { className?: string }) {
           push({ min, max });
         }}
         options={budgetOptions}
-        placeholder="Any budget"
+        placeholder="Price"
         ariaLabel="Budget"
         compactLabel
       />

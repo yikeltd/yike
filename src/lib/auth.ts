@@ -17,6 +17,10 @@ import {
 import type { Profile, UserRole } from "@/types/database";
 import { canListProperties } from "@/lib/agent-tiers";
 import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
+import {
+  mustCompleteSellerVerification,
+  SELLER_VERIFY_PATH,
+} from "@/lib/seller-trust";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 
@@ -73,7 +77,7 @@ export function isEmailVerified(
 }
 
 export async function requireAgentLister(
-  redirectTo = "/agent/become",
+  redirectTo = SELLER_VERIFY_PATH,
   options?: { skipProfileSetup?: boolean }
 ) {
   const user = await requireAuth();
@@ -89,10 +93,14 @@ export async function requireAgentLister(
   }
 
   if (canListProperties(profile)) {
+    if (
+      !options?.skipProfileSetup &&
+      mustCompleteSellerVerification(profile)
+    ) {
+      redirect(SELLER_VERIFY_PATH);
+    }
     if (!options?.skipProfileSetup && !hasBasicListingProfile(profile)) {
-      const next =
-        redirectTo === "/agent/become" ? "/agent/listings/new" : redirectTo;
-      redirect(`/agent/profile-setup?next=${encodeURIComponent(next)}`);
+      redirect(SELLER_VERIFY_PATH);
     }
     return { user, profile };
   }

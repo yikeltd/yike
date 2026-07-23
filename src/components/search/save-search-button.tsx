@@ -53,7 +53,7 @@ export function SaveSearchButton({
       ) : (
         <Bookmark className="h-3.5 w-3.5" />
       )}
-      {!compact && (saved ? "Saved" : "Save")}
+      {!compact && (saved ? "Saved" : "Save Search")}
     </button>
   );
 }

@@ -2,6 +2,7 @@
 (function () {
   var MAX = 2600;
   var done = false;
+  var SRC = "/splash/splash-1080x1920.webp";
 
   function isTwa() {
     try {
@@ -40,9 +41,6 @@
     done = true;
     htmlDone();
     s.classList.add("yike-boot-splash--out");
-    setTimeout(function () {
-      if (s && s.parentNode) s.parentNode.removeChild(s);
-    }, 280);
   }
 
   function showRecovery() {
@@ -66,20 +64,21 @@
     }
   }
 
-  function removeNow() {
-    var s = document.getElementById("yike-boot-splash");
-    if (s) s.remove();
-    htmlDone();
+  function armImage() {
+    var img = document.getElementById("yike-boot-splash-img");
+    if (img) img.setAttribute("src", SRC);
   }
 
   function boot() {
     if (!isApp()) {
       document.documentElement.classList.add("yike-web-mode");
-      removeNow();
+      document.documentElement.classList.remove("yike-boot-splash-enabled");
+      htmlDone();
       return;
     }
     document.documentElement.classList.add("yike-app-mode");
     document.documentElement.classList.add("yike-boot-splash-enabled");
+    armImage();
     bind();
     setTimeout(showRecovery, 2300);
     setTimeout(hide, isTwa() ? 1200 : 1500);
@@ -94,6 +93,10 @@
   window.addEventListener(
     "pageshow",
     function () {
+      if (!isApp()) {
+        htmlDone();
+        return;
+      }
       setTimeout(hide, MAX);
     },
     { once: true }

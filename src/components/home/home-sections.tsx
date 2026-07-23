@@ -79,8 +79,8 @@ export async function HomeShowcaseSection() {
   return (
     <section className="mx-auto mt-6 max-w-7xl px-3 lg:mt-8 lg:px-6 xl:px-8">
       <SectionHeader
-        title="Trending homes"
-        subtitle="Fresh verified listings across Nigeria"
+        title="Trending on Yike"
+        subtitle="Fresh verified property across Nigeria"
         href="/search"
       />
       <PropertyGrid properties={items} isDemo={isDemo} richEmpty={false} />
@@ -98,7 +98,7 @@ export async function HomeFeaturedSection() {
   return (
     <section className="mx-auto mt-6 max-w-7xl px-3 lg:mt-8 lg:px-6 xl:px-8">
       <SectionHeader
-        title="Featured homes"
+        title="Featured property"
         subtitle="Promoted listings with extra visibility"
         href="/search?featured=1"
       />

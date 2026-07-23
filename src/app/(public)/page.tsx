@@ -1,47 +1,56 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
-import { HomeSearchHero } from "@/components/home/home-search-hero";
-import { HomeHotPicksSections } from "@/components/home/home-hotspot-row";
-import {
-  HomeFeaturedSection,
-  HomeFilteredFeed,
-  HomeShowcaseSection,
-  PopularAreasSection,
-} from "@/components/home/home-sections";
-import { SocialProofBar } from "@/components/home/social-proof-bar";
-import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
-import { getMarketplaceStats } from "@/lib/marketplace-stats";
-import { getHomeHeroTrustedAgentsConfig } from "@/lib/home/hero-trusted-agents.server";
-import { getDefaultHeroTrustedAgentsConfig } from "@/lib/home/hero-trusted-agents";
-import { parseSearchParams } from "@/lib/properties";
+import { HomeMarketplaceExperience } from "@/components/home/home-marketplace-experience";
+import { MarketplaceLocationBootstrap } from "@/components/location/marketplace-location-bootstrap";
 import { PropertyGridSkeleton } from "@/components/ui/skeleton";
 import { PrefSync } from "@/components/personalization/pref-sync";
-import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
-import { SponsoredAdSlot } from "@/components/ads/sponsored-ad-slot";
+import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/constants";
+import {
+  getFeaturedProperties,
+  getPublicProperties,
+} from "@/lib/properties";
+import { createClient } from "@/lib/supabase/server";
+import { queryPublicVehicles } from "@/lib/marketplace/listings";
+import { parseHomeCategory } from "@/lib/home/marketplace-category";
+import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import {
+  demoFeaturedRail,
+  demoRecentRail,
+  demoLuxuryRail,
+  demoNearYouRail,
+  demoLowMileageRail,
+  filterDemoByLocation,
+  withEmptyInventoryDemoFixtures,
+} from "@/lib/demo-ui-fixtures";
+import {
+  dedupeById,
+  pickFeaturedRail,
+  pickRecentRail,
+  pickLuxuryRail,
+  pickNearYouRail,
+  pickLowMileageRail,
+  pickTrendingRail,
+  pickNationwideFeaturedRail,
+} from "@/lib/home/inventory-rails";
+import { getServerMarketplaceLocation } from "@/lib/search-preferences";
+import { getHomepageAds } from "@/lib/advertisements/public";
+import { getHeroTrustedAgentsConfig } from "@/lib/home/hero-trusted-agents";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
-import { HOME_SEO_SEARCH_LINKS } from "@/lib/home/popular-search-links";
 import { BRAND_OG_IMAGE, BRAND_OG_IMAGE_WEBP } from "@/lib/share-images";
-
-const BrowseRail = dynamic(
-  () =>
-    import("@/components/retention/browse-rail").then((m) => ({
-      default: m.BrowseRail,
-    })),
-  { loading: () => null }
-);
+import type { Property } from "@/types/database";
+import type { LocationScope, MarketplaceLocation } from "@/lib/marketplace-location";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Yike — Find Homes, Land, Shops & Agents Across Nigeria",
+    absolute: "Yike — Nigeria's Trusted Marketplace for Property & Vehicles",
   },
   description:
-    "Discover property listings across Nigeria, connect with agents, and explore safer real estate options on Yike.",
+    "Find verified properties and vehicles across Nigeria. One marketplace, WhatsApp contact, trusted sellers.",
   alternates: { canonical: SITE_URL },
   openGraph: {
-    title: "Yike — Find Homes, Land, Shops & Agents Across Nigeria",
+    title: "Yike — Nigeria's Trusted Marketplace",
     description:
-      "Discover property listings across Nigeria, connect with agents, and explore safer real estate options on Yike.",
+      "Find verified properties and vehicles across Nigeria. One marketplace.",
     url: SITE_URL,
     siteName: SITE_NAME,
     locale: "en_NG",
@@ -51,62 +60,43 @@ export const metadata: Metadata = {
         url: BRAND_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Yike — Nigerian property marketplace",
+        alt: "Yike — Nigerian marketplace",
         type: "image/png",
       },
       {
         url: BRAND_OG_IMAGE_WEBP,
         width: 1200,
         height: 630,
-        alt: "Yike — Nigerian property marketplace",
+        alt: "Yike — Nigerian marketplace",
         type: "image/webp",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Yike — Find Homes, Land, Shops & Agents Across Nigeria",
+    title: "Yike — Nigeria's Trusted Marketplace",
     description:
-      "Discover property listings across Nigeria, connect with agents, and explore safer real estate options on Yike.",
+      "Find verified properties and vehicles across Nigeria. One marketplace.",
     images: [BRAND_OG_IMAGE],
   },
 };
-
-const POPULAR_SEARCH_LINKS = HOME_SEO_SEARCH_LINKS;
-
-function SectionFallback() {
-  return (
-    <div className="px-3 py-6 lg:px-0">
-      <PropertyGridSkeleton count={3} />
-    </div>
-  );
-}
 
 function logHomeDataFailure(label: string, error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   console.warn(`[home] ${label} unavailable`, message);
 }
 
-async function getSafeHomeShellData() {
-  const [statsResult, trustedAgentsResult] = await Promise.allSettled([
-    getMarketplaceStats(),
-    getHomeHeroTrustedAgentsConfig(),
-  ]);
-
-  if (statsResult.status === "rejected") {
-    logHomeDataFailure("marketplace stats", statsResult.reason);
+async function safeLoad<T>(
+  label: string,
+  load: () => Promise<T>,
+  fallback: T,
+): Promise<T> {
+  try {
+    return await load();
+  } catch (error) {
+    logHomeDataFailure(label, error);
+    return fallback;
   }
-  if (trustedAgentsResult.status === "rejected") {
-    logHomeDataFailure("trusted agents", trustedAgentsResult.reason);
-  }
-
-  return {
-    stats: statsResult.status === "fulfilled" ? statsResult.value : null,
-    trustedAgents:
-      trustedAgentsResult.status === "fulfilled"
-        ? trustedAgentsResult.value
-        : getDefaultHeroTrustedAgentsConfig(),
-  };
 }
 
 function HomePageStructuredData() {
@@ -117,28 +107,16 @@ function HomePageStructuredData() {
         "@type": "WebPage",
         "@id": `${SITE_URL}/#webpage`,
         url: SITE_URL,
-        name: "Yike — Nigerian property search",
+        name: "Yike — Nigeria's Trusted Marketplace",
         description: SITE_TAGLINE,
         isPartOf: { "@id": WEBSITE_ID },
         publisher: { "@id": ORG_ID },
         inLanguage: "en-NG",
         about: [
-          "Houses for rent in Nigeria",
-          "Apartments in Nigeria",
-          "Verified property agents",
-          "Nigerian property search",
+          "Property marketplace Nigeria",
+          "Vehicles marketplace Nigeria",
+          "Verified listings",
         ],
-      },
-      {
-        "@type": "ItemList",
-        "@id": `${SITE_URL}/#popular-searches`,
-        name: "Popular Nigerian property searches",
-        itemListElement: POPULAR_SEARCH_LINKS.map((item, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          name: item.label,
-          url: `${SITE_URL}${item.href}`,
-        })),
       },
     ],
   };
@@ -151,89 +129,326 @@ function HomePageStructuredData() {
   );
 }
 
+function railMeta(
+  result: { items: Property[]; scope: LocationScope; expanded: boolean },
+): { items: Property[]; scope: LocationScope; expanded: boolean } {
+  return {
+    items: result.items,
+    scope: result.scope,
+    expanded: result.expanded,
+  };
+}
+
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const { stats, trustedAgents } = await getSafeHomeShellData();
-  const filters = parseSearchParams(params);
-  const initial = {
-    listingType: filters.listing_type,
-    hub: filters.hub,
-    propertyType: filters.property_type,
-    state: filters.state,
-    city: filters.city,
-    area: filters.area,
-    min: filters.min_price ? String(filters.min_price) : undefined,
-    max: filters.max_price ? String(filters.max_price) : undefined,
-  };
+  const category = parseHomeCategory(params.category);
+  const marketplaceLoc = await getServerMarketplaceLocation();
+  const preferredCity = marketplaceLoc?.city || undefined;
+  const preferredState = marketplaceLoc?.state || undefined;
+  // City, state-wide, or null (nationwide)
+  const loc: MarketplaceLocation | null =
+    marketplaceLoc?.city || marketplaceLoc?.state
+      ? {
+          ...marketplaceLoc,
+          city: marketplaceLoc.city || "",
+          state: marketplaceLoc.state || "",
+        }
+      : null;
+
+  const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
+
+  // Lean fetch: featured + recent pool (+ city when set). Luxury/state derived in-memory.
+  const [featuredProps, recentProps, nearYouProps, vehiclePool] =
+    await Promise.all([
+      safeLoad("featured properties", () => getFeaturedProperties(8), []),
+      safeLoad("recent properties", () => getPublicProperties({}, 36), []),
+      preferredCity
+        ? safeLoad(
+            "near-you properties",
+            () => getPublicProperties({ city: preferredCity }, 12),
+            [],
+          )
+        : preferredState
+          ? safeLoad(
+              "near-you properties",
+              () => getPublicProperties({ state: preferredState }, 12),
+              [],
+            )
+          : Promise.resolve([] as Property[]),
+      vehiclesOn
+        ? (async () => {
+            const supabase = await createClient();
+            if (!supabase) return [] as Property[];
+            const [featured, recent, local] = await Promise.all([
+              safeLoad(
+                "featured vehicles",
+                () =>
+                  queryPublicVehicles(supabase, { featured: true, limit: 8 }),
+                [],
+              ),
+              safeLoad(
+                "recent vehicles",
+                () => queryPublicVehicles(supabase, { limit: 36 }),
+                [],
+              ),
+              preferredCity
+                ? safeLoad(
+                    "local vehicles",
+                    () =>
+                      queryPublicVehicles(supabase, {
+                        city: preferredCity,
+                        limit: 12,
+                      }),
+                    [],
+                  )
+                : preferredState
+                  ? safeLoad(
+                      "local vehicles",
+                      () =>
+                        queryPublicVehicles(supabase, {
+                          state: preferredState,
+                          limit: 12,
+                        }),
+                      [],
+                    )
+                  : Promise.resolve([] as Property[]),
+            ]);
+            return dedupeById([...featured, ...recent, ...local]);
+          })()
+        : Promise.resolve([] as Property[]),
+    ]);
+
+  const propertyPool = dedupeById([
+    ...featuredProps,
+    ...recentProps,
+    ...nearYouProps,
+  ]);
+  const propertyDemo = withEmptyInventoryDemoFixtures(
+    propertyPool,
+    "property",
+    12,
+  );
+  const vehicleDemo = withEmptyInventoryDemoFixtures(vehiclePool, "vehicle", 12);
+
+  // When using demo fixtures, prefer location-matched DEMO inventory
+  const propertyDemoFiltered = propertyDemo.isDemo
+    ? filterDemoByLocation(propertyDemo.items, loc, 12)
+    : { items: propertyDemo.items, matchedLocally: Boolean(loc?.city) };
+  const vehicleDemoFiltered = vehicleDemo.isDemo
+    ? filterDemoByLocation(vehicleDemo.items, loc, 12)
+    : { items: vehicleDemo.items, matchedLocally: Boolean(loc?.city) };
+
+  const propertyItems = propertyDemoFiltered.items;
+  const vehicleItems = vehicleDemoFiltered.items;
+  const showingDemoFixtures = propertyDemo.isDemo || vehicleDemo.isDemo;
+
+  const nearPool = propertyDemo.isDemo
+    ? propertyItems
+    : dedupeById([...nearYouProps, ...recentProps]);
+
+  const featuredLive = pickFeaturedRail(
+    propertyDemo.isDemo
+      ? propertyItems
+      : featuredProps.length > 0
+        ? featuredProps
+        : propertyItems,
+    6,
+    loc,
+  );
+  const recentLive = pickRecentRail(
+    propertyDemo.isDemo
+      ? propertyItems
+      : recentProps.length > 0
+        ? recentProps
+        : propertyItems,
+    6,
+    loc,
+  );
+  const nearYouLive = pickNearYouRail(nearPool, preferredCity, 6, loc);
+  const trendingLive = pickTrendingRail(
+    propertyDemo.isDemo ? propertyItems : nearPool,
+    6,
+    loc,
+  );
+  const luxuryLive = pickLuxuryRail(
+    propertyDemo.isDemo ? propertyItems : propertyPool,
+    "property",
+    6,
+    loc,
+  );
+  const nationwideLive = pickNationwideFeaturedRail(
+    propertyDemo.isDemo ? propertyItems : propertyPool,
+    6,
+    loc,
+  );
+
+  const vFeatured = pickFeaturedRail(vehicleItems, 6, loc);
+  const vRecent = pickRecentRail(vehicleItems, 6, loc);
+  const vLowKm = pickLowMileageRail(vehicleItems, 6, loc);
+  const vLuxury = pickLuxuryRail(vehicleItems, "vehicle", 6, loc);
+  const vTrending = pickTrendingRail(vehicleItems, 6, loc);
+  const vNationwide = pickNationwideFeaturedRail(vehicleItems, 6, loc);
+
+  const homepageAds = await safeLoad(
+    "homepage ads",
+    () => getHomepageAds(),
+    {
+      homepage_slot_1: null,
+      homepage_slot_2: null,
+      homepage_slot_3: null,
+      homepage_slot_4: null,
+      homepage_slot_5: null,
+    },
+  );
 
   return (
-    <div className="home-canvas min-h-[100dvh] lg:pb-8">
+    <div className="home-canvas min-h-[100dvh] bg-[#F4F6FA] lg:pb-8">
       <HomePageStructuredData />
       <PrefSync />
-      <Suspense fallback={null}>
-        <HomeSearchHero initial={initial} trustedAgents={trustedAgents} />
-      </Suspense>
+      <MarketplaceLocationBootstrap />
 
-      <Suspense fallback={null}>
-        <SponsoredAdSlot placement="homepage_top" className="pt-3" compact />
-      </Suspense>
-
-      <Suspense fallback={<SectionFallback />}>
-        <HomeHotPicksSections />
-      </Suspense>
-
-      <Suspense fallback={<SectionFallback />}>
-        <HomeShowcaseSection />
-      </Suspense>
-
-      <Suspense fallback={<SectionFallback />}>
-        <HomeFeaturedSection />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <SponsoredAdSlot placement="homepage_middle" className="py-3" />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <AdminPromoSlot
-          placement="homepage_inline"
-          variant="card"
-          className="mx-auto max-w-7xl px-3 pt-3 lg:px-6 xl:px-8"
+      <Suspense
+        fallback={
+          <div className="px-3 py-10">
+            <PropertyGridSkeleton count={3} />
+          </div>
+        }
+      >
+        <HomeMarketplaceExperience
+          initialCategory={category}
+          showingDemoFixtures={showingDemoFixtures}
+          homepageAds={homepageAds}
+          trustedAgents={getHeroTrustedAgentsConfig()}
+          marketplaceLocation={
+            loc
+              ? {
+                  city: loc.city || loc.state || "",
+                  state: loc.state || undefined,
+                }
+              : preferredCity
+                ? { city: preferredCity }
+                : preferredState
+                  ? { city: preferredState, state: preferredState }
+                  : null
+          }
+          propertyRails={{
+            featured: railMeta(
+              propertyDemo.isDemo
+                ? {
+                    items: demoFeaturedRail(propertyItems, 6),
+                    scope: propertyDemoFiltered.matchedLocally
+                      ? "city"
+                      : "nationwide",
+                    expanded: !propertyDemoFiltered.matchedLocally,
+                  }
+                : featuredLive,
+            ),
+            recent: railMeta(
+              propertyDemo.isDemo
+                ? {
+                    items: demoRecentRail(propertyItems, 6),
+                    scope: propertyDemoFiltered.matchedLocally
+                      ? "city"
+                      : "nationwide",
+                    expanded: !propertyDemoFiltered.matchedLocally,
+                  }
+                : recentLive,
+            ),
+            nearYou: railMeta(
+              propertyDemo.isDemo
+                ? {
+                    items: demoNearYouRail(propertyItems, 6),
+                    scope: propertyDemoFiltered.matchedLocally
+                      ? "city"
+                      : "nationwide",
+                    expanded: !propertyDemoFiltered.matchedLocally,
+                  }
+                : nearYouLive,
+            ),
+            trending: railMeta(
+              propertyDemo.isDemo
+                ? {
+                    items: demoRecentRail(propertyItems, 6),
+                    scope: propertyDemoFiltered.matchedLocally
+                      ? "city"
+                      : "nationwide",
+                    expanded: !propertyDemoFiltered.matchedLocally,
+                  }
+                : trendingLive,
+            ),
+            luxury: railMeta(
+              propertyDemo.isDemo
+                ? {
+                    items: demoLuxuryRail(propertyItems, 6),
+                    scope: "nationwide",
+                    expanded: true,
+                  }
+                : luxuryLive,
+            ),
+            nationwide: nationwideLive,
+          }}
+          vehicleRails={{
+            featured: railMeta(
+              vehicleDemo.isDemo
+                ? {
+                    items: demoFeaturedRail(vehicleItems, 6),
+                    scope: vehicleDemoFiltered.matchedLocally
+                      ? "city"
+                      : "nationwide",
+                    expanded: !vehicleDemoFiltered.matchedLocally,
+                  }
+                : vFeatured,
+            ),
+            recent: railMeta(
+              vehicleDemo.isDemo
+                ? {
+                    items: demoRecentRail(vehicleItems, 6),
+                    scope: vehicleDemoFiltered.matchedLocally
+                      ? "city"
+                      : "nationwide",
+                    expanded: !vehicleDemoFiltered.matchedLocally,
+                  }
+                : vRecent,
+            ),
+            lowMileage: railMeta(
+              vehicleDemo.isDemo
+                ? {
+                    items: demoLowMileageRail(vehicleItems, 6),
+                    scope: vehicleDemoFiltered.matchedLocally
+                      ? "city"
+                      : "nationwide",
+                    expanded: !vehicleDemoFiltered.matchedLocally,
+                  }
+                : vLowKm,
+            ),
+            trending: railMeta(
+              vehicleDemo.isDemo
+                ? {
+                    items: demoRecentRail(vehicleItems, 6),
+                    scope: vehicleDemoFiltered.matchedLocally
+                      ? "city"
+                      : "nationwide",
+                    expanded: !vehicleDemoFiltered.matchedLocally,
+                  }
+                : vTrending,
+            ),
+            luxury: railMeta(
+              vehicleDemo.isDemo
+                ? {
+                    items: demoLuxuryRail(vehicleItems, 6),
+                    scope: "nationwide",
+                    expanded: true,
+                  }
+                : vLuxury,
+            ),
+            nationwide: vNationwide,
+          }}
         />
       </Suspense>
-
-      <Suspense fallback={null}>
-        <div className="mt-3">
-          <BrowseRail />
-        </div>
-      </Suspense>
-
-      <section className="mx-auto max-w-7xl px-3 pt-5 lg:px-6 xl:px-8">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark dark:text-gold">
-              For you
-            </p>
-            <h2 className="text-xl font-bold text-foreground lg:text-2xl">
-              Homes for you
-            </h2>
-            <p className="mt-0.5 text-sm text-muted">
-              Verified listings · WhatsApp contact · Trusted agents
-            </p>
-          </div>
-          <SocialProofBar stats={stats} />
-        </div>
-      </section>
-
-      <Suspense fallback={<SectionFallback />}>
-        <HomeFilteredFeed filters={filters} />
-      </Suspense>
-
-      <PopularAreasSection />
     </div>
   );
 }

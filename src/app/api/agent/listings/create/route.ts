@@ -8,6 +8,11 @@ import { LISTING_LIMIT_REACHED_MESSAGE } from "@/lib/copy/user-messages";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
 import { mustVerifyWhatsappBeforeListing } from "@/lib/whatsapp-verification/profile";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
+import {
+  assertCanCreateListing,
+  ensurePendingManualSellerVerification,
+  isVerifiedSeller,
+} from "@/lib/seller-trust";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -161,7 +166,7 @@ export async function POST(request: Request) {
   const { data: profile, error: profileError } = await admin
     .from("profiles")
     .select(
-      "role, email_verified, is_banned, listing_limit, subscription_plan_code, starter_plan_started_at, created_at, whatsapp, phone, whatsapp_verified_at, whatsapp_verification_status"
+      "role, email_verified, phone_verified, phone_verified_at, is_banned, listing_limit, subscription_plan_code, starter_plan_started_at, created_at, whatsapp, phone, email, full_name, verification_status, verified_badge, account_status, profile_status, whatsapp_verified_at, whatsapp_verification_status, date_of_birth, residential_address, office_address, residential_state, seller_profile_completed_at, verification_submitted_at"
     )
     .eq("id", user.id)
     .single();
@@ -174,8 +179,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Account unavailable" }, { status: 403 });
   }
 
-  if (!isEmailVerified(user, { email_verified: profile.email_verified })) {
-    return NextResponse.json({ error: "Verify your email to list." }, { status: 400 });
+  const emailOk = isEmailVerified(user, { email_verified: profile.email_verified });
+  const createGate = assertCanCreateListing({
+    ...profile,
+    email_verified: emailOk || Boolean(profile.email_verified),
+  });
+  if (!createGate.ok) {
+    const status =
+      createGate.code === "phone_verification_required" ||
+      createGate.code === "seller_profile_required"
+        ? 403
+        : 400;
+    return NextResponse.json(
+      { error: createGate.error, code: createGate.code },
+      { status }
+    );
   }
 
   if (mustVerifyWhatsappBeforeListing(profile)) {
@@ -225,7 +243,9 @@ export async function POST(request: Request) {
       .eq("agent_id", user.id)
       .maybeSingle();
 
-    const stayLive = existing?.status === "approved";
+    const stayLive =
+      existing?.status === "approved" && isVerifiedSeller(profile);
+
     const prevExtras =
       existing?.extras &&
       typeof existing.extras === "object" &&
@@ -260,6 +280,12 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (!updateError && updated?.id) {
+      await ensurePendingManualSellerVerification(admin, user.id, {
+        ...profile,
+        email: profile.email ?? user.email ?? null,
+      }).catch((err) => {
+        console.error("[listing-create] seller queue failed:", err);
+      });
       logStage("listing_insert_success", {
         userId: user.id,
         listingId: updated.id,
@@ -319,6 +345,13 @@ export async function POST(request: Request) {
     userId: user.id,
     listingId: result.id,
     durationMs: Date.now() - startedAt,
+  });
+
+  await ensurePendingManualSellerVerification(admin, user.id, {
+    ...profile,
+    email: profile.email ?? user.email ?? null,
+  }).catch((err) => {
+    console.error("[listing-create] seller queue failed:", err);
   });
 
   return NextResponse.json({ ok: true, listingId: result.id });

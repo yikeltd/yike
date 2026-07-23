@@ -12,6 +12,7 @@ export function AuthShell({
   title,
   subtitle,
   compact,
+  centered,
   children,
   footer,
   belowLegal,
@@ -19,6 +20,8 @@ export function AuthShell({
   title?: string;
   subtitle?: string;
   compact?: boolean;
+  /** Center title + subtitle under the logo (signup welcome). */
+  centered?: boolean;
   children: React.ReactNode;
   footer?: React.ReactNode;
   belowLegal?: React.ReactNode;
@@ -39,14 +42,26 @@ export function AuthShell({
             <Logo href="/" showText className="text-white [&_span]:text-white" />
           </div>
           {title ? (
-            <h1 className="mt-8 text-[1.65rem] font-bold leading-tight tracking-tight text-white sm:text-3xl">
+            <h1
+              className={
+                centered
+                  ? "mt-9 text-center text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mt-10 sm:text-[2rem]"
+                  : "mt-8 text-[1.65rem] font-bold leading-tight tracking-tight text-white sm:text-3xl"
+              }
+            >
               {title}
             </h1>
           ) : compact ? (
             <div className="mt-6" aria-hidden />
           ) : null}
           {subtitle ? (
-            <p className="mt-2.5 text-base leading-relaxed text-white/85">
+            <p
+              className={
+                centered
+                  ? "mx-auto mt-3 max-w-[20rem] text-center text-[0.95rem] leading-relaxed text-white/80 sm:mt-3.5 sm:text-base"
+                  : "mt-2.5 text-base leading-relaxed text-white/85"
+              }
+            >
               {subtitle}
             </p>
           ) : null}

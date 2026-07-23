@@ -20,7 +20,13 @@ export async function POST(request: Request, ctx: RouteCtx) {
   }
 
   const { id } = await ctx.params;
-  let body: { action?: string } = {};
+  let body: {
+    action?: string;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    expiresAt?: string | null;
+    enabled?: boolean | string;
+  } = {};
   try {
     body = await request.json();
   } catch {
@@ -39,6 +45,50 @@ export async function POST(request: Request, ctx: RouteCtx) {
 
   const action = body.action?.trim();
   const now = new Date().toISOString();
+
+  if (action === "update_schedule") {
+    const patch: Record<string, unknown> = { updated_at: now };
+    if ("startsAt" in body) {
+      const raw = (body as { startsAt?: string | null }).startsAt;
+      patch.starts_at = raw ? new Date(String(raw)).toISOString() : null;
+    }
+    if ("endsAt" in body || "expiresAt" in body) {
+      const raw =
+        (body as { endsAt?: string | null; expiresAt?: string | null }).endsAt ??
+        (body as { expiresAt?: string | null }).expiresAt;
+      patch.expires_at = raw ? new Date(String(raw)).toISOString() : null;
+    }
+    if ("enabled" in body) {
+      const on =
+        (body as { enabled?: boolean | string }).enabled === true ||
+        String((body as { enabled?: boolean | string }).enabled) === "true";
+      if (on) {
+        await admin
+          .from("advertisements")
+          .update({ status: "paused", updated_at: now })
+          .eq("placement", ad.placement)
+          .eq("status", "active")
+          .neq("id", id);
+        patch.status = "active";
+        if (!ad.starts_at) patch.starts_at = now;
+      } else {
+        patch.status = "paused";
+      }
+    }
+    const { data: updated, error } = await admin
+      .from("advertisements")
+      .update(patch)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error || !updated) {
+      return NextResponse.json(
+        { error: error?.message ?? "Could not update" },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ ok: true, advertisement: updated });
+  }
 
   if (action === "submit_pending") {
     await admin

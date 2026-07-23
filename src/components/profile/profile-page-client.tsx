@@ -18,6 +18,7 @@ import type { Profile } from "@/types/database";
 import type { ProfileSocialStats } from "@/lib/social/types";
 import { ProfileCoverHero } from "@/components/profile/profile-cover-hero";
 import { VerifiedBadge, StatusBadge, SellerTypeBadge } from "@/components/ui/badge";
+import { SellerTrustBadge } from "@/components/marketplace/seller-trust-badge";
 import { ProfileAccountActions } from "@/components/profile/profile-account-actions";
 import { ProfileUserActivityStats } from "@/components/profile/profile-user-activity-stats";
 import { TrustCenterCard } from "@/components/profile/trust-center-card";
@@ -108,6 +109,7 @@ export function ProfilePageClient({
         badges={
           <>
             {showAgentBadge(profile, verified) ? <VerifiedBadge /> : null}
+            {isLister ? <SellerTrustBadge profile={profile} size="sm" /> : null}
             <SubscriptionPlanBadge
               planCode={profile.subscription_plan_code as SubscriptionPlanCode | null}
               size="md"
@@ -179,7 +181,7 @@ export function ProfilePageClient({
           <DashboardSection title="Quick actions">
             <div className={quickGridClass}>
               <Link
-                href="/agent/listings/new"
+                href="/agent/listings/choose"
                 prefetch
                 className={primaryCtaClass}
               >

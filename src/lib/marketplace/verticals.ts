@@ -50,7 +50,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     href: "/search",
     createHref: "/agent/listings/new",
     status: "live",
-    description: "Residential, commercial, land, and short-let listings.",
+    description: "Find your next home.",
   },
   {
     id: "vehicle",
@@ -61,7 +61,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     createHref: "/agent/listings/new/vehicle",
     status: "launching",
     launchFeature: "vehicle_marketplace",
-    description: "Cars, SUVs, trucks, motorcycles, commercial and heavy equipment.",
+    description: "Find your next vehicle.",
   },
   {
     id: "jobs",
@@ -71,7 +71,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     href: "/jobs",
     createHref: "/jobs/new",
     status: "reserved",
-    description: "Future vertical — configuration only.",
+    description: "Find your next role.",
   },
   {
     id: "services",
@@ -81,7 +81,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     href: "/services-market",
     createHref: "/services-market/new",
     status: "reserved",
-    description: "Future vertical — configuration only.",
+    description: "Find trusted services.",
   },
   {
     id: "equipment",
@@ -91,7 +91,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     href: "/equipment",
     createHref: "/equipment/new",
     status: "reserved",
-    description: "Future vertical — configuration only.",
+    description: "Find equipment.",
   },
   {
     id: "agriculture",
@@ -101,7 +101,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     href: "/agriculture",
     createHref: "/agriculture/new",
     status: "reserved",
-    description: "Future vertical — configuration only.",
+    description: "Find agriculture listings.",
   },
   {
     id: "hospitality",
@@ -112,7 +112,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     createHref: "/hospitality/new",
     status: "reserved",
     launchFeature: "hospitality_listings",
-    description: "Future listing vertical — Hotel ops stay with Hotel & Suites.",
+    description: "Find stays and hospitality.",
   },
   {
     id: "rentals",
@@ -122,7 +122,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     href: "/rentals",
     createHref: "/rentals/new",
     status: "reserved",
-    description: "Future vertical — configuration only.",
+    description: "Find rentals.",
   },
   {
     id: "marine",
@@ -132,7 +132,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     href: "/marine",
     createHref: "/marine/new",
     status: "reserved",
-    description: "Future vertical — boats may also appear under Vehicles.",
+    description: "Find marine listings.",
   },
   {
     id: "aviation",
@@ -142,7 +142,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     href: "/aviation",
     createHref: "/aviation/new",
     status: "reserved",
-    description: "Future vertical — configuration only.",
+    description: "Find aviation listings.",
   },
   {
     id: "businesses",
@@ -153,7 +153,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     createHref: "/businesses/new",
     status: "reserved",
     launchFeature: "business_listings",
-    description: "Future vertical — not BamSignal community.",
+    description: "Find businesses.",
   },
   {
     id: "digital_assets",
@@ -163,7 +163,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     href: "/digital-assets",
     createHref: "/digital-assets/new",
     status: "reserved",
-    description: "Future vertical — configuration only.",
+    description: "Find digital assets.",
   },
 ];
 

@@ -18,8 +18,17 @@
   transition: opacity 0.28s ease, visibility 0.28s ease;
 }
 
+/* Web browsers: never show splash (belt + suspenders with critical inline CSS). */
+html.yike-web-mode #yike-boot-splash,
+html.yike-boot-splash-disabled #yike-boot-splash {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 html.yike-boot-splash-enabled #yike-boot-splash {
-  display: flex;
+  display: flex !important;
   opacity: 1;
   pointer-events: auto;
   visibility: visible;
@@ -134,6 +143,7 @@ html.yike-app-mode.yike-boot-splash-enabled #yike-boot-splash {
 }
 
 html.yike-boot-splash-disabled #yike-boot-splash,
+html.yike-web-mode #yike-boot-splash,
 #yike-boot-splash.yike-boot-splash--out,
 #yike-boot-splash.yike-boot-splash--out img {
   animation: none;

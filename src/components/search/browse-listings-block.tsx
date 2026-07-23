@@ -63,15 +63,24 @@ export function BrowseListingsBlock({
   onSearch,
   initial,
   title = "Discover homes across Nigeria",
+  searchButtonLabel = "Search homes",
   variant = "default",
+  alwaysShowSearch = false,
+  hideTitle = false,
 }: {
   onSearch: (payload: BrowseSearchPayload) => void;
   initial?: BrowseListingsInitial;
   title?: string;
-  variant?: "default" | "home-premium" | "home-desktop-panel";
+  searchButtonLabel?: string;
+  variant?: "default" | "home-premium" | "home-desktop-panel" | "home-inline";
+  /** Always show primary Search CTA (homepage marketplace). */
+  alwaysShowSearch?: boolean;
+  /** Hide contextual title when category tab already provides context. */
+  hideTitle?: boolean;
 }) {
   const isPremium = variant === "home-premium";
   const isDesktopPanel = variant === "home-desktop-panel";
+  const isInline = variant === "home-inline";
   const [dealKey, setDealKey] = useState(initial?.dealKey ?? "");
   const [state, setState] = useState(initial?.state ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
@@ -94,6 +103,8 @@ export function BrowseListingsBlock({
   const hasFilterSelection = Boolean(
     dealKey || state || city || area || propertyType || budget
   );
+  const showSearchButton =
+    alwaysShowSearch || isPremium || isDesktopPanel || hasFilterSelection;
 
   function buildParams(overrides?: {
     dealKey?: string;
@@ -142,20 +153,27 @@ export function BrowseListingsBlock({
     ? "rounded-2xl border border-white/10 bg-[#031B4E] p-4 shadow-[0_28px_72px_-20px_rgba(2,20,51,0.55),0_12px_32px_-12px_rgba(0,0,0,0.35)] ring-1 ring-white/10 xl:p-5"
     : isPremium
       ? "rounded-2xl border border-white/18 bg-white/[0.07] p-4 shadow-[inset_0_1px_0_rgb(255_255_255_/_14%),0_10px_36px_rgb(2_20_51_/_32%)] ring-1 ring-white/[0.08] lg:p-3.5"
-      : "rounded-2xl border border-navy/10 bg-white/95 p-3.5 shadow-sm ring-1 ring-navy/[0.06] dark:border-white/10 dark:bg-elevated dark:ring-white/[0.05]";
+      : isInline
+        ? ""
+        : alwaysShowSearch
+          ? "rounded-2xl border border-navy/10 bg-white p-4 shadow-[0_12px_40px_-18px_rgba(3,27,78,0.28)] ring-1 ring-navy/[0.04]"
+          : "rounded-2xl border border-navy/10 bg-white/95 p-3.5 shadow-sm ring-1 ring-navy/[0.06] dark:border-white/10 dark:bg-elevated dark:ring-white/[0.05]";
 
   const titleClass = isPremium
     ? "mb-3.5 text-[10px] font-bold uppercase tracking-[0.24em] text-gold lg:mb-3 lg:text-sm lg:normal-case lg:tracking-normal"
-    : "mb-3 text-sm font-bold text-navy dark:text-foreground";
+    : alwaysShowSearch
+      ? "mb-3 text-center text-base font-bold tracking-tight text-navy"
+      : "mb-3 text-sm font-bold text-navy dark:text-foreground";
 
   const chipIdle = isPremium
     ? "border border-white/12 bg-white/[0.07] text-white/85 hover:bg-white/10"
     : isDesktopPanel
       ? "border border-white/14 bg-white/[0.06] text-white/78 hover:bg-white/[0.1] hover:text-white"
-      : "bg-navy/[0.04] text-muted ring-1 ring-navy/10 hover:text-foreground dark:bg-white/5 dark:ring-white/[0.08]";
+      : isInline
+        ? "bg-white/90 text-navy/55 ring-1 ring-navy/10 hover:text-navy"
+        : "bg-navy/[0.04] text-muted ring-1 ring-navy/10 hover:text-foreground dark:bg-white/5 dark:ring-white/[0.08]";
 
   const selectVariant = isPremium ? "hero" : isDesktopPanel ? "hero" : "default";
-  const showSearchButton = isDesktopPanel || hasFilterSelection;
 
   const stateOptions = useMemo(() => buildStateSelectOptions(), []);
   const cityOptionsList = useMemo(
@@ -174,15 +192,18 @@ export function BrowseListingsBlock({
     [isPremium, budgetContext]
   );
 
+  const showTitle = !isDesktopPanel && !hideTitle && !isInline;
+
   return (
     <div className={shellClass}>
-      {!isDesktopPanel ? (
+      {showTitle ? (
         <p className={cn(titleClass, "text-center text-balance")}>{title}</p>
       ) : null}
 
       <div
         className={cn(
-          "mb-3.5 grid grid-cols-4 gap-1.5 pb-0.5 lg:mb-3 lg:flex lg:justify-center lg:gap-2",
+          "grid grid-cols-4 gap-1 pb-0.5 lg:flex lg:justify-center lg:gap-2",
+          isInline ? "mb-2" : "mb-3.5 lg:mb-3",
           isDesktopPanel && "mb-4 lg:justify-start"
         )}
       >
@@ -201,7 +222,10 @@ export function BrowseListingsBlock({
                 }
               }}
               className={cn(
-                "pressable min-w-0 rounded-full px-2 py-2 text-center text-[11px] font-bold leading-tight transition-all duration-200 sm:text-xs lg:shrink-0 lg:px-4 lg:py-2.5 lg:text-sm",
+                "pressable min-w-0 rounded-lg text-center font-bold leading-tight transition-all duration-200 lg:shrink-0",
+                isInline
+                  ? "px-1.5 py-1.5 text-[10px] sm:rounded-full sm:px-3 sm:text-xs"
+                  : "rounded-full px-2 py-2 text-[11px] sm:text-xs lg:px-4 lg:py-2.5 lg:text-sm",
                 active
                   ? "bg-gold text-navy shadow-glow-gold"
                   : chipIdle
@@ -215,8 +239,9 @@ export function BrowseListingsBlock({
 
       <div
         className={cn(
-          "grid grid-cols-2 gap-3 sm:grid-cols-4",
-          isDesktopPanel && "lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end xl:gap-3"
+          "grid grid-cols-2 sm:grid-cols-4",
+          isInline ? "gap-2" : "gap-3",
+          isDesktopPanel && "lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end xl:gap-3.5"
         )}
       >
         <ThemedSelect
@@ -226,7 +251,7 @@ export function BrowseListingsBlock({
             setCity("");
           }}
           options={stateOptions}
-          placeholder="Any state"
+          placeholder={isDesktopPanel ? "State" : "Any state"}
           ariaLabel="State"
           variant={selectVariant}
         />
@@ -238,7 +263,7 @@ export function BrowseListingsBlock({
             if (inferred) setState(inferred);
           }}
           options={cityOptionsList}
-          placeholder="Any city"
+          placeholder={isDesktopPanel ? "City" : "Any city"}
           ariaLabel="City"
           variant={selectVariant}
         />
@@ -246,7 +271,7 @@ export function BrowseListingsBlock({
           value={propertyType}
           onChange={setPropertyType}
           options={propertyTypeOptions}
-          placeholder="Any property type"
+          placeholder={isDesktopPanel ? "Property Type" : "Any type"}
           ariaLabel="Property type"
           variant={selectVariant}
         />
@@ -254,43 +279,59 @@ export function BrowseListingsBlock({
           value={budget}
           onChange={setBudget}
           options={budgetOptions}
-          placeholder="Any budget"
+          placeholder={isDesktopPanel ? "Budget" : "Any budget"}
           ariaLabel="Budget"
           variant={selectVariant}
-          compactLabel={isPremium}
+          compactLabel={isPremium || isInline}
         />
         {isDesktopPanel ? (
           <button
             type="button"
             onClick={() => submit()}
-            className="pressable col-span-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-bold text-navy shadow-glow-gold transition-transform hover:scale-[1.01] active:scale-[0.99] sm:col-span-1 lg:col-auto lg:h-10 lg:min-w-[9.5rem]"
+            className="pressable col-span-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-bold text-navy shadow-glow-gold transition-transform hover:scale-[1.01] active:scale-[0.99] sm:col-span-1 lg:col-auto lg:h-11 lg:min-w-[10.25rem]"
           >
             <Search className="h-4 w-4" strokeWidth={2.5} />
-            Search
+            {searchButtonLabel}
           </button>
         ) : null}
       </div>
 
       {!isDesktopPanel ? (
-        <div
-          className={cn(
-            "grid transition-all duration-300 ease-out",
-            showSearchButton
-              ? "mt-3 grid-rows-[1fr] opacity-100"
-              : "mt-0 grid-rows-[0fr] opacity-0"
-          )}
-        >
-          <div className="overflow-hidden">
-            <button
-              type="button"
-              onClick={() => submit()}
-              className="pressable flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-2.5 text-sm font-bold text-navy shadow-glow-gold"
-            >
-              <Search className="h-4 w-4" strokeWidth={2.5} />
-              Search homes
-            </button>
+        alwaysShowSearch || isInline ? (
+          <button
+            type="button"
+            onClick={() => submit()}
+            className={cn(
+              "pressable flex w-full items-center justify-center gap-2 rounded-xl bg-gold font-bold text-navy shadow-glow-gold",
+              isInline
+                ? "mt-2.5 py-3 text-[15px]"
+                : "mt-3.5 py-3 text-sm sm:py-3.5 sm:text-[15px]",
+            )}
+          >
+            <Search className="h-4 w-4" strokeWidth={2.5} />
+            {searchButtonLabel}
+          </button>
+        ) : (
+          <div
+            className={cn(
+              "grid transition-all duration-300 ease-out",
+              showSearchButton
+                ? "mt-3 grid-rows-[1fr] opacity-100"
+                : "mt-0 grid-rows-[0fr] opacity-0"
+            )}
+          >
+            <div className="overflow-hidden">
+              <button
+                type="button"
+                onClick={() => submit()}
+                className="pressable flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-2.5 text-sm font-bold text-navy shadow-glow-gold"
+              >
+                <Search className="h-4 w-4" strokeWidth={2.5} />
+                {searchButtonLabel}
+              </button>
+            </div>
           </div>
-        </div>
+        )
       ) : null}
     </div>
   );
