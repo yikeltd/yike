@@ -4,13 +4,23 @@ import Image from "next/image";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ListingImage } from "./listing-image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import { VerifiedBadge, FeaturedBadge, YikeVerifiedBadge } from "@/components/ui/badge";
+import {
+  VerifiedBadge,
+  FeaturedBadge,
+  YikeVerifiedBadge,
+  PremiumBadge,
+  NegotiableBadge,
+  SoldBadge,
+  NewListingBadge,
+} from "@/components/ui/badge";
 import { ShareButton } from "./listing-share-menu";
+import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
 import type { Property } from "@/types/database";
 import { listingImageAlt } from "@/lib/image-seo";
 import { isPreOptimizedListingUrl, optimizeListingImageUrl } from "@/lib/image-url";
 import { prefetchListingImages } from "@/lib/image-prefetch";
 import { cn } from "@/lib/utils";
+import type { ListingBadgeKind } from "@/lib/design/listing-badges";
 
 export function PropertyGallery({
   images,
@@ -24,6 +34,7 @@ export function PropertyGallery({
   city,
   listingType,
   propertyType,
+  extraBadges,
 }: {
   images: string[];
   title: string;
@@ -39,6 +50,8 @@ export function PropertyGallery({
   city?: string;
   listingType?: string;
   propertyType?: string | null;
+  /** Additional semantic badges (premium, new, negotiable, sold). */
+  extraBadges?: ListingBadgeKind[];
 }) {
   const [index, setIndex] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -97,40 +110,54 @@ export function PropertyGallery({
   }
 
   const badges = (
-    <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5 lg:left-4 lg:top-4">
+    <div className="absolute left-3 top-3 z-10 flex max-w-[70%] flex-wrap gap-1.5 lg:left-4 lg:top-4">
       {verified && <VerifiedBadge size="sm" />}
       {yikeVerified && <YikeVerifiedBadge size="sm" />}
       {featured && <FeaturedBadge />}
+      {extraBadges?.includes("premium") && <PremiumBadge size="sm" />}
+      {extraBadges?.includes("new") && <NewListingBadge />}
+      {extraBadges?.includes("negotiable") && <NegotiableBadge size="sm" />}
+      {extraBadges?.includes("sold") && <SoldBadge size="sm" label="Sold" />}
+      {extraBadges?.includes("rented") && <SoldBadge size="sm" label="Rented" />}
     </div>
   );
 
-  const share = shareUrl && (
-    <div className="absolute right-3 top-3 z-10 lg:right-4 lg:top-4">
-      <ShareButton
-        title={title}
-        text={`Check out this home on Yike: ${title}`}
-        url={shareUrl}
-        listingId={listingId}
-        city={city ?? imageSeo?.city}
-        listingType={listingType ?? imageSeo?.listing_type}
-        propertyType={propertyType ?? imageSeo?.property_type}
-      />
+  const actions = (
+    <div className="absolute right-3 top-3 z-10 flex items-center gap-2 lg:right-4 lg:top-4">
+      {listingId ? (
+        <ListingSaveButton
+          listingId={listingId}
+          compact
+          className="pressable !h-10 !w-10 rounded-full bg-elevated/90 shadow-float backdrop-blur-sm [&_svg]:!h-4 [&_svg]:!w-4"
+        />
+      ) : null}
+      {shareUrl ? (
+        <ShareButton
+          title={title}
+          text={`Check out this home on Yike: ${title}`}
+          url={shareUrl}
+          listingId={listingId}
+          city={city ?? imageSeo?.city}
+          listingType={listingType ?? imageSeo?.listing_type}
+          propertyType={propertyType ?? imageSeo?.property_type}
+        />
+      ) : null}
     </div>
   );
 
-  function altFor(index: number) {
-    if (imageSeo) return listingImageAlt(imageSeo, index);
-    return index === 0 ? title : `${title} photo ${index + 1}`;
+  function altFor(imageIndex: number) {
+    if (imageSeo) return listingImageAlt(imageSeo, imageIndex);
+    return imageIndex === 0 ? title : `${title} photo ${imageIndex + 1}`;
   }
 
   const counter = images.length > 1 && (
-    <span className="absolute right-3 top-14 z-10 rounded-full bg-navy/80 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-sm lg:top-16">
+    <span className="absolute bottom-4 right-3 z-10 rounded-full bg-navy/80 px-2.5 py-1 text-xs font-bold tabular-nums text-white backdrop-blur-sm lg:bottom-auto lg:right-4 lg:top-16">
       {index + 1} / {images.length}
     </span>
   );
 
   const mobileCarousel = (
-    <div className="relative lg:hidden">
+    <div className="detail-hero-mobile relative lg:hidden">
       <div
         ref={scrollRef}
         className="snap-x-mandatory hide-scrollbar flex aspect-[5/6] overflow-x-auto sm:aspect-[4/5]"
@@ -163,12 +190,12 @@ export function PropertyGallery({
         })}
       </div>
       {badges}
-      {share}
+      {actions}
       {counter}
       {images.length > 1 && (
         <>
           <div className="gradient-scrim-light pointer-events-none absolute inset-x-0 bottom-0 h-24" />
-          <div className="absolute bottom-4 left-0 right-0 z-10 flex justify-center gap-1.5">
+          <div className="absolute bottom-4 left-0 right-0 z-10 flex justify-center gap-1.5 pr-16">
             {images.map((_, i) => (
               <span
                 key={i}
@@ -185,7 +212,7 @@ export function PropertyGallery({
   );
 
   const desktopGrid = (
-    <div className="relative hidden overflow-hidden rounded-2xl ring-1 ring-black/[0.04] lg:block">
+    <div className="detail-hero relative hidden lg:block">
       <div
         className={cn(
           "grid gap-1.5",
@@ -223,12 +250,17 @@ export function PropertyGallery({
         ))}
       </div>
       {badges}
-      {share}
+      {actions}
+      {images.length > 1 ? (
+        <span className="absolute bottom-4 left-4 z-10 rounded-full bg-navy/80 px-2.5 py-1 text-xs font-bold tabular-nums text-white backdrop-blur-sm">
+          {images.length} photos
+        </span>
+      ) : null}
       {images.length > 5 && (
         <button
           type="button"
           onClick={() => setFullscreen(true)}
-          className="pressable absolute bottom-4 right-4 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-navy shadow-float"
+          className="pressable absolute bottom-4 right-4 rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-navy shadow-float"
         >
           Show all {images.length} photos
         </button>

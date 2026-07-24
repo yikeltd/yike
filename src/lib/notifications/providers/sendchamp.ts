@@ -164,8 +164,8 @@ export function isSendchampConfigured(): boolean {
   return getSendchampApiKeys().length > 0;
 }
 
-/** Sendchamp verification API accepts SMS/WHATSAPP or lowercase variants. */
-type VerificationChannel = "SMS" | "WHATSAPP" | "sms" | "whatsapp";
+/** Sendchamp verification API — WhatsApp / diagnostics only. Never used for SMS delivery. */
+type VerificationChannel = "WHATSAPP" | "whatsapp";
 
 async function sendVerificationOtp(
   channel: VerificationChannel,
@@ -173,9 +173,6 @@ async function sendVerificationOtp(
   mobile: string,
   code: string
 ): Promise<ProviderResult<{ reference?: string }>> {
-  // Always in_app_token for SMS so Sendchamp never delivers its default template.
-  // Callers that need delivery must use sendBrandedSmsOtp separately.
-  const isSms = channel === "SMS" || channel === "sms";
   const result = await sendchampPost<Record<string, unknown>>("/verification/create", {
     channel,
     sender,
@@ -185,7 +182,6 @@ async function sendVerificationOtp(
     customer_mobile_number: mobile,
     meta_data: { product: "yike", purpose: "phone_verification" },
     token: code,
-    ...(isSms ? { in_app_token: true } : {}),
   });
 
   if (!result.ok) return result;
@@ -242,7 +238,7 @@ export async function sendWhatsAppText(
   return { ok: true, data: { reference } };
 }
 
-/** Branded production SMS OTP (sender YIKE) — used by phone-verification provider. */
+/** Branded production SMS OTP (sender YIKE) — sole SMS delivery path. */
 export async function sendBrandedSmsOtp(
   phone: string,
   code: string
@@ -255,7 +251,13 @@ export async function sendBrandedSmsOtp(
 
   for (const route of ["non_dnd", "dnd"] as const) {
     const direct = await sendSmsMessage(mobile, message, config.smsSender, route);
-    if (direct.ok) return direct;
+    if (direct.ok) {
+      console.info("[sendchamp] sms/send ok", {
+        route,
+        mobileSuffix: mobile.slice(-4),
+      });
+      return direct;
+    }
   }
 
   return { ok: false, error: "SMS delivery failed" };
@@ -263,8 +265,7 @@ export async function sendBrandedSmsOtp(
 
 /**
  * SMS OTP delivery — branded `/sms/send` only.
- * Never fall back to `/verification/create` without `in_app_token` (that sends
- * Sendchamp’s default “Hi There” template and causes duplicate SMS).
+ * Do not call `/verification/create` for SMS (duplicate “Hi There” template).
  */
 export async function sendOtpSms(
   phone: string,
@@ -364,12 +365,8 @@ export async function runSendchampDiagnostics(
     if (sms.ok) break;
   }
 
-  const smsVerify = await sendVerificationOtp("SMS", config.smsSender, testMobile, code);
-  steps.push({
-    step: "verification_sms",
-    ok: smsVerify.ok,
-    error: smsVerify.ok ? undefined : smsVerify.error,
-  });
+  // Do not probe `/verification/create` with SMS — that delivers Sendchamp’s
+  // default template and is not used in production SMS OTP flows.
 
   if (config.whatsappSender) {
     const waVerify = await sendVerificationOtp(

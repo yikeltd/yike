@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { BadgeCheck, Shield, ShieldCheck, Star, Sparkles } from "lucide-react";
+import {
+  BadgeCheck,
+  Shield,
+  ShieldCheck,
+  Star,
+  Sparkles,
+  Crown,
+  Tag,
+  CircleOff,
+} from "lucide-react";
+import type { SellerType } from "@/lib/profile-display";
 
 const VERIFIED_TIP = "Verified identity or business information.";
 
@@ -39,7 +49,7 @@ export function VerifiedBadge({
           setOpen((v) => !v);
         }}
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border border-gold/25 bg-gold font-bold text-navy shadow-glow-gold",
+          "inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500 font-bold text-white shadow-sm",
           size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
           className
         )}
@@ -57,12 +67,77 @@ export function FeaturedBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-white/25 bg-navy/75 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-white/95 backdrop-blur-sm",
+        "inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold px-2 py-0.5 text-[10px] font-bold tracking-wide text-navy shadow-sm",
         className
       )}
     >
-      <Star className="h-2.5 w-2.5 fill-gold/90 text-gold/90" strokeWidth={2} />
+      <Star className="h-2.5 w-2.5 fill-navy/80 text-navy" strokeWidth={2} />
       Featured
+    </span>
+  );
+}
+
+export function PremiumBadge({
+  className,
+  size = "sm",
+}: {
+  className?: string;
+  size?: "sm" | "md";
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-600 font-bold text-white shadow-sm",
+        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+        className
+      )}
+    >
+      <Crown className={cn(size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} strokeWidth={2.5} />
+      Premium
+    </span>
+  );
+}
+
+export function NegotiableBadge({
+  className,
+  size = "sm",
+}: {
+  className?: string;
+  size?: "sm" | "md";
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/15 font-bold text-orange-700 dark:text-orange-300",
+        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+        className
+      )}
+    >
+      <Tag className={cn(size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} strokeWidth={2.5} />
+      Negotiable
+    </span>
+  );
+}
+
+export function SoldBadge({
+  className,
+  size = "sm",
+  label = "Sold",
+}: {
+  className?: string;
+  size?: "sm" | "md";
+  label?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-slate-400/30 bg-slate-500/15 font-bold text-slate-700 dark:text-slate-300",
+        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
+        className
+      )}
+    >
+      <CircleOff className={cn(size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} strokeWidth={2.5} />
+      {label}
     </span>
   );
 }
@@ -86,7 +161,7 @@ export function YikeVerifiedBadge({
           setOpen((v) => !v);
         }}
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border border-gold/50 bg-navy/90 font-bold text-gold backdrop-blur-sm",
+          "inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-navy/90 font-bold text-emerald-300 backdrop-blur-sm",
           size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs",
           className
         )}
@@ -149,8 +224,6 @@ export function AgencyBadge({ className }: { className?: string }) {
     </span>
   );
 }
-
-import type { SellerType } from "@/lib/profile-display";
 
 export function SellerTypeBadge({
   type,
@@ -217,11 +290,11 @@ export function NewListingBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300",
+        "inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300",
         className
       )}
     >
-      New listing
+      New
     </span>
   );
 }
@@ -269,10 +342,11 @@ export function StatusBadge({
   const styles: Record<string, string> = {
     not_started: "bg-surface text-muted",
     pending: "bg-gold/20 text-gold-dark",
-    approved: "bg-gold/30 text-navy font-bold",
-    verified: "bg-gold/30 text-navy font-bold",
+    approved: "bg-emerald-500/15 text-emerald-800 font-bold",
+    verified: "bg-emerald-500/15 text-emerald-800 font-bold",
     rejected: "bg-red-500/15 text-red-600",
-    rented: "bg-surface text-muted",
+    rented: "bg-slate-500/15 text-slate-700",
+    sold: "bg-slate-500/15 text-slate-700",
     hidden: "bg-surface text-muted",
     on_hold: "bg-amber-500/15 text-amber-800",
     pending_verification: "bg-gold/20 text-gold-dark",

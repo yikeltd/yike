@@ -1,47 +1,25 @@
-# OTP Validation Report — Phone SMS
+# OTP Validation Report
 
-**Date:** 2026-07-23  
-**Status:** Validated in code (`tsc --noEmit` clean) · live SMS requires rotated Sendchamp keys
+**Date:** 2026-07-24  
+**Scope:** P0 single-path phone SMS OTP hotfix  
+**Result:** PASS (code-level). Live SMS not burned in this run.
 
-## Send path
+## Code proof — single branded SMS path
 
-| Check | Result |
-|-------|--------|
-| OTP never generated on client | Pass — `generateOtp()` / Verification API server-side only |
-| Default channel SMS (not WhatsApp) | Pass — `preferredChannel ?? "sms"`, `SENDCHAMP_OTP_CHANNEL=sms` |
-| Sender YIKE | Pass — `resolveSmsSender` defaults to `YIKE` |
-| 6-digit numeric | Pass — `SENDCHAMP_OTP_LENGTH` / `OTP_LENGTH = 6` |
-| 30-minute expiry | Pass — env + `OTP_EXPIRY_MS = 30 * 60 * 1000` |
-| Branded SMS template | Pass — `buildSmsOtpMessage()` |
-| Verification API register + confirm | Pass — seller + shared OTP SMS paths |
-| Resend cooldown ~60s | Pass — UI + server `RESEND_COOLDOWN_MS` / `OTP_RESEND_COOLDOWN_MS` |
-| Rate limit ≤3 sends / phone / hour | Pass — seller service |
+| Requirement | Evidence |
+|-------------|----------|
+| Only `sendBrandedSmsOtp` / `/sms/send` for phone SMS | `provider.ts` SMS branch calls `sendBrandedSmsOtp` only; `otp/service.ts` SMS uses `sendBrandedSmsOtp` |
+| No Verification API SMS / no “Hi There” | `sendchamp-verification.ts` blocks `channel === "sms" && !inAppToken`; comments forbid `/verification/create` for SMS |
+| Exact template | `SMS_OTP_MESSAGE_TEMPLATE` in `copy.ts`: `Your verification code is: {OTP}. Code is valid for 30 minutes. Never share this code. Welcome to Yike. Happy Listing.` |
+| Hash store + verify | `local-otp.ts` → `local:` + `hashOtp`; confirm via `verifyOtpHash` |
+| Invalidate previous on resend | `service.ts` expires prior `status: "sent"` sessions before new claim |
+| Button locks | UI `sendLockRef` / cooldown / disabled busy states; server `sendInFlight` map |
 
-## Verify path
+## Build gates
 
-| Check | Result |
-|-------|--------|
-| Confirm via Sendchamp `/verification/confirm` | Pass when `provider_reference` present |
-| Wrong code → clear error + attempt bump | Pass |
-| Max attempts (5) | Pass |
-| Expired code | Pass — session marked expired |
-| Success → `phone_verified = true` | Pass |
-| Success timestamp | Pass — `whatsapp_verified_at` + session `consumed_at` (no separate `phone_verified_at` column yet) |
+- `npx tsc --noEmit` — expected PASS before ship  
+- `npm run build` — required PASS before push  
 
-## UX (`/auth/verify-phone`)
+## Live SMS
 
-- Title: **Verify Your Phone Number**
-- Masked display: `+234 XXX XXX XXXX` via `formatWhatsappDisplay`
-- 6-digit OTP input, Verify + Resend (60s cooldown)
-- Validity hint: “Code is valid for 30 minutes.”
-- Gate copy: “Verify your phone to start selling.”
-
-## Dry-run without production keys
-
-- Missing / invalid `SENDCHAMP_*` → 503 friendly error
-- No secrets in client bundles (API routes `runtime = "nodejs"`)
-- Dev non-prod fallback remains only on legacy `/api/auth/phone/*` hash path when Sendchamp down
-
-## Known residual
-
-- If Sendchamp ignores `in_app_token: true`, users could receive a provider-template SMS plus Yike branded SMS — monitor first production sends; fall back to Verification-API-only delivery if needed.
+**Not executed here** (avoids burning credits / inventing success). Founder must send one real OTP on yike.ng after Coolify Ready.

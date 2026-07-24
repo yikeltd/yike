@@ -3,8 +3,9 @@ import { OTP_LENGTH } from "./constants";
 
 export function generateOtp(): string {
   const min = 10 ** (OTP_LENGTH - 1);
-  const max = 10 ** OTP_LENGTH - 1;
-  return String(randomInt(min, max));
+  // randomInt max is exclusive — include full 6-digit range (100000–999999).
+  const maxExclusive = 10 ** OTP_LENGTH;
+  return String(randomInt(min, maxExclusive));
 }
 
 export function hashOtp(otp: string): string {

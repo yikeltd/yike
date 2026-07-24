@@ -35,7 +35,7 @@ import { ListingStructuredData } from "@/components/seo/listing-structured-data"
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { ListingFreshness } from "@/components/property/listing-freshness";
 import { PropertyPhysicallyVerifiedCard } from "@/components/property/property-physically-verified";
-import { BedDouble, Bath, MapPin, Navigation } from "lucide-react";
+import { BedDouble, Bath, MapPin, Navigation, Home, Layers } from "lucide-react";
 import { PropertyViewTracker } from "./view-tracker";
 import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
 import { PropertyBackButton } from "@/components/property/property-back-button";
@@ -45,6 +45,9 @@ import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 import { ListingInsightsSection } from "@/components/property/listing-insights-section";
 import { ListingValueDriversSection } from "@/components/property/listing-value-drivers-section";
 import { getActiveAd } from "@/lib/ads";
+import { SpecTileGrid } from "@/components/ui/info-tile";
+import { resolveListingBadges } from "@/lib/design/listing-badges";
+import { ListingBadgeRow } from "@/components/ui/listing-badge-row";
 
 const ReportListingForm = dynamic(
   () =>
@@ -183,9 +186,19 @@ export default async function PropertyDetailPage({
   const amenities = property.extras?.amenities ?? [];
   const shareUrl = propertyAbsoluteUrl(property);
   const detailAd = await getActiveAd("property_detail");
+  const allBadges = resolveListingBadges(property, {
+    agentVerified: !!verified,
+    featuredActive,
+  });
+  const extraBadges = allBadges.filter(
+    (b) =>
+      b !== "verified" &&
+      b !== "yike_verified" &&
+      b !== "featured"
+  );
 
   return (
-    <div>
+    <div className="detail-band-ivory">
       {isPubliclyVisible ? <ListingStructuredData property={property} /> : null}
       <PropertyViewTracker propertyId={property.id} property={property} slug={slug} />
 
@@ -201,7 +214,7 @@ export default async function PropertyDetailPage({
           </div>
 
           {previewMode ? (
-            <div className="mx-4 mt-3 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 lg:mx-0">
+            <div className="mx-4 mt-3 rounded-2xl border border-gold/30 bg-gold/5 px-4 py-3 lg:mx-0">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-navy">
@@ -224,7 +237,7 @@ export default async function PropertyDetailPage({
                 {isOwner ? (
                   <Link
                     href={`/agent/listings/${property.id}/edit`}
-                    className="pressable shrink-0 rounded-lg bg-gold px-4 py-2 text-xs font-bold text-navy"
+                    className="pressable shrink-0 rounded-xl bg-gold px-4 py-2 text-xs font-bold text-navy"
                   >
                     Edit listing
                   </Link>
@@ -244,6 +257,7 @@ export default async function PropertyDetailPage({
             city={property.city}
             listingType={property.listing_type}
             propertyType={property.property_type}
+            extraBadges={extraBadges}
           />
 
           {property.video_url && (
@@ -256,12 +270,12 @@ export default async function PropertyDetailPage({
             </div>
           )}
 
-          <div className="space-y-4 px-4 pt-4 lg:space-y-6 lg:px-0 lg:pt-8">
+          <div className="detail-band-white space-y-5 px-4 pt-5 lg:space-y-7 lg:rounded-t-[1.5rem] lg:px-0 lg:pt-8">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gold-dark lg:text-xs">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted lg:text-xs">
                 {listingTypeLabel(property.listing_type)}
               </p>
-              <p className="mt-1.5 text-[2rem] font-bold leading-none tracking-tight text-navy tabular-nums lg:text-4xl">
+              <p className="mt-1.5 text-[2.15rem] font-bold leading-none tracking-tight text-navy tabular-nums lg:text-4xl">
                 {price}
               </p>
               <ListingFreshness
@@ -283,6 +297,10 @@ export default async function PropertyDetailPage({
                   </span>
                 ) : null}
               </div>
+              <ListingBadgeRow
+                badges={extraBadges.filter((b) => b !== "new")}
+                className="mt-2.5 flex flex-wrap items-center gap-1.5 lg:hidden"
+              />
               <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-muted lg:text-base">
                 <MapPin className="h-4 w-4 shrink-0 text-gold" />
                 {property.area}, {property.city}
@@ -300,6 +318,39 @@ export default async function PropertyDetailPage({
               )}
             </div>
 
+            <SpecTileGrid
+              columns={property.bedrooms > 0 || property.bathrooms > 0 ? 2 : 2}
+              items={[
+                {
+                  icon: BedDouble,
+                  label: "Bedrooms",
+                  value: property.bedrooms > 0 ? property.bedrooms : null,
+                },
+                {
+                  icon: Bath,
+                  label: "Bathrooms",
+                  value: property.bathrooms > 0 ? property.bathrooms : null,
+                },
+                {
+                  icon: Home,
+                  label: "Type",
+                  value: property.property_type
+                    ? propertyTypeLabel(property.property_type)
+                    : null,
+                },
+                {
+                  icon: Layers,
+                  label: "Listing",
+                  value: listingTypeLabel(property.listing_type),
+                },
+                {
+                  icon: MapPin,
+                  label: "Location",
+                  value: `${property.area}, ${property.city}`,
+                },
+              ]}
+            />
+
             <Suspense fallback={<DetailSectionFallback />}>
               <ListingInsightsSection property={property} agent={agent} />
             </Suspense>
@@ -309,33 +360,15 @@ export default async function PropertyDetailPage({
             </Suspense>
 
             {amenities.length > 0 && (
-              <AmenityChips amenities={amenities} max={8} size="md" />
+              <div className="detail-band-stone -mx-4 rounded-2xl px-4 py-4 lg:mx-0 lg:px-5">
+                <AmenityChips amenities={amenities} max={8} size="md" />
+              </div>
             )}
 
             <RentTransparencyCard property={property} />
 
-            <div className="flex flex-wrap gap-2">
-              {property.bedrooms > 0 && (
-                <span className="rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-foreground lg:text-sm">
-                  <BedDouble className="mr-1 inline h-3.5 w-3.5" />
-                  {property.bedrooms} beds
-                </span>
-              )}
-              {property.bathrooms > 0 && (
-                <span className="rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-foreground lg:text-sm">
-                  <Bath className="mr-1 inline h-3.5 w-3.5" />
-                  {property.bathrooms} baths
-                </span>
-              )}
-              {property.property_type && (
-                <span className="rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-foreground lg:text-sm">
-                  {propertyTypeLabel(property.property_type)}
-                </span>
-              )}
-            </div>
-
             {property.description && (
-              <section className="rounded-2xl bg-white p-4 shadow-float lg:p-6">
+              <section className="rounded-[1.25rem] border border-[color:var(--border-premium)] bg-white p-4 shadow-card lg:p-6">
                 <h2 className="text-sm font-bold text-navy lg:text-base">
                   About this home
                 </h2>

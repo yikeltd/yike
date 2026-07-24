@@ -9,6 +9,7 @@ import {
 import {
   createSendchampVerificationOtp,
   confirmSendchampVerification,
+  otpExpiryMinutes,
 } from "@/lib/notifications/providers/sendchamp-verification";
 import { isWhatsappOtpProviderSendchamp } from "@/lib/feature-flags";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
@@ -19,6 +20,7 @@ import {
   isPhoneOtpEnabled,
   phoneOtpDisabledPublicMessage,
 } from "@/lib/feature-flags";
+import { isLocalOtpReference } from "@/lib/phone-verification/local-otp";
 import {
   OTP_EXPIRY_MS,
   OTP_MAX_ATTEMPTS,
@@ -227,39 +229,31 @@ async function sendPhoneOtpUnlocked(
     };
   }
 
-  // SMS (production default): one OTP → Verification API register (in_app_token) → one branded SMS.
-  // Do not fall through to a second generate/send — that causes duplicate SMS.
+  // SMS (production default): one local OTP → one branded `/sms/send` only.
+  // Never call `/verification/create` for SMS (Sendchamp default “Hi There” template).
   if (channel === "sms") {
     const phoneIntl = toSendchampPhone(phone);
     const code = generateOtp();
-    const registered = await createSendchampVerificationOtp({
-      phoneIntl,
-      channel: "sms",
-      purpose: "account_verification",
-      token: code,
-      inAppToken: true,
-    });
+    const expiresMinutes = otpExpiryMinutes();
+    const expiresAt = new Date(Date.now() + expiresMinutes * 60_000).toISOString();
 
-    if (!registered.ok) {
-      if (registered.code === "provider_auth_failed") {
-        console.error("[otp] provider_auth_failed");
-      }
-      await otpLogEvent(db, {
-        phone,
-        channel: "sms",
-        status: "failed",
-        providerError: registered.error,
-      });
-      return {
-        ok: false,
-        error: OTP_USER_MESSAGES.sendFailed,
-        status: registered.status >= 400 ? registered.status : 502,
-      };
+    const inserted = await otpInsertPending(db, {
+      phone,
+      otpHash: hashOtp(code),
+      expiresAt,
+      channel: "sms",
+    });
+    if (!inserted) {
+      return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
     }
 
     const delivered = await sendBrandedSmsOtp(phoneIntl, code);
     if (!delivered.ok) {
-      console.error("[otp] branded SMS failed after verification register", delivered.error);
+      console.error("[otp] branded SMS failed", {
+        phone,
+        error: delivered.error,
+      });
+      await otpMarkFailed(db, inserted.id, sanitizeOtpError(delivered.error));
       await otpLogEvent(db, {
         phone,
         channel: "sms",
@@ -273,19 +267,8 @@ async function sendPhoneOtpUnlocked(
       };
     }
 
-    const expiresAt = new Date(
-      Date.now() + registered.expiresMinutes * 60_000
-    ).toISOString();
-    const inserted = await otpInsertPending(db, {
-      phone,
-      otpHash: hashOtp(registered.reference),
-      expiresAt,
-      channel: "sms",
-    });
-    if (!inserted) {
-      return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
-    }
-    await otpMarkSent(db, inserted.id, "sms", registered.reference);
+    // Store SMS delivery reference only (not a Verification API session).
+    await otpMarkSent(db, inserted.id, "sms", delivered.data?.reference);
     await otpLogEvent(db, {
       phone,
       channel: "sms",
@@ -469,24 +452,30 @@ export async function verifyPhoneOtp(
     .maybeSingle();
 
   const providerReference = providerRow?.provider_reference as string | undefined;
+  const trimmedCode = code.trim();
 
-  if (providerReference) {
+  const useSendchampConfirm =
+    row.channel === "whatsapp" &&
+    Boolean(providerReference) &&
+    !isLocalOtpReference(providerReference!);
+
+  if (useSendchampConfirm) {
     const confirmed = await confirmSendchampVerification({
-      reference: providerReference,
-      code,
+      reference: providerReference!,
+      code: trimmedCode,
     });
     if (!confirmed.ok) {
       const attempts = (await otpIncrementAttempts(db, row.id)) ?? row.attempts + 1;
       await otpLogEvent(db, {
         phone,
-        channel: row.channel ?? "whatsapp",
+        channel: "whatsapp",
         status: "failed",
         attempts,
         expiresAt: row.expires_at,
       });
       return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 400 };
     }
-  } else if (!verifyOtpHash(code, row.otp_hash)) {
+  } else if (!verifyOtpHash(trimmedCode, row.otp_hash)) {
     const attempts = (await otpIncrementAttempts(db, row.id)) ?? row.attempts + 1;
     await otpLogEvent(db, {
       phone,

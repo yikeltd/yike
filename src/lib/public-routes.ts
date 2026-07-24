@@ -57,6 +57,7 @@ export const PUBLIC_STATIC_SEGMENTS = new Set([
   "verifier",
   "verify-agent",
   "verify-property",
+  "vehicles",
   "why-verified",
   "houses",
   "intent",

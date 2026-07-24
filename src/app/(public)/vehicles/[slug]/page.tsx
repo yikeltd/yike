@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
@@ -10,18 +9,21 @@ import {
 } from "@/lib/marketplace/listings";
 import { vehicleCategoryLabel } from "@/lib/marketplace/vehicle-specs";
 import { ContactButtons } from "@/components/property/contact-buttons";
-import { ListingShareMenu } from "@/components/property/listing-share-menu";
+import { StickyContactBar } from "@/components/property/sticky-contact-bar";
 import { ReportListingForm } from "@/components/property/report-form";
-import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { MarketplaceSafetyNotice } from "@/components/marketplace/safety-notice";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
+import { VehicleDetailHero } from "@/components/marketplace/vehicle-detail-hero";
+import { VehicleSpecSections } from "@/components/marketplace/vehicle-spec-sections";
 import { DetailPromotionZone } from "@/components/ads/detail-promotion-zone";
 import { DetailRecentlyViewed } from "@/components/marketplace/detail-recently-viewed";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { getActiveAd } from "@/lib/ads";
+import { resolveListingBadges } from "@/lib/design/listing-badges";
+import { MapPin } from "lucide-react";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -83,31 +85,21 @@ export default async function VehicleDetailPage({ params }: Props) {
   const priceLabel = formatNaira(Number(vehicle.price));
   const shareUrl = listingAbsoluteUrl(vehicle);
   const isDealer = agent?.account_type === "dealer";
-
-  const specs: [string, string | number | null | undefined][] = [
-    ["Category", vehicleCategoryLabel(vehicle.auto_category)],
-    ["Make", vehicle.make],
-    ["Model", vehicle.model],
-    ["Year", vehicle.year],
-    ["Trim", vehicle.trim],
-    ["Condition", vehicle.vehicle_condition],
-    [
-      "Mileage",
-      vehicle.mileage != null ? `${vehicle.mileage.toLocaleString()} km` : null,
-    ],
-    ["Transmission", vehicle.transmission],
-    ["Fuel", vehicle.fuel_type],
-    ["Body", vehicle.body_type],
-    ["Drivetrain", vehicle.drivetrain],
-    ["Engine", vehicle.engine],
-    ["Exterior", vehicle.exterior_color],
-    ["Interior", vehicle.interior_color],
-    ["Registration", vehicle.registration_status],
-    ["Financing", vehicle.financing_available ? "Available" : null],
-  ];
+  const featuredActive = isFeaturedActive(vehicle);
+  const verified = !!vehicle.is_verified_listing;
+  const allBadges = resolveListingBadges(vehicle, {
+    agentVerified: verified,
+    featuredActive,
+  });
+  const extraBadges = allBadges.filter(
+    (b) => b !== "verified" && b !== "yike_verified" && b !== "featured"
+  );
+  const location = [vehicle.area, vehicle.city, vehicle.state]
+    .filter(Boolean)
+    .join(", ");
 
   return (
-    <main className="mx-auto max-w-5xl py-6">
+    <main className="detail-band-ivory safe-bottom-detail mx-auto max-w-5xl pb-8">
       <MarketplaceViewTracker
         id={vehicle.id}
         title={vehicle.title}
@@ -119,166 +111,160 @@ export default async function VehicleDetailPage({ params }: Props) {
         slug={vehicle.slug}
       />
 
-      <p className="mb-2 text-sm text-black/50">
-        <Link href="/vehicles" className="hover:underline">
-          Vehicles
-        </Link>
-        {" / "}
-        {vehicleCategoryLabel(vehicle.auto_category)}
-      </p>
+      <div className="px-4 pt-4 lg:px-0 lg:pt-6">
+        <p className="mb-3 text-sm text-muted">
+          <Link href="/vehicles" className="font-medium hover:underline">
+            Vehicles
+          </Link>
+          {" / "}
+          {vehicleCategoryLabel(vehicle.auto_category)}
+        </p>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-navy/5">
-            {vehicle.media_urls?.[0] ? (
-              <Image
-                src={vehicle.media_urls[0]}
-                alt={vehicle.title}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 1024px) 100vw, 60vw"
-              />
-            ) : null}
-            {isFeaturedActive(vehicle) ? (
-              <span className="absolute left-3 top-3 rounded-full bg-gold px-3 py-1 text-xs font-bold text-navy">
-                Featured
-              </span>
-            ) : null}
+        <div className="grid gap-6 lg:grid-cols-5 lg:gap-8">
+          <div className="lg:col-span-3">
+            <VehicleDetailHero
+              images={vehicle.media_urls ?? []}
+              title={vehicle.title}
+              listingId={vehicle.id}
+              shareUrl={shareUrl}
+              city={vehicle.city}
+              autoCategory={vehicle.auto_category}
+              badges={extraBadges}
+              featured={featuredActive}
+              verified={!!verified}
+            />
           </div>
-          {vehicle.media_urls && vehicle.media_urls.length > 1 ? (
-            <ul className="mt-2 grid grid-cols-4 gap-2">
-              {vehicle.media_urls.slice(1, 5).map((url) => (
-                <li
-                  key={url}
-                  className="relative aspect-square overflow-hidden rounded-lg bg-navy/5"
+
+          <div className="detail-band-white space-y-4 rounded-[1.5rem] px-1 lg:col-span-2 lg:px-0 lg:pt-1">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted">
+                {vehicleCategoryLabel(vehicle.auto_category)}
+              </p>
+              <p className="mt-1.5 text-[2.15rem] font-bold leading-none tracking-tight text-navy tabular-nums">
+                {priceLabel}
+              </p>
+              <h1 className="mt-3 text-xl font-semibold leading-snug text-navy lg:text-2xl">
+                {vehicle.title}
+              </h1>
+              {location ? (
+                <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-muted">
+                  <MapPin className="h-4 w-4 shrink-0 text-gold" aria-hidden />
+                  {location}
+                </p>
+              ) : null}
+            </div>
+
+            {agent ? (
+              <div className="rounded-[1.25rem] border border-[color:var(--border-premium)] bg-white p-4 shadow-card">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted">
+                  {isDealer ? "Dealer" : "Seller"}
+                </p>
+                <p className="mt-1 font-bold text-navy">
+                  {agent.company_name || agent.full_name || "Yike seller"}
+                </p>
+                {isDealer ? (
+                  <p className="mt-1 text-xs text-muted">
+                    Dealer profile — verify paperwork before payment.
+                  </p>
+                ) : null}
+                <Link
+                  href={`/agents/${agent.id}`}
+                  className="mt-2 inline-block text-sm font-semibold text-gold-dark underline-offset-2 hover:underline"
                 >
-                  <Image src={url} alt="" fill className="object-cover" sizes="120px" />
+                  View {isDealer ? "dealer" : "seller"} profile
+                </Link>
+              </div>
+            ) : null}
+
+            <div className="hidden lg:block">
+              <ContactButtons
+                propertyId={vehicle.id}
+                title={vehicle.title}
+                area={vehicle.area || vehicle.city}
+                city={vehicle.city}
+                listingType={vehicle.listing_type || "sale"}
+                propertyType={vehicle.auto_category}
+                agentId={vehicle.agent_id}
+                agentName={agent?.full_name || "Seller"}
+                price={Number(vehicle.price)}
+                paymentPeriod={vehicle.payment_period || "total"}
+                phone={agent?.phone}
+                whatsapp={agent?.whatsapp}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-6 px-4 lg:mt-10 lg:px-0">
+        <section className="detail-band-white rounded-[1.5rem] p-4 shadow-card sm:p-6">
+          <h2 className="mb-5 text-sm font-bold text-navy lg:text-base">
+            Vehicle details
+          </h2>
+          <VehicleSpecSections vehicle={vehicle} />
+        </section>
+
+        {vehicle.description ? (
+          <section className="detail-band-stone rounded-[1.5rem] p-4 sm:p-6">
+            <h2 className="text-sm font-bold text-navy lg:text-base">
+              Description
+            </h2>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted lg:text-base">
+              {vehicle.description}
+            </p>
+          </section>
+        ) : null}
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <MarketplaceSafetyNotice vertical="vehicle" />
+          <details className="text-sm">
+            <summary className="cursor-pointer font-semibold text-navy/70 hover:text-navy">
+              Report this listing
+            </summary>
+            <div className="mt-3 max-w-lg">
+              <ReportListingForm propertyId={vehicle.id} />
+            </div>
+          </details>
+        </div>
+
+        {detailAd ? (
+          <DetailPromotionZone placement="vehicle_detail" ad={detailAd} />
+        ) : null}
+        {!detailAd ? (
+          <DetailRecentlyViewed excludeId={vehicle.id} />
+        ) : null}
+
+        {similar.length > 0 ? (
+          <section>
+            <h2 className="text-lg font-semibold text-navy">Similar vehicles</h2>
+            <ul className={`mt-3 ${BROWSE_GRID_CLASS}`}>
+              {similar.map((s) => (
+                <li key={s.id}>
+                  <VehicleCard vehicle={s} />
                 </li>
               ))}
             </ul>
-          ) : null}
-        </div>
-
-        <div className="lg:col-span-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <ListingSaveButton listingId={vehicle.id} />
-            <ListingShareMenu
-              title={vehicle.title}
-              text={`${vehicle.title} on Yike`}
-              url={shareUrl}
-              price={priceLabel}
-              city={vehicle.city}
-              listingId={vehicle.id}
-              listingType="sale"
-              propertyType={vehicle.auto_category}
-            />
-          </div>
-
-          <h1 className="mt-3 text-2xl font-bold text-navy">{vehicle.title}</h1>
-          <p className="mt-2 text-3xl font-bold text-navy">{priceLabel}</p>
-          <p className="mt-1 text-sm text-black/55">
-            {[vehicle.city, vehicle.state].filter(Boolean).join(", ")}
-          </p>
-          {vehicle.is_verified_listing ? (
-            <p className="mt-2 inline-block rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold text-navy">
-              Verified listing
-            </p>
-          ) : null}
-
-          <dl className="mt-6 grid grid-cols-2 gap-3 text-sm">
-            {specs
-              .filter(([, v]) => v != null && v !== "")
-              .map(([k, v]) => (
-                <div key={k} className="rounded-lg bg-black/[0.03] px-3 py-2">
-                  <dt className="text-xs text-black/45">{k}</dt>
-                  <dd className="font-medium text-navy">{v}</dd>
-                </div>
-              ))}
-          </dl>
-
-          {agent ? (
-            <div className="mt-6 rounded-xl border border-black/8 p-4">
-              <p className="text-xs uppercase tracking-wide text-black/45">
-                {isDealer ? "Dealer" : "Seller"}
-              </p>
-              <p className="font-semibold text-navy">
-                {agent.company_name || agent.full_name || "Yike seller"}
-              </p>
-              {isDealer ? (
-                <p className="mt-1 text-xs text-navy/60">
-                  Dealer profile — verify paperwork before payment.
-                </p>
-              ) : null}
-              <Link
-                href={`/agents/${agent.id}`}
-                className="mt-2 inline-block text-sm text-navy underline-offset-2 hover:underline"
-              >
-                View {isDealer ? "dealer" : "seller"} profile
-              </Link>
-            </div>
-          ) : null}
-
-          <div className="mt-4">
-            <ContactButtons
-              propertyId={vehicle.id}
-              title={vehicle.title}
-              area={vehicle.area || vehicle.city}
-              city={vehicle.city}
-              listingType={vehicle.listing_type || "sale"}
-              propertyType={vehicle.auto_category}
-              agentId={vehicle.agent_id}
-              agentName={agent?.full_name || "Seller"}
-              price={Number(vehicle.price)}
-              paymentPeriod={vehicle.payment_period || "total"}
-              phone={agent?.phone}
-              whatsapp={agent?.whatsapp}
-            />
-          </div>
-        </div>
+          </section>
+        ) : null}
       </div>
 
-      {vehicle.description ? (
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold text-navy">Description</h2>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-black/70">
-            {vehicle.description}
-          </p>
-        </section>
-      ) : null}
-
-      <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <MarketplaceSafetyNotice vertical="vehicle" />
-        <details className="text-sm">
-          <summary className="cursor-pointer font-semibold text-navy/70 hover:text-navy">
-            Report this listing
-          </summary>
-          <div className="mt-3 max-w-lg">
-            <ReportListingForm propertyId={vehicle.id} />
-          </div>
-        </details>
-      </div>
-
-      {detailAd ? (
-        <div className="mt-6">
-          <DetailPromotionZone placement="vehicle_detail" ad={detailAd} />
+      {agent ? (
+        <div className="lg:hidden">
+          <StickyContactBar
+            propertyId={vehicle.id}
+            title={vehicle.title}
+            area={vehicle.area || vehicle.city}
+            city={vehicle.city}
+            listingType={vehicle.listing_type || "sale"}
+            propertyType={vehicle.auto_category}
+            agentId={agent.id}
+            agentName={agent.full_name || "Seller"}
+            price={Number(vehicle.price)}
+            paymentPeriod={vehicle.payment_period || "total"}
+            phone={agent.phone}
+            whatsapp={agent.whatsapp}
+          />
         </div>
-      ) : null}
-      {!detailAd ? (
-        <DetailRecentlyViewed excludeId={vehicle.id} className="mt-6" />
-      ) : null}
-
-      {similar.length > 0 ? (
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold text-navy">Similar vehicles</h2>
-          <ul className={`mt-3 ${BROWSE_GRID_CLASS}`}>
-            {similar.map((s) => (
-              <li key={s.id}>
-                <VehicleCard vehicle={s} />
-              </li>
-            ))}
-          </ul>
-        </section>
       ) : null}
     </main>
   );

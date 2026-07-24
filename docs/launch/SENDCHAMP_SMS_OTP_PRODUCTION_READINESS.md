@@ -1,28 +1,41 @@
-# Production Readiness Report — Sendchamp SMS Phone OTP
+# Production Readiness Report — Phone SMS OTP Hotfix
 
-**Date:** 2026-07-23  
-**Verdict:** **Ready after credential rotation + Coolify env** (code complete; hold commit pending review)
+**Date:** 2026-07-24  
+**Verdict:** **Code ready for review / deploy after live SMS smoke**  
+**Git commit:** **None — do not commit until reviewed** (per task)
 
 ## Checklist
 
 | Item | Status |
 |------|--------|
-| SMS default channel (not WhatsApp) | Done |
-| Sender `YIKE`, 6-digit, 30 min | Done |
-| Branded SMS copy | Done |
-| Verification API confirm | Done |
-| Seller UX `/auth/verify-phone` | Done |
-| Listing gate phone required | Done |
-| Channel abstraction for future WA/email | Done |
-| Env-only credentials | Done |
-| `tsc --noEmit` | Pass |
-| Live SMS end-to-end | Blocked until rotated keys in Coolify |
-| Git commit | **Not committed** (per request) |
+| Duplicate SMS eliminated (Verification API + SMS API) | Done — SMS uses `/sms/send` only |
+| Exact single-line SMS template | Done |
+| Local OTP hash generate/store/verify aligned | Done |
+| Prior OTP invalidated on resend (seller) | Done |
+| Phone normalize consistent (`08…` ↔ `234…`) | Done |
+| Frontend double-tap / loading / cooldown | Done |
+| No OTP value in production logs | Done |
+| `npx tsc --noEmit` | Pass |
+| Live SMS end-to-end on production numbers | Pending after deploy |
+| Git commit / push | **Held** |
 
-## Coolify env (production)
+## Files touched (review focus)
+
+- `src/lib/phone-verification/copy.ts` — template
+- `src/lib/phone-verification/local-otp.ts` — local hash refs (new)
+- `src/lib/phone-verification/provider.ts` — SMS = branded send only
+- `src/lib/phone-verification/service.ts` — invalidate prior; verify logging
+- `src/lib/otp/service.ts` — auth SMS path + verify
+- `src/lib/otp/crypto.ts` — full 6-digit `randomInt` range
+- `src/lib/notifications/providers/sendchamp.ts` — no SMS Verification probe
+- `src/lib/notifications/providers/sendchamp-verification.ts` — block SMS delivery via Verification API
+- `src/components/profile/phone-sms-verification-panel.tsx`
+- `src/components/agent/seller-phone-verify-row.tsx`
+
+## Coolify env (unchanged requirements)
 
 ```
-SENDCHAMP_PUBLIC_KEY=<rotated key>
+SENDCHAMP_PUBLIC_KEY=<key>
 SENDCHAMP_LIVE_BASE_URL=https://api.sendchamp.com/api/v1
 SENDCHAMP_SMS_SENDER=YIKE
 SENDCHAMP_OTP_CHANNEL=sms
@@ -32,26 +45,24 @@ ENABLE_PHONE_OTP=true
 ENABLE_SMS_OTP=true
 ENABLE_WHATSAPP_OTP=false
 NEXT_PUBLIC_ENABLE_PHONE_OTP=true
-NEXT_PUBLIC_ENABLE_WHATSAPP_OTP=false
+YIKE_OTP_SERVER_TOKEN=<existing>
 ```
-
-Optional: `SENDCHAMP_WEBHOOK_SECRET`, `YIKE_OTP_SERVER_TOKEN` (existing OTP DB RPC).
 
 ## Post-deploy smoke
 
-1. Sign in with email-verified account that has `phone_verified=false`.
-2. Open `/agent/listings/new` → redirected to `/auth/verify-phone`.
-3. Send SMS → receive Yike branded OTP from sender **YIKE**.
-4. Verify → redirected to listing form; `phone_verified` true in profile.
-5. Confirm browse/search still works without phone on a second account.
+1. Request seller phone OTP once → **exactly one** SMS with the exact template (no “Hi There”).
+2. Enter that code → verify success; `phone_verified` true.
+3. Double-tap Verify → single request; button stays disabled while verifying.
+4. Resend within 60s → cooldown; after cooldown → new SMS; old code invalid.
+5. Auth `/api/auth/phone/send` + verify with same normalization if used in signup.
 
 ## Rollback
 
-Set `ENABLE_PHONE_OTP=false` (and matching `NEXT_PUBLIC_`) in Coolify → redeploy. Listing create will fail closed until phone OTP is re-enabled — prefer fixing Sendchamp over leaving phone gate off in production.
+Revert this change set or set `ENABLE_PHONE_OTP=false` / `ENABLE_SMS_OTP=false` in Coolify (listing gate fails closed — prefer fix over long disable).
 
-## Related docs
+## Related reports
 
-- [SMS_VERIFICATION_REPORT.md](./SMS_VERIFICATION_REPORT.md)
-- [OTP_VALIDATION_REPORT.md](./OTP_VALIDATION_REPORT.md)
-- [SELLER_VERIFICATION_GATE_REPORT.md](./SELLER_VERIFICATION_GATE_REPORT.md)
-- [SENDCHAMP_SMS_OTP_SECURITY_REVIEW.md](./SENDCHAMP_SMS_OTP_SECURITY_REVIEW.md)
+- [SENDCHAMP_INTEGRATION_AUDIT_REPORT.md](./SENDCHAMP_INTEGRATION_AUDIT_REPORT.md)
+- [OTP_GENERATION_AUDIT_REPORT.md](./OTP_GENERATION_AUDIT_REPORT.md)
+- [OTP_VERIFICATION_AUDIT_REPORT.md](./OTP_VERIFICATION_AUDIT_REPORT.md)
+- [PHONE_VERIFICATION_FLOW_REPORT.md](./PHONE_VERIFICATION_FLOW_REPORT.md)

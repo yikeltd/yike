@@ -36,7 +36,7 @@ export function StickyContactBar({
 
   return (
     <div className="fixed inset-x-0 bottom-[var(--bottom-nav-stack)] z-30 mx-auto max-w-lg px-3 lg:hidden">
-      <div className="glass shadow-float-lg rounded-2xl border border-gold/20 p-2.5">
+      <div className="detail-contact-bar p-2.5">
         <ContactButtons
           propertyId={propertyId}
           title={title}

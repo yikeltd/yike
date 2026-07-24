@@ -31,7 +31,8 @@ export function PhoneSmsVerificationPanel({
   const [step, setStep] = useState<Step>(phoneNumber ? "intro" : "update");
   const [phone, setPhone] = useState(phoneNumber);
   const [code, setCode] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const sendLockRef = useRef(false);
@@ -49,7 +50,7 @@ export function PhoneSmsVerificationPanel({
   }, [cooldown]);
 
   async function sendCode(phoneValue: string) {
-    if (sendLockRef.current || loading || cooldown > 0) return;
+    if (sendLockRef.current || sending || verifying || cooldown > 0) return;
     const normalized = normalizeWhatsappInput(phoneValue);
     if (!canRequestPhoneOtp(normalized)) {
       setError(PHONE_VERIFY_COPY.invalidPhone);
@@ -57,7 +58,7 @@ export function PhoneSmsVerificationPanel({
     }
 
     sendLockRef.current = true;
-    setLoading(true);
+    setSending(true);
     setError("");
     try {
       const res = await fetch("/api/profile/phone/send-code", {
@@ -75,22 +76,23 @@ export function PhoneSmsVerificationPanel({
       setPhone(normalized);
       onNumberUpdated?.(normalized);
       setStep("code");
+      setCode("");
       setCooldown(RESEND_COOLDOWN_SEC);
     } finally {
-      setLoading(false);
+      setSending(false);
       sendLockRef.current = false;
     }
   }
 
   async function verifyCode() {
-    if (verifyLockRef.current || loading) return;
+    if (verifyLockRef.current || verifying || sending) return;
     if (code.trim().length !== 6) {
       setError(PHONE_VERIFY_COPY.invalidCode);
       return;
     }
 
     verifyLockRef.current = true;
-    setLoading(true);
+    setVerifying(true);
     setError("");
     try {
       const res = await fetch("/api/profile/phone/verify-code", {
@@ -107,7 +109,7 @@ export function PhoneSmsVerificationPanel({
 
       onVerified?.();
     } finally {
-      setLoading(false);
+      setVerifying(false);
       verifyLockRef.current = false;
     }
   }
@@ -116,7 +118,8 @@ export function PhoneSmsVerificationPanel({
   const shellClass = compact
     ? "rounded-2xl border border-border bg-elevated p-4"
     : "space-y-4";
-  const sendBusy = loading || sendLockRef.current || cooldown > 0;
+  const sendBusy = sending || sendLockRef.current || cooldown > 0 || verifying;
+  const verifyBusy = verifying || verifyLockRef.current || sending;
 
   return (
     <div className={shellClass}>
@@ -136,10 +139,10 @@ export function PhoneSmsVerificationPanel({
           <Button
             type="button"
             className="w-full"
-            disabled={loading || sendLockRef.current}
+            disabled={sendBusy}
             onClick={() => void sendCode(phone || phoneNumber)}
           >
-            {loading ? PHONE_VERIFY_COPY.sending : PHONE_VERIFY_COPY.sendButton}
+            {sending ? PHONE_VERIFY_COPY.sending : PHONE_VERIFY_COPY.sendButton}
           </Button>
           <button
             type="button"
@@ -164,14 +167,15 @@ export function PhoneSmsVerificationPanel({
             onChange={(e) => setPhone(e.target.value)}
             className="h-11 rounded-xl"
             autoComplete="tel"
+            disabled={sending}
           />
           <Button
             type="button"
             className="w-full"
-            disabled={loading || sendLockRef.current}
+            disabled={sendBusy}
             onClick={() => void sendCode(phone)}
           >
-            {loading ? PHONE_VERIFY_COPY.sending : PHONE_VERIFY_COPY.sendButton}
+            {sending ? PHONE_VERIFY_COPY.sending : PHONE_VERIFY_COPY.sendButton}
           </Button>
         </div>
       )}
@@ -192,14 +196,15 @@ export function PhoneSmsVerificationPanel({
             className="h-12 rounded-xl text-center text-lg tracking-[0.35em]"
             autoComplete="one-time-code"
             maxLength={6}
+            disabled={verifying}
           />
           <Button
             type="button"
             className="w-full"
-            disabled={loading || code.trim().length !== 6}
+            disabled={verifyBusy || code.trim().length !== 6}
             onClick={() => void verifyCode()}
           >
-            {loading ? PHONE_VERIFY_COPY.verifying : PHONE_VERIFY_COPY.verifyButton}
+            {verifying ? PHONE_VERIFY_COPY.verifying : PHONE_VERIFY_COPY.verifyButton}
           </Button>
           <button
             type="button"

@@ -131,6 +131,15 @@ async function sendSellerPhoneVerificationCodeUnlocked(
       .eq("id", params.userId);
   }
 
+  // One active OTP per phone: expire prior unconsumed sessions for this user+number.
+  const invalidateAt = new Date().toISOString();
+  await admin
+    .from("whatsapp_otp_sessions")
+    .update({ status: "expired", consumed_at: invalidateAt })
+    .eq("user_id", params.userId)
+    .eq("phone_intl", params.phoneIntl)
+    .eq("status", "sent");
+
   // Claim a DB row before provider call so cooldown starts immediately (blocks races).
   const claimExpiresAt = new Date(Date.now() + 30 * 60_000).toISOString();
   const claimReference = `pending:${randomUUID()}`;
@@ -167,7 +176,11 @@ async function sendSellerPhoneVerificationCodeUnlocked(
   });
 
   if (!created.ok) {
-    console.error("[phone-verification] send failed", created.error);
+    console.error("[phone-verification] send failed", {
+      channel: params.channel,
+      error: created.error,
+      status: created.status,
+    });
     await admin
       .from("whatsapp_otp_sessions")
       .update({
@@ -271,9 +284,12 @@ export async function verifySellerPhoneCode(
     return { ok: false, error: PHONE_VERIFY_COPY.invalidCode, status: 400 };
   }
 
+  // Latest unexpired OTP for this user (normalized phone was set at send time).
   const { data: session } = await admin
     .from("whatsapp_otp_sessions")
-    .select("id, provider_reference, verify_attempts, expires_at, status, phone_local, channel")
+    .select(
+      "id, provider_reference, verify_attempts, expires_at, status, phone_local, phone_intl, channel"
+    )
     .eq("user_id", params.userId)
     .eq("status", "sent")
     .order("created_at", { ascending: false })
@@ -311,9 +327,15 @@ export async function verifySellerPhoneCode(
       .from("whatsapp_otp_sessions")
       .update({ verify_attempts: session.verify_attempts + 1 })
       .eq("id", session.id);
+    console.info("[phone-verification] verify failed", {
+      sessionId: session.id,
+      channel: session.channel,
+      attempts: session.verify_attempts + 1,
+    });
     return { ok: false, error: PHONE_VERIFY_COPY.invalidCode, status: 400 };
   }
 
+  // Consume only after successful confirmation.
   const now = new Date().toISOString();
   await admin
     .from("whatsapp_otp_sessions")

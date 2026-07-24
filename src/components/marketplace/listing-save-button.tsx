@@ -97,6 +97,7 @@ export function ListingSaveButton({
       <Heart
         className={cn(
           compact ? "h-3.5 w-3.5" : "h-4 w-4",
+          saved && "animate-heart-pop",
           saved
             ? compact
               ? "fill-red-500 text-red-500"

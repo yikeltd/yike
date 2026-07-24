@@ -111,11 +111,11 @@ export function VehicleCard({
 
   if (isBrowse) {
     return (
-      <article className="group relative flex h-full flex-col overflow-hidden rounded-xl bg-transparent">
+      <article className="group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-transparent">
         <Link href={href} prefetch={!isDemo} className="block">
           <div
             className={cn(
-              "listing-thumb relative overflow-hidden rounded-xl bg-navy/5",
+              "listing-thumb relative overflow-hidden rounded-[1.25rem] bg-navy/5",
               BROWSE_THUMB_ASPECT,
             )}
           >
@@ -198,12 +198,12 @@ export function VehicleCard({
     <article
       className={
         isMarketplace
-          ? "group flex h-full flex-col overflow-hidden rounded-xl bg-transparent"
-          : "group flex h-full flex-col overflow-hidden rounded-xl border border-navy/8 bg-white shadow-card ring-1 ring-black/[0.03]"
+          ? "group card-lift flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-transparent"
+          : "group card-lift flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-navy/8 bg-white shadow-card ring-1 ring-black/[0.03]"
       }
     >
       <Link href={href} prefetch={!isDemo} className="block">
-        <div className="listing-thumb relative aspect-[4/3] overflow-hidden rounded-xl bg-navy/5">
+        <div className="listing-thumb relative aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-navy/5">
           {img ? (
             <Image
               src={img}

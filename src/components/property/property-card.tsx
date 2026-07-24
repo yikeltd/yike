@@ -263,7 +263,7 @@ export function PropertyCard({
   /* Inventory-first browse poster — photo · price · title · pin · verified */
   if (isBrowse) {
     return (
-      <article className="group relative flex h-full flex-col overflow-hidden rounded-xl bg-transparent">
+      <article className="group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-transparent">
         <Link
           href={href}
           prefetch={!isDemo}
@@ -272,7 +272,7 @@ export function PropertyCard({
         >
           <div
             className={cn(
-              "listing-thumb relative overflow-hidden rounded-xl bg-navy/5",
+              "listing-thumb relative overflow-hidden rounded-[1.25rem] bg-navy/5",
               BROWSE_THUMB_ASPECT,
             )}
           >
@@ -372,7 +372,7 @@ export function PropertyCard({
   return (
     <article
       className={cn(
-        "group card-lift relative flex h-full flex-col overflow-hidden rounded-xl bg-elevated shadow-card ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
+        "group card-lift relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-elevated shadow-card ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
         inline ? "" : ""
       )}
     >

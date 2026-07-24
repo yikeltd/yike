@@ -4,6 +4,7 @@ export {
   deliverOtp,
   isSendchampConfigured,
   resolveWhatsAppSender,
+  sendBrandedSmsOtp,
   sendOtpSms,
   sendOtpWhatsApp,
   sendWhatsAppText,

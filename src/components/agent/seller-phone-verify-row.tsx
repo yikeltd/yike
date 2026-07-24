@@ -27,7 +27,8 @@ export function SellerPhoneVerifyRow({
   const [phone, setPhone] = useState(phoneNumber);
   const [code, setCode] = useState("");
   const [codeVisible, setCodeVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const sendLockRef = useRef(false);
@@ -44,14 +45,14 @@ export function SellerPhoneVerifyRow({
   }, [cooldown]);
 
   async function sendCode() {
-    if (sendLockRef.current || loading || cooldown > 0) return;
+    if (sendLockRef.current || sending || verifying || cooldown > 0) return;
     const normalized = normalizeWhatsappInput(phone);
     if (!canRequestPhoneOtp(normalized)) {
       setError(PHONE_VERIFY_COPY.invalidPhone);
       return;
     }
     sendLockRef.current = true;
-    setLoading(true);
+    setSending(true);
     setError("");
     try {
       const res = await fetch("/api/profile/phone/send-code", {
@@ -66,21 +67,22 @@ export function SellerPhoneVerifyRow({
       }
       setPhone(normalized);
       setCodeVisible(true);
+      setCode("");
       setCooldown(RESEND_COOLDOWN_SEC);
     } finally {
-      setLoading(false);
+      setSending(false);
       sendLockRef.current = false;
     }
   }
 
   async function verifyCode() {
-    if (verifyLockRef.current || loading) return;
+    if (verifyLockRef.current || verifying || sending) return;
     if (code.trim().length !== 6) {
       setError(PHONE_VERIFY_COPY.invalidCode);
       return;
     }
     verifyLockRef.current = true;
-    setLoading(true);
+    setVerifying(true);
     setError("");
     try {
       const res = await fetch("/api/profile/phone/verify-code", {
@@ -103,7 +105,7 @@ export function SellerPhoneVerifyRow({
         typeof data.phone === "string" && data.phone ? data.phone : phone;
       onVerified(verifiedPhone, verifiedAt);
     } finally {
-      setLoading(false);
+      setVerifying(false);
       verifyLockRef.current = false;
     }
   }
@@ -129,7 +131,8 @@ export function SellerPhoneVerifyRow({
     );
   }
 
-  const sendBusy = loading || sendLockRef.current || cooldown > 0;
+  const sendBusy = sending || sendLockRef.current || cooldown > 0 || verifying;
+  const verifyBusy = verifying || verifyLockRef.current || sending;
 
   return (
     <div className="space-y-2">
@@ -143,16 +146,17 @@ export function SellerPhoneVerifyRow({
             onChange={(e) => setPhone(e.target.value)}
             className="mt-1 h-11 rounded-xl"
             autoComplete="tel"
+            disabled={sending || verifying}
           />
         </label>
         <Button
           type="button"
           variant="outline"
           className="h-11 shrink-0 rounded-xl border-gold/40 px-4 font-semibold text-navy"
-          disabled={loading || sendLockRef.current}
+          disabled={sendBusy || codeVisible}
           onClick={() => void sendCode()}
         >
-          {loading && !codeVisible ? PHONE_VERIFY_COPY.sending : "Verify"}
+          {sending && !codeVisible ? PHONE_VERIFY_COPY.sending : "Send code"}
         </Button>
       </div>
 
@@ -167,15 +171,16 @@ export function SellerPhoneVerifyRow({
               className="mt-1 h-11 rounded-xl tracking-[0.25em]"
               autoComplete="one-time-code"
               maxLength={6}
+              disabled={verifying}
             />
           </label>
           <Button
             type="button"
             className="h-11 shrink-0 rounded-xl px-4 font-semibold"
-            disabled={loading || code.trim().length !== 6}
+            disabled={verifyBusy || code.trim().length !== 6}
             onClick={() => void verifyCode()}
           >
-            {loading ? PHONE_VERIFY_COPY.verifying : "Verify Code"}
+            {verifying ? PHONE_VERIFY_COPY.verifying : "Verify Code"}
           </Button>
         </div>
       ) : null}

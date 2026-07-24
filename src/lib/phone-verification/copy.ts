@@ -1,15 +1,11 @@
 import type { PhoneVerificationChannel } from "./types";
 
-/** Single production SMS OTP body — {OTP} replaced at send time. */
-export const SMS_OTP_MESSAGE_TEMPLATE = `Yike
-
-Your verification code is:
-
-{OTP}
-
-Valid for 30 minutes.
-
-Never share this code.`;
+/**
+ * Single production SMS OTP body — exact plain text, one line.
+ * `{OTP}` is replaced at send time. No line breaks, HTML, emojis, or markdown.
+ */
+export const SMS_OTP_MESSAGE_TEMPLATE =
+  "Your verification code is: {OTP}. Code is valid for 30 minutes. Never share this code. Welcome to Yike. Happy Listing.";
 
 export function buildSmsOtpMessage(otp: string): string {
   return SMS_OTP_MESSAGE_TEMPLATE.replace("{OTP}", otp.trim());

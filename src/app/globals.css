@@ -186,6 +186,9 @@ html.yike-web-mode #yike-boot-splash,
   --shadow-float-lg: 0 8px 24px rgba(10, 35, 80, 0.08), 0 2px 6px rgba(10, 35, 80, 0.05);
   --shadow-card: 0 1px 2px rgba(3, 27, 78, 0.04), 0 8px 24px -10px rgba(3, 27, 78, 0.12);
   --shadow-card-hover: 0 2px 4px rgba(3, 27, 78, 0.05), 0 16px 36px -12px rgba(3, 27, 78, 0.18);
+  --shadow-hero: 0 4px 6px rgba(3, 27, 78, 0.04), 0 20px 48px -16px rgba(3, 27, 78, 0.22);
+  --shadow-float-bar: 0 8px 32px rgba(3, 27, 78, 0.12), 0 2px 8px rgba(3, 27, 78, 0.06),
+    0 0 0 1px rgba(3, 27, 78, 0.04);
   --shadow-glow-gold: 0 0 0 1px rgba(228, 181, 71, 0.22), 0 4px 16px rgba(228, 181, 71, 0.28),
     0 2px 8px rgba(10, 35, 80, 0.08);
   --shadow-search: 0 4px 6px rgba(3, 27, 78, 0.04), 0 24px 56px -16px rgba(2, 20, 51, 0.42),
@@ -194,9 +197,18 @@ html.yike-web-mode #yike-boot-splash,
   --shadow-cta: 0 2px 8px rgba(10, 35, 80, 0.12), 0 1px 2px rgba(10, 35, 80, 0.06);
   --border-glass: rgba(10, 35, 80, 0.08);
   --border-glass-strong: rgba(10, 35, 80, 0.14);
-  --radius-card: 1rem;
-  --radius-card-lg: 1.25rem;
+  --border-premium: rgba(3, 27, 78, 0.06);
+  /* 20–24px premium surfaces (Design Language 2026) */
+  --radius-card: 1.25rem;
+  --radius-card-lg: 1.5rem;
+  --radius-tile: 1.125rem;
   --radius-search: 1.35rem;
+  --warm-stone: #f3efe8;
+  --badge-emerald: #059669;
+  --badge-purple: #7c3aed;
+  --badge-sky: #0284c7;
+  --badge-orange: #ea580c;
+  --badge-slate: #475569;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-fast: 150ms;
@@ -231,6 +243,10 @@ html.yike-web-mode #yike-boot-splash,
   --shadow-float-lg: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.4);
   --shadow-card-hover: 0 2px 6px rgba(0, 0, 0, 0.4), 0 18px 40px rgba(0, 0, 0, 0.5);
+  --shadow-hero: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-float-bar: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --warm-stone: #0e2038;
+  --border-premium: rgba(255, 255, 255, 0.08);
   --shadow-glow-gold: 0 0 0 1px rgba(232, 188, 74, 0.2), 0 4px 16px rgba(232, 188, 74, 0.18),
     0 2px 12px rgba(0, 0, 0, 0.25);
   --shadow-search: 0 24px 56px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
@@ -278,6 +294,7 @@ html.yike-web-mode #yike-boot-splash,
   --color-ivory: var(--ivory);
   --color-sand: var(--sand);
   --color-warm-neutral: var(--warm-neutral);
+  --color-warm-stone: var(--warm-stone);
   --color-navy: var(--navy);
   --color-navy-dark: var(--navy-dark);
   --color-navy-mid: var(--navy-mid);
@@ -343,6 +360,114 @@ body {
 }
 .home-band-warm {
   background: var(--warm-neutral);
+}
+
+/* Listing detail page section rhythm — Soft Ivory / White / Warm Stone */
+.detail-band-ivory {
+  background: var(--ivory);
+}
+.detail-band-white {
+  background: #ffffff;
+}
+.detail-band-stone {
+  background: var(--warm-stone);
+}
+
+.shadow-hero {
+  box-shadow: var(--shadow-hero);
+}
+
+.shadow-float-bar {
+  box-shadow: var(--shadow-float-bar);
+}
+
+/* Cinematic listing hero media */
+.detail-hero {
+  border-radius: var(--radius-card-lg);
+  box-shadow: var(--shadow-hero);
+  overflow: hidden;
+  border: 1px solid var(--border-premium);
+}
+
+.detail-hero-mobile {
+  box-shadow: var(--shadow-hero);
+  border-radius: 0 0 var(--radius-card-lg) var(--radius-card-lg);
+  overflow: hidden;
+}
+
+/* Premium info tiles — replace flat gray spec boxes */
+.info-tile {
+  border-radius: var(--radius-tile);
+  background: color-mix(in srgb, var(--elevated) 92%, var(--ivory) 8%);
+  border: 1px solid var(--border-premium);
+  box-shadow: 0 1px 2px rgba(3, 27, 78, 0.03), 0 4px 14px -8px rgba(3, 27, 78, 0.1);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .info-tile:hover {
+    border-color: var(--border-glass-strong);
+    box-shadow: var(--shadow-card);
+    transform: translateY(-1px);
+  }
+}
+
+.dark .info-tile {
+  background: color-mix(in srgb, var(--elevated) 88%, transparent);
+  border-color: var(--border-glass);
+}
+
+/* Floating contact / WhatsApp bar — banking-app feel */
+.detail-contact-bar {
+  background: color-mix(in srgb, var(--elevated) 78%, transparent);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border-radius: var(--radius-card-lg);
+  border: 1px solid color-mix(in srgb, var(--gold) 22%, var(--border-glass));
+  box-shadow: var(--shadow-float-bar);
+}
+
+/* Filter / chip press polish */
+.filter-chip {
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.filter-chip:active {
+  transform: scale(0.96);
+}
+
+@keyframes heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-heart-pop {
+  animation: heart-pop 320ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info-tile,
+  .card-lift,
+  .filter-chip,
+  .animate-heart-pop,
+  .animate-image-reveal,
+  .animate-fade-up {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 .home-rail-section {

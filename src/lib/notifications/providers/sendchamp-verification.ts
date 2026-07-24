@@ -111,16 +111,17 @@ export function isSendchampVerificationConfigured(): boolean {
 
 /**
  * Create a Sendchamp Verification OTP session.
- * - `inAppToken: true` — register OTP for confirm without Sendchamp channel delivery
- *   (Yike sends branded SMS separately).
- * - `inAppToken: false` — Sendchamp generates and delivers via channel.
+ * - WhatsApp / email: Sendchamp delivers.
+ * - SMS: **do not use for delivery**. Production SMS uses `sendBrandedSmsOtp` only.
+ *   If channel is sms, `inAppToken` must be true (register without SMS send). Prefer
+ *   not calling this for SMS at all.
  */
 export async function createSendchampVerificationOtp(params: {
   phoneIntl: string;
   purpose: SendchampVerificationPurpose;
   email?: string;
   channel?: SendchampVerificationChannel;
-  /** Server-generated OTP when delivering branded SMS ourselves. */
+  /** Server-generated OTP when registering without Sendchamp delivery. */
   token?: string;
   inAppToken?: boolean;
 }): Promise<
@@ -129,6 +130,16 @@ export async function createSendchampVerificationOtp(params: {
 > {
   const channel = resolveChannel(params.channel);
   const expiresMinutes = otpExpiryMinutes();
+  const inAppToken = params.inAppToken ?? false;
+
+  // Block accidental Sendchamp SMS delivery (default “Hi There” template).
+  if (channel === "sms" && !inAppToken) {
+    return {
+      ok: false,
+      error: "SMS must use sendBrandedSmsOtp — Verification API SMS delivery is disabled",
+      status: 400,
+    };
+  }
 
   const body: Record<string, unknown> = {
     channel,
@@ -142,14 +153,14 @@ export async function createSendchampVerificationOtp(params: {
       brand: "Yike",
       purpose: params.purpose,
     },
-    in_app_token: params.inAppToken ?? false,
+    in_app_token: inAppToken,
   };
 
   if (params.token) {
     body.token = params.token;
   }
 
-  // SMS requires approved sender ID (production: YIKE).
+  // SMS requires approved sender ID (production: YIKE) when registering a session.
   if (channel === "sms") {
     body.sender = resolveSmsSender(process.env.SENDCHAMP_SMS_SENDER ?? "YIKE");
   }
@@ -174,8 +185,8 @@ export async function createSendchampVerificationOtp(params: {
 }
 
 /**
- * @deprecated Prefer createSendchampVerificationOtp — kept for WhatsApp profile callers.
- * Defaults to SENDCHAMP_OTP_CHANNEL (sms).
+ * @deprecated Prefer createSendchampVerificationOtp with channel whatsapp.
+ * Always forces WhatsApp so SMS Verification API is never used accidentally.
  */
 export async function createSendchampWhatsappVerification(params: {
   phoneIntl: string;
@@ -187,6 +198,7 @@ export async function createSendchampWhatsappVerification(params: {
 > {
   return createSendchampVerificationOtp({
     ...params,
+    channel: "whatsapp",
     inAppToken: false,
   });
 }
