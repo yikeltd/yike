@@ -25,7 +25,7 @@
 ## Founder actions before go-live
 
 1. Review code locally at `http://127.0.0.1:3000`
-2. Set Coolify WhatsApp env → `2348103514329`
+2. Set Coolify WhatsApp env → `2348035143299`
 3. Decide inventory:
    - **A)** Keep UI fixtures until real listings, or  
    - **B)** `ALLOW_PRODUCTION_SEED=1` seed + admin Sample tools

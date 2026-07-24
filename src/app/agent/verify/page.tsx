@@ -8,8 +8,7 @@ import {
 
 export const metadata = {
   title: "Verify Yourself to Start Listing | Yike",
-  description:
-    "Verify your phone and complete a short seller profile before listing on Yike.",
+  description: "Seller verification for listing on Yike.",
 };
 
 export default async function SellerVerifyPage() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +34,8 @@ export function PhoneSmsVerificationPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const sendLockRef = useRef(false);
+  const verifyLockRef = useRef(false);
 
   useEffect(() => {
     setPhone(phoneNumber);
@@ -47,68 +49,80 @@ export function PhoneSmsVerificationPanel({
   }, [cooldown]);
 
   async function sendCode(phoneValue: string) {
+    if (sendLockRef.current || loading || cooldown > 0) return;
     const normalized = normalizeWhatsappInput(phoneValue);
     if (!canRequestPhoneOtp(normalized)) {
       setError(PHONE_VERIFY_COPY.invalidPhone);
       return;
     }
 
+    sendLockRef.current = true;
     setLoading(true);
     setError("");
-    const res = await fetch("/api/profile/phone/send-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalized }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
+    try {
+      const res = await fetch("/api/profile/phone/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: normalized }),
+      });
+      const data = await res.json().catch(() => ({}));
 
-    if (!res.ok) {
-      setError((data.error as string) || PHONE_VERIFY_COPY.providerUnavailable);
-      return;
+      if (!res.ok) {
+        setError((data.error as string) || PHONE_VERIFY_COPY.providerUnavailable);
+        return;
+      }
+
+      setPhone(normalized);
+      onNumberUpdated?.(normalized);
+      setStep("code");
+      setCooldown(RESEND_COOLDOWN_SEC);
+    } finally {
+      setLoading(false);
+      sendLockRef.current = false;
     }
-
-    setPhone(normalized);
-    onNumberUpdated?.(normalized);
-    setStep("code");
-    setCooldown(RESEND_COOLDOWN_SEC);
   }
 
   async function verifyCode() {
+    if (verifyLockRef.current || loading) return;
     if (code.trim().length !== 6) {
       setError(PHONE_VERIFY_COPY.invalidCode);
       return;
     }
 
+    verifyLockRef.current = true;
     setLoading(true);
     setError("");
-    const res = await fetch("/api/profile/phone/verify-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: code.trim() }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
+    try {
+      const res = await fetch("/api/profile/phone/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
 
-    if (!res.ok) {
-      setError((data.error as string) || PHONE_VERIFY_COPY.invalidCode);
-      return;
+      if (!res.ok) {
+        setError((data.error as string) || PHONE_VERIFY_COPY.invalidCode);
+        return;
+      }
+
+      onVerified?.();
+    } finally {
+      setLoading(false);
+      verifyLockRef.current = false;
     }
-
-    onVerified?.();
   }
 
   const displayNumber = formatWhatsappDisplay(phone || phoneNumber);
   const shellClass = compact
     ? "rounded-2xl border border-border bg-elevated p-4"
     : "space-y-4";
+  const sendBusy = loading || sendLockRef.current || cooldown > 0;
 
   return (
     <div className={shellClass}>
       {!compact ? null : (
         <div className="mb-3">
           <h2 className="text-base font-bold text-navy">{PHONE_VERIFY_COPY.cardTitle}</h2>
-          <p className="mt-1 text-sm text-muted">{PHONE_VERIFY_COPY.screenBody}</p>
         </div>
       )}
 
@@ -119,11 +133,10 @@ export function PhoneSmsVerificationPanel({
               {displayNumber}
             </p>
           ) : null}
-          <p className="text-xs text-muted">{PHONE_VERIFY_COPY.validityHint}</p>
           <Button
             type="button"
             className="w-full"
-            disabled={loading}
+            disabled={loading || sendLockRef.current}
             onClick={() => void sendCode(phone || phoneNumber)}
           >
             {loading ? PHONE_VERIFY_COPY.sending : PHONE_VERIFY_COPY.sendButton}
@@ -149,14 +162,13 @@ export function PhoneSmsVerificationPanel({
             inputMode="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="08103514329 or +2348103514329"
             className="h-11 rounded-xl"
             autoComplete="tel"
           />
           <Button
             type="button"
             className="w-full"
-            disabled={loading}
+            disabled={loading || sendLockRef.current}
             onClick={() => void sendCode(phone)}
           >
             {loading ? PHONE_VERIFY_COPY.sending : PHONE_VERIFY_COPY.sendButton}
@@ -169,8 +181,6 @@ export function PhoneSmsVerificationPanel({
           <p className="text-sm font-semibold tracking-wide text-foreground">
             {displayNumber}
           </p>
-          <p className="text-xs text-muted">{PHONE_VERIFY_COPY.sentSms}</p>
-          <p className="text-xs text-muted">{PHONE_VERIFY_COPY.validityHint}</p>
           <label className="sr-only" htmlFor="phone-sms-otp">
             {PHONE_VERIFY_COPY.codeLabel}
           </label>
@@ -179,7 +189,6 @@ export function PhoneSmsVerificationPanel({
             inputMode="numeric"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder={PHONE_VERIFY_COPY.codePlaceholder}
             className="h-12 rounded-xl text-center text-lg tracking-[0.35em]"
             autoComplete="one-time-code"
             maxLength={6}
@@ -195,7 +204,7 @@ export function PhoneSmsVerificationPanel({
           <button
             type="button"
             className="w-full text-xs font-semibold text-navy underline disabled:opacity-50"
-            disabled={loading || cooldown > 0}
+            disabled={sendBusy}
             onClick={() => void sendCode(phone)}
           >
             {cooldown > 0

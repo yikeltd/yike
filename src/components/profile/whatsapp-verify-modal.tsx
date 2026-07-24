@@ -71,7 +71,7 @@ export function WhatsAppVerificationModal({
   async function sendCode(phoneValue: string) {
     const normalized = normalizeWhatsappInput(phoneValue);
     if (!canRequestPhoneOtp(normalized)) {
-      setError("Enter a valid Nigerian number (e.g. 08103514329 or +2348103514329).");
+      setError("Enter a valid Nigerian number (e.g. 08035143299 or +2348035143299).");
       return;
     }
 
@@ -189,7 +189,7 @@ export function WhatsAppVerificationModal({
               inputMode="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="08103514329 or +2348103514329"
+              placeholder="08035143299 or +2348035143299"
               className="h-11 rounded-xl"
               autoComplete="tel"
             />

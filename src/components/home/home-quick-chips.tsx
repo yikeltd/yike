@@ -37,18 +37,24 @@ export function HomeQuickChips({
             type="button"
             role="option"
             aria-selected={active}
+            aria-label={chip.label}
             onClick={() => onSelect(active ? null : chip.id)}
             className={cn(
-              "pressable shrink-0 font-bold transition-all duration-200",
+              "pressable inline-flex shrink-0 items-center gap-1.5 font-bold transition-all duration-200",
               compact
-                ? "rounded-lg px-2.5 py-1.5 text-[11px] sm:rounded-full sm:text-xs"
+                ? "rounded-xl px-2.5 py-1.5 text-[11px] sm:rounded-full sm:text-xs"
                 : "rounded-full px-3.5 py-2 text-xs sm:text-sm",
               active
                 ? "bg-navy text-white shadow-[0_6px_18px_rgba(3,27,78,0.22)]"
-                : "bg-white text-navy/70 ring-1 ring-navy/10 hover:text-navy hover:ring-navy/20",
+                : "bg-white/95 text-navy/70 shadow-sm ring-1 ring-navy/10 hover:-translate-y-px hover:text-navy hover:ring-navy/20 hover:shadow-md",
             )}
           >
-            {chip.label}
+            {chip.emoji ? (
+              <span className="text-[0.95em] leading-none" aria-hidden>
+                {chip.emoji}
+              </span>
+            ) : null}
+            <span>{chip.label}</span>
           </button>
         );
       })}

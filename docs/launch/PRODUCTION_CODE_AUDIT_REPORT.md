@@ -14,7 +14,7 @@ Code changes are launch-oriented: location friction removed, official WhatsApp n
 | Area | Status |
 |------|--------|
 | Location Near Me silent fallback | Done |
-| Official WhatsApp E.164 | Done (`2348103514329`) |
+| Official WhatsApp E.164 | Done (`2348035143299`) |
 | Empty-inventory fixtures (no public DEMO) | Done |
 | Seed script `is_sample` (prod write gated) | Done — **DB not written** |
 | WhatsApp lead ref + UTM/device | Done |
@@ -32,7 +32,7 @@ Code changes are launch-oriented: location friction removed, official WhatsApp n
 
 1. Production currently has **0 published listings** — UI fixtures fill rails until real inventory or founder-approved seed.
 2. Lead UTM columns require founder apply of migration; metadata already stored in `listing_leads.metadata` + `lead_events`.
-3. Env override: set `YIKE_WHATSAPP_NUMBER` / Coolify env to `2348103514329` if still pointing at old line.
+3. Env override: set `YIKE_WHATSAPP_NUMBER` / Coolify env to `2348035143299` if still pointing at old line.
 
 ## DB writes this sprint
 

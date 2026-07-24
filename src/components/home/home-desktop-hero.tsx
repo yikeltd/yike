@@ -6,6 +6,9 @@ import {
   ShieldCheck,
   Car,
   Home,
+  MapPinned,
+  BadgeCheck,
+  Sparkles,
 } from "lucide-react";
 import { BrowseListingsBlock } from "@/components/search/browse-listings-block";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
@@ -18,6 +21,12 @@ import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { cn } from "@/lib/utils";
 
 const DESKTOP_HERO_IMAGE = "/images/hero/yike-city-hero.webp";
+
+const HERO_STATS = [
+  { label: "New this week", value: "Fresh listings", icon: Sparkles },
+  { label: "Verified sellers", value: "Trust-checked", icon: BadgeCheck },
+  { label: "Coverage", value: "36 states", icon: MapPinned },
+] as const;
 
 type HomeDesktopHeroProps = {
   category: HomeMarketplaceCategory;
@@ -78,12 +87,13 @@ export function HomeDesktopHero({
               alt=""
               fill
               priority
-              className="object-cover object-center"
+              className="object-cover object-center scale-[1.02]"
               sizes="(min-width: 1280px) 1280px, 100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#021433]/88 via-[#031B4E]/45 to-[#031B4E]/10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#021433]/55 via-transparent to-transparent" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_88%_38%,rgba(228,181,71,0.1),transparent_65%)]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#021433]/90 via-[#031B4E]/52 to-[#031B4E]/18" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#021433]/62 via-transparent to-[#021433]/15" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_88%_38%,rgba(228,181,71,0.14),transparent_65%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_35%_at_18%_78%,rgba(255,255,255,0.06),transparent_70%)]" />
           </div>
 
           <div className="relative flex items-start justify-between gap-6 px-8 pb-36 pt-10 xl:gap-10 xl:px-12 xl:pb-40 xl:pt-12">
@@ -121,7 +131,7 @@ export function HomeDesktopHero({
                     className={cn(
                       "pressable group inline-flex min-h-[48px] items-center gap-2 rounded-2xl px-6 text-sm font-bold transition-all",
                       !isVehicle
-                        ? "bg-gold text-navy shadow-[0_8px_28px_rgba(228,181,71,0.35)] hover:scale-[1.02] active:scale-[0.98]"
+                        ? "yike-btn-accent bg-gold text-navy"
                         : "border border-white/24 bg-white/10 font-semibold text-white backdrop-blur-sm hover:border-white/40 hover:bg-white/[0.14]",
                     )}
                   >
@@ -141,7 +151,7 @@ export function HomeDesktopHero({
                       className={cn(
                         "pressable group inline-flex min-h-[48px] items-center gap-2 rounded-2xl px-6 text-sm transition-all",
                         isVehicle
-                          ? "bg-gold font-bold text-navy shadow-[0_8px_28px_rgba(228,181,71,0.35)] hover:scale-[1.02] active:scale-[0.98]"
+                          ? "yike-btn-accent bg-gold font-bold text-navy"
                           : "border border-white/24 bg-white/10 font-semibold text-white backdrop-blur-sm hover:border-white/40 hover:bg-white/[0.14]",
                       )}
                     >
@@ -157,6 +167,28 @@ export function HomeDesktopHero({
                   ) : null}
                 </div>
               </div>
+
+              <ul
+                className="mt-8 flex flex-wrap gap-2.5 xl:mt-9"
+                aria-label="Marketplace highlights"
+              >
+                {HERO_STATS.map(({ label, value, icon: Icon }) => (
+                  <li
+                    key={label}
+                    className="inline-flex items-center gap-2.5 rounded-2xl border border-white/12 bg-white/[0.07] px-3.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md"
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-gold/15 text-gold">
+                      <Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55">
+                        {label}
+                      </span>
+                      <span className="block text-xs font-bold text-white/90">{value}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <HomeDesktopTrustedAgentsCard config={trustedAgents} className="mt-1" />

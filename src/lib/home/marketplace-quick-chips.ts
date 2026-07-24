@@ -4,24 +4,26 @@ import type { HomeMarketplaceCategory } from "@/lib/home/marketplace-category";
 export type QuickChip = {
   id: string;
   label: string;
+  /** Optional visual prefix — decorative; label remains accessible text. */
+  emoji?: string;
 };
 
 export const PROPERTY_QUICK_CHIPS: readonly QuickChip[] = [
-  { id: "apartments", label: "Apartments" },
-  { id: "duplexes", label: "Duplexes" },
-  { id: "land", label: "Land" },
-  { id: "commercial", label: "Commercial" },
-  { id: "luxury", label: "Luxury" },
-  { id: "shortlets", label: "Short Lets" },
+  { id: "apartments", label: "Apartments", emoji: "🏠" },
+  { id: "duplexes", label: "Duplexes", emoji: "🏡" },
+  { id: "land", label: "Land", emoji: "🌿" },
+  { id: "commercial", label: "Commercial", emoji: "🏢" },
+  { id: "luxury", label: "Luxury", emoji: "✨" },
+  { id: "shortlets", label: "Short Lets", emoji: "🔑" },
 ] as const;
 
 export const VEHICLE_QUICK_CHIPS: readonly QuickChip[] = [
-  { id: "car", label: "Cars" },
-  { id: "suv", label: "SUVs" },
-  { id: "pickup", label: "Pickups" },
-  { id: "bus", label: "Buses" },
-  { id: "motorcycle", label: "Motorcycles" },
-  { id: "ev", label: "EVs" },
+  { id: "car", label: "Cars", emoji: "🚗" },
+  { id: "suv", label: "SUVs", emoji: "🚙" },
+  { id: "pickup", label: "Pickups", emoji: "🛻" },
+  { id: "bus", label: "Buses", emoji: "🚌" },
+  { id: "motorcycle", label: "Motorcycles", emoji: "🏍️" },
+  { id: "ev", label: "EVs", emoji: "⚡" },
 ] as const;
 
 const APARTMENT_TYPES = new Set([

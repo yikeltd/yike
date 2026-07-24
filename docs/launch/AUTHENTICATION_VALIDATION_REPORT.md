@@ -13,17 +13,17 @@
 |------|--------|
 | Email OTP signup / login | Intact — no demo banners |
 | PIN gate (admin) | Intact — used by sample purge |
-| Phone / WhatsApp verify UI | Example numbers updated to official format style (`08103514329`) |
+| Phone / WhatsApp verify UI | Example numbers updated to official format style (`08035143299`) |
 | Seller onboarding / verification | No changes required for polish sprint |
 
 ## Fixes applied (non-blocking)
 
-- Support WhatsApp constant aligned so verification banners / support CTAs use `+234 810 351 4329`
+- Support WhatsApp constant aligned so verification banners / support CTAs use `+234 803 514 3299`
 - Example placeholders that still showed the old `803…` pattern updated for consistency
 
 ## Residual
 
-- Coolify / Sendchamp sender env may still carry the old digits — confirm production env matches `2348103514329`
+- Coolify / Sendchamp sender env may still carry the old digits — confirm production env matches `2348035143299`
 - Full OTP delivery depends on Sendchamp / email provider health (out of scope)
 
 ## Recommendation

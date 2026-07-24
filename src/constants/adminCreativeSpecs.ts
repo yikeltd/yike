@@ -80,7 +80,15 @@ export const AD_PLACEMENT_CREATIVE_SPECS: Record<AdPlacementKey, AdminCreativeSp
     displaySize: "Above related listings",
     preset: "card",
     format: ADMIN_UPLOAD_FORMAT,
-    notes: "Keep key copy away from bottom — WhatsApp bar stays visible.",
+    notes: "Keep key copy away from bottom — WhatsApp bar stays visible. Inactive = hidden (no reserved space).",
+  },
+  vehicle_detail: {
+    designSize: "768 × 480 px",
+    aspectRatio: "16 : 10",
+    displaySize: "Above similar vehicles",
+    preset: "card",
+    format: ADMIN_UPLOAD_FORMAT,
+    notes: "Inactive = hidden (no reserved space).",
   },
   footer_strip: {
     designSize: "1200 × 200 px",

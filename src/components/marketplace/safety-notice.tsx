@@ -1,44 +1,46 @@
 import Link from "next/link";
+import { Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /**
- * Compact marketplace safety card — product UX only (not Trust Runtime).
- * Minimal vertical space; full tips on /safety.
+ * Marketplace safety — product UX only (not Trust Runtime).
+ * Prefer the compact link on search + detail surfaces.
  */
 
-const TIPS = [
-  "Meet in safe public places",
-  "Verify before payment",
-  "Report suspicious listings",
-] as const;
+/** Inline link for search / detail pages — does not compete with primary CTAs. */
+export function MarketplaceSafetyTipsLink({
+  className,
+}: {
+  className?: string;
+}) {
+  return (
+    <Link
+      href="/safety"
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xs font-semibold text-navy/50 transition-colors hover:text-navy",
+        className
+      )}
+    >
+      <Shield className="h-3.5 w-3.5 text-gold" aria-hidden />
+      Safety Tips →
+    </Link>
+  );
+}
 
+/**
+ * Compact Stay Safe control for listing detail.
+ * Full tip list lives on /safety — keeps detail pages free of tall safety cards.
+ */
 export function MarketplaceSafetyNotice({
   vertical = "property",
+  className,
 }: {
   vertical?: "property" | "vehicle" | "seller" | "dealer";
+  className?: string;
 }) {
   void vertical;
 
-  return (
-    <aside className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-navy/8 bg-navy/[0.03] px-3.5 py-2.5 text-sm text-navy/75">
-      <p className="shrink-0 text-xs font-bold uppercase tracking-wide text-navy">
-        Stay safe
-      </p>
-      <ul className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1 text-xs text-navy/65 sm:text-sm">
-        {TIPS.map((tip) => (
-          <li key={tip} className="flex items-center gap-1.5">
-            <span className="h-1 w-1 shrink-0 rounded-full bg-gold" aria-hidden />
-            {tip}
-          </li>
-        ))}
-      </ul>
-      <Link
-        href="/safety"
-        className="shrink-0 text-xs font-bold text-gold-dark hover:underline sm:text-sm"
-      >
-        Learn More
-      </Link>
-    </aside>
-  );
+  return <MarketplaceSafetyTipsLink className={className} />;
 }
 
 /** @deprecated Prefer MarketplaceSafetyNotice — kept for import compatibility. */

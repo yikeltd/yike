@@ -1,13 +1,15 @@
 import type { PhoneVerificationChannel } from "./types";
 
-/** Approved production SMS OTP body — {OTP} replaced at send time. */
-export const SMS_OTP_MESSAGE_TEMPLATE = `Welcome to Yike, your verification code is {OTP}.
+/** Single production SMS OTP body — {OTP} replaced at send time. */
+export const SMS_OTP_MESSAGE_TEMPLATE = `Yike
 
-It's valid for 30 minutes.
+Your verification code is:
 
-Do not share it with anyone.
+{OTP}
 
-Happy listing.`;
+Valid for 30 minutes.
+
+Never share this code.`;
 
 export function buildSmsOtpMessage(otp: string): string {
   return SMS_OTP_MESSAGE_TEMPLATE.replace("{OTP}", otp.trim());
@@ -30,7 +32,7 @@ export const PHONE_VERIFY_COPY = {
   phoneLabel: "Phone number",
   codeLabel: "Verification code",
   codePlaceholder: "6-digit code",
-  invalidPhone: "Enter a valid Nigerian number (e.g. 08103514329).",
+  invalidPhone: "Enter a valid Nigerian number (e.g. 08035143299).",
   invalidCode: "Enter the 6-digit code from your SMS.",
   verified: "Phone verified. You can continue listing.",
   providerUnavailable:

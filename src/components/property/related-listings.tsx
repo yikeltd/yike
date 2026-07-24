@@ -47,7 +47,7 @@ export async function RelatedListings({ property }: { property: Property }) {
   const allProps = sections.flatMap((s) => s.properties);
 
   return (
-    <div className="mt-8 space-y-10 border-t border-surface pt-8 lg:mt-12">
+    <div className="mt-4 space-y-8 border-t border-surface pt-5 lg:mt-6 lg:pt-6">
       <NearbyPrefetch properties={allProps} />
       {sections.map((section) => (
         <section key={section.title}>

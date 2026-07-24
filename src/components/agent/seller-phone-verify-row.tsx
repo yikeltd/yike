@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +22,7 @@ export function SellerPhoneVerifyRow({
   phoneNumber?: string;
   verified: boolean;
   verifiedAt?: string | null;
-  onVerified: (phone: string) => void;
+  onVerified: (phone: string, verifiedAt: string) => void;
 }) {
   const [phone, setPhone] = useState(phoneNumber);
   const [code, setCode] = useState("");
@@ -30,6 +30,8 @@ export function SellerPhoneVerifyRow({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const sendLockRef = useRef(false);
+  const verifyLockRef = useRef(false);
 
   useEffect(() => {
     setPhone(phoneNumber);
@@ -42,50 +44,68 @@ export function SellerPhoneVerifyRow({
   }, [cooldown]);
 
   async function sendCode() {
+    if (sendLockRef.current || loading || cooldown > 0) return;
     const normalized = normalizeWhatsappInput(phone);
     if (!canRequestPhoneOtp(normalized)) {
       setError(PHONE_VERIFY_COPY.invalidPhone);
       return;
     }
+    sendLockRef.current = true;
     setLoading(true);
     setError("");
-    const res = await fetch("/api/profile/phone/send-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalized }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError((data.error as string) || PHONE_VERIFY_COPY.providerUnavailable);
-      return;
+    try {
+      const res = await fetch("/api/profile/phone/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: normalized }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((data.error as string) || PHONE_VERIFY_COPY.providerUnavailable);
+        return;
+      }
+      setPhone(normalized);
+      setCodeVisible(true);
+      setCooldown(RESEND_COOLDOWN_SEC);
+    } finally {
+      setLoading(false);
+      sendLockRef.current = false;
     }
-    setPhone(normalized);
-    setCodeVisible(true);
-    setCooldown(RESEND_COOLDOWN_SEC);
   }
 
   async function verifyCode() {
+    if (verifyLockRef.current || loading) return;
     if (code.trim().length !== 6) {
       setError(PHONE_VERIFY_COPY.invalidCode);
       return;
     }
+    verifyLockRef.current = true;
     setLoading(true);
     setError("");
-    const res = await fetch("/api/profile/phone/verify-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: code.trim() }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError((data.error as string) || PHONE_VERIFY_COPY.invalidCode);
-      return;
+    try {
+      const res = await fetch("/api/profile/phone/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((data.error as string) || PHONE_VERIFY_COPY.invalidCode);
+        return;
+      }
+      setCodeVisible(false);
+      setCode("");
+      const verifiedAt =
+        typeof data.phoneVerifiedAt === "string"
+          ? data.phoneVerifiedAt
+          : new Date().toISOString();
+      const verifiedPhone =
+        typeof data.phone === "string" && data.phone ? data.phone : phone;
+      onVerified(verifiedPhone, verifiedAt);
+    } finally {
+      setLoading(false);
+      verifyLockRef.current = false;
     }
-    setCodeVisible(false);
-    setCode("");
-    onVerified(phone);
   }
 
   if (verified) {
@@ -109,6 +129,8 @@ export function SellerPhoneVerifyRow({
     );
   }
 
+  const sendBusy = loading || sendLockRef.current || cooldown > 0;
+
   return (
     <div className="space-y-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -119,7 +141,6 @@ export function SellerPhoneVerifyRow({
             inputMode="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="08103514329"
             className="mt-1 h-11 rounded-xl"
             autoComplete="tel"
           />
@@ -128,7 +149,7 @@ export function SellerPhoneVerifyRow({
           type="button"
           variant="outline"
           className="h-11 shrink-0 rounded-xl border-gold/40 px-4 font-semibold text-navy"
-          disabled={loading}
+          disabled={loading || sendLockRef.current}
           onClick={() => void sendCode()}
         >
           {loading && !codeVisible ? PHONE_VERIFY_COPY.sending : "Verify"}
@@ -143,7 +164,6 @@ export function SellerPhoneVerifyRow({
               inputMode="numeric"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="6-digit code"
               className="mt-1 h-11 rounded-xl tracking-[0.25em]"
               autoComplete="one-time-code"
               maxLength={6}
@@ -164,16 +184,14 @@ export function SellerPhoneVerifyRow({
         <button
           type="button"
           className="text-xs font-semibold text-navy underline disabled:opacity-50"
-          disabled={loading || cooldown > 0}
+          disabled={sendBusy}
           onClick={() => void sendCode()}
         >
           {cooldown > 0
             ? PHONE_VERIFY_COPY.resendCooldown(cooldown)
             : PHONE_VERIFY_COPY.resendButton}
         </button>
-      ) : (
-        <p className="text-[11px] text-muted">{PHONE_VERIFY_COPY.validityHint}</p>
-      )}
+      ) : null}
 
       {error ? <p className="text-xs text-danger">{error}</p> : null}
     </div>

@@ -121,14 +121,11 @@ export function buildSellerTrustProgress(
 }
 
 export const SELLER_VERIFICATION_CONSENT =
-  "I confirm that the information I have provided is accurate. I agree to follow Yike's marketplace rules and understand that false information or fraudulent listings may result in account suspension or permanent removal.";
+  "I confirm the information provided is accurate and agree to Yike's marketplace rules.";
 
 export const SELLER_VERIFICATION_COPY = {
   title: "Verify Yourself to Start Listing",
-  subtitle:
-    "To keep Yike safe and trusted, every seller must verify their phone number and complete a short seller profile before publishing listings.",
   progressTitle: "Seller Verification",
   completeCta: "Complete Verification",
   phoneVerifiedLabel: "Phone Number Verified",
-  addressHint: "House Number, Street, Area, City, Postal Code optional",
 } as const;

@@ -7,6 +7,7 @@ export const AD_PLACEMENT_KEYS = [
   "search_feed_mid",
   "location_top",
   "property_detail",
+  "vehicle_detail",
   "footer_strip",
   "auth_login_footer",
   "email_transactional",
@@ -47,8 +48,13 @@ export const AD_PLACEMENT_META: Record<
     aspect: "banner",
   },
   property_detail: {
-    label: "Listing detail page",
-    hint: "Below description, before related listings. Do not cover WhatsApp bar.",
+    label: "Property detail page",
+    hint: "Below description, before related listings. Renders only when active — no empty gap. Do not cover WhatsApp bar.",
+    aspect: "card",
+  },
+  vehicle_detail: {
+    label: "Vehicle detail page",
+    hint: "Below description, before similar vehicles. Renders only when active — no empty gap.",
     aspect: "card",
   },
   footer_strip: {

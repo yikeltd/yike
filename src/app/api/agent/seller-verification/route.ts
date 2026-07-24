@@ -147,7 +147,7 @@ export async function POST(request: Request) {
   const { data: profile } = await admin
     .from("profiles")
     .select(
-      "role, email_verified, phone_verified, whatsapp_verification_status, whatsapp_verified_at, is_banned, full_name, phone, whatsapp, email, account_type, verification_status, verified_badge, avatar_url"
+      "role, email_verified, phone_verified, phone_verified_at, whatsapp_verification_status, whatsapp_verified_at, is_banned, full_name, phone, whatsapp, email, account_type, verification_status, verified_badge, avatar_url"
     )
     .eq("id", user.id)
     .single();

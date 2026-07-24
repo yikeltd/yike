@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPhoneOtpEnabled, isSmsOtpEnabled } from "@/lib/feature-flags";
 import {
@@ -13,6 +13,9 @@ import type { PhoneVerificationChannel } from "./types";
 const MAX_SENDS_PER_PHONE_HOUR = 3;
 const MAX_VERIFY_ATTEMPTS = 5;
 const RESEND_COOLDOWN_MS = 60_000;
+
+/** In-flight send locks: one user action → one OTP generation + one SMS (per process). */
+const sendInFlight = new Map<string, Promise<SendPhoneVerificationResult>>();
 
 function hashIp(request: Request): string | null {
   const ip =
@@ -54,7 +57,13 @@ export type SendPhoneVerificationResult =
   | { ok: false; error: string; status: number; code?: string };
 
 export type VerifyPhoneVerificationResult =
-  | { ok: true; message: string }
+  | {
+      ok: true;
+      message: string;
+      phoneVerified: true;
+      phoneVerifiedAt: string;
+      phone: string;
+    }
   | { ok: false; error: string; status: number };
 
 /** Seller / profile SMS OTP — independent of WhatsApp Business verification. */
@@ -64,27 +73,18 @@ export function isSellerPhoneSmsOtpEnabled(): boolean {
   return resolveDefaultPhoneVerificationChannel() === "sms";
 }
 
-export async function sendSellerPhoneVerificationCode(
+async function sendSellerPhoneVerificationCodeUnlocked(
   admin: SupabaseClient,
   params: {
     userId: string;
     phoneLocal: string;
+    phoneIntl: string;
     email?: string | null;
     request: Request;
     updateProfilePhone?: boolean;
-    channel?: PhoneVerificationChannel;
+    channel: PhoneVerificationChannel;
   }
 ): Promise<SendPhoneVerificationResult> {
-  if (!isSellerPhoneSmsOtpEnabled() && params.channel !== "whatsapp") {
-    return {
-      ok: false,
-      error: PHONE_VERIFY_COPY.providerUnavailable,
-      status: 503,
-      code: "phone_otp_disabled",
-    };
-  }
-
-  const channel = params.channel ?? resolveDefaultPhoneVerificationChannel();
   const provider = getPhoneVerificationProvider();
 
   if (!provider.isConfigured()) {
@@ -96,12 +96,7 @@ export async function sendSellerPhoneVerificationCode(
     };
   }
 
-  const phoneIntl = toInternationalNigerianPhone(params.phoneLocal);
-  if (!phoneIntl) {
-    return { ok: false, error: PHONE_VERIFY_COPY.invalidPhone, status: 400 };
-  }
-
-  const sends = await countSendsLastHour(admin, phoneIntl);
+  const sends = await countSendsLastHour(admin, params.phoneIntl);
   if (sends >= MAX_SENDS_PER_PHONE_HOUR) {
     return {
       ok: false,
@@ -136,15 +131,50 @@ export async function sendSellerPhoneVerificationCode(
       .eq("id", params.userId);
   }
 
+  // Claim a DB row before provider call so cooldown starts immediately (blocks races).
+  const claimExpiresAt = new Date(Date.now() + 30 * 60_000).toISOString();
+  const claimReference = `pending:${randomUUID()}`;
+  const { data: claimRow, error: claimError } = await admin
+    .from("whatsapp_otp_sessions")
+    .insert({
+      user_id: params.userId,
+      phone_local: params.phoneLocal,
+      phone_intl: params.phoneIntl,
+      provider_reference: claimReference,
+      channel: params.channel,
+      status: "sent",
+      verify_attempts: 0,
+      expires_at: claimExpiresAt,
+      ip_hash: hashIp(params.request),
+    })
+    .select("id")
+    .single();
+
+  if (claimError || !claimRow?.id) {
+    console.error("[phone-verification] claim insert failed", claimError?.message);
+    return {
+      ok: false,
+      error: PHONE_VERIFY_COPY.providerUnavailable,
+      status: 500,
+    };
+  }
+
   const created = await provider.sendOtp({
-    phoneIntl,
-    channel,
+    phoneIntl: params.phoneIntl,
+    channel: params.channel,
     email: params.email ?? undefined,
     purpose: "phone_verification",
   });
 
   if (!created.ok) {
     console.error("[phone-verification] send failed", created.error);
+    await admin
+      .from("whatsapp_otp_sessions")
+      .update({
+        status: "expired",
+        consumed_at: new Date().toISOString(),
+      })
+      .eq("id", claimRow.id);
     return {
       ok: false,
       error: created.error,
@@ -155,17 +185,15 @@ export async function sendSellerPhoneVerificationCode(
 
   const expiresAt = new Date(Date.now() + created.expiresMinutes * 60_000).toISOString();
 
-  await admin.from("whatsapp_otp_sessions").insert({
-    user_id: params.userId,
-    phone_local: params.phoneLocal,
-    phone_intl: phoneIntl,
-    provider_reference: created.reference,
-    channel: created.channel,
-    status: "sent",
-    verify_attempts: 0,
-    expires_at: expiresAt,
-    ip_hash: hashIp(params.request),
-  });
+  await admin
+    .from("whatsapp_otp_sessions")
+    .update({
+      provider_reference: created.reference,
+      channel: created.channel,
+      status: "sent",
+      expires_at: expiresAt,
+    })
+    .eq("id", claimRow.id);
 
   return {
     ok: true,
@@ -173,6 +201,58 @@ export async function sendSellerPhoneVerificationCode(
     channel: created.channel,
     expiresMinutes: created.expiresMinutes,
   };
+}
+
+export async function sendSellerPhoneVerificationCode(
+  admin: SupabaseClient,
+  params: {
+    userId: string;
+    phoneLocal: string;
+    email?: string | null;
+    request: Request;
+    updateProfilePhone?: boolean;
+    channel?: PhoneVerificationChannel;
+  }
+): Promise<SendPhoneVerificationResult> {
+  if (!isSellerPhoneSmsOtpEnabled() && params.channel !== "whatsapp") {
+    return {
+      ok: false,
+      error: PHONE_VERIFY_COPY.providerUnavailable,
+      status: 503,
+      code: "phone_otp_disabled",
+    };
+  }
+
+  const channel = params.channel ?? resolveDefaultPhoneVerificationChannel();
+  const phoneIntl = toInternationalNigerianPhone(params.phoneLocal);
+  if (!phoneIntl) {
+    return { ok: false, error: PHONE_VERIFY_COPY.invalidPhone, status: 400 };
+  }
+
+  const lockKey = `${params.userId}:${phoneIntl}:${channel}`;
+  const existing = sendInFlight.get(lockKey);
+  if (existing) {
+    // Same in-flight request — await it; do not generate/send a second OTP.
+    return existing;
+  }
+
+  let pending!: Promise<SendPhoneVerificationResult>;
+  pending = sendSellerPhoneVerificationCodeUnlocked(admin, {
+    userId: params.userId,
+    phoneLocal: params.phoneLocal,
+    phoneIntl,
+    email: params.email,
+    request: params.request,
+    updateProfilePhone: params.updateProfilePhone,
+    channel,
+  }).finally(() => {
+    if (sendInFlight.get(lockKey) === pending) {
+      sendInFlight.delete(lockKey);
+    }
+  });
+
+  sendInFlight.set(lockKey, pending);
+  return pending;
 }
 
 export async function verifySellerPhoneCode(
@@ -200,7 +280,7 @@ export async function verifySellerPhoneCode(
     .limit(1)
     .maybeSingle();
 
-  if (!session?.provider_reference) {
+  if (!session?.provider_reference || String(session.provider_reference).startsWith("pending:")) {
     return { ok: false, error: PHONE_VERIFY_COPY.invalidCode, status: 400 };
   }
 
@@ -290,7 +370,18 @@ export async function verifySellerPhoneCode(
 
   if (phonePatchError) {
     console.error("[phone-verification] profile update failed", phonePatchError.message);
+    return {
+      ok: false,
+      error: PHONE_VERIFY_COPY.providerUnavailable,
+      status: 500,
+    };
   }
 
-  return { ok: true, message: PHONE_VERIFY_COPY.verified };
+  return {
+    ok: true,
+    message: PHONE_VERIFY_COPY.verified,
+    phoneVerified: true,
+    phoneVerifiedAt: now,
+    phone: phoneLocal,
+  };
 }

@@ -306,7 +306,7 @@ export default async function HomePage({
   );
 
   return (
-    <div className="home-canvas min-h-[100dvh] bg-[#F4F6FA] lg:pb-8">
+    <div className="home-canvas min-h-[100dvh] lg:pb-8">
       <HomePageStructuredData />
       <PrefSync />
       <MarketplaceLocationBootstrap />

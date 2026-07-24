@@ -6,11 +6,12 @@ type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
   accent:
-    "bg-gold text-navy font-semibold hover:bg-gold-dark active:scale-[0.98] shadow-sm",
+    "bg-gold text-navy font-semibold hover:bg-gold-dark yike-btn-accent",
   navy: "bg-navy text-white hover:bg-navy-light active:scale-[0.98] yike-btn-primary",
-  secondary: "bg-surface text-foreground hover:bg-border/50",
+  secondary:
+    "bg-white text-navy border border-navy/20 hover:border-navy/35 hover:bg-warm-neutral/80 shadow-sm",
   outline:
-    "border border-border bg-background text-foreground hover:border-gold/60 hover:bg-surface",
+    "border border-navy/20 bg-white text-navy hover:border-navy/40 hover:bg-warm-neutral/60",
   ghost: "text-foreground hover:bg-surface",
   danger: "bg-danger text-white hover:opacity-90",
 };

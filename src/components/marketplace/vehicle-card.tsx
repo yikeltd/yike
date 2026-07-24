@@ -10,7 +10,14 @@ import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { cn, isVerifiedAgent } from "@/lib/utils";
-import { MapPin } from "lucide-react";
+import {
+  MapPin,
+  Gauge,
+  Fuel,
+  Settings2,
+  Calendar,
+  ShieldCheck,
+} from "lucide-react";
 
 function formatNaira(n: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -27,6 +34,54 @@ function transmissionShort(value?: string | null): string | null {
   if (v === "manual") return "Manual";
   if (v === "cvt") return "CVT";
   return value;
+}
+
+function fuelShort(value?: string | null): string | null {
+  if (!value) return null;
+  const v = value.toLowerCase();
+  if (v === "petrol" || v === "gasoline") return "Petrol";
+  if (v === "diesel") return "Diesel";
+  if (v === "electric" || v === "ev") return "EV";
+  if (v === "hybrid") return "Hybrid";
+  if (v === "cng") return "CNG";
+  return value;
+}
+
+function conditionShort(value?: string | null): string | null {
+  if (!value) return null;
+  const v = value.toLowerCase().replace(/_/g, " ");
+  if (v.includes("foreign") || v === "tokunbo") return "Foreign used";
+  if (v.includes("nigeria") || v === "local") return "Nigerian used";
+  if (v.includes("new") || v === "brand new") return "Brand new";
+  return value.length > 14 ? `${value.slice(0, 12)}…` : value;
+}
+
+type AttrItem = { icon: typeof Gauge; label: string };
+
+function buildVehicleAttrs(vehicle: Property): AttrItem[] {
+  const items: AttrItem[] = [];
+  if (vehicle.year) {
+    items.push({ icon: Calendar, label: String(vehicle.year) });
+  }
+  if (vehicle.mileage != null) {
+    items.push({
+      icon: Gauge,
+      label: `${vehicle.mileage.toLocaleString()} km`,
+    });
+  }
+  const transmission = transmissionShort(vehicle.transmission);
+  if (transmission) {
+    items.push({ icon: Settings2, label: transmission });
+  }
+  const fuel = fuelShort(vehicle.fuel_type);
+  if (fuel) {
+    items.push({ icon: Fuel, label: fuel });
+  }
+  const condition = conditionShort(vehicle.vehicle_condition);
+  if (condition && items.length < 4) {
+    items.push({ icon: ShieldCheck, label: condition });
+  }
+  return items;
 }
 
 export function VehicleCard({
@@ -49,17 +104,10 @@ export function VehicleCard({
   const location = [vehicle.area, vehicle.city || vehicle.state]
     .filter(Boolean)
     .join(", ");
-  const transmission = transmissionShort(vehicle.transmission);
   const verified =
     vehicle.is_verified_listing ||
     (vehicle.agent ? isVerifiedAgent(vehicle.agent) : false);
-
-  const attrs: string[] = [];
-  if (vehicle.year) attrs.push(String(vehicle.year));
-  if (vehicle.mileage != null) {
-    attrs.push(`${vehicle.mileage.toLocaleString()} km`);
-  }
-  if (transmission) attrs.push(transmission);
+  const attrs = buildVehicleAttrs(vehicle);
 
   if (isBrowse) {
     return (
@@ -67,7 +115,7 @@ export function VehicleCard({
         <Link href={href} prefetch={!isDemo} className="block">
           <div
             className={cn(
-              "relative overflow-hidden rounded-xl bg-navy/5",
+              "listing-thumb relative overflow-hidden rounded-xl bg-navy/5",
               BROWSE_THUMB_ASPECT,
             )}
           >
@@ -82,15 +130,31 @@ export function VehicleCard({
                 sizes="(max-width: 640px) 46vw, (max-width: 1024px) 25vw, (max-width: 1536px) 14vw, 12vw"
               />
             ) : null}
+            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-navy/35 to-transparent" />
+            <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-1">
+              {featured ? (
+                <span className="rounded-md bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
+                  Feat
+                </span>
+              ) : null}
+              {verified ? (
+                <span
+                  className="rounded-md bg-emerald-600/92 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-[2px]"
+                  title="Verified"
+                >
+                  ✓ Verified
+                </span>
+              ) : null}
+            </div>
           </div>
         </Link>
 
         {!isDemo ? (
-          <div className="absolute right-1.5 top-1.5 z-10 opacity-80 transition-opacity group-hover:opacity-100">
+          <div className="absolute right-1.5 top-1.5 z-10 opacity-90 transition-opacity group-hover:opacity-100">
             <ListingSaveButton
               listingId={vehicle.id}
               compact
-              className="!bg-black/25 !text-white backdrop-blur-[2px]"
+              className="!h-8 !w-8 !bg-white/95 !text-navy shadow-sm backdrop-blur-sm"
             />
           </div>
         ) : null}
@@ -100,7 +164,7 @@ export function VehicleCard({
             <p className="text-[13px] font-bold tabular-nums leading-tight text-navy sm:text-sm">
               {formatNaira(Number(vehicle.price))}
             </p>
-            <p className="mt-0.5 line-clamp-1 text-[11px] font-semibold leading-snug text-navy sm:text-[12px]">
+            <p className="mt-0.5 line-clamp-1 text-[11px] font-semibold leading-snug text-navy/90 sm:text-[12px]">
               {vehicle.title}
             </p>
             {location ? (
@@ -114,9 +178,14 @@ export function VehicleCard({
                 />
               </p>
             ) : null}
-            {verified ? (
-              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
-                Verified
+            {attrs.length > 0 ? (
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/45">
+                {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
+                  <span key={label} className="inline-flex items-center gap-0.5">
+                    <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                    {label}
+                  </span>
+                ))}
               </p>
             ) : null}
           </Link>
@@ -130,11 +199,11 @@ export function VehicleCard({
       className={
         isMarketplace
           ? "group flex h-full flex-col overflow-hidden rounded-xl bg-transparent"
-          : "group flex h-full flex-col overflow-hidden rounded-xl border border-navy/8 bg-white shadow-sm ring-1 ring-black/[0.03]"
+          : "group flex h-full flex-col overflow-hidden rounded-xl border border-navy/8 bg-white shadow-card ring-1 ring-black/[0.03]"
       }
     >
       <Link href={href} prefetch={!isDemo} className="block">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-navy/5">
+        <div className="listing-thumb relative aspect-[4/3] overflow-hidden rounded-xl bg-navy/5">
           {img ? (
             <Image
               src={img}
@@ -146,16 +215,16 @@ export function VehicleCard({
           ) : null}
           <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-1">
             {featured ? (
-              <span className="rounded bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
+              <span className="rounded-md bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
                 Feat
               </span>
             ) : null}
             {!isDemo && vehicle.is_verified_listing ? (
               <span
-                className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white"
+                className="rounded-md bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white"
                 title="Verified"
               >
-                ✓
+                ✓ Verified
               </span>
             ) : null}
           </div>
@@ -187,8 +256,13 @@ export function VehicleCard({
           </p>
         ) : null}
         {attrs.length > 0 ? (
-          <p className="mt-0.5 line-clamp-1 text-[10px] font-semibold text-black/45 sm:text-[11px]">
-            {attrs.slice(0, 3).join(" · ")}
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-black/45 sm:text-[11px]">
+            {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
+              <span key={label} className="inline-flex items-center gap-0.5">
+                <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                {label}
+              </span>
+            ))}
           </p>
         ) : null}
         <Link

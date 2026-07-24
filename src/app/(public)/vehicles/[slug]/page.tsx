@@ -16,9 +16,12 @@ import { ListingSaveButton } from "@/components/marketplace/listing-save-button"
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { MarketplaceSafetyNotice } from "@/components/marketplace/safety-notice";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
+import { DetailPromotionZone } from "@/components/ads/detail-promotion-zone";
+import { DetailRecentlyViewed } from "@/components/marketplace/detail-recently-viewed";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import { isFeaturedActive } from "@/lib/agent-tiers";
+import { getActiveAd } from "@/lib/ads";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -53,13 +56,16 @@ export default async function VehicleDetailPage({ params }: Props) {
   const vehicle = await getVehicleByIdOrSlug(supabase, slug);
   if (!vehicle || vehicle.status !== "approved") notFound();
 
-  const similar = (
-    await queryPublicVehicles(supabase, {
+  const [similarRaw, detailAd] = await Promise.all([
+    queryPublicVehicles(supabase, {
       auto_category: vehicle.auto_category ?? undefined,
       make: vehicle.make ?? undefined,
       limit: 8,
-    })
-  )
+    }),
+    getActiveAd("vehicle_detail"),
+  ]);
+
+  const similar = similarRaw
     .filter((x) => x.id !== vehicle.id)
     .slice(0, 4);
 
@@ -101,7 +107,7 @@ export default async function VehicleDetailPage({ params }: Props) {
   ];
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-6 pb-28">
+    <main className="mx-auto max-w-5xl py-6">
       <MarketplaceViewTracker
         id={vehicle.id}
         title={vehicle.title}
@@ -241,20 +247,29 @@ export default async function VehicleDetailPage({ params }: Props) {
         </section>
       ) : null}
 
-      <section className="mt-8 space-y-4">
+      <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
         <MarketplaceSafetyNotice vertical="vehicle" />
-        <details className="rounded-xl border border-black/8 p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-navy">
+        <details className="text-sm">
+          <summary className="cursor-pointer font-semibold text-navy/70 hover:text-navy">
             Report this listing
           </summary>
-          <div className="mt-3">
+          <div className="mt-3 max-w-lg">
             <ReportListingForm propertyId={vehicle.id} />
           </div>
         </details>
-      </section>
+      </div>
+
+      {detailAd ? (
+        <div className="mt-6">
+          <DetailPromotionZone placement="vehicle_detail" ad={detailAd} />
+        </div>
+      ) : null}
+      {!detailAd ? (
+        <DetailRecentlyViewed excludeId={vehicle.id} className="mt-6" />
+      ) : null}
 
       {similar.length > 0 ? (
-        <section className="mt-10">
+        <section className="mt-8">
           <h2 className="text-lg font-semibold text-navy">Similar vehicles</h2>
           <ul className={`mt-3 ${BROWSE_GRID_CLASS}`}>
             {similar.map((s) => (

@@ -105,10 +105,10 @@ export function ThemedSelect({
   const triggerClass =
     variant === "hero"
       ? cn(
-          "flex min-h-[44px] w-full items-center justify-between gap-2 rounded-xl border px-3.5 text-left outline-none transition-all duration-200",
+          "flex min-h-[48px] w-full items-center justify-between gap-2 rounded-xl border px-3.5 text-left outline-none transition-all duration-200",
           compactLabel ? "text-xs sm:text-sm" : "text-sm",
           "font-semibold",
-          "border-white/30 bg-[#f4f6fa] text-navy",
+          "border-white/30 bg-[#FCFBF7] text-navy",
           "shadow-[0_2px_10px_rgb(2_20_51_/20%),inset_0_1px_0_rgb(255_255_255_/90%)]",
           disabled && "cursor-not-allowed opacity-50",
           !disabled &&

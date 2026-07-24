@@ -52,6 +52,9 @@ export type VerifyOtpResult =
   | { ok: true; phoneVerificationToken: string; phone: string }
   | { ok: false; error: string; status: number };
 
+/** One in-flight send per phone+channel (prevents double SMS on concurrent requests). */
+const phoneOtpSendInFlight = new Map<string, Promise<SendOtpResult>>();
+
 function otpDb(): SupabaseClient | null {
   return createOtpDbClient();
 }
@@ -115,8 +118,7 @@ async function devFallbackSend(
   };
 }
 
-export async function sendPhoneOtp(
-  _admin: SupabaseClient | null,
+async function sendPhoneOtpUnlocked(
   phone: string,
   preferredChannel?: OtpChannel
 ): Promise<SendOtpResult> {
@@ -225,7 +227,8 @@ export async function sendPhoneOtp(
     };
   }
 
-  // SMS (production default): server OTP → Verification API register → branded SMS.
+  // SMS (production default): one OTP → Verification API register (in_app_token) → one branded SMS.
+  // Do not fall through to a second generate/send — that causes duplicate SMS.
   if (channel === "sms") {
     const phoneIntl = toSendchampPhone(phone);
     const code = generateOtp();
@@ -237,40 +240,64 @@ export async function sendPhoneOtp(
       inAppToken: true,
     });
 
-    if (registered.ok) {
-      const delivered = await sendBrandedSmsOtp(phoneIntl, code);
-      if (delivered.ok) {
-        const expiresAt = new Date(
-          Date.now() + registered.expiresMinutes * 60_000
-        ).toISOString();
-        const inserted = await otpInsertPending(db, {
-          phone,
-          otpHash: hashOtp(registered.reference),
-          expiresAt,
-          channel: "sms",
-        });
-        if (!inserted) {
-          return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
-        }
-        await otpMarkSent(db, inserted.id, "sms", registered.reference);
-        await otpLogEvent(db, {
-          phone,
-          channel: "sms",
-          status: "sent",
-          expiresAt,
-        });
-        return {
-          ok: true,
-          channel: "sms",
-          message: otpSentMessage("sms"),
-          ...(!isProductionEnv() ? { devOtp: code } : {}),
-        };
+    if (!registered.ok) {
+      if (registered.code === "provider_auth_failed") {
+        console.error("[otp] provider_auth_failed");
       }
-      console.error("[otp] branded SMS failed after verification register", delivered.error);
-    } else if (registered.code === "provider_auth_failed") {
-      console.error("[otp] provider_auth_failed");
+      await otpLogEvent(db, {
+        phone,
+        channel: "sms",
+        status: "failed",
+        providerError: registered.error,
+      });
+      return {
+        ok: false,
+        error: OTP_USER_MESSAGES.sendFailed,
+        status: registered.status >= 400 ? registered.status : 502,
+      };
     }
-    // Fall through to legacy hash + deliverOtp path if Verification API register fails.
+
+    const delivered = await sendBrandedSmsOtp(phoneIntl, code);
+    if (!delivered.ok) {
+      console.error("[otp] branded SMS failed after verification register", delivered.error);
+      await otpLogEvent(db, {
+        phone,
+        channel: "sms",
+        status: "failed",
+        providerError: delivered.error,
+      });
+      return {
+        ok: false,
+        error: OTP_USER_MESSAGES.sendFailed,
+        status: 502,
+      };
+    }
+
+    const expiresAt = new Date(
+      Date.now() + registered.expiresMinutes * 60_000
+    ).toISOString();
+    const inserted = await otpInsertPending(db, {
+      phone,
+      otpHash: hashOtp(registered.reference),
+      expiresAt,
+      channel: "sms",
+    });
+    if (!inserted) {
+      return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
+    }
+    await otpMarkSent(db, inserted.id, "sms", registered.reference);
+    await otpLogEvent(db, {
+      phone,
+      channel: "sms",
+      status: "sent",
+      expiresAt,
+    });
+    return {
+      ok: true,
+      channel: "sms",
+      message: otpSentMessage("sms"),
+      ...(!isProductionEnv() ? { devOtp: code } : {}),
+    };
   }
 
   const code = generateOtp();
@@ -358,6 +385,26 @@ export async function sendPhoneOtp(
     channel: sentChannel,
     message: otpSentMessage(sentChannel),
   };
+}
+
+export async function sendPhoneOtp(
+  _admin: SupabaseClient | null,
+  phone: string,
+  preferredChannel?: OtpChannel
+): Promise<SendOtpResult> {
+  const channel: OtpChannel = preferredChannel ?? "sms";
+  const lockKey = `${phone}:${channel}`;
+  const existing = phoneOtpSendInFlight.get(lockKey);
+  if (existing) return existing;
+
+  let pending!: Promise<SendOtpResult>;
+  pending = sendPhoneOtpUnlocked(phone, preferredChannel).finally(() => {
+    if (phoneOtpSendInFlight.get(lockKey) === pending) {
+      phoneOtpSendInFlight.delete(lockKey);
+    }
+  });
+  phoneOtpSendInFlight.set(lockKey, pending);
+  return pending;
 }
 
 export async function verifyPhoneOtp(

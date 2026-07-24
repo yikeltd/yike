@@ -74,7 +74,7 @@ Output: `twa/app-release-signed.apk` or `.aab` (upload `.aab` to Play Console).
 | Account deletion | https://yike.ng/account/delete |
 | Moderation | https://yike.ng/moderation |
 | Support email | hello@yike.ng |
-| Support phone/WhatsApp | +234 810 351 4329 |
+| Support phone/WhatsApp | +234 803 514 3299 |
 
 Store assets (in `public/store/`):
 

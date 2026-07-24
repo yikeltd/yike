@@ -1,48 +1,38 @@
-# Seller Verification UX Report — Onboarding v1
+# Seller Verification UX Report
 
 **Date:** 2026-07-23  
-**Status:** Implemented — **hold commit** pending founder review  
-**Route:** `/agent/verify`
+**Route:** `/agent/verify`  
+**Status:** Simplified · **no commit** (founder review)
 
-## Philosophy
+## Verdict
 
-Ask only when needed. Buyers are not forced into a seller profile. Sellers must verify. Progressive disclosure. Banking-app calm. Mobile-first. Never leave the onboarding flow mid-step.
+Seller verification UI is reduced to **title + progress + fields**. Explanatory paragraphs, address sub-hints, and placeholders are removed.
 
-## Entry routing
+## Changes
 
-| Trigger | Destination |
-|---------|-------------|
-| Sell / List Property / List Vehicle / Create Listing | `/agent/verify` if phone **or** seller profile incomplete |
-| Same, when phone verified **and** profile complete | `/agent/listings/choose` → Property / Vehicle wizard |
-| Legacy `/agent/become`, `/list`, `/list-property`, `/post-property` | Redirect into `/agent/verify` (or choose when ready) |
+| Item | Before | After |
+|------|--------|-------|
+| Page subtitle | “To keep Yike safe and trusted…” | Removed |
+| Unlock copy | “Verify your phone to unlock…” | Removed (form appears only when phone verified) |
+| Address | Hint text + placeholder listing House/Street/Area/City/Postal | Single **Address** textarea, no placeholder/hint |
+| Fields | Placeholders on occupation/referral | Labels only: State*, Address*, DOB*, Occupation (optional), Referral (optional) |
+| Declaration | Long legal paragraph | “I confirm the information provided is accurate and agree to Yike's marketplace rules.” + required checkbox |
+| Phone verified | ✓ + number + timestamp (+ extra hints while unverified) | Verified state: ✓ Phone Number Verified + number + timestamp only |
 
-## Page structure
+## Kept (intentional)
 
-1. **Title:** Verify Yourself to Start Listing  
-2. **Subtitle:** trust copy (phone + short seller profile before publishing)  
-3. **Trust progress** (top, not sticky, no %, no bar): Email · Phone · Seller Profile · Manual Review  
-4. **§1 Personal details** — Full Name / Email read-only; Phone editable until verified  
-5. **Phone OTP** — same-row Verify → code input + Verify Code (horizontal on `sm+`)  
-6. **§2 Seller profile** — revealed only after phone verified  
-7. **Consent** checkbox (required)  
-8. **Complete Verification** — full-width gold CTA
+- Read-only Full Name + Email (identity confirmation in section 1)
+- Progress indicator (`SellerTrustProgress`)
+- Phone OTP controls when not yet verified (no placeholders on phone/code inputs)
 
-## After completion
+## Copy constants
 
-- Persist: phone verified, seller profile completed, verification submitted (pending manual review)  
-- Redirect: **Choose Listing Type** (`/agent/listings/choose`)  
-- Publish live still blocked until admin **Approve** (Verified Seller) via `assertCanPublishListing`
+`src/lib/seller-trust/onboarding.ts`:
 
-## Progressive disclosure
+- `SELLER_VERIFICATION_COPY` — title, progressTitle, completeCta, phoneVerifiedLabel only
+- `SELLER_VERIFICATION_CONSENT` — short declaration
 
-- Seller profile section hidden until phone OTP succeeds  
-- Manual Review step highlighted after submit; badge stays “pending” for buyers until approve  
+## Preview
 
-## Files
-
-- `src/app/agent/verify/page.tsx`
-- `src/components/agent/seller-verification-client.tsx`
-- `src/components/agent/seller-trust-progress.tsx`
-- `src/components/agent/seller-phone-verify-row.tsx`
-- `src/app/agent/listings/choose/page.tsx`
-- `src/lib/seller-trust/onboarding.ts`
+- `GET /agent/verify` → **307** to `/auth/login?next=/agent/verify` when signed out (expected gate)
+- Local: `http://localhost:3000/agent/verify` (sign in to review form)

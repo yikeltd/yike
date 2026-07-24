@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -46,6 +46,22 @@ export function SellerVerificationClient({
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const submitLockRef = useRef(false);
+
+  // Keep local trust state in sync when the server profile refreshes (no manual reload).
+  useEffect(() => {
+    setProfile(initialProfile);
+    const verified = isPhoneVerifiedForSeller(initialProfile);
+    setPhoneVerified(verified);
+    setPhoneVerifiedAt(
+      initialProfile.phone_verified_at ?? initialProfile.whatsapp_verified_at ?? null
+    );
+    if (verified) {
+      setError((prev) =>
+        prev === "Verify your phone number first." ? "" : prev
+      );
+    }
+  }, [initialProfile]);
 
   const progress = useMemo(
     () =>
@@ -53,6 +69,13 @@ export function SellerVerificationClient({
         {
           ...profile,
           phone_verified: phoneVerified,
+          phone_verified_at: phoneVerifiedAt,
+          whatsapp_verified_at: phoneVerified
+            ? phoneVerifiedAt ?? profile.whatsapp_verified_at
+            : profile.whatsapp_verified_at,
+          whatsapp_verification_status: phoneVerified
+            ? "verified"
+            : profile.whatsapp_verification_status,
           email_verified: emailVerified || profile.email_verified,
           date_of_birth: dateOfBirth || profile.date_of_birth,
           residential_address: address || profile.residential_address,
@@ -60,7 +83,7 @@ export function SellerVerificationClient({
         },
         { emailVerified }
       ),
-    [profile, phoneVerified, emailVerified, dateOfBirth, address, state]
+    [profile, phoneVerified, phoneVerifiedAt, emailVerified, dateOfBirth, address, state]
   );
 
   const profileAlreadyComplete =
@@ -68,7 +91,24 @@ export function SellerVerificationClient({
     phoneVerified &&
     profile.verification_status !== "rejected";
 
+  function applyPhoneVerified(phone: string, verifiedAt: string) {
+    setPhoneVerified(true);
+    setPhoneVerifiedAt(verifiedAt);
+    setError("");
+    setProfile((p) => ({
+      ...p,
+      phone,
+      whatsapp: phone,
+      phone_verified: true,
+      phone_verified_at: verifiedAt,
+      whatsapp_verified_at: verifiedAt,
+      whatsapp_verification_status: "verified",
+    }));
+    router.refresh();
+  }
+
   async function completeVerification() {
+    if (submitLockRef.current || loading) return;
     if (!phoneVerified) {
       setError("Verify your phone number first.");
       return;
@@ -77,29 +117,50 @@ export function SellerVerificationClient({
       setError("Confirm the accuracy consent to continue.");
       return;
     }
+    submitLockRef.current = true;
     setLoading(true);
     setError("");
-    const res = await fetch("/api/agent/seller-verification", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        residentialState: state,
-        residentialAddress: address,
-        dateOfBirth,
-        occupation,
-        referralCode: referralCode.trim() || undefined,
-        consentAccepted: true,
-        accountType: profile.account_type ?? "individual",
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setLoading(false);
-    if (!res.ok) {
-      setError(friendlyPublicError(data.error as string, PUBLIC_ERROR_FALLBACK));
-      return;
+    try {
+      const res = await fetch("/api/agent/seller-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          residentialState: state,
+          residentialAddress: address,
+          dateOfBirth,
+          occupation,
+          referralCode: referralCode.trim() || undefined,
+          consentAccepted: true,
+          accountType: profile.account_type ?? "individual",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const apiError = friendlyPublicError(
+          data.error as string,
+          PUBLIC_ERROR_FALLBACK
+        );
+        // Phone already verified locally — never keep the stale gate message.
+        if (
+          data.code === "phone_verification_required" &&
+          phoneVerified
+        ) {
+          setError("");
+          router.refresh();
+          setError(
+            "Phone status is updating. Wait a moment, then try again."
+          );
+          return;
+        }
+        setError(apiError);
+        return;
+      }
+      router.push((data.next as string) || SELLER_CHOOSE_LISTING_PATH);
+      router.refresh();
+    } finally {
+      setLoading(false);
+      submitLockRef.current = false;
     }
-    router.push((data.next as string) || SELLER_CHOOSE_LISTING_PATH);
-    router.refresh();
   }
 
   return (
@@ -108,9 +169,6 @@ export function SellerVerificationClient({
         <h1 className="text-2xl font-bold tracking-tight text-navy">
           {SELLER_VERIFICATION_COPY.title}
         </h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted">
-          {SELLER_VERIFICATION_COPY.subtitle}
-        </p>
       </div>
 
       <SellerTrustProgress
@@ -140,18 +198,7 @@ export function SellerVerificationClient({
           phoneNumber={profile.phone ?? profile.whatsapp ?? ""}
           verified={phoneVerified}
           verifiedAt={phoneVerifiedAt}
-          onVerified={(phone) => {
-            const now = new Date().toISOString();
-            setPhoneVerified(true);
-            setPhoneVerifiedAt(now);
-            setProfile((p) => ({
-              ...p,
-              phone,
-              whatsapp: phone,
-              phone_verified: true,
-              phone_verified_at: now,
-            }));
-          }}
+          onVerified={applyPhoneVerified}
         />
       </section>
 
@@ -181,14 +228,10 @@ export function SellerVerificationClient({
             <textarea
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              rows={4}
-              placeholder={SELLER_VERIFICATION_COPY.addressHint}
-              className="mt-1 w-full rounded-xl border border-navy/10 bg-white px-3 py-2.5 text-sm text-navy placeholder:text-muted focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-navy/10 bg-white px-3 py-2.5 text-sm text-navy focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
               required
             />
-            <span className="mt-1 block text-[11px] font-normal text-muted">
-              {SELLER_VERIFICATION_COPY.addressHint}
-            </span>
           </label>
 
           <label className="block text-xs font-semibold text-navy">
@@ -207,7 +250,6 @@ export function SellerVerificationClient({
             <Input
               value={occupation}
               onChange={(e) => setOccupation(e.target.value)}
-              placeholder="e.g. Property agent"
               className="mt-1 h-11 rounded-xl"
             />
           </label>
@@ -217,7 +259,6 @@ export function SellerVerificationClient({
             <Input
               value={referralCode}
               onChange={(e) => setReferralCode(e.target.value)}
-              placeholder="Ambassador or partner code"
               className="mt-1 h-11 rounded-xl"
             />
           </label>
@@ -240,7 +281,7 @@ export function SellerVerificationClient({
             size="lg"
             fullWidth
             className="font-bold"
-            disabled={loading || !consent}
+            disabled={loading || !consent || !phoneVerified}
             onClick={() => void completeVerification()}
           >
             {loading ? "Saving…" : SELLER_VERIFICATION_COPY.completeCta}
@@ -256,11 +297,7 @@ export function SellerVerificationClient({
             </button>
           ) : null}
         </section>
-      ) : (
-        <p className="rounded-2xl border border-dashed border-navy/15 bg-surface/30 px-4 py-3 text-sm text-muted">
-          Verify your phone to unlock the seller profile.
-        </p>
-      )}
+      ) : null}
     </div>
   );
 }

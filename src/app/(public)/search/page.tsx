@@ -26,17 +26,16 @@ import {
   resolveSearchResults,
 } from "@/lib/search-fallback";
 import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
-import { MarketplaceSafetyNotice } from "@/components/marketplace/safety-notice";
 import { MarketplaceEmptyState } from "@/components/marketplace/marketplace-empty-state";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
 
 export const metadata: Metadata = {
-  title: `Search Homes in Nigeria`,
+  title: `Search Properties`,
   description: `Search apartments, houses, land and shops across Nigeria. Filter by city, area, budget and property type on ${SITE_NAME}.`,
   alternates: { canonical: `${SITE_URL}/search` },
   openGraph: {
-    title: `Search Nigerian Property | ${SITE_NAME}`,
-    description: "Find verified rentals and homes — mobile-first, WhatsApp contact.",
+    title: `Search Properties | ${SITE_NAME}`,
+    description: "Verified rentals and homes — mobile-first, WhatsApp contact.",
     url: `${SITE_URL}/search`,
   },
 };
@@ -55,10 +54,24 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const params = parseSearchParams(await searchParams);
-  const hasQuery = hasActiveFilters(params);
+  const rawParams = await searchParams;
+  const params = parseSearchParams(rawParams);
+  const nearbyFlag =
+    (typeof rawParams.nearby === "string" && rawParams.nearby === "1") ||
+    (Array.isArray(rawParams.nearby) && rawParams.nearby[0] === "1");
+  const hasQuery = hasActiveFilters(params) || nearbyFlag;
   const prefs = hasQuery ? {} : await getServerSearchPreferences();
-  const preloadParams: PropertySearchParams = hasQuery ? params : prefs;
+  const preloadParams: PropertySearchParams = {
+    ...(hasQuery ? params : prefs),
+  };
+
+  // Nearby chip: apply saved location when city/state not already set.
+  if (nearbyFlag && !preloadParams.city && !preloadParams.state) {
+    const nearbyPrefs = await getServerSearchPreferences();
+    if (nearbyPrefs.city) preloadParams.city = nearbyPrefs.city;
+    if (nearbyPrefs.state) preloadParams.state = nearbyPrefs.state;
+    if (nearbyPrefs.area) preloadParams.area = nearbyPrefs.area;
+  }
 
   let exactCount = 0;
   let feedItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
@@ -107,7 +120,6 @@ export default async function SearchPage({
     .filter(Boolean)
     .join(" · ");
 
-  const rawParams = await searchParams;
   const qs = new URLSearchParams();
   for (const [key, value] of Object.entries(rawParams)) {
     if (typeof value === "string") qs.set(key, value);
@@ -132,13 +144,12 @@ export default async function SearchPage({
       <div className="px-3 pt-4 lg:px-6 xl:px-8">
         <MarketplaceCategoryHeader
           vertical="property"
-          title="Properties"
-          tagline="Find your next home."
+          title="Search Properties"
           sellHref="/agent/listings/new"
           sellLabel="Sell Property"
           saveLabel={saveLabel}
           saveHref={saveHref}
-          className="mb-3"
+          className="mb-2"
         />
       </div>
       <Suspense fallback={<ResultsFallback />}>
@@ -152,25 +163,10 @@ export default async function SearchPage({
           hideSuggestions
           filtersDefaultOpen
         >
-          <div className="mb-4 px-3 lg:px-6 xl:px-8">
-            <MarketplaceSafetyNotice vertical="property" />
-          </div>
-
-          <AdSlot
-            placement="search_top"
-            className="mt-2 hidden px-3 lg:block lg:px-6 xl:px-8"
-          />
-
-          <section className="mt-2 w-full px-3 lg:px-6 xl:px-8">
-            <AdminPromoSlot placement="search_page" variant="inline" className="mb-4" />
+          {/* Order: Search → Filters → Summary (in chrome) → Listings → Ads */}
+          <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
             {showingNearby ? (
               <div className="mb-4">
-                <p className="mb-1 text-sm font-semibold text-navy">
-                  {emptyCopy.title}
-                </p>
-                <p className="mb-3 text-xs text-muted">
-                  Nearby in {preloadParams.state ?? preloadParams.city ?? "your area"}
-                </p>
                 <PropertyFeed
                   properties={nearbyItems}
                   isDemo={isDemo}
@@ -205,6 +201,14 @@ export default async function SearchPage({
                 secondaryLabel={hasQuery ? "Clear filters" : undefined}
               />
             )}
+
+            <div className="mt-6 space-y-4">
+              <AdminPromoSlot placement="search_page" variant="inline" />
+              <AdSlot
+                placement="search_top"
+                className="hidden lg:block"
+              />
+            </div>
           </section>
         </SearchResultsChrome>
       </Suspense>

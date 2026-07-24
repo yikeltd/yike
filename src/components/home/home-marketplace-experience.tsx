@@ -92,9 +92,11 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-2.5 flex items-end justify-between gap-3 lg:mb-3.5">
-      <h2 className="min-w-0 text-base font-bold tracking-tight text-navy sm:text-lg lg:text-xl">
-        {title}
-      </h2>
+      <div className="min-w-0 border-l-[3px] border-gold pl-2.5 sm:pl-3">
+        <h2 className="text-base font-bold tracking-tight text-navy sm:text-lg lg:text-xl">
+          {title}
+        </h2>
+      </div>
       <Link
         href={href}
         className="shrink-0 text-xs font-bold text-gold-dark transition-colors hover:text-navy hover:underline sm:text-sm"
@@ -351,7 +353,7 @@ export function HomeMarketplaceExperience({
       />
 
       {/* Mobile / tablet — sticky Properties|Vehicles; inventory-first */}
-      <div className="sticky top-14 z-30 border-b border-navy/[0.06] bg-[#F4F6FA]/95 px-3 py-2 backdrop-blur-md sm:px-6 lg:hidden">
+      <div className="sticky top-14 z-30 border-b border-navy/[0.06] bg-ivory/95 px-3 py-2 backdrop-blur-md sm:px-6 lg:hidden">
         <div className="mx-auto max-w-sm sm:max-w-md">
           <MarketplaceCategoryToggle
             category={category}
@@ -373,9 +375,9 @@ export function HomeMarketplaceExperience({
           </section>
         ) : (
           <>
-            {/* 1. Featured Near You */}
+            {/* 1. Featured Near You — white */}
             {featuredNearItems.length > 0 ? (
-              <section className="rounded-2xl bg-gradient-to-b from-white to-[#F7F8FC] px-1 pb-4 pt-1 sm:px-2 lg:pb-6">
+              <section className="home-rail-section home-band-white">
                 <SectionHeader
                   title={featuredNearTitle}
                   href={featuredCopy.href}
@@ -393,12 +395,12 @@ export function HomeMarketplaceExperience({
               placement="homepage_slot_1"
             />
 
-            {/* 2. Recently Added */}
+            {/* 2. Recently Added — soft ivory */}
             {(isVehicle
               ? vehicleRails.recent.items
               : propertyRails.recent.items
             ).length > 0 ? (
-              <section className="rounded-2xl bg-[#EEF1F7]/70 px-1 py-4 sm:px-2 lg:py-6">
+              <section className="home-rail-section home-band-ivory mt-1 lg:mt-2">
                 <SectionHeader
                   title={recentCopy.title}
                   href={recentCopy.href}
@@ -416,12 +418,12 @@ export function HomeMarketplaceExperience({
               placement="homepage_slot_2"
             />
 
-            {/* 3. Luxury */}
+            {/* 3. Luxury — soft sand */}
             {(isVehicle
               ? vehicleRails.luxury.items
               : propertyRails.luxury.items
             ).length > 0 ? (
-              <section className="rounded-2xl bg-gradient-to-b from-white via-gold/[0.04] to-white px-1 py-4 sm:px-2 lg:py-6">
+              <section className="home-rail-section home-band-sand mt-1 lg:mt-2">
                 <SectionHeader
                   title={luxuryCopy.title}
                   href={luxuryCopy.href}
@@ -439,7 +441,7 @@ export function HomeMarketplaceExperience({
               placement="homepage_slot_3"
             />
 
-            {/* 4. Recommended */}
+            {/* 4. Recommended — warm neutral */}
             {(() => {
               const trendingItems = isVehicle
                 ? vehicleRails.trending.items
@@ -454,7 +456,7 @@ export function HomeMarketplaceExperience({
               if (recommendedItems.length === 0) return null;
               const copy = useTrending ? trendingCopy : nationwideCopy;
               return (
-                <section className="rounded-2xl bg-[#F4F6FA] px-1 py-4 sm:px-2 lg:py-6">
+                <section className="home-rail-section home-band-warm mt-1 lg:mt-2">
                   <SectionHeader
                     title={useTrending ? "Recommended" : "Recommended for you"}
                     href={copy.href}
@@ -478,7 +480,7 @@ export function HomeMarketplaceExperience({
         <HomeFeaturedLocations
           items={locations}
           title="Popular Cities"
-          className="pb-4 pt-2"
+          className="home-rail-section home-band-white pb-4 pt-2"
         />
 
         <div className="pb-3 pt-1 lg:pb-4">

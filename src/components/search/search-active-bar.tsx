@@ -4,11 +4,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { hubLabel } from "@/constants/listingTypes";
 import { budgetLabelFromParams } from "@/lib/search-summary";
-import { SaveSearchButton } from "./save-search-button";
 import { cn } from "@/lib/utils";
 
 const PILL_KEYS: { key: string; label: (v: string) => string }[] = [
-  { key: "type", label: (v) => v },
+  { key: "type", label: (v) => (v === "sale" ? "For Sale" : v === "rent" ? "For Rent" : v) },
   {
     key: "hub",
     label: (v) => hubLabel(v as Parameters<typeof hubLabel>[0]) ?? v,
@@ -26,8 +25,8 @@ export function SearchActiveBar({
   resultCount,
   nearbyCount = 0,
   showingFallback = false,
-  currentHref,
-  currentLabel,
+  currentHref: _currentHref,
+  currentLabel: _currentLabel,
   compact,
   className,
 }: {
@@ -39,6 +38,8 @@ export function SearchActiveBar({
   compact?: boolean;
   className?: string;
 }) {
+  void _currentHref;
+  void _currentLabel;
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -62,6 +63,7 @@ export function SearchActiveBar({
 
   if (sp.get("verified") === "1") pills.push({ key: "verified", text: "Verified" });
   if (sp.get("featured") === "1") pills.push({ key: "featured", text: "Featured" });
+  if (sp.get("nearby") === "1") pills.push({ key: "nearby", text: "Nearby" });
   if (sp.get("min") || sp.get("max")) {
     const label =
       budgetLabelFromParams(sp.get("min"), sp.get("max")) ?? "Budget";
@@ -69,45 +71,39 @@ export function SearchActiveBar({
   }
 
   const hasFilters = pills.length > 0;
+  const count = showingFallback ? nearbyCount : resultCount;
+  const summary = showingFallback
+    ? `${count} Results Nearby`
+    : sp.get("nearby") === "1"
+      ? `${count} Results Nearby`
+      : `${count} Results`;
 
   return (
     <div
       className={cn(
-        "border-b border-navy/8 bg-white/95 px-3 backdrop-blur-sm lg:px-6 xl:px-8",
-        compact ? "py-2.5" : "py-3",
+        "px-3 lg:px-6 xl:px-8",
+        compact ? "py-2" : "py-2.5",
         className
       )}
     >
-      <div className="w-full lg:max-w-7xl lg:mx-auto">
+      <div className="w-full lg:mx-auto lg:max-w-7xl">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-bold text-foreground lg:text-base">
-            {showingFallback
-              ? `${nearbyCount} nearby`
-              : `${resultCount} ${resultCount === 1 ? "listing" : "listings"}`}
+          <p className="text-sm font-bold tracking-tight text-navy lg:text-[15px]">
+            {summary}
           </p>
-          <div className="flex shrink-0 items-center gap-1.5">
-            {currentHref && currentLabel ? (
-              <SaveSearchButton
-                label={currentLabel}
-                href={currentHref}
-                compact
-                className="!px-2 !py-1"
-              />
-            ) : null}
-            {hasFilters ? (
-              <button
-                type="button"
-                onClick={clearAll}
-                className="pressable rounded-full px-2.5 py-1 text-xs font-bold text-muted hover:text-foreground"
-              >
-                Clear
-              </button>
-            ) : null}
-          </div>
+          {hasFilters ? (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="pressable rounded-full px-2.5 py-1 text-xs font-semibold text-navy/45 hover:text-navy"
+            >
+              Clear
+            </button>
+          ) : null}
         </div>
 
         {hasFilters ? (
-          <div className="hide-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-0.5">
+          <div className="hide-scrollbar mt-1.5 flex gap-1.5 overflow-x-auto pb-0.5">
             {pills.map((pill) => (
               <button
                 key={`${pill.key}-${pill.text}`}
@@ -121,16 +117,12 @@ export function SearchActiveBar({
                     router.push(qs ? `/search?${qs}` : "/search");
                     return;
                   }
-                  if (pill.key === "verified" || pill.key === "featured") {
-                    removeKey(pill.key);
-                    return;
-                  }
                   removeKey(pill.key);
                 }}
-                className="pressable inline-flex shrink-0 items-center gap-1 rounded-full bg-navy px-2.5 py-1 text-[11px] font-bold text-white"
+                className="pressable inline-flex shrink-0 items-center gap-1 rounded-full bg-navy/[0.06] px-2.5 py-1 text-[11px] font-semibold text-navy/80"
               >
                 <span className="capitalize">{pill.text}</span>
-                <X className="h-2.5 w-2.5 opacity-70" />
+                <X className="h-2.5 w-2.5 opacity-50" />
               </button>
             ))}
           </div>

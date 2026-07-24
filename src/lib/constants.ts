@@ -10,12 +10,12 @@ export const COMPANY_EMAIL = "hello@yike.ng";
 
 /**
  * Official Yike support WhatsApp — E.164 digits only (no +).
- * Display: +234 810 351 4329
+ * Display: +234 803 514 3299
  */
-export const YIKE_SUPPORT_WHATSAPP = "2348103514329";
+export const YIKE_SUPPORT_WHATSAPP = "2348035143299";
 
 /** Human-readable support phone for contact pages and compliance. */
-export const YIKE_SUPPORT_PHONE_DISPLAY = "+234 810 351 4329";
+export const YIKE_SUPPORT_PHONE_DISPLAY = "+234 803 514 3299";
 
 /** @deprecated HomeHeroPitch removed — kept for reference only */
 export const HOME_HERO_HEADLINE = "Property and vehicles across Nigeria.";

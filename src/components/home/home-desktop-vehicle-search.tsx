@@ -74,7 +74,7 @@ export function HomeDesktopVehicleSearch({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-white/10 bg-[#031B4E] p-4 shadow-[0_28px_72px_-20px_rgba(2,20,51,0.55),0_12px_32px_-12px_rgba(0,0,0,0.35)] ring-1 ring-white/10 xl:p-5",
+        "yike-search-shell rounded-[1.35rem] border border-white/14 bg-[#031B4E]/96 p-4 shadow-search ring-1 ring-white/12 xl:p-5",
         className,
       )}
     >
@@ -122,7 +122,7 @@ export function HomeDesktopVehicleSearch({
         <button
           type="button"
           onClick={submit}
-          className="pressable col-span-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-bold text-navy shadow-glow-gold transition-transform hover:scale-[1.01] active:scale-[0.99] sm:col-span-1 lg:col-auto lg:h-11 lg:min-w-[10.25rem]"
+          className="pressable yike-btn-accent col-span-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-bold text-navy sm:col-span-1 lg:col-auto lg:h-12 lg:min-w-[10.5rem]"
         >
           <Search className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           Search Vehicles

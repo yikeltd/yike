@@ -34,10 +34,6 @@ import {
   toggleGuestFavorite,
 } from "@/lib/guest-favorites";
 import { logFeaturedAnalyticsEvent } from "@/lib/featured-promotions/analytics-client";
-import {
-  deriveSellerBuyerBadge,
-  SELLER_BUYER_BADGE_LABELS,
-} from "@/lib/seller-trust";
 
 export type PropertyCardLayout = "mobile" | "desktop";
 export type PropertyCardVariant = "default" | "browse";
@@ -76,10 +72,6 @@ export function PropertyCard({
   const agent = property.agent;
   const verified =
     property.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
-  const sellerBadge = agent ? deriveSellerBuyerBadge(agent) : null;
-  const sellerBadgeLabel = sellerBadge
-    ? SELLER_BUYER_BADGE_LABELS[sellerBadge]
-    : null;
   const hasAgent = !!agent?.id;
   const isDemo = isDemoProperty(property.id);
   const href = listingPath(property);
@@ -280,7 +272,7 @@ export function PropertyCard({
         >
           <div
             className={cn(
-              "relative overflow-hidden rounded-xl bg-navy/5",
+              "listing-thumb relative overflow-hidden rounded-xl bg-navy/5",
               BROWSE_THUMB_ASPECT,
             )}
           >
@@ -292,6 +284,25 @@ export function PropertyCard({
               width={480}
               className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
+            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-navy/35 to-transparent" />
+            <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-1">
+              <span className="rounded-md bg-navy/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-[2px]">
+                {listingTypeLabel(property.listing_type)}
+              </span>
+              {verified ? (
+                <span
+                  className="rounded-md bg-emerald-600/92 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-[2px]"
+                  title="Verified"
+                >
+                  ✓ Verified
+                </span>
+              ) : null}
+              {featuredActive ? (
+                <span className="rounded-md bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
+                  Feat
+                </span>
+              ) : null}
+            </div>
           </div>
         </Link>
 
@@ -302,16 +313,16 @@ export function PropertyCard({
               onClick={toggleSave}
               disabled={saving}
               className={cn(
-                "pointer-events-auto pressable flex h-7 w-7 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-[2px] transition-opacity",
+                "pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-navy shadow-sm backdrop-blur-sm transition-transform",
                 saving && "opacity-70",
-                !saved && "opacity-80 group-hover:opacity-100",
+                !saved && "opacity-90 group-hover:opacity-100 group-hover:scale-105",
               )}
               aria-label={saved ? "Unsave listing" : "Save listing"}
             >
               <Heart
                 className={cn(
-                  "h-3.5 w-3.5",
-                  saved ? "fill-red-500 text-red-500" : "text-white",
+                  "h-3.5 w-3.5 transition-colors",
+                  saved ? "fill-red-500 text-red-500" : "text-navy/70",
                 )}
               />
             </button>
@@ -328,7 +339,7 @@ export function PropertyCard({
             <p className="text-[13px] font-bold tabular-nums leading-tight tracking-tight text-navy sm:text-sm">
               {price}
             </p>
-            <p className="mt-0.5 line-clamp-1 text-[11px] font-semibold leading-snug text-navy sm:text-[12px]">
+            <p className="mt-0.5 line-clamp-1 text-[11px] font-semibold leading-snug text-navy/90 sm:text-[12px]">
               {property.title}
             </p>
             {locationLabel ? (
@@ -342,26 +353,14 @@ export function PropertyCard({
                 />
               </p>
             ) : null}
-            {sellerBadgeLabel ? (
-              <p
-                className={cn(
-                  "mt-0.5 text-[9px] font-bold uppercase tracking-wide",
-                  sellerBadge === "verified_seller"
-                    ? "text-emerald-700"
-                    : sellerBadge === "verification_pending"
-                      ? "text-amber-800"
-                      : "text-navy/45"
-                )}
-              >
-                {sellerBadge === "verified_seller"
-                  ? "✓ Verified"
-                  : sellerBadge === "verification_pending"
-                    ? "⏳ Pending"
-                    : "Unverified"}
-              </p>
-            ) : verified ? (
-              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
-                Verified
+            {attrs.length > 0 ? (
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/45">
+                {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
+                  <span key={label} className="inline-flex items-center gap-0.5">
+                    <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                    {label}
+                  </span>
+                ))}
               </p>
             ) : null}
           </Link>
@@ -373,7 +372,7 @@ export function PropertyCard({
   return (
     <article
       className={cn(
-        "group card-lift relative flex h-full flex-col overflow-hidden rounded-xl bg-elevated shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
+        "group card-lift relative flex h-full flex-col overflow-hidden rounded-xl bg-elevated shadow-card ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
         inline ? "" : ""
       )}
     >
@@ -394,19 +393,19 @@ export function PropertyCard({
             className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
           <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.75rem)] flex-wrap gap-1">
-            <span className="rounded bg-navy/85 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+            <span className="rounded-md bg-navy/85 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
               {listingTypeLabel(property.listing_type)}
             </span>
             {verified ? (
               <span
-                className="rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm"
+                className="rounded-md bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm"
                 title="Verified"
               >
-                ✓
+                ✓ Verified
               </span>
             ) : null}
             {featuredActive ? (
-              <span className="rounded bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
+              <span className="rounded-md bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
                 Feat
               </span>
             ) : null}
@@ -421,7 +420,7 @@ export function PropertyCard({
           onClick={toggleSave}
           disabled={saving || isDemo}
           className={cn(
-            "pointer-events-auto pressable flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm",
+            "pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm transition-transform hover:scale-105",
             saving && "opacity-70"
           )}
           aria-label={saved ? "Unsave listing" : "Save listing"}
@@ -438,7 +437,7 @@ export function PropertyCard({
             type="button"
             onClick={onChatClick}
             disabled={chatLoading}
-            className="pointer-events-auto pressable flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm disabled:opacity-70"
+            className="pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm transition-transform hover:scale-105 disabled:opacity-70"
             aria-label="Chat on WhatsApp"
           >
             <MessageCircle className="h-3.5 w-3.5 text-navy/70" />

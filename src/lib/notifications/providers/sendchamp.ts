@@ -173,6 +173,9 @@ async function sendVerificationOtp(
   mobile: string,
   code: string
 ): Promise<ProviderResult<{ reference?: string }>> {
+  // Always in_app_token for SMS so Sendchamp never delivers its default template.
+  // Callers that need delivery must use sendBrandedSmsOtp separately.
+  const isSms = channel === "SMS" || channel === "sms";
   const result = await sendchampPost<Record<string, unknown>>("/verification/create", {
     channel,
     sender,
@@ -182,6 +185,7 @@ async function sendVerificationOtp(
     customer_mobile_number: mobile,
     meta_data: { product: "yike", purpose: "phone_verification" },
     token: code,
+    ...(isSms ? { in_app_token: true } : {}),
   });
 
   if (!result.ok) return result;
@@ -257,23 +261,16 @@ export async function sendBrandedSmsOtp(
   return { ok: false, error: "SMS delivery failed" };
 }
 
+/**
+ * SMS OTP delivery — branded `/sms/send` only.
+ * Never fall back to `/verification/create` without `in_app_token` (that sends
+ * Sendchamp’s default “Hi There” template and causes duplicate SMS).
+ */
 export async function sendOtpSms(
   phone: string,
   code: string
 ): Promise<ProviderResult<{ reference?: string }>> {
-  const branded = await sendBrandedSmsOtp(phone, code);
-  if (branded.ok) return branded;
-
-  const config = getConfig();
-  if (!config) return { ok: false, error: "Sendchamp not configured" };
-
-  const mobile = toSendchampPhone(phone);
-  for (const channel of ["SMS", "sms"] as const) {
-    const verification = await sendVerificationOtp(channel, config.smsSender, mobile, code);
-    if (verification.ok) return verification;
-  }
-
-  return { ok: false, error: branded.error || "SMS delivery failed" };
+  return sendBrandedSmsOtp(phone, code);
 }
 
 export async function sendOtpWhatsApp(

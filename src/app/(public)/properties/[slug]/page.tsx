@@ -27,7 +27,8 @@ import { StickyContactBar } from "@/components/property/sticky-contact-bar";
 import { PropertyVideo } from "@/components/property/property-video";
 import { SafetyNotice } from "@/components/property/safety-notice";
 import { RelatedListings } from "@/components/property/related-listings";
-import { AdSlot } from "@/components/ads/ad-slot";
+import { DetailPromotionZone } from "@/components/ads/detail-promotion-zone";
+import { DetailRecentlyViewed } from "@/components/marketplace/detail-recently-viewed";
 import { RentTransparencyCard } from "@/components/property/rent-transparency-card";
 import { AmenityChips } from "@/components/property/amenity-chips";
 import { ListingStructuredData } from "@/components/seo/listing-structured-data";
@@ -43,6 +44,7 @@ import { SITE_NAME } from "@/lib/constants";
 import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 import { ListingInsightsSection } from "@/components/property/listing-insights-section";
 import { ListingValueDriversSection } from "@/components/property/listing-value-drivers-section";
+import { getActiveAd } from "@/lib/ads";
 
 const ReportListingForm = dynamic(
   () =>
@@ -180,9 +182,10 @@ export default async function PropertyDetailPage({
 
   const amenities = property.extras?.amenities ?? [];
   const shareUrl = propertyAbsoluteUrl(property);
+  const detailAd = await getActiveAd("property_detail");
 
   return (
-    <div className="safe-bottom-detail lg:pb-0">
+    <div>
       {isPubliclyVisible ? <ListingStructuredData property={property} /> : null}
       <PropertyViewTracker propertyId={property.id} property={property} slug={slug} />
 
@@ -373,18 +376,22 @@ export default async function PropertyDetailPage({
 
             <Link
               href="/search"
-              className="block py-4 text-center text-sm font-semibold text-gold-dark lg:text-left"
+              className="block py-2 text-center text-sm font-semibold text-gold-dark lg:text-left"
             >
               ← Browse more homes
             </Link>
 
-            <Suspense fallback={null}>
-              <AdSlot placement="property_detail" className="!px-0" />
-            </Suspense>
+            {detailAd ? (
+              <DetailPromotionZone placement="property_detail" ad={detailAd} />
+            ) : (
+              <DetailRecentlyViewed excludeId={property.id} />
+            )}
 
-            <Suspense fallback={<DetailSectionFallback />}>
+            <Suspense fallback={null}>
               <RelatedListings property={property} />
             </Suspense>
+
+            <SafetyNotice className="pt-1 lg:hidden" />
           </div>
         </div>
 

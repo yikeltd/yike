@@ -1,7 +1,7 @@
 # WhatsApp Lead Tracking Report
 
 **Date:** 2026-07-23  
-**Official line:** `+234 810 351 4329` → E.164 digits `2348103514329`
+**Official line:** `+234 803 514 3299` → E.164 digits `2348035143299`
 
 ## Verdict
 
@@ -46,8 +46,8 @@ Via SQL Editor on production, or `npm run db:push` after review. Until applied, 
 
 ## Number migration
 
-| Before | After |
-|--------|-------|
-| `2348035143299` | `2348103514329` |
+| Before (wrong) | After (official) |
+|----------------|------------------|
+| `2348103514329` | `2348035143299` |
 
-Confirm Coolify env `YIKE_WHATSAPP_NUMBER` / `NEXT_PUBLIC_YIKE_SUPPORT_WHATSAPP` / Sendchamp sender.
+Confirm Coolify env `YIKE_WHATSAPP_NUMBER` / `NEXT_PUBLIC_YIKE_SUPPORT_WHATSAPP` / Sendchamp sender = `2348035143299`.

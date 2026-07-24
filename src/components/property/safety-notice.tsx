@@ -1,35 +1,38 @@
 import Link from "next/link";
-import { ShieldAlert } from "lucide-react";
-import { getDailySafetyMessage } from "@/constants/safetyMessages";
+import { Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/** Compact safety link for property detail (desktop aside + mobile). */
 export function SafetyNotice({
-  compact,
+  compact = true,
   className,
 }: {
   compact?: boolean;
   className?: string;
 }) {
-  const message = getDailySafetyMessage();
+  if (compact) {
+    return (
+      <Link
+        href="/safety"
+        className={cn(
+          "inline-flex items-center gap-1.5 text-xs font-semibold text-navy/55 transition-colors hover:text-navy",
+          className
+        )}
+      >
+        <Shield className="h-3.5 w-3.5 text-gold" aria-hidden />
+        Safety Tips →
+      </Link>
+    );
+  }
 
   return (
-    <div
-      className={cn(
-        "rounded-2xl bg-surface/80 p-4 lg:p-5",
-        className
-      )}
-    >
+    <div className={cn("rounded-2xl bg-surface/80 p-4 lg:p-5", className)}>
       <div className="flex gap-3">
-        <ShieldAlert className="h-5 w-5 shrink-0 text-gold lg:h-6 lg:w-6" />
+        <Shield className="h-5 w-5 shrink-0 text-gold lg:h-6 lg:w-6" />
         <div>
           <p className="font-bold text-navy lg:text-base">Stay safe on Yike</p>
-          <p
-            className={cn(
-              "mt-1 leading-relaxed text-muted",
-              compact ? "line-clamp-2 text-xs" : "text-sm"
-            )}
-          >
-            {message}
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            Meet in public. Verify before payment. Never send inspection fees to strangers.
           </p>
           <Link
             href="/safety"
