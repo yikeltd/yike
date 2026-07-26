@@ -6,7 +6,7 @@ import {
   buildCoverStoragePaths,
   resolveImageMime,
 } from "@/lib/media/image";
-import { PROFILE_MEDIA_LIMITS } from "@/lib/media/constants";
+import { PROFILE_MEDIA_LIMITS, MEDIA_LIMITS } from "@/lib/media/constants";
 import { logUserProfileMedia } from "@/lib/profile/media-audit";
 import {
   removeProfileImageVariants,
@@ -209,6 +209,13 @@ export async function POST(request: Request) {
     const file = form.get("file") as File | null;
     if (!file || file.size === 0) {
       return NextResponse.json({ error: "Upload a JPG, PNG, or WebP photo" }, { status: 400 });
+    }
+
+    if (file.size > MEDIA_LIMITS.maxUploadBytes) {
+      return NextResponse.json(
+        { error: "Photo must be 15MB or smaller." },
+        { status: 400 }
+      );
     }
 
     const focalY = parseFocalY(form.get("focal_y"));

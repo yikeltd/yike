@@ -26,6 +26,12 @@ Enterprise Media Protection (`704163b4`) is **production-ready**. Do not reopen 
 
 Everything else → **Version 2** milestone. Do not merge V2 work to `main` during freeze.
 
+### Hardening gate (2026-07-26)
+
+**No new features** until [PRODUCTION_HARDENING_AUDIT.md](./PRODUCTION_HARDENING_AUDIT.md) says **READY FOR LAUNCH** and every listed **P0** is closed.
+
+Current audit verdict: **READY AFTER P0 FIXES** (FAT + profiles column security + supply framing).
+
 ---
 
 ## Pre-launch focus (non-feature)
