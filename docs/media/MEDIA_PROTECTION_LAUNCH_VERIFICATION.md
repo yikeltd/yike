@@ -27,7 +27,14 @@
 
 ## Files committed
 
-See git commit (media protection + related launch-ready docs/migrations as applicable).
+| Commit | Message |
+|--------|---------|
+| `704163b4` | feat(media): add enterprise media protection pipeline with dynamic watermarking and image fingerprinting |
+| `c73da09d` | chore(launch): ship Phase 1 readiness fixes for vehicles, profile lock, and audit docs |
+
+Pushed to `origin/main` (Coolify auto-deploy).
+
+OTP/Sendchamp WIP intentionally left uncommitted.
 
 ---
 
