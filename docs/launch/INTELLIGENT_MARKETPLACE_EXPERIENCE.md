@@ -76,6 +76,8 @@ Display each fact **once**.
 | Response rate / ratings | V2 (when data exists) |
 | Vision blur/dark/angle beyond current pipeline | V2 |
 
+**Definitive listing OS (architecture):** [INTELLIGENT_LISTING_ENGINE.md](./INTELLIGENT_LISTING_ENGINE.md) — one metadata-driven engine; Engine-1 implementation post-FAT / override.
+
 ---
 
 ## Components

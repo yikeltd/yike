@@ -67,6 +67,8 @@ Founder direction: do not add discovery rails for their own sake, AI, personaliz
 
 **IA/UX exception (Phase 1):** Intelligent Marketplace progressive disclosure — buyer detail dedupe, TrustModule, stepped listing forms using existing catalogs. See [INTELLIGENT_MARKETPLACE_EXPERIENCE.md](./INTELLIGENT_MARKETPLACE_EXPERIENCE.md). No new APIs/schema. Full smart-listing intelligence remains V2.
 
+**Architecture (docs only during freeze):** [INTELLIGENT_LISTING_ENGINE.md](./INTELLIGENT_LISTING_ENGINE.md) — definitive metadata-driven listing OS. Engine-0/1 implementation waits for FAT clearance or written founder override.
+
 **Governance (permanent, docs/rules):** Intelligent Marketplace OS + Yike Design System (YDS) — [INTELLIGENT_MARKETPLACE.md](../product/INTELLIGENT_MARKETPLACE.md), [YIKE_DESIGN_SYSTEM.md](../design/YIKE_DESIGN_SYSTEM.md). Documentation and token alignment may land during freeze; V2 automation (LLM, comps, factory catalogs) stays deferred.
 
 Further launch work = dealers, inventory, FAT, media smoke, support, bugfixes.
