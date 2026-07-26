@@ -3,8 +3,11 @@
 **Effective:** Sprint 0.7 (2026-07-21)  
 Infrastructure **frozen**. Coolify only. Ship product.
 
+> **Architecture freeze (2026-07-26):** See [PLATFORM_CONSTITUTION.md](../architecture/PLATFORM_CONSTITUTION.md) — YIP / Capability Runtime is complete; future work is capabilities, not new platform layers.
+
 | Standard | Doc |
 |----------|-----|
+| **Constitution** | [PLATFORM_CONSTITUTION.md](../architecture/PLATFORM_CONSTITUTION.md) |
 | Platform | [PLATFORM_STANDARD.md](./PLATFORM_STANDARD.md) |
 | Deploy | [DEPLOYMENT_STANDARD.md](./DEPLOYMENT_STANDARD.md) |
 | Environment | [ENVIRONMENT_STANDARD.md](./ENVIRONMENT_STANDARD.md) |

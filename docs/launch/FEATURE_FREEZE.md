@@ -6,6 +6,8 @@
 
 Yike has moved from *building features* to *operating a production marketplace*.
 
+**Architecture frozen:** [PLATFORM_CONSTITUTION.md](../architecture/PLATFORM_CONSTITUTION.md) — platform complete; ship **capabilities**, not new infrastructure layers. Agent rule: `.cursor/rules/platform-constitution.mdc`.
+
 **Daily ops dashboard:** [LAUNCH_COMMAND_CENTER.md](./LAUNCH_COMMAND_CENTER.md) (single source of truth until launch).
 
 Enterprise Media Protection (`704163b4`) is **production-ready**. Do not reopen feature expansion before soft launch is stable.

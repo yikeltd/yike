@@ -2,6 +2,7 @@
 
 Read `.cursor/rules/yike-product-direction.mdc` before any change. Direction is **locked** unless the founder overrides it.
 
+**Platform Constitution (architecture frozen):** `.cursor/rules/platform-constitution.mdc` · `docs/architecture/PLATFORM_CONSTITUTION.md` — no new infrastructure layers; ship capabilities only.  
 **Product OS:** Intelligent Marketplace — `.cursor/rules/intelligent-marketplace.mdc` · `docs/product/INTELLIGENT_MARKETPLACE.md`  
 **Design governance (YDS):** `.cursor/rules/yike-design-system.mdc` · `docs/design/YIKE_DESIGN_SYSTEM.md`
 

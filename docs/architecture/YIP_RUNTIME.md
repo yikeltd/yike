@@ -1,9 +1,9 @@
 # YIP Runtime — Capability Runtime Architecture
 
 **Status:** Shipped — the permanent platform foundation. No ML/LLM. **This is the last infrastructure layer.**
-**Authority:** Founder-approved final CORE extension (2026-07-26) — see [FEATURE_FREEZE.md](../launch/FEATURE_FREEZE.md)
+**Authority:** Founder-approved final CORE extension (2026-07-26) — see [FEATURE_FREEZE.md](../launch/FEATURE_FREEZE.md) · **[PLATFORM_CONSTITUTION.md](./PLATFORM_CONSTITUTION.md)** (architecture frozen)
 **Code:** `src/lib/yip/runtime/`
-**Related:** [YIKE_INTELLIGENCE_PLATFORM.md](./YIKE_INTELLIGENCE_PLATFORM.md) · [YIP_PLUGIN_ARCHITECTURE.md](./YIP_PLUGIN_ARCHITECTURE.md) · [YIP_RUNTIME_IMPLEMENTATION.md](../implementation/YIP_RUNTIME_IMPLEMENTATION.md)
+**Related:** [PLATFORM_CONSTITUTION.md](./PLATFORM_CONSTITUTION.md) · [YIKE_INTELLIGENCE_PLATFORM.md](./YIKE_INTELLIGENCE_PLATFORM.md) · [YIP_PLUGIN_ARCHITECTURE.md](./YIP_PLUGIN_ARCHITECTURE.md) · [YIP_RUNTIME_IMPLEMENTATION.md](../implementation/YIP_RUNTIME_IMPLEMENTATION.md)
 
 ---
 
