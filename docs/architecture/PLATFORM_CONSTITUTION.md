@@ -166,6 +166,12 @@ Categories, catalogs, and vertical intelligence extend via metadata + plugins �
 
 ---
 
-## One-line summary
+**One-line summary**
 
 **Platform complete. Capabilities forever. YIP does not change — what you install does.**
+
+---
+
+## Activation (pre-launch)
+
+Architecture freeze does not mean “stop shipping.” It means ship through the [Enterprise Activation Program](../launch/ENTERPRISE_ACTIVATION_PROGRAM.md) and [Capability Lifecycle](./CAPABILITY_LIFECYCLE.md): certify Group 1, build Group 2 dark, register Group 3 plugins, keep Group 4 out of the marketplace core.

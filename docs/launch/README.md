@@ -8,6 +8,11 @@ Operational pack for **Property Marketplace** launch. Complements
 | Doc | Purpose |
 |-----|---------|
 | **[LAUNCH_COMMAND_CENTER.md](./LAUNCH_COMMAND_CENTER.md)** | **Daily executive dashboard — update this only until launch** |
+| **[ENTERPRISE_ACTIVATION_PROGRAM.md](./ENTERPRISE_ACTIVATION_PROGRAM.md)** | **Final pre-launch activation program (capabilities, not infrastructure)** |
+| [ACTIVATION_GROUPS.md](./ACTIVATION_GROUPS.md) | 🟢🟡🔵🔴 readiness groups |
+| [PLATFORM_ACTIVATION_REPORT.md](./PLATFORM_ACTIVATION_REPORT.md) | Living certification scorecard |
+| [../architecture/CAPABILITY_LIFECYCLE.md](../architecture/CAPABILITY_LIFECYCLE.md) | Planned → Production → Retired |
+| [../architecture/PLATFORM_CONSTITUTION.md](../architecture/PLATFORM_CONSTITUTION.md) | Architecture frozen |
 | [FINAL_PRE_LAUNCH_REPORT.md](./FINAL_PRE_LAUNCH_REPORT.md) | FAT sprint · SMS bypass · launch checklist |
 | [MARKETPLACE_PLACEMENT_SYSTEM.md](./MARKETPLACE_PLACEMENT_SYSTEM.md) | Featured / Trending / Recently placement tiers |
 | [VEHICLE_MARKETPLACE_LAUNCH_REPORT.md](./VEHICLE_MARKETPLACE_LAUNCH_REPORT.md) | Vehicles flagship sync + GO/NO-GO |

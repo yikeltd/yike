@@ -8,6 +8,7 @@
 **Completion (launch readiness):** **~78%** · Engineering ~92% · Operations ~70% · Marketplace ~30% · Security ~85% · Documentation ~96%
 
 > **Single source of truth until launch.**  
+> **Activation program:** [ENTERPRISE_ACTIVATION_PROGRAM.md](./ENTERPRISE_ACTIVATION_PROGRAM.md) · [ACTIVATION_GROUPS.md](./ACTIVATION_GROUPS.md) · scorecard [PLATFORM_ACTIVATION_REPORT.md](./PLATFORM_ACTIVATION_REPORT.md)  
 > Vehicles report: [VEHICLE_MARKETPLACE_LAUNCH_REPORT.md](./VEHICLE_MARKETPLACE_LAUNCH_REPORT.md) · FAT: [FOUNDER_ACCEPTANCE_TEST.md](./FOUNDER_ACCEPTANCE_TEST.md) · Final report: [FINAL_PRE_LAUNCH_REPORT.md](./FINAL_PRE_LAUNCH_REPORT.md)
 
 ---

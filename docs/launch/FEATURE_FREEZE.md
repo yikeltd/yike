@@ -8,6 +8,8 @@ Yike has moved from *building features* to *operating a production marketplace*.
 
 **Architecture frozen:** [PLATFORM_CONSTITUTION.md](../architecture/PLATFORM_CONSTITUTION.md) — platform complete; ship **capabilities**, not new infrastructure layers. Agent rule: `.cursor/rules/platform-constitution.mdc`.
 
+**Enterprise Activation (founder-approved):** [ENTERPRISE_ACTIVATION_PROGRAM.md](./ENTERPRISE_ACTIVATION_PROGRAM.md) · [ACTIVATION_GROUPS.md](./ACTIVATION_GROUPS.md) · [CAPABILITY_LIFECYCLE.md](../architecture/CAPABILITY_LIFECYCLE.md) · scorecard [PLATFORM_ACTIVATION_REPORT.md](./PLATFORM_ACTIVATION_REPORT.md). This is the **last platform instruction before launch** — activate, integrate, certify; do not turn every flag on.
+
 **Daily ops dashboard:** [LAUNCH_COMMAND_CENTER.md](./LAUNCH_COMMAND_CENTER.md) (single source of truth until launch).
 
 Enterprise Media Protection (`704163b4`) is **production-ready**. Do not reopen feature expansion before soft launch is stable.
@@ -27,6 +29,17 @@ Enterprise Media Protection (`704163b4`) is **production-ready**. Do not reopen 
 | 🟡 | Documentation |
 
 Everything else → **Version 2** milestone. Do not merge V2 work to `main` during freeze.
+
+### Founder override — Enterprise Activation Program
+
+Work that **implements or certifies** capabilities listed in [ENTERPRISE_ACTIVATION_PROGRAM.md](./ENTERPRISE_ACTIVATION_PROGRAM.md) may merge when it:
+
+- Goes through YIP / Capability Runtime / plugins (no new infrastructure layer)
+- Advances a lifecycle stage ([CAPABILITY_LIFECYCLE.md](../architecture/CAPABILITY_LIFECYCLE.md))
+- Keeps Group 2+ UI behind flags unless Group 1 explicitly requires enablement
+- Updates [PLATFORM_ACTIVATION_REPORT.md](./PLATFORM_ACTIVATION_REPORT.md)
+
+Random consumer features and Group 4 product builds remain blocked.
 
 ### Hardening gate (2026-07-26)
 
