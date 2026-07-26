@@ -3,6 +3,7 @@ import { fetchAdminProfileStats } from "@/lib/admin/profile-stats";
 import { fetchUserAuditLogs } from "@/lib/admin/user-audit";
 import { getSession, getProfile } from "@/lib/auth";
 import { canViewAccounts, getActiveSupportView } from "@/lib/admin/support-view";
+import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 import { notFound } from "next/navigation";
 import { AdminUserDetail } from "@/components/admin/admin-user-detail";
 import type { Profile } from "@/types/database";
@@ -25,7 +26,11 @@ export default async function AdminUserDetailPage({
   const supportViewSession =
     staffProfile != null ? await getActiveSupportView(staffProfile.id) : null;
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select(PROFILES_SAFE_SELECT)
+    .eq("id", id)
+    .single();
 
   if (!profile) notFound();
 

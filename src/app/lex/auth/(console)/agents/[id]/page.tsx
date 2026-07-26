@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAdminProfileStats } from "@/lib/admin/profile-stats";
 import { fetchUserAuditLogs } from "@/lib/admin/user-audit";
+import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 import { notFound } from "next/navigation";
 import { AdminUserDetail } from "@/components/admin/admin-user-detail";
 import { AdminAgentVerificationSection } from "@/components/admin/admin-agent-verification-section";
@@ -15,7 +16,11 @@ export default async function AdminAgentDetailPage({
   const supabase = createAdminClient();
   if (!supabase) notFound();
 
-  const { data: agent } = await supabase.from("profiles").select("*").eq("id", id).single();
+  const { data: agent } = await supabase
+    .from("profiles")
+    .select(PROFILES_SAFE_SELECT)
+    .eq("id", id)
+    .single();
 
   if (!agent) notFound();
 

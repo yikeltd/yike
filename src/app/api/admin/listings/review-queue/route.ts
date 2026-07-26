@@ -52,7 +52,9 @@ export async function GET(req: Request) {
   const { data: groupRows } = await admin
     .from("properties")
     .select("review_queue_group")
-    .eq("status", status);
+    .eq("status", status)
+    .not("review_queue_group", "is", null)
+    .limit(2000);
 
   const groups: Record<string, number> = {};
   for (const g of Object.keys(REVIEW_QUEUE_LABELS) as ReviewQueueGroup[]) {

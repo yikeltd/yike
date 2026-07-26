@@ -1,4 +1,5 @@
-import { requireServerClient } from "@/lib/supabase/require-client";
+import { requireAdmin } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { AdminListingEditor } from "@/components/admin/admin-listing-editor";
 import type { Property, Profile } from "@/types/database";
@@ -8,10 +9,11 @@ export default async function AdminListingEditPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireAdmin();
   const { id } = await params;
-  const supabase = await requireServerClient();
+  const admin = createAdminClient();
 
-  const { data } = await supabase
+  const { data, error } = await admin
     .from("properties")
     .select(
       `*, agent:profiles!properties_agent_id_fkey (
@@ -22,6 +24,9 @@ export default async function AdminListingEditPage({
     .eq("id", id)
     .single();
 
+  if (error) {
+    console.error("[lex/listings/id]", error.message);
+  }
   if (!data) notFound();
 
   const listing = data as Property & { agent: Profile | null };

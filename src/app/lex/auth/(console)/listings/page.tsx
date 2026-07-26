@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { requireServerClient } from "@/lib/supabase/require-client";
+import { requireAdmin } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { adminListingsPath } from "@/lib/admin-paths";
 import { ModerationCard } from "@/components/admin/moderation-card";
 import { ListingActions } from "@/components/admin/listing-actions";
@@ -15,6 +16,29 @@ import { SampleBulkPurgeButton } from "@/components/admin/sample-bulk-purge-butt
 import { isSampleListing } from "@/lib/mock-listings";
 import { cn } from "@/lib/utils";
 
+/** Slim projection for moderation queue — avoid `*` media_items / jsonb bloat. */
+const LISTINGS_QUEUE_SELECT = `
+  id, title, price, payment_period, listing_type, property_type, bedrooms,
+  city, area, slug, status, media_urls, attributes, description, asset_type,
+  created_at, agent_id, review_overall_score, review_risk_level,
+  agent:profiles!properties_agent_id_fkey (
+    id, full_name, verification_status, verified_badge, role, phone, whatsapp
+  )
+`.replace(/\s+/g, " ").trim();
+
+type QueueAgent = Pick<
+  Profile,
+  | "id"
+  | "full_name"
+  | "verification_status"
+  | "verified_badge"
+  | "role"
+  | "phone"
+  | "whatsapp"
+>;
+
+type QueueListing = Property & { agent: QueueAgent | null };
+
 export default async function AdminListingsPage({
   searchParams,
 }: {
@@ -25,37 +49,58 @@ export default async function AdminListingsPage({
     vertical?: string;
   }>;
 }) {
+  await requireAdmin();
   const sp = await searchParams;
   const tabs = ["pending", "approved", "hidden", "rejected"] as const;
   if (!sp.status || !tabs.includes(sp.status as (typeof tabs)[number])) {
     redirect(adminListingsPath("pending"));
   }
   const status = sp.status;
-  const vertical = sp.vertical === "vehicle" ? "vehicle" : sp.vertical === "property" ? "property" : "all";
+  const vertical =
+    sp.vertical === "vehicle"
+      ? "vehicle"
+      : sp.vertical === "property"
+        ? "property"
+        : "all";
   const { page, from, to } = parseAdminPage(sp);
-  const supabase = await requireServerClient();
 
-  let query = supabase
-    .from("properties")
-    .select(
-      `*, agent:profiles!properties_agent_id_fkey (id, full_name, verification_status, verified_badge, role, phone, whatsapp)`,
-      { count: "exact" }
-    )
-    .eq("status", status)
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  let listings: QueueListing[] = [];
+  let total = 0;
+  let loadError: string | null = null;
 
-  if (sp.agent) query = query.eq("agent_id", sp.agent);
-  if (vertical === "vehicle") query = query.eq("asset_type", "VEHICLE");
-  if (vertical === "property") {
-    query = query.or("asset_type.eq.PROPERTY,asset_type.is.null");
+  try {
+    const admin = createAdminClient();
+    let query = admin
+      .from("properties")
+      .select(LISTINGS_QUEUE_SELECT, { count: "exact" })
+      .eq("status", status)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (sp.agent) query = query.eq("agent_id", sp.agent);
+    if (vertical === "vehicle") query = query.eq("asset_type", "VEHICLE");
+    if (vertical === "property") {
+      query = query.or("asset_type.eq.PROPERTY,asset_type.is.null");
+    }
+
+    const { data, count, error } = await query;
+    if (error) {
+      console.error("[lex/listings]", error.message);
+      loadError = "Could not load the moderation queue. Try again.";
+    } else {
+      listings = (data ?? []) as unknown as QueueListing[];
+      total = count ?? 0;
+    }
+  } catch (err) {
+    console.error("[lex/listings] fatal:", err);
+    loadError = "Could not load the moderation queue. Try again.";
   }
 
-  const { data, count } = await query;
-  const listings = (data ?? []) as (Property & { agent: Profile })[];
-  const total = count ?? 0;
-
-  const pageParams = { status, agent: sp.agent, vertical: vertical === "all" ? undefined : vertical };
+  const pageParams = {
+    status,
+    agent: sp.agent,
+    vertical: vertical === "all" ? undefined : vertical,
+  };
 
   return (
     <div className="space-y-6 pb-8">
@@ -112,7 +157,11 @@ export default async function AdminListingsPage({
           </Link>
         ))}
       </div>
-      {listings.length === 0 ? (
+      {loadError ? (
+        <p className="rounded-2xl bg-white py-16 text-center text-sm text-danger shadow-float">
+          {loadError}
+        </p>
+      ) : listings.length === 0 ? (
         <p className="rounded-2xl bg-white py-16 text-center text-sm text-muted shadow-float">
           No {status} listings.
         </p>
@@ -133,7 +182,7 @@ export default async function AdminListingsPage({
               </thead>
               <tbody>
                 {listings.map((p) => {
-                  const thumb = p.media_urls[0];
+                  const thumb = Array.isArray(p.media_urls) ? p.media_urls[0] : undefined;
                   const pubPath = propertyPath(p);
                   const sample = isSampleListing(p);
                   return (
@@ -230,7 +279,16 @@ export default async function AdminListingsPage({
           </div>
           <ul className="space-y-3 lg:hidden">
             {listings.map((p) => (
-              <ModerationCard key={p.id} property={p} />
+              <ModerationCard
+                key={p.id}
+                property={
+                  {
+                    ...p,
+                    media_urls: Array.isArray(p.media_urls) ? p.media_urls : [],
+                    agent: p.agent,
+                  } as Property & { agent: Profile | null }
+                }
+              />
             ))}
           </ul>
           <AdminPagination

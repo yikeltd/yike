@@ -3,6 +3,7 @@ import { authNavAllowlist } from "@/lib/admin/roles";
 import {
   AUTH_NAV_GROUPS,
   filterNavForRole,
+  type AdminNavBadges,
 } from "@/lib/admin/navigation";
 import { fetchAdminNavBadges } from "@/lib/admin/nav-badges";
 import { AdminShell } from "@/components/admin/shell/admin-shell";
@@ -17,7 +18,14 @@ export default async function AdminConsoleLayout({
   const { profile } = await requireAdmin();
   const allowlist = authNavAllowlist(profile.role);
   const groups = filterNavForRole(AUTH_NAV_GROUPS, allowlist);
-  const badges = allowlist === null ? await fetchAdminNavBadges() : {};
+  let badges: AdminNavBadges = {};
+  if (allowlist === null) {
+    try {
+      badges = await fetchAdminNavBadges();
+    } catch (err) {
+      console.error("[lex/layout] nav badges:", err);
+    }
+  }
 
   return (
     <AdminShell

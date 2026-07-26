@@ -6,6 +6,7 @@ import { StatusBadge, VerifiedBadge } from "@/components/ui/badge";
 import { SellerTrustBadge } from "@/components/marketplace/seller-trust-badge";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
 import { parseAdminPage } from "@/lib/admin/pagination";
+import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 import {
   deriveSellerLaunchStatus,
   SELLER_DB_STATUS_LABELS,
@@ -46,14 +47,16 @@ export default async function AdminAgentsPage({
 
   const { data: verifications } = await supabase
     .from("agent_verifications")
-    .select(`*, agent:profiles!agent_verifications_agent_id_fkey (*)`)
+    .select(
+      `*, agent:profiles!agent_verifications_agent_id_fkey (${PROFILES_SAFE_SELECT})`
+    )
     .eq("status", "pending")
     .order("created_at", { ascending: false })
     .range(from, to);
 
   const { data: agents, count } = await supabase
     .from("profiles")
-    .select("*", { count: "exact" })
+    .select(PROFILES_SAFE_SELECT, { count: "exact" })
     .in("role", ["agent", "agent_unverified", "agent_verified"])
     .order("created_at", { ascending: false })
     .range(from, to);
