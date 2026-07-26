@@ -26,6 +26,7 @@
 .cursor/
 scripts/.seed-*.sql
 yike.txt
+/tmp/
 
 # secrets & key material — never commit
 *.pem

@@ -28,6 +28,12 @@ export {
 export { storeWebpObject, AD_CREATIVES_BUCKET } from "./store-webp";
 export { handleAdminImageUpload } from "./admin-upload-handler";
 export {
+  isMediaProtectionEnabled,
+  protectListingImage,
+  compareFingerprints,
+  resolveWatermarkAttribution,
+} from "./protection";
+export {
   compressImage,
   compressImageBuffer,
   compressAdminPresetImage,

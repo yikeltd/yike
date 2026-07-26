@@ -49,6 +49,7 @@
     "store:capture:tablet-10": "TABLET_SIZE=10 node scripts/capture-play-tablet-screenshots.mjs",
     "store:capture:tablet": "TABLET_SIZE=both node scripts/capture-play-tablet-screenshots.mjs",
     "test:auth": "tsx scripts/test-auth-security.ts",
+    "test:media-protection": "tsx --test src/lib/media/protection/protection.test.ts",
     "test:review-memory": "tsx scripts/test-review-memory.ts",
     "test:outcome-intelligence": "tsx scripts/test-outcome-intelligence.ts",
     "test:e2e": "playwright test"
@@ -77,6 +78,7 @@
     "playwright": "^1.52.0",
     "png-to-ico": "^3.0.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }

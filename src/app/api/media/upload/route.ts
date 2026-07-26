@@ -5,13 +5,78 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { compressPropertyPhoto } from "@/lib/images/compress-image";
 import { buildStoragePaths, resolveImageMime } from "@/lib/media/image";
 import { validateVideoUpload } from "@/lib/media/video";
-import { ALLOWED_IMAGE_TYPES } from "@/lib/media/constants";
+import { ALLOWED_IMAGE_TYPES, MEDIA_LIMITS } from "@/lib/media/constants";
 import { friendlyStorageError } from "@/lib/media/storage-errors";
+import {
+  isMediaProtectionEnabled,
+  protectListingImage,
+  persistMediaAsset,
+} from "@/lib/media/protection";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const BUCKET = "property-media";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const STAFF_ROLES = new Set([
+  "admin",
+  "super_admin",
+  "support",
+  "tech",
+  "content",
+  "careers",
+  "moderator",
+]);
+
+/**
+ * Resolve a safe storage folder key.
+ * - draft → scoped under the authenticated user (prevents cross-user overwrite)
+ * - UUID → must own the listing (or be staff)
+ */
+async function resolveStoragePropertyId(params: {
+  rawPropertyId: string;
+  userId: string;
+  role: string;
+  admin: ReturnType<typeof createAdminClient>;
+}): Promise<
+  | { ok: true; storageId: string; listingId: string | null }
+  | { ok: false; status: number; error: string }
+> {
+  const raw = params.rawPropertyId.trim() || "draft";
+
+  if (raw === "draft") {
+    return { ok: true, storageId: `draft/${params.userId}`, listingId: null };
+  }
+
+  if (!UUID_RE.test(raw)) {
+    return { ok: false, status: 400, error: "Invalid property id" };
+  }
+
+  const { data: property, error } = await params.admin
+    .from("properties")
+    .select("id, agent_id")
+    .eq("id", raw)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[media/upload] property lookup failed", error.message);
+    return { ok: false, status: 500, error: "Could not verify listing ownership" };
+  }
+
+  if (!property) {
+    return { ok: false, status: 404, error: "Listing not found" };
+  }
+
+  const isStaff = STAFF_ROLES.has(params.role);
+  if (property.agent_id !== params.userId && !isStaff) {
+    return { ok: false, status: 403, error: "Not allowed to upload for this listing" };
+  }
+
+  return { ok: true, storageId: raw, listingId: raw };
+}
 
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
@@ -38,7 +103,7 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, is_banned")
+    .select("role, is_banned, full_name, company_name")
     .eq("id", user.id)
     .single();
 
@@ -55,7 +120,7 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const file = form.get("file") as File | null;
-  const propertyId = (form.get("propertyId") as string) || "draft";
+  const rawPropertyId = (form.get("propertyId") as string) || "draft";
   const index = Number(form.get("index") ?? 0);
   const kind = (form.get("kind") as string) || "image";
   const durationSec = form.get("duration")
@@ -66,7 +131,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No file" }, { status: 400 });
   }
 
+  const maxBytes =
+    kind === "video" ? MEDIA_LIMITS.maxVideoUploadBytes : MEDIA_LIMITS.maxUploadBytes;
+  if (!Number.isFinite(file.size) || file.size <= 0) {
+    return NextResponse.json({ error: "Empty file" }, { status: 400 });
+  }
+  if (file.size > maxBytes) {
+    return NextResponse.json(
+      {
+        error:
+          kind === "video"
+            ? "Video is too large (max 15MB before compression)."
+            : "Photo is too large (max 15MB before compression).",
+      },
+      { status: 400 }
+    );
+  }
+
+  const ownership = await resolveStoragePropertyId({
+    rawPropertyId,
+    userId: user.id,
+    role: profile.role,
+    admin,
+  });
+  if (!ownership.ok) {
+    return NextResponse.json({ error: ownership.error }, { status: ownership.status });
+  }
+  const propertyId = ownership.storageId;
+
   const buffer = Buffer.from(await file.arrayBuffer());
+  if (buffer.byteLength > maxBytes) {
+    return NextResponse.json({ error: "File exceeds upload limit" }, { status: 400 });
+  }
+
   const storage = admin.storage;
 
   if (kind === "video") {
@@ -106,6 +203,93 @@ export async function POST(request: Request) {
   }
 
   try {
+    const protectionOn = isMediaProtectionEnabled();
+
+    if (protectionOn) {
+      const protectedImage = await protectListingImage({
+        buffer,
+        profile: {
+          full_name: profile.full_name,
+          company_name: profile.company_name,
+        },
+        ownerId: user.id,
+        listingRef: propertyId,
+        listingId: ownership.listingId,
+        index,
+        mimeSource: mime,
+      });
+
+      const uploads = [
+        await storage.from(BUCKET).upload(protectedImage.paths.thumbnail, protectedImage.thumbnail, {
+          contentType: "image/webp",
+          upsert: true,
+        }),
+        await storage.from(BUCKET).upload(protectedImage.paths.medium, protectedImage.medium, {
+          contentType: "image/webp",
+          upsert: true,
+        }),
+        await storage.from(BUCKET).upload(protectedImage.paths.large, protectedImage.large, {
+          contentType: "image/webp",
+          upsert: true,
+        }),
+      ];
+
+      const failed = uploads.find((u) => u.error);
+      if (failed?.error) {
+        console.error("[media/upload] protected storage upload failed", {
+          bucket: BUCKET,
+          propertyId,
+          mime,
+          message: failed.error.message,
+        });
+        return NextResponse.json(
+          { error: friendlyStorageError(failed.error.message) },
+          { status: 500 }
+        );
+      }
+
+      const archiveUpload = await storage
+        .from(protectedImage.buckets.archive)
+        .upload(protectedImage.paths.original, protectedImage.archiveBuffer, {
+          contentType: mime,
+          upsert: true,
+        });
+      if (archiveUpload.error) {
+        // Public variants already published — log but do not fail the seller upload.
+        console.error("[media/upload] archive original failed", archiveUpload.error.message);
+      }
+
+      const persisted = await persistMediaAsset(admin, {
+        protected: protectedImage,
+        ownerId: user.id,
+        listingId: ownership.listingId,
+        listingRef: propertyId,
+        index,
+        mimeSource: mime,
+      });
+
+      const { data: largeUrl } = storage.from(BUCKET).getPublicUrl(protectedImage.paths.large);
+      const { data: mediumUrl } = storage.from(BUCKET).getPublicUrl(protectedImage.paths.medium);
+      const { data: thumbUrl } = storage.from(BUCKET).getPublicUrl(protectedImage.paths.thumbnail);
+
+      return NextResponse.json({
+        url: largeUrl.publicUrl,
+        medium: mediumUrl.publicUrl,
+        thumbnail: thumbUrl.publicUrl,
+        blur_data_url: protectedImage.blurDataUrl,
+        width: protectedImage.originalWidth,
+        height: protectedImage.originalHeight,
+        small_warning: protectedImage.smallSource,
+        optimized: true,
+        format: "webp",
+        protected: true,
+        mediaAssetId: persisted?.id ?? null,
+        imageUuid: protectedImage.imageUuid,
+        watermarkLabel: protectedImage.watermarkLabel,
+      });
+    }
+
+    // Legacy path (ENABLE_MEDIA_PROTECTION=false) — compress only, no watermark.
     const optimized = await compressPropertyPhoto(buffer);
     const paths = buildStoragePaths(propertyId, index);
 
@@ -152,6 +336,7 @@ export async function POST(request: Request) {
       small_warning: optimized.smallSource,
       optimized: true,
       format: "webp",
+      protected: false,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Upload failed — try again";

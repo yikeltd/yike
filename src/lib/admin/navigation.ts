@@ -543,7 +543,7 @@ export const TECH_NAV_GROUPS: NavGroup[] = [
       { href: techPath("email"), label: "Email Status", segment: "email" },
       { href: techPath("env"), label: "Env Health", segment: "env" },
       { href: techPath("errors"), label: "Error Logs", segment: "errors" },
-      { href: techPath("uploads"), label: "Failed Uploads", segment: "uploads" },
+      { href: techPath("uploads"), label: "Uploads & Protection", segment: "uploads" },
     ],
   },
 ];
