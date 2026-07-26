@@ -55,6 +55,14 @@ export class CapabilityRegistry implements ICapabilityRegistry {
     return this.entries.get(toCapabilityId(id))?.descriptor.enabled ?? false;
   }
 
+  /** Flips a descriptor's enabled flag. Disabling also drops the memoized instance so a later re-enable rebuilds it. */
+  setEnabled(id: CapabilityId | string, enabled: boolean): void {
+    const entry = this.entries.get(toCapabilityId(id));
+    if (!entry) throw new CapabilityNotFoundError(String(id));
+    entry.descriptor.enabled = enabled;
+    if (!enabled) entry.instance = undefined;
+  }
+
   has(id: CapabilityId | string): boolean {
     return this.entries.has(toCapabilityId(id));
   }

@@ -17,7 +17,34 @@ export { CapabilityRegistry } from "./registry/capability-registry";
 export type { CapabilityDescriptor, ICapabilityRegistry, RegisteredCapability } from "./registry/types";
 export { CAPABILITIES } from "./registry/capabilities";
 export type { CapabilityKey } from "./registry/capabilities";
+/** @deprecated see `plugins/builtins` + `PluginHost.installAll()` */
 export { registerDefaults } from "./registry/register-defaults";
+
+export { PluginHost } from "./plugins/host";
+export type { PluginHostDeps } from "./plugins/host";
+export { assertValidPlugin, definePlugin } from "./plugins/define-plugin";
+export { resolveInstallOrder, validatePluginGraph } from "./plugins/dependency";
+export type { PluginGraphValidation } from "./plugins/dependency";
+export {
+  InvalidPluginError,
+  PluginConflictError,
+  PluginDependencyError,
+  PluginLifecycleError,
+  PluginNotFoundError,
+} from "./plugins/errors";
+export type {
+  PluginDiagnostics,
+  PluginHealth,
+  PluginHealthStatus,
+  PluginId,
+  PluginLifecycleState,
+  PluginPermission,
+  PluginProviderOption,
+  YipPlugin,
+  YipPluginContext,
+  YipPluginHooks,
+} from "./plugins/types";
+export { BUILTIN_PLUGINS, createBuiltinPlugins } from "./plugins/builtins";
 
 export { EventBus } from "./events/event-bus";
 export type {

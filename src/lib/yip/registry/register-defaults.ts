@@ -1,4 +1,10 @@
 /**
+ * @deprecated Superseded by `plugins/builtins` + `PluginHost.installAll()`
+ * (see `bootstrap.ts`). Kept for external callers that registered
+ * capabilities directly against a registry before YIP 2.0's plugin host
+ * existed — behavior is unchanged, it just isn't what `createYip()` calls
+ * anymore.
+ *
  * Registers CORE's default capability set. Knowledge capabilities are
  * enabled (real data, no ML). Intelligence capabilities beyond knowledge
  * (recommendation, pricing, trust, media) are registered but stubbed —

@@ -31,4 +31,5 @@ export interface ICapabilityRegistry {
   isEnabled(id: CapabilityId | string): boolean;
   list(): RegisteredCapability[];
   has(id: CapabilityId | string): boolean;
+  setEnabled(id: CapabilityId | string, enabled: boolean): void;
 }

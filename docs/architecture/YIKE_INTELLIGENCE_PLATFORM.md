@@ -39,7 +39,8 @@ src/lib/yip/
   index.ts                 Public package surface (barrel export)
   bootstrap.ts              createYip() — wires registry + event bus + knowledge, registers defaults
   shared/                   Result, Confidence, CapabilityId/ProviderId brands, YipError hierarchy
-  registry/                 CapabilityRegistry (register/get/tryGet/list/isEnabled) + typed capability ids
+  registry/                 CapabilityRegistry (register/get/tryGet/list/isEnabled/setEnabled) + typed capability ids
+  plugins/                  YIP 2.0 plugin contract, PluginHost, dependency resolution, builtins/ (see YIP_PLUGIN_ARCHITECTURE.md)
   events/                   Discriminated YipEvent union + in-process EventBus (subscribe/publish/clear)
   knowledge/                Real data: vehicle/property/location knowledge + market/photo stubs + facade
   context/                  buildContext() — partial input → normalized YipContext
@@ -168,6 +169,14 @@ YIP core has zero framework or Yike-runtime coupling outside `knowledge/*` adapt
 3. Everything else — registry, events, context builder, all the stub modules — works unmodified.
 
 This is why the design goal insists on "no Next.js imports, no React, no `@/components`" inside `yip/*`: it's what makes step 3 true.
+
+---
+
+## YIP 2.0 — Plugins
+
+**CORE stays exactly as documented above.** New intelligence is no longer wired into `register-defaults.ts` directly — it's added as a `YipPlugin` (typed TypeScript module, git-reviewed, no filesystem dynamic loading) installed through `PluginHost`. `createYip()` now installs `plugins/builtins/*` (the same nine capabilities this document describes) instead of calling `registerDefaults` directly; `registerDefaults` is kept as a deprecated thin wrapper for any external caller that still wants a plain-registry setup.
+
+Applications are unaffected — `registry.get(...)` / `KnowledgeFacade` work exactly as before. See [YIP_PLUGIN_ARCHITECTURE.md](./YIP_PLUGIN_ARCHITECTURE.md) for the plugin contract, lifecycle, dependency/conflict resolution, and how to add a new plugin.
 
 ---
 

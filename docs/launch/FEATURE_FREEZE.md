@@ -73,6 +73,8 @@ Founder direction: do not add discovery rails for their own sake, AI, personaliz
 
 **YIP CORE override — ACTIVE (2026-07-26):** Founder-approved CORE scaffold for the Yike Intelligence Platform — interfaces, capability registry, in-process event bus, and a real Knowledge Layer wrapping existing vehicle/property/location data. **No ML/LLM/learning algorithms** — pricing, trust, recommendation, media analysis, and the learning layer are documented stubs only. Does not touch `listing-engine`'s `CATALOG_REGISTRY` or its 28 passing tests. See [YIKE_INTELLIGENCE_PLATFORM.md](../architecture/YIKE_INTELLIGENCE_PLATFORM.md) · [YIP_CORE_IMPLEMENTATION.md](../implementation/YIP_CORE_IMPLEMENTATION.md).
 
+**YIP 2.0 plugin host override — ACTIVE (2026-07-26):** Founder-approved CORE extension — a typed plugin contract + `PluginHost` so future capabilities install as reviewed TypeScript plugins instead of edits to a shared `register-defaults.ts`. Still **no ML/LLM**; no filesystem dynamic loading; no DB-stored manifests. `CapabilityRegistry`'s public API is unchanged (only additive `setEnabled`). See [YIP_PLUGIN_ARCHITECTURE.md](../architecture/YIP_PLUGIN_ARCHITECTURE.md) · [YIP_2_PLUGIN_IMPLEMENTATION.md](../implementation/YIP_2_PLUGIN_IMPLEMENTATION.md).
+
 **Governance (permanent, docs/rules):** Intelligent Marketplace OS + Yike Design System (YDS) — [INTELLIGENT_MARKETPLACE.md](../product/INTELLIGENT_MARKETPLACE.md), [YIKE_DESIGN_SYSTEM.md](../design/YIKE_DESIGN_SYSTEM.md). Documentation and token alignment may land during freeze; V2 automation (LLM, comps, factory catalogs) stays deferred.
 
 Further launch work = dealers, inventory, FAT, media smoke, support, bugfixes.

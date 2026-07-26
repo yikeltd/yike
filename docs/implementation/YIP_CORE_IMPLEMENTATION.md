@@ -3,6 +3,7 @@
 **Status:** Shipped — interfaces + registry + events + real Knowledge Layer. No ML/LLM/learning.
 **Authority:** Founder-approved CORE implementation (2026-07-26)
 **Architecture:** [YIKE_INTELLIGENCE_PLATFORM.md](../architecture/YIKE_INTELLIGENCE_PLATFORM.md)
+**Superseded bootstrap wiring:** `createYip()` now installs capabilities through the plugin host, not `registerDefaults` directly — see [YIP_2_PLUGIN_IMPLEMENTATION.md](./YIP_2_PLUGIN_IMPLEMENTATION.md) · [YIP_PLUGIN_ARCHITECTURE.md](../architecture/YIP_PLUGIN_ARCHITECTURE.md). Everything below (registry API, knowledge layer, event bus) is unchanged.
 
 ---
 
@@ -48,7 +49,7 @@ src/lib/listing-engine/index.ts                  (added getListingCatalogsFromYi
 ## Tests
 
 ```bash
-npm run test:yip             # 11 tests — registry, event bus, bootstrap defaults, vehicle/market knowledge, context, learning stub
+npm run test:yip             # 32 tests total — this file's 11 (registry, event bus, bootstrap defaults, vehicle/market knowledge, context, learning stub) + yip-plugins.test.ts's 21
 npm run test:listing-engine  # 28 tests — unchanged, still green
 npx tsc --noEmit              # clean
 ```
