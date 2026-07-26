@@ -137,7 +137,7 @@ SubmissionEngine → existing create adapters (no duplicate APIs)
 | `DependencyEngine` | Option graphs + invalidate dependents |
 | `SuggestionEngine` | Catalog / infer suggestions |
 | `AutoFillEngine` | Title, subtitle, description, SEO, tags, specs |
-| `PhotoEngine` | Photo rules + shared media pipeline |
+| `PhotoEngine` | Category `photo.schema` + variants · shared media pipeline — see [PHOTO_METADATA_ENGINE.md](./PHOTO_METADATA_ENGINE.md) |
 | `ReviewEngine` | Preview + checklist (not a second form) |
 | `SubmissionEngine` | Adapter → existing create API |
 
@@ -473,7 +473,7 @@ Metadata-driven generation (seller reviews and edits):
 | Suggested specs | infer + confirm |
 | Suggested price range | honest comps / anomaly only when data exists |
 | Recommended tags | `tagsFrom` |
-| Photo checklist | `photo.tips` |
+| Photo checklist | `photo.schema.recommendedShots` (via `resolvePhotoSchema`) · optional `photo.tips` override |
 | SEO title / description | recipes (deterministic) |
 
 Stop overwriting after first manual edit of that field (existing vehicle title behaviour).
@@ -482,14 +482,19 @@ Stop overwriting after first manual edit of that field (existing vehicle title b
 
 ## Photo engine
 
+**Category-aware taxonomies** — see [PHOTO_METADATA_ENGINE.md](./PHOTO_METADATA_ENGINE.md).
+
 Metadata defines per category:
 
+- `photo.schema` — tags, upload sequence, cover prefs, recommended shots  
+- `photo.schemaVariants` — e.g. land / commercial / shortlet  
 - Min / max photos  
-- Required / recommended angles  
+- Optional `tips` override (else `schema.recommendedShots`)  
 - Recommended cover strategy  
-- Accepted formats  
-- Warnings  
+- Accepted formats / warnings  
 - Compression: always via shared `src/lib/media/` — category may **tighten**, never bypass platform limits  
+
+`ListingPhotoManager` renders **only** the resolved schema. No hardcoded vehicle/property tag lists in the UI.
 
 Reuse `ListingPhotoManager` + `/api/media/upload`. No second upload pipeline.
 
