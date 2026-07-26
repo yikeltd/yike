@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { beginUserSession } from "@/lib/auth/session-state";
 
 export const runtime = "nodejs";
 
@@ -69,6 +70,8 @@ export async function POST(req: Request) {
       })
       .eq("id", user.id);
   }
+
+  await beginUserSession(user.id);
 
   return NextResponse.json({ ok: true });
 }

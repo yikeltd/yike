@@ -42,7 +42,7 @@ export function StaffSetPasswordForm() {
       return;
     }
 
-    router.replace("/lex?app=staff");
+    router.replace("/lex/auth/overview");
     router.refresh();
   }
 

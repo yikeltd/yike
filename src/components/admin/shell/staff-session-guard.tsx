@@ -35,7 +35,14 @@ export function StaffSessionGuard({ children }: { children: React.ReactNode }) {
   const pinPromptDismissed = useRef(false);
   const checking = useRef(false);
 
-  const skip = !pathname.startsWith("/lex") || !isSupabaseConfigured();
+  const isAuthSurface =
+    pathname === "/lex" ||
+    pathname.startsWith("/lex/auth/staff/set-password");
+
+  const skip =
+    !pathname.startsWith("/lex") ||
+    isAuthSurface ||
+    !isSupabaseConfigured();
 
   const refreshStatus = useCallback(async () => {
     if (skip || checking.current) return;
