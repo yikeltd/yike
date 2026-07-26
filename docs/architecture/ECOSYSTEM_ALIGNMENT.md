@@ -31,6 +31,7 @@ Yike adapts locally (marketplace UX) without rewriting the canon.
 - Listing moderation
 - Marketplace experience (feed, detail, WhatsApp CTAs, PWA)
 - Marketplace trust **indicators** (presentation / contribution of signals)
+- **Yike Intelligence Platform (YIP)** CORE — capability-oriented marketplace intelligence scaffold (`src/lib/yip/`); designed for eventual extraction as a shared Stankings package. See [YIKE_INTELLIGENCE_PLATFORM.md](./YIKE_INTELLIGENCE_PLATFORM.md).
 
 ## What Yike never owns
 

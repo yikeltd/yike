@@ -71,6 +71,8 @@ Founder direction: do not add discovery rails for their own sake, AI, personaliz
 
 **Engine-1 override — ACTIVE (2026-07-26):** Founder explicit override to build and FAT the Intelligent Metadata Listing Engine. M1–M3 shipped: modular engine + vehicle/property create/edit on `ListingEngine`. Legacy forms retained unused for rollback until FAT parity (M5). See [ENGINE_1_IMPLEMENTATION.md](../implementation/ENGINE_1_IMPLEMENTATION.md).
 
+**YIP CORE override — ACTIVE (2026-07-26):** Founder-approved CORE scaffold for the Yike Intelligence Platform — interfaces, capability registry, in-process event bus, and a real Knowledge Layer wrapping existing vehicle/property/location data. **No ML/LLM/learning algorithms** — pricing, trust, recommendation, media analysis, and the learning layer are documented stubs only. Does not touch `listing-engine`'s `CATALOG_REGISTRY` or its 28 passing tests. See [YIKE_INTELLIGENCE_PLATFORM.md](../architecture/YIKE_INTELLIGENCE_PLATFORM.md) · [YIP_CORE_IMPLEMENTATION.md](../implementation/YIP_CORE_IMPLEMENTATION.md).
+
 **Governance (permanent, docs/rules):** Intelligent Marketplace OS + Yike Design System (YDS) — [INTELLIGENT_MARKETPLACE.md](../product/INTELLIGENT_MARKETPLACE.md), [YIKE_DESIGN_SYSTEM.md](../design/YIKE_DESIGN_SYSTEM.md). Documentation and token alignment may land during freeze; V2 automation (LLM, comps, factory catalogs) stays deferred.
 
 Further launch work = dealers, inventory, FAT, media smoke, support, bugfixes.

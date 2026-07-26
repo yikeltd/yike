@@ -51,6 +51,7 @@
     "test:auth": "tsx scripts/test-auth-security.ts",
     "test:media-protection": "tsx --test src/lib/media/protection/protection.test.ts",
     "test:listing-engine": "tsx --test src/lib/listing-engine/__tests__/engine.test.ts",
+    "test:yip": "tsx --test src/lib/yip/__tests__/yip-core.test.ts",
     "test:review-memory": "tsx scripts/test-review-memory.ts",
     "test:outcome-intelligence": "tsx scripts/test-outcome-intelligence.ts",
     "test:e2e": "playwright test"

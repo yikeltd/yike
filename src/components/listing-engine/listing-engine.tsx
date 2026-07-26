@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
-  CATALOG_REGISTRY,
   MetadataResolver,
   NAMED_VALIDATION_RULES,
   NAMED_VISIBILITY_RULES,
   applyDependencyClears,
   getCategoryManifest,
+  getListingCatalogsFromYip,
   photoChecklistStatus,
   validateValues,
   valuesToPropertyPayload,
@@ -26,6 +26,9 @@ import {
   loadVehicleDraft,
   saveVehicleDraft,
 } from "@/lib/marketplace/vehicle-draft";
+
+/** Catalogs resolved via YIP Knowledge Layer (not direct dataset imports). */
+const LISTING_CATALOGS = getListingCatalogsFromYip();
 
 type Props = {
   categoryId: ListingCategoryId;
@@ -88,7 +91,7 @@ export function ListingEngine({
 
   const resolved = useMemo(
     () =>
-      MetadataResolver.compute(manifest, values, CATALOG_REGISTRY, {
+      MetadataResolver.compute(manifest, values, LISTING_CATALOGS, {
         visibilityEvaluators: NAMED_VISIBILITY_RULES,
         titleTouched,
         photoCount,
@@ -153,7 +156,7 @@ export function ListingEngine({
     });
     setValues((prev) => {
       const withChange = { ...prev, [id]: value };
-      return applyDependencyClears(manifest, id, withChange, CATALOG_REGISTRY);
+      return applyDependencyClears(manifest, id, withChange, LISTING_CATALOGS);
     });
   }
 

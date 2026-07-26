@@ -46,6 +46,7 @@ export { CATALOG_REGISTRY, getCatalog } from "./catalogs/registry";
 export type { CatalogMap, CatalogProvider } from "./catalogs/types";
 export { VEHICLE_CATALOGS } from "./catalogs/vehicle";
 export { PROPERTY_CATALOGS } from "./catalogs/property";
+export { getListingCatalogsFromYip } from "./catalogs/yip-bridge";
 
 export {
   NAMED_VISIBILITY_RULES,
