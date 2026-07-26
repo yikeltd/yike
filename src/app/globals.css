@@ -953,7 +953,11 @@ html.yike-app-mode body {
 }
 
 .site-footer-shell .site-footer-divider {
-  border-color: rgb(255 255 255 / 14%);
+  border-color: rgb(255 255 255 / 10%);
+}
+
+.site-footer-shell .site-footer-legal {
+  letter-spacing: 0.01em;
 }
 
 .section-band {
