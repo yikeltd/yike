@@ -35,6 +35,15 @@ const ACTION_TEMPLATES: Record<string, (a: SummaryInput) => string> = {
   "listing.approve": (i) => `${actorLabel(i)} approved listing ${targetLabel(i)}.`,
   "listing.reject": (i) => `${actorLabel(i)} rejected listing ${targetLabel(i)}.`,
   "listing.archive": (i) => `${actorLabel(i)} archived listing ${targetLabel(i)}.`,
+  "listing.delete": (i) => {
+    const why =
+      (typeof i.metadata?.delete_reason_label === "string" &&
+        i.metadata.delete_reason_label) ||
+      i.reason;
+    return why
+      ? `${actorLabel(i)} permanently deleted listing ${targetLabel(i)} (${why}).`
+      : `${actorLabel(i)} permanently deleted listing ${targetLabel(i)}.`;
+  },
   "listing.restore": (i) => `${actorLabel(i)} restored listing ${targetLabel(i)}.`,
   "listing.hide": (i) => `${actorLabel(i)} hid listing ${targetLabel(i)}.`,
   "listing.feature": (i) => `${actorLabel(i)} featured listing ${targetLabel(i)}.`,

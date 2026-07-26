@@ -8,6 +8,7 @@ import { AdminPagination } from "@/components/admin/admin-pagination";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { parseAdminPage } from "@/lib/admin/pagination";
+import { canPermanentlyDeleteListing } from "@/lib/admin/listing-delete";
 import { propertyPath } from "@/lib/property-url";
 import type { Property, Profile } from "@/types/database";
 import Link from "next/link";
@@ -49,7 +50,8 @@ export default async function AdminListingsPage({
     vertical?: string;
   }>;
 }) {
-  await requireAdmin();
+  const { profile } = await requireAdmin();
+  const allowPermanentDelete = canPermanentlyDeleteListing(profile.role);
   const sp = await searchParams;
   const tabs = ["pending", "approved", "hidden", "rejected"] as const;
   if (!sp.status || !tabs.includes(sp.status as (typeof tabs)[number])) {
@@ -261,6 +263,7 @@ export default async function AdminListingsPage({
                           agentWhatsapp={p.agent?.whatsapp}
                           agentPhone={p.agent?.phone}
                           isSample={sample}
+                          allowPermanentDelete={allowPermanentDelete}
                           agentVerified={
                             !!(
                               p.agent?.verified_badge ||
@@ -281,6 +284,7 @@ export default async function AdminListingsPage({
             {listings.map((p) => (
               <ModerationCard
                 key={p.id}
+                allowPermanentDelete={allowPermanentDelete}
                 property={
                   {
                     ...p,

@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { usePinGate } from "@/components/admin/pin-confirm-modal";
+import { ListingDeleteConfirmModal } from "@/components/admin/listing-delete-modal";
 import { AdminRecommendedEdits } from "@/components/admin/admin-recommended-edits";
+import type { ListingDeleteReason } from "@/lib/admin/listing-delete";
 import { normalizeWhatsApp } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { PropertyStatus } from "@/types/database";
@@ -33,6 +35,7 @@ export function ListingActions({
   agentPhone,
   compact,
   isSample = false,
+  allowPermanentDelete = false,
 }: {
   propertyId: string;
   title?: string;
@@ -45,12 +48,15 @@ export function ListingActions({
   compact?: boolean;
   /** Admin-only: sample / demo seed listing */
   isSample?: boolean;
+  /** Chief admin only — permanent soft-delete */
+  allowPermanentDelete?: boolean;
 }) {
   const router = useRouter();
   const { requirePin, pinModal } = usePinGate();
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [editsOpen, setEditsOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const reviewHref = `/lex/auth/listings/${propertyId}`;
   const agentHref = agentId ? `/lex/auth/agents/${agentId}` : null;
@@ -152,6 +158,28 @@ export function ListingActions({
     router.refresh();
   }
 
+  async function permanentDelete(payload: {
+    reason: ListingDeleteReason;
+    notes: string;
+  }) {
+    setBusy("delete");
+    setMessage("");
+    const res = await fetch(`/api/admin/listings/${propertyId}/delete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = (await res.json()) as { error?: string };
+    setBusy(null);
+    if (!res.ok) {
+      setMessage(body.error ?? "Delete failed");
+      throw new Error(body.error ?? "Delete failed");
+    }
+    setDeleteOpen(false);
+    setMessage("Deleted");
+    router.refresh();
+  }
+
   function renderActionButton({
     label,
     actionKey,
@@ -188,8 +216,10 @@ export function ListingActions({
   const showReject = status === "pending" || status === "flagged";
   const showRented = status === "approved";
   const showRequeue = status !== "pending";
-  const showHide = status !== "hidden" && status !== "rented";
+  const showHide = status !== "hidden" && status !== "rented" && status !== "archived";
   const showFeature = status === "approved" || status === "pending";
+  const showPermanentDelete =
+    allowPermanentDelete && status !== "archived";
 
   return (
     <div className={cn("space-y-2", compact ? "min-w-[200px]" : "min-w-[240px]")}>
@@ -314,6 +344,16 @@ export function ListingActions({
             actionKey: "request_edits",
             onClick: () => void moderate("request_edits"),
           })}
+          {showPermanentDelete ? (
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={() => setDeleteOpen(true)}
+              className="pressable min-h-[36px] rounded-lg bg-red-50 px-2.5 text-[11px] font-semibold text-red-800 disabled:opacity-50"
+            >
+              {busy === "delete" ? "…" : "🗑 Delete"}
+            </button>
+          ) : null}
         </div>
       </details>
 
@@ -329,6 +369,12 @@ export function ListingActions({
 
       {message ? <p className="text-[10px] text-muted">{message}</p> : null}
       {pinModal}
+      <ListingDeleteConfirmModal
+        open={deleteOpen}
+        listingTitle={title}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={permanentDelete}
+      />
     </div>
   );
 }

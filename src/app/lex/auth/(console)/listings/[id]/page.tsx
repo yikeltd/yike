@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { AdminListingEditor } from "@/components/admin/admin-listing-editor";
+import { canPermanentlyDeleteListing } from "@/lib/admin/listing-delete";
 import type { Property, Profile } from "@/types/database";
 
 export default async function AdminListingEditPage({
@@ -9,7 +10,7 @@ export default async function AdminListingEditPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  const { profile } = await requireAdmin();
   const { id } = await params;
   const admin = createAdminClient();
 
@@ -31,5 +32,10 @@ export default async function AdminListingEditPage({
 
   const listing = data as Property & { agent: Profile | null };
 
-  return <AdminListingEditor listing={listing} />;
+  return (
+    <AdminListingEditor
+      listing={listing}
+      allowPermanentDelete={canPermanentlyDeleteListing(profile.role)}
+    />
+  );
 }

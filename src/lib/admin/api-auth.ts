@@ -124,6 +124,8 @@ export async function requireTrustEnforcementApi() {
 
 export function roleAllowsAction(role: UserRole, action: string): boolean {
   if (isSuperAdmin(role)) return true;
+  // Permanent listing delete is chief-admin only (never moderators/content).
+  if (action === "listing.delete") return false;
   const supportActions = ["ticket.update", "report.view", "contact.view"];
   const techActions = ["health.view", "logs.view", "webhook.view"];
   const moderatorActions = ["listing.review", "report.resolve", "agent.review"];

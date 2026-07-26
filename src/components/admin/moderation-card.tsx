@@ -14,8 +14,10 @@ import type { Property, Profile } from "@/types/database";
 
 export function ModerationCard({
   property,
+  allowPermanentDelete = false,
 }: {
   property: Property & { agent: Profile | null };
+  allowPermanentDelete?: boolean;
 }) {
   const thumb = property.media_urls[0];
   const agent = property.agent;
@@ -105,6 +107,7 @@ export function ModerationCard({
           agentWhatsapp={agent?.whatsapp}
           agentPhone={agent?.phone}
           agentVerified={agent ? isVerifiedAgent(agent) : false}
+          allowPermanentDelete={allowPermanentDelete}
         />
       </div>
     </li>

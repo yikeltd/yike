@@ -27,7 +27,13 @@ import type { AdminEntityItem } from "@/components/admin/selection/types";
 
 type ListingRow = Property & { agent?: Profile | null };
 
-export function AdminListingEditor({ listing }: { listing: ListingRow }) {
+export function AdminListingEditor({
+  listing,
+  allowPermanentDelete = false,
+}: {
+  listing: ListingRow;
+  allowPermanentDelete?: boolean;
+}) {
   const router = useRouter();
   const { requirePin, pinModal } = usePinGate();
   const [form, setForm] = useState({
@@ -208,6 +214,7 @@ export function AdminListingEditor({ listing }: { listing: ListingRow }) {
               listing.agent?.verification_status === "approved"
             )
           }
+          allowPermanentDelete={allowPermanentDelete}
         />
       </section>
       <AdminRecommendedEdits listingId={listing.id} />
