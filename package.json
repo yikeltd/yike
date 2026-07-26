@@ -50,6 +50,7 @@
     "store:capture:tablet": "TABLET_SIZE=both node scripts/capture-play-tablet-screenshots.mjs",
     "test:auth": "tsx scripts/test-auth-security.ts",
     "test:media-protection": "tsx --test src/lib/media/protection/protection.test.ts",
+    "test:listing-engine": "tsx --test src/lib/listing-engine/__tests__/engine.test.ts",
     "test:review-memory": "tsx scripts/test-review-memory.ts",
     "test:outcome-intelligence": "tsx scripts/test-outcome-intelligence.ts",
     "test:e2e": "playwright test"

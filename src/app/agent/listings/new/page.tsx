@@ -1,6 +1,6 @@
 import { requireAgentLister } from "@/lib/auth";
 import { requireServerClient } from "@/lib/supabase/require-client";
-import { ListingForm } from "@/components/agent/listing-form";
+import { ListingEngine } from "@/components/listing-engine/listing-engine";
 import { ListingFormErrorBoundary } from "@/components/agent/listing-form-error-boundary";
 import { ListingWhatsappVerifyPrompt } from "@/components/agent/listing-whatsapp-verify-prompt";
 import {
@@ -15,7 +15,6 @@ import { TrustGateCompact } from "@/components/verification/trust-gate-compact";
 import { getRequiredVerificationTasks } from "@/lib/verification/tasks";
 import { getTrustCapabilities } from "@/lib/verification/permissions";
 import { countAsActiveListing, getListingLimit } from "@/lib/agent-tiers";
-import { getActiveAd } from "@/lib/ads";
 import Link from "next/link";
 import type { Property } from "@/types/database";
 import {
@@ -49,7 +48,6 @@ export default async function NewListingPage() {
   const statusMessage = accountStatusMessage(profile);
   const trustCaps = getTrustCapabilities(profile);
   const verificationTasks = getRequiredVerificationTasks(profile);
-  const listingFormAd = !atLimit ? await getActiveAd("agent_listing_form") : null;
   const whatsappNeedsVerify =
     mustVerifyWhatsappBeforeListing(profile) && !isWhatsappNumberVerified(profile);
   const showTrustNotice = Boolean(trustCaps.calmMessage);
@@ -59,14 +57,11 @@ export default async function NewListingPage() {
     <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">
       <div>
         <h1 className="text-xl font-bold text-navy lg:text-2xl">New listing</h1>
-        {limit !== null && (
+        {limit !== null ? (
           <p className="mt-2 text-xs text-muted">
             {activeCount} of {limit} listing slots used
           </p>
-        )}
-        <p className="mt-1 text-xs text-muted">
-          First listings go to Yike review. Verified Seller badge unlocks after manual approval.
-        </p>
+        ) : null}
       </div>
 
       {atLimit ? (
@@ -78,9 +73,7 @@ export default async function NewListingPage() {
         </div>
       ) : (
         <>
-          {showTrustNotice ? (
-            <TrustGateCompact tasks={verificationTasks} />
-          ) : null}
+          {showTrustNotice ? <TrustGateCompact tasks={verificationTasks} /> : null}
           {showAccountNotice ? (
             <div className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
               <p className="font-medium">Before you publish</p>
@@ -97,13 +90,7 @@ export default async function NewListingPage() {
             <ListingWhatsappVerifyPrompt profile={profile} />
           ) : null}
           <ListingFormErrorBoundary>
-            <ListingForm
-              agentId={user.id}
-              activeCount={activeCount}
-              listingLimit={limit}
-              listingFormAd={listingFormAd}
-              profile={profile}
-            />
+            <ListingEngine categoryId="property" agentId={user.id} />
           </ListingFormErrorBoundary>
         </>
       )}

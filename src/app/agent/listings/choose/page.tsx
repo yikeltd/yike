@@ -31,8 +31,7 @@ export default async function ChooseListingTypePage() {
           Choose Listing Type
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Your seller profile is in. Listings go to Yike review until you are a
-          Verified Seller.
+          Pick a category. The listing form adapts as you go.
         </p>
       </div>
 

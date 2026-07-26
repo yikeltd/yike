@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * @deprecated Engine-1 — create/edit routes now use ListingEngine.
+ * Kept for FAT rollback until founder confirms parity, then delete (M5).
+ * See docs/implementation/ENGINE_1_IMPLEMENTATION.md
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {

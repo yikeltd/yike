@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
-import { VehicleListingForm } from "@/components/marketplace/vehicle-listing-form";
+import { ListingEngine } from "@/components/listing-engine/listing-engine";
 import { requireAgentLister } from "@/lib/auth";
 import {
   mustCompleteSellerVerification,
@@ -38,10 +38,6 @@ export default async function NewVehicleListingPage() {
             New listing
           </p>
           <h1 className="text-2xl font-bold text-navy">List a vehicle</h1>
-          <p className="mt-1 text-sm text-black/60">
-            Submitted listings go to moderation before going live. Drafts save
-            on this device until you submit.
-          </p>
         </div>
         <Link
           href="/agent/listings/new"
@@ -50,7 +46,7 @@ export default async function NewVehicleListingPage() {
           List property instead
         </Link>
       </div>
-      <VehicleListingForm agentId={user.id} />
+      <ListingEngine categoryId="vehicle" agentId={user.id} />
     </main>
   );
 }
