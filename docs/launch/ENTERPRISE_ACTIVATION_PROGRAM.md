@@ -88,12 +88,16 @@ Registration · Initialization · Dependency resolution · Permissions · Config
 
 ---
 
-## Phase 2 — Payment Capability (launch-critical)
+## Phase 2 — Financial Platform · Payment module (launch-critical)
 
-**Do not** let app code talk to Paystack directly long-term.
+> Founder refinement: ship **one Financial Capability** with internal modules
+> (Payment, Wallet, Ledger, Settlement, Subscription, Promotion, Commission, Refund, Provider, Audit)
+> — not separate top-level capabilities. See [FINANCIAL_PLATFORM.md](../architecture/FINANCIAL_PLATFORM.md).
+
+**Do not** let app code talk to Paystack directly.
 
 ```
-Payment Capability → Provider → Paystack | Flutterwave | Moniepoint | Stripe | Bank | Wallet
+Application → Financial Capability → Payment Module → Provider → Paystack | …
 ```
 
 Implement / certify:
@@ -107,9 +111,9 @@ Scope: listing promotions, featured listings, reconciliation in Lex.
 
 ---
 
-## Phase 3 — Wallet Capability
+## Phase 3 — Financial Platform · Wallet module
 
-Financial ledger (not a consumer “bank app” at launch):
+Financial identity (not a consumer “bank app” at launch):
 
 Credits · refunds · promo credits · future escrow/commissions · bonuses · adjustments · history · audit  
 

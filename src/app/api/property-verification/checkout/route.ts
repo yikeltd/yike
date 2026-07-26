@@ -6,10 +6,7 @@ import { packageAmount } from "@/lib/property-verification/pricing";
 import { createPaidVerificationOrder } from "@/lib/property-verification/orders";
 import { isFeaturedPaymentsEnabled } from "@/lib/feature-flags";
 import { isPaystackConfigured } from "@/lib/payments/config";
-import {
-  createPaymentOrder,
-  initializePayment,
-} from "@/lib/payments/services/payment-service";
+import { getFinancialPlatform } from "@/lib/financial";
 import { friendlyPublicError } from "@/lib/copy/public-errors";
 
 export const runtime = "nodejs";
@@ -98,7 +95,8 @@ export async function POST(request: Request) {
     });
   }
 
-  const paymentOrder = await createPaymentOrder(admin, {
+  const financial = getFinancialPlatform();
+  const paymentOrder = await financial.payment.createOrder(admin, {
     userId,
     orderType: "property_verification",
     amount,
@@ -110,7 +108,7 @@ export async function POST(request: Request) {
   });
 
   const email = user?.email ?? verificationRequest.buyer_email ?? "";
-  const init = await initializePayment(admin, paymentOrder.id, email);
+  const init = await financial.payment.initialize(admin, paymentOrder.id, email);
   if (!init.authorizationUrl) {
     return NextResponse.json({ error: "Could not start payment" }, { status: 500 });
   }

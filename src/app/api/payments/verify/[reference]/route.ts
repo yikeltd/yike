@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, tryCreateAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { getPaymentStatus } from "@/lib/payments/services/payment-service";
+import { getFinancialPlatform } from "@/lib/financial";
 import { friendlyPublicError } from "@/lib/copy/public-errors";
 
 export const runtime = "nodejs";
@@ -43,7 +43,7 @@ export async function GET(_request: Request, ctx: RouteCtx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const result = await getPaymentStatus(admin, reference);
+  const result = await getFinancialPlatform().payment.status(admin, reference);
   if (!result.ok) {
     return NextResponse.json({ error: result.error, code: result.code }, { status: 404 });
   }

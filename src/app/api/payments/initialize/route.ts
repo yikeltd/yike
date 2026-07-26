@@ -7,10 +7,7 @@ import {
   isPaystackConfigured,
   isPaymentsRuntimeEnabled,
 } from "@/lib/payments/config";
-import {
-  createPaymentOrder,
-  initializePayment,
-} from "@/lib/payments/services/payment-service";
+import { getFinancialPlatform } from "@/lib/financial";
 import { friendlyPublicError } from "@/lib/copy/public-errors";
 
 export const runtime = "nodejs";
@@ -104,7 +101,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const order = await createPaymentOrder(admin, {
+    const financial = getFinancialPlatform();
+    const order = await financial.payment.createOrder(admin, {
       userId: user.id,
       orderType: product.purpose,
       amount: product.amount,
@@ -115,7 +113,7 @@ export async function POST(request: Request) {
       metadata: product.metadata,
     });
 
-    const checkout = await initializePayment(admin, order.id, email);
+    const checkout = await financial.payment.initialize(admin, order.id, email);
 
     return NextResponse.json({
       ok: true,

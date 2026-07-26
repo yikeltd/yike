@@ -5,13 +5,19 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAuthSmsVerificationStatus } from "@/lib/auth/sms-verification-flag";
-import { isFeaturedPaymentsEnabled } from "@/lib/feature-flags";
-import { isPaystackConfigured } from "@/lib/payments/config";
 import { getSendchampConfigSummary } from "@/lib/notifications/providers/sendchamp";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isAdminClientConfigured } from "@/lib/supabase/admin";
 import { offsetDaysIso } from "@/lib/time";
+import { getPinPepperStatus } from "@/lib/pin-pepper";
+import { getFinancialPlatform } from "@/lib/financial";
+import {
+  isPaymentsEnabled,
+  isWalletEnabled,
+  isSettlementEnabled,
+} from "@/lib/yip/capabilities/financial/flags";
+import { isPaystackConfigured } from "@/lib/payments/config";
 
 export type HealthTone = "ok" | "warn" | "fail" | "na";
 
@@ -65,7 +71,9 @@ export async function getLaunchHealthSnapshot(
   const sendchamp = getSendchampConfigSummary();
   const emailConfigured = isResendConfigured();
   const paystack = isPaystackConfigured();
-  const paymentsLive = isFeaturedPaymentsEnabled() && paystack;
+  const paymentsLive = isPaymentsEnabled() && paystack;
+  const pinPepper = getPinPepperStatus();
+  const financial = getFinancialPlatform().health();
 
   const [
     emailFailed,
@@ -207,18 +215,53 @@ export async function getLaunchHealthSnapshot(
             : "SMS verification required · provider OK",
     },
     {
+      id: "pin_pepper",
+      label: "PIN Pepper",
+      tone: pinPepper.ok ? "ok" : "fail",
+      detail: pinPepper.message,
+    },
+    {
       id: "payments",
       label: "Payments",
-      tone: !isFeaturedPaymentsEnabled()
+      tone: !isPaymentsEnabled()
         ? "na"
         : paymentsLive
           ? "ok"
           : "warn",
-      detail: !isFeaturedPaymentsEnabled()
-        ? "Featured payments off (launch flag)"
+      detail: !isPaymentsEnabled()
+        ? "Payments off (ENABLE_PAYMENTS / ENABLE_FEATURED_PAYMENTS)"
         : paymentsLive
-          ? "Paystack configured"
+          ? "Financial Platform · Paystack provider ready"
           : "Payments flag on · Paystack incomplete",
+    },
+    {
+      id: "financial_platform",
+      label: "Financial Platform",
+      tone:
+        financial.overall === "critical"
+          ? "fail"
+          : financial.overall === "warning"
+            ? "warn"
+            : financial.overall === "disabled"
+              ? "na"
+              : "ok",
+      detail: `YIP financial.platform · ${financial.modules.filter((m) => m.enabled).length}/${financial.modules.length} modules enabled`,
+    },
+    {
+      id: "wallet",
+      label: "Wallet",
+      tone: !isWalletEnabled() ? "na" : "ok",
+      detail: !isWalletEnabled()
+        ? "ENABLE_WALLET off"
+        : "Wallet module operational",
+    },
+    {
+      id: "settlement",
+      label: "Settlement",
+      tone: !isSettlementEnabled() ? "na" : "ok",
+      detail: !isSettlementEnabled()
+        ? "ENABLE_SETTLEMENT / ENABLE_ESCROW off"
+        : "Settlement framework active",
     },
     {
       id: "search",

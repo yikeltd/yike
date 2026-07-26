@@ -17,7 +17,9 @@ export type PluginPermission =
   | "events.subscribe"
   | "events.publish"
   | "analytics.track"
-  | "registry.register";
+  | "registry.register"
+  | "finance.read"
+  | "finance.write";
 
 export type PluginHealthStatus = "healthy" | "degraded" | "unhealthy" | "unknown";
 

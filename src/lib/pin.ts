@@ -1,18 +1,19 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { pinPolicyError } from "@/lib/pin-policy";
+import { getPinPepper } from "@/lib/pin-pepper";
+
+export {
+  assertPinPepperProductionReady,
+  getPinPepper,
+  getPinPepperRaw,
+  getPinPepperStatus,
+  PIN_PEPPER_MIN_LENGTH,
+} from "@/lib/pin-pepper";
+export type { PinPepperStatus } from "@/lib/pin-pepper";
 
 const SALT_BYTES = 16;
 const KEY_LEN = 64;
 const SCRYPT_COST = 16384; // N=2^14 — comparable strength to bcrypt cost ~12
-
-/** Server-side pepper — never expose to client. */
-export function getPinPepper(): string {
-  return (
-    process.env.YIKE_PIN_PEPPER?.trim() ||
-    process.env.SUPABASE_PIN_PEPPER?.trim() ||
-    ""
-  );
-}
 
 function pepperedPin(pin: string, usePepper: boolean): string {
   const pepper = getPinPepper();
@@ -45,7 +46,6 @@ export function verifyPin(pin: string, stored: string): boolean {
       });
       if (timingSafeEqual(actual, expected)) return true;
     } catch {
-      /* try legacy (no explicit cost) */
       try {
         const actual = scryptSync(pepperedPin(pin, usePepper), salt, expected.length);
         if (timingSafeEqual(actual, expected)) return true;

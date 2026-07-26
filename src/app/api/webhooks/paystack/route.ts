@@ -1,4 +1,4 @@
-import { processPaystackWebhookPost } from "@/lib/payments/webhooks/paystack";
+import { getFinancialPlatform } from "@/lib/financial";
 
 export const runtime = "nodejs";
 
@@ -7,7 +7,8 @@ export const runtime = "nodejs";
  * https://yike.ng/api/payments/webhook
  *
  * Auth: HMAC-SHA512(raw body, PAYSTACK_SECRET_KEY) vs x-paystack-signature.
+ * Gateway traffic enters only through Financial Platform → Payment module.
  */
 export async function POST(request: Request) {
-  return processPaystackWebhookPost(request, "paystack webhook");
+  return getFinancialPlatform().payment.processWebhook(request, "paystack webhook");
 }

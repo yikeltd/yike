@@ -1,5 +1,9 @@
 import { isProductionEnv } from "./env";
 import { isAuthSmsVerificationBypassActive } from "@/lib/auth/sms-verification-flag";
+import {
+  assertPinPepperProductionReady,
+  getPinPepperStatus,
+} from "@/lib/pin-pepper";
 
 export type EnvCheck = {
   name: string;
@@ -14,6 +18,7 @@ const PRODUCTION_REQUIRED = [
   "NEXT_PUBLIC_SITE_URL",
   "CRON_SECRET",
   "YIKE_OTP_SERVER_TOKEN",
+  "YIKE_PIN_PEPPER",
 ] as const;
 
 const PRODUCTION_RECOMMENDED = [
@@ -24,6 +29,9 @@ const PRODUCTION_RECOMMENDED = [
 ] as const;
 
 function present(name: string): boolean {
+  if (name === "YIKE_PIN_PEPPER") {
+    return getPinPepperStatus().ok;
+  }
   return Boolean(process.env[name]?.trim());
 }
 
@@ -34,8 +42,10 @@ export function getEnvValidationSnapshot(): {
   missingRequired: string[];
   missingRecommended: string[];
   ok: boolean;
+  pinPepper: ReturnType<typeof getPinPepperStatus>;
 } {
   const production = isProductionEnv();
+  const pinPepper = getPinPepperStatus();
   const checks: EnvCheck[] = [
     ...PRODUCTION_REQUIRED.map((name) => ({
       name,
@@ -60,13 +70,14 @@ export function getEnvValidationSnapshot(): {
     missingRequired: [...missingRequired],
     missingRecommended: [...missingRecommended],
     ok: !production || missingRequired.length === 0,
+    pinPepper,
   };
 }
 
 /**
- * Production startup gate — logs errors for missing required vars.
- * Does not throw (keeps container bootable for health diagnostics);
- * operators must treat missing required vars as deploy failure.
+ * Production startup gate.
+ * PIN pepper is fail-fast (throws). Other missing required vars are logged
+ * so health endpoints can still diagnose, but PIN pepper must never be weak.
  */
 export function validateProductionEnvironment(): {
   ok: boolean;
@@ -81,6 +92,9 @@ export function validateProductionEnvironment(): {
       missingRecommended: snap.missingRecommended,
     };
   }
+
+  // Launch blocker — refuse to run production without a strong PIN pepper.
+  assertPinPepperProductionReady();
 
   if (snap.missingRequired.length > 0) {
     console.error(

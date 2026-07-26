@@ -8,10 +8,7 @@ import {
 import { SUBSCRIPTION_DURATION_DAYS } from "@/lib/subscriptions/constants";
 import { isFeaturedPaymentsEnabled } from "@/lib/feature-flags";
 import { isPaystackConfigured } from "@/lib/payments/config";
-import {
-  createPaymentOrder,
-  initializePayment,
-} from "@/lib/payments/services/payment-service";
+import { getFinancialPlatform } from "@/lib/financial";
 import type { Profile } from "@/types/database";
 import { friendlyPublicError } from "@/lib/copy/public-errors";
 
@@ -62,7 +59,8 @@ export async function POST() {
     return NextResponse.json({ ok: true, paymentsLive: false });
   }
 
-  const order = await createPaymentOrder(admin, {
+  const financial = getFinancialPlatform();
+  const order = await financial.payment.createOrder(admin, {
     userId: user.id,
     orderType: "subscription",
     amount: renewal.amount,
@@ -76,7 +74,7 @@ export async function POST() {
   });
 
   const email = user.email ?? (profileRow as Profile | null)?.email ?? "";
-  const init = await initializePayment(admin, order.id, email);
+  const init = await financial.payment.initialize(admin, order.id, email);
   if (!init.authorizationUrl) {
     return NextResponse.json({ error: "Could not start payment" }, { status: 500 });
   }

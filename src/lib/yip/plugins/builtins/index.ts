@@ -4,6 +4,7 @@
  */
 import { createKnowledgeFacade, type KnowledgeFacade } from "../../knowledge";
 import type { YipPlugin } from "../types";
+import { createFinancialPlugin } from "./financial";
 import { createLocationKnowledgePlugin } from "./location-knowledge";
 import { createMarketKnowledgePlugin } from "./market-knowledge";
 import { createMediaAnalysisPlugin } from "./media-analysis";
@@ -25,12 +26,14 @@ export function createBuiltinPlugins(knowledge: KnowledgeFacade): YipPlugin[] {
     createPricingPlugin(),
     createTrustPlugin(),
     createMediaAnalysisPlugin(),
+    createFinancialPlugin(),
   ];
 }
 
 /** Convenience export for callers that don't need a custom `KnowledgeFacade`. */
 export const BUILTIN_PLUGINS: YipPlugin[] = createBuiltinPlugins(createKnowledgeFacade());
 
+export { createFinancialPlugin } from "./financial";
 export { createLocationKnowledgePlugin } from "./location-knowledge";
 export { createMarketKnowledgePlugin } from "./market-knowledge";
 export { createMediaAnalysisPlugin } from "./media-analysis";

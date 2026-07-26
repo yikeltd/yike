@@ -71,5 +71,7 @@ export function getPaystackPublicKey(): string | null {
 }
 
 export function isPaymentsRuntimeEnabled(): boolean {
-  return envFlag("ENABLE_FEATURED_PAYMENTS", false) && isPaystackConfigured();
+  const flag =
+    envFlag("ENABLE_PAYMENTS", false) || envFlag("ENABLE_FEATURED_PAYMENTS", false);
+  return flag && isPaystackConfigured();
 }

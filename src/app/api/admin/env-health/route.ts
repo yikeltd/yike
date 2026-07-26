@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/api-auth";
 import { isEmailOtpEnabled, isWebAuthnEnabled } from "@/lib/feature-flags";
-import { getPinPepper } from "@/lib/pin";
+import { getPinPepperStatus } from "@/lib/pin-pepper";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
 import {
   transactionalFromAddress,
@@ -33,7 +33,7 @@ export async function GET() {
     NEXT_PUBLIC_SUPABASE_URL: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()),
     CRON_SECRET: Boolean(process.env.CRON_SECRET?.trim()),
-    YIKE_PIN_PEPPER: Boolean(getPinPepper()),
+    YIKE_PIN_PEPPER: getPinPepperStatus().ok,
   };
   const optionalFeatureChecks = {
     ENABLE_WEBAUTHN: isWebAuthnEnabled(),
@@ -74,6 +74,7 @@ export async function GET() {
     authEmailFromDomain: transactionalFromDomain(),
     transactionalFrom: resolvedFrom,
     pinPepperConfigured: requiredEnvChecks.YIKE_PIN_PEPPER,
+    pinPepper: getPinPepperStatus(),
     webAuthnEnabled: optionalFeatureChecks.ENABLE_WEBAUTHN,
   });
 }

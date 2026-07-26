@@ -142,7 +142,10 @@ export function isFeaturedListingsEnabled(): boolean {
 
 /** Featured listing checkout — off until payment gateway is connected. */
 export function isFeaturedPaymentsEnabled(): boolean {
-  return envFlag("ENABLE_FEATURED_PAYMENTS", false);
+  return (
+    envFlag("ENABLE_FEATURED_PAYMENTS", false) ||
+    envFlag("ENABLE_PAYMENTS", false)
+  );
 }
 
 /** Client bundle — mirrors ENABLE_FEATURED_LISTINGS for agent promote UI. */

@@ -1,4 +1,4 @@
-import { processPaystackWebhookPost } from "@/lib/payments/webhooks/paystack";
+import { getFinancialPlatform } from "@/lib/financial";
 
 export const runtime = "nodejs";
 
@@ -8,7 +8,9 @@ export const runtime = "nodejs";
  *
  * Auth: HMAC-SHA512(raw body, PAYSTACK_SECRET_KEY) vs x-paystack-signature.
  * Legacy alias: /api/webhooks/paystack
+ *
+ * Gateway traffic enters only through Financial Platform → Payment module.
  */
 export async function POST(request: Request) {
-  return processPaystackWebhookPost(request, "payments webhook");
+  return getFinancialPlatform().payment.processWebhook(request, "payments webhook");
 }

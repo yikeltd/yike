@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { activateAdvertisementFromPayment } from "@/lib/advertisements/service";
-import {
-  createPaymentOrder,
-  initializePayment,
-} from "@/lib/payments/services/payment-service";
+import { getFinancialPlatform } from "@/lib/financial";
 import { isFeaturedPaymentsEnabled } from "@/lib/feature-flags";
 import { isPaystackConfigured } from "@/lib/payments/config";
 
@@ -139,7 +136,8 @@ export async function POST(request: Request, ctx: RouteCtx) {
       return NextResponse.json({ ok: true, paymentsLive: false });
     }
 
-    const order = await createPaymentOrder(admin, {
+    const financial = getFinancialPlatform();
+    const order = await financial.payment.createOrder(admin, {
       userId: auth.user.id,
       orderType: "advertisement",
       amount,
@@ -152,7 +150,7 @@ export async function POST(request: Request, ctx: RouteCtx) {
     });
 
     const email = auth.user.email ?? "";
-    const init = await initializePayment(admin, order.id, email);
+    const init = await financial.payment.initialize(admin, order.id, email);
     if (!init.authorizationUrl) {
       return NextResponse.json({ error: "Could not start payment" }, { status: 500 });
     }

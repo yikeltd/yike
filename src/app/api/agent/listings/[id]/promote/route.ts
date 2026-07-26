@@ -15,10 +15,7 @@ import {
   isFeaturedPaymentsEnabled,
 } from "@/lib/feature-flags";
 import { isPaystackConfigured } from "@/lib/payments/config";
-import {
-  createPaymentOrder,
-  initializePayment,
-} from "@/lib/payments/services/payment-service";
+import { getFinancialPlatform } from "@/lib/financial";
 import type { PaymentOrderType } from "@/lib/payments/types";
 import { friendlyPublicError } from "@/lib/copy/public-errors";
 
@@ -133,7 +130,8 @@ export async function POST(req: Request, ctx: RouteCtx) {
   const discountRate = await getSubscriptionDiscountRate(admin, user.id, discountProduct);
   const chargedAmount = applyDiscount(Number(result.promotion.amount), discountRate);
 
-  const order = await createPaymentOrder(admin, {
+  const financial = getFinancialPlatform();
+  const order = await financial.payment.createOrder(admin, {
     userId: user.id,
     orderType,
     amount: chargedAmount,
@@ -151,7 +149,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
   });
 
   try {
-    const checkout = await initializePayment(admin, order.id, email);
+    const checkout = await financial.payment.initialize(admin, order.id, email);
     return NextResponse.json({
       promotion: result.promotion,
       payment: {

@@ -14,6 +14,7 @@ export const CAPABILITIES = {
   PRICING_ENGINE: toCapabilityId("pricing.engine"),
   TRUST_ASSESSMENT: toCapabilityId("trust.assessment"),
   MEDIA_ANALYSIS: toCapabilityId("media.analysis"),
+  FINANCIAL_PLATFORM: toCapabilityId("financial.platform"),
 } as const;
 
 export type CapabilityKey = keyof typeof CAPABILITIES;

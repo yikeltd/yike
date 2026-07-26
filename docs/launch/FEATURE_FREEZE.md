@@ -8,7 +8,7 @@ Yike has moved from *building features* to *operating a production marketplace*.
 
 **Architecture frozen:** [PLATFORM_CONSTITUTION.md](../architecture/PLATFORM_CONSTITUTION.md) — platform complete; ship **capabilities**, not new infrastructure layers. Agent rule: `.cursor/rules/platform-constitution.mdc`.
 
-**Enterprise Activation (founder-approved):** [ENTERPRISE_ACTIVATION_PROGRAM.md](./ENTERPRISE_ACTIVATION_PROGRAM.md) · [ACTIVATION_GROUPS.md](./ACTIVATION_GROUPS.md) · [CAPABILITY_LIFECYCLE.md](../architecture/CAPABILITY_LIFECYCLE.md) · scorecard [PLATFORM_ACTIVATION_REPORT.md](./PLATFORM_ACTIVATION_REPORT.md). This is the **last platform instruction before launch** — activate, integrate, certify; do not turn every flag on.
+**Enterprise Activation (founder-approved):** [ENTERPRISE_ACTIVATION_PROGRAM.md](./ENTERPRISE_ACTIVATION_PROGRAM.md) · [ACTIVATION_GROUPS.md](./ACTIVATION_GROUPS.md) · [CAPABILITY_LIFECYCLE.md](../architecture/CAPABILITY_LIFECYCLE.md) · scorecard [PLATFORM_ACTIVATION_REPORT.md](./PLATFORM_ACTIVATION_REPORT.md) · [FINANCIAL_PLATFORM.md](../architecture/FINANCIAL_PLATFORM.md). This is the **last platform instruction before launch** — activate, integrate, certify; do not turn every flag on.
 
 **Daily ops dashboard:** [LAUNCH_COMMAND_CENTER.md](./LAUNCH_COMMAND_CENTER.md) (single source of truth until launch).
 
