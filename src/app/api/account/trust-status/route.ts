@@ -5,6 +5,7 @@ import { getTrustCapabilities } from "@/lib/verification/permissions";
 import { getRequiredVerificationTasks } from "@/lib/verification/tasks";
 import { deriveVerificationState, VERIFICATION_STATE_LABELS } from "@/lib/verification/status-states";
 import type { TrustProfileSlice } from "@/lib/verification/levels";
+import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 
 export const runtime = "nodejs";
 
@@ -23,16 +24,16 @@ export async function GET() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select(PROFILES_SAFE_SELECT)
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
   const config = await getVerificationControlConfig(supabase);
-  const slice = profile as TrustProfileSlice;
+  const slice = profile as unknown as TrustProfileSlice;
   const caps = getTrustCapabilities(slice, config);
   const tasks = getRequiredVerificationTasks(slice, config);
   const state = deriveVerificationState(slice);

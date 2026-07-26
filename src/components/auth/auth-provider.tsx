@@ -14,6 +14,7 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Profile } from "@/types/database";
+import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 import {
   type AuthIntent,
   AUTH_PUBLIC_INTENTS,
@@ -89,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (u) {
       const { profile: p, favorites } = await withAuthTimeout(
         Promise.all([
-          supabase.from("profiles").select("*").eq("id", u.id).single(),
+          supabase.from("profiles").select(PROFILES_SAFE_SELECT).eq("id", u.id).maybeSingle(),
           supabase.from("favorites").select("property_id").eq("user_id", u.id),
         ]).then(([profileRes, favoritesRes]) => ({
           profile: profileRes.data as Profile | null,

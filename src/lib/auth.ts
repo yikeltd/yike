@@ -17,6 +17,9 @@ import {
 import type { Profile, UserRole } from "@/types/database";
 import { canListProperties } from "@/lib/agent-tiers";
 import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
+import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
+import { repairUserProfile } from "@/lib/auth/profile-repair";
+import { tryCreateAdminClient } from "@/lib/supabase/admin";
 import {
   mustCompleteSellerVerification,
   SELLER_VERIFY_PATH,
@@ -38,12 +41,39 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
   if (!supabase) return null;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select(PROFILES_SAFE_SELECT)
     .eq("id", userId)
-    .single();
+    .maybeSingle();
+  if (error) {
+    console.error("[getProfile]", error.message);
+    return null;
+  }
   return data as Profile | null;
+}
+
+/** Own account: load profile, or create silently if the auth user has no row. */
+export async function getOrCreateOwnProfile(user: User): Promise<Profile | null> {
+  const existing = await getProfile(user.id);
+  if (existing) return existing;
+
+  const admin = tryCreateAdminClient();
+  if (!admin) {
+    console.error("[getOrCreateOwnProfile] admin client unavailable");
+    return null;
+  }
+
+  const repaired = await repairUserProfile(admin, {
+    userId: user.id,
+    email: user.email ?? undefined,
+  });
+  if (!repaired.ok) {
+    console.error("[getOrCreateOwnProfile] repair failed:", repaired.error);
+    return null;
+  }
+
+  return getProfile(user.id);
 }
 
 export async function requireAuth(redirectTo = "/auth/login") {

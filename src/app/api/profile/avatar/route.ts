@@ -10,6 +10,7 @@ import {
 import { MEDIA_LIMITS } from "@/lib/media/constants";
 import { logUserProfileMedia } from "@/lib/profile/media-audit";
 import { uploadProfileImageVariants } from "@/lib/profile/media-storage";
+import { repairUserProfile } from "@/lib/auth/profile-repair";
 import type { UserRole } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -73,6 +74,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const ensured = await repairUserProfile(admin, {
+      userId: user.id,
+      email: user.email ?? undefined,
+    });
+    if (!ensured.ok) {
+      console.error("[profile/avatar] profile ensure failed:", ensured.error);
+      return NextResponse.json({ error: PROFILE_SAVE_ERROR }, { status: 500 });
+    }
+
     const paths = buildAvatarStoragePaths(user.id);
     const uploaded = await uploadProfileImageVariants(admin, paths, {
       thumbnail: optimized.thumbnail,
@@ -83,13 +93,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: uploaded.error }, { status: 500 });
     }
 
-    const { data: profileRow } = await supabase
+    const { data: profileRow } = await admin
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .maybeSingle();
 
-    const { error: profileError } = await supabase
+    // service_role write — same pattern as /api/profile/cover (user JWT select=*
+    // / update paths break after pin_hash column grants).
+    const { error: profileError } = await admin
       .from("profiles")
       .update({ avatar_url: uploaded.publicUrl })
       .eq("id", user.id);

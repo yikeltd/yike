@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAuth, getProfile } from "@/lib/auth";
+import { requireAuth, getOrCreateOwnProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { BasicProfileForm } from "@/components/agent/basic-profile-form";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
@@ -11,7 +11,7 @@ import { ChevronLeft } from "lucide-react";
  */
 export default async function EditProfilePage() {
   const user = await requireAuth("/auth/login?next=/agent/edit-profile");
-  const profile = await getProfile(user.id);
+  const profile = await getOrCreateOwnProfile(user);
   if (!profile || profile.is_banned) redirect("/");
 
   const displayName = profile.full_name ?? profile.username ?? "Your profile";

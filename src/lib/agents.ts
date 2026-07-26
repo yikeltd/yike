@@ -8,6 +8,7 @@ import {
 } from "@/lib/mock-listings";
 import { isUuidParam } from "@/lib/agent-slugs";
 import { agentPublicPath } from "@/lib/agent-slugs";
+import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 
 const AGENT_SELECT = `
   *,
@@ -26,12 +27,12 @@ export async function getAgentById(id: string): Promise<Profile | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("*")
+    .select(PROFILES_SAFE_SELECT)
     .eq("id", id)
     .maybeSingle();
 
   if (!data) return mock;
-  const profile = data as Profile;
+  const profile = data as unknown as Profile;
   if (profile.profile_status === "deleted") return null;
   return profile;
 }
@@ -47,12 +48,12 @@ export async function getAgentBySlug(slug: string): Promise<Profile | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("*")
+    .select(PROFILES_SAFE_SELECT)
     .eq("public_slug", slug)
     .maybeSingle();
 
   if (!data) return null;
-  const profile = data as Profile;
+  const profile = data as unknown as Profile;
   if (profile.profile_status === "deleted") return null;
   return profile;
 }

@@ -1,4 +1,4 @@
-import { requireAuth, getProfile } from "@/lib/auth";
+import { requireAuth, getOrCreateOwnProfile } from "@/lib/auth";
 import {
   canListProperties,
   getListingLimit,
@@ -39,12 +39,16 @@ export default async function ProfilePage({
   searchParams: Promise<{ saved?: string }>;
 }) {
   const user = await requireAuth("/auth/login?next=/agent");
-  const profile = await getProfile(user.id);
+  const profile = await getOrCreateOwnProfile(user);
   const supabase = await requireServerClient();
   const { saved } = await searchParams;
 
   if (!profile) {
-    return <p className="pt-8 text-center text-muted">Profile not found.</p>;
+    return (
+      <p className="pt-8 text-center text-muted">
+        Setting up your profile… Refresh if this stays here.
+      </p>
+    );
   }
 
   const verified = isVerifiedAgentProfile(profile);

@@ -10,6 +10,7 @@ import { isPhoneVerifiedForSeller } from "@/lib/seller-trust";
 import { PHONE_VERIFY_COPY } from "@/lib/phone-verification/copy";
 import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
 import type { Profile } from "@/types/database";
+import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 
 export function VerifyPhoneClient() {
   const router = useRouter();
@@ -30,9 +31,9 @@ export function VerifyPhoneClient() {
     }
     const { data: prof } = await supabase
       .from("profiles")
-      .select("*")
+      .select(PROFILES_SAFE_SELECT)
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
     setProfile(prof as Profile | null);
     setLoading(false);
   }, [nextPath]);

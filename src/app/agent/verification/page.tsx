@@ -7,6 +7,7 @@ import { PhoneVerificationCard } from "@/components/profile/phone-verification-c
 import { ProfileVerificationCard } from "@/components/profile/profile-verification-card";
 import Link from "next/link";
 import type { AgentVerification, Profile } from "@/types/database";
+import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 
 export default function AgentVerificationPage() {
   const [verification, setVerification] = useState<AgentVerification | null>(null);
@@ -23,7 +24,7 @@ export default function AgentVerificationPage() {
       return;
     }
     const [{ data: prof }, { data: ver }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("profiles").select(PROFILES_SAFE_SELECT).eq("id", user.id).maybeSingle(),
       supabase
         .from("agent_verifications")
         .select("*")
