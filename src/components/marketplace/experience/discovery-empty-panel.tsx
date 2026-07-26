@@ -116,8 +116,8 @@ export function DiscoveryEmptyPanel({
 
       <CityBrowseGrid
         items={isVehicle ? VEHICLE_CITY_BROWSE : PROPERTY_CITY_BROWSE}
-        title="Browse nearby cities"
-        subtitle="Try another city or filter"
+        title="Cities"
+        subtitle={null}
       />
 
       <div className="flex flex-wrap gap-2">

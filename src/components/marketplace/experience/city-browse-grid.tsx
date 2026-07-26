@@ -1,17 +1,25 @@
 import Link from "next/link";
-import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CityBrowseItem = {
   id: string;
   label: string;
   href: string;
+  /** Real listing count only — never invent. */
+  count?: number;
+  /** Lagos / Abuja / Port Harcourt — stronger weight. */
+  priority?: boolean;
 };
 
 export const VEHICLE_CITY_BROWSE: CityBrowseItem[] = [
-  { id: "lagos", label: "Lagos", href: "/vehicles?state=Lagos" },
-  { id: "abuja", label: "Abuja", href: "/vehicles?state=FCT" },
-  { id: "ph", label: "Port Harcourt", href: "/vehicles?state=Rivers" },
+  { id: "lagos", label: "Lagos", href: "/vehicles?state=Lagos", priority: true },
+  { id: "abuja", label: "Abuja", href: "/vehicles?state=FCT", priority: true },
+  {
+    id: "ph",
+    label: "Port Harcourt",
+    href: "/vehicles?state=Rivers",
+    priority: true,
+  },
   { id: "enugu", label: "Enugu", href: "/vehicles?state=Enugu" },
   { id: "ibadan", label: "Ibadan", href: "/vehicles?state=Oyo" },
   { id: "benin", label: "Benin", href: "/vehicles?state=Edo" },
@@ -24,9 +32,14 @@ export const VEHICLE_CITY_BROWSE: CityBrowseItem[] = [
 ];
 
 export const PROPERTY_CITY_BROWSE: CityBrowseItem[] = [
-  { id: "lagos", label: "Lagos", href: "/houses/lagos" },
-  { id: "abuja", label: "Abuja", href: "/houses/abuja" },
-  { id: "ph", label: "Port Harcourt", href: "/houses/port-harcourt" },
+  { id: "lagos", label: "Lagos", href: "/houses/lagos", priority: true },
+  { id: "abuja", label: "Abuja", href: "/houses/abuja", priority: true },
+  {
+    id: "ph",
+    label: "Port Harcourt",
+    href: "/houses/port-harcourt",
+    priority: true,
+  },
   { id: "enugu", label: "Enugu", href: "/search?state=Enugu" },
   { id: "ibadan", label: "Ibadan", href: "/search?city=Ibadan" },
   { id: "benin", label: "Benin", href: "/search?city=Benin" },
@@ -38,45 +51,103 @@ export const PROPERTY_CITY_BROWSE: CityBrowseItem[] = [
   { id: "uyo", label: "Uyo", href: "/search?city=Uyo" },
 ];
 
-/** Browse-by-city discovery — existing filtered routes only. */
+function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "")}k`;
+  return String(n);
+}
+
+/**
+ * Compact city chips — fintech density, not dashboard cards.
+ * Homepage should prefer inventory rails; use this in search/empty states.
+ */
 export function CityBrowseGrid({
   items,
   className,
-  title = "Browse by City",
-  subtitle = "Explore inventory across Nigeria",
+  title = "Popular cities",
+  subtitle,
+  viewAllHref,
 }: {
   items: readonly CityBrowseItem[];
   className?: string;
   title?: string;
-  subtitle?: string;
+  /** Omit for a quieter, denser block. */
+  subtitle?: string | null;
+  viewAllHref?: string;
 }) {
+  const priority = items.filter((c) => c.priority);
+  const rest = items.filter((c) => !c.priority);
+  const allHref =
+    viewAllHref ??
+    (items[0]?.href.startsWith("/vehicles") ? "/vehicles" : "/search");
+
   return (
-    <section className={cn("space-y-3", className)}>
-      <div>
-        <h2 className="text-base font-bold tracking-tight text-navy sm:text-lg">
-          {title}
-        </h2>
-        {subtitle ? (
-          <p className="mt-0.5 text-xs font-medium text-navy/45">{subtitle}</p>
-        ) : null}
+    <section className={cn("space-y-2.5", className)} aria-label={title}>
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-navy/45">
+            {title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-0.5 text-xs font-medium text-navy/40">{subtitle}</p>
+          ) : null}
+        </div>
+        <Link
+          href={allHref}
+          className="pressable shrink-0 text-xs font-bold text-navy/55 transition hover:text-navy"
+        >
+          View all
+          <span aria-hidden> →</span>
+        </Link>
       </div>
-      <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-        {items.map((city) => (
-          <li key={city.id}>
-            <Link
-              href={city.href}
-              className="pressable group flex flex-col items-center gap-1.5 rounded-2xl border border-navy/10 bg-gradient-to-b from-white to-[#f5f7fb] px-2 py-3.5 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-md"
-            >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-navy/[0.06] text-navy transition group-hover:bg-gold/20">
-                <MapPin className="h-4 w-4 text-gold" aria-hidden />
-              </span>
-              <span className="text-xs font-bold text-navy sm:text-[13px]">
-                {city.label}
-              </span>
-            </Link>
-          </li>
+
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+        {priority.map((city) => (
+          <CityChip key={city.id} city={city} emphasis />
         ))}
-      </ul>
+      </div>
+
+      {rest.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+          {rest.map((city) => (
+            <CityChip key={city.id} city={city} />
+          ))}
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+function CityChip({
+  city,
+  emphasis = false,
+}: {
+  city: CityBrowseItem;
+  emphasis?: boolean;
+}) {
+  const hasCount = typeof city.count === "number" && city.count > 0;
+
+  return (
+    <Link
+      href={city.href}
+      className={cn(
+        "pressable inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition duration-200",
+        "active:scale-[0.98] hover:-translate-y-px",
+        emphasis
+          ? "border-navy/14 bg-navy text-white shadow-[0_1px_2px_rgba(2,20,51,0.12)] hover:border-navy/20 hover:bg-[#04245f]"
+          : "border-navy/[0.08] bg-white text-navy/75 shadow-[0_1px_0_rgba(2,20,51,0.04)] hover:border-gold/35 hover:text-navy hover:shadow-[0_2px_8px_rgba(2,20,51,0.06)]",
+      )}
+    >
+      <span>{city.label}</span>
+      {hasCount ? (
+        <span
+          className={cn(
+            "tabular-nums text-[10px] font-bold",
+            emphasis ? "text-white/70" : "text-navy/40",
+          )}
+        >
+          {formatCount(city.count!)}
+        </span>
+      ) : null}
+    </Link>
   );
 }

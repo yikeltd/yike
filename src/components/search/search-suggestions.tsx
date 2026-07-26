@@ -105,8 +105,8 @@ export function SearchSuggestions({
 
         <CityBrowseGrid
           items={PROPERTY_CITY_BROWSE}
-          title="Popular cities"
-          subtitle="Tap a city to start browsing"
+          title="Cities"
+          subtitle={null}
         />
       </section>
     );

@@ -14,9 +14,6 @@ import { HOME_RAIL_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import {
   QuickFinderBar,
   MarketplaceSection,
-  CityBrowseGrid,
-  VEHICLE_CITY_BROWSE,
-  PROPERTY_CITY_BROWSE,
   DealerDiscoveryRow,
   DiscoveryEmptyPanel,
 } from "@/components/marketplace/experience";
@@ -615,13 +612,6 @@ export function HomeMarketplaceExperience({
             />
           </>
         )}
-
-        <div className="home-rail-section home-band-white pb-4 pt-3">
-          <CityBrowseGrid
-            items={isVehicle ? VEHICLE_CITY_BROWSE : PROPERTY_CITY_BROWSE}
-            title="Popular cities"
-          />
-        </div>
 
         <div className="pb-3 pt-1 lg:pb-4">
           <HomeTrustBadges />
