@@ -80,8 +80,9 @@ Future providers plug into Provider Module without changing app routes.
 - Every financial event becomes ledger entries (credit + debit pair preferred).
 - Entries are **immutable** — append only; never update or delete.
 - Types: payment, refund, commission, wallet_credit/debit, settlement, promotion_credit, subscription, adjustment, reserve, release.
-- Current implementation: in-process ring buffer for certification.
-- Next: Postgres immutable ledger table migration (append-only RLS).
+- **Durable:** `public.financial_ledger_entries` (migration `20260726212317_financial_ledger_immutable_v1`).
+- In-process ring buffer remains for unit tests / fail-soft when DB unavailable.
+- Payment reconcile and wallet credit/debit call `recordFinancialEvent()` (idempotent on reference+direction+type+account).
 
 ---
 

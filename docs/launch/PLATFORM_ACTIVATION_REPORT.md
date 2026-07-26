@@ -4,7 +4,7 @@
 Update after each capability stage change. Do not leave blank/unknown rows.
 
 **Last updated:** 2026-07-26  
-**Overall:** NOT LAUNCH-CERTIFIED — Financial Platform Phase 0–1 scaffold shipped; Coolify PIN pepper + Paystack FAT pending
+**Overall:** NOT LAUNCH-CERTIFIED — Financial Platform Phase 1.5 (durable ledger) ready; apply migration + Coolify PIN pepper + Paystack FAT
 
 ---
 
@@ -13,6 +13,7 @@ Update after each capability stage change. Do not leave blank/unknown rows.
 | Item | Status | Notes |
 |------|--------|-------|
 | `YIKE_PIN_PEPPER` in Coolify | 🟡 Code ready | ≥32 chars required; production fail-fast; confirm Coolify |
+| Apply `financial_ledger_immutable_v1` | 🟡 SQL ready | `20260726212317` — SQL Editor or db:push |
 | Email OTP | 🟡 Audit | Browse-first policy; certify path |
 | SMS OTP | 🟡 | Re-enable when provider proven; do not block if email sufficient |
 | Featured / Paystack payments | 🟡 Scaffold | Routes via Financial Platform; flag off until FAT |
@@ -32,7 +33,7 @@ Update after each capability stage change. Do not leave blank/unknown rows.
 | **Financial Platform** | 🟢 | Beta | module flags | 🟡 | One capability · many modules · [docs](../architecture/FINANCIAL_PLATFORM.md) |
 | ↳ Payment module | 🟢 | Beta | `ENABLE_PAYMENTS` | 🟡 | App routes migrated off direct service |
 | ↳ Wallet module | 🟢 | Beta | `ENABLE_WALLET` | 🟡 | Agent wallet façade |
-| ↳ Ledger module | 🟢 | Experimental | — | 🟡 | Append-only in-memory; DB next |
+| ↳ Ledger module | 🟢 | Beta | — | 🟡 | Durable `financial_ledger_entries` · apply migration |
 | ↳ Settlement module | 🟡 | Planned | `ENABLE_SETTLEMENT` | 🔴 | Framework only |
 | Search | 🟢 | Beta | — | 🟡 | Complete autocomplete/ranking/saved |
 | Trust (engine) | 🟢 | Beta | Trust Economy UI off | 🟡 | Backend scores; UI hidden |
@@ -70,10 +71,10 @@ Update after each capability stage change. Do not leave blank/unknown rows.
 
 ## Known limitations
 
-- Ledger is in-memory until DB migration.
+- Apply `20260726212317_financial_ledger_immutable_v1.sql` on production before compliance reliance.
 - Settlement / commission workflows are frameworks, not full business engines.
 - Provider HTTP remains in `src/lib/payments/providers` (correct adapter layer).
-
+- Launch Health warns if ledger table missing.
 ## Launch readiness
 
 | Gate | Status |

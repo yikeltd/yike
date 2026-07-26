@@ -36,9 +36,11 @@
 | Feature flags config-only | ✅ |
 | Launch Health financial rows | ✅ |
 | Unit / ledger / transaction / plugin tests | ✅ `npm run test:yip` |
-| DB-backed immutable ledger | ⬜ next migration |
+| DB-backed immutable ledger | ✅ migration `20260726212317` — apply on production |
 | Settlement business workflows | ⬜ Phase 2+ |
 | Full webhook + Paystack FAT on production | ⬜ before ENABLE_PAYMENTS=true |
+| Payment/wallet events → ledger + audit | ✅ wired (fail-soft) |
+| Launch Health ledger + payment queue | ✅ |
 
 ---
 
@@ -48,9 +50,9 @@
 |-----------|---------|
 | No application communicates directly with payment providers | ✅ routes via Financial Platform |
 | Every financial operation flows through Financial Platform | ✅ new path; legacy service remains internal adapter |
-| Immutable ledger implemented | ✅ memory · DB pending |
-| Wallet operational | ✅ behind `ENABLE_WALLET` |
-| Payment capability certified | 🟡 scaffold + route migration; live Paystack FAT pending |
+| Immutable ledger implemented | ✅ durable table + memory fail-soft |
+| Wallet operational | ✅ behind `ENABLE_WALLET` · ledger events |
+| Payment capability certified | 🟡 route migration + ledger write; live Paystack FAT pending |
 | Settlement / Promotion / Subscription / Refund frameworks | ✅ ready; deepen workflows later |
 | Launch Command Center reports financial health | ✅ |
 | All financial capabilities integrated through YIP | ✅ one capability, modules |
@@ -78,7 +80,7 @@ YIKE_PIN_PEPPER=<random ≥32 chars>
 1. Set `YIKE_PIN_PEPPER` in Coolify (≥32). Redeploy if process was started without it.
 2. Confirm Paystack keys + webhook URL `https://yike.ng/api/payments/webhook`.
 3. Flip `ENABLE_PAYMENTS=true` only after webhook FAT.
-4. Ledger DB migration before treating ledger as compliance source of truth.
+4. Apply migration `20260726212317_financial_ledger_immutable_v1.sql` on production (SQL Editor or `npm run db:push`) before treating ledger as compliance source of truth.
 
 ---
 

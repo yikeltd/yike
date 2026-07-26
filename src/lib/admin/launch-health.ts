@@ -88,6 +88,9 @@ export async function getLaunchHealthSnapshot(
     searchesToday,
     savesToday,
     contactProxy,
+    paymentsPending,
+    paymentsFailed,
+    ledgerCount,
   ] = await Promise.all([
     supabase
       .from("email_logs")
@@ -143,6 +146,18 @@ export async function getLaunchHealthSnapshot(
       .select("contact_clicks")
       .eq("status", "approved")
       .limit(5000),
+    supabase
+      .from("payment_orders")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["pending", "processing"]),
+    supabase
+      .from("payment_orders")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "failed")
+      .gte("created_at", since24h),
+    supabase
+      .from("financial_ledger_entries")
+      .select("*", { count: "exact", head: true }),
   ]);
 
   const dbOk = isSupabaseConfigured() && isAdminClientConfigured();
@@ -262,6 +277,25 @@ export async function getLaunchHealthSnapshot(
       detail: !isSettlementEnabled()
         ? "ENABLE_SETTLEMENT / ENABLE_ESCROW off"
         : "Settlement framework active",
+    },
+    {
+      id: "ledger",
+      label: "Ledger Integrity",
+      tone: ledgerCount.error ? "warn" : "ok",
+      detail: ledgerCount.error
+        ? "financial_ledger_entries missing — apply migration"
+        : `Append-only · ${ledgerCount.count ?? 0} durable entries`,
+    },
+    {
+      id: "payment_queue",
+      label: "Payment Queue",
+      tone:
+        (paymentsFailed.count ?? 0) > 0
+          ? "warn"
+          : (paymentsPending.count ?? 0) > 20
+            ? "warn"
+            : "ok",
+      detail: `${paymentsPending.count ?? 0} pending · ${paymentsFailed.count ?? 0} failed (24h)`,
     },
     {
       id: "search",

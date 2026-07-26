@@ -23,6 +23,7 @@ export function __resetFinancialPlatformForTests(): void {
 }
 
 export type { FinancialPlatform };
+export { recordFinancialEvent } from "./record-events";
 export {
   isPaymentsEnabled,
   isWalletEnabled,

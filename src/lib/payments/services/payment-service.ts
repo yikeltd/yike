@@ -549,6 +549,7 @@ export async function reconcileAndFulfillPayment(
     const fulfillment = await fulfillOrder(admin, order);
     if (fulfillment.ok) {
       await markFulfilledMetadata(admin, order.id, order.metadata as Record<string, unknown>);
+      await recordPaymentLedger(admin, order);
     }
     return fulfillment.ok
       ? { ...fulfillment, alreadyFulfilled: true }
@@ -621,12 +622,51 @@ export async function reconcileAndFulfillPayment(
       claimed.id,
       claimed.metadata as Record<string, unknown>
     );
+    await recordPaymentLedger(admin, claimed);
     if (!fulfillment.alreadyFulfilled) {
       void notifyPaymentSuccessful(admin, claimed, fulfillment);
     }
   }
 
   return fulfillment;
+}
+
+async function recordPaymentLedger(
+  admin: SupabaseClient,
+  order: PaymentOrder
+): Promise<void> {
+  try {
+    const { recordFinancialEvent } = await import("@/lib/financial/record-events");
+    const orderType = String(order.order_type ?? "");
+    const type =
+      orderType === "subscription" || orderType === "lead_insights"
+        ? ("subscription" as const)
+        : orderType === "featured_listing" ||
+            orderType === "boost_listing" ||
+            orderType === "advertisement"
+          ? ("promotion_credit" as const)
+          : ("payment" as const);
+
+    await recordFinancialEvent({
+      admin,
+      type,
+      accountId: `user:${order.user_id}`,
+      amount: Number(order.amount),
+      currency: String(order.currency ?? "NGN"),
+      reference: order.reference,
+      capability: "financial.payment",
+      provider: String(order.provider ?? order.gateway ?? "paystack"),
+      actorId: order.user_id,
+      status: "completed",
+      paymentOrderId: order.id,
+      metadata: {
+        order_type: order.order_type,
+        listing_id: order.listing_id ?? null,
+      },
+    });
+  } catch {
+    // Fail-soft — payment fulfillment must not roll back on ledger write errors
+  }
 }
 
 async function markFulfilledMetadata(

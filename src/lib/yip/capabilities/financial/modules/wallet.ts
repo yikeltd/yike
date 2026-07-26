@@ -35,6 +35,37 @@ async function billing() {
   return import("@/lib/leads/billing");
 }
 
+async function recordWalletLedger(input: {
+  accountId: string;
+  amount: number;
+  type: "wallet_credit" | "wallet_debit";
+  actorId: string;
+  reference: string;
+  reason: string;
+}): Promise<void> {
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const { recordFinancialEvent } = await import("@/lib/financial/record-events");
+    const admin = createAdminClient();
+    if (!admin) return;
+    await recordFinancialEvent({
+      admin,
+      type: input.type,
+      accountId: `wallet:${input.accountId}`,
+      amount: input.amount,
+      currency: "NGN",
+      reference: input.reference,
+      capability: "financial.wallet",
+      provider: "wallet",
+      actorId: input.actorId,
+      status: "completed",
+      metadata: { reason: input.reason },
+    });
+  } catch {
+    // Fail-soft
+  }
+}
+
 export function createWalletModule(): WalletModule {
   return {
     isEnabled: () => isWalletEnabled(),
@@ -46,7 +77,7 @@ export function createWalletModule(): WalletModule {
     credit: async (input) => {
       if (!isWalletEnabled()) return { ok: false, error: "Wallet disabled" };
       const { adjustAgentWallet } = await billing();
-      return adjustAgentWallet({
+      const result = await adjustAgentWallet({
         agentId: input.accountId,
         amount: Math.abs(input.amount),
         reason: input.reason,
@@ -54,11 +85,22 @@ export function createWalletModule(): WalletModule {
         reference: input.reference,
         ledgerType: "topup",
       });
+      if (result.ok) {
+        await recordWalletLedger({
+          accountId: input.accountId,
+          amount: Math.abs(input.amount),
+          type: "wallet_credit",
+          actorId: input.actorId,
+          reference: input.reference ?? `wallet-credit-${Date.now()}`,
+          reason: input.reason,
+        });
+      }
+      return result;
     },
     debit: async (input) => {
       if (!isWalletEnabled()) return { ok: false, error: "Wallet disabled" };
       const { adjustAgentWallet } = await billing();
-      return adjustAgentWallet({
+      const result = await adjustAgentWallet({
         agentId: input.accountId,
         amount: -Math.abs(input.amount),
         reason: input.reason,
@@ -66,6 +108,17 @@ export function createWalletModule(): WalletModule {
         reference: input.reference,
         ledgerType: "adjustment",
       });
+      if (result.ok) {
+        await recordWalletLedger({
+          accountId: input.accountId,
+          amount: Math.abs(input.amount),
+          type: "wallet_debit",
+          actorId: input.actorId,
+          reference: input.reference ?? `wallet-debit-${Date.now()}`,
+          reason: input.reason,
+        });
+      }
+      return result;
     },
     health: () => ({
       id: "wallet",

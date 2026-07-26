@@ -116,9 +116,9 @@ describe("Financial Platform — single capability, modules", () => {
     }
   });
 
-  it("ledger is append-only and recordPair creates credit+debit", () => {
+  it("ledger is append-only and recordPair creates credit+debit", async () => {
     const fp = createFinancialPlatform();
-    const { credit, debit } = fp.ledger.recordPair({
+    const { credit, debit, persisted } = await fp.ledger.recordPair({
       type: "payment",
       accountId: "user:1",
       amount: 5000,
@@ -131,6 +131,7 @@ describe("Financial Platform — single capability, modules", () => {
     assert.equal(credit.direction, "credit");
     assert.equal(debit.direction, "debit");
     assert.equal(credit.amount, 5000);
+    assert.equal(persisted, false);
     assert.equal(fp.ledger.listByReference("YK_TEST_1").length, 2);
   });
 
