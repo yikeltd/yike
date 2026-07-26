@@ -57,28 +57,46 @@ async function ensureSellerRole(
 ): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
   if (LISTER_ROLES.has(profile.role)) {
     if (accountType && accountType !== profile.account_type) {
-      await admin
-        .from("profiles")
-        .update({ account_type: accountType, listing_rules_accepted_at: new Date().toISOString() })
-        .eq("id", user.id);
+      const patch: Record<string, unknown> = {
+        account_type: accountType,
+        listing_rules_accepted_at: new Date().toISOString(),
+      };
+      const { error } = await admin.from("profiles").update(patch).eq("id", user.id);
+      if (error?.message?.includes("listing_rules_accepted_at")) {
+        delete patch.listing_rules_accepted_at;
+        const retry = await admin.from("profiles").update(patch).eq("id", user.id);
+        if (retry.error) {
+          console.error("[seller-verification] account type update failed:", retry.error.message);
+          return { ok: false, error: "Could not start seller account.", status: 500 };
+        }
+      } else if (error) {
+        console.error("[seller-verification] account type update failed:", error.message);
+        return { ok: false, error: "Could not start seller account.", status: 500 };
+      }
     }
     return { ok: true };
   }
 
   const now = new Date().toISOString();
-  const { error } = await admin
-    .from("profiles")
-    .update({
-      role: "agent_unverified",
-      listing_limit: UNVERIFIED_AGENT_LISTING_LIMIT,
-      subscription_plan_code: "free",
-      starter_plan_started_at: now,
-      listing_limit_reason: "subscription:free",
-      verified_badge: false,
-      account_type: accountType,
-      listing_rules_accepted_at: now,
-    })
-    .eq("id", user.id);
+  const payload: Record<string, unknown> = {
+    role: "agent_unverified",
+    listing_limit: UNVERIFIED_AGENT_LISTING_LIMIT,
+    subscription_plan_code: "free",
+    starter_plan_started_at: now,
+    listing_limit_reason: "subscription:free",
+    verified_badge: false,
+    account_type: accountType,
+    listing_rules_accepted_at: now,
+  };
+
+  let { error } = await admin.from("profiles").update(payload).eq("id", user.id);
+
+  // Production may lag migrations that add listing_rules_accepted_at.
+  if (error?.message?.includes("listing_rules_accepted_at")) {
+    delete payload.listing_rules_accepted_at;
+    const retry = await admin.from("profiles").update(payload).eq("id", user.id);
+    error = retry.error;
+  }
 
   if (error) {
     console.error("[seller-verification] become seller failed:", error.message);
@@ -191,7 +209,6 @@ export async function POST(request: Request) {
     verification_submitted_at: now,
     verification_status: "pending",
     verified_badge: false,
-    updated_at: now,
     ...(referralCode ? { referral_code_used: referralCode } : {}),
   };
 
