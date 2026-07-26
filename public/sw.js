@@ -1,6 +1,6 @@
-const SHELL_CACHE = "yike-shell-v33";
-const IMAGE_CACHE = "yike-images-v6";
-const LISTING_CACHE = "yike-listings-v5";
+const SHELL_CACHE = "yike-shell-v34";
+const IMAGE_CACHE = "yike-images-v7";
+const LISTING_CACHE = "yike-listings-v6";
 const CACHE_PREFIX = "yike-";
 
 const SHELL = [
@@ -171,6 +171,12 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (url.origin !== self.location.origin) return;
+
+  // Next build assets are content-hashed — never serve a stale match.
+  if (url.pathname.startsWith("/_next/")) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
 
   // Document navigations: network-first, warm-cache fallback, /offline last
   if (event.request.mode === "navigate") {

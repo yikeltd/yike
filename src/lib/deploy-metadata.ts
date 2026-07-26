@@ -27,6 +27,7 @@ export function getDeploymentMetadata(application: string, version?: string): De
     commit:
       process.env.GIT_COMMIT_SHA?.trim() ||
       process.env.COOLIFY_SOURCE_COMMIT?.trim() ||
+      process.env.SOURCE_COMMIT?.trim() ||
       null,
     buildTime: process.env.BUILD_TIME?.trim() || null,
     nodeEnv: process.env.NODE_ENV || "unknown",

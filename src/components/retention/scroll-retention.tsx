@@ -1,28 +1,47 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
 const PREFIX = "yike_scroll:";
 
-/** Restore scroll on back navigation for feed-style pages. */
+/**
+ * Restore scroll only on browser Back/Forward (popstate).
+ * Never restore on Link taps — that jumped users to the footer/mid-feed.
+ */
 export function ScrollRetention() {
   const pathname = usePathname();
+  const restoreOnPopRef = useRef(false);
 
   useEffect(() => {
     if ("scrollRestoration" in history) {
       history.scrollRestoration = "manual";
     }
+
+    function onPopState() {
+      restoreOnPopRef.current = true;
+    }
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   useEffect(() => {
     const key = `${PREFIX}${pathname}`;
-    const saved = sessionStorage.getItem(key);
-    if (saved) {
-      const y = Number(saved);
-      if (!Number.isNaN(y)) {
-        requestAnimationFrame(() => window.scrollTo(0, y));
+    const shouldRestore = restoreOnPopRef.current;
+    restoreOnPopRef.current = false;
+
+    if (shouldRestore) {
+      const saved = sessionStorage.getItem(key);
+      if (saved) {
+        const y = Number(saved);
+        if (!Number.isNaN(y) && y > 0) {
+          requestAnimationFrame(() => window.scrollTo(0, y));
+        }
       }
+    } else {
+      // Forward navigation (bottom nav, header links): land at top.
+      requestAnimationFrame(() => window.scrollTo(0, 0));
     }
 
     function onScroll() {
