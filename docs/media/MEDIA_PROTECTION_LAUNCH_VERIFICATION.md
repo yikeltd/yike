@@ -38,7 +38,24 @@ OTP/Sendchamp WIP intentionally left uncommitted.
 
 ---
 
-## Remaining risks
+## Deployment status
+
+- Pushed `origin/main` successfully.
+- Coolify served new route within ~2 minutes: `GET /api/admin/media/assets` → **401** `{"error":"Sign in required"}` (was HTML catch-all pre-deploy).
+- Homepage https://yike.ng → **200**.
+- GH Actions “PR Checks” still fails on pre-existing lint debt (known; Coolify deploys from `main` independently).
+
+## Production validation
+
+| Check | Status |
+|-------|--------|
+| Deploy live (admin media API auth gate) | PASS |
+| Anonymous original archive access | PASS (bucket `public=false`) |
+| Live seller photo upload + Lex registry row | **Founder smoke** — requires authenticated lister session |
+| Vehicle photo upload | N/A if `ENABLE_VEHICLE_MARKETPLACE=false` (expected) |
+
+**Founder smoke (2 minutes):** Upload one property listing photo → confirm watermark on public URL → open Lex Tech → Uploads & Protection → confirm fingerprint row.
+
 
 1. **Upload latency** — ~0.5–2s extra vs legacy on mid-size images; watch Coolify CPU under concurrent seller uploads.  
 2. **Synthetic vs real photos** — micro pattern looks stronger on flat color fields than textured real estate photos; opacity defaults tightened (max 0.03, neutral ink).  
