@@ -3,6 +3,14 @@
 Operational pack for **Property Marketplace** launch. Complements
 `docs/engineering/DEPLOYMENT_STANDARD.md` and the approved Architecture Audit.
 
+## 🚀 Single source of truth (Launch Operations Phase)
+
+| Doc | Purpose |
+|-----|---------|
+| **[LAUNCH_COMMAND_CENTER.md](./LAUNCH_COMMAND_CENTER.md)** | **Daily executive dashboard — update this only until launch** |
+| [FEATURE_FREEZE.md](./FEATURE_FREEZE.md) | Merge gate (ACTIVE) |
+| [LAUNCH_WAR_ROOM_2026-07-26.md](./LAUNCH_WAR_ROOM_2026-07-26.md) | Critical / Polish / V2 board |
+
 ## Production Launch Candidate (2026-07-23) — GO
 
 | Doc | Purpose |
