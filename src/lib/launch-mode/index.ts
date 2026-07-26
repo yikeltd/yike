@@ -4,8 +4,11 @@
  * Prefer isLaunchFeatureVisible() over ad-hoc env checks for deferred surfaces.
  * YIKE_LAUNCH_MODE=true (default in production posture) keeps deferred features off.
  * Per-feature env overrides can enable a single surface when explicitly authorized.
- * Vehicle marketplace is a Day-1 flagship — defaults ON (`ENABLE_VEHICLE_MARKETPLACE`).
- * Set `ENABLE_VEHICLE_MARKETPLACE=false` only for emergency hide.
+ *
+ * Vehicle marketplace is a Day-1 flagship and stays ON unless emergency off is set:
+ * `ENABLE_VEHICLE_MARKETPLACE_EMERGENCY_OFF=true`.
+ * Do not use `ENABLE_VEHICLE_MARKETPLACE=false` — that caused /vehicles soft-404s while
+ * footer/nav still linked to the route.
  */
 
 import { isProductionEnv } from "@/lib/env";
@@ -27,7 +30,7 @@ export type LaunchFeature =
   | "trust_economy_ui";
 
 const FEATURE_ENV: Partial<Record<LaunchFeature, string>> = {
-  vehicle_marketplace: "ENABLE_VEHICLE_MARKETPLACE",
+  vehicle_marketplace: "ENABLE_VEHICLE_MARKETPLACE_EMERGENCY_OFF",
   industrial_marketplace: "ENABLE_INDUSTRIAL_MARKETPLACE",
   hospitality_listings: "ENABLE_HOSPITALITY_LISTINGS",
   business_listings: "ENABLE_BUSINESS_LISTINGS",
@@ -66,9 +69,9 @@ export function isLaunchModeStrict(): boolean {
 export function isLaunchFeatureVisible(feature: LaunchFeature): boolean {
   const envName = FEATURE_ENV[feature];
 
-  // Vehicle marketplace: Day-1 flagship — default ON.
+  // Vehicle marketplace: Day-1 flagship — always ON unless emergency kill-switch.
   if (feature === "vehicle_marketplace") {
-    return envFlag("ENABLE_VEHICLE_MARKETPLACE", true);
+    return !envFlag("ENABLE_VEHICLE_MARKETPLACE_EMERGENCY_OFF", false);
   }
 
   if (envName && envFlag(envName, false)) return true;

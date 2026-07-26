@@ -37,6 +37,12 @@ export function staticPathRedirect(pathname: string): string | null {
     "/cookie-policy": "/cookies",
     "/legal": "/privacy",
     "/support": "/contact",
+    // Consumer aliases — never soft-404 via catch-all
+    "/sell": "/agent/verify",
+    "/account": "/agent",
+    "/help": "/safety",
+    "/messages": "/contact",
+    "/properties": "/search",
   };
 
   if (exact[normalized]) return exact[normalized];

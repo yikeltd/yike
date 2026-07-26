@@ -6,11 +6,12 @@ import {
   SITE_NAME,
 } from "@/lib/constants";
 import { brand } from "@/lib/design/tokens";
+import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 
-const explore = [
+const exploreBase = [
   { href: "/buy", label: "Buy Property" },
   { href: "/rent", label: "Rent Property" },
-  { href: "/vehicles", label: "Vehicles" },
+  { href: "/vehicles", label: "Vehicles", vehiclesOnly: true as const },
   { href: "/land", label: "Land" },
   { href: "/post-property", label: "Sell on Yike" },
 ] as const;
@@ -58,6 +59,10 @@ function FooterNavColumn({
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
+  const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
+  const explore = exploreBase.filter(
+    (link) => !("vehiclesOnly" in link && link.vehiclesOnly && !vehiclesOn)
+  );
 
   return (
     <footer className="text-[#f0f4fa]">

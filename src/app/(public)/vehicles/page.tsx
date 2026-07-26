@@ -56,6 +56,7 @@ export default async function VehiclesPage({
 }: {
   searchParams: SearchParams;
 }) {
+  // Soft-404 only for true emergency hide — never for legacy ENABLE_*=false misconfig.
   if (!isLaunchFeatureVisible("vehicle_marketplace")) notFound();
 
   const sp = await searchParams;

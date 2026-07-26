@@ -3,6 +3,7 @@ import { buildStandardHealthPayload } from "@/lib/deploy-metadata";
 import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
 import { getSupabaseAdminConfig } from "@/lib/supabase/admin";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
+import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +32,7 @@ export function GET() {
         yikeOtpServerToken: otpToken,
         supabaseServiceRole: serviceRolePresent,
         otpDbClient: otpDb,
+        vehicleMarketplace: isLaunchFeatureVisible("vehicle_marketplace"),
       },
     }),
     {

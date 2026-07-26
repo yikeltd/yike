@@ -164,6 +164,11 @@ const nextConfig: NextConfig = {
       { source: "/cookie-policy", destination: "/cookies", permanent: true },
       { source: "/legal", destination: "/privacy", permanent: true },
       { source: "/support", destination: "/contact", permanent: true },
+      { source: "/sell", destination: "/agent/verify", permanent: false },
+      { source: "/account", destination: "/agent", permanent: false },
+      { source: "/help", destination: "/safety", permanent: true },
+      { source: "/messages", destination: "/contact", permanent: false },
+      { source: "/properties", destination: "/search", permanent: false },
       {
         source: "/listing/:id",
         destination: "/properties/:id",
