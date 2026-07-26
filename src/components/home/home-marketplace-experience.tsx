@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HomeAdSlot } from "@/components/ads/home-ad-slot";
 import { HomeDesktopHero } from "@/components/home/home-desktop-hero";
-import { MarketplaceCategoryToggle } from "@/components/home/marketplace-category-toggle";
 import { HomeTrustBadges } from "@/components/home/home-trust-badges";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
@@ -141,9 +140,8 @@ function hasAnyInventory(rails: PropertyRails | VehicleRails): boolean {
  * Browse-first homepage — Discover → Browse → Trust → Search → Buy.
  * Presentation only: themed rails from existing inventory pools.
  *
- * APPROVED MOBILE LAYOUT (locked): inventory-first — sticky Vehicles|Properties,
- * then listing rails. Do NOT remount HomeMobileHero / search-first chrome on mobile
- * unless the founder explicitly requests a redesign.
+ * Mobile category switching: visual chips in HeaderMobile (auto-hide on scroll).
+ * Desktop keeps HomeDesktopHero + MarketplaceCategoryToggle.
  */
 export function HomeMarketplaceExperience({
   initialCategory,
@@ -312,16 +310,7 @@ export function HomeMarketplaceExperience({
         onVehicleSearch={handleVehicleSearch}
       />
 
-      {/* Vehicles | Properties — keep discovery chrome minimal (approved mobile) */}
-      <div className="sticky top-14 z-30 border-b border-navy/[0.06] bg-ivory/95 px-3 py-2 backdrop-blur-md sm:px-6 lg:hidden">
-        <div className="mx-auto max-w-sm sm:max-w-md">
-          <MarketplaceCategoryToggle
-            category={category}
-            onChange={syncCategory}
-            compact
-          />
-        </div>
-      </div>
+      {/* Mobile category chips live in HeaderMobile (scroll auto-hide). */}
 
       <div className="mx-auto max-w-7xl px-3 pt-3 sm:px-6 lg:px-6 lg:pt-4 xl:px-8">
         {totallyEmpty ? (

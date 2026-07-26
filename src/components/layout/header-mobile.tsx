@@ -1,19 +1,18 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 import { MobileHeaderBanner } from "@/components/banners/mobile-header-banner";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
-import { MarketplaceNavSheet } from "@/components/marketplace/experience";
+import { MarketplaceCategoryChips } from "@/components/home/marketplace-category-chips";
 import type { SiteBanner } from "@/types/database";
 
 /**
- * Mobile chrome — Logo | Search (location + mic inside) | Menu.
- * Single row. Sell stays in bottom nav / menu sheet.
+ * Mobile chrome — search pill with logo inside + location.
+ * On home: premium category banners under search; banners auto-hide on scroll.
+ * Hamburger removed — bottom nav covers Sell / Account / Browse.
+ * Desktop header is unchanged.
  */
 export function HeaderMobile({
   mobileBanner,
@@ -28,6 +27,34 @@ export function HeaderMobile({
     pathname.startsWith("/properties/") ||
     (pathname.startsWith("/vehicles/") && pathname.split("/").length >= 3);
 
+  const [bannersVisible, setBannersVisible] = useState(true);
+
+  useEffect(() => {
+    if (!isHome) return;
+
+    let ticking = false;
+
+    const update = () => {
+      const y = window.scrollY;
+      if (y <= 16) {
+        setBannersVisible(true);
+      } else if (y > 40) {
+        setBannersVisible(false);
+      }
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isHome]);
+
   if (isDetail || isProfile) return null;
 
   return (
@@ -38,26 +65,16 @@ export function HeaderMobile({
     >
       <div
         className={cn(
-          "flex items-center gap-2 px-3",
-          isHome ? "min-h-14 py-2" : "min-h-12 py-2",
+          "flex items-center justify-center px-4",
+          isHome ? "min-h-14 py-2.5" : "min-h-12 py-2",
           isBrowse && "border-b-0",
         )}
       >
-        <Link href="/" className="shrink-0" aria-label="Yike home">
-          <Image
-            src={brand.logoSm}
-            alt="Yike"
-            width={isHome ? 34 : 32}
-            height={isHome ? 34 : 32}
-            className="rounded-lg"
-            priority
-          />
-        </Link>
         <Suspense
           fallback={
             <div
               className={cn(
-                "min-w-0 flex-1 rounded-full bg-navy/[0.06]",
+                "w-full rounded-full bg-navy/[0.06]",
                 isHome ? "h-11" : "h-10",
               )}
             />
@@ -67,12 +84,32 @@ export function HeaderMobile({
             size={isHome ? "large" : "default"}
             tone="default"
             placement="header_mobile"
+            placeholder="Search vehicles & properties…"
             showLocation
-            showMic
+            showLogo
+            className="w-full"
           />
         </Suspense>
-        <MarketplaceNavSheet size={isHome ? "md" : "sm"} />
       </div>
+
+      {isHome ? (
+        <div
+          className={cn(
+            "overflow-hidden px-4 transition-[max-height,opacity,transform] duration-200 ease-out",
+            bannersVisible
+              ? "max-h-[110px] translate-y-0 opacity-100"
+              : "pointer-events-none max-h-0 -translate-y-2 opacity-0",
+          )}
+          aria-hidden={!bannersVisible}
+        >
+          <div className="pb-3 pt-0.5">
+            <Suspense fallback={<div className="h-20 rounded-2xl bg-navy/[0.04]" />}>
+              <MarketplaceCategoryChips homeMode />
+            </Suspense>
+          </div>
+        </div>
+      ) : null}
+
       {mobileBanner && <MobileHeaderBanner banner={mobileBanner} />}
     </header>
   );

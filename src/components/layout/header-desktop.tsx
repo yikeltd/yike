@@ -45,7 +45,6 @@ export function HeaderDesktop({ className }: { className?: string }) {
             tone="desktop"
             placement="header_desktop"
             showLocation
-            showMic
           />
         </Suspense>
 

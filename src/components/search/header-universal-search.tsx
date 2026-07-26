@@ -1,8 +1,10 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search, X, Mic } from "lucide-react";
+import { Search, X } from "lucide-react";
 import {
   buildSearchHref,
   getSmartSearchSuggestions,
@@ -26,6 +28,7 @@ import { parseHomeCategory } from "@/lib/home/marketplace-category";
 import { VEHICLE_MAKES } from "@/lib/marketplace/vehicle-makes";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { allowNetworkAction } from "@/lib/pwa/offline-ui";
+import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
 
@@ -62,8 +65,8 @@ type Props = {
   placeholder?: string;
   /** Embed location selector inside the search surface. */
   showLocation?: boolean;
-  /** Show disabled mic affordance (no voice engine in this task). */
-  showMic?: boolean;
+  /** Show tappable Yike logo on the left inside the search pill. */
+  showLogo?: boolean;
 };
 
 /**
@@ -75,9 +78,9 @@ export function HeaderUniversalSearch({
   tone = "default",
   className,
   placement = "header_universal",
-  placeholder = "Search cars, houses…",
+  placeholder = "Search vehicles & properties…",
   showLocation = false,
-  showMic = false,
+  showLogo = false,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -276,13 +279,34 @@ export function HeaderUniversalSearch({
           open && "border-gold/45 shadow-glow-gold ring-2 ring-gold/15",
         )}
       >
-        <Search
-          className={cn(
-            "ml-3.5 shrink-0 text-navy/40",
-            isLarge ? "h-[18px] w-[18px]" : "h-4 w-4",
-          )}
-          aria-hidden
-        />
+        {showLogo ? (
+          <Link
+            href="/"
+            className={cn(
+              "ml-2 shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50",
+              isLarge ? "p-0.5" : "p-0.5",
+            )}
+            aria-label="Yike home"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={brand.logoSm}
+              alt=""
+              width={isLarge ? 28 : 26}
+              height={isLarge ? 28 : 26}
+              className="rounded-md"
+              priority
+            />
+          </Link>
+        ) : (
+          <Search
+            className={cn(
+              "ml-3.5 shrink-0 text-navy/40",
+              isLarge ? "h-[18px] w-[18px]" : "h-4 w-4",
+            )}
+            aria-hidden
+          />
+        )}
         <input
           ref={inputRef}
           type="search"
@@ -303,8 +327,9 @@ export function HeaderUniversalSearch({
           placeholder={placeholder}
           className={cn(
             "min-w-0 flex-1 bg-transparent py-0 text-navy outline-none placeholder:text-navy/40",
-            isLarge ? "h-12 text-[15px]" : "h-10 text-sm",
-            query || showLocation || showMic ? "pr-1" : "pr-3",
+            isLarge ? "h-11 text-[14px]" : "h-10 text-sm",
+            query || showLocation ? "pr-1" : "pr-3",
+            showLogo && "pl-1",
           )}
           aria-label={placeholder}
           aria-expanded={open}
@@ -324,51 +349,27 @@ export function HeaderUniversalSearch({
           </button>
         ) : null}
 
-        {(showLocation || showMic) && (
-          <div className="mr-1.5 flex shrink-0 items-center gap-0.5">
-            {showLocation ? (
-              <>
+        {showLocation ? (
+          <div className="mr-1.5 flex shrink-0 items-center">
+            <span className="mx-0.5 h-5 w-px bg-navy/10" aria-hidden />
+            <Suspense
+              fallback={
                 <span
-                  className="mx-0.5 hidden h-5 w-px bg-navy/10 sm:block"
+                  className={cn(
+                    "inline-block shrink-0",
+                    isLarge ? "h-8 w-16" : "h-7 w-14",
+                  )}
                   aria-hidden
                 />
-                <Suspense
-                  fallback={
-                    <span
-                      className={cn(
-                        "inline-block shrink-0",
-                        isLarge ? "h-8 w-16" : "h-7 w-14",
-                      )}
-                      aria-hidden
-                    />
-                  }
-                >
-                  <MarketplaceLocationIndicator
-                    size={isLarge ? "md" : "sm"}
-                    variant="embedded"
-                  />
-                </Suspense>
-              </>
-            ) : null}
-            {showMic ? (
-              <>
-                <span className="mx-0.5 h-5 w-px bg-navy/10" aria-hidden />
-                <button
-                  type="button"
-                  disabled
-                  title="Voice search coming soon"
-                  aria-label="Voice search (coming soon)"
-                  className={cn(
-                    "inline-flex shrink-0 items-center justify-center rounded-full text-navy/35",
-                    isLarge ? "h-9 w-9" : "h-8 w-8",
-                  )}
-                >
-                  <Mic className={isLarge ? "h-4 w-4" : "h-3.5 w-3.5"} aria-hidden />
-                </button>
-              </>
-            ) : null}
+              }
+            >
+              <MarketplaceLocationIndicator
+                size={isLarge ? "md" : "sm"}
+                variant="embedded"
+              />
+            </Suspense>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div
