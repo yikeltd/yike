@@ -19,6 +19,22 @@ export function AdminPinSetupCard() {
       .then((d: { hasAdminPin?: boolean }) => setHasAdminPin(Boolean(d.hasAdminPin)));
   }, []);
 
+  async function clearOwnPin() {
+    setError("");
+    setMessage("");
+    setBusy(true);
+    const res = await fetch("/api/admin/pin/clear-own", { method: "POST" });
+    const data = (await res.json()) as { ok?: boolean; error?: string };
+    setBusy(false);
+    if (!res.ok || !data.ok) {
+      setError(data.error ?? "Could not clear PIN.");
+      return;
+    }
+    setHasAdminPin(false);
+    setCurrentPin("");
+    setMessage("Previous PIN cleared. Choose a new 6-digit PIN below.");
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -72,20 +88,30 @@ export function AdminPinSetupCard() {
       ) : (
         <form onSubmit={(e) => void submit(e)} className="mt-4 space-y-3">
           {hasAdminPin && (
-            <label className="block text-xs font-semibold text-muted">
-              Current PIN
-              <Input
-                type="password"
-                inputMode="numeric"
-                maxLength={6}
-                value={currentPin}
-                onChange={(e) =>
-                  setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 6))
-                }
-                placeholder="••••••"
-                className="mt-1 text-center tracking-[0.4em]"
-              />
-            </label>
+            <>
+              <label className="block text-xs font-semibold text-muted">
+                Current PIN
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={currentPin}
+                  onChange={(e) =>
+                    setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  placeholder="••••••"
+                  className="mt-1 text-center tracking-[0.4em]"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void clearOwnPin()}
+                className="text-xs font-semibold text-navy underline-offset-2 hover:underline"
+              >
+                I don&apos;t have / forgot my current PIN
+              </button>
+            </>
           )}
           <label className="block text-xs font-semibold text-muted">
             {hasAdminPin ? "New PIN" : "PIN"}
