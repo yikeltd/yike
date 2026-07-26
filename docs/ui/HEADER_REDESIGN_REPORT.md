@@ -44,10 +44,10 @@ Microphone is a **disabled** affordance (`Voice search coming soon`). No speech 
 
 ## Verification
 
-- [x] `npx tsc --noEmit`
-- [ ] `npm run lint` (run in CI / local)
-- [ ] `npm run build`
-- Manual: desktop / tablet / mobile — logo, search focus, location picker, menu sheet
+- [x] `npx tsc --noEmit` (exit 0)
+- [x] `eslint` on modified header files (0 errors; pre-existing hook warnings only)
+- [x] Local preview mobile: Logo · Search (location + mic inside) · Menu
+- Manual remaining: tablet + desktop width, production Coolify deploy smoke
 
 ## Confirmation
 
