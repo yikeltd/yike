@@ -31,11 +31,7 @@ type LoginProfile = {
   has_pin_set: boolean;
 };
 
-type StoredLoginProfile = LoginProfile & {
-  pin_hash: string | null;
-};
-
-function publicLoginProfile(profile: StoredLoginProfile | null): LoginProfile | null {
+function publicLoginProfile(profile: LoginProfile | null): LoginProfile | null {
   if (!profile) return null;
   return {
     id: profile.id,
@@ -45,21 +41,21 @@ function publicLoginProfile(profile: StoredLoginProfile | null): LoginProfile | 
     email: profile.email,
     role: profile.role,
     account_type: profile.account_type,
-    has_pin_set: Boolean(profile.has_pin_set || profile.pin_hash),
+    has_pin_set: Boolean(profile.has_pin_set),
   };
 }
 
-async function loadLoginProfile(userId: string): Promise<StoredLoginProfile | null> {
+async function loadLoginProfile(userId: string): Promise<LoginProfile | null> {
   try {
     const admin = createAdminClient();
     const { data } = await admin
       .from("profiles")
       .select(
-        "id, full_name, username, avatar_url, email, role, account_type, has_pin_set, pin_hash"
+        "id, full_name, username, avatar_url, email, role, account_type, has_pin_set"
       )
       .eq("id", userId)
       .maybeSingle();
-    return (data as StoredLoginProfile | null) ?? null;
+    return (data as LoginProfile | null) ?? null;
   } catch (error) {
     console.error("[auth/verify-email-otp] profile load failed", (error as Error).message);
     return null;

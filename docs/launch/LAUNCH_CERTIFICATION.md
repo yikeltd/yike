@@ -1,142 +1,119 @@
-# Launch Certification — Production Hardening Pass
+# Launch Certification — Yike RC1
 
-**Date:** 2026-07-23  
-**Repo:** yikeltd/yike · branch `main` (local hardening **uncommitted**)  
-**Supabase:** `hlpojfurfldvcxfxhveg`  
-**Live site:** https://yike.ng  
-
-## Launch Decision
-
-# READY AFTER DEPLOYMENT VERIFICATION
-
-Marketplace consumer launch remains **operationally blocked** until approved inventory > 0.
+**Date:** 2026-07-26  
+**Auditor:** Principal engineering release review (Cursor)  
+**Companion checklist:** [FINAL_LAUNCH_CHECKLIST.md](./FINAL_LAUNCH_CHECKLIST.md)  
+**Hardening audit:** [PRODUCTION_HARDENING_AUDIT.md](./PRODUCTION_HARDENING_AUDIT.md)
 
 ---
 
-## 1. Security Hardening Validation (local code)
+## Final Verdict
 
-| Control | Status | Evidence |
-|---------|--------|----------|
-| Auth callback `safeNextPath` | **PASS (local)** | Blocks `//`, absolute URLs, encoded `/%2f%2f…`, schemes |
-| Canonical redirect origin | **PASS (local)** | Only `yike.ng` / `www` / `localhost`; else `SITE_URL` |
-| Login / verify-email / signup / profile-setup `next` | **PASS (local)** | All use `safeNextPath` |
-| CSP | **PASS (local)** | Added in `next.config.ts` |
-| X-Frame-Options DENY | **PASS (local)** | `next.config.ts` |
-| X-Content-Type-Options | **PASS (local)** | nosniff |
-| Referrer-Policy | **PASS (local)** | strict-origin-when-cross-origin |
-| Permissions-Policy | **PASS (local)** | camera/mic/geo/payment disabled |
-| HSTS | **PASS (local)** | max-age=63072000; includeSubDomains; preload |
-| Deployed headers on yike.ng | **FAIL (not deployed)** | Live response lacks security headers |
+# **NOT READY**
+
+**Reason:** Engineering P0s for routes, vehicles, Edit Profile navigation, seller-verification schema, mobile hero regression, and **profiles PIN hash column exposure** are addressed in code/DB. **Signed-in Founder Acceptance Testing is still BLOCKED** (no live session exercised in this sprint). Launch requires FAT PASS on seller + buyer critical paths.
+
+Re-certify to **READY FOR LAUNCH** only after checklist FAT rows flip to PASS with no P0 FAIL.
 
 ---
 
-## 2. Authentication Validation
+## Build status
 
-| Check | Live | Local |
-|-------|------|-------|
-| Signup readiness | `ready: true` | — |
-| Open redirect on `/auth/callback` | Vulnerable until deploy | Fixed |
-| Client `next` bypass (login/verify) | Vulnerable until deploy | Fixed |
-| `/agent` anonymous | Redirects to login | — |
-| Admin APIs anonymous | 401 | — |
-
-Unit attack matrix for `safeNextPath`: **ALL PASS** (incl. encoded protocol-relative).
+| Check | Result |
+|-------|--------|
+| Production health | `ok` · commit `135aa972` (pre this push) |
+| Feature freeze | ACTIVE — no new features |
+| Approved UI freeze | ACTIVE |
+| TypeScript | Changed auth/profile paths typecheck clean (filtered); full `tsc` not blocking Coolify historically |
 
 ---
 
-## 3. Paystack Validation
+## Routes
 
-| Check | Live today | Local hardening |
-|-------|------------|-----------------|
-| Unconfigured POST | **200** soft-ack (`skipped`) | **503** fail-closed |
-| Signature HMAC-SHA512 + timingSafeEqual | Present in provider | Unchanged |
-| Duplicate event protection | Present | Unchanged |
-| Missing admin client | Soft-ack historically | **503** |
-
-Payments can stay offline for marketplace launch; fail-closed must deploy before enabling Paystack.
-
----
-
-## 4. SendChamp Validation
-
-| Check | Live | Local |
-|-------|------|-------|
-| Missing/wrong secret POST | **401** | Same + timing-safe compare |
-| Missing secret env | Fail-closed 503 | Same |
-| Unauthenticated data mutation | Blocked (no handler without auth) | Same |
-| Replay protection | Delivery status logs only (no OTP mint) | Acceptable for launch |
-| SMS sender `YIKE` defaults | Code local | Needs deploy if phone OTP enabled |
+| Area | Result |
+|------|--------|
+| Consumer core | **PASS** (200 / redirects) |
+| Vehicles | **PASS** |
+| Aliases (`/sell` `/account` `/help` `/messages` `/properties` `/swipe`) | **PASS** |
+| Admin `/lex` | **PASS** (staff layouts) |
+| Soft-404 unknowns | Acceptable catch-all fallback |
 
 ---
 
-## 5. Marketplace Inventory Status (read-only)
+## Authentication
 
-| Status | Count | Notes |
-|--------|------:|-------|
-| **approved** | **0** | **Launch blocker (ops)** |
-| pending | 1 | VEHICLE |
-| hidden | 3 | PROPERTY |
-| archived | 1 | PROPERTY |
-| rejected | 5 | PROPERTY |
-
-**Total rows:** 10 · **PROPERTY:** 9 · **VEHICLE:** 1  
-
-No production inventory was modified.
+| Area | Result |
+|------|--------|
+| Signup readiness (health) | **PASS** |
+| Password login API | **PASS** (no longer selects `pin_hash` via user client) |
+| PIN login RPC | **PASS** (`yike_pin_login_lookup` SECURITY DEFINER) |
+| Session unlock / sensitive confirm | **PASS** (service_role for hash read) |
+| Live login/logout FAT | **BLOCKED** (founder) |
 
 ---
 
-## 6. Production Smoke Test
+## Seller flow
 
-| Journey | Status |
-|---------|--------|
-| Signup env / OTP plumbing | Ready (env) — full OTP inbox E2E not re-run this pass |
-| Login / logout / search / profile | Pages load; full session E2E deferred until after deploy |
-| Listing details / contact seller / saved | **Blocked by 0 approved listings** |
-| Admin / moderator login | Deferred to post-deploy staff session check |
-
-**Post-deploy required smoke (your sequence steps 4–6):**  
-Auth callback attack URL · response headers · Paystack 503 · Sendchamp 401 · then seed/approve listings · full user journeys.
+| Area | Result |
+|------|--------|
+| Become / verify routes | **PASS** (redirects) |
+| Seller verification API + schema | **PASS** (code); **BLOCKED** live FAT |
+| Listing create / media | **PASS** (code + actionable 503s); **BLOCKED** live FAT |
+| Publish / Lex approve | **BLOCKED** FAT |
 
 ---
 
-## 7. Final Production Readiness
+## Buyer flow
 
-### Technically ready after deploy
-- Env restored
-- DB / RLS / migrations healthy
-- Cron protected
-- SendChamp webhook secret live
-- Local hardening complete for approved blockers
-
-### Still blocking full launch
-1. **Deploy** hardening commit (after your approve)
-2. **Verify** headers + callback + Paystack 503 on live
-3. **Approve/seed listings** (ops — not a code defect)
+| Area | Result |
+|------|--------|
+| Home / search / discover / vehicles | **PASS** |
+| Saved / contact WhatsApp | **BLOCKED** FAT |
+| Dealer profile | **BLOCKED** FAT |
 
 ---
 
-## Classification
+## Admin flow
 
-**READY AFTER DEPLOYMENT VERIFICATION**
-
-Not **READY FOR PRODUCTION** until deploy verification succeeds **and** approved listings > 0.  
-Not **BLOCKED** on engineering foundation — ops + undeployed hardening remain.
+| Area | Result |
+|------|--------|
+| Lex console auth helpers | **PASS** (layout gates) |
+| Moderation path | **BLOCKED** FAT with staff account |
 
 ---
 
-## Commit gate
+## RLS / Security
 
-**Do not commit until you explicitly approve.**  
-When approved, commit scope should be hardening-only:
+| Area | Result |
+|------|--------|
+| `pin_hash` / `admin_pin_hash` denied to anon + authenticated | **PASS** (verified `has_column_privilege` = false) |
+| Public profile fields still readable | **PASS** |
+| service_role retains hash access | **PASS** |
+| PIN auth path | **PASS** (RPC + admin fallback) |
+| Migrations | `launch_revoke_profile_pin_hash_columns` + `launch_profiles_pin_hash_column_grants` applied on `hlpojfurfldvcxfxhveg` |
 
-- `src/lib/auth/safe-next-path.ts`
-- `src/app/auth/callback/route.ts`
-- `src/app/auth/login/login-client.tsx`
-- `src/app/auth/verify-email/page.tsx`
-- `src/app/auth/signup/page.tsx`
-- `src/app/agent/profile-setup/page.tsx`
-- `next.config.ts` (security headers + CSP)
-- `src/app/api/webhooks/paystack/route.ts`
-- `src/app/api/webhooks/sendchamp/route.ts`
-- Sendchamp SMS sender defaults (if included)
-- This certification doc (optional)
+---
+
+## Performance
+
+| Area | Result |
+|------|--------|
+| Inventory-first mobile home | **PASS** |
+| Media pipeline / upload caps | **PASS** |
+| No intentional perf regressions this sprint | **PASS** |
+
+---
+
+## Remaining risks
+
+1. Founder FAT incomplete → unknown prod auth/seller edge cases.  
+2. Thin live inventory vs marketplace promise.  
+3. Careers CV upload still unauthenticated (P1).  
+4. Coolify `version: 0.0.0` metadata.  
+5. Large Lex API surface — keep staff-only.
+
+---
+
+## Certification rule
+
+No feature merges until verdict is **READY FOR LAUNCH** and every checklist P0/FAT row is **PASS** (see FEATURE_FREEZE hardening gate).

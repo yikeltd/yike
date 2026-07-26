@@ -108,7 +108,13 @@ async function ensureSellerRole(
 export async function POST(request: Request) {
   const supabase = await createClient();
   if (!supabase) {
-    return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+    return NextResponse.json(
+      {
+        error:
+          "Seller verification is temporarily unavailable. Check your connection and try again.",
+      },
+      { status: 503 }
+    );
   }
 
   const {
@@ -120,7 +126,13 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   if (!admin) {
-    return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+    return NextResponse.json(
+      {
+        error:
+          "Seller verification is temporarily unavailable. Try again in a few minutes.",
+      },
+      { status: 503 }
+    );
   }
 
   const body = (await request.json().catch(() => ({}))) as Body;

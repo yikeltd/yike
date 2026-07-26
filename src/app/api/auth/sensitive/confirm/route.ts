@@ -14,6 +14,7 @@ import {
 } from "@/lib/auth/trusted-device";
 import { verifyPin } from "@/lib/pin";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { AccountType, UserRole } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -45,10 +46,22 @@ export async function POST(request: Request) {
 
   const supabase = await createClient();
   if (!supabase) {
-    return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+    return NextResponse.json(
+      { error: "This action is temporarily unavailable. Try again in a moment." },
+      { status: 503 }
+    );
   }
 
-  const { data: profile } = await supabase
+  const admin = createAdminClient();
+  if (!admin) {
+    return NextResponse.json(
+      { error: "This action is temporarily unavailable. Try again in a moment." },
+      { status: 503 }
+    );
+  }
+
+  // pin_hash is not selectable by authenticated role — load via service_role after session auth.
+  const { data: profile } = await admin
     .from("profiles")
     .select("pin_hash, email, account_type, role")
     .eq("id", userId)
@@ -113,7 +126,13 @@ export async function POST(request: Request) {
 
   const confirmationToken = createSensitiveConfirmationToken(userId, action, deviceId);
   if (!confirmationToken) {
-    return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+    return NextResponse.json(
+      {
+        error:
+          "We couldn't confirm your PIN right now. Wait a moment and try again, or use your password.",
+      },
+      { status: 503 }
+    );
   }
 
   return NextResponse.json({

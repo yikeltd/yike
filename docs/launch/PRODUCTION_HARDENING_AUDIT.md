@@ -52,7 +52,7 @@ Do **not** merge new features until this report says **READY FOR LAUNCH**.
 |----|---------|----------|--------|
 | P0-1 | **Founder FAT incomplete** on seller verification → list → publish | `SELLER_VERIFICATION_FIX.md` checklist open | Run Complete Verification + create listing on prod |
 | P0-2 | **Founder FAT incomplete** on Account → Edit Profile → save/avatar | `INTERACTION_AUDIT.md` checklist open | Buyer + complete seller paths |
-| P0-3 | **`profiles` SELECT may expose `pin_hash` / `admin_pin_hash`** to clients | Broad RLS “non-banned profiles”; hashes used by login | Narrow columns / projection view / service-role-only pin reads (migration — careful, don’t break PIN login) |
+| P0-3 | **`profiles` SELECT may expose `pin_hash` / `admin_pin_hash`** to clients | Broad RLS “non-banned profiles”; hashes used by login | **CLOSED 2026-07-26** — column grants exclude hashes for anon/authenticated; verified `has_column_privilege=false`; PIN via RPC/service_role |
 | P0-4 | **Live supply / soft-launch framing** | Launch command center: thin approved inventory | Ops/founder — not a code bug |
 
 ---

@@ -21,7 +21,13 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     if (!supabase) {
-      return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+      return NextResponse.json(
+        {
+          error:
+            "Photo upload is temporarily unavailable. Check your connection and try again.",
+        },
+        { status: 503 }
+      );
     }
 
     const {

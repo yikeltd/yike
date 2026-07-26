@@ -29,7 +29,6 @@ function publicLoginProfile(
     role: string | null;
     account_type: string | null;
     has_pin_set: boolean | null;
-    pin_hash: string | null;
   } | null
 ) {
   if (!profile) return null;
@@ -41,7 +40,7 @@ function publicLoginProfile(
     email: profile.email,
     role: profile.role,
     account_type: profile.account_type,
-    has_pin_set: Boolean(profile.has_pin_set || profile.pin_hash),
+    has_pin_set: Boolean(profile.has_pin_set),
   };
 }
 
@@ -113,7 +112,7 @@ export async function POST(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, username, avatar_url, email, role, account_type, has_pin_set, pin_hash")
+    .select("id, full_name, username, avatar_url, email, role, account_type, has_pin_set")
     .eq("id", data.user.id)
     .maybeSingle();
 
@@ -153,7 +152,7 @@ export async function POST(request: Request) {
     needsEmailVerify,
     needsLoginOtp: !trusted && !reviewer && !needsEmailVerify,
     deviceTrusted: trusted || reviewer,
-    requiresPinSetup: Boolean((trusted || reviewer) && profile && !profile.has_pin_set && !profile.pin_hash),
+    requiresPinSetup: Boolean((trusted || reviewer) && profile && !profile.has_pin_set),
     profile: publicLoginProfile(profile),
   });
 }

@@ -30,7 +30,10 @@ Everything else → **Version 2** milestone. Do not merge V2 work to `main` duri
 
 **No new features** until [PRODUCTION_HARDENING_AUDIT.md](./PRODUCTION_HARDENING_AUDIT.md) says **READY FOR LAUNCH** and every listed **P0** is closed.
 
-Current audit verdict: **READY AFTER P0 FIXES** (FAT + profiles column security + supply framing).
+Current audit verdict: **NOT READY** for public launch until Founder FAT PASSes  
+(see [LAUNCH_CERTIFICATION.md](./LAUNCH_CERTIFICATION.md) · [FINAL_LAUNCH_CHECKLIST.md](./FINAL_LAUNCH_CHECKLIST.md)).
+
+Hardening baseline: [PRODUCTION_HARDENING_AUDIT.md](./PRODUCTION_HARDENING_AUDIT.md).
 
 ---
 

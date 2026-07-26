@@ -27,9 +27,10 @@ export default function GlobalError({
       >
         <div style={{ maxWidth: 420, textAlign: "center" }}>
           <p style={{ fontSize: 14, letterSpacing: "0.08em", opacity: 0.8 }}>YIKE</p>
-          <h1 style={{ fontSize: 22, margin: "12px 0" }}>Something went wrong</h1>
+          <h1 style={{ fontSize: 22, margin: "12px 0" }}>This page failed to load</h1>
           <p style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.5 }}>
-            Please try again. If this keeps happening, contact support.
+            Tap Try again. If it keeps failing, open yike.ng or WhatsApp support —
+            include the reference below if you see one.
           </p>
           {error.digest ? (
             <p style={{ fontSize: 11, opacity: 0.55, marginTop: 12 }}>Ref: {error.digest}</p>

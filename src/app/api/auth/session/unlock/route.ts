@@ -14,7 +14,7 @@ import {
 import { getDeviceTokenFromCookies, touchTrustedDevice } from "@/lib/auth/trusted-device";
 import { verifyPin } from "@/lib/pin";
 import { AUTH_UNAVAILABLE_MESSAGE } from "@/lib/copy/user-messages";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -48,12 +48,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createClient();
-  if (!supabase) {
+  // pin_hash is not selectable by authenticated role — use service_role after session auth.
+  const admin = createAdminClient();
+  if (!admin) {
     return NextResponse.json({ error: AUTH_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
-  const { data: profile } = await supabase
+  const { data: profile } = await admin
     .from("profiles")
     .select("pin_hash")
     .eq("id", userId)
