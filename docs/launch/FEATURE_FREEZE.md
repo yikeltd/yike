@@ -10,6 +10,8 @@ Yike has moved from *building features* to *operating a production marketplace*.
 
 Enterprise Media Protection (`704163b4`) is **production-ready**. Do not reopen feature expansion before soft launch is stable.
 
+**Approved UI freeze:** [APPROVED_UI_FREEZE.md](./APPROVED_UI_FREEZE.md) — do not silently replace founder-approved homepage chrome (see [UI_REGRESSION_REPORT.md](./UI_REGRESSION_REPORT.md)).
+
 ---
 
 ## Merge gate (only these may land)
