@@ -23,11 +23,13 @@ Supabase
 
 | Step | Command |
 |------|---------|
-| Build | `npm run build` (inside Dockerfile) |
-| Start | per repo `Dockerfile` |
+| Build | Multi-stage `Dockerfile` → `npm run build` (standalone output) |
+| Start | `node server.js` (Next standalone; see `Dockerfile` runner stage) |
 | Port | `3000` |
 
 Enable **Inject Build Variables** in Coolify for `NEXT_PUBLIC_*` at build time.
+
+**Memory:** Coolify build sets `NODE_OPTIONS=--max-old-space-size=4096` and `NEXT_BUILD_CPUS=1`. Do not raise the heap to 8GB on small Hetzner hosts — Node will claim RAM the kernel then kills (`exit 255` after static pages finish).
 
 ## Health verification
 

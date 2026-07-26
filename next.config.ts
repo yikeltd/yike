@@ -4,10 +4,16 @@ import { fileURLToPath } from "url";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
+const buildCpus = Number(process.env.NEXT_BUILD_CPUS);
+
 const nextConfig: NextConfig = {
+  // Required for multi-stage Coolify/Docker images (see Dockerfile).
+  output: "standalone",
   poweredByHeader: false,
   experimental: {
     optimizePackageImports: ["lucide-react"],
+    // Cap static-generation workers on memory-tight Coolify hosts (OOM after SSG).
+    ...(Number.isFinite(buildCpus) && buildCpus > 0 ? { cpus: buildCpus } : {}),
   },
   turbopack: {
     root: projectRoot,
