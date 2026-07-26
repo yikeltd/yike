@@ -2,35 +2,26 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
-import { AuthHeaderAccount } from "@/components/auth/auth-header-account";
-import { ListPropertyButton } from "@/components/auth/list-property-button";
-import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
+import { MarketplaceNavSheet } from "@/components/marketplace/experience";
 
-/** Marketplace nav — Sell lives as CTA (right), not in this list. */
-const marketplaceNav = [
-  { href: "/buy", label: "Buy" },
-  { href: "/rent", label: "Rent" },
-  { href: "/vehicles", label: "Vehicles", vehiclesOnly: true },
-  { href: "/land", label: "Land" },
-  { href: "/safety", label: "Safety" },
-] as const;
-
+/**
+ * Desktop marketplace chrome — Logo | Search (dominant) | Menu.
+ * Nav / Sell / Account live in MarketplaceNavSheet (unchanged open behavior).
+ */
 export function HeaderDesktop({ className }: { className?: string }) {
-  const pathname = usePathname();
-  const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
-
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 hidden border-b border-surface/80 bg-white/95 backdrop-blur-md lg:block",
+        "sticky top-0 z-50 hidden border-b border-surface/70 bg-white/95 backdrop-blur-md lg:block",
         className,
       )}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-6 xl:gap-4 xl:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+      <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center gap-4 px-6 xl:gap-5 xl:px-8">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Yike home">
           <Image
             src={brand.logoSm}
             alt="Yike"
@@ -44,34 +35,21 @@ export function HeaderDesktop({ className }: { className?: string }) {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-5 xl:gap-6" aria-label="Primary">
-          {marketplaceNav.map((l) => {
-            if ("vehiclesOnly" in l && l.vehiclesOnly && !vehiclesOn) {
-              return null;
-            }
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={cn(
-                  "text-sm transition-colors hover:text-gold-dark",
-                  pathname === l.href || pathname.startsWith(`${l.href}/`)
-                    ? "font-semibold text-navy"
-                    : "font-medium text-muted hover:text-foreground",
-                )}
-              >
-                {l.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <Suspense
+          fallback={
+            <div className="h-12 min-w-0 flex-1 rounded-full bg-navy/[0.04]" />
+          }
+        >
+          <HeaderUniversalSearch
+            size="large"
+            tone="desktop"
+            placement="header_desktop"
+            showLocation
+            showMic
+          />
+        </Suspense>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <AuthHeaderAccount variant="desktop" />
-          <ListPropertyButton className="pressable inline-flex min-h-[40px] items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold uppercase tracking-wide text-navy shadow-sm transition-transform hover:brightness-105 active:scale-[0.98]">
-            Sell
-          </ListPropertyButton>
-        </div>
+        <MarketplaceNavSheet size="md" className="shrink-0" />
       </div>
     </header>
   );

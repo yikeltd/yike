@@ -8,13 +8,12 @@ import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 import { MobileHeaderBanner } from "@/components/banners/mobile-header-banner";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
-import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
 import { MarketplaceNavSheet } from "@/components/marketplace/experience";
 import type { SiteBanner } from "@/types/database";
 
 /**
- * Mobile chrome — Logo | Search (max width) | Location.
- * Sell lives in bottom nav only.
+ * Mobile chrome — Logo | Search (location + mic inside) | Menu.
+ * Single row. Sell stays in bottom nav / menu sheet.
  */
 export function HeaderMobile({
   mobileBanner,
@@ -34,7 +33,7 @@ export function HeaderMobile({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-surface bg-elevated/95 backdrop-blur-md lg:hidden",
+        "sticky top-0 z-40 border-b border-surface/70 bg-elevated/95 backdrop-blur-md lg:hidden",
       )}
     >
       <div
@@ -59,7 +58,7 @@ export function HeaderMobile({
             <div
               className={cn(
                 "min-w-0 flex-1 rounded-full bg-navy/[0.06]",
-                isHome ? "h-11" : "h-9",
+                isHome ? "h-11" : "h-10",
               )}
             />
           }
@@ -68,10 +67,9 @@ export function HeaderMobile({
             size={isHome ? "large" : "default"}
             tone="default"
             placement="header_mobile"
+            showLocation
+            showMic
           />
-        </Suspense>
-        <Suspense fallback={<div className="h-8 w-16 shrink-0" />}>
-          <MarketplaceLocationIndicator size={isHome ? "sm" : "sm"} />
         </Suspense>
         <MarketplaceNavSheet size={isHome ? "md" : "sm"} />
       </div>

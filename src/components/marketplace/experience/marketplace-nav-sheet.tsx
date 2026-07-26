@@ -8,6 +8,8 @@ import {
   Home,
   Heart,
   HelpCircle,
+  Landmark,
+  KeyRound,
   Menu,
   Shield,
   Tag,
@@ -15,8 +17,19 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { AuthHeaderAccount } from "@/components/auth/auth-header-account";
 
 const LINKS = [
+  {
+    href: "/buy",
+    label: "Buy",
+    icon: KeyRound,
+  },
+  {
+    href: "/rent",
+    label: "Rent",
+    icon: Home,
+  },
   {
     href: "/vehicles",
     label: "Vehicles",
@@ -24,8 +37,13 @@ const LINKS = [
     vehiclesOnly: true,
   },
   {
+    href: "/land",
+    label: "Land",
+    icon: Landmark,
+  },
+  {
     href: "/search",
-    label: "Properties",
+    label: "Search all",
     icon: Home,
   },
   {
@@ -141,6 +159,10 @@ export function MarketplaceNavSheet({
                   </Link>
                 ))}
               </nav>
+
+              <div className="mt-4 border-t border-navy/8 pt-4">
+                <AuthHeaderAccount className="w-full justify-start" />
+              </div>
             </div>
           </div>,
           document.body,
