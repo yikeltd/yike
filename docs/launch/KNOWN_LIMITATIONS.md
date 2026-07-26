@@ -1,9 +1,10 @@
 # Known Limitations — Property Launch
 
-**As of:** 2026-07-22  
+**As of:** 2026-07-26  
 **Scope:** Property Marketplace launch vertical
 
 These are intentional or accepted gaps — **not** Vehicle/Passport scope creep.
+Vehicle marketplace is **flagged off by default** (`ENABLE_VEHICLE_MARKETPLACE=false`) until live supply exists.
 
 ## Launch scope boundaries
 
@@ -22,7 +23,7 @@ These are intentional or accepted gaps — **not** Vehicle/Passport scope creep.
 3. **Agency profiles** — Presented on `/agents/[slug]`; not a separate agency product URL; content thinner than full brand storefront.
 4. **Video** — Duration/size validated; H.264 ≤8MB optimization worker deferred.
 5. **Maps** — Text location + area guides; no interactive map search.
-6. **Launch-mode registry** — Implemented but not yet wired into route guards; vehicles currently absent by lack of UI (wire before any vehicle code ships).
+6. **Launch-mode registry** — Wired for vehicles and deferred ecosystem surfaces; vehicles default **OFF** via `ENABLE_VEHICLE_MARKETPLACE` (set `true` only with inventory).
 7. **Reports resolve** — Auth console resolve path lacks dedicated audited staff API (PIN/audit gap).
 8. **Support moderation queue** — UI/API/nav/RBAC misaligned; prefer `/lex/auth` moderation for launch ops.
 9. **Marketplace health** — Some panels are observational; rely on cron + manual recalculate.

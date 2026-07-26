@@ -7,6 +7,7 @@
  *
  * YIKE_LAUNCH_MODE=true (default in production posture) keeps deferred features off.
  * Per-feature env overrides can enable a single surface when explicitly authorized.
+ * Vehicle marketplace defaults OFF until real supply exists (Launch War Room C06).
  */
 
 import { isProductionEnv } from "@/lib/env";
@@ -55,9 +56,6 @@ function envFlag(name: string, defaultValue: boolean): boolean {
 /**
  * When true (default), deferred launch features stay hidden unless a
  * per-feature ENABLE_* override is set.
- *
- * Vehicle marketplace defaults ON for Enterprise Marketplace launch unless
- * ENABLE_VEHICLE_MARKETPLACE=false.
  */
 export function isLaunchModeStrict(): boolean {
   const raw = process.env.YIKE_LAUNCH_MODE?.trim().toLowerCase();
@@ -70,12 +68,9 @@ export function isLaunchModeStrict(): boolean {
 export function isLaunchFeatureVisible(feature: LaunchFeature): boolean {
   const envName = FEATURE_ENV[feature];
 
-  // Vehicle marketplace: default enabled for marketplace launch completion.
+  // Vehicle marketplace: default OFF until inventory + founder override.
   if (feature === "vehicle_marketplace") {
-    if (envName && process.env[envName]?.trim()) {
-      return envFlag(envName, true);
-    }
-    return envFlag("ENABLE_VEHICLE_MARKETPLACE", true);
+    return envFlag("ENABLE_VEHICLE_MARKETPLACE", false);
   }
 
   if (envName && envFlag(envName, false)) return true;
