@@ -7,7 +7,7 @@
 **Phase 1 ship notes:** [INTELLIGENT_MARKETPLACE_EXPERIENCE.md](./INTELLIGENT_MARKETPLACE_EXPERIENCE.md)  
 **Freeze:** [FEATURE_FREEZE.md](./FEATURE_FREEZE.md) — **docs + design only until founder override or post-FAT**  
 **V2 automation depth:** [V2_BACKLOG.md](./V2_BACKLOG.md) (V2-16 … V2-20)  
-**Engineering contract (schema, engines, migration):** [METADATA_LISTING_ENGINE.md](../architecture/METADATA_LISTING_ENGINE.md)
+**Engineering contract (implementation standard):** [METADATA_LISTING_ENGINE.md](../architecture/METADATA_LISTING_ENGINE.md) — typed TypeScript metadata (not DB JSON); generic UI; business rules in config; CI-validated packs.
 
 ---
 
