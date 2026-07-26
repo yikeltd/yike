@@ -46,6 +46,42 @@ export type {
 } from "./plugins/types";
 export { BUILTIN_PLUGINS, createBuiltinPlugins } from "./plugins/builtins";
 
+export { CapabilityRuntime } from "./runtime/capability-runtime";
+export type { CapabilityRuntimeDeps } from "./runtime/capability-runtime";
+export type {
+  CapabilityConfigProperty,
+  CapabilityConfigSchema,
+  CapabilityGraphNode,
+  CapabilityHealthRequirements,
+  CapabilityManifest,
+  DependencyEdge,
+  ProviderDiagnostics,
+  RuntimeDiagnostics,
+  RuntimeStatus,
+  SoftSandboxPolicy,
+} from "./runtime/types";
+export { toManifest, assertValidManifest } from "./runtime/manifest";
+export {
+  ConfigurationError,
+  InvalidManifestError,
+  PermissionDeniedError,
+  ProviderNotFoundError,
+  RuntimeStateError,
+} from "./runtime/errors";
+export { PermissionManager } from "./runtime/permission-manager";
+export { ProviderResolver } from "./runtime/provider-resolver";
+export { ConfigurationManager } from "./runtime/configuration-manager";
+export { CapabilityLogger } from "./runtime/logger";
+export { CapabilityMetrics } from "./runtime/metrics";
+export type { CapabilityMetricsSnapshot } from "./runtime/metrics";
+export { CapabilityHealthMonitor } from "./runtime/health-monitor";
+export { SoftSandbox } from "./runtime/sandbox";
+export type { SoftSandboxRunOptions } from "./runtime/sandbox";
+export { CapabilityDiscovery } from "./runtime/discovery";
+export { CapabilityLoader } from "./runtime/loader";
+export { LifecycleManager } from "./runtime/lifecycle-manager";
+export { buildRuntimeDiagnostics } from "./runtime/diagnostics";
+
 export { EventBus } from "./events/event-bus";
 export type {
   BaseEvent,

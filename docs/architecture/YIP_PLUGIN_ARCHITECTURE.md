@@ -3,7 +3,9 @@
 **Status:** Shipped — plugin contract, host, dependency resolution, builtin plugins. No ML/LLM.
 **Authority:** Founder-approved CORE extension (2026-07-26) — see [FEATURE_FREEZE.md](../launch/FEATURE_FREEZE.md)
 **Code:** `src/lib/yip/plugins/`
-**Related:** [YIKE_INTELLIGENCE_PLATFORM.md](./YIKE_INTELLIGENCE_PLATFORM.md) · [YIP_CORE_IMPLEMENTATION.md](../implementation/YIP_CORE_IMPLEMENTATION.md) · [YIP_2_PLUGIN_IMPLEMENTATION.md](../implementation/YIP_2_PLUGIN_IMPLEMENTATION.md)
+**Related:** [YIKE_INTELLIGENCE_PLATFORM.md](./YIKE_INTELLIGENCE_PLATFORM.md) · [YIP_RUNTIME.md](./YIP_RUNTIME.md) · [YIP_CORE_IMPLEMENTATION.md](../implementation/YIP_CORE_IMPLEMENTATION.md) · [YIP_2_PLUGIN_IMPLEMENTATION.md](../implementation/YIP_2_PLUGIN_IMPLEMENTATION.md)
+
+> **Plugins are packages; the runtime is the OS.** This document is still the source of truth for the plugin *contract* and `PluginHost`'s lifecycle — nothing here changed when the runtime shipped. [YIP_RUNTIME.md](./YIP_RUNTIME.md) documents `CapabilityRuntime`, the OS façade that discovers, validates, and coordinates plugins through this exact same `PluginHost` (it does not re-implement anything below). Read this doc for "how does a plugin work"; read the runtime doc for "how does the platform start/stop/monitor/isolate a set of plugins."
 
 ---
 
@@ -17,7 +19,7 @@ YIP CORE shipped a fixed set of capabilities wired directly in `registry/registe
 
 ## OS / apps / drivers metaphor
 
-Think of `CapabilityRegistry` + `EventBus` as the **kernel** — stable, generic, never changes per feature. A `YipPlugin` is a **driver**: it knows how to register one or more capabilities ("devices") and, optionally, react to platform events. Applications (`src/app/**`) are **apps** — they only ever talk to the kernel (`registry.get(...)`), never to a driver directly.
+Think of `CapabilityRegistry` + `EventBus` as the **kernel** — stable, generic, never changes per feature. A `YipPlugin` is a **driver**: it knows how to register one or more capabilities ("devices") and, optionally, react to platform events. Applications (`src/app/**`) are **apps** — they only ever talk to the kernel (`registry.get(...)`), never to a driver directly. `CapabilityRuntime` ([YIP_RUNTIME.md](./YIP_RUNTIME.md)) is the **operating system** around `PluginHost` — it decides *which drivers get loaded and in what order*, tracks permissions/providers/config/metrics, and exposes one diagnostics surface, but it still calls `PluginHost` for every actual lifecycle transition.
 
 ```
 Applications (src/app/**, src/components/**)
@@ -26,10 +28,15 @@ Applications (src/app/**, src/components/**)
 CapabilityRegistry + EventBus   ← the kernel, unchanged by plugins
         ▲
         │  registerCapabilities(ctx) during initialize()
-YipPlugin (driver)               ← vehicle-knowledge, pricing, trust, ...
+YipPlugin (driver/package)       ← vehicle-knowledge, pricing, trust, ...
         │
         ▼
 PluginHost                       ← installs/enables/disables/health-checks drivers
+        ▲
+        │  installAll/enable/disable/reload/healthCheckAll (unchanged)
+CapabilityRuntime                ← the OS façade — discovery, permissions,
+                                    providers, config, metrics, soft sandbox,
+                                    diagnostics (see YIP_RUNTIME.md)
 ```
 
 ---

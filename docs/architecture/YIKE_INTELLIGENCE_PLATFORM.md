@@ -5,6 +5,8 @@
 **Code:** `src/lib/yip/`
 **Related:** [METADATA_LISTING_ENGINE.md](./METADATA_LISTING_ENGINE.md) · [INTELLIGENT_MARKETPLACE.md](../product/INTELLIGENT_MARKETPLACE.md) · [FEATURE_FREEZE.md](../launch/FEATURE_FREEZE.md)
 
+> **Top of the stack:** [YIP_RUNTIME.md](./YIP_RUNTIME.md) is the OS façade that now orchestrates everything documented below — `CapabilityRegistry` + `EventBus` (CORE, this doc) → `PluginHost` (drivers, [YIP_PLUGIN_ARCHITECTURE.md](./YIP_PLUGIN_ARCHITECTURE.md)) → `CapabilityRuntime` (the runtime — discovery, permissions, providers, config, metrics, soft sandbox, diagnostics). **The runtime is the last platform layer** — do not build another orchestration layer above it; new work from here is capabilities (plugins), not infrastructure.
+
 ---
 
 ## What YIP is
@@ -41,6 +43,7 @@ src/lib/yip/
   shared/                   Result, Confidence, CapabilityId/ProviderId brands, YipError hierarchy
   registry/                 CapabilityRegistry (register/get/tryGet/list/isEnabled/setEnabled) + typed capability ids
   plugins/                  YIP 2.0 plugin contract, PluginHost, dependency resolution, builtins/ (see YIP_PLUGIN_ARCHITECTURE.md)
+  runtime/                  CapabilityRuntime — OS façade: discovery, manifests, permissions, providers, config, metrics, health, soft sandbox, diagnostics (see YIP_RUNTIME.md). Last platform layer.
   events/                   Discriminated YipEvent union + in-process EventBus (subscribe/publish/clear)
   knowledge/                Real data: vehicle/property/location knowledge + market/photo stubs + facade
   context/                  buildContext() — partial input → normalized YipContext
@@ -177,6 +180,14 @@ This is why the design goal insists on "no Next.js imports, no React, no `@/comp
 **CORE stays exactly as documented above.** New intelligence is no longer wired into `register-defaults.ts` directly — it's added as a `YipPlugin` (typed TypeScript module, git-reviewed, no filesystem dynamic loading) installed through `PluginHost`. `createYip()` now installs `plugins/builtins/*` (the same nine capabilities this document describes) instead of calling `registerDefaults` directly; `registerDefaults` is kept as a deprecated thin wrapper for any external caller that still wants a plain-registry setup.
 
 Applications are unaffected — `registry.get(...)` / `KnowledgeFacade` work exactly as before. See [YIP_PLUGIN_ARCHITECTURE.md](./YIP_PLUGIN_ARCHITECTURE.md) for the plugin contract, lifecycle, dependency/conflict resolution, and how to add a new plugin.
+
+---
+
+## YIP Runtime — the OS façade (top orchestration layer)
+
+**CORE and the plugin contract stay exactly as documented above.** `createYip()` now builds a `CapabilityRuntime` on top of `PluginHost`: `runtime.registerPackages(createBuiltinPlugins(knowledge))` queues the same nine builtin plugins this document describes, then `runtime.start()` performs discovery → manifest validation → `plugins.installAll(...)` — the exact same install sequence as before, just invoked through the runtime instead of directly. `YipPlatform` gained a `runtime: CapabilityRuntime` field; `registry`, `eventBus`, `knowledge`, and `plugins` are unchanged.
+
+The runtime adds platform-operational concerns `PluginHost` never owned: permission grants/checks per plugin, active-provider selection, per-plugin configuration, in-process metrics, a soft try/catch-timeout-circuit-breaker sandbox for capability calls, and one `diagnostics()` snapshot covering capabilities/dependencies/health/versions/permissions/providers. See [YIP_RUNTIME.md](./YIP_RUNTIME.md) for the full architecture — **it is the last infrastructure layer YIP will get; all future work is capabilities (plugins) on top of it.**
 
 ---
 
