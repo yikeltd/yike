@@ -6,9 +6,17 @@ import {
   verifyAdminPin,
 } from "@/lib/admin/pin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { hashPin } from "@/lib/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 
+/**
+ * Set or change the caller's admin PIN.
+ *
+ * - First-time: no current PIN needed
+ * - Change: current PIN or active PIN session
+ * - Forgotten: `replaceForgotten: true` skips current PIN (Lex session is the gate)
+ */
 export async function POST(req: Request) {
   const auth = await requireSuperAdminApi();
   if (!auth.ok) {
@@ -19,10 +27,12 @@ export async function POST(req: Request) {
     pin?: string;
     confirmPin?: string;
     currentPin?: string;
+    replaceForgotten?: boolean;
   };
 
   const pin = body.pin?.trim();
   const confirmPin = body.confirmPin?.trim() ?? pin;
+  const replaceForgotten = body.replaceForgotten === true;
 
   if (!pin || !/^\d{6}$/.test(pin)) {
     return NextResponse.json({ error: "PIN must be 6 digits" }, { status: 400 });
@@ -39,7 +49,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
 
-  // admin_pin_hash is not selectable by authenticated — load via service_role.
   const { data: pinRow, error: pinLoadError } = await admin
     .from("profiles")
     .select("admin_pin_hash")
@@ -54,13 +63,16 @@ export async function POST(req: Request) {
   const storedHash = pinRow?.admin_pin_hash as string | null | undefined;
   const hasExistingPin = Boolean(storedHash);
 
-  if (hasExistingPin) {
+  if (hasExistingPin && !replaceForgotten) {
     const sessionValid = await hasValidPinSession(auth.user.id);
     if (!sessionValid) {
       const currentPin = body.currentPin?.trim();
       if (!currentPin) {
         return NextResponse.json(
-          { error: "Current PIN or active PIN session required" },
+          {
+            error:
+              "Current PIN required — or use “I forgot my PIN” to set a new one while signed in.",
+          },
           { status: 403 }
         );
       }
@@ -71,17 +83,36 @@ export async function POST(req: Request) {
     }
   }
 
-  const { error } = await admin
-    .from("profiles")
-    .update({ admin_pin_hash: hashPin(pin) })
-    .eq("id", auth.user.id);
+  const nextHash = hashPin(pin);
+  let saved = false;
 
-  if (error) {
-    console.error("[admin/pin/setup] update failed:", error.message);
-    return NextResponse.json(
-      { error: "Could not save PIN. Sign in again and retry." },
-      { status: 500 }
-    );
+  // User-scoped RPC — auth.uid() is required inside yike_admin_reset_profile_pin.
+  const userClient = await createClient();
+  if (userClient) {
+    const { error: rpcError } = await userClient.rpc("yike_admin_reset_profile_pin", {
+      p_target_id: auth.user.id,
+      p_pin_type: "admin",
+      p_pin_hash: nextHash,
+    });
+    if (!rpcError) saved = true;
+    else console.error("[admin/pin/setup] rpc failed:", rpcError.message);
+  }
+
+  if (!saved) {
+    const { data: updated, error } = await admin
+      .from("profiles")
+      .update({ admin_pin_hash: nextHash })
+      .eq("id", auth.user.id)
+      .select("id")
+      .maybeSingle();
+
+    if (error || !updated?.id) {
+      console.error("[admin/pin/setup] update failed:", error?.message);
+      return NextResponse.json(
+        { error: "Could not save PIN. Sign in again and retry." },
+        { status: 500 }
+      );
+    }
   }
 
   const hdrs = await headers();
@@ -90,11 +121,15 @@ export async function POST(req: Request) {
   await writeAuditLog({
     actor_id: auth.user.id,
     actor_role: auth.profile.role,
-    action: hasExistingPin ? "pin.admin_change" : "pin.admin_setup",
+    action: replaceForgotten
+      ? "pin.admin_forgot_replace"
+      : hasExistingPin
+        ? "pin.admin_change"
+        : "pin.admin_setup",
     target_type: "profile",
     target_id: auth.user.id,
     ip,
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, hasAdminPin: true });
 }

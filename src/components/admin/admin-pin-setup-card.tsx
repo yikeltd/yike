@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+type Mode = "loading" | "set" | "change" | "forgot";
+
 export function AdminPinSetupCard() {
-  const [hasAdminPin, setHasAdminPin] = useState<boolean | null>(null);
+  const [mode, setMode] = useState<Mode>("loading");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [currentPin, setCurrentPin] = useState("");
@@ -16,23 +18,21 @@ export function AdminPinSetupCard() {
   useEffect(() => {
     void fetch("/api/admin/pin/verify")
       .then((r) => r.json())
-      .then((d: { hasAdminPin?: boolean }) => setHasAdminPin(Boolean(d.hasAdminPin)));
+      .then((d: { hasAdminPin?: boolean }) => {
+        setMode(d.hasAdminPin ? "change" : "set");
+      })
+      .catch(() => setMode("set"));
   }, []);
 
-  async function clearOwnPin() {
+  function enterForgotMode() {
     setError("");
-    setMessage("");
-    setBusy(true);
-    const res = await fetch("/api/admin/pin/clear-own", { method: "POST" });
-    const data = (await res.json()) as { ok?: boolean; error?: string };
-    setBusy(false);
-    if (!res.ok || !data.ok) {
-      setError(data.error ?? "Could not clear PIN.");
-      return;
-    }
-    setHasAdminPin(false);
+    setMessage(
+      "Enter a new 6-digit PIN below. You do not need the old one while you are signed into Lex."
+    );
     setCurrentPin("");
-    setMessage("Previous PIN cleared. Choose a new 6-digit PIN below.");
+    setPin("");
+    setConfirmPin("");
+    setMode("forgot");
   }
 
   async function submit(e: React.FormEvent) {
@@ -48,6 +48,10 @@ export function AdminPinSetupCard() {
       setError("PINs do not match.");
       return;
     }
+    if (mode === "change" && currentPin.length !== 6) {
+      setError("Enter your current PIN, or tap “I forgot my PIN”.");
+      return;
+    }
 
     setBusy(true);
     const res = await fetch("/api/admin/pin/setup", {
@@ -56,7 +60,8 @@ export function AdminPinSetupCard() {
       body: JSON.stringify({
         pin,
         confirmPin,
-        currentPin: hasAdminPin ? currentPin : undefined,
+        currentPin: mode === "change" ? currentPin : undefined,
+        replaceForgotten: mode === "forgot",
       }),
     });
     const data = (await res.json()) as { ok?: boolean; error?: string };
@@ -67,57 +72,89 @@ export function AdminPinSetupCard() {
       return;
     }
 
-    setMessage(hasAdminPin ? "Admin PIN updated." : "Admin PIN set.");
-    setHasAdminPin(true);
+    setMessage(
+      mode === "set"
+        ? "Admin PIN set. Use it to confirm sensitive actions."
+        : mode === "forgot"
+          ? "New admin PIN saved. Your previous PIN no longer works."
+          : "Admin PIN updated."
+    );
+    setMode("change");
     setPin("");
     setConfirmPin("");
     setCurrentPin("");
   }
 
+  const showCurrent = mode === "change";
+  const titlePinLabel = mode === "change" ? "New PIN" : "PIN";
+
   return (
     <div className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-bold text-navy">Your admin PIN</h2>
       <p className="mt-2 text-sm text-muted">
-        {hasAdminPin === false
+        {mode === "set"
           ? "Set a 6-digit PIN to confirm sensitive admin actions."
-          : "Change your PIN if you forgot it or need a new one. Other super admins can reset staff PINs from Staff accounts."}
+          : mode === "forgot"
+            ? "Recover your admin PIN while signed into Lex — no old PIN required."
+            : "Change your PIN anytime. If you forget it, use recovery below — you will not be locked out of Lex."}
       </p>
 
-      {hasAdminPin === null ? (
+      {mode === "loading" ? (
         <p className="mt-4 text-sm text-muted">Loading…</p>
       ) : (
         <form onSubmit={(e) => void submit(e)} className="mt-4 space-y-3">
-          {hasAdminPin && (
-            <>
-              <label className="block text-xs font-semibold text-muted">
-                Current PIN
-                <Input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={currentPin}
-                  onChange={(e) =>
-                    setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 6))
-                  }
-                  placeholder="••••••"
-                  className="mt-1 text-center tracking-[0.4em]"
-                />
-              </label>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void clearOwnPin()}
-                className="text-xs font-semibold text-navy underline-offset-2 hover:underline"
-              >
-                I don&apos;t have / forgot my current PIN
-              </button>
-            </>
+          {showCurrent && (
+            <label className="block text-xs font-semibold text-muted">
+              Current PIN
+              <Input
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={6}
+                value={currentPin}
+                onChange={(e) =>
+                  setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+                placeholder="••••••"
+                className="mt-1 text-center tracking-[0.4em]"
+              />
+            </label>
           )}
+
+          {(mode === "change" || mode === "forgot") && (
+            <div className="rounded-xl border border-navy/10 bg-surface px-3 py-2">
+              {mode === "change" ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={enterForgotMode}
+                  className="text-left text-xs font-semibold text-navy underline-offset-2 hover:underline"
+                >
+                  I forgot my PIN — set a new one without the current PIN
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    setMode("change");
+                    setMessage("");
+                    setError("");
+                  }}
+                  className="text-left text-xs font-semibold text-muted underline-offset-2 hover:underline"
+                >
+                  Back — I remember my current PIN
+                </button>
+              )}
+            </div>
+          )}
+
           <label className="block text-xs font-semibold text-muted">
-            {hasAdminPin ? "New PIN" : "PIN"}
+            {titlePinLabel}
             <Input
               type="password"
               inputMode="numeric"
+              autoComplete="new-password"
               maxLength={6}
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -130,6 +167,7 @@ export function AdminPinSetupCard() {
             <Input
               type="password"
               inputMode="numeric"
+              autoComplete="new-password"
               maxLength={6}
               value={confirmPin}
               onChange={(e) =>
@@ -143,9 +181,20 @@ export function AdminPinSetupCard() {
           {message && <p className="text-sm text-emerald-700">{message}</p>}
           <Button
             type="submit"
-            disabled={busy || pin.length !== 6 || confirmPin.length !== 6}
+            disabled={
+              busy ||
+              pin.length !== 6 ||
+              confirmPin.length !== 6 ||
+              (mode === "change" && currentPin.length !== 6)
+            }
           >
-            {busy ? "Saving…" : hasAdminPin ? "Update admin PIN" : "Set admin PIN"}
+            {busy
+              ? "Saving…"
+              : mode === "set"
+                ? "Set admin PIN"
+                : mode === "forgot"
+                  ? "Save new admin PIN"
+                  : "Update admin PIN"}
           </Button>
         </form>
       )}
