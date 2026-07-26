@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { STAFF_APP_COOKIE, STAFF_APP_START_PATH } from "@/lib/admin/staff-app";
 import { getDefaultConsolePath } from "@/lib/admin/roles";
-import { isStaffRole } from "@/lib/admin/roles";
 import type { UserRole } from "@/types/database";
 
 type Props = {
@@ -69,23 +68,23 @@ export function StaffLoginForm({ staffApp = false }: Props) {
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, is_banned, last_login_at")
-      .eq("id", user.id)
-      .single();
+    const verify = await fetch("/api/staff/verify-access", { method: "POST" });
+    const verifyData = (await verify.json().catch(() => ({}))) as {
+      ok?: boolean;
+      role?: UserRole;
+      error?: string;
+    };
 
-    if (!profile || profile.is_banned || !isStaffRole(profile.role as UserRole)) {
-      await supabase.auth.signOut();
+    if (!verify.ok || !verifyData.ok || !verifyData.role) {
       setLoading(false);
-      setError("Access denied. This account is not authorised for internal consoles.");
+      setError(
+        verifyData.error ??
+          "Access denied. This account is not authorised for internal consoles."
+      );
       return;
     }
 
-    await supabase
-      .from("profiles")
-      .update({ last_login_at: new Date().toISOString() })
-      .eq("id", user.id);
+    const role = verifyData.role;
 
     const postLogin = await fetch("/api/staff/post-login", { method: "POST" });
     const postData = (await postLogin.json().catch(() => ({}))) as {
@@ -114,7 +113,7 @@ export function StaffLoginForm({ staffApp = false }: Props) {
 
     const dest = staffApp
       ? await resolveLanding()
-      : getDefaultConsolePath(profile.role as UserRole);
+      : getDefaultConsolePath(role);
     router.replace(dest);
     router.refresh();
   }

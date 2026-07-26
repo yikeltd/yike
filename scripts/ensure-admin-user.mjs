@@ -2,6 +2,9 @@
  * Creates or updates Yike admin: yikeltd@gmail.com
  * Run: SUPABASE_SERVICE_ROLE_KEY=... node scripts/ensure-admin-user.mjs
  * Optional: ADMIN_PASSWORD=... (default generated below)
+ *
+ * Also ensures staff_profiles + require_password_reset so /lex can
+ * force a password change on next login.
  */
 import { createClient } from "@supabase/supabase-js";
 
@@ -11,6 +14,7 @@ const DEFAULT_PASSWORD = "Yk#Lex9mPvQ2xRn7";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const password = process.env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
+const forcePasswordReset = process.env.ADMIN_FORCE_PASSWORD_RESET !== "0";
 
 if (!url || !serviceKey) {
   console.error("Need NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
@@ -68,7 +72,7 @@ async function main() {
       id: user.id,
       full_name: "Yike Admin",
       email: EMAIL,
-      role: "admin",
+      role: "super_admin",
       verification_status: "approved",
       is_banned: false,
     },
@@ -78,16 +82,48 @@ async function main() {
   if (profileError) {
     const { error: updateError } = await admin
       .from("profiles")
-      .update({ role: "admin", email: EMAIL, verification_status: "approved" })
+      .update({
+        role: "super_admin",
+        email: EMAIL,
+        verification_status: "approved",
+        is_banned: false,
+        full_name: "Yike Admin",
+      })
       .eq("id", user.id);
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.warn("Profile update warning:", updateError.message);
+    }
   }
 
+  const staffPayload = {
+    id: user.id,
+    full_name: "Yike Admin",
+    email: EMAIL,
+    work_email: EMAIL,
+    role: "super_admin",
+    status: "active",
+    require_password_reset: forcePasswordReset,
+    password_reset_completed_at: forcePasswordReset ? null : new Date().toISOString(),
+    onboarding_checklist: {},
+    access_checklist: {},
+    hr_metadata: {},
+    archived_at: null,
+    disabled_at: null,
+  };
+
+  const { error: staffError } = await admin.from("staff_profiles").upsert(staffPayload, {
+    onConflict: "id",
+  });
+  if (staffError) throw staffError;
+
   console.log("\nAdmin ready:");
-  console.log("  URL:", `${process.env.SITE_URL || "https://yike.ng"}/lex/auth`);
+  console.log("  URL:", `${process.env.SITE_URL || "https://yike.ng"}/lex`);
   console.log("  Email:", EMAIL);
   console.log("  Password:", password);
-  console.log("\nChange password anytime in Supabase Auth or after sign-in.");
+  console.log(
+    "  Password reset required:",
+    forcePasswordReset ? "yes (set a new password after login)" : "no"
+  );
 }
 
 main().catch((e) => {
