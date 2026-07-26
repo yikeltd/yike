@@ -9,7 +9,13 @@ import {
   Check,
 } from "lucide-react";
 import { MIN_LISTING_IMAGES } from "@/lib/constants";
-import { ROOM_LABELS } from "@/lib/media/labels";
+import type { PhotoSchema } from "@/lib/listing-engine/photo-schema";
+import {
+  isValidPhotoLabel,
+  migratePhotoLabel,
+  resolvePropertyPhotoSchema,
+  schemaLabels,
+} from "@/lib/listing-engine/photo-schema";
 import type { PropertyMediaItem } from "@/lib/media/items";
 import {
   applyDefaultLabels,
@@ -24,17 +30,32 @@ import { cn } from "@/lib/utils";
 type Props = {
   items: PropertyMediaItem[];
   onChange: (items: PropertyMediaItem[]) => void;
+  photoSchema?: PhotoSchema;
 };
 
-export function MediaTagEditor({ items, onChange }: Props) {
+export function MediaTagEditor({
+  items,
+  onChange,
+  photoSchema: photoSchemaProp,
+}: Props) {
   if (items.length === 0) return null;
 
+  const photoSchema = photoSchemaProp ?? resolvePropertyPhotoSchema({});
+  const photoLabels = schemaLabels(photoSchema);
   const ready = items.length >= MIN_LISTING_IMAGES;
 
   function updateLabel(id: string, room_label: string) {
+    if (room_label && !isValidPhotoLabel(photoSchema, room_label)) return;
     onChange(
       items.map((item) =>
-        item.id === id ? { ...item, room_label } : item
+        item.id === id
+          ? {
+              ...item,
+              room_label: room_label
+                ? migratePhotoLabel(photoSchema, room_label)
+                : room_label,
+            }
+          : item
       )
     );
   }
@@ -45,7 +66,9 @@ export function MediaTagEditor({ items, onChange }: Props) {
   }
 
   function confirmAllLabels() {
-    onChange(sortMediaItemsForStory(applyDefaultLabels(items)));
+    onChange(
+      sortMediaItemsForStory(applyDefaultLabels(items, photoSchema), photoSchema)
+    );
   }
 
   return (
@@ -107,7 +130,7 @@ export function MediaTagEditor({ items, onChange }: Props) {
                 aria-label={`Label for photo ${index + 1}`}
               >
                 <option value="">Choose room…</option>
-                {ROOM_LABELS.map((label) => (
+                {photoLabels.map((label) => (
                   <option key={label} value={label}>
                     {label}
                   </option>

@@ -70,7 +70,11 @@ export const MetadataResolver = {
       subtitleTouched: ctx.subtitleTouched,
     });
 
-    const photoStatus = photoChecklistStatus(manifest.photo, ctx.photoCount ?? 0);
+    const photoStatus = photoChecklistStatus(
+      manifest.photo,
+      ctx.photoCount ?? 0,
+      values
+    );
 
     return { visibleFields, stepFields, optionsByField, suggestionsByField, autofillPatch, photoStatus };
   },

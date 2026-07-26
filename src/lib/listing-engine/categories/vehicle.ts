@@ -3,6 +3,7 @@
  * lives outside this file; engines resolve everything from here.
  */
 import type { CategoryManifest } from "../types";
+import { VEHICLE_PHOTO_RULES } from "../photo-schema/rules";
 
 const CATEGORIES_WITH_VIN_FIELDS = ["car", "suv", "truck", "van", "commercial"];
 
@@ -200,12 +201,7 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
       submitKey: "description",
     },
   ],
-  photo: {
-    min: 1,
-    max: 20,
-    tips: ["Front", "Rear", "Interior", "Dashboard", "Engine", "Tyres"],
-    recommendedCover: "first",
-  },
+  photo: VEHICLE_PHOTO_RULES,
   autofill: {
     titleRecipe: ["year", "make", "model", "transmission"],
     descriptionRecipe: "off",

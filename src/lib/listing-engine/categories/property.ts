@@ -4,6 +4,7 @@
  * conditionals in this file or in the engines.
  */
 import type { CategoryManifest } from "../types";
+import { PROPERTY_PHOTO_RULES } from "../photo-schema/rules";
 
 export const PROPERTY_CATEGORY_MANIFEST: CategoryManifest = {
   id: "property",
@@ -157,12 +158,7 @@ export const PROPERTY_CATEGORY_MANIFEST: CategoryManifest = {
       submitKey: "video_url",
     },
   ],
-  photo: {
-    min: 2,
-    max: 20,
-    tips: ["Exterior", "Living room", "Kitchen", "Bedrooms", "Bathrooms", "Compound"],
-    recommendedCover: "first",
-  },
+  photo: PROPERTY_PHOTO_RULES,
   autofill: {
     titleRecipe: ["bedrooms", "property_type", "city"],
     descriptionRecipe: "off",

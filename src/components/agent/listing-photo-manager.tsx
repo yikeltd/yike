@@ -19,7 +19,13 @@ import {
 } from "lucide-react";
 import type { ListingTypeValue } from "@/constants/listingTypes";
 import { MIN_LISTING_IMAGES, MAX_LISTING_IMAGES } from "@/lib/constants";
-import { photoLabelsForContext } from "@/lib/media/labels";
+import type { PhotoSchema } from "@/lib/listing-engine/photo-schema";
+import {
+  isValidPhotoLabel,
+  migratePhotoLabel,
+  resolvePropertyPhotoSchema,
+  schemaLabels,
+} from "@/lib/listing-engine/photo-schema";
 import { photoManagerCopy } from "@/lib/listing-form-copy";
 import {
   applyDefaultLabels,
@@ -62,7 +68,14 @@ type Props = {
   items: ListingPhotoItem[];
   onChange: (items: ListingPhotoItem[]) => void;
   onUploadProgress?: (done: number, total: number) => void;
+  /**
+   * Category photo taxonomy from the listing metadata engine.
+   * When provided, dropdown options come only from this schema.
+   */
+  photoSchema?: PhotoSchema;
+  /** @deprecated Prefer photoSchema from resolvePhotoSchema / category manifest. */
   listingType?: ListingTypeValue;
+  /** @deprecated Prefer photoSchema from resolvePhotoSchema / category manifest. */
   propertyType?: string;
 };
 
@@ -88,13 +101,25 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
       items,
       onChange,
       onUploadProgress,
+      photoSchema: photoSchemaProp,
       listingType = "rent",
       propertyType = "flat",
     },
     ref
   ) {
-    const photoLabels = photoLabelsForContext(propertyType, listingType);
-    const photoCopy = photoManagerCopy(listingType, propertyType);
+    const photoSchema =
+      photoSchemaProp ??
+      resolvePropertyPhotoSchema({ propertyType, listingType });
+    const photoLabels = schemaLabels(photoSchema);
+    const photoCopy = {
+      ...photoManagerCopy(listingType, propertyType),
+      ...(photoSchema.uploadHint
+        ? { uploadHint: photoSchema.uploadHint }
+        : {}),
+      ...(photoSchema.labelPlaceholder
+        ? { labelPlaceholder: photoSchema.labelPlaceholder }
+        : {}),
+    };
     const [error, setError] = useState("");
     const [dragOver, setDragOver] = useState(false);
     const [activeUploads, setActiveUploads] = useState(0);
@@ -125,6 +150,20 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
       onUploadProgress?.(done, items.length);
       syncUploadError(items);
     }, [items, onUploadProgress]);
+
+    // When category taxonomy changes, remapped invalid labels → Other (never drop photos).
+    useEffect(() => {
+      let changed = false;
+      const next = itemsRef.current.map((item) => {
+        if (!item.room_label) return item;
+        const migrated = migratePhotoLabel(photoSchema, item.room_label);
+        if (migrated === item.room_label) return item;
+        changed = true;
+        return { ...item, room_label: migrated };
+      });
+      if (changed) onChange(next);
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- only remigrate when schema id changes
+    }, [photoSchema.id]);
 
     function updateItems(
       updater: (prev: ListingPhotoItem[]) => ListingPhotoItem[]
@@ -234,8 +273,7 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
                     width: json.width,
                     height: json.height,
                     blur_data_url: json.blur_data_url,
-                    propertyType,
-                    listingType,
+                    photoSchema,
                   }),
                   id: item.id,
                   room_label: item.room_label,
@@ -329,8 +367,7 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
             index: startIndex + result.i,
             width: result.prepared.width,
             height: result.prepared.height,
-            propertyType,
-            listingType,
+            photoSchema,
           }),
           id,
           local_preview: result.prepared.previewUrl,
@@ -365,8 +402,20 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
     }
 
     function updateLabel(id: string, room_label: string) {
+      if (room_label && !isValidPhotoLabel(photoSchema, room_label)) {
+        return;
+      }
       onChange(
-        items.map((item) => (item.id === id ? { ...item, room_label } : item))
+        items.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                room_label: room_label
+                  ? migratePhotoLabel(photoSchema, room_label)
+                  : room_label,
+              }
+            : item
+        )
       );
     }
 
@@ -429,7 +478,8 @@ export const ListingPhotoManager = forwardRef<ListingPhotoManagerHandle, Props>(
     function confirmAllLabels() {
       onChange(
         sortMediaItemsForStory(
-          applyDefaultLabels(items, propertyType, listingType)
+          applyDefaultLabels(items, photoSchema),
+          photoSchema
         ) as ListingPhotoItem[]
       );
     }

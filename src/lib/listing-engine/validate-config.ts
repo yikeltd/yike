@@ -141,6 +141,30 @@ export function validateCategoryManifest(
     errors.push(`Photo rules invalid: min (${manifest.photo.min}) > max (${manifest.photo.max})`);
   }
 
+  // unused first collect removed — keep only variant rule validation
+  if (!manifest.photo.schema?.tags?.length) {
+    errors.push(`Photo rules missing schema tags for category "${manifest.id}"`);
+  } else {
+    const tagIds = new Set(manifest.photo.schema.tags.map((t) => t.id));
+    if (!tagIds.has("other")) {
+      errors.push(`Photo schema "${manifest.photo.schema.id}" must include an "other" tag`);
+    }
+    for (const variant of manifest.photo.schemaVariants ?? []) {
+      if (!variant.schema?.tags?.length) {
+        errors.push(`Photo schema variant missing tags`);
+      }
+      const variantRuleIds: string[] = [];
+      collectVisibilityRuleIds(variant.when, variantRuleIds);
+      for (const ruleId of variantRuleIds) {
+        if (!NAMED_VISIBILITY_RULES[ruleId]) {
+          errors.push(
+            `Photo schema variant references unknown visibility rule id "${ruleId}"`
+          );
+        }
+      }
+    }
+  }
+
   if (opts.throwOnError !== false && errors.length > 0) {
     throw new Error(
       `listing-engine: invalid category manifest "${manifest.id}":\n- ${errors.join("\n- ")}`

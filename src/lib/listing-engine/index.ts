@@ -38,6 +38,23 @@ export type { InferProvider, InferProviders } from "./suggestion";
 export { buildTitleFromRecipe, applyAutofill } from "./autofill";
 export type { AutofillPatch } from "./autofill";
 export { photoChecklistStatus } from "./photo";
+export {
+  resolvePhotoSchema,
+  resolvePhotoSchemaFromManifest,
+  resolvePropertyPhotoSchema,
+  resolveVehiclePhotoSchema,
+  VEHICLE_PHOTO_SCHEMA,
+  PROPERTY_RESIDENTIAL_PHOTO_SCHEMA,
+  PROPERTY_LAND_PHOTO_SCHEMA,
+  PROPERTY_COMMERCIAL_PHOTO_SCHEMA,
+  PROPERTY_SHORTLET_PHOTO_SCHEMA,
+  DEALER_SHOWROOM_PHOTO_SCHEMA,
+  migratePhotoLabel,
+  sanitizeMediaItemLabels,
+  schemaLabels,
+  isValidPhotoLabel,
+} from "./photo-schema";
+export type { PhotoSchema, PhotoTag, PhotoSchemaVariant } from "./photo-schema";
 export { MetadataResolver } from "./resolver";
 export type { ResolverContext, ResolvedListingState } from "./resolver";
 export { validateCategoryManifest } from "./validate-config";

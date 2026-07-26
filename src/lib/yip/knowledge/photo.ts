@@ -12,17 +12,29 @@ import type { PhotoGuidance, PhotoKnowledge } from "./types";
 const DEFAULT_GUIDANCE: PhotoGuidance = { min: 1, max: 20, tips: ["Well-lit", "In focus", "No watermarks"] };
 
 const DOMAIN_GUIDANCE: Record<string, PhotoGuidance> = {
-  vehicle: { min: 1, max: 20, tips: ["Front", "Rear", "Interior", "Dashboard", "Engine", "Tyres"] },
+  vehicle: {
+    min: 1,
+    max: 20,
+    tips: ["Front", "Rear", "Interior", "Dashboard", "Engine", "Tyres"],
+  },
   property: {
-    min: 3,
-    max: 25,
-    tips: ["Exterior", "Living room", "Bedrooms", "Kitchen", "Bathroom", "Compound"],
+    min: 2,
+    max: 20,
+    tips: ["Front", "Kitchen", "Parlor", "Bedrooms", "Bathrooms", "Compound"],
   },
 };
 
 const CATEGORY_GUIDANCE: Record<string, PhotoGuidance> = {
-  land: { min: 2, max: 15, tips: ["Boundary/fence", "Access road", "Survey pillar", "Wide angle"] },
-  motorcycle: { min: 1, max: 12, tips: ["Front", "Side", "Rear", "Engine", "Chassis number"] },
+  land: {
+    min: 2,
+    max: 15,
+    tips: ["Boundary", "Access Road", "Survey", "Neighborhood"],
+  },
+  motorcycle: {
+    min: 1,
+    max: 12,
+    tips: ["Front", "Side", "Rear", "Engine", "Chassis number"],
+  },
 };
 
 export class DefaultPhotoKnowledge implements PhotoKnowledge {

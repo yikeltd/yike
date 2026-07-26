@@ -20,6 +20,7 @@ import {
 } from "@/lib/marketplace/vehicle-makes";
 import { ListingPhotoManager } from "@/components/agent/listing-photo-manager";
 import type { ListingPhotoItem } from "@/components/agent/listing-photo-types";
+import { resolveVehiclePhotoSchema } from "@/lib/listing-engine/photo-schema";
 import {
   clearVehicleDraft,
   loadVehicleDraft,
@@ -513,6 +514,7 @@ export function VehicleListingForm({ listingId, agentId, initial }: Props) {
             propertyId={listingId}
             items={photos}
             onChange={setPhotos}
+            photoSchema={resolveVehiclePhotoSchema()}
             listingType="sale"
           />
           <p className="mt-1 text-xs text-black/50">

@@ -7,6 +7,8 @@
  * only, never from `if (vehicle)` / `if (property)` conditionals.
  */
 
+import type { PhotoSchema, PhotoSchemaVariant } from "./photo-schema/types";
+
 export type ListingCategoryId =
   | "vehicle"
   | "property"
@@ -124,8 +126,19 @@ export type ListingStepDef = {
 export type PhotoRules = {
   min: number;
   max: number;
+  /**
+   * Category photo taxonomy — tags, upload sequence, cover prefs, recommended shots.
+   * UI must render this schema only (never hardcode vehicle/property labels).
+   */
+  schema: PhotoSchema;
+  /** Variant taxonomies (e.g. land vs residential) resolved from listing values. */
+  schemaVariants?: PhotoSchemaVariant[];
   requiredAngles?: string[];
-  tips: string[];
+  /**
+   * Soft recommended-shot chips. Prefer omitting and using `schema.recommendedShots`
+   * via `photoChecklistStatus` / resolvePhotoSchema.
+   */
+  tips?: string[];
   recommendedCover?: "first" | "sharpest";
   accept?: ("image/jpeg" | "image/png" | "image/webp")[];
   /** Tighten only; never loosen platform MEDIA_LIMITS. */

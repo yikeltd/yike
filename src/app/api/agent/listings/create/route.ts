@@ -13,6 +13,10 @@ import {
   ensurePendingManualSellerVerification,
   isVerifiedSeller,
 } from "@/lib/seller-trust";
+import {
+  migratePhotoLabel,
+  resolvePropertyPhotoSchema,
+} from "@/lib/listing-engine/photo-schema";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -31,6 +35,24 @@ const LISTER_ROLES = new Set([
   "admin",
   "super_admin",
 ]);
+
+function sanitizeListingMediaItems(
+  items: unknown[],
+  ctx: { propertyType: string; listingType: string }
+): unknown[] {
+  const schema = resolvePropertyPhotoSchema(ctx);
+  return items.map((raw) => {
+    if (!raw || typeof raw !== "object") return raw;
+    const item = raw as Record<string, unknown>;
+    if (typeof item.room_label !== "string" || !item.room_label.trim()) {
+      return item;
+    }
+    return {
+      ...item,
+      room_label: migratePhotoLabel(schema, item.room_label),
+    };
+  });
+}
 
 function logStage(stage: string, extra: Record<string, unknown> = {}): void {
   console.info("[listing-create]", { stage, ...extra });
@@ -75,7 +97,13 @@ function buildMinimalRow(
     address_hint: payload.address_hint ?? null,
     landmark: payload.landmark ?? null,
     media_urls: mediaUrls,
-    media_items: Array.isArray(payload.media_items) ? payload.media_items : [],
+    media_items: sanitizeListingMediaItems(
+      Array.isArray(payload.media_items) ? payload.media_items : [],
+      {
+        propertyType: String(payload.property_type ?? "flat"),
+        listingType: String(payload.listing_type ?? "rent"),
+      }
+    ),
     video_url: payload.video_url || null,
     extras: payload.extras ?? {},
     status: "pending",

@@ -26,6 +26,7 @@ import { transparencyToExtras } from "./listing-transparency-fields";
 import { extrasToFeeFormState } from "@/lib/rent-breakdown";
 import { ListingInlineFees } from "./listing-inline-fees";
 import { MIN_LISTING_IMAGES, MAX_LISTING_IMAGES } from "@/lib/constants";
+import { resolvePropertyPhotoSchema } from "@/lib/listing-engine/photo-schema";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
 import {
   defaultPaymentPeriodForListingType,
@@ -1337,6 +1338,10 @@ export function ListingForm({
               ref={photoManagerRef}
               items={mediaItems}
               onChange={setMediaItems}
+              photoSchema={resolvePropertyPhotoSchema({
+                propertyType,
+                listingType,
+              })}
               listingType={listingType}
               propertyType={propertyType}
             />

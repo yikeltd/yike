@@ -11,6 +11,7 @@ import {
   getCategoryManifest,
   getListingCatalogsFromYip,
   photoChecklistStatus,
+  resolvePhotoSchemaFromManifest,
   validateValues,
   valuesToPropertyPayload,
   valuesToVehiclePayload,
@@ -166,7 +167,7 @@ export function ListingEngine({
 
   function validateCurrentStep(): boolean {
     if (step.id === "photos") {
-      const status = photoChecklistStatus(manifest.photo, photoCount);
+      const status = photoChecklistStatus(manifest.photo, photoCount, values);
       if (!status.ok) {
         setError(`Add at least ${manifest.photo.min} photo${manifest.photo.min === 1 ? "" : "s"}.`);
         return false;
@@ -220,7 +221,7 @@ export function ListingEngine({
       if (stepWithError >= 0) setStepIndex(stepWithError);
       return;
     }
-    const status = photoChecklistStatus(manifest.photo, photoCount);
+    const status = photoChecklistStatus(manifest.photo, photoCount, values);
     if (!status.ok) {
       setError(`Add at least ${manifest.photo.min} photo${manifest.photo.min === 1 ? "" : "s"}.`);
       const photoStep = manifest.steps.findIndex((s) => s.id === "photos");
@@ -380,14 +381,18 @@ export function ListingEngine({
 
       {step.id === "photos" ? (
         <div className="space-y-3">
-          <ListingPhotoManager items={photos} onChange={setPhotos} />
-          {manifest.photo.tips.length > 0 ? (
+          <ListingPhotoManager
+            items={photos}
+            onChange={setPhotos}
+            photoSchema={resolvePhotoSchemaFromManifest(manifest, values)}
+          />
+          {resolved.photoStatus.tips.length > 0 ? (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-navy/45">
                 Recommended shots
               </p>
               <ul className="mt-2 flex flex-wrap gap-1.5">
-                {manifest.photo.tips.map((tip) => (
+                {resolved.photoStatus.tips.map((tip) => (
                   <li
                     key={tip}
                     className="rounded-full bg-navy/[0.06] px-2.5 py-1 text-[11px] font-medium text-navy/70"

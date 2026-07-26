@@ -1,0 +1,151 @@
+import { buildPhotoSchema, tag } from "./helpers";
+
+/** Residential / short-let property photo taxonomy. */
+export const PROPERTY_RESIDENTIAL_PHOTO_SCHEMA = buildPhotoSchema({
+  id: "property.residential",
+  tags: [
+    tag("cover", "Cover Photo"),
+    tag("front_view", "Front View"),
+    tag("compound", "Compound"),
+    tag("living_room", "Living Room"),
+    tag("dining_area", "Dining Area"),
+    tag("kitchen", "Kitchen"),
+    tag("master_bedroom", "Master Bedroom"),
+    tag("bedroom", "Bedroom"),
+    tag("bathroom", "Bathroom"),
+    tag("guest_toilet", "Guest Toilet"),
+    tag("balcony", "Balcony"),
+    tag("corridor", "Corridor"),
+    tag("staircase", "Staircase"),
+    tag("garden", "Garden"),
+    tag("swimming_pool", "Swimming Pool"),
+    tag("parking", "Parking"),
+    tag("security_house", "Security House"),
+    tag("rooftop", "Rooftop"),
+    tag("backyard", "Backyard"),
+    tag("view", "View"),
+    tag("other", "Other"),
+  ],
+  uploadSequence: [
+    "cover",
+    "front_view",
+    "living_room",
+    "kitchen",
+    "master_bedroom",
+    "bedroom",
+    "bathroom",
+    "compound",
+    "other",
+  ],
+  preferredCoverIds: ["cover", "front_view", "living_room", "compound"],
+  poorCoverIds: ["other", "bathroom", "guest_toilet", "corridor"],
+  recommendedShots: ["Front", "Kitchen", "Parlor", "Bedrooms", "Bathrooms", "Compound"],
+  uploadHint: "Show front, living area, kitchen, bedrooms, and bathrooms",
+  labelPlaceholder: "Room label…",
+});
+
+/** Short-let leans hospitality / stay quality. */
+export const PROPERTY_SHORTLET_PHOTO_SCHEMA = buildPhotoSchema({
+  id: "property.shortlet",
+  tags: PROPERTY_RESIDENTIAL_PHOTO_SCHEMA.tags,
+  uploadSequence: [
+    "cover",
+    "front_view",
+    "living_room",
+    "kitchen",
+    "master_bedroom",
+    "bathroom",
+    "balcony",
+    "other",
+  ],
+  preferredCoverIds: ["cover", "front_view", "living_room"],
+  poorCoverIds: ["other", "bathroom", "guest_toilet"],
+  recommendedShots: ["Front", "Living room", "Kitchen", "Bedroom", "Bathroom", "Balcony"],
+  uploadHint: "Show exterior, living area, bedroom, and bathroom",
+  labelPlaceholder: "Room label…",
+});
+
+/** Land plot taxonomy — never includes bedroom/kitchen. */
+export const PROPERTY_LAND_PHOTO_SCHEMA = buildPhotoSchema({
+  id: "property.land",
+  tags: [
+    tag("cover", "Cover Photo"),
+    tag("front_view", "Front View"),
+    tag("boundary", "Boundary"),
+    tag("access_road", "Access Road"),
+    tag("survey_plan", "Survey Plan"),
+    tag("neighborhood", "Neighborhood"),
+    tag("drainage", "Drainage"),
+    tag("nearby_landmark", "Nearby Landmark"),
+    tag("other", "Other"),
+  ],
+  uploadSequence: [
+    "cover",
+    "front_view",
+    "boundary",
+    "access_road",
+    "survey_plan",
+    "neighborhood",
+    "other",
+  ],
+  preferredCoverIds: ["cover", "front_view", "boundary", "access_road"],
+  poorCoverIds: ["other", "survey_plan"],
+  recommendedShots: ["Boundary", "Access Road", "Survey", "Neighborhood"],
+  uploadHint: "Start with front view, boundary, access road, and survey",
+  labelPlaceholder: "Photo label…",
+});
+
+/** Commercial shop / office / plaza. */
+export const PROPERTY_COMMERCIAL_PHOTO_SCHEMA = buildPhotoSchema({
+  id: "property.commercial",
+  tags: [
+    tag("cover", "Cover Photo"),
+    tag("front_view", "Front View"),
+    tag("shop_front", "Shop Front"),
+    tag("office_space", "Office Space"),
+    tag("reception", "Reception"),
+    tag("interior", "Interior"),
+    tag("parking", "Parking"),
+    tag("signage", "Signage"),
+    tag("compound", "Compound"),
+    tag("security_house", "Security House"),
+    tag("view", "View"),
+    tag("other", "Other"),
+  ],
+  uploadSequence: [
+    "cover",
+    "shop_front",
+    "front_view",
+    "interior",
+    "office_space",
+    "parking",
+    "other",
+  ],
+  preferredCoverIds: ["cover", "shop_front", "front_view"],
+  poorCoverIds: ["other"],
+  recommendedShots: ["Shop front", "Interior", "Parking", "Signage"],
+  uploadHint: "Start with shop front, street view, and interior",
+  labelPlaceholder: "Photo label…",
+});
+
+/** Dealer / vendor showroom profile media (future-ready). */
+export const DEALER_SHOWROOM_PHOTO_SCHEMA = buildPhotoSchema({
+  id: "dealer.showroom",
+  tags: [
+    tag("cover", "Cover"),
+    tag("office", "Office"),
+    tag("showroom", "Showroom"),
+    tag("workshop", "Workshop"),
+    tag("reception", "Reception"),
+    tag("inventory", "Inventory"),
+    tag("signage", "Signage"),
+    tag("staff", "Staff"),
+    tag("other", "Other"),
+  ],
+  uploadSequence: ["cover", "showroom", "office", "inventory", "other"],
+  preferredCoverIds: ["cover", "showroom", "signage"],
+  poorCoverIds: ["other", "staff"],
+  recommendedShots: ["Showroom", "Office", "Inventory", "Signage"],
+  uploadHint: "Show the showroom, office, and inventory",
+  labelPlaceholder: "Photo label…",
+});
