@@ -28,26 +28,22 @@ This audit confirms each flagged function’s role and re-locks trigger-only int
 
 ---
 
-## Intentional public / client RPCs (retained)
+## Follow-up (2026-07-26) — advisor lints 0028 / 0029
 
-These require `anon` or `authenticated` execute because the app calls them from the browser-facing Supabase client (often with `YIKE_OTP_SERVER_TOKEN` validation inside the function):
+Migration `20260726001850_revoke_client_execute_security_definer_rpcs.sql` revokes
+`anon` / `authenticated` / `PUBLIC` execute on:
 
-### Auth & signup
-- `yike_username_available`, `yike_complete_signup`, `yike_auth_confirm_reviewer`
+- `increment_property_views`, `increment_contact_clicks`
 - `yike_check_signup_duplicates`
-- `yike_pin_login_lookup`
-- Full `yike_auth_otp_*` and `yike_signup_pending_*` family
-- `yike_email_*` OTP family
+- `get_listing_like_count`, `get_profile_social_stats`, `get_public_follow_profiles`
 
-### Social (aggregated, no PII leak)
-- `get_profile_social_stats`, `get_listing_like_count`, `get_public_follow_profiles`
+`service_role` retains execute. App call sites already use (or were updated to use)
+the admin client for these RPCs (`src/lib/social/stats.ts`, payment/view APIs,
+signup OTP admin client).
 
-### Analytics counters
-- `increment_property_views`, `increment_contact_clicks` — called from API routes; granted to anon/authenticated for PostgREST compatibility
+**Still manual:** Leaked password protection — Dashboard Auth setting
+(see `FOUNDER_ACTION_LEAKED_PASSWORD_PROTECTION.md`).
 
-### Careers & leads (token or validation inside)
-- `yike_career_submit_application`, `yike_career_submit_follow_up`
-- `yike_log_lead` (client-side lead capture with validation)
 
 ---
 

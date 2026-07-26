@@ -1,10 +1,25 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { ProfileSocialStats, PublicFollowProfile, FollowDirection } from "./types";
 
+/** Service-role client for SECURITY DEFINER social RPCs (not callable by anon/authenticated). */
+function socialRpcClient(fallback?: SupabaseClient | null): SupabaseClient | null {
+  try {
+    return createAdminClient();
+  } catch {
+    return fallback ?? null;
+  }
+}
+
 export async function getProfileSocialStats(
-  client: SupabaseClient,
+  _client: SupabaseClient | null | undefined,
   userId: string
 ): Promise<ProfileSocialStats> {
+  const client = socialRpcClient(_client);
+  if (!client) {
+    return { followersCount: 0, listingLikesCount: 0 };
+  }
+
   const { data, error } = await client.rpc("get_profile_social_stats", {
     p_user_id: userId,
   });
@@ -21,9 +36,12 @@ export async function getProfileSocialStats(
 }
 
 export async function getListingLikeCount(
-  client: SupabaseClient,
+  _client: SupabaseClient | null | undefined,
   listingId: string
 ): Promise<number> {
+  const client = socialRpcClient(_client);
+  if (!client) return 0;
+
   const { data, error } = await client.rpc("get_listing_like_count", {
     p_listing_id: listingId,
   });
@@ -60,12 +78,15 @@ export async function isFollowingUser(
 }
 
 export async function getFollowProfiles(
-  client: SupabaseClient,
+  _client: SupabaseClient | null | undefined,
   userId: string,
   direction: FollowDirection,
   limit = 50,
   offset = 0
 ): Promise<PublicFollowProfile[]> {
+  const client = socialRpcClient(_client);
+  if (!client) return [];
+
   const { data, error } = await client.rpc("get_public_follow_profiles", {
     p_user_id: userId,
     p_direction: direction,
