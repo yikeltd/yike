@@ -6,18 +6,22 @@ import { createClient } from "@/lib/supabase/server";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { queryPublicVehicles } from "@/lib/marketplace/listings";
 import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
-import { MarketplaceEmptyState } from "@/components/marketplace/marketplace-empty-state";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
-import { VehicleSearchPanel } from "@/components/marketplace/vehicle-search-panel";
+import { VehicleSearchResultsChrome } from "@/components/marketplace/vehicle-search-results-chrome";
+import {
+  QuickFilterChips,
+  VEHICLE_QUICK_FILTERS,
+  DiscoveryEmptyPanel,
+} from "@/components/marketplace/experience";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Search Vehicles",
+  title: "Vehicles",
   description: `Search cars, SUVs, trucks and more across Nigeria on ${SITE_NAME}.`,
   alternates: { canonical: `${SITE_URL}/vehicles` },
 };
@@ -37,6 +41,15 @@ const USED_CONDITIONS = new Set([
   "foreign_used",
   "certified",
 ]);
+
+function ResultsFallback() {
+  return (
+    <div className="space-y-3 px-3 pt-2">
+      <div className="skeleton h-14 w-full rounded-xl" />
+      <div className="skeleton h-11 w-full rounded-xl" />
+    </div>
+  );
+}
 
 export default async function VehiclesPage({
   searchParams,
@@ -66,7 +79,6 @@ export default async function VehiclesPage({
     state = prefs.state;
   }
 
-  // Query without exact used/verified condition — filter client-side for "used" group.
   const queryCondition =
     conditionParam && conditionParam !== "used" ? conditionParam : undefined;
 
@@ -129,7 +141,10 @@ export default async function VehiclesPage({
   const total = vehicles.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
-  const pageSlice = vehicles.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
+  const pageSlice = vehicles.slice(
+    (pageSafe - 1) * PAGE_SIZE,
+    pageSafe * PAGE_SIZE,
+  );
 
   const qs = new URLSearchParams();
   for (const key of [
@@ -155,17 +170,6 @@ export default async function VehiclesPage({
     const v = first(sp[key]);
     if (v) qs.set(key, v);
   }
-  const saveHref = qs.toString() ? `/vehicles?${qs.toString()}` : "/vehicles";
-  const saveLabel = [
-    "Vehicles",
-    first(sp.category),
-    first(sp.make),
-    first(sp.q),
-    city,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
   function pageHref(p: number) {
     const next = new URLSearchParams(qs);
     if (p > 1) next.set("page", String(p));
@@ -190,92 +194,79 @@ export default async function VehiclesPage({
       nearbyFlag,
   );
 
-  const summary = nearbyFlag
-    ? `${total} Results Nearby`
-    : `${total} Results`;
-
   return (
-    <main className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] pb-24">
+    <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
       <PrefSync />
-      <div className="mx-auto max-w-6xl px-3 pt-4 sm:px-4 lg:px-6">
+      <div className="px-3 pt-4 lg:px-6 xl:px-8">
         <MarketplaceCategoryHeader
           vertical="vehicle"
-          title="Search Vehicles"
-          sellHref="/agent/listings/new/vehicle"
-          sellLabel="Sell Vehicle"
-          saveLabel={saveLabel}
-          saveHref={saveHref}
+          title="Vehicles"
           className="mb-2"
         />
-
-        <Suspense
-          fallback={
-            <div className="mb-2 h-12 animate-pulse rounded-2xl bg-white/80" />
-          }
-        >
-          <VehicleSearchPanel defaultOpen />
+        <Suspense fallback={null}>
+          <div className="mb-3">
+            <QuickFilterChips
+              chips={VEHICLE_QUICK_FILTERS}
+              basePath="/vehicles"
+            />
+          </div>
         </Suspense>
-
-        <div className="mb-3 flex items-center justify-between gap-2 px-0.5 pt-1">
-          <p className="text-sm font-bold tracking-tight text-navy">{summary}</p>
-          {hasFilters ? (
-            <Link
-              href="/vehicles"
-              className="text-xs font-semibold text-navy/45 hover:text-navy"
-            >
-              Clear
-            </Link>
-          ) : null}
-        </div>
-
-        {pageSlice.length === 0 ? (
-          <MarketplaceEmptyState
-            title={hasFilters ? "No Vehicles Match" : "No Vehicles Yet"}
-            subtitle={
-              hasFilters
-                ? "Try fewer filters, or list one yourself."
-                : "Be the first to list one."
-            }
-            actionHref="/agent/listings/new/vehicle"
-            actionLabel="Sell Vehicle"
-            secondaryHref={hasFilters ? "/vehicles" : undefined}
-            secondaryLabel={hasFilters ? "Clear filters" : undefined}
-          />
-        ) : (
-          <>
-            <ul className={BROWSE_GRID_CLASS}>
-              {pageSlice.map((v) => (
-                <li key={v.id}>
-                  <VehicleCard vehicle={v} />
-                </li>
-              ))}
-            </ul>
-            {totalPages > 1 ? (
-              <nav className="mt-8 flex flex-wrap items-center justify-center gap-2">
-                {pageSafe > 1 ? (
-                  <Link
-                    href={pageHref(pageSafe - 1)}
-                    className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
-                  >
-                    Previous
-                  </Link>
-                ) : null}
-                <span className="text-sm text-muted">
-                  {pageSafe} / {totalPages}
-                </span>
-                {pageSafe < totalPages ? (
-                  <Link
-                    href={pageHref(pageSafe + 1)}
-                    className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
-                  >
-                    Next
-                  </Link>
-                ) : null}
-              </nav>
-            ) : null}
-          </>
-        )}
       </div>
-    </main>
+
+      <Suspense fallback={<ResultsFallback />}>
+        <VehicleSearchResultsChrome
+          resultCount={total}
+          filtersDefaultOpen={false}
+        >
+          <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
+            {pageSlice.length === 0 ? (
+              <DiscoveryEmptyPanel
+                category="vehicle"
+                title={hasFilters ? "No vehicles match" : "Start exploring vehicles"}
+                subtitle={
+                  hasFilters
+                    ? "Try another filter, or browse popular categories below."
+                    : "Recent searches, trending makes, and cities — tap to browse."
+                }
+                showLatestHref="/vehicles"
+              />
+            ) : (
+              <>
+                <ul className={BROWSE_GRID_CLASS}>
+                  {pageSlice.map((v) => (
+                    <li key={v.id}>
+                      <VehicleCard vehicle={v} variant="browse" />
+                    </li>
+                  ))}
+                </ul>
+                {totalPages > 1 ? (
+                  <nav className="mt-8 flex flex-wrap items-center justify-center gap-2 pb-6">
+                    {pageSafe > 1 ? (
+                      <Link
+                        href={pageHref(pageSafe - 1)}
+                        className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
+                      >
+                        Previous
+                      </Link>
+                    ) : null}
+                    <span className="text-sm text-muted">
+                      {pageSafe} / {totalPages}
+                    </span>
+                    {pageSafe < totalPages ? (
+                      <Link
+                        href={pageHref(pageSafe + 1)}
+                        className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
+                      >
+                        Next
+                      </Link>
+                    ) : null}
+                  </nav>
+                ) : null}
+              </>
+            )}
+          </section>
+        </VehicleSearchResultsChrome>
+      </Suspense>
+    </div>
   );
 }

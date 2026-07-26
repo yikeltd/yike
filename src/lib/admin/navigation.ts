@@ -87,6 +87,21 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
         emphasis: "primary",
         keywords: ["revenue", "metrics", "ceo", "control tower", "analytics"],
       },
+      {
+        href: adminPath("marketplace-analytics"),
+        label: "Marketplace Analytics",
+        segment: "marketplace-analytics",
+        emphasis: "primary",
+        keywords: [
+          "marketplace",
+          "inventory",
+          "launch",
+          "pulse",
+          "views",
+          "dealers",
+          "control tower",
+        ],
+      },
     ],
   },
   {
@@ -489,10 +504,10 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
       },
       {
         href: adminPath("health"),
-        label: "Health",
+        label: "Launch Health",
         segment: "health",
-        emphasis: "muted",
-        keywords: ["status", "uptime"],
+        emphasis: "primary",
+        keywords: ["status", "uptime", "launch", "sms", "fat", "command center"],
       },
       {
         href: adminPath("audit-logs"),
@@ -532,7 +547,15 @@ export const TECH_NAV_GROUPS: NavGroup[] = [
     id: "overview",
     label: "Overview",
     defaultExpanded: true,
-    items: [{ href: techPath(), label: "Health Dashboard", segment: "", emphasis: "primary" }],
+    items: [
+      { href: techPath(), label: "Health Dashboard", segment: "", emphasis: "primary" },
+      {
+        href: adminPath("health"),
+        label: "Launch Health",
+        segment: "launch-health",
+        keywords: ["fat", "rc", "systems", "sms"],
+      },
+    ],
   },
   {
     id: "monitoring",

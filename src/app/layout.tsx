@@ -14,6 +14,7 @@ import { GuestFavoriteSync } from "@/components/retention/guest-favorite-sync";
 import { UserActivitySync } from "@/components/retention/user-activity-sync";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
+import { SmsVerificationBypassBanner } from "@/components/auth/sms-verification-bypass-banner";
 import {
   bootSplashArmScript,
   bootSplashCriticalCss,
@@ -223,6 +224,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: bootSplashHideScript }} />
         <ThemeProvider>
           <AuthProvider>
+            <SmsVerificationBypassBanner />
             <StructuredData />
             {children}
             <Suspense fallback={null}>

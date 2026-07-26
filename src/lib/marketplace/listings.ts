@@ -94,7 +94,8 @@ const VEHICLE_SELECT = `
   agent:profiles!properties_agent_id_fkey (
     id, full_name, phone, whatsapp, avatar_url,
     verification_status, agent_type, role, account_type,
-    verified_badge, ranking_score, is_verified_agent
+    verified_badge, ranking_score, is_verified_agent,
+    company_name, public_slug, created_at, listing_limit
   )
 `;
 

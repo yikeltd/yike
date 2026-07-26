@@ -1,4 +1,5 @@
 import type { Profile } from "@/types/database";
+import { isAuthSmsVerificationBypassActive } from "@/lib/auth/sms-verification-flag";
 import {
   deriveSellerLaunchStatus,
   isPhoneVerifiedForSeller,
@@ -79,7 +80,7 @@ export function assertCanCreateListing(
     };
   }
 
-  if (!isPhoneVerifiedForSeller(profile)) {
+  if (!isPhoneVerifiedForSeller(profile) && !isAuthSmsVerificationBypassActive()) {
     return {
       ok: false,
       code: "phone_verification_required",
@@ -143,5 +144,6 @@ export function assertCanPublishListing(
 export function mustVerifyPhoneBeforeListing(
   profile: Partial<SellerTrustProfileSlice> | null | undefined
 ): boolean {
+  if (isAuthSmsVerificationBypassActive()) return false;
   return !isPhoneVerifiedForSeller(profile);
 }

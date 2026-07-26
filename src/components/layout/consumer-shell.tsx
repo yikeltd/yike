@@ -22,6 +22,9 @@ export function ConsumerShell({
   const isHome = pathname === "/";
   const isProfile = pathname === "/agent";
   const isPropertyDetail = pathname.startsWith("/properties/");
+  const isVehicleDetail =
+    pathname.startsWith("/vehicles/") && pathname.split("/").length >= 3;
+  const isListingDetail = isPropertyDetail || isVehicleDetail;
   const isDiscover =
     pathname === "/discover" || pathname.startsWith("/discover/");
   const hideChrome =
@@ -61,11 +64,11 @@ export function ConsumerShell({
         className={cn(
           "mx-auto w-full flex-1",
           !isHome &&
-            !isPropertyDetail &&
+            !isListingDetail &&
             "px-3 lg:max-w-7xl lg:px-6 xl:px-8",
-          isPropertyDetail && "lg:max-w-7xl lg:px-6 xl:px-8",
+          isListingDetail && "lg:max-w-7xl lg:px-6 xl:px-8",
           isProfile && "pt-[max(0.75rem,env(safe-area-inset-top))]",
-          isPropertyDetail ? "safe-bottom-detail" : "safe-bottom",
+          isListingDetail ? "safe-bottom-detail" : "safe-bottom",
           "lg:safe-bottom-0 lg:pb-6"
         )}
       >

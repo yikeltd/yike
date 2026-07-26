@@ -32,6 +32,21 @@ import {
   pickTrendingRail,
   pickNationwideFeaturedRail,
 } from "@/lib/home/inventory-rails";
+import {
+  excludeListingIds,
+  listingIdSet,
+} from "@/lib/marketplace/placement";
+import {
+  pickByAutoCategory,
+  pickBudgetUnder,
+  pickCommercialVehicles,
+  pickPremiumRail,
+  pickPropertyByTypes,
+  extractDealersFromListings,
+  countByAutoCategory,
+  countByPropertyType,
+  BUDGET_UNDER_5M,
+} from "@/lib/home/discovery-from-pool";
 import { getServerMarketplaceLocation } from "@/lib/search-preferences";
 import { getHomepageAds } from "@/lib/advertisements/public";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
@@ -258,21 +273,29 @@ export default async function HomePage({
     6,
     loc,
   );
+  const featuredIds = listingIdSet(featuredLive.items);
+  const trendingLive = pickTrendingRail(
+    excludeListingIds(
+      propertyDemo.isDemo ? propertyItems : nearPool,
+      featuredIds,
+    ),
+    6,
+    loc,
+  );
+  const trendingIds = listingIdSet(trendingLive.items);
   const recentLive = pickRecentRail(
-    propertyDemo.isDemo
-      ? propertyItems
-      : recentProps.length > 0
-        ? recentProps
-        : propertyItems,
+    excludeListingIds(
+      propertyDemo.isDemo
+        ? propertyItems
+        : recentProps.length > 0
+          ? recentProps
+          : propertyItems,
+      [...featuredIds, ...trendingIds],
+    ),
     6,
     loc,
   );
   const nearYouLive = pickNearYouRail(nearPool, preferredCity, 6, loc);
-  const trendingLive = pickTrendingRail(
-    propertyDemo.isDemo ? propertyItems : nearPool,
-    6,
-    loc,
-  );
   const luxuryLive = pickLuxuryRail(
     propertyDemo.isDemo ? propertyItems : propertyPool,
     "property",
@@ -286,11 +309,39 @@ export default async function HomePage({
   );
 
   const vFeatured = pickFeaturedRail(vehicleItems, 6, loc);
-  const vRecent = pickRecentRail(vehicleItems, 6, loc);
+  const vFeaturedIds = listingIdSet(vFeatured.items);
+  const vTrending = pickTrendingRail(
+    excludeListingIds(vehicleItems, vFeaturedIds),
+    6,
+    loc,
+  );
+  const vTrendingIds = listingIdSet(vTrending.items);
+  const vRecent = pickRecentRail(
+    excludeListingIds(vehicleItems, [...vFeaturedIds, ...vTrendingIds]),
+    6,
+    loc,
+  );
   const vLowKm = pickLowMileageRail(vehicleItems, 6, loc);
   const vLuxury = pickLuxuryRail(vehicleItems, "vehicle", 6, loc);
-  const vTrending = pickTrendingRail(vehicleItems, 6, loc);
   const vNationwide = pickNationwideFeaturedRail(vehicleItems, 6, loc);
+  const vPremium = pickPremiumRail(vehicleItems, 6, loc);
+  const vCommercial = pickCommercialVehicles(vehicleItems, 6);
+  const vBudget = pickBudgetUnder(vehicleItems, BUDGET_UNDER_5M, 6);
+  const vSuv = pickByAutoCategory(vehicleItems, "suv", 6);
+  const vPickup = pickByAutoCategory(vehicleItems, "truck", 6);
+  const vNear = pickNearYouRail(vehicleItems, preferredCity, 6, loc);
+  const dealers = extractDealersFromListings(
+    vehicleDemo.isDemo ? vehicleItems : vehiclePool,
+    8,
+  );
+  const vehicleCategoryCounts = countByAutoCategory(vehicleItems);
+  const propertyCategoryCounts = countByPropertyType(propertyItems);
+  const propertyCommercial = pickPropertyByTypes(
+    propertyItems,
+    ["shop", "office", "warehouse", "commercial"],
+    6,
+  );
+  const propertyFeaturedExtra = pickFeaturedRail(propertyItems, 6, loc);
 
   const homepageAds = await safeLoad(
     "homepage ads",
@@ -388,6 +439,8 @@ export default async function HomePage({
                 : luxuryLive,
             ),
             nationwide: nationwideLive,
+            commercial: propertyCommercial,
+            featuredExtra: propertyFeaturedExtra.items,
           }}
           vehicleRails={{
             featured: railMeta(
@@ -444,7 +497,22 @@ export default async function HomePage({
                 : vLuxury,
             ),
             nationwide: vNationwide,
+            premium: vPremium.items,
+            commercial: vCommercial,
+            budget: vBudget,
+            suv: vSuv,
+            pickup: vPickup,
+            nearYou: railMeta(vNear),
           }}
+          dealers={dealers}
+          categoryCounts={
+            category === "vehicle" || vehiclesOn
+              ? {
+                  vehicle: vehicleCategoryCounts,
+                  property: propertyCategoryCounts,
+                }
+              : { property: propertyCategoryCounts }
+          }
         />
       </Suspense>
     </div>

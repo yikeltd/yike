@@ -18,15 +18,17 @@ import { getSponsoredAd } from "@/lib/advertisements/public";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
-import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
-import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
 import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 import {
   buildSearchEmptyCopy,
   resolveSearchResults,
 } from "@/lib/search-fallback";
 import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
-import { MarketplaceEmptyState } from "@/components/marketplace/marketplace-empty-state";
+import {
+  DiscoveryEmptyPanel,
+  QuickFilterChips,
+  PROPERTY_QUICK_FILTERS,
+} from "@/components/marketplace/experience";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
 
 export const metadata: Metadata = {
@@ -127,16 +129,8 @@ export default async function SearchPage({
   }
   const currentHref = qs.toString() ? `/search?${qs.toString()}` : undefined;
 
-  const helpCity = params.city ?? preloadParams.city;
-  const helpArea = params.area ?? preloadParams.area;
-  const helpUrl = helpCity ? buildSeoHelpWhatsAppUrl(helpCity, helpArea) : null;
-  const helpLabel = helpCity ? seoHelpLabel(helpCity, helpArea) : "";
-
   const emptyCopy = buildSearchEmptyCopy(preloadParams);
   const showingNearby = hasQuery && exactCount === 0 && nearbyItems.length > 0;
-
-  const saveHref = currentHref ?? "/search";
-  const saveLabel = label || "Properties";
 
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
@@ -145,12 +139,16 @@ export default async function SearchPage({
         <MarketplaceCategoryHeader
           vertical="property"
           title="Search Properties"
-          sellHref="/agent/listings/new"
-          sellLabel="Sell Property"
-          saveLabel={saveLabel}
-          saveHref={saveHref}
           className="mb-2"
         />
+        <Suspense fallback={null}>
+          <div className="mb-3">
+            <QuickFilterChips
+              chips={PROPERTY_QUICK_FILTERS}
+              basePath="/search"
+            />
+          </div>
+        </Suspense>
       </div>
       <Suspense fallback={<ResultsFallback />}>
         <SearchResultsChrome
@@ -161,7 +159,7 @@ export default async function SearchPage({
           currentLabel={label || undefined}
           showEmptySuggestions={false}
           hideSuggestions
-          filtersDefaultOpen
+          filtersDefaultOpen={false}
         >
           {/* Order: Search → Filters → Summary (in chrome) → Listings → Ads */}
           <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
@@ -188,17 +186,15 @@ export default async function SearchPage({
                 adPlacementKey="search_feed_mid"
               />
             ) : showingNearby ? null : (
-              <MarketplaceEmptyState
-                title={hasQuery ? emptyCopy.title : "No Properties Yet"}
+              <DiscoveryEmptyPanel
+                category="property"
+                title={hasQuery ? emptyCopy.title : "Start exploring homes"}
                 subtitle={
                   hasQuery
-                    ? "Try fewer filters, or list one yourself."
-                    : "Be the first to list one."
+                    ? "Try another filter, or browse popular categories below."
+                    : "Recent searches, trending areas, and cities — tap to browse."
                 }
-                actionHref="/agent/listings/new"
-                actionLabel="Sell Property"
-                secondaryHref={hasQuery ? "/search" : undefined}
-                secondaryLabel={hasQuery ? "Clear filters" : undefined}
+                showLatestHref="/search"
               />
             )}
 
@@ -212,10 +208,6 @@ export default async function SearchPage({
           </section>
         </SearchResultsChrome>
       </Suspense>
-
-      {helpUrl ? (
-        <StickySeoHelpBar label={helpLabel} whatsAppUrl={helpUrl} />
-      ) : null}
     </div>
   );
 }

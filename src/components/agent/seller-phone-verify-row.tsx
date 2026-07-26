@@ -66,6 +66,17 @@ export function SellerPhoneVerifyRow({
         return;
       }
       setPhone(normalized);
+      // FAT bypass — SMS skipped; phone already marked verified server-side.
+      if (data.bypass === true && data.phoneVerified === true) {
+        const verifiedAt =
+          typeof data.phoneVerifiedAt === "string"
+            ? data.phoneVerifiedAt
+            : new Date().toISOString();
+        const verifiedPhone =
+          typeof data.phone === "string" && data.phone ? data.phone : normalized;
+        onVerified(verifiedPhone, verifiedAt);
+        return;
+      }
       setCodeVisible(true);
       setCode("");
       setCooldown(RESEND_COOLDOWN_SEC);

@@ -2,13 +2,10 @@ import {
   confirmSendchampVerification,
   createSendchampVerificationOtp,
   isSendchampVerificationConfigured,
-  otpExpiryMinutes,
 } from "@/lib/notifications/providers/sendchamp-verification";
-import { sendBrandedSmsOtp } from "@/lib/notifications/providers/sendchamp";
-import { generateOtp } from "@/lib/otp/crypto";
+import { logOtpAudit } from "@/lib/otp/delivery-audit";
 import { PHONE_VERIFY_COPY } from "./copy";
 import {
-  buildLocalOtpReference,
   confirmLocalOtp,
   fingerprintPhone,
   isLocalOtpReference,
@@ -21,10 +18,8 @@ import type {
 } from "./types";
 
 /**
- * Sendchamp provider — production SMS via Verification API (BamSignal path):
- * `/verification/create` + sender YIKE + branded meta message.
- * Branded `/sms/send` is a delivery fallback only when Verification fails.
- * WhatsApp still uses Verification API delivery.
+ * Sendchamp provider — production SMS = ONE Verification API create (BamSignal path).
+ * Never call `/sms/send` in the same user action (double-charge risk).
  */
 export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
   id: "sendchamp",
@@ -39,7 +34,10 @@ export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
     channel: PhoneVerificationChannel;
     email?: string;
     purpose: string;
+    requestId?: string;
   }): Promise<PhoneOtpSendResult> {
+    const requestId = params.requestId ?? "unknown";
+
     if (params.channel === "email") {
       return {
         ok: false,
@@ -59,71 +57,65 @@ export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
     }
 
     if (params.channel === "sms") {
+      logOtpAudit({
+        event: "provider_sms_start",
+        requestId,
+        phone: params.phoneIntl,
+      });
+
       const created = await createSendchampVerificationOtp({
         phoneIntl: params.phoneIntl,
         channel: "sms",
         purpose: params.purpose,
         email: params.email,
         inAppToken: false,
+        requestId,
       });
 
-      if (created.ok) {
-        console.info("[phone-verification] sms sent via verification API", {
-          phoneFp: fingerprintPhone(params.phoneIntl),
-          channel: "sms",
+      if (!created.ok) {
+        logOtpAudit({
+          event: "provider_sms_failed",
+          requestId,
+          phone: params.phoneIntl,
+          error: created.error,
         });
-        return {
-          ok: true,
-          channel: "sms",
-          reference: created.reference,
-          expiresMinutes: created.expiresMinutes,
-          message: PHONE_VERIFY_COPY.sentSms,
-        };
-      }
-
-      console.warn("[phone-verification] verification SMS failed — trying branded /sms/send", {
-        phoneFp: fingerprintPhone(params.phoneIntl),
-        error: created.error,
-      });
-
-      // Fallback: local OTP + branded SMS API (DND-first routes).
-      const code = generateOtp();
-      const delivered = await sendBrandedSmsOtp(params.phoneIntl, code);
-      if (!delivered.ok) {
-        console.error("[phone-verification] branded SMS fallback failed", {
+        console.error("[phone-verification] verification SMS failed", {
           phoneFp: fingerprintPhone(params.phoneIntl),
-          verificationError: created.error,
-          smsError: delivered.error,
+          error: created.error,
+          requestId,
         });
         return {
           ok: false,
           error: PHONE_VERIFY_COPY.providerUnavailable,
-          status: 502,
+          status: created.status,
+          code: created.code,
         };
       }
 
-      console.info("[phone-verification] sms sent via branded fallback", {
-        phoneFp: fingerprintPhone(params.phoneIntl),
-        channel: "sms",
-        referencePrefix: "local",
+      logOtpAudit({
+        event: "provider_sms_ok",
+        requestId,
+        phone: params.phoneIntl,
+        reference: created.reference,
+        deliveryReference: created.reference,
       });
 
       return {
         ok: true,
         channel: "sms",
-        reference: buildLocalOtpReference(code),
-        expiresMinutes: otpExpiryMinutes(),
+        reference: created.reference,
+        expiresMinutes: created.expiresMinutes,
         message: PHONE_VERIFY_COPY.sentSms,
       };
     }
 
-    // WhatsApp Business — Verification API delivers.
     const created = await createSendchampVerificationOtp({
       phoneIntl: params.phoneIntl,
       channel: "whatsapp",
       purpose: params.purpose,
       email: params.email,
       inAppToken: false,
+      requestId,
     });
 
     if (!created.ok) {
@@ -147,6 +139,7 @@ export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
   async confirmOtp(params: {
     reference: string;
     code: string;
+    requestId?: string;
   }): Promise<PhoneOtpConfirmResult> {
     const code = params.code.trim();
 
@@ -160,6 +153,7 @@ export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
     const confirmed = await confirmSendchampVerification({
       reference: params.reference,
       code,
+      requestId: params.requestId,
     });
     if (!confirmed.ok) {
       return { ok: false, error: confirmed.error, status: confirmed.status };

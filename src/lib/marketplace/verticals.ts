@@ -43,6 +43,17 @@ export type MarketplaceVertical = {
 
 export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
   {
+    id: "vehicle",
+    assetType: "VEHICLE",
+    label: "Vehicle",
+    pluralLabel: "Vehicles",
+    href: "/vehicles",
+    createHref: "/agent/listings/new/vehicle",
+    status: "live",
+    launchFeature: "vehicle_marketplace",
+    description: "Find your next vehicle.",
+  },
+  {
     id: "property",
     assetType: "PROPERTY",
     label: "Property",
@@ -51,17 +62,6 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     createHref: "/agent/listings/new",
     status: "live",
     description: "Find your next home.",
-  },
-  {
-    id: "vehicle",
-    assetType: "VEHICLE",
-    label: "Vehicle",
-    pluralLabel: "Vehicles",
-    href: "/vehicles",
-    createHref: "/agent/listings/new/vehicle",
-    status: "launching",
-    launchFeature: "vehicle_marketplace",
-    description: "Find your next vehicle.",
   },
   {
     id: "jobs",

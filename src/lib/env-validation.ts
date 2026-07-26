@@ -1,4 +1,5 @@
 import { isProductionEnv } from "./env";
+import { isAuthSmsVerificationBypassActive } from "@/lib/auth/sms-verification-flag";
 
 export type EnvCheck = {
   name: string;
@@ -93,6 +94,12 @@ export function validateProductionEnvironment(): {
   }
   if (snap.ok) {
     console.log("[yike] production env validation ok");
+  }
+
+  if (isAuthSmsVerificationBypassActive()) {
+    console.warn(
+      "[yike] AUTH_SMS_VERIFICATION_ENABLED=false — SMS bypass ACTIVE. Re-enable before public launch.",
+    );
   }
 
   return {

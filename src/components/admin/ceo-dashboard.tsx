@@ -106,24 +106,24 @@ export function CeoDashboard({ metrics }: { metrics: CeoDashboardMetrics }) {
             href={adminPath("listings")}
           />
           <MetricCard
-            label="Property · today"
-            value={metrics.supply.propertyToday}
-            href={`${adminPath("listings")}?vertical=property`}
-          />
-          <MetricCard
             label="Vehicles · today"
             value={metrics.supply.vehicleToday}
             href={`${adminPath("listings")}?vertical=vehicle`}
           />
           <MetricCard
-            label="Property · month"
-            value={metrics.supply.propertyThisMonth}
+            label="Property · today"
+            value={metrics.supply.propertyToday}
             href={`${adminPath("listings")}?vertical=property`}
           />
           <MetricCard
             label="Vehicles · month"
             value={metrics.supply.vehicleThisMonth}
             href={`${adminPath("listings")}?vertical=vehicle`}
+          />
+          <MetricCard
+            label="Property · month"
+            value={metrics.supply.propertyThisMonth}
+            href={`${adminPath("listings")}?vertical=property`}
           />
           <MetricCard
             label="Dealers"

@@ -8,9 +8,21 @@ Operational pack for **Property Marketplace** launch. Complements
 | Doc | Purpose |
 |-----|---------|
 | **[LAUNCH_COMMAND_CENTER.md](./LAUNCH_COMMAND_CENTER.md)** | **Daily executive dashboard — update this only until launch** |
-| [FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md](./FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md) | CTO-style brief (what remains / % / GO?) |
+| [FINAL_PRE_LAUNCH_REPORT.md](./FINAL_PRE_LAUNCH_REPORT.md) | FAT sprint · SMS bypass · launch checklist |
+| [MARKETPLACE_PLACEMENT_SYSTEM.md](./MARKETPLACE_PLACEMENT_SYSTEM.md) | Featured / Trending / Recently placement tiers |
+| [VEHICLE_MARKETPLACE_LAUNCH_REPORT.md](./VEHICLE_MARKETPLACE_LAUNCH_REPORT.md) | Vehicles flagship sync + GO/NO-GO |
+| [FOUNDER_EXECUTIVE_REPORT_FINAL_LAUNCH_SPRINT.md](./FOUNDER_EXECUTIVE_REPORT_FINAL_LAUNCH_SPRINT.md) | Final Launch Sprint CTO report (GO/NO-GO) |
+| [FINAL_LAUNCH_SPRINT_AUDIT_2026-07-26.md](./FINAL_LAUNCH_SPRINT_AUDIT_2026-07-26.md) | Live production probe evidence |
+| [FOUNDER_ACCEPTANCE_TEST.md](./FOUNDER_ACCEPTANCE_TEST.md) | Printable FAT checklist |
+| [MEDIA_PROTECTION_PRODUCTION_SMOKE.md](./MEDIA_PROTECTION_PRODUCTION_SMOKE.md) | Founder real-upload verification |
+| [STAGING_VALIDATION_REPORT_2026-07-26.md](./STAGING_VALIDATION_REPORT_2026-07-26.md) | Large-set QA status |
+| [V2_BACKLOG.md](./V2_BACKLOG.md) | Non-blockers deferred under freeze |
+| [FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md](./FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md) | Earlier CTO brief |
 | [LAUNCH_OPS_AUDIT_2026-07-26.md](./LAUNCH_OPS_AUDIT_2026-07-26.md) | Env / supply / probe audit |
 | [FEATURE_FREEZE.md](./FEATURE_FREEZE.md) | Merge gate (ACTIVE) |
+| [INTELLIGENT_MARKETPLACE_EXPERIENCE.md](./INTELLIGENT_MARKETPLACE_EXPERIENCE.md) | Phase 1 IA notes |
+| [../product/INTELLIGENT_MARKETPLACE.md](../product/INTELLIGENT_MARKETPLACE.md) | Product OS (permanent) |
+| [../design/YIKE_DESIGN_SYSTEM.md](../design/YIKE_DESIGN_SYSTEM.md) | Yike Design System (YDS) |
 | [LAUNCH_WAR_ROOM_2026-07-26.md](./LAUNCH_WAR_ROOM_2026-07-26.md) | Critical / Polish / V2 board |
 
 ## Production Launch Candidate (2026-07-23) — GO
@@ -21,7 +33,8 @@ Operational pack for **Property Marketplace** launch. Complements
 | [PRODUCTION_CODE_AUDIT_REPORT.md](./PRODUCTION_CODE_AUDIT_REPORT.md) | Code audit (hold commit) |
 | [AUTHENTICATION_VALIDATION_REPORT.md](./AUTHENTICATION_VALIDATION_REPORT.md) | Auth paths validation |
 | [HOMEPAGE_VISUAL_POLISH_REPORT.md](./HOMEPAGE_VISUAL_POLISH_REPORT.md) | Homepage depth polish |
-| [SAMPLE_MARKETPLACE_DATA_REPORT.md](./SAMPLE_MARKETPLACE_DATA_REPORT.md) | Fixtures + seed (no prod write) |
+| [SAMPLE_MARKETPLACE_DATA_REPORT.md](./SAMPLE_MARKETPLACE_DATA_REPORT.md) | Prod sample inventory status |
+| [LAUNCH_VALIDATION_DATASET.md](./LAUNCH_VALIDATION_DATASET.md) | Staging load-test catalog (~300 props / ~134 vehicles) |
 | [WHATSAPP_LEAD_TRACKING_REPORT.md](./WHATSAPP_LEAD_TRACKING_REPORT.md) | Lead ref + UTM attribution |
 | [PERFORMANCE_AUDIT_REPORT.md](./PERFORMANCE_AUDIT_REPORT.md) | Light perf pass |
 | [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md) | Sprint security delta |

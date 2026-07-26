@@ -11,6 +11,7 @@ import {
   Crown,
   Tag,
   CircleOff,
+  TrendingUp,
 } from "lucide-react";
 import type { SellerType } from "@/lib/profile-display";
 
@@ -309,11 +310,11 @@ export function TrendingBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700 dark:text-orange-300",
+        "inline-flex items-center gap-1 rounded-full border border-orange-500/25 bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700 dark:text-orange-300",
         className
       )}
     >
-      <Sparkles className="h-3 w-3" />
+      <TrendingUp className="h-3 w-3" aria-hidden />
       {label}
     </span>
   );

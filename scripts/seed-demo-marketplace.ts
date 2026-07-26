@@ -23,9 +23,16 @@
  *   --purge-demo      Delete demo-namespace rows (stable IDs / is_demo flag) then exit
  *
  * Docs: docs/engineering/DEMO_MARKETPLACE_SEED.md
+ * Launch validation catalog: scripts/lib/launch-validation-catalog.ts (~300 props + ~130 vehicles)
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  buildExtraSellers,
+  buildGeneratedProperties,
+  buildGeneratedVehicles,
+  summarizeCatalog,
+} from "./lib/launch-validation-catalog";
 
 const PRODUCTION_REF = "hlpojfurfldvcxfxhveg";
 const SEED_NAMESPACE = "yike-demo-marketplace-v1";
@@ -1100,6 +1107,21 @@ const VEHICLES: DemoVehicle[] = [
   },
 ];
 
+/** Expand to launch-validation scale (stable IDs from 100+; never collide with handcrafted 001–0xx). */
+SELLERS.push(...(buildExtraSellers() as DemoSeller[]));
+PROPERTIES.push(
+  ...(buildGeneratedProperties(
+    SELLERS.map((s) => s.id),
+    282,
+  ) as DemoProperty[]),
+);
+VEHICLES.push(
+  ...(buildGeneratedVehicles(
+    SELLERS.map((s) => s.id),
+    120,
+  ) as DemoVehicle[]),
+);
+
 function projectRefFromUrl(url: string | undefined): string | null {
   if (!url) return null;
   try {
@@ -1477,6 +1499,7 @@ async function validateDiscovery(admin: SupabaseClient): Promise<ValidationRepor
 }
 
 function printInventoryPlan() {
+  const summary = summarizeCatalog(PROPERTIES, VEHICLES);
   console.log("\n=== Inventory plan ===");
   console.log(`Sellers: ${SELLERS.length}`);
   for (const s of SELLERS) {
@@ -1487,19 +1510,15 @@ function printInventoryPlan() {
   console.log(
     `Properties: ${PROPERTIES.length} (boosted ${PROPERTIES.filter((p) => p.boosted).length})`,
   );
-  for (const p of PROPERTIES) {
-    console.log(
-      `  - ${p.city} · ${p.listing_type}/${p.property_type} · ₦${p.price.toLocaleString()} · ${p.boosted ? "BOOSTED" : "standard"}`,
-    );
-  }
   console.log(
     `Vehicles: ${VEHICLES.length} (boosted ${VEHICLES.filter((v) => v.boosted).length})`,
   );
-  for (const v of VEHICLES) {
-    console.log(
-      `  - ${v.make} ${v.model} ${v.year} · ${v.body_type}/${v.auto_category} · ₦${v.price.toLocaleString()} · ${v.boosted ? "BOOSTED" : "standard"}`,
-    );
-  }
+  console.log("Cities:", Object.entries(summary.byCity).map(([c, n]) => `${c}:${n}`).join(", "));
+  console.log("Property types:", Object.entries(summary.byType).map(([t, n]) => `${t}:${n}`).join(", "));
+  console.log("Vehicle makes:", Object.entries(summary.byMake).map(([m, n]) => `${m}:${n}`).join(", "));
+  console.log(
+    "Note: listings are tagged is_demo/is_sample — no public DEMO labels. Prefer staging; production requires ALLOW_PRODUCTION_SEED=1.",
+  );
 }
 
 function printValidation(report: ValidationReport) {

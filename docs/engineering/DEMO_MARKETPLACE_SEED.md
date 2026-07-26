@@ -1,20 +1,32 @@
 # Demo / sample marketplace seed
 
-Idempotent script that inserts **sample** property + vehicle inventory for discovery testing and (optionally) launch feel.
+Idempotent script that inserts **sample** property + vehicle inventory for discovery testing and launch-validation load testing.
 
 **Never run against production** (`hlpojfurfldvcxfxhveg`) unless the founder explicitly sets `ALLOW_PRODUCTION_SEED=1` (default: refused).
 
+**Preferred:** run the full catalog on **staging/sandbox** (`gyxemepnrkwxocgzfbeo`). Do not treat fake inventory as a substitute for real supply on yike.ng. See [LAUNCH_VALIDATION_DATASET.md](../launch/LAUNCH_VALIDATION_DATASET.md).
+
 ## Script
 
-`scripts/seed-demo-marketplace.ts`
+| Path | Role |
+|------|------|
+| `scripts/seed-demo-marketplace.ts` | Upsert / purge / validate |
+| `scripts/lib/launch-validation-catalog.ts` | Generated nationwide catalog |
 
-## What it seeds
+```bash
+npm run seed:demo:dry
+npm run seed:demo
+```
+
+## What it seeds (dry-run 2026-07-26)
 
 | Kind | Count | Notes |
 |------|------:|-------|
-| Sellers | 4 | Private, Verified Seller, Dealer, Agency |
-| Properties | 18+ | Nationwide city mix; rent/sale/land/shop/office |
-| Vehicles | 14+ | Camry, Corolla, RX350, Prado, Hilux, Accord, C300… |
+| Sellers | 12 | 4 handcrafted + 8 agencies/dealers |
+| Properties | **300** | 18 handcrafted + ~282 generated |
+| Vehicles | **134** | 14 handcrafted + ~120 generated |
+
+Coverage: Lagos, Abuja, Port Harcourt, Enugu, Ibadan, Benin City, Owerri, Uyo, Asaba, Aba, Kaduna, Kano, Jos (+ handcrafted outliers).
 
 Every listing is tagged:
 
@@ -27,7 +39,7 @@ Every listing is tagged:
 **Public UI:** never shows Sample / DEMO badges.  
 **Admin:** shows “Sample Listing”; one-click / bulk remove via `/api/admin/sample-listings` or `--purge-demo`.
 
-Images use Unsplash placeholders.
+Images use Unsplash placeholders — **not** Media Protection Pipeline uploads.
 
 ## Empty production without seeding
 
@@ -58,11 +70,12 @@ npx tsx scripts/seed-demo-marketplace.ts --purge-demo
 # Dry-run first (safe)
 npx tsx --env-file=.env.local scripts/seed-demo-marketplace.ts --dry-run
 
-# Explicit write (founder confirmation required)
+# Explicit write (founder confirmation required — not recommended for soft-launch)
 ALLOW_PRODUCTION_SEED=1 npx tsx --env-file=.env.local scripts/seed-demo-marketplace.ts
 ```
 
 ## Related
 
+- Launch validation report: `docs/launch/LAUNCH_VALIDATION_DATASET.md`
 - UI fixtures: `src/lib/demo-ui-fixtures.ts`
 - Admin purge: `POST /api/admin/sample-listings`

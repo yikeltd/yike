@@ -34,6 +34,11 @@ import {
   toggleGuestFavorite,
 } from "@/lib/guest-favorites";
 import { logFeaturedAnalyticsEvent } from "@/lib/featured-promotions/analytics-client";
+import {
+  PlacementBadge,
+  featuredPlacementChrome,
+} from "@/components/marketplace/placement-badge";
+import { resolvePlacementKind } from "@/lib/marketplace/placement";
 
 export type PropertyCardLayout = "mobile" | "desktop";
 export type PropertyCardVariant = "default" | "browse";
@@ -76,6 +81,7 @@ export function PropertyCard({
   const isDemo = isDemoProperty(property.id);
   const href = listingPath(property);
   const featuredActive = isFeaturedActive(property);
+  const placement = resolvePlacementKind(property);
   const parking = hasParking(property);
 
   useEffect(() => {
@@ -274,6 +280,7 @@ export function PropertyCard({
             className={cn(
               "listing-thumb relative overflow-hidden rounded-[1.25rem] bg-navy/5",
               BROWSE_THUMB_ASPECT,
+              featuredPlacementChrome(placement === "featured"),
             )}
           >
             <ListingImage
@@ -289,17 +296,15 @@ export function PropertyCard({
               <span className="rounded-md bg-navy/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-[2px]">
                 {listingTypeLabel(property.listing_type)}
               </span>
+              {placement ? (
+                <PlacementBadge kind={placement} compact />
+              ) : null}
               {verified ? (
                 <span
                   className="rounded-md bg-emerald-600/92 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-[2px]"
                   title="Verified"
                 >
                   ✓ Verified
-                </span>
-              ) : null}
-              {featuredActive ? (
-                <span className="rounded-md bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
-                  Feat
                 </span>
               ) : null}
             </div>
@@ -329,21 +334,31 @@ export function PropertyCard({
           </div>
         ) : null}
 
-        <div className="flex flex-1 flex-col gap-0 pt-1.5">
+        <div className="flex flex-1 flex-col gap-0.5 pt-1.5">
           <Link
             href={href}
             prefetch={!isDemo}
             className="block min-w-0"
             onClick={handleFeaturedNavigate}
           >
-            <p className="text-[13px] font-bold tabular-nums leading-tight tracking-tight text-navy sm:text-sm">
+            <p className="text-[15px] font-bold tabular-nums leading-tight tracking-tight text-navy sm:text-base">
               {price}
             </p>
-            <p className="mt-0.5 line-clamp-1 text-[11px] font-semibold leading-snug text-navy/90 sm:text-[12px]">
+            <p className="mt-0.5 line-clamp-1 text-[12px] font-bold leading-snug text-navy/90 sm:text-[13px]">
               {property.title}
             </p>
+            {attrs.length > 0 ? (
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/50">
+                {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
+                  <span key={label} className="inline-flex items-center gap-0.5">
+                    <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                    {label}
+                  </span>
+                ))}
+              </p>
+            ) : null}
             {locationLabel ? (
-              <p className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-navy/50">
+              <p className="mt-1 flex items-center gap-0.5 text-[10px] font-medium text-navy/50">
                 <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
                 <span className="line-clamp-1">{locationLabel}</span>
                 <ListingDistanceLabel
@@ -351,16 +366,6 @@ export function PropertyCard({
                   state={property.state}
                   className="ml-auto shrink-0 tabular-nums text-navy/40"
                 />
-              </p>
-            ) : null}
-            {attrs.length > 0 ? (
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/45">
-                {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
-                  <span key={label} className="inline-flex items-center gap-0.5">
-                    <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
-                    {label}
-                  </span>
-                ))}
               </p>
             ) : null}
           </Link>
@@ -396,17 +401,15 @@ export function PropertyCard({
             <span className="rounded-md bg-navy/85 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
               {listingTypeLabel(property.listing_type)}
             </span>
+            {placement ? (
+              <PlacementBadge kind={placement} compact />
+            ) : null}
             {verified ? (
               <span
                 className="rounded-md bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm"
                 title="Verified"
               >
                 ✓ Verified
-              </span>
-            ) : null}
-            {featuredActive ? (
-              <span className="rounded-md bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
-                Feat
               </span>
             ) : null}
           </div>

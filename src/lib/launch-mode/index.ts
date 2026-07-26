@@ -2,12 +2,10 @@
  * Launch / ecosystem feature visibility registry.
  *
  * Prefer isLaunchFeatureVisible() over ad-hoc env checks for deferred surfaces.
- * Vehicle Marketplace must stay hidden until Security + Constitutional + Passport
- * prep are complete (approved audit sequencing).
- *
  * YIKE_LAUNCH_MODE=true (default in production posture) keeps deferred features off.
  * Per-feature env overrides can enable a single surface when explicitly authorized.
- * Vehicle marketplace defaults OFF until real supply exists (Launch War Room C06).
+ * Vehicle marketplace is a Day-1 flagship — defaults ON (`ENABLE_VEHICLE_MARKETPLACE`).
+ * Set `ENABLE_VEHICLE_MARKETPLACE=false` only for emergency hide.
  */
 
 import { isProductionEnv } from "@/lib/env";
@@ -68,9 +66,9 @@ export function isLaunchModeStrict(): boolean {
 export function isLaunchFeatureVisible(feature: LaunchFeature): boolean {
   const envName = FEATURE_ENV[feature];
 
-  // Vehicle marketplace: default OFF until inventory + founder override.
+  // Vehicle marketplace: Day-1 flagship — default ON.
   if (feature === "vehicle_marketplace") {
-    return envFlag("ENABLE_VEHICLE_MARKETPLACE", false);
+    return envFlag("ENABLE_VEHICLE_MARKETPLACE", true);
   }
 
   if (envName && envFlag(envName, false)) return true;

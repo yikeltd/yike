@@ -119,7 +119,7 @@ export function AgentTrustCard({
         listingType &&
         price != null &&
         paymentPeriod && (
-          <div className="mt-5 border-t border-surface pt-5">
+          <div className="mt-5 border-t border-surface pt-5" id="listing-primary-cta">
             <ContactButtons
               propertyId={propertyId}
               title={title}

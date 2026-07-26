@@ -2,13 +2,17 @@
 
 Read `.cursor/rules/yike-product-direction.mdc` before any change. Direction is **locked** unless the founder overrides it.
 
+**Product OS:** Intelligent Marketplace — `.cursor/rules/intelligent-marketplace.mdc` · `docs/product/INTELLIGENT_MARKETPLACE.md`  
+**Design governance (YDS):** `.cursor/rules/yike-design-system.mdc` · `docs/design/YIKE_DESIGN_SYSTEM.md`
+
 ## Quick reference
 
 - **Stack:** Next.js App Router, TypeScript, Tailwind, Supabase, Coolify (Hetzner)
-- **Colors:** Navy `#031B4E` · Gold `#E4B547`
+- **Colors:** Navy `#031B4E` · Gold `#E4B547` (tokens in `src/app/globals.css`)
 - **Logo:** `public/images/logo.webp`
 - **Media:** `src/lib/media/` — all uploads must use the optimization pipeline
 - **MVP:** listings, search, trust, moderation — no payments/chat/AI
+- **UX doctrine:** system thinks first; progressive disclosure; one fact once; never invent metrics
 
 ## Commands
 

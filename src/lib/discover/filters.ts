@@ -18,7 +18,7 @@ export type DiscoverFilterState = {
 };
 
 export const DEFAULT_DISCOVER_FILTERS: DiscoverFilterState = {
-  category: "property",
+  category: "vehicle",
   deal: "",
   state: "",
   city: "",

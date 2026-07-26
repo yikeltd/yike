@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { MobileHeaderBanner } from "@/components/banners/mobile-header-banner";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
 import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
+import { MarketplaceNavSheet } from "@/components/marketplace/experience";
 import type { SiteBanner } from "@/types/database";
 
 /**
@@ -24,7 +25,9 @@ export function HeaderMobile({
   const isHome = pathname === "/";
   const isProfile = pathname === "/agent";
   const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
-  const isDetail = pathname.startsWith("/properties/");
+  const isDetail =
+    pathname.startsWith("/properties/") ||
+    (pathname.startsWith("/vehicles/") && pathname.split("/").length >= 3);
 
   if (isDetail || isProfile) return null;
 
@@ -70,6 +73,7 @@ export function HeaderMobile({
         <Suspense fallback={<div className="h-8 w-16 shrink-0" />}>
           <MarketplaceLocationIndicator size={isHome ? "sm" : "sm"} />
         </Suspense>
+        <MarketplaceNavSheet size={isHome ? "md" : "sm"} />
       </div>
       {mobileBanner && <MobileHeaderBanner banner={mobileBanner} />}
     </header>

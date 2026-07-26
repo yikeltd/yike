@@ -4,9 +4,9 @@ import Image from "next/image";
 import { Heart, MapPin, BedDouble, Bath, Gauge } from "lucide-react";
 import type { Property } from "@/types/database";
 import { formatPrice, cn } from "@/lib/utils";
-import { VerifiedBadge, FeaturedBadge } from "@/components/ui/badge";
+import { VerifiedBadge, FeaturedBadge, TrendingBadge, NewListingBadge } from "@/components/ui/badge";
 import { isTrustVerified } from "@/lib/hub-filters";
-import { isFeaturedActive } from "@/lib/agent-tiers";
+import { resolvePlacementKind } from "@/lib/marketplace/placement";
 import { MotionSlide } from "@/components/browse/motion-slide";
 import { buildMotionSlides } from "@/lib/media/items";
 import { normalizeAssetType } from "@/lib/marketplace/listings";
@@ -84,7 +84,7 @@ export function DiscoverCard({
   dragHint = null,
 }: Props) {
   const verified = isTrustVerified(property);
-  const featured = isFeaturedActive(property);
+  const placement = resolvePlacementKind(property);
   const agent = property.agent;
   const photoCount = buildMotionSlides(property).length;
   const price = formatPrice(
@@ -151,7 +151,9 @@ export function DiscoverCard({
       <div className="absolute left-0 right-0 top-0 z-10 flex items-start justify-between p-4 pt-4">
         <div className="flex flex-wrap items-center gap-1.5">
           {verified ? <VerifiedBadge size="sm" /> : null}
-          {featured ? <FeaturedBadge /> : null}
+          {placement === "featured" ? <FeaturedBadge /> : null}
+          {placement === "trending" ? <TrendingBadge /> : null}
+          {placement === "new" ? <NewListingBadge /> : null}
         </div>
         <div className="flex items-center gap-2">
           {photoCount > 1 ? (

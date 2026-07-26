@@ -11,6 +11,7 @@ import {
   type DiscoverFilterState,
 } from "@/lib/discover/filters";
 import { isSwipeFeedBlocked } from "@/lib/swipe/quality";
+import { softBoostFeaturedPlacement } from "@/lib/marketplace/placement";
 
 /** Rank + filter Discover deck from property and vehicle pools. */
 export function buildDiscoverFeed(
@@ -32,15 +33,17 @@ export function buildDiscoverFeed(
     filters,
   );
 
+  let ranked: Property[];
   if (filters.category === "vehicle") {
-    return rankPropertiesForBrowse(filtered, browsePrefs).slice(0, 80);
-  }
-
-  if (
+    ranked = rankPropertiesForBrowse(filtered, browsePrefs).slice(0, 80);
+  } else if (
     filtered.every((p) => normalizeAssetType(p.asset_type) !== "VEHICLE")
   ) {
-    return buildBalancedBrowseFeed(filtered, browsePrefs, 80);
+    ranked = buildBalancedBrowseFeed(filtered, browsePrefs, 80);
+  } else {
+    ranked = rankPropertiesForBrowse(filtered, browsePrefs).slice(0, 80);
   }
 
-  return rankPropertiesForBrowse(filtered, browsePrefs).slice(0, 80);
+  // Soft placement: Featured near top without changing filters/search.
+  return softBoostFeaturedPlacement(ranked);
 }

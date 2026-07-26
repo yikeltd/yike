@@ -212,7 +212,7 @@ export function ProfilePageClient({
                 className="dashboard-primary-cta pressable col-span-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-navy-light to-navy px-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-float hover:brightness-110 active:scale-[0.98]"
               >
                 <PlusCircle className="h-4 w-4" />
-                List a Property
+                List on Yike
               </Link>
               <QuickAction href="/agent/listings" icon={List} label="My listings" />
               <QuickAction href="/agent/leads" icon={MessageCircle} label="Leads" />
@@ -248,7 +248,7 @@ export function ProfilePageClient({
                 className="dashboard-primary-cta pressable col-span-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-gold to-gold-dark px-3 text-sm font-semibold text-navy shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-float hover:brightness-[1.03] active:scale-[0.98]"
               >
                 <PlusCircle className="h-4 w-4" />
-                List a Property
+                List on Yike
               </Link>
               <QuickAction href="/saved" icon={Bookmark} label="Saved" />
               <QuickAction href="/search" icon={Home} label="Browse" />

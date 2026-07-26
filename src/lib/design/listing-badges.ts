@@ -1,5 +1,5 @@
 import type { FeeTransparencyMode, Property } from "@/types/database";
-import { getListingFreshness } from "@/components/property/listing-freshness";
+import { resolvePlacementKind } from "@/lib/marketplace/placement";
 
 const NEGOTIABLE_MODES = new Set<FeeTransparencyMode>([
   "negotiable",
@@ -10,6 +10,7 @@ export type ListingBadgeKind =
   | "verified"
   | "yike_verified"
   | "featured"
+  | "trending"
   | "premium"
   | "new"
   | "negotiable"
@@ -42,6 +43,8 @@ export function resolveListingBadges(
     | "yike_verified"
     | "is_featured"
     | "featured_until"
+    | "is_boosted"
+    | "boosted_until"
     | "is_premium_deal"
     | "status"
     | "availability_status"
@@ -62,27 +65,28 @@ export function resolveListingBadges(
     return badges;
   }
 
+  // Trust first — never purchasable, may coexist with one placement badge.
   if (property.yike_verified || property.is_verified_listing || options?.agentVerified) {
     badges.push("verified");
   }
   if (property.yike_verified) {
     badges.push("yike_verified");
   }
-  if (options?.featuredActive ?? false) {
-    badges.push("featured");
-  }
-  if (property.is_premium_deal) {
-    badges.push("premium");
-  }
 
-  const freshness = getListingFreshness(property.updated_at, {
-    createdAt: property.created_at,
-    lastRefreshedAt: property.last_refreshed_at,
-    viewsCount: property.views_count,
-    contactClicks: property.contact_clicks,
-  });
-  if (freshness.tone === "new" && freshness.showPublicly) {
+  // Max one placement badge: Featured > Trending > New.
+  const placement =
+    options?.featuredActive === true
+      ? ("featured" as const)
+      : resolvePlacementKind(property);
+  if (placement === "featured") {
+    badges.push("featured");
+  } else if (placement === "trending") {
+    badges.push("trending");
+  } else if (placement === "new") {
     badges.push("new");
+  } else if (property.is_premium_deal) {
+    // Editorial premium only when no higher placement applies.
+    badges.push("premium");
   }
 
   if (hasNegotiableFees(property as Property)) {

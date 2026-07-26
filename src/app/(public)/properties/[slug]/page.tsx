@@ -21,11 +21,11 @@ import { propertyAbsoluteUrl } from "@/lib/property-url";
 import { listingShareImageUrl } from "@/lib/share-images";
 import { listingGalleryImages } from "@/lib/listing-gallery-images";
 import { AgentTrustCard } from "@/components/property/agent-trust-card";
+import { ContactButtons } from "@/components/property/contact-buttons";
 import { ReportRentedButton } from "@/components/property/report-rented-button";
 import { ListingGallery } from "@/components/property/listing-gallery";
 import { StickyContactBar } from "@/components/property/sticky-contact-bar";
 import { PropertyVideo } from "@/components/property/property-video";
-import { SafetyNotice } from "@/components/property/safety-notice";
 import { RelatedListings } from "@/components/property/related-listings";
 import { DetailPromotionZone } from "@/components/ads/detail-promotion-zone";
 import { DetailRecentlyViewed } from "@/components/marketplace/detail-recently-viewed";
@@ -35,7 +35,7 @@ import { ListingStructuredData } from "@/components/seo/listing-structured-data"
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { ListingFreshness } from "@/components/property/listing-freshness";
 import { PropertyPhysicallyVerifiedCard } from "@/components/property/property-physically-verified";
-import { BedDouble, Bath, MapPin, Navigation, Home, Layers } from "lucide-react";
+import { MapPin, Navigation, Home, Layers } from "lucide-react";
 import { PropertyViewTracker } from "./view-tracker";
 import { PropertyBreadcrumbs } from "@/components/property/property-breadcrumbs";
 import { PropertyBackButton } from "@/components/property/property-back-button";
@@ -45,9 +45,14 @@ import { AdminPromoSlot } from "@/components/promo/admin-promo-slot";
 import { ListingInsightsSection } from "@/components/property/listing-insights-section";
 import { ListingValueDriversSection } from "@/components/property/listing-value-drivers-section";
 import { getActiveAd } from "@/lib/ads";
-import { SpecTileGrid } from "@/components/ui/info-tile";
 import { resolveListingBadges } from "@/lib/design/listing-badges";
 import { ListingBadgeRow } from "@/components/ui/listing-badge-row";
+import {
+  TrustModule,
+  CollapsibleSpecs,
+  type TrustBadgeKind,
+} from "@/components/marketplace/experience";
+import { MarketplaceSafetyTipsLink } from "@/components/marketplace/safety-notice";
 
 const ReportListingForm = dynamic(
   () =>
@@ -196,6 +201,14 @@ export default async function PropertyDetailPage({
       b !== "yike_verified" &&
       b !== "featured"
   );
+  const trustKinds: TrustBadgeKind[] = [];
+  if (property.is_verified_listing || property.yike_verified) {
+    trustKinds.push("verified_listing");
+  }
+  if (agent && isVerifiedAgent(agent)) {
+    trustKinds.push("verified_seller");
+  }
+  trustKinds.push("media_protected");
 
   return (
     <div className="detail-band-ivory">
@@ -271,24 +284,15 @@ export default async function PropertyDetailPage({
           )}
 
           <div className="detail-band-white space-y-5 px-4 pt-5 lg:space-y-7 lg:rounded-t-[1.5rem] lg:px-0 lg:pt-8">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted lg:text-xs">
+            <div className="rounded-[1.5rem] border border-navy/[0.07] bg-white/95 p-5 shadow-[0_20px_50px_-32px_rgba(3,27,78,0.45)] backdrop-blur-sm sm:p-6 lg:p-7">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-navy/45">
                 {listingTypeLabel(property.listing_type)}
               </p>
-              <p className="mt-1.5 text-[2.15rem] font-bold leading-none tracking-tight text-navy tabular-nums lg:text-4xl">
+              <p className="mt-4 text-[2.35rem] font-bold leading-none tracking-tight text-navy tabular-nums lg:text-[2.75rem]">
                 {price}
               </p>
-              <ListingFreshness
-                updatedAt={property.updated_at}
-                createdAt={property.created_at}
-                lastRefreshedAt={property.last_refreshed_at}
-                viewsCount={property.views_count}
-                verified={!!verified}
-                contactClicks={property.contact_clicks}
-                className="mt-2 block"
-              />
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <h1 className="text-lg font-semibold leading-snug text-foreground lg:text-2xl">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <h1 className="text-[1.2rem] font-bold leading-snug tracking-tight text-navy lg:text-[1.5rem]">
                   {property.title}
                 </h1>
                 {previewMode && isListingUnderReview(property) ? (
@@ -297,59 +301,103 @@ export default async function PropertyDetailPage({
                   </span>
                 ) : null}
               </div>
-              <ListingBadgeRow
-                badges={extraBadges.filter((b) => b !== "new")}
-                className="mt-2.5 flex flex-wrap items-center gap-1.5 lg:hidden"
-              />
-              <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-muted lg:text-base">
-                <MapPin className="h-4 w-4 shrink-0 text-gold" />
+              <p className="mt-2.5 flex items-center gap-1.5 text-sm font-medium text-navy/50">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-gold" />
                 {property.area}, {property.city}
               </p>
+              {property.landmark ? (
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-navy/40">
+                  <Navigation className="h-3.5 w-3.5 shrink-0 text-gold/80" />
+                  Near {property.landmark}
+                </p>
+              ) : null}
+              <TrustModule kinds={trustKinds} className="mt-4" />
+              {(property.bedrooms > 0 || property.bathrooms > 0) && (
+                <p className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-semibold text-navy/65">
+                  {property.bedrooms > 0 ? (
+                    <span className="rounded-full border border-navy/8 bg-navy/[0.03] px-2.5 py-1">
+                      {property.bedrooms} bed
+                    </span>
+                  ) : null}
+                  {property.bathrooms > 0 ? (
+                    <span className="rounded-full border border-navy/8 bg-navy/[0.03] px-2.5 py-1">
+                      {property.bathrooms} bath
+                    </span>
+                  ) : null}
+                </p>
+              )}
               {property.physically_verified_at ? (
                 <div className="mt-3">
                   <PropertyPhysicallyVerifiedCard verifiedAt={property.physically_verified_at} />
                 </div>
               ) : null}
-              {property.landmark && (
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
-                  <Navigation className="h-3.5 w-3.5 shrink-0 text-gold" />
-                  Near {property.landmark}
-                </p>
-              )}
+              {agent ? (
+                <div id="listing-primary-cta" className="mt-5 border-t border-navy/[0.06] pt-5 lg:hidden">
+                  <ContactButtons
+                    propertyId={property.id}
+                    title={property.title}
+                    area={property.area}
+                    city={property.city}
+                    listingType={property.listing_type}
+                    propertyType={property.property_type}
+                    bedrooms={property.bedrooms}
+                    agentId={agent.id}
+                    agentName={agent.full_name ?? "Agent"}
+                    price={Number(property.price)}
+                    paymentPeriod={property.payment_period}
+                    phone={agent.phone}
+                    whatsapp={agent.whatsapp}
+                  />
+                </div>
+              ) : null}
+              <ListingFreshness
+                updatedAt={property.updated_at}
+                createdAt={property.created_at}
+                lastRefreshedAt={property.last_refreshed_at}
+                viewsCount={property.views_count}
+                verified={!!verified}
+                contactClicks={property.contact_clicks}
+                className="mt-3 block text-navy/40"
+              />
+              <ListingBadgeRow
+                badges={extraBadges.filter((b) => b !== "new")}
+                className="mt-2 flex flex-wrap items-center gap-1.5 lg:hidden"
+              />
             </div>
 
-            <SpecTileGrid
-              columns={property.bedrooms > 0 || property.bathrooms > 0 ? 2 : 2}
+            <CollapsibleSpecs
+              title="Full details"
+              subtitle="Beds, type, listing — expand when you need them"
               items={[
-                {
-                  icon: BedDouble,
-                  label: "Bedrooms",
-                  value: property.bedrooms > 0 ? property.bedrooms : null,
-                },
-                {
-                  icon: Bath,
-                  label: "Bathrooms",
-                  value: property.bathrooms > 0 ? property.bathrooms : null,
-                },
-                {
-                  icon: Home,
-                  label: "Type",
-                  value: property.property_type
-                    ? propertyTypeLabel(property.property_type)
-                    : null,
-                },
+                property.property_type
+                  ? {
+                      icon: Home,
+                      label: "Type",
+                      value: propertyTypeLabel(property.property_type),
+                    }
+                  : null,
                 {
                   icon: Layers,
                   label: "Listing",
                   value: listingTypeLabel(property.listing_type),
                 },
-                {
-                  icon: MapPin,
-                  label: "Location",
-                  value: `${property.area}, ${property.city}`,
-                },
-              ]}
+              ].filter(Boolean) as Array<{
+                icon: typeof Home;
+                label: string;
+                value: string;
+              }>}
             />
+
+            {amenities.length > 0 ? (
+              <details className="group rounded-[1.5rem] border border-navy/10 bg-white open:pb-4">
+                <summary className="cursor-pointer list-none px-5 py-4 text-sm font-bold text-navy [&::-webkit-details-marker]:hidden">
+                  Amenities ({amenities.length})
+                </summary>
+                <div className="px-5">
+                  <AmenityChips amenities={amenities} max={24} size="md" />
+                </div>
+              </details>
+            ) : null}
 
             <Suspense fallback={<DetailSectionFallback />}>
               <ListingInsightsSection property={property} agent={agent} />
@@ -358,12 +406,6 @@ export default async function PropertyDetailPage({
             <Suspense fallback={null}>
               <ListingValueDriversSection listingId={property.id} />
             </Suspense>
-
-            {amenities.length > 0 && (
-              <div className="detail-band-stone -mx-4 rounded-2xl px-4 py-4 lg:mx-0 lg:px-5">
-                <AmenityChips amenities={amenities} max={8} size="md" />
-              </div>
-            )}
 
             <RentTransparencyCard property={property} />
 
@@ -424,7 +466,9 @@ export default async function PropertyDetailPage({
               <RelatedListings property={property} />
             </Suspense>
 
-            <SafetyNotice className="pt-1 lg:hidden" />
+            <p className="pt-1 text-center text-xs text-navy/45 lg:hidden">
+              <MarketplaceSafetyTipsLink />
+            </p>
           </div>
         </div>
 
@@ -446,7 +490,9 @@ export default async function PropertyDetailPage({
               recentLeads={recentLeads}
               sticky
             />
-            <SafetyNotice />
+            <p className="mt-3 text-xs text-navy/45">
+              <MarketplaceSafetyTipsLink />
+            </p>
           </aside>
         )}
       </div>

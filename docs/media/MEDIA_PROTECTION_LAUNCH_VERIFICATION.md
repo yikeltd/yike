@@ -51,7 +51,7 @@ OTP/Sendchamp WIP intentionally left uncommitted.
 |-------|--------|
 | Deploy live (admin media API auth gate) | PASS |
 | Anonymous original archive access | PASS (bucket `public=false`) |
-| Live seller photo upload + Lex registry row | **Founder smoke** — requires authenticated lister session |
+| Live seller photo upload + Lex registry row | **NOT VERIFIED** — `media_assets=0` · see [MEDIA_PROTECTION_PRODUCTION_SMOKE.md](../launch/MEDIA_PROTECTION_PRODUCTION_SMOKE.md) |
 | Vehicle photo upload | N/A if `ENABLE_VEHICLE_MARKETPLACE=false` (expected) |
 
 **Founder smoke (2 minutes):** Upload one property listing photo → confirm watermark on public URL → open Lex Tech → Uploads & Protection → confirm fingerprint row.

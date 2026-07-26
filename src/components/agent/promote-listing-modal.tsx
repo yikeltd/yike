@@ -107,6 +107,9 @@ export function PromoteListingModal({
               Promote listing
             </h2>
             <p className="mt-1 text-sm text-muted">
+              Buy visibility — not trust. Featured placement puts you at the top of discovery.
+            </p>
+            <p className="mt-1 text-sm text-muted">
               Get more visibility across Yike.
             </p>
           </div>
@@ -145,9 +148,11 @@ export function PromoteListingModal({
           <div className="mt-4 space-y-5">
             <section className="rounded-xl border-2 border-gold/40 bg-gold/5 p-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gold-dark">
-                Featured
+                Featured placement
               </p>
-              <p className="mt-1 text-xs text-muted">Premium placement across Yike</p>
+              <p className="mt-1 text-xs text-muted">
+                Maximum visibility · top homepage placement · higher exposure
+              </p>
               <div className="mt-3 grid gap-2">
                 {([7, 30] as FeaturedDurationDays[]).map((days) => {
                   const tier = FEATURED_PRICING[days];
@@ -178,7 +183,7 @@ export function PromoteListingModal({
                 onClick={() => handleContinue("featured")}
                 className="mt-3 w-full rounded-xl bg-gold py-2.5 text-sm font-bold text-navy disabled:opacity-60"
               >
-                {busy ? "Processing…" : "Continue with Featured"}
+                {busy ? "Processing…" : "Make Featured"}
               </button>
             </section>
 

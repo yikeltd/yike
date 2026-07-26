@@ -1,6 +1,7 @@
 import { requireServerClient } from "@/lib/supabase/require-client";
 import { createOtpDbClient } from "@/lib/otp/rpc";
 import { getSendchampConfigSummary } from "@/lib/notifications/providers/sendchamp";
+import { getAuthSmsVerificationStatus } from "@/lib/auth/sms-verification-flag";
 import { EnvHealthPanel } from "@/components/admin/env-health-panel";
 import { SafeHavenHealthPanel } from "@/components/admin/safehaven-health-panel";
 import {
@@ -14,6 +15,7 @@ export default async function TechDashboardPage() {
   const supabase = await requireServerClient();
   const sendchamp = getSendchampConfigSummary();
   const otpDbConfigured = Boolean(createOtpDbClient());
+  const smsAuth = getAuthSmsVerificationStatus();
   const since = offsetDaysIso(-1);
 
   const [emailSent, emailFailed, otpSent, otpFailed, recentOtpErrors, recentEmailErrors] =
@@ -41,6 +43,13 @@ export default async function TechDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard label="Resend status" value={emailFailed.count === 0 ? "OK" : "Issues"} sub={`${emailSent.count ?? 0} sent · ${emailFailRate}% fail`} variant={emailFailed.count === 0 ? "success" : "warning"} />
         <MetricCard label="Sendchamp status" value={sendchamp.configured ? "Configured" : "Missing key"} sub={otpDbConfigured ? "OTP RPC OK" : "OTP token missing"} variant={sendchamp.configured && otpDbConfigured ? "success" : "danger"} href="/lex/tech/otp" />
+        <MetricCard
+          label="SMS verification"
+          value={smsAuth.bypassActive ? "BYPASS (FAT)" : "Required"}
+          sub={smsAuth.warning ?? "AUTH_SMS_VERIFICATION_ENABLED"}
+          variant={smsAuth.bypassActive ? "warning" : "success"}
+          href="/lex/tech/otp"
+        />
         <MetricCard label="Sendchamp delivery" value={otpFailed.count === 0 ? "OK" : "Issues"} sub={`${otpSent.count ?? 0} sent · ${otpFailRate}% fail`} variant={otpFailed.count === 0 ? "success" : "warning"} href="/lex/tech/otp" />
         <MetricCard label="Supabase" value="Connected" variant="success" />
         <MetricCard label="OTP failure rate" value={`${otpFailRate}%`} href="/lex/tech/otp" variant={otpFailRate > 5 ? "danger" : "default"} />

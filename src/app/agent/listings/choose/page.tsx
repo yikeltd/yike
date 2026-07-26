@@ -37,21 +37,6 @@ export default async function ChooseListingTypePage() {
       </div>
 
       <div className="grid gap-3">
-        <Link
-          href="/agent/listings/new"
-          className="flex items-center gap-4 rounded-2xl border border-navy/10 bg-white p-4 transition hover:border-gold/50 hover:shadow-sm"
-        >
-          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy text-gold">
-            <Building2 className="h-6 w-6" />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-base font-bold text-navy">Property</span>
-            <span className="mt-0.5 block text-xs text-muted">
-              Houses, flats, land, commercial, short lets
-            </span>
-          </span>
-        </Link>
-
         {vehiclesOn ? (
           <Link
             href="/agent/listings/new/vehicle"
@@ -68,6 +53,21 @@ export default async function ChooseListingTypePage() {
             </span>
           </Link>
         ) : null}
+
+        <Link
+          href="/agent/listings/new"
+          className="flex items-center gap-4 rounded-2xl border border-navy/10 bg-white p-4 transition hover:border-gold/50 hover:shadow-sm"
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy text-gold">
+            <Building2 className="h-6 w-6" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-base font-bold text-navy">Property</span>
+            <span className="mt-0.5 block text-xs text-muted">
+              Houses, flats, land, commercial, short lets
+            </span>
+          </span>
+        </Link>
       </div>
     </main>
   );

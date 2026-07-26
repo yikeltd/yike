@@ -66,5 +66,13 @@ export async function POST(request: Request) {
     channel: result.channel,
     message: result.message,
     expiresMinutes: result.expiresMinutes,
+    ...(result.bypass
+      ? {
+          bypass: true,
+          phoneVerified: true,
+          phoneVerifiedAt: result.phoneVerifiedAt,
+          phone: result.phone,
+        }
+      : {}),
   });
 }

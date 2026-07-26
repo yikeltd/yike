@@ -7,6 +7,7 @@ import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 import { AuthHeaderAccount } from "@/components/auth/auth-header-account";
 import { ListPropertyButton } from "@/components/auth/list-property-button";
+import { MarketplaceNavSheet } from "@/components/marketplace/experience";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 
 /** Marketplace nav — Sell lives as CTA (right), not in this list. */
@@ -67,6 +68,7 @@ export function HeaderDesktop({ className }: { className?: string }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-3">
+          <MarketplaceNavSheet size="sm" />
           <AuthHeaderAccount variant="desktop" />
           <ListPropertyButton className="pressable inline-flex min-h-[40px] items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold uppercase tracking-wide text-navy shadow-sm transition-transform hover:brightness-105 active:scale-[0.98]">
             Sell

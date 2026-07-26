@@ -20,6 +20,7 @@ export function ListingShareMenu({
   listingType,
   propertyType,
   className,
+  variant = "icon",
 }: {
   title: string;
   text: string;
@@ -30,6 +31,8 @@ export function ListingShareMenu({
   listingType?: string;
   propertyType?: string | null;
   className?: string;
+  /** Icon FAB (gallery) or labeled button (detail CTAs). */
+  variant?: "icon" | "button";
 }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -78,15 +81,20 @@ export function ListingShareMenu({
   }
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative", variant === "button" && "w-full", className)}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-elevated/90 shadow-float backdrop-blur-sm"
+        className={
+          variant === "button"
+            ? "pressable inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-navy/12 bg-white text-sm font-bold text-navy transition hover:border-gold/40 hover:bg-gold/10"
+            : "pressable flex h-10 w-10 items-center justify-center rounded-full bg-elevated/90 shadow-float backdrop-blur-sm"
+        }
         aria-label="Share listing"
         aria-expanded={open}
       >
         <Share2 className="h-4 w-4 text-navy" />
+        {variant === "button" ? <span>Share</span> : null}
       </button>
 
       {open && (

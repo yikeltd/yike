@@ -10,4 +10,5 @@ export {
   isSellerPhoneSmsOtpEnabled,
   sendSellerPhoneVerificationCode,
   verifySellerPhoneCode,
+  markSellerPhoneVerifiedForFatBypass,
 } from "./service";

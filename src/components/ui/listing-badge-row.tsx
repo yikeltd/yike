@@ -8,6 +8,7 @@ import {
   NegotiableBadge,
   SoldBadge,
   NewListingBadge,
+  TrendingBadge,
 } from "@/components/ui/badge";
 import type { ListingBadgeKind } from "@/lib/design/listing-badges";
 
@@ -32,6 +33,8 @@ export function ListingBadgeRow({
             return <YikeVerifiedBadge key={kind} size={size} />;
           case "featured":
             return <FeaturedBadge key={kind} />;
+          case "trending":
+            return <TrendingBadge key={kind} />;
           case "premium":
             return <PremiumBadge key={kind} size={size} />;
           case "new":

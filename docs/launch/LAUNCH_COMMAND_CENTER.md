@@ -3,12 +3,25 @@
 **Phase:** Launch Operations (not development)  
 **Feature freeze:** [ACTIVE](./FEATURE_FREEZE.md)  
 **Prod:** https://yike.ng · Coolify · Supabase `hlpojfurfldvcxfxhveg`  
-**Last updated:** 2026-07-26 (War Room execution pass)  
+**Last updated:** 2026-07-26 (FAT SMS bypass + Final Pre-Launch Report)  
 **Owner:** Founder + ops  
-**Completion (launch readiness):** **~72%** · Feature completeness ~92% · Eng launch-safe ~88%
+**Completion (launch readiness):** **~78%** · Engineering ~92% · Operations ~70% · Marketplace ~30% · Security ~85% · Documentation ~96%
 
-> **Single source of truth until launch.** Update this document daily. Do not scatter status across chat threads.  
-> Executive brief: [FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md](./FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md) · Ops audit: [LAUNCH_OPS_AUDIT_2026-07-26.md](./LAUNCH_OPS_AUDIT_2026-07-26.md)
+> **Single source of truth until launch.**  
+> Vehicles report: [VEHICLE_MARKETPLACE_LAUNCH_REPORT.md](./VEHICLE_MARKETPLACE_LAUNCH_REPORT.md) · FAT: [FOUNDER_ACCEPTANCE_TEST.md](./FOUNDER_ACCEPTANCE_TEST.md) · Final report: [FINAL_PRE_LAUNCH_REPORT.md](./FINAL_PRE_LAUNCH_REPORT.md)
+
+---
+
+## Day 1 launch priorities (ordered)
+
+1. **Vehicle Marketplace (Primary / flagship)**  
+2. **Property Marketplace (Secondary)**  
+3. **Seller Trust & Verification**  
+4. **Media Protection**  
+5. **Search & Discovery**  
+6. **Admin & Moderation**
+
+Every remaining eng/ops decision aligns to this order. **Do not disable vehicles.**
 
 ---
 
@@ -16,20 +29,19 @@
 
 | Area | Status | Class |
 |------|--------|-------|
-| Core Marketplace | ✅ Ready | READY |
-| Authentication | ✅ Ready (SMS isolated) | READY |
-| Listings / Property | ✅ Ready | READY |
-| Vehicles | ✅ Code ready · gated · **Coolify may still expose `/vehicles` (200)** | FOUNDER ACTION (env) |
+| **Vehicle Marketplace** | ✅ Flagship ON · UI primary · thin supply | FOUNDER supply + FAT |
+| Property Marketplace | ✅ Ready · secondary in UI | READY |
+| Authentication | ✅ Ready · SMS FAT bypass env-flagged | READY / FAT |
+| SMS (seller phone) | ⚠ Bypass for FAT · re-enable + live SMS before launch | FOUNDER |
 | Search / Profiles / Admin | ✅ Ready | READY |
-| Media Protection | ✅ Production · **0 live `media_assets` yet** | FOUNDER smoke |
+| Media Protection | ✅ Deployed · **not production-verified** | FOUNDER (C12) |
 | Security | ✅ Baseline · leaked-password OFF | FOUNDER (C08) |
 | Infrastructure | ✅ Production | READY |
-| Documentation | ✅ Comprehensive | READY |
 | Feature Development | 🛑 Frozen | READY |
-| Launch Operations | 🚀 Active | READY |
-| **Marketplace supply** | ⚠ **32** approved live (target 250+) | **BLOCKED / FOUNDER** |
+| **Marketplace supply** | ⚠ **32** listings (sample-heavy) · **14** vehicle-ish | **BLOCKED / FOUNDER** |
 
-**Headline Go / No-Go:** `NO-GO` — inventory + founder FAT/sign-offs (confidence: high that eng is not the bottleneck).
+**Headline Go / No-Go:** `NO-GO` — real vehicle (+ property) supply, founder FAT, media smoke, C07/C08.  
+**Vehicle product surface:** CONDITIONAL GO (see vehicle report).
 
 ---
 
@@ -37,90 +49,57 @@
 
 | Field | Value |
 |-------|--------|
-| Target soft-launch window | _TBD by founder_ |
-| Days remaining | _update daily_ |
-| Public marketing push | After ≥2 weeks stable supply |
+| Target soft-launch window | After C07/C08/C10/C12 + vehicle supply framing |
+| Public marketing push | After stable **real** vehicle inventory |
 | Freeze start | 2026-07-26 |
+| Vehicles primary UI | Shipped in tree (Vehicles \| Properties) |
 
 ---
 
-## 3. Five workstreams
+## 3. Workstreams (priority-aligned)
 
-### WS1 — Marketplace supply (highest priority)
+### WS1 — Vehicle supply (highest)
 
 | Metric | Target | Current | Class |
 |--------|--------|--------:|-------|
-| Active property listings (approved live) | 250+ | **32** | FOUNDER / BLOCKED |
-| Active vehicle listings | 150+ if ON | **0** | NOT REQUIRED FOR LAUNCH if vehicles OFF |
-| Verified agents | 25+ | **~3** verified-ish / **18** agent-like | FOUNDER |
-| Geo coverage | 10 cities listed | _thin_ | FOUNDER |
+| Approved vehicle listings (real) | Credible city depth | **~14** sample-ish | FOUNDER |
+| Dealers / verified sellers | Growing | thin | FOUNDER |
+| `/vehicles` live | ON | **200** | READY |
+| `ENABLE_VEHICLE_MARKETPLACE` | **true** | Code default **true**; Coolify confirm | FOUNDER confirm |
+| Validation catalog vehicles | ~134 | Catalog ready · staging seed ☐ | OPS |
 
-**Daily supply actions:** recruit · verify · approve queue · freshness · remove fakes.
+### WS2 — Property supply (secondary)
 
----
+| Metric | Target | Current |
+|--------|--------|--------:|
+| Approved property listings | Soft-launch credible | Remainder of **32** sample set |
 
-### WS2 — Production operations
+### WS3 — Production operations
 
-**Daily checklist** (Sun 2026-07-26):
+| Check | Status |
+|-------|--------|
+| public-health | ☑ OK |
+| SSL | ☑ |
+| Vehicles flag | Keep **ENABLED** |
+| Backups drill | ☐ |
+| Media smoke (prefer vehicle photo) | ☐ C12 |
 
-| Check | Sun |
-|-------|-----|
-| Coolify serving latest APIs | ☑ media API 401 gate |
-| https://yike.ng 200 | ☑ |
-| Legal pages 200 | ☑ |
-| SSL valid | ☑ |
-| DB linked + advisors skim | ☑ (C08 warn remains) |
-| Storage buckets correct | ☑ archive private |
-| Backups restore tested | ☐ FOUNDER/OPS |
-| Monitoring / Sentry | ☐ (global-error only) |
-| Error logs skimmed | ☐ |
+### WS4 — Trust & media
 
----
+| Item | Status |
+|------|--------|
+| Media protection code | READY |
+| `media_assets` | **0** — founder vehicle upload |
+| Lex moderation | FAT |
 
-### WS3 — Trust & safety (operate)
+### WS5 — QA
 
-| Queue | Class | Notes |
-|-------|-------|-------|
-| Lex Auth moderation | FOUNDER/OPS | Primary path `/lex/auth` |
-| Media protection registry | READY | Lex Tech → Uploads; awaiting first prod row |
-| Stolen-image auto queue | NOT REQUIRED FOR LAUNCH | V2 |
-| SMS fraud / OTP | DEFERRED | WIP off main |
-
----
-
-### WS4 — Quality assurance
-
-| Journey | Last run | Result | Class |
-|---------|----------|--------|-------|
-| Guest browse / search | 2026-07-26 | Pass (anon probe) | READY |
-| Legal / contact pages | 2026-07-26 | Pass | READY |
-| Signup page loads | 2026-07-26 | Pass | READY |
-| Seller upload + watermark | — | ☐ | FOUNDER FAT |
-| Buyer WA contact | — | ☐ | FOUNDER FAT |
-| Lex moderate | — | ☐ | FOUNDER FAT |
-| Agent profile | — | ☐ | FOUNDER FAT |
-| Media protection live | — | ☐ `media_assets=0` | FOUNDER |
-
-**Defect log**
-
-| ID | Defect | Severity | Disposition |
-|----|--------|----------|-------------|
-| D1 | Thin inventory (32 live) | Critical (trust) | Blocker — supply |
-| D2 | Leaked-password protection disabled | High | Blocker — founder Auth |
-| D3 | Coolify may leave vehicles ON | Medium | Founder env |
-| D4 | No crash monitoring vendor | Medium | Post-launch OK / optional eng |
-| D5 | CI warning debt (non-error) | Low | Post-launch |
-
----
-
-### WS5 — Launch preparation
-
-| Item | Status | Class |
-|------|--------|-------|
-| Privacy / Terms / Cookies / Safety / Moderation / Contact | Live 200 | READY (confirm legal text) |
-| Help / FAQ | ☐ | BUSINESS / NOT REQUIRED if contact+safety cover MVP |
-| Social / press / Play | ☐ | MARKETING — after inventory |
-| Analytics / Sentry | ☐ | ENGINEERING optional |
+| Journey | Status |
+|---------|--------|
+| Guest `/vehicles` | Anon PASS |
+| Vehicles \| Properties toggle | Updated — FAT confirm |
+| Seller create vehicle + photo | FOUNDER FAT |
+| Lex moderate vehicles | FOUNDER FAT |
 
 ---
 
@@ -128,101 +107,131 @@
 
 | ID | Item | Owner | Status | Class |
 |----|------|-------|--------|-------|
-| C04 | Live supply / soft-launch framing | Founder | OPEN | FOUNDER / BLOCKED |
+| C04 | Real supply (vehicles primary, property secondary) / framing | Founder | OPEN | FOUNDER / BLOCKED |
 | C07 | Rotate OTP / Sendchamp if exposed | Founder | OPEN | FOUNDER ACTION |
 | C08 | Leaked-password protection | Founder | OPEN | FOUNDER ACTION |
-| C10 | Founder Acceptance Test (FAT) | Founder | OPEN | FOUNDER ACTION |
-| C11 | Coolify `ENABLE_VEHICLE_MARKETPLACE=false` until supply | Founder | OPEN | FOUNDER ACTION |
-| C12 | First prod protected upload (`media_assets` ≥ 1) | Founder | OPEN | FOUNDER ACTION |
+| C10 | Founder Acceptance Test (include vehicle path) | Founder | OPEN | FOUNDER ACTION |
+| C12 | First prod protected upload (`media_assets` ≥ 1) — prefer **vehicle** photo | Founder | OPEN | FOUNDER ACTION |
 
-**Closed:** C01–C03, C05 deferred, C06 code default OFF, C09 prefer-const + refs lint + webhooks Link, media protection ship, `global-error.tsx`.
+**Closed / inverted:** C11 — ~~disable vehicles~~ → **Vehicles stay ENABLED for Day 1.**  
+**Closed earlier:** C01–C03, C05 deferred, C06 superseded by flagship decision, C09 lint/webhooks, media code ship.
 
 ---
 
-## 5. Infrastructure health (snapshot)
+## 5. Infrastructure health
 
 | System | Status | Notes |
 |--------|--------|-------|
 | Coolify / Hetzner | ✅ | |
-| TLS | ✅ | |
-| Supabase | ✅ | Advisors: leaked-password WARN |
-| Media protection code | ✅ | 0 registry rows |
-| Paystack featured | ⏸ | Off |
-| Vehicles | ⚠ | Code default OFF; prod URL still 200 |
-| SMS | ⏸ | Isolated |
-| Monitoring | ⚠ | global-error only |
+| TLS | ✅ | → 2026-10-18 |
+| Supabase | ✅ | C08 warn |
+| Vehicles | ✅ ON | Flagship |
+| Media protection | ⚠ | Unverified live |
+| Monitoring | ⚠ | public-health + global-error |
 
 ---
 
 ## 6. Known risks
 
-1. Empty/thin inventory destroys trust.  
-2. SMS unproven — do not gate browse/signup.  
-3. Vehicles URL live without vehicle inventory.  
-4. Media protection unproven on a real prod upload.  
-5. No vendor crash monitoring yet.  
-6. GH Actions may still warn; Coolify deploys from `main`.
+1. Flagship vehicles with thin/sample inventory damages trust fastest.  
+2. Media protection unproven on real upload.  
+3. Auth leaked-password still off.  
+4. Property remains secondary — still needs honest coverage.  
 
 ---
 
 ## 7. Definition of Launch Ready
 
-- [x] Platform stable for Critical eng items (remaining are founder/ops)
-- [ ] Real inventory / honest soft-launch framing
-- [ ] Sellers publish E2E (FAT)
-- [ ] Admins moderate (FAT)
-- [ ] Backups tested
-- [ ] Monitoring minimum (global-error ✅; Sentry optional)
-- [ ] Media protection verified on live listing photo
-- [ ] C07/C08 done or accepted risk in writing
-- [ ] No Critical/High blockers remain
+- [x] Vehicle marketplace enabled (code + prod URL)  
+- [x] Vehicles primary in peer category UI  
+- [ ] Real vehicle inventory / honest framing  
+- [ ] FAT including vehicle create → moderate  
+- [ ] Media protection verified (vehicle photo preferred)  
+- [ ] C07/C08 done or accepted in writing  
+- [ ] Backups status checked  
 
 ---
 
-## 8. Go / No-Go decision
+## 8. Go / No-Go
 
 | Date | Decision | Confidence | Rationale |
 |------|----------|------------|-----------|
-| 2026-07-26 | **NO-GO** | High | 32 listings; FAT unsigned; C08 open; media_assets=0 |
-| 2026-07-26 (eng pass) | **NO-GO** (unchanged) | High | Eng closed what it can; supply/FAT remain |
+| 2026-07-26 Final Sprint | NO-GO | High | Supply + FAT + C08 + media |
+| 2026-07-26 Vehicles flagship | **NO-GO** (company) · Vehicle surface **CONDITIONAL GO** | High | Priority flipped; inventory still thin |
+
+### Scoreboard
+
+| Lens | % |
+|------|--:|
+| Overall | **76** |
+| Engineering | **91** |
+| Operations | **70** |
+| Marketplace | **30** |
+| Security | **85** |
+| Documentation | **95** |
+
+**Eng critical hours remaining:** ~0 (founder/ops/supply)  
+**Founder hours:** 5–8 · **Supply:** 40–120+
 
 ---
 
-## 9. Launch sign-off checklist
+## 9. Sign-off
 
 | Role | Sign-off | Date | Initials |
 |------|----------|------|----------|
-| Founder — supply & positioning | ☐ | | |
+| Founder — vehicle supply & positioning | ☐ | | |
 | Founder — secrets / Auth (C07/C08) | ☐ | | |
-| Founder — FAT | ☐ | | |
-| Ops — Coolify / backups / SSL / vehicle flag | ☐ | | |
-| Trust — moderation runbook | ☐ | | |
-| Eng — anon probes + CI errors | ☑ 2026-07-26 | Eng | |
+| Founder — FAT (vehicle-first) | ☐ | | |
+| Founder — media smoke (C12) | ☐ | | |
+| Ops — Coolify vehicles **ENABLED** + backups | ☐ | | |
+| Eng — vehicles primary + flag default ON | ☑ 2026-07-26 | Eng | |
 
 ---
 
-## 10. Remaining task buckets (hours)
+## 10. Daily log — 2026-07-26 (Vehicles flagship)
 
-| Bucket | Hours | Notes |
-|--------|------:|-------|
-| Engineering critical | 0–4 | Optional Sentry / warnings |
-| Founder personal | 6–10 | FAT + C07/C08 + Coolify + first photo |
-| Business supply | 40–120+ | Real listings |
-| Ops | 2–3 | Backup drill |
-| Legal/Marketing | as needed | After supply |
+- Founder direction: Vehicles Day-1 primary — **do not disable**  
+- Code: `ENABLE_VEHICLE_MARKETPLACE` default **true**; peer UI **Vehicles \| Properties**; discover/home default vehicle  
+- Search More: year / transmission / fuel exposed (existing query)  
+- Report: [VEHICLE_MARKETPLACE_LAUNCH_REPORT.md](./VEHICLE_MARKETPLACE_LAUNCH_REPORT.md)  
+- C11 closed/inverted; company decision still **NO-GO** on supply/FAT/media/Auth  
 
 ---
 
-## 11. Daily log
+## 11. Marketplace Experience P0 (presentation polish)
 
-### Daily log — 2026-07-26 (War Room execution)
+- **Override:** Feature freeze remains ACTIVE; founder-approved **UX/presentation only** (no APIs/DB/auth/media pipeline).  
+- **Shipped (eng):** Home Quick Finder + popular/category browse; card hierarchy; vehicle + property detail trust/price hierarchy; light marketplace nav sheet (no Messages).  
+- **Doc:** [MARKETPLACE_EXPERIENCE_REDESIGN.md](./MARKETPLACE_EXPERIENCE_REDESIGN.md)  
+- **Does not clear:** supply, FAT, C07–C08, C12 — company still **NO-GO** until those close.  
 
-- Supply: **32** approved live · **1** pending · **0** vehicles · **18** agents · **3** verified-ish · **0** media_assets  
-- Ops: Coolify OK · SSL OK · archive bucket private · vehicles URL still 200  
-- Trust: media protection shipped; live smoke pending  
-- QA: anon legal/search/signup PASS; authenticated FAT pending  
-- Eng: CI prefer-const + refs-in-render fixed; global-error added  
-- Decision: still **NO-GO** — founder inventory + FAT + C07/C08  
+---
+
+## 12. Marketplace Discovery P1 (alive browsing)
+
+- **Override:** Still presentation-only — themed rails, dealer row, city grid, quick chips, rich empties from **existing** listing pools. No AI / no recommendation engine.  
+- **Doc:** [MARKETPLACE_DISCOVERY_ENHANCEMENT.md](./MARKETPLACE_DISCOVERY_ENHANCEMENT.md)  
+- **Does not clear:** supply, FAT, C07–C08, C12.  
+
+---
+
+## 13. Marketplace Analytics Control Tower (LAST eng exception)
+
+- **Internal only** — `/lex/auth/marketplace-analytics`  
+- Read-only ops pulse from existing tables (no schema, no consumer UI, no AI)  
+- **Doc:** [MARKETPLACE_ANALYTICS_CONTROL_TOWER.md](./MARKETPLACE_ANALYTICS_CONTROL_TOWER.md)  
+- **Product eng STOP:** No further UI / discovery / card / animation work unless a P0 launch bug. Next workstream = **execution** (dealers, inventory, FAT, media smoke, launch).  
+
+---
+
+## 14. Intelligent Marketplace + Design Governance
+
+- **Product OS:** [INTELLIGENT_MARKETPLACE.md](../product/INTELLIGENT_MARKETPLACE.md) — system thinks first; golden rule; merge questions.  
+- **YDS:** [YIKE_DESIGN_SYSTEM.md](../design/YIKE_DESIGN_SYSTEM.md) — tokens, hierarchy, checklist.  
+- **Design Excellence Sprint:** [DESIGN_EXCELLENCE_SPRINT.md](../design/DESIGN_EXCELLENCE_SPRINT.md) — craftsmanship / ₦50M purchase mindset (presentation only).  
+- **Rules:** `.cursor/rules/intelligent-marketplace.mdc` · `.cursor/rules/yike-design-system.mdc`  
+- **Phase 1 ship notes:** [INTELLIGENT_MARKETPLACE_EXPERIENCE.md](./INTELLIGENT_MARKETPLACE_EXPERIENCE.md) (IA only — no new APIs/schema/AI).  
+- **Does not clear:** supply, FAT, C07–C08, C12. Full smart-listing intelligence → V2 backlog.  
 
 ---
 
@@ -230,10 +239,16 @@
 
 | Doc | Role |
 |-----|------|
+| [../product/INTELLIGENT_MARKETPLACE.md](../product/INTELLIGENT_MARKETPLACE.md) | Core product philosophy (OS) |
+| [../design/YIKE_DESIGN_SYSTEM.md](../design/YIKE_DESIGN_SYSTEM.md) | Yike Design System (YDS) |
+| [INTELLIGENT_MARKETPLACE_EXPERIENCE.md](./INTELLIGENT_MARKETPLACE_EXPERIENCE.md) | Phase 1 IA ship + V2 roadmap |
+| [MARKETPLACE_ANALYTICS_CONTROL_TOWER.md](./MARKETPLACE_ANALYTICS_CONTROL_TOWER.md) | Staff marketplace pulse |
+| [MARKETPLACE_DISCOVERY_ENHANCEMENT.md](./MARKETPLACE_DISCOVERY_ENHANCEMENT.md) | P1 discovery / engagement polish |
+| [MARKETPLACE_EXPERIENCE_REDESIGN.md](./MARKETPLACE_EXPERIENCE_REDESIGN.md) | Yike 2.0 P0 UX (presentation) |
+| [VEHICLE_MARKETPLACE_LAUNCH_REPORT.md](./VEHICLE_MARKETPLACE_LAUNCH_REPORT.md) | Vehicle sync + GO |
 | [FEATURE_FREEZE.md](./FEATURE_FREEZE.md) | Merge gate |
-| [FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md](./FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md) | CTO brief |
-| [LAUNCH_OPS_AUDIT_2026-07-26.md](./LAUNCH_OPS_AUDIT_2026-07-26.md) | Today’s ops audit |
-| [LAUNCH_WAR_ROOM_2026-07-26.md](./LAUNCH_WAR_ROOM_2026-07-26.md) | Critical board |
-| [LAUNCH_READINESS_AUDIT_2026-07-26.md](./LAUNCH_READINESS_AUDIT_2026-07-26.md) | Feature audit |
-| [../media/MEDIA_PROTECTION_LAUNCH_VERIFICATION.md](../media/MEDIA_PROTECTION_LAUNCH_VERIFICATION.md) | Media GO |
+| [FOUNDER_ACCEPTANCE_TEST.md](./FOUNDER_ACCEPTANCE_TEST.md) | Printable FAT |
+| [MEDIA_PROTECTION_PRODUCTION_SMOKE.md](./MEDIA_PROTECTION_PRODUCTION_SMOKE.md) | C12 |
+| [LAUNCH_VALIDATION_DATASET.md](./LAUNCH_VALIDATION_DATASET.md) | Seed catalog |
+| [V2_BACKLOG.md](./V2_BACKLOG.md) | Non-blockers |
 | [README.md](./README.md) | Index |

@@ -7,7 +7,6 @@ import { listingPath } from "@/lib/marketplace/listing-path";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
 import { ListingDistanceLabel } from "@/components/marketplace/listing-distance-label";
 import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
-import { isFeaturedActive } from "@/lib/agent-tiers";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { cn, isVerifiedAgent } from "@/lib/utils";
 import {
@@ -18,6 +17,11 @@ import {
   Calendar,
   ShieldCheck,
 } from "lucide-react";
+import {
+  PlacementBadge,
+  featuredPlacementChrome,
+} from "@/components/marketplace/placement-badge";
+import { resolvePlacementKind } from "@/lib/marketplace/placement";
 
 function formatNaira(n: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -97,7 +101,7 @@ export function VehicleCard({
 }) {
   const href = listingPath(vehicle);
   const img = vehicle.media_urls?.[0];
-  const featured = isFeaturedActive(vehicle);
+  const placement = resolvePlacementKind(vehicle);
   const isBrowse = variant === "browse";
   const isMarketplace = variant === "marketplace" || isBrowse;
   const isDemo = isDemoProperty(vehicle.id);
@@ -117,6 +121,7 @@ export function VehicleCard({
             className={cn(
               "listing-thumb relative overflow-hidden rounded-[1.25rem] bg-navy/5",
               BROWSE_THUMB_ASPECT,
+              featuredPlacementChrome(placement === "featured"),
             )}
           >
             {img ? (
@@ -132,10 +137,8 @@ export function VehicleCard({
             ) : null}
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-navy/35 to-transparent" />
             <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-1">
-              {featured ? (
-                <span className="rounded-md bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
-                  Feat
-                </span>
+              {placement ? (
+                <PlacementBadge kind={placement} compact />
               ) : null}
               {verified ? (
                 <span
@@ -159,16 +162,34 @@ export function VehicleCard({
           </div>
         ) : null}
 
-        <div className="flex flex-1 flex-col gap-0 pt-1.5">
+        <div className="flex flex-1 flex-col gap-0.5 pt-1.5">
           <Link href={href} prefetch={!isDemo} className="min-w-0">
-            <p className="text-[13px] font-bold tabular-nums leading-tight text-navy sm:text-sm">
+            <p className="text-[15px] font-bold tabular-nums leading-tight tracking-tight text-navy sm:text-base">
               {formatNaira(Number(vehicle.price))}
             </p>
-            <p className="mt-0.5 line-clamp-1 text-[11px] font-semibold leading-snug text-navy/90 sm:text-[12px]">
+            <p className="mt-0.5 line-clamp-1 text-[12px] font-bold leading-snug text-navy/90 sm:text-[13px]">
               {vehicle.title}
             </p>
+            {verified ? (
+              <p className="mt-1 flex flex-wrap items-center gap-1">
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-600/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800">
+                  <ShieldCheck className="h-2.5 w-2.5" aria-hidden />
+                  Verified
+                </span>
+              </p>
+            ) : null}
+            {attrs.length > 0 ? (
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/50">
+                {attrs.slice(0, 4).map(({ icon: Icon, label }) => (
+                  <span key={label} className="inline-flex items-center gap-0.5">
+                    <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                    {label}
+                  </span>
+                ))}
+              </p>
+            ) : null}
             {location ? (
-              <p className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-navy/50">
+              <p className="mt-1 flex items-center gap-0.5 text-[10px] font-medium text-navy/50">
                 <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
                 <span className="line-clamp-1">{location}</span>
                 <ListingDistanceLabel
@@ -176,16 +197,6 @@ export function VehicleCard({
                   state={vehicle.state}
                   className="ml-auto shrink-0 tabular-nums text-navy/40"
                 />
-              </p>
-            ) : null}
-            {attrs.length > 0 ? (
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/45">
-                {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
-                  <span key={label} className="inline-flex items-center gap-0.5">
-                    <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
-                    {label}
-                  </span>
-                ))}
               </p>
             ) : null}
           </Link>
@@ -214,10 +225,8 @@ export function VehicleCard({
             />
           ) : null}
           <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-1">
-            {featured ? (
-              <span className="rounded-md bg-gold px-1.5 py-0.5 text-[9px] font-bold text-navy">
-                Feat
-              </span>
+            {placement ? (
+              <PlacementBadge kind={placement} compact />
             ) : null}
             {!isDemo && vehicle.is_verified_listing ? (
               <span
@@ -234,11 +243,11 @@ export function VehicleCard({
       <div className="flex flex-1 flex-col gap-0.5 pt-2">
         <div className="flex items-start justify-between gap-1">
           <Link href={href} prefetch={!isDemo} className="min-w-0 flex-1">
-            <p className="text-sm font-bold tabular-nums leading-tight text-navy sm:text-[15px]">
-              {formatNaira(Number(vehicle.price))}
-            </p>
-            <p className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-navy sm:text-[13px]">
+            <p className="line-clamp-2 text-[13px] font-bold leading-snug text-navy sm:text-sm">
               {vehicle.title}
+            </p>
+            <p className="mt-1 text-base font-bold tabular-nums leading-tight text-navy sm:text-[17px]">
+              {formatNaira(Number(vehicle.price))}
             </p>
           </Link>
           {!isDemo ? (
@@ -249,15 +258,9 @@ export function VehicleCard({
             />
           ) : null}
         </div>
-        {location ? (
-          <p className="flex items-center gap-0.5 text-[10px] font-medium text-black/50 sm:text-[11px]">
-            <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
-            <span className="line-clamp-1">{location}</span>
-          </p>
-        ) : null}
         {attrs.length > 0 ? (
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-black/45 sm:text-[11px]">
-            {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/50 sm:text-[11px]">
+            {attrs.slice(0, 4).map(({ icon: Icon, label }) => (
               <span key={label} className="inline-flex items-center gap-0.5">
                 <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
                 {label}
@@ -265,13 +268,12 @@ export function VehicleCard({
             ))}
           </p>
         ) : null}
-        <Link
-          href={href}
-          prefetch={!isDemo}
-          className="mt-auto pt-1 text-[10px] font-bold text-gold-dark hover:underline sm:text-[11px]"
-        >
-          View
-        </Link>
+        {location ? (
+          <p className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-navy/50 sm:text-[11px]">
+            <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
+            <span className="line-clamp-1">{location}</span>
+          </p>
+        ) : null}
       </div>
     </article>
   );

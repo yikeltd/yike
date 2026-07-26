@@ -32,9 +32,11 @@ export type PhoneVerificationProvider = {
     channel: PhoneVerificationChannel;
     email?: string;
     purpose: string;
+    requestId?: string;
   }): Promise<PhoneOtpSendResult>;
   confirmOtp(params: {
     reference: string;
     code: string;
+    requestId?: string;
   }): Promise<PhoneOtpConfirmResult>;
 };

@@ -20,9 +20,7 @@ import { getCityPersonality } from "@/constants/cityPersonalities";
 import { TRENDING_CITIES } from "@/constants/trendingCities";
 import { toSlug } from "@/lib/location-slugs";
 import { popularLocalSearches } from "@/lib/seo/popular-searches";
-import { buildSeoHelpWhatsAppUrl, seoHelpLabel } from "@/lib/seo/help-whatsapp";
 import { PopularLocalSearches } from "./popular-local-searches";
-import { StickySeoHelpBar } from "@/components/leads/sticky-seo-help-bar";
 import { partitionAreaListings } from "@/lib/seo/area-listings";
 import {
   intentHeroVibe,
@@ -118,8 +116,6 @@ export function SeoLandingPage({
     neighborhood,
     neighborhoodSlug
   );
-  const helpUrl = buildSeoHelpWhatsAppUrl(city, neighborhood);
-  const helpLabel = seoHelpLabel(city, neighborhood);
   const sections = partitionAreaListings(listings);
   const searchHref = intent
     ? intentSearchHref(intent, city)
@@ -252,10 +248,6 @@ export function SeoLandingPage({
         <SafetyNotice compact />
         <ConversionStrip />
       </div>
-
-      {helpUrl ? (
-        <StickySeoHelpBar label={helpLabel} whatsAppUrl={helpUrl} />
-      ) : null}
     </div>
   );
 }

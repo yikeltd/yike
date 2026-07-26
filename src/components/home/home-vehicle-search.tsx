@@ -108,12 +108,6 @@ export function HomeVehicleSearch({
         className,
       )}
     >
-      {!compact ? (
-        <p className="mb-3 text-center text-base font-bold tracking-tight text-navy">
-          Find Your Next Vehicle
-        </p>
-      ) : null}
-
       <div
         className={cn(
           "grid grid-cols-2 sm:grid-cols-3",
@@ -178,9 +172,9 @@ export function HomeVehicleSearch({
             ? "mt-2.5 py-3 text-[15px]"
             : "mt-3.5 py-3.5 text-[15px] sm:py-4",
         )}
+        aria-label="Search vehicles"
       >
         <Search className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-        Search Vehicles
       </button>
     </div>
   );

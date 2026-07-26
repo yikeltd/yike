@@ -28,26 +28,29 @@ type CategoryItem = {
 function buildCategories(): CategoryItem[] {
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
 
+  const property: CategoryItem = {
+    id: "property",
+    label: "Property",
+    description: "Homes, land & shops",
+    href: "/search",
+    icon: Building2,
+    tone: "live",
+    prominence: "primary",
+  };
+
+  const vehicles: CategoryItem = {
+    id: "vehicles",
+    label: "Vehicles",
+    description: vehiclesOn ? "Cars, SUVs & more" : "Coming soon",
+    href: vehiclesOn ? "/vehicles" : "#",
+    icon: Car,
+    tone: vehiclesOn ? "live" : "soon",
+    badge: vehiclesOn ? undefined : "Soon",
+    prominence: "primary",
+  };
+
   return [
-    {
-      id: "property",
-      label: "Property",
-      description: "Homes, land & shops",
-      href: "/search",
-      icon: Building2,
-      tone: "live",
-      prominence: "primary",
-    },
-    {
-      id: "vehicles",
-      label: "Vehicles",
-      description: vehiclesOn ? "Cars, SUVs & more" : "Coming soon",
-      href: vehiclesOn ? "/vehicles" : "#",
-      icon: Car,
-      tone: vehiclesOn ? "live" : "soon",
-      badge: vehiclesOn ? undefined : "Soon",
-      prominence: "primary",
-    },
+    ...(vehiclesOn ? [vehicles, property] : [property, vehicles]),
     {
       id: "jobs",
       label: "Jobs",
@@ -81,7 +84,7 @@ function buildCategories(): CategoryItem[] {
   ];
 }
 
-/** Equal Property/Vehicles entry points + future-ready category chips. */
+/** Vehicles-first + Property peer entry points + future-ready category chips. */
 export function HomeCategoryRail({
   variant = "default",
   className,
@@ -109,7 +112,7 @@ export function HomeCategoryRail({
             Shop by category
           </p>
           <h2 className="text-lg font-bold text-foreground lg:text-xl">
-            Property &amp; Vehicles — equal on Yike
+            Vehicles &amp; Property on Yike
           </h2>
         </div>
       ) : null}

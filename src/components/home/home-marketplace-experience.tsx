@@ -1,27 +1,30 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HomeAdSlot } from "@/components/ads/home-ad-slot";
 import { HomeDesktopHero } from "@/components/home/home-desktop-hero";
 import { MarketplaceCategoryToggle } from "@/components/home/marketplace-category-toggle";
-import { HomeFeaturedLocations } from "@/components/home/home-featured-locations";
 import { HomeTrustBadges } from "@/components/home/home-trust-badges";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
+import { HOME_RAIL_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import {
-  HOME_RAIL_GRID_CLASS,
-} from "@/lib/marketplace/browse-grid";
+  QuickFinderBar,
+  MarketplaceSection,
+  CityBrowseGrid,
+  VEHICLE_CITY_BROWSE,
+  PROPERTY_CITY_BROWSE,
+  DealerDiscoveryRow,
+  DiscoveryEmptyPanel,
+} from "@/components/marketplace/experience";
+import type { DiscoveryDealerCard } from "@/lib/home/discovery-from-pool";
 import {
   homeCategoryQueryValue,
   parseHomeCategory,
   type HomeMarketplaceCategory,
 } from "@/lib/home/marketplace-category";
-import {
-  featuredLocationsForCategory,
-} from "@/lib/home/marketplace-trending";
 import type { Advertisement, Property } from "@/types/database";
 import type { HomepageAdSlot } from "@/lib/advertisements/constants";
 import type { LocationScope } from "@/lib/marketplace-location";
@@ -34,7 +37,6 @@ import {
 } from "@/lib/marketplace-location";
 import { trackEvent } from "@/lib/analytics";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
-import { LocationThinEmptyState } from "@/components/marketplace/marketplace-empty-state";
 import { getStateForCity } from "@/lib/constants";
 import { budgetValueFromSearchParams } from "@/lib/budget-ranges";
 import { chipKeyFromParams } from "@/lib/home-search-params";
@@ -54,6 +56,8 @@ type PropertyRails = {
   trending: RailSlice;
   luxury: RailSlice;
   nationwide: Property[];
+  commercial: Property[];
+  featuredExtra: Property[];
 };
 
 type VehicleRails = {
@@ -63,6 +67,12 @@ type VehicleRails = {
   trending: RailSlice;
   luxury: RailSlice;
   nationwide: Property[];
+  premium: Property[];
+  commercial: Property[];
+  budget: Property[];
+  suv: Property[];
+  pickup: Property[];
+  nearYou: RailSlice;
 };
 
 type Props = {
@@ -70,55 +80,14 @@ type Props = {
   propertyRails: PropertyRails;
   vehicleRails: VehicleRails;
   marketplaceLocation?: { city: string; state?: string } | null;
-  /** Empty-inventory UI fixtures (no public DEMO badge). */
   showingDemoFixtures?: boolean;
-  /** Smart homepage ads — only non-null slots render. */
   homepageAds?: Partial<Record<HomepageAdSlot, Advertisement | null>>;
+  dealers?: DiscoveryDealerCard[];
+  categoryCounts?: {
+    vehicle?: Record<string, number>;
+    property?: Record<string, number>;
+  };
 };
-
-function SectionHeader({
-  title,
-  href,
-  linkLabel = "View all",
-}: {
-  title: string;
-  href: string;
-  linkLabel?: string;
-}) {
-  return (
-    <div className="mb-2.5 flex items-end justify-between gap-3 lg:mb-3.5">
-      <div className="min-w-0 border-l-[3px] border-gold pl-2.5 sm:pl-3">
-        <h2 className="text-base font-bold tracking-tight text-navy sm:text-lg lg:text-xl">
-          {title}
-        </h2>
-      </div>
-      <Link
-        href={href}
-        className="shrink-0 text-xs font-bold text-gold-dark transition-colors hover:text-navy hover:underline sm:text-sm"
-      >
-        {linkLabel} →
-      </Link>
-    </div>
-  );
-}
-
-function EmptyRail({
-  category,
-  city,
-  state,
-}: {
-  category: HomeMarketplaceCategory;
-  city?: string | null;
-  state?: string | null;
-}) {
-  return (
-    <LocationThinEmptyState
-      city={city}
-      state={state}
-      category={category === "vehicle" ? "vehicle" : "property"}
-    />
-  );
-}
 
 function PropertyRail({
   items,
@@ -155,25 +124,25 @@ function VehicleRail({ items }: { items: Property[] }) {
 }
 
 function hasAnyInventory(rails: PropertyRails | VehicleRails): boolean {
-  const slices = [
+  const slices: RailSlice[] = [
     rails.featured,
     rails.recent,
-    "nearYou" in rails ? rails.nearYou : undefined,
-    "lowMileage" in rails ? rails.lowMileage : undefined,
     rails.trending,
     rails.luxury,
-  ].filter(Boolean) as RailSlice[];
+  ];
+  if ("nearYou" in rails && rails.nearYou) slices.push(rails.nearYou);
+  if ("lowMileage" in rails && rails.lowMileage) slices.push(rails.lowMileage);
   if (slices.some((s) => s.items.length > 0)) return true;
-  return rails.nationwide.length > 0;
+  if (rails.nationwide.length > 0) return true;
+  if ("premium" in rails && rails.premium.length > 0) return true;
+  if ("commercial" in rails && rails.commercial.length > 0) return true;
+  if ("budget" in rails && rails.budget.length > 0) return true;
+  return false;
 }
 
 /**
- * Unified responsive homepage:
- * - Desktop (lg+): premium marketplace hero → shared inventory rails
- * - Mobile / tablet (&lt; lg): inventory-first (no hero)
- *
- * Desktop rail order after hero:
- * Featured Near You → Ad → Recently Added → Ad → Luxury → Ad → Recommended → Ad → Popular Cities
+ * Browse-first homepage — Discover → Browse → Trust → Search → Buy.
+ * Presentation only: themed rails from existing inventory pools.
  */
 export function HomeMarketplaceExperience({
   initialCategory,
@@ -182,7 +151,10 @@ export function HomeMarketplaceExperience({
   marketplaceLocation = null,
   showingDemoFixtures: _showingDemoFixtures = false,
   homepageAds = {},
+  dealers = [],
+  categoryCounts: _categoryCounts = {},
 }: Props) {
+  void _categoryCounts;
   void _showingDemoFixtures;
   const router = useRouter();
   const pathname = usePathname();
@@ -286,7 +258,6 @@ export function HomeMarketplaceExperience({
   );
 
   const isVehicle = category === "vehicle";
-  const locations = featuredLocationsForCategory(category);
   const kind = isVehicle ? "vehicle" : "property";
   const loc = marketplaceLocation
     ? {
@@ -299,7 +270,6 @@ export function HomeMarketplaceExperience({
 
   const rails = isVehicle ? vehicleRails : propertyRails;
 
-  // Featured Near You: prefer near-you rail when it has inventory; else featured.
   const featuredNearItems = isVehicle
     ? vehicleRails.featured.items
     : propertyRails.nearYou.items.length > 0
@@ -325,8 +295,6 @@ export function HomeMarketplaceExperience({
   const luxuryCopy = luxuryRailCopy(loc, rails.luxury.scope, kind);
   const nationwideCopy = nationwideRailCopy(kind);
 
-  const cityLabel = marketplaceLocation?.city ?? null;
-  const stateLabel = marketplaceLocation?.state ?? null;
   const totallyEmpty = !hasAnyInventory(rails);
 
   return (
@@ -335,7 +303,6 @@ export function HomeMarketplaceExperience({
         Yike — Browse properties and vehicles across Nigeria
       </h1>
 
-      {/* Desktop only — premium dual-marketplace hero (hidden below lg) */}
       <HomeDesktopHero
         category={category}
         onCategoryChange={syncCategory}
@@ -344,7 +311,7 @@ export function HomeMarketplaceExperience({
         onVehicleSearch={handleVehicleSearch}
       />
 
-      {/* Mobile / tablet — sticky Properties|Vehicles; inventory-first */}
+      {/* Vehicles | Properties — keep discovery chrome minimal */}
       <div className="sticky top-14 z-30 border-b border-navy/[0.06] bg-ivory/95 px-3 py-2 backdrop-blur-md sm:px-6 lg:hidden">
         <div className="mx-auto max-w-sm sm:max-w-md">
           <MarketplaceCategoryToggle
@@ -355,54 +322,117 @@ export function HomeMarketplaceExperience({
         </div>
       </div>
 
-      {/* Shared inventory rails — all breakpoints */}
-      <div className="mx-auto max-w-7xl px-3 pt-2 lg:px-6 lg:pt-4 xl:px-8">
+      <div className="mx-auto max-w-7xl px-3 pt-3 sm:px-6 lg:px-6 lg:pt-4 xl:px-8">
         {totallyEmpty ? (
           <section className="pb-4">
-            <EmptyRail
-              category={category}
-              city={cityLabel}
-              state={stateLabel}
+            <DiscoveryEmptyPanel
+              category={isVehicle ? "vehicle" : "property"}
+              title="Nothing nearby yet — keep browsing"
+              subtitle="Popular categories, searches, and cities to explore."
+              showLatestHref={isVehicle ? "/vehicles" : "/search"}
             />
           </section>
         ) : (
           <>
-            {/* 1. Featured Near You — white */}
+            {/* Inventory first — placement tiers, then dealers, then browse */}
             {featuredNearItems.length > 0 ? (
-              <section className="home-rail-section home-band-white">
-                <SectionHeader
-                  title={featuredNearTitle}
-                  href={featuredCopy.href}
-                />
+              <MarketplaceSection
+                title={isVehicle ? "Featured" : featuredNearTitle}
+                href={featuredCopy.href}
+                band="white"
+              >
                 {isVehicle ? (
                   <VehicleRail items={featuredNearItems} />
                 ) : (
                   <PropertyRail items={featuredNearItems} trackFeatured />
                 )}
-              </section>
+              </MarketplaceSection>
             ) : null}
+
+            {(isVehicle
+              ? vehicleRails.trending.items
+              : propertyRails.trending.items
+            ).length > 0 ? (
+              <MarketplaceSection
+                title="Trending"
+                href={trendingCopy.href}
+                band="warm"
+                className="mt-1"
+              >
+                {isVehicle ? (
+                  <VehicleRail items={vehicleRails.trending.items.slice(0, 4)} />
+                ) : (
+                  <PropertyRail
+                    items={propertyRails.trending.items.slice(0, 4)}
+                  />
+                )}
+              </MarketplaceSection>
+            ) : null}
+
+            {(isVehicle
+              ? vehicleRails.recent.items
+              : propertyRails.recent.items
+            ).length > 0 ? (
+              <MarketplaceSection
+                title={recentCopy.title}
+                href={recentCopy.href}
+                band="ivory"
+                className="mt-1"
+              >
+                {isVehicle ? (
+                  <VehicleRail items={vehicleRails.recent.items} />
+                ) : (
+                  <PropertyRail items={propertyRails.recent.items} />
+                )}
+              </MarketplaceSection>
+            ) : null}
+
+            {isVehicle && dealers.length > 0 ? (
+              <div className="home-rail-section home-band-ivory pb-4 pt-2">
+                <DealerDiscoveryRow dealers={dealers} />
+              </div>
+            ) : null}
+
+            {/* Filters after placement inventory — in-flow (not sticky) */}
+            <div className="py-2 lg:py-3">
+              <QuickFinderBar
+                category={category}
+                onSearch={isVehicle ? handleVehicleSearch : handlePropertySearch}
+                initial={{
+                  state: browseInitial.state,
+                  city: browseInitial.city,
+                  budgetValue: browseInitial.budgetValue,
+                  propertyType: browseInitial.propertyType,
+                }}
+                tone="light"
+              />
+            </div>
 
             <HomeAdSlot
               ad={homepageAds.homepage_slot_1}
               placement="homepage_slot_1"
             />
 
-            {/* 2. Recently Added — soft ivory */}
-            {(isVehicle
-              ? vehicleRails.recent.items
-              : propertyRails.recent.items
-            ).length > 0 ? (
-              <section className="home-rail-section home-band-ivory mt-1 lg:mt-2">
-                <SectionHeader
-                  title={recentCopy.title}
-                  href={recentCopy.href}
-                />
-                {isVehicle ? (
-                  <VehicleRail items={vehicleRails.recent.items} />
-                ) : (
-                  <PropertyRail items={propertyRails.recent.items} />
-                )}
-              </section>
+            {isVehicle && vehicleRails.premium.length > 0 ? (
+              <MarketplaceSection
+                title="Premium"
+                href="/vehicles?featured=1"
+                band="sand"
+                className="mt-1 lg:mt-2"
+              >
+                <VehicleRail items={vehicleRails.premium} />
+              </MarketplaceSection>
+            ) : null}
+
+            {!isVehicle && propertyRails.featuredExtra.length > 0 ? (
+              <MarketplaceSection
+                title="Featured Properties"
+                href="/search?featured=1"
+                band="sand"
+                className="mt-1 lg:mt-2"
+              >
+                <PropertyRail items={propertyRails.featuredExtra} trackFeatured />
+              </MarketplaceSection>
             ) : null}
 
             <HomeAdSlot
@@ -410,22 +440,66 @@ export function HomeMarketplaceExperience({
               placement="homepage_slot_2"
             />
 
-            {/* 3. Luxury — soft sand */}
+            {isVehicle && vehicleRails.suv.length > 0 ? (
+              <MarketplaceSection
+                title="SUVs"
+                href="/vehicles?category=suv"
+                band="white"
+                className="mt-1 lg:mt-2"
+              >
+                <VehicleRail items={vehicleRails.suv} />
+              </MarketplaceSection>
+            ) : null}
+
+            {isVehicle && vehicleRails.pickup.length > 0 ? (
+              <MarketplaceSection
+                title="Pickups"
+                href="/vehicles?category=truck"
+                band="ivory"
+                className="mt-1 lg:mt-2"
+              >
+                <VehicleRail items={vehicleRails.pickup} />
+              </MarketplaceSection>
+            ) : null}
+
+            {isVehicle && vehicleRails.commercial.length > 0 ? (
+              <MarketplaceSection
+                title="Commercial"
+                href="/vehicles?category=commercial"
+                band="warm"
+                className="mt-1 lg:mt-2"
+              >
+                <VehicleRail items={vehicleRails.commercial} />
+              </MarketplaceSection>
+            ) : null}
+
+            {!isVehicle && propertyRails.commercial.length > 0 ? (
+              <MarketplaceSection
+                title="Commercial"
+                href="/search?property_type=shop"
+                band="warm"
+                className="mt-1 lg:mt-2"
+              >
+                <PropertyRail items={propertyRails.commercial} />
+              </MarketplaceSection>
+            ) : null}
+
             {(isVehicle
               ? vehicleRails.luxury.items
               : propertyRails.luxury.items
             ).length > 0 ? (
-              <section className="home-rail-section home-band-sand mt-1 lg:mt-2">
-                <SectionHeader
-                  title={luxuryCopy.title}
-                  href={luxuryCopy.href}
-                />
+              <MarketplaceSection
+                title={isVehicle ? "Luxury" : luxuryCopy.title}
+                href={luxuryCopy.href}
+                band="sand"
+                className="mt-1 lg:mt-2"
+              >
                 {isVehicle ? (
                   <VehicleRail items={vehicleRails.luxury.items} />
                 ) : (
                   <PropertyRail items={propertyRails.luxury.items} />
                 )}
-              </section>
+              </MarketplaceSection>
             ) : null}
 
             <HomeAdSlot
@@ -433,47 +507,66 @@ export function HomeMarketplaceExperience({
               placement="homepage_slot_3"
             />
 
-            {/* 4. Recommended — warm neutral */}
-            {(() => {
-              const trendingItems = isVehicle
-                ? vehicleRails.trending.items
-                : propertyRails.trending.items;
-              const nationwideItems = isVehicle
-                ? vehicleRails.nationwide
-                : propertyRails.nationwide;
-              const useTrending = trendingItems.length > 0;
-              const recommendedItems = useTrending
-                ? trendingItems
-                : nationwideItems;
-              if (recommendedItems.length === 0) return null;
-              const copy = useTrending ? trendingCopy : nationwideCopy;
-              return (
-                <section className="home-rail-section home-band-warm mt-1 lg:mt-2">
-                  <SectionHeader
-                    title={useTrending ? "Recommended" : "Recommended for you"}
-                    href={copy.href}
-                  />
-                  {isVehicle ? (
-                    <VehicleRail items={recommendedItems} />
-                  ) : (
-                    <PropertyRail items={recommendedItems} />
-                  )}
-                </section>
-              );
-            })()}
+            {isVehicle && vehicleRails.budget.length > 0 ? (
+              <MarketplaceSection
+                title="Budget picks"
+                href="/vehicles?max_price=5000000"
+                band="ivory"
+                className="mt-1 lg:mt-2"
+              >
+                <VehicleRail items={vehicleRails.budget} />
+              </MarketplaceSection>
+            ) : null}
+
+            {isVehicle &&
+            vehicleRails.nearYou.items.length > 0 &&
+            marketplaceLocation?.city ? (
+              <MarketplaceSection
+                title={`Nearby · ${marketplaceLocation.city}`}
+                href={`/vehicles?city=${encodeURIComponent(marketplaceLocation.city)}`}
+                band="white"
+                className="mt-1 lg:mt-2"
+              >
+                <VehicleRail items={vehicleRails.nearYou.items} />
+              </MarketplaceSection>
+            ) : null}
+
+            {(isVehicle
+              ? vehicleRails.nationwide
+              : propertyRails.nationwide
+            ).length > 0 ? (
+              <MarketplaceSection
+                title="All listings"
+                href={nationwideCopy.href}
+                band="white"
+                className="mt-1 lg:mt-2"
+              >
+                {isVehicle ? (
+                  <VehicleRail items={vehicleRails.nationwide} />
+                ) : (
+                  <PropertyRail items={propertyRails.nationwide} />
+                )}
+              </MarketplaceSection>
+            ) : null}
 
             <HomeAdSlot
               ad={homepageAds.homepage_slot_4}
               placement="homepage_slot_4"
             />
+
+            <HomeAdSlot
+              ad={homepageAds.homepage_slot_5}
+              placement="homepage_slot_5"
+            />
           </>
         )}
 
-        <HomeFeaturedLocations
-          items={locations}
-          title="Popular Cities"
-          className="home-rail-section home-band-white pb-4 pt-2"
-        />
+        <div className="home-rail-section home-band-white pb-4 pt-3">
+          <CityBrowseGrid
+            items={isVehicle ? VEHICLE_CITY_BROWSE : PROPERTY_CITY_BROWSE}
+            title="Popular cities"
+          />
+        </div>
 
         <div className="pb-3 pt-1 lg:pb-4">
           <HomeTrustBadges />

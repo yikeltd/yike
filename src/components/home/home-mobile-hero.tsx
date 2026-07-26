@@ -44,7 +44,7 @@ export function HomeMobileHero({ browseInitial, onSearch }: HomeMobileHeroProps)
       </div>
 
       <div className="relative z-[2] mx-auto max-w-7xl">
-        <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
+        <p className="sr-only">
           Nigeria&apos;s trusted marketplace
         </p>
         <BrowseListingsBlock
@@ -57,7 +57,7 @@ export function HomeMobileHero({ browseInitial, onSearch }: HomeMobileHeroProps)
           }
           variant="home-premium"
           initial={browseInitial}
-          title="Find Property & Vehicles Across Nigeria"
+          hideTitle
           onSearch={onSearch}
         />
         <HomeCategoryRail variant="hero" />

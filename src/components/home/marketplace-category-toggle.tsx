@@ -14,7 +14,7 @@ type Props = {
   tone?: "default" | "onDark";
 };
 
-/** Uber-style Properties | Vehicles — animated gold pill (marketplace switch). */
+/** Uber-style Vehicles | Properties — animated gold pill (marketplace switch). */
 export function MarketplaceCategoryToggle({
   category,
   onChange,
@@ -24,7 +24,8 @@ export function MarketplaceCategoryToggle({
 }: Props) {
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
   const showVehicles = vehiclesOn;
-  const activeIsVehicle = showVehicles && category === "vehicle";
+  /** When both tabs show, Vehicles is left (primary); Properties is right. */
+  const pillOnRight = showVehicles && category === "property";
   const onDark = tone === "onDark";
 
   return (
@@ -56,30 +57,9 @@ export function MarketplaceCategoryToggle({
             : compact && !onDark
               ? "left-0.5 right-0.5 w-auto"
               : "left-1 right-1 w-auto",
-          activeIsVehicle ? "translate-x-full" : "translate-x-0",
+          pillOnRight ? "translate-x-full" : "translate-x-0",
         )}
       />
-      <button
-        type="button"
-        role="tab"
-        aria-selected={category === "property"}
-        onClick={() => onChange("property")}
-        className={cn(
-          "relative z-[1] flex-1 rounded-full text-center font-bold uppercase transition-colors duration-200",
-          compact && !onDark
-            ? "px-3 py-2 text-[11px] tracking-[0.12em]"
-            : onDark
-              ? "px-4 py-2.5 text-xs tracking-[0.14em] sm:text-sm"
-              : "px-4 py-2.5 text-xs tracking-[0.12em] sm:text-sm",
-          category === "property"
-            ? "text-navy"
-            : onDark
-              ? "text-white/90 hover:text-white"
-              : "text-navy/45 hover:text-navy/70",
-        )}
-      >
-        Properties
-      </button>
       {showVehicles ? (
         <button
           type="button"
@@ -103,6 +83,27 @@ export function MarketplaceCategoryToggle({
           Vehicles
         </button>
       ) : null}
+      <button
+        type="button"
+        role="tab"
+        aria-selected={category === "property"}
+        onClick={() => onChange("property")}
+        className={cn(
+          "relative z-[1] flex-1 rounded-full text-center font-bold uppercase transition-colors duration-200",
+          compact && !onDark
+            ? "px-3 py-2 text-[11px] tracking-[0.12em]"
+            : onDark
+              ? "px-4 py-2.5 text-xs tracking-[0.14em] sm:text-sm"
+              : "px-4 py-2.5 text-xs tracking-[0.12em] sm:text-sm",
+          category === "property"
+            ? "text-navy"
+            : onDark
+              ? "text-white/90 hover:text-white"
+              : "text-navy/45 hover:text-navy/70",
+        )}
+      >
+        Properties
+      </button>
     </div>
   );
 }

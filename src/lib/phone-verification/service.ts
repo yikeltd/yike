@@ -1,10 +1,12 @@
 import { createHash, randomUUID } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPhoneOtpEnabled, isSmsOtpEnabled } from "@/lib/feature-flags";
+import { isAuthSmsVerificationBypassActive } from "@/lib/auth/sms-verification-flag";
 import {
   normalizePhoneForDuplicateCheck,
   toInternationalNigerianPhone,
 } from "@/lib/phone";
+import { logOtpAudit, newOtpRequestId } from "@/lib/otp/delivery-audit";
 import { resolveDefaultPhoneVerificationChannel } from "./channel";
 import { PHONE_VERIFY_COPY } from "./copy";
 import { getPhoneVerificationProvider } from "./provider";
@@ -53,7 +55,17 @@ async function lastSentAt(
 }
 
 export type SendPhoneVerificationResult =
-  | { ok: true; message: string; channel: PhoneVerificationChannel; expiresMinutes: number }
+  | {
+      ok: true;
+      message: string;
+      channel: PhoneVerificationChannel;
+      expiresMinutes: number;
+      /** FAT only — phone marked verified without SMS. */
+      bypass?: true;
+      phoneVerified?: true;
+      phoneVerifiedAt?: string;
+      phone?: string;
+    }
   | { ok: false; error: string; status: number; code?: string };
 
 export type VerifyPhoneVerificationResult =
@@ -68,9 +80,86 @@ export type VerifyPhoneVerificationResult =
 
 /** Seller / profile SMS OTP — independent of WhatsApp Business verification. */
 export function isSellerPhoneSmsOtpEnabled(): boolean {
+  if (isAuthSmsVerificationBypassActive()) return false;
   if (!isPhoneOtpEnabled()) return false;
   if (!isSmsOtpEnabled()) return false;
   return resolveDefaultPhoneVerificationChannel() === "sms";
+}
+
+/**
+ * FAT-only: mark phone verified without Sendchamp.
+ * Gated by AUTH_SMS_VERIFICATION_ENABLED=false — no-op otherwise.
+ */
+export async function markSellerPhoneVerifiedForFatBypass(
+  admin: SupabaseClient,
+  params: { userId: string; phoneLocal: string },
+): Promise<VerifyPhoneVerificationResult> {
+  if (!isAuthSmsVerificationBypassActive()) {
+    return {
+      ok: false,
+      error: "SMS verification bypass is not active",
+      status: 403,
+    };
+  }
+
+  const phoneIntl = toInternationalNigerianPhone(params.phoneLocal);
+  if (!phoneIntl) {
+    return { ok: false, error: PHONE_VERIFY_COPY.invalidPhone, status: 400 };
+  }
+
+  const now = new Date().toISOString();
+  const normalizedPhone = normalizePhoneForDuplicateCheck(params.phoneLocal);
+  const phoneVerifiedPatch: Record<string, unknown> = {
+    phone_verified: true,
+    phone_verified_at: now,
+    phone: params.phoneLocal,
+    whatsapp: params.phoneLocal,
+    normalized_phone: normalizedPhone,
+    whatsapp_verified_at: now,
+    whatsapp_verification_status: "verified",
+    whatsapp_verification_reference: null,
+    whatsapp_verification_attempts: 0,
+  };
+
+  let { error: phonePatchError } = await admin
+    .from("profiles")
+    .update(phoneVerifiedPatch)
+    .eq("id", params.userId);
+
+  if (phonePatchError?.message?.includes("phone_verified_at")) {
+    delete phoneVerifiedPatch.phone_verified_at;
+    const retry = await admin
+      .from("profiles")
+      .update(phoneVerifiedPatch)
+      .eq("id", params.userId);
+    phonePatchError = retry.error;
+  }
+
+  if (phonePatchError) {
+    console.error(
+      "[phone-verification] FAT bypass profile update failed",
+      phonePatchError.message,
+    );
+    return {
+      ok: false,
+      error: PHONE_VERIFY_COPY.providerUnavailable,
+      status: 500,
+    };
+  }
+
+  logOtpAudit({
+    event: "seller_sms_bypass_marked_verified",
+    requestId: newOtpRequestId(),
+    phone: phoneIntl,
+  });
+
+  return {
+    ok: true,
+    message: "Phone verified for testing (SMS bypass active).",
+    phoneVerified: true,
+    phoneVerifiedAt: now,
+    phone: params.phoneLocal,
+  };
 }
 
 async function sendSellerPhoneVerificationCodeUnlocked(
@@ -83,9 +172,17 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     request: Request;
     updateProfilePhone?: boolean;
     channel: PhoneVerificationChannel;
+    requestId: string;
   }
 ): Promise<SendPhoneVerificationResult> {
+  const { requestId } = params;
   const provider = getPhoneVerificationProvider();
+
+  logOtpAudit({
+    event: "seller_send_start",
+    requestId,
+    phone: params.phoneIntl,
+  });
 
   if (!provider.isConfigured()) {
     return {
@@ -98,6 +195,11 @@ async function sendSellerPhoneVerificationCodeUnlocked(
 
   const sends = await countSendsLastHour(admin, params.phoneIntl);
   if (sends >= MAX_SENDS_PER_PHONE_HOUR) {
+    logOtpAudit({
+      event: "seller_send_rate_limited",
+      requestId,
+      phone: params.phoneIntl,
+    });
     return {
       ok: false,
       error: PHONE_VERIFY_COPY.rateLimited,
@@ -110,6 +212,11 @@ async function sendSellerPhoneVerificationCodeUnlocked(
   if (last) {
     const elapsed = Date.now() - new Date(last).getTime();
     if (elapsed < RESEND_COOLDOWN_MS) {
+      logOtpAudit({
+        event: "seller_send_cooldown",
+        requestId,
+        phone: params.phoneIntl,
+      });
       return {
         ok: false,
         error: PHONE_VERIFY_COPY.cooldown,
@@ -161,6 +268,12 @@ async function sendSellerPhoneVerificationCodeUnlocked(
 
   if (claimError || !claimRow?.id) {
     console.error("[phone-verification] claim insert failed", claimError?.message);
+    logOtpAudit({
+      event: "seller_claim_failed",
+      requestId,
+      phone: params.phoneIntl,
+      error: claimError?.message,
+    });
     return {
       ok: false,
       error: PHONE_VERIFY_COPY.providerUnavailable,
@@ -168,11 +281,20 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     };
   }
 
+  logOtpAudit({
+    event: "seller_claim_ok",
+    requestId,
+    phone: params.phoneIntl,
+    reference: claimReference,
+    otpHash: claimRow.id,
+  });
+
   const created = await provider.sendOtp({
     phoneIntl: params.phoneIntl,
     channel: params.channel,
     email: params.email ?? undefined,
     purpose: "phone_verification",
+    requestId,
   });
 
   if (!created.ok) {
@@ -180,6 +302,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
       channel: params.channel,
       error: created.error,
       status: created.status,
+      requestId,
     });
     await admin
       .from("whatsapp_otp_sessions")
@@ -188,6 +311,12 @@ async function sendSellerPhoneVerificationCodeUnlocked(
         consumed_at: new Date().toISOString(),
       })
       .eq("id", claimRow.id);
+    logOtpAudit({
+      event: "seller_send_failed",
+      requestId,
+      phone: params.phoneIntl,
+      error: created.error,
+    });
     return {
       ok: false,
       error: created.error,
@@ -208,6 +337,14 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     })
     .eq("id", claimRow.id);
 
+  logOtpAudit({
+    event: "seller_send_ok",
+    requestId,
+    phone: params.phoneIntl,
+    reference: created.reference,
+    deliveryReference: created.reference,
+  });
+
   return {
     ok: true,
     message: created.message,
@@ -227,6 +364,32 @@ export async function sendSellerPhoneVerificationCode(
     channel?: PhoneVerificationChannel;
   }
 ): Promise<SendPhoneVerificationResult> {
+  // FAT bypass — mark verified immediately; no SMS provider call.
+  if (isAuthSmsVerificationBypassActive()) {
+    const marked = await markSellerPhoneVerifiedForFatBypass(admin, {
+      userId: params.userId,
+      phoneLocal: params.phoneLocal,
+    });
+    if (!marked.ok) {
+      return {
+        ok: false,
+        error: marked.error,
+        status: marked.status,
+        code: "sms_bypass_failed",
+      };
+    }
+    return {
+      ok: true,
+      message: marked.message,
+      channel: "sms",
+      expiresMinutes: 0,
+      bypass: true,
+      phoneVerified: true,
+      phoneVerifiedAt: marked.phoneVerifiedAt,
+      phone: marked.phone,
+    };
+  }
+
   if (!isSellerPhoneSmsOtpEnabled() && params.channel !== "whatsapp") {
     return {
       ok: false,
@@ -242,10 +405,16 @@ export async function sendSellerPhoneVerificationCode(
     return { ok: false, error: PHONE_VERIFY_COPY.invalidPhone, status: 400 };
   }
 
+  const requestId = newOtpRequestId();
   const lockKey = `${params.userId}:${phoneIntl}:${channel}`;
   const existing = sendInFlight.get(lockKey);
   if (existing) {
     // Same in-flight request — await it; do not generate/send a second OTP.
+    logOtpAudit({
+      event: "seller_send_deduped",
+      requestId,
+      phone: phoneIntl,
+    });
     return existing;
   }
 
@@ -257,6 +426,7 @@ export async function sendSellerPhoneVerificationCode(
     request: params.request,
     updateProfilePhone: params.updateProfilePhone,
     channel,
+    requestId,
   }).finally(() => {
     if (sendInFlight.get(lockKey) === pending) {
       sendInFlight.delete(lockKey);

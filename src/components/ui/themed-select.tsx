@@ -42,9 +42,7 @@ export function ThemedSelect({
   placeholder: string;
   ariaLabel: string;
   variant?: Variant;
-  /** Tighter typography for currency-style labels (e.g. budget tiers). */
   compactLabel?: boolean;
-  /** Filter long lists — defaults on when there are more than 8 choices. */
   searchable?: boolean;
   disabled?: boolean;
 }) {
@@ -65,7 +63,7 @@ export function ThemedSelect({
 
   const selectableOptions = useMemo(
     () => options.filter(isSelectable),
-    [options]
+    [options],
   );
 
   const selected = selectableOptions.find((o) => o.value === value);
@@ -84,17 +82,23 @@ export function ThemedSelect({
     return selectableOptions.filter(
       (opt) =>
         opt.label.toLowerCase().includes(trimmed) ||
-        (opt.value && opt.value.toLowerCase().includes(trimmed))
+        (opt.value && opt.value.toLowerCase().includes(trimmed)),
     );
   }, [options, query, selectableOptions]);
 
   useEffect(() => {
     if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
+      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- close is stable enough for open cycle
   }, [open]);
 
   function close() {
@@ -114,14 +118,14 @@ export function ThemedSelect({
           !disabled &&
             (open
               ? "border-gold/55 shadow-[0_4px_18px_rgb(2_20_51_/26%)] ring-2 ring-gold/25"
-              : "focus-visible:border-gold/50 focus-visible:shadow-[0_4px_16px_rgb(2_20_51_/22%)] focus-visible:ring-2 focus-visible:ring-gold/20")
+              : "focus-visible:border-gold/50 focus-visible:shadow-[0_4px_16px_rgb(2_20_51_/22%)] focus-visible:ring-2 focus-visible:ring-gold/20"),
         )
       : cn(
           "flex h-10 w-full items-center justify-between gap-1 rounded-xl border px-3 text-left text-xs font-medium outline-none transition-colors",
           "border-navy/10 bg-white text-foreground",
           "focus-visible:ring-2 focus-visible:ring-gold/35",
           "dark:border-white/10 dark:bg-elevated lg:text-sm",
-          disabled && "cursor-not-allowed opacity-50"
+          disabled && "cursor-not-allowed opacity-50",
         );
 
   const headerTextClass =
@@ -141,50 +145,82 @@ export function ThemedSelect({
 
   const sheet =
     open && mounted ? (
-      <div className="fixed inset-0 z-[100] flex flex-col justify-end pb-[var(--bottom-nav-stack)] lg:items-center lg:justify-center lg:p-6 lg:pb-6">
+      <div className="fixed inset-0 z-[200]" role="presentation">
         <button
           type="button"
           className={cn(
-            "absolute inset-0 backdrop-blur-[3px]",
-            variant === "hero" ? "bg-navy/55" : "bg-[#021433]/70 backdrop-blur-[2px]"
+            "absolute inset-0",
+            variant === "hero" ? "bg-navy/55" : "bg-[#021433]/70",
           )}
           aria-label="Close"
           onClick={close}
         />
+
         <div
           role="dialog"
           aria-modal="true"
           aria-label={ariaLabel}
           className={cn(
-            "relative flex max-h-[min(68vh,480px)] w-full flex-col shadow-float-lg",
-            "lg:max-h-[min(72vh,520px)] lg:max-w-md lg:rounded-2xl",
+            "absolute inset-x-0 flex max-h-[min(72dvh,560px)] w-full flex-col overflow-hidden shadow-float-lg",
+            "bottom-[var(--bottom-nav-stack,0px)] rounded-t-2xl",
+            "lg:inset-x-auto lg:bottom-auto lg:left-1/2 lg:top-1/2 lg:w-full lg:max-w-md lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-2xl",
             variant === "hero"
-              ? "rounded-t-2xl border border-navy/10 bg-white"
-              : "rounded-t-2xl border border-gold/20 bg-gradient-to-b from-[#042a66] to-[#031B4E]"
+              ? "border border-navy/10 bg-white"
+              : "border border-gold/20 bg-gradient-to-b from-[#042a66] to-[#031B4E]",
           )}
         >
           <div
             className={cn(
-              "flex items-center justify-between gap-3 border-b px-4 py-3.5",
-              variant === "hero" ? "border-navy/8" : "border-white/10 py-3"
+              "flex shrink-0 items-center gap-2 border-b px-3 py-2.5",
+              variant === "hero" ? "border-navy/8" : "border-white/10",
             )}
           >
-            <p
-              className={cn(
-                "text-sm font-bold",
-                variant === "hero" ? "text-navy" : "text-gold"
-              )}
-            >
-              {ariaLabel}
-            </p>
+            {showSearch ? (
+              <div
+                className={cn(
+                  "flex min-w-0 flex-1 items-center gap-2 rounded-xl border px-3 py-2",
+                  variant === "hero"
+                    ? "border-navy/10 bg-navy/[0.03]"
+                    : "border-white/12 bg-white/[0.06]",
+                )}
+              >
+                <Search
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    variant === "hero" ? "text-navy/40" : "text-white/45",
+                  )}
+                  aria-hidden
+                />
+                <label className="sr-only" htmlFor={`${ariaLabel}-search`}>
+                  Search {ariaLabel}
+                </label>
+                <input
+                  id={`${ariaLabel}-search`}
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search…"
+                  autoComplete="off"
+                  autoFocus
+                  className={cn(
+                    "min-w-0 flex-1 bg-transparent text-sm outline-none",
+                    variant === "hero"
+                      ? "text-navy placeholder:text-navy/40"
+                      : "text-white placeholder:text-white/40",
+                  )}
+                />
+              </div>
+            ) : (
+              <span className="flex-1" />
+            )}
             <button
               type="button"
               onClick={close}
               className={cn(
-                "pressable flex h-8 w-8 items-center justify-center rounded-full",
+                "pressable flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
                 variant === "hero"
                   ? "bg-navy/[0.06] text-navy/70"
-                  : "bg-white/10 text-white/80"
+                  : "bg-white/10 text-white/80",
               )}
               aria-label="Close"
             >
@@ -192,53 +228,10 @@ export function ThemedSelect({
             </button>
           </div>
 
-          {showSearch ? (
-            <div
-              className={cn(
-                "border-b px-3 py-2.5",
-                variant === "hero" ? "border-navy/8" : "border-white/10"
-              )}
-            >
-              <label className="sr-only" htmlFor={`${ariaLabel}-search`}>
-                Search {ariaLabel}
-              </label>
-              <div
-                className={cn(
-                  "flex items-center gap-2 rounded-xl border px-3 py-2.5",
-                  variant === "hero"
-                    ? "border-navy/10 bg-navy/[0.03]"
-                    : "border-white/12 bg-white/[0.06]"
-                )}
-              >
-                <Search
-                  className={cn(
-                    "h-4 w-4 shrink-0",
-                    variant === "hero" ? "text-navy/40" : "text-white/45"
-                  )}
-                  aria-hidden
-                />
-                <input
-                  id={`${ariaLabel}-search`}
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={`Search ${ariaLabel.toLowerCase()}…`}
-                  autoComplete="off"
-                  className={cn(
-                    "min-w-0 flex-1 bg-transparent text-sm outline-none",
-                    variant === "hero"
-                      ? "text-navy placeholder:text-navy/40"
-                      : "text-white placeholder:text-white/40"
-                  )}
-                />
-              </div>
-            </div>
-          ) : null}
-
           <ul
             role="listbox"
             aria-label={ariaLabel}
-            className="hide-scrollbar flex-1 overflow-y-auto overscroll-contain px-2 py-2 pb-4"
+            className="hide-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pb-2"
           >
             {visibleOptions.length === 0 ? (
               <li className="px-3 py-6 text-center text-sm text-muted">
@@ -286,11 +279,14 @@ export function ThemedSelect({
                             : "font-medium text-navy/85 hover:bg-navy/[0.04]"
                           : active
                             ? "bg-gold/15 font-bold text-gold"
-                            : "text-white/90 hover:bg-white/[0.06]"
+                            : "text-white/90 hover:bg-white/[0.06]",
                       )}
                     >
                       <span
-                        className={cn("min-w-0", compactLabel && "tracking-tight")}
+                        className={cn(
+                          "min-w-0",
+                          compactLabel && "tracking-tight",
+                        )}
                       >
                         {opt.label}
                       </span>
@@ -298,7 +294,9 @@ export function ThemedSelect({
                         <Check
                           className={cn(
                             "h-4 w-4 shrink-0",
-                            variant === "hero" ? "text-gold-dark" : "text-gold"
+                            variant === "hero"
+                              ? "text-gold-dark"
+                              : "text-gold",
                           )}
                         />
                       ) : null}
@@ -308,7 +306,6 @@ export function ThemedSelect({
               })
             )}
           </ul>
-          <div className="h-[max(0.75rem,env(safe-area-inset-bottom))] shrink-0 lg:h-2" />
         </div>
       </div>
     ) : null;
@@ -332,7 +329,8 @@ export function ThemedSelect({
           className={cn(
             "min-w-0 truncate",
             compactLabel && "tracking-tight",
-            variant === "hero" && (isPlaceholder ? "text-navy/55" : "text-navy")
+            variant === "hero" &&
+              (isPlaceholder ? "text-navy/55" : "text-navy"),
           )}
         >
           {display}
@@ -342,7 +340,7 @@ export function ThemedSelect({
             "shrink-0",
             variant === "hero"
               ? "h-4 w-4 text-navy/65"
-              : "h-3.5 w-3.5 opacity-70"
+              : "h-3.5 w-3.5 opacity-70",
           )}
           strokeWidth={variant === "hero" ? 2.5 : 2}
           aria-hidden

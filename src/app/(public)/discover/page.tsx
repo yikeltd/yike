@@ -26,7 +26,7 @@ export default async function DiscoverPage() {
     }
   }
 
-  const desktopItems = [...properties, ...vehicles].slice(0, 12);
+  const desktopItems = [...vehicles, ...properties].slice(0, 12);
 
   return (
     <>

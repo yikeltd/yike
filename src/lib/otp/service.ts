@@ -3,13 +3,11 @@ import {
   deliverOtp,
   getSendchampConfigSummary,
   isSendchampConfigured,
-  sendBrandedSmsOtp,
   toSendchampPhone,
 } from "@/lib/notifications/providers/sendchamp";
 import {
   createSendchampVerificationOtp,
   confirmSendchampVerification,
-  otpExpiryMinutes,
 } from "@/lib/notifications/providers/sendchamp-verification";
 import { isWhatsappOtpProviderSendchamp } from "@/lib/feature-flags";
 import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
@@ -20,7 +18,8 @@ import {
   isPhoneOtpEnabled,
   phoneOtpDisabledPublicMessage,
 } from "@/lib/feature-flags";
-import { isLocalOtpReference, buildLocalOtpReference } from "@/lib/phone-verification/local-otp";
+import { isLocalOtpReference } from "@/lib/phone-verification/local-otp";
+import { logOtpAudit, newOtpRequestId } from "@/lib/otp/delivery-audit";
 import {
   OTP_EXPIRY_MS,
   OTP_MAX_ATTEMPTS,
@@ -229,58 +228,51 @@ async function sendPhoneOtpUnlocked(
     };
   }
 
-  // SMS (production default): Sendchamp Verification API (BamSignal path).
-  // Branded `/sms/send` only if Verification create fails.
+  // SMS (production default): ONE Sendchamp Verification API create — no /sms/send fallback.
   if (channel === "sms") {
     const phoneIntl = toSendchampPhone(phone);
+    const requestId = newOtpRequestId();
+    logOtpAudit({
+      event: "auth_sms_start",
+      requestId,
+      phone: phoneIntl,
+    });
+
     const created = await createSendchampVerificationOtp({
       phoneIntl,
       channel: "sms",
       purpose: "account_verification",
       inAppToken: false,
+      requestId,
     });
 
-    if (created.ok) {
-      const expiresAt = new Date(
-        Date.now() + created.expiresMinutes * 60_000
-      ).toISOString();
-
-      const inserted = await otpInsertPending(db, {
-        phone,
-        otpHash: hashOtp(created.reference),
-        expiresAt,
-        channel: "sms",
+    if (!created.ok) {
+      logOtpAudit({
+        event: "auth_sms_failed",
+        requestId,
+        phone: phoneIntl,
+        error: created.error,
       });
-      if (!inserted) {
-        return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
-      }
-
-      await otpMarkSent(db, inserted.id, "sms", created.reference);
       await otpLogEvent(db, {
         phone,
         channel: "sms",
-        status: "sent",
-        expiresAt,
+        status: "failed",
+        providerError: created.error,
       });
       return {
-        ok: true,
-        channel: "sms",
-        message: otpSentMessage("sms"),
+        ok: false,
+        error: OTP_USER_MESSAGES.sendFailed,
+        status: created.status === 401 ? 503 : 502,
       };
     }
 
-    console.warn("[otp] verification SMS failed — trying branded /sms/send", {
-      phone,
-      error: created.error,
-    });
-
-    const code = generateOtp();
-    const expiresMinutes = otpExpiryMinutes();
-    const expiresAt = new Date(Date.now() + expiresMinutes * 60_000).toISOString();
+    const expiresAt = new Date(
+      Date.now() + created.expiresMinutes * 60_000
+    ).toISOString();
 
     const inserted = await otpInsertPending(db, {
       phone,
-      otpHash: hashOtp(code),
+      otpHash: hashOtp(created.reference),
       expiresAt,
       channel: "sms",
     });
@@ -288,39 +280,25 @@ async function sendPhoneOtpUnlocked(
       return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
     }
 
-    const delivered = await sendBrandedSmsOtp(phoneIntl, code);
-    if (!delivered.ok) {
-      console.error("[otp] branded SMS fallback failed", {
-        phone,
-        verificationError: created.error,
-        error: delivered.error,
-      });
-      await otpMarkFailed(db, inserted.id, sanitizeOtpError(delivered.error));
-      await otpLogEvent(db, {
-        phone,
-        channel: "sms",
-        status: "failed",
-        providerError: delivered.error || created.error,
-      });
-      return {
-        ok: false,
-        error: OTP_USER_MESSAGES.sendFailed,
-        status: 502,
-      };
-    }
-
-    await otpMarkSent(db, inserted.id, "sms", buildLocalOtpReference(code));
+    await otpMarkSent(db, inserted.id, "sms", created.reference);
     await otpLogEvent(db, {
       phone,
       channel: "sms",
       status: "sent",
       expiresAt,
     });
+    logOtpAudit({
+      event: "auth_sms_ok",
+      requestId,
+      phone: phoneIntl,
+      reference: created.reference,
+      deliveryReference: created.reference,
+      otpHash: hashOtp(created.reference),
+    });
     return {
       ok: true,
       channel: "sms",
       message: otpSentMessage("sms"),
-      ...(!isProductionEnv() ? { devOtp: code } : {}),
     };
   }
 

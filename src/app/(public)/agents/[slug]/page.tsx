@@ -22,7 +22,11 @@ import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { PassportReadinessNotice } from "@/components/marketplace/passport-readiness";
-import { MarketplaceSafetyNotice } from "@/components/marketplace/safety-notice";
+import {
+  TrustModule,
+  type TrustBadgeKind,
+} from "@/components/marketplace/experience";
+import { isResponsiveAgent } from "@/lib/agent-response";
 
 export async function generateMetadata({
   params,
@@ -80,6 +84,15 @@ export default async function AgentProfilePage({
     (p) => normalizeAssetType(p.asset_type) === "VEHICLE",
   );
   const isDealer = agent.account_type === "dealer";
+  const trustKinds: TrustBadgeKind[] = [];
+  if (verified) {
+    trustKinds.push(isDealer ? "verified_dealer" : "verified_seller");
+  }
+  trustKinds.push("media_protected");
+  const listingCount = listings.length;
+  const locationLabel = [agent.residential_city, agent.residential_state]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <div className="space-y-6 px-3 pt-2 pb-8 lg:px-0 lg:pt-8">
@@ -99,44 +112,54 @@ export default async function AgentProfilePage({
             viewerId={viewer?.id}
           />
 
-          <PassportReadinessNotice accountType={agent.account_type} />
+          <div className="rounded-[1.5rem] border border-navy/10 bg-gradient-to-b from-white to-[#f4f6fa] p-4 sm:p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-navy/40">
+              {isDealer ? "Dealership" : "Seller"}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-3 text-xs font-semibold text-navy/55">
+              {locationLabel ? <span>{locationLabel}</span> : null}
+              <span>
+                {listingCount} live listing{listingCount === 1 ? "" : "s"}
+              </span>
+              {isResponsiveAgent(agent) ? (
+                <span className="text-emerald-700">Responsive seller</span>
+              ) : null}
+            </div>
+            <TrustModule kinds={trustKinds} className="mt-3" />
+          </div>
 
-          <MarketplaceSafetyNotice
-            vertical={isDealer ? "dealer" : "seller"}
-          />
+          <PassportReadinessNotice accountType={agent.account_type} />
 
           <AgencyDeveloperProfileSections agent={agent} listings={listings} />
 
-          <AgentReviewsSection
-            agentId={agentId}
-            isAgency={agent.account_type === "agency" || agent.agent_type === "agency"}
-          />
+          <details className="rounded-2xl border border-navy/10 bg-white">
+            <summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold text-navy [&::-webkit-details-marker]:hidden">
+              Reviews
+            </summary>
+            <div className="border-t border-navy/8 px-2 pb-2">
+              <AgentReviewsSection
+                agentId={agentId}
+                isAgency={agent.account_type === "agency" || agent.agent_type === "agency"}
+              />
+            </div>
+          </details>
 
           {showListings && (
             <section className="space-y-6">
               {isDealer ? (
-                <p className="rounded-xl border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-semibold text-navy">
-                  Dealer storefront — inventory below. Passport verification will
-                  strengthen trust when Stankings activates it.
-                </p>
-              ) : null}
-              {propertyListings.length > 0 ? (
-                <div>
-                  <h2 className="mb-3 px-1 text-sm font-bold text-navy lg:text-base">
-                    Properties ({propertyListings.length})
-                  </h2>
-                  <PropertyFeed
-                    properties={propertyListings}
-                    isDemo={isDemo}
-                    emptyMessage="No active property listings."
-                  />
-                </div>
-              ) : null}
+                <h2 className="border-l-[3px] border-gold pl-3 text-lg font-bold tracking-tight text-navy">
+                  Showroom inventory
+                </h2>
+              ) : (
+                <h2 className="border-l-[3px] border-gold pl-3 text-lg font-bold tracking-tight text-navy">
+                  Listings
+                </h2>
+              )}
               {vehiclesOn && vehicleListings.length > 0 ? (
                 <div>
-                  <h2 className="mb-3 px-1 text-sm font-bold text-navy lg:text-base">
+                  <h3 className="mb-3 px-1 text-sm font-bold text-navy lg:text-base">
                     Vehicles ({vehicleListings.length})
-                  </h2>
+                  </h3>
                   <ul className={BROWSE_GRID_CLASS}>
                     {vehicleListings.map((v) => (
                       <li key={v.id}>
@@ -144,6 +167,18 @@ export default async function AgentProfilePage({
                       </li>
                     ))}
                   </ul>
+                </div>
+              ) : null}
+              {propertyListings.length > 0 ? (
+                <div>
+                  <h3 className="mb-3 px-1 text-sm font-bold text-navy lg:text-base">
+                    Properties ({propertyListings.length})
+                  </h3>
+                  <PropertyFeed
+                    properties={propertyListings}
+                    isDemo={isDemo}
+                    emptyMessage="No active property listings."
+                  />
                 </div>
               ) : null}
               {propertyListings.length === 0 &&

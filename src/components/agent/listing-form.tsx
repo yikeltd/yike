@@ -1278,16 +1278,6 @@ export function ListingForm({
                   />
                 </div>
               </div>
-            ) : commercial ? (
-              <div>
-                <FieldLabel>{amenitiesSectionLabel(listingType, propertyType)}</FieldLabel>
-                <ListingAmenitiesPicker
-                  listingType={listingType}
-                  propertyType={propertyType}
-                  selected={amenities}
-                  onChange={setAmenities}
-                />
-              </div>
             ) : null}
             <div>
               <FieldLabel>{paymentPeriodLabel(listingType)}</FieldLabel>

@@ -192,7 +192,7 @@ export function BrowseListingsBlock({
     [isPremium, budgetContext]
   );
 
-  const showTitle = !isDesktopPanel && !hideTitle && !isInline;
+  const showTitle = false;
 
   return (
     <div className={shellClass}>

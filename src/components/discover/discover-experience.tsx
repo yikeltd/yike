@@ -58,7 +58,7 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
   const { user, guardAction, isListingSaved, setListingSaved } = useAuth();
   const [filters, setFilters] = useState<DiscoverFilterState>(() => ({
     ...DEFAULT_DISCOVER_FILTERS,
-    category: "property",
+    category: vehiclesOn ? "vehicle" : "property",
   }));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [feed, setFeed] = useState<Property[]>([]);

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 
-/** Property / Vehicles switcher for marketplace discovery surfaces. */
+/** Vehicles / Property switcher for marketplace discovery surfaces (Vehicles primary). */
 export function MarketplaceVerticalSwitcher({
   active,
 }: {
@@ -13,16 +13,6 @@ export function MarketplaceVerticalSwitcher({
 
   return (
     <div className="inline-flex rounded-full border border-navy/12 bg-white p-1 text-sm font-semibold">
-      <Link
-        href="/search"
-        className={
-          active === "property"
-            ? "rounded-full bg-navy px-4 py-1.5 text-white"
-            : "rounded-full px-4 py-1.5 text-navy/60"
-        }
-      >
-        Property
-      </Link>
       {vehiclesOn ? (
         <Link
           href="/vehicles"
@@ -35,6 +25,16 @@ export function MarketplaceVerticalSwitcher({
           Vehicles
         </Link>
       ) : null}
+      <Link
+        href="/search"
+        className={
+          active === "property"
+            ? "rounded-full bg-navy px-4 py-1.5 text-white"
+            : "rounded-full px-4 py-1.5 text-navy/60"
+        }
+      >
+        Property
+      </Link>
     </div>
   );
 }

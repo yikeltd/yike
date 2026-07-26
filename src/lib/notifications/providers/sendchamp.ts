@@ -1,6 +1,11 @@
 import type { OtpChannel, ProviderResult } from "../types";
 import { buildSmsOtpMessage } from "@/lib/phone-verification/copy";
 import {
+  logOtpAudit,
+  pickResponseHeaders,
+  sanitizeSendchampPayload,
+} from "@/lib/otp/delivery-audit";
+import {
   auditSendchampEnv,
   looksLikeSupabaseKey,
   resolveSmsSender,
@@ -15,7 +20,6 @@ import { otpExpiryMinutes } from "./sendchamp-verification";
 
 const DEFAULT_BASE_URL = "https://api.sendchamp.com/api/v1";
 const FETCH_TIMEOUT_MS = 25_000;
-const FETCH_RETRIES = 2;
 
 function getBaseUrl(): string {
   return process.env.SENDCHAMP_LIVE_BASE_URL?.trim() || DEFAULT_BASE_URL;
@@ -98,7 +102,8 @@ export function getSendchampConfigSummary() {
 
 async function sendchampPost<T extends Record<string, unknown>>(
   path: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
+  options: { requestId?: string; phone?: string; billable?: boolean } = {}
 ): Promise<ProviderResult<SendchampEnvelope<T>>> {
   const config = getConfig();
   if (!config) {
@@ -106,46 +111,80 @@ async function sendchampPost<T extends Record<string, unknown>>(
   }
 
   const baseUrl = getBaseUrl();
+  const billable =
+    options.billable ?? (path.includes("/sms/") || path.includes("/verification/"));
+  // Billable: one key, one attempt — never timeout-retry (double charge risk).
+  const keysToTry = billable ? config.apiKeys.slice(0, 1) : config.apiKeys;
   let lastError = "Sendchamp request failed";
 
-  for (const apiKey of config.apiKeys) {
-    for (let attempt = 0; attempt < FETCH_RETRIES; attempt++) {
-      try {
-        const res = await fetch(`${baseUrl}${path}`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        });
+  for (let keyIndex = 0; keyIndex < keysToTry.length; keyIndex++) {
+    const apiKey = keysToTry[keyIndex]!;
+    const started = Date.now();
+    try {
+      const res = await fetch(`${baseUrl}${path}`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
 
-        const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      const durationMs = Date.now() - started;
 
-        if (isSendchampSuccess(data, res.ok)) {
-          return { ok: true, data: data as SendchampEnvelope<T> };
-        }
+      logOtpAudit({
+        event: "sendchamp_http_response",
+        requestId: options.requestId ?? "unknown",
+        phone: options.phone,
+        path,
+        httpStatus: res.status,
+        responseHeaders: pickResponseHeaders(res),
+        responseBody: data,
+        requestPayload: sanitizeSendchampPayload(body),
+        deliveryReference: pickSendchampReference(data),
+        deliveryStatus: String(
+          (data.data as Record<string, unknown> | undefined)?.status ??
+            data.status ??
+            ""
+        ),
+        retryCount: keyIndex,
+        durationMs,
+      });
 
-        lastError = sendchampErrorMessage(data, res.status);
-        console.error(
-          "[sendchamp]",
-          path,
-          res.status,
-          lastError,
-          JSON.stringify(data).slice(0, 500)
-        );
-        break;
-      } catch (err) {
-        const detail = err instanceof Error ? err.message : String(err);
-        lastError =
-          err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")
-            ? "Sendchamp request timed out"
-            : `Sendchamp network error: ${detail.slice(0, 120)}`;
-        console.error("[sendchamp]", path, lastError, `attempt ${attempt + 1}`);
-        if (attempt + 1 < FETCH_RETRIES) continue;
+      if (isSendchampSuccess(data, res.ok)) {
+        return { ok: true, data: data as SendchampEnvelope<T> };
       }
+
+      lastError = sendchampErrorMessage(data, res.status);
+      console.error(
+        "[sendchamp]",
+        path,
+        res.status,
+        lastError,
+        JSON.stringify(data).slice(0, 500)
+      );
+      if (billable) break;
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      lastError =
+        err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")
+          ? "Sendchamp request timed out"
+          : `Sendchamp network error: ${detail.slice(0, 120)}`;
+      logOtpAudit({
+        event: "sendchamp_http_error",
+        requestId: options.requestId ?? "unknown",
+        phone: options.phone,
+        path,
+        requestPayload: sanitizeSendchampPayload(body),
+        retryCount: keyIndex,
+        durationMs: Date.now() - started,
+        error: lastError,
+      });
+      console.error("[sendchamp]", path, lastError);
+      if (billable) break;
     }
   }
 
@@ -190,31 +229,28 @@ async function sendVerificationOtp(
   return { ok: true, data: { reference } };
 }
 
-/** OTP SMS routes — DND first (Nigeria transactional), then premium / non-DND. */
-function smsOtpRoutes(): string[] {
-  const fromEnv = process.env.SENDCHAMP_SMS_ROUTE?.trim();
-  if (fromEnv) {
-    return fromEnv
-      .split(",")
-      .map((r) => r.trim())
-      .filter(Boolean);
-  }
-  // Prefer DND / premium so OTP reaches DND-registered Nigerian lines.
-  return ["dnd", "DND_NG", "PREMIUM_NG", "non_dnd", "NON_DND_NG"];
+/** Single route for branded SMS — multi-route spray caused multiple charge attempts. */
+function smsOtpRoute(): string {
+  return process.env.SENDCHAMP_SMS_ROUTE?.trim().split(",")[0]?.trim() || "dnd";
 }
 
 async function sendSmsMessage(
   mobile: string,
   message: string,
   sender_name: string,
-  route: string
+  route: string,
+  options: { requestId?: string; phone?: string } = {}
 ): Promise<ProviderResult<{ reference?: string }>> {
-  const result = await sendchampPost<Record<string, unknown>>("/sms/send", {
-    to: [mobile],
-    message,
-    sender_name,
-    route,
-  });
+  const result = await sendchampPost<Record<string, unknown>>(
+    "/sms/send",
+    {
+      to: [mobile],
+      message,
+      sender_name,
+      route,
+    },
+    { ...options, billable: true }
+  );
 
   if (!result.ok) return result;
 
@@ -252,33 +288,57 @@ export async function sendWhatsAppText(
 }
 
 /**
- * Branded `/sms/send` OTP (sender YIKE).
- * Fallback path when Verification API SMS fails — tries DND routes first.
+ * Branded `/sms/send` — ops/diagnostics only.
+ * Production seller/auth OTP must NOT call this in the same request as Verification create.
  */
 export async function sendBrandedSmsOtp(
   phone: string,
-  code: string
+  code: string,
+  options: { requestId?: string } = {}
 ): Promise<ProviderResult<{ reference?: string }>> {
   const config = getConfig();
   if (!config) return { ok: false, error: "Sendchamp not configured" };
 
   const mobile = toSendchampPhone(phone);
   const message = buildSmsOtpMessage(code);
-  let lastError = "SMS delivery failed";
+  const route = smsOtpRoute();
 
-  for (const route of smsOtpRoutes()) {
-    const direct = await sendSmsMessage(mobile, message, config.smsSender, route);
-    if (direct.ok) {
-      console.info("[sendchamp] sms/send ok", {
-        route,
-        mobileSuffix: mobile.slice(-4),
-      });
-      return direct;
-    }
-    lastError = direct.error || lastError;
+  logOtpAudit({
+    event: "sms_send_start",
+    requestId: options.requestId ?? "unknown",
+    phone: mobile,
+    path: "/sms/send",
+    requestPayload: sanitizeSendchampPayload({
+      to: [mobile],
+      message,
+      sender_name: config.smsSender,
+      route,
+    }),
+  });
+
+  const direct = await sendSmsMessage(mobile, message, config.smsSender, route, {
+    requestId: options.requestId,
+    phone: mobile,
+  });
+
+  if (direct.ok) {
+    logOtpAudit({
+      event: "sms_send_ok",
+      requestId: options.requestId ?? "unknown",
+      phone: mobile,
+      deliveryReference: direct.data?.reference,
+      deliveryStatus: "ok",
+    });
+    return direct;
   }
 
-  return { ok: false, error: lastError };
+  logOtpAudit({
+    event: "sms_send_failed",
+    requestId: options.requestId ?? "unknown",
+    phone: mobile,
+    error: direct.error,
+  });
+  return { ok: false, error: direct.error || "SMS delivery failed" };
 }
 
 /**
@@ -373,15 +433,13 @@ export async function runSendchampDiagnostics(
     error: auth.ok ? undefined : auth.error,
   });
 
-  for (const route of smsOtpRoutes()) {
-    const sms = await sendSmsMessage(testMobile, message, config.smsSender, route);
-    steps.push({
-      step: `sms_send_${route}`,
-      ok: sms.ok,
-      error: sms.ok ? undefined : sms.error,
-    });
-    if (sms.ok) break;
-  }
+  const route = smsOtpRoute();
+  const sms = await sendSmsMessage(testMobile, message, config.smsSender, route);
+  steps.push({
+    step: `sms_send_${route}`,
+    ok: sms.ok,
+    error: sms.ok ? undefined : sms.error,
+  });
 
   if (config.whatsappSender) {
     const waVerify = await sendVerificationOtp(
