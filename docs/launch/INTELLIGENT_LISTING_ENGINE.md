@@ -6,7 +6,8 @@
 **Product OS:** [INTELLIGENT_MARKETPLACE.md](../product/INTELLIGENT_MARKETPLACE.md)  
 **Phase 1 ship notes:** [INTELLIGENT_MARKETPLACE_EXPERIENCE.md](./INTELLIGENT_MARKETPLACE_EXPERIENCE.md)  
 **Freeze:** [FEATURE_FREEZE.md](./FEATURE_FREEZE.md) — **docs + design only until founder override or post-FAT**  
-**V2 automation depth:** [V2_BACKLOG.md](./V2_BACKLOG.md) (V2-16 … V2-20)
+**V2 automation depth:** [V2_BACKLOG.md](./V2_BACKLOG.md) (V2-16 … V2-20)  
+**Engineering contract (schema, engines, migration):** [METADATA_LISTING_ENGINE.md](../architecture/METADATA_LISTING_ENGINE.md)
 
 ---
 
@@ -22,7 +23,7 @@ That is how a 2027 marketplace feels: Apple clarity, Stripe speed, Airbnb confid
 
 **Today:** Phase 1 progressive disclosure is already live (stepped forms, make→model, auto-title, type-based property fields, shared media pipeline).
 
-**Next architecture:** One **metadata-driven listing engine** that renders Vehicle, Property, and future verticals from configuration — not duplicate wizards.
+**Next architecture:** One **metadata-driven listing engine** that renders Vehicle, Property, and future verticals from **typed TypeScript configuration** — not duplicate wizards, not database JSON. See [METADATA_LISTING_ENGINE.md](../architecture/METADATA_LISTING_ENGINE.md).
 
 **Do not build the full engine during active FAT / feature freeze.** Finish Profile → Seller verify → Publish certification first. This document is the build contract for the post-certification (or founder-override) implementation.
 

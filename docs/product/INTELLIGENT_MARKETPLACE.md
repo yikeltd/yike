@@ -79,7 +79,7 @@ Listing feels like a conversation, not a giant form:
 Category → make → models → year → system suggests title / fields / category → seller **reviews**, does not invent from blank.
 
 **Phase 1 (shipped):** stepped forms, make→model catalogs, editable auto-title, type-based property fields, advanced collapsed.  
-**Architecture (locked):** one metadata-driven [Intelligent Listing Engine](../launch/INTELLIGENT_LISTING_ENGINE.md) — Vehicle + Property (+ future verticals) from category manifests, not duplicate wizards.  
+**Architecture (locked):** one metadata-driven [Intelligent Listing Engine](../launch/INTELLIGENT_LISTING_ENGINE.md) — Vehicle + Property (+ future verticals) from category manifests, not duplicate wizards. Engineering schema: [METADATA_LISTING_ENGINE.md](../architecture/METADATA_LISTING_ENGINE.md) (plain TypeScript config, not DB JSON).  
 **V2:** factory trim/HP catalogs, LLM description drafts, live market price bands — see [V2_BACKLOG.md](../launch/V2_BACKLOG.md).
 
 ---
