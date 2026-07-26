@@ -1,38 +1,84 @@
-# Security Validation Report — Launch Candidate
+# Security Validation Report — Supabase Security Audit
 
-**Date:** 2026-07-23  
-**Scope:** Ship gate for marketplace launch candidate (auth, OTP, seller verification, ads schema).  
-**Verdict:** **GO with founder follow-ups** (SMS E2E + optional Sendchamp rotation)
+**Date:** 2026-07-24  
+**Project:** `hlpojfurfldvcxfxhveg` (Yike production)  
+**Scope:** Phases 1–5 per founder-approved security audit  
+**Verdict:** **Ready for review** — migration created, **not yet applied** to production
 
-## Controls verified in this pass
+---
 
-| Area | Status | Notes |
-|------|--------|-------|
-| Supabase project guard | **PASS** | Linked ref = production only |
-| Migrations | **PASS** | Applied once; no re-apply of historical migrations |
-| Secrets in git | **PASS** | `.env.local` not staged; `.env.example` placeholders only |
-| Typecheck / production build | **PASS** | No ship-blocking TS/build errors |
-| Public health | **PASS** | Signup readiness flags true on yike.ng |
-| PIN policy | **Present** | Client + server weak-PIN rejection in codebase |
-| Phone normalization | **Present** | Local NG → `234…` for SMS/dedupe |
-| Sendchamp webhook | **Present** | Route exists; webhook secret recommended in Coolify |
-| Service role | **Server-only** | Not `NEXT_PUBLIC_` |
+## Pre-flight checks
 
-## Seller verification schema
+| Check | Result |
+|-------|--------|
+| `docs/engineering/PROJECT_IDENTITY.md` ref | `hlpojfurfldvcxfxhveg` ✓ |
+| `npm run verify:supabase-project -- --require-linked` | **PASS** |
+| Cross-project link risk | None — config.toml and `.temp/project-ref` match |
+| Git commit | **Not committed** (per founder instruction) |
+| Migration apply | **Pending** — `SUPABASE_ACCESS_TOKEN` unavailable in agent environment |
 
-New `profiles` columns (timestamps + notes + `verified_by`) support manual Verified Seller — **no automated NIN/KYC** in this candidate (launch-correct).
+---
 
-## Ads placement constraint
+## Phase completion
 
-`advertisements_placement_check` extended for `homepage_slot_1`…`5` — empty slots collapse in UI (no forced empty chrome).
+| Phase | Priority | Status | Migration section |
+|-------|----------|--------|-------------------|
+| 1 — RLS policy presence | Critical | SQL ready | § Phase 1 |
+| 2 — SECURITY DEFINER search_path | High | SQL ready | § Phase 2 |
+| 3 — Storage bucket listing | High | SQL ready | § Phase 3 |
+| 4 — RPC execute grants | High | SQL ready | § Phase 4 |
+| 5 — Leaked password protection | Easy | Documented | See `FOUNDER_ACTION_LEAKED_PASSWORD_PROTECTION.md` |
 
-## Residual risks / founder actions
+**Migration file:** `supabase/migrations/20260724075626_supabase_security_audit_phase1_5.sql`
 
-1. **Rotate Sendchamp** if keys were ever pasted/logged outside Coolify.
-2. Confirm `SENDCHAMP_WEBHOOK_SECRET` and webhook URL `https://yike.ng/api/webhooks/sendchamp`.
-3. Live SMS OTP + admin approve path not exercised by agent (no fake OTP claims).
-4. Ensure RLS/admin-only paths for verification approve remain staff-gated (Lex).
+---
 
-## Out of scope (deferred by launch mode)
+## Application impact assessment
 
-Passport UI, wallet, escrow, in-app chat, consumer Command Center — remain behind launch flags / not shipped as consumer surfaces.
+| Change | Breaks app? | Notes |
+|--------|-------------|-------|
+| Backend-only table deny policies | **No** | All writes/reads already use `createAdminClient()` |
+| `verification_control_config` authenticated read | **No** | Preserves `/api/account/trust-status` behavior |
+| Remove storage SELECT listing policies | **No** | Public buckets still serve direct object URLs; upload policies unchanged |
+| search_path hardening | **No** | Same schemas, adds `pg_temp` immutability |
+| Trigger function EXECUTE revoke | **No** | Triggers invoke functions internally; not called via PostgREST |
+
+---
+
+## Residual linter warnings (expected after apply)
+
+| Warning | Expected after apply? |
+|---------|----------------------|
+| RLS enabled no policy (6 tables) | **Cleared** |
+| Function search_path mutable (SECURITY DEFINER) | **Cleared** for `public` SECURITY DEFINER functions |
+| Storage object listing (property-media, ad-creatives) | **Cleared** |
+| Leaked password protection disabled | **Remains** — Dashboard-only (Phase 5) |
+| Other pre-existing findings | Re-run linter post-apply; not in scope of this sprint |
+
+---
+
+## MCP / CLI limitations
+
+- Supabase MCP `execute_sql` and `get_advisors` returned permission errors in this session
+- `npm run db:push` requires `SUPABASE_ACCESS_TOKEN` in `.env.local` (not available here)
+- Founder should apply migration via SQL Editor or local `db:push`, then confirm linter
+
+---
+
+## Related reports
+
+- [RLS Policy Report](./RLS_POLICY_REPORT.md)
+- [Search Path Fix Report](./SEARCH_PATH_FIX_REPORT.md)
+- [Storage Bucket Policy Report](./STORAGE_BUCKET_POLICY_REPORT.md)
+- [SECURITY DEFINER RPC Audit Report](./SECURITY_DEFINER_RPC_AUDIT_REPORT.md)
+- [Founder Action: Leaked Password Protection](./FOUNDER_ACTION_LEAKED_PASSWORD_PROTECTION.md)
+
+---
+
+## Sign-off checklist (founder)
+
+- [ ] Review migration SQL
+- [ ] Apply to production (`hlpojfurfldvcxfxhveg`)
+- [ ] Re-run Database Linter
+- [ ] Enable leaked password protection (Dashboard)
+- [ ] Approve commit + push

@@ -27,4 +27,8 @@ export const safehavenPaymentProvider: PaymentProvider = {
   async verifyPayment(_reference: string): Promise<VerifyPaymentResult> {
     return { ok: false, error: "Safe Haven payments are not enabled yet" };
   },
+
+  verifyWebhookSignature(): boolean {
+    return false;
+  },
 };

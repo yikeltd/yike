@@ -65,7 +65,7 @@ function staticSitemapEntries(): SitemapUrlEntry[] {
     { path: "/buy", changeFrequency: "daily", priority: 0.9 },
     { path: "/land", changeFrequency: "daily", priority: 0.9 },
     { path: "/explore", changeFrequency: "weekly", priority: 0.85 },
-    { path: "/browse", changeFrequency: "daily", priority: 0.85 },
+    { path: "/discover", changeFrequency: "daily", priority: 0.85 },
     { path: "/post-property", changeFrequency: "weekly", priority: 0.8 },
     { path: "/property-verification", changeFrequency: "weekly", priority: 0.78 },
     { path: "/about", changeFrequency: "monthly", priority: 0.7 },

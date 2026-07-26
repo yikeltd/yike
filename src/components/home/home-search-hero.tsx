@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getStateForCity } from "@/lib/constants";
 import { budgetValueFromSearchParams } from "@/lib/budget-ranges";
 import { chipKeyFromParams, type Initial } from "@/lib/home-search-params";
@@ -11,13 +11,11 @@ import { trackEvent } from "@/lib/analytics";
 import { useDesktopWeb } from "@/hooks/use-desktop-web";
 import { HomeMobileHero } from "@/components/home/home-mobile-hero";
 import { HomeDesktopHero } from "@/components/home/home-desktop-hero";
-import type { HeroTrustedAgentsConfig } from "@/lib/home/hero-trusted-agents";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 import {
   parseHomeCategory,
   type HomeMarketplaceCategory,
 } from "@/lib/home/marketplace-category";
-import { useState } from "react";
 
 export { type Initial } from "@/lib/home-search-params";
 
@@ -27,10 +25,8 @@ export { type Initial } from "@/lib/home-search-params";
  */
 export function HomeSearchHero({
   initial,
-  trustedAgents,
 }: {
   initial?: Initial;
-  trustedAgents: HeroTrustedAgentsConfig;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -116,7 +112,6 @@ export function HomeSearchHero({
         category={category}
         onCategoryChange={setCategory}
         browseInitial={browseInitial}
-        trustedAgents={trustedAgents}
         onPropertySearch={handlePropertySearch}
         onVehicleSearch={handleVehicleSearch}
       />

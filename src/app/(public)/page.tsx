@@ -34,7 +34,6 @@ import {
 } from "@/lib/home/inventory-rails";
 import { getServerMarketplaceLocation } from "@/lib/search-preferences";
 import { getHomepageAds } from "@/lib/advertisements/public";
-import { getHeroTrustedAgentsConfig } from "@/lib/home/hero-trusted-agents";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
 import { BRAND_OG_IMAGE, BRAND_OG_IMAGE_WEBP } from "@/lib/share-images";
 import type { Property } from "@/types/database";
@@ -322,7 +321,6 @@ export default async function HomePage({
           initialCategory={category}
           showingDemoFixtures={showingDemoFixtures}
           homepageAds={homepageAds}
-          trustedAgents={getHeroTrustedAgentsConfig()}
           marketplaceLocation={
             loc
               ? {

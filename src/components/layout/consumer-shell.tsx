@@ -22,11 +22,10 @@ export function ConsumerShell({
   const isHome = pathname === "/";
   const isProfile = pathname === "/agent";
   const isPropertyDetail = pathname.startsWith("/properties/");
-  const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
+  const isDiscover =
+    pathname === "/discover" || pathname.startsWith("/discover/");
   const hideChrome =
-    pathname.startsWith("/auth") ||
-    pathname.startsWith("/lex") ||
-    isBrowse;
+    pathname.startsWith("/auth") || pathname.startsWith("/lex");
 
   if (hideChrome) {
     return (
@@ -34,6 +33,20 @@ export function ConsumerShell({
         <OfflineBanner />
         <OfflineWarmCache />
         <main className="flex-1">{children}</main>
+      </>
+    );
+  }
+
+  /* Discover: immersive deck — no site headers, keep bottom nav */
+  if (isDiscover) {
+    return (
+      <>
+        <OfflineBanner />
+        <OfflineWarmCache />
+        <main className="flex-1">{children}</main>
+        <Suspense fallback={null}>
+          <BottomNavMobile />
+        </Suspense>
       </>
     );
   }

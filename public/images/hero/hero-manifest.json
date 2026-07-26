@@ -1,0 +1,13 @@
+{
+  "source": "/images/hero.png",
+  "primary": "/images/hero.webp",
+  "quality": 92,
+  "resized": false,
+  "cropped": false,
+  "exactDimensions": true,
+  "width": 2171,
+  "height": 724,
+  "aspectRatio": "2171/724",
+  "generatedAt": "2026-07-24T09:55:12.545Z",
+  "bytes": 416192
+}

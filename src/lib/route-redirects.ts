@@ -26,8 +26,9 @@ export function staticPathRedirect(pathname: string): string | null {
 
   const exact: Record<string, string> = {
     "/home": "/",
-    "/swipe-homes": "/browse",
-    "/swipe": "/browse",
+    "/swipe-homes": "/discover",
+    "/swipe": "/discover",
+    "/browse": "/discover",
     "/list": "/agent/verify",
     "/list-property": "/agent/verify",
     "/post-property": "/agent/verify",

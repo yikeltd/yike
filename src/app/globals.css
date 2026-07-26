@@ -607,7 +607,7 @@ body {
 }
 
 :root {
-  --bottom-nav-stack: calc(4.75rem + env(safe-area-inset-bottom));
+  --bottom-nav-stack: calc(5.25rem + env(safe-area-inset-bottom));
   --bottom-edge-stack: max(0.75rem, env(safe-area-inset-bottom));
   --listing-form-action-h: 5.25rem;
 }

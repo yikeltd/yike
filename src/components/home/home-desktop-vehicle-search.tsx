@@ -16,6 +16,14 @@ import { getStateForCity } from "@/lib/constants";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 import { cn } from "@/lib/utils";
 
+/** Mirrors property All / Rent / Buy / Land — vehicle types that fit the hero. */
+const VEHICLE_DEAL_CHIPS = [
+  { value: "", label: "All" },
+  { value: "car", label: "Cars" },
+  { value: "suv", label: "SUVs" },
+  { value: "truck", label: "Trucks" },
+] as const;
+
 type Props = {
   onSearch: (payload: BrowseSearchPayload) => void;
   initial?: {
@@ -23,12 +31,13 @@ type Props = {
     city?: string;
     make?: string;
     budgetValue?: string;
+    category?: string;
   };
   className?: string;
 };
 
 /**
- * Desktop hero vehicle search — State · City · Make · Budget.
+ * Desktop hero vehicle search — chips + State · City · Make · Budget.
  * Same intelligent search path as /vehicles (no duplicate engine).
  */
 export function HomeDesktopVehicleSearch({
@@ -36,6 +45,7 @@ export function HomeDesktopVehicleSearch({
   initial,
   className,
 }: Props) {
+  const [category, setCategory] = useState(initial?.category ?? "");
   const [state, setState] = useState(initial?.state ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
   const [make, setMake] = useState(initial?.make ?? "");
@@ -51,6 +61,7 @@ export function HomeDesktopVehicleSearch({
 
   function submit() {
     const params = new URLSearchParams();
+    if (category) params.set("category", category);
     if (state) params.set("state", state);
     if (city) params.set("city", city);
     if (make) params.set("make", make);
@@ -60,8 +71,9 @@ export function HomeDesktopVehicleSearch({
       if (max) params.set("max_price", max);
     }
 
+    const chipLabel = VEHICLE_DEAL_CHIPS.find((c) => c.value === category)?.label;
     const labelParts = [
-      make || "Vehicles",
+      make || (chipLabel && chipLabel !== "All" ? chipLabel : "Vehicles"),
       city || state || undefined,
     ].filter(Boolean);
 
@@ -74,10 +86,31 @@ export function HomeDesktopVehicleSearch({
   return (
     <div
       className={cn(
-        "yike-search-shell rounded-[1.35rem] border border-white/14 bg-[#031B4E]/96 p-4 shadow-search ring-1 ring-white/12 xl:p-5",
+        "yike-search-shell rounded-2xl border border-white/14 bg-[#031B4E]/92 p-3 shadow-search ring-1 ring-white/12 backdrop-blur-sm",
         className,
       )}
     >
+      <div className="mb-2.5 flex flex-wrap gap-2 lg:justify-start">
+        {VEHICLE_DEAL_CHIPS.map((chip) => {
+          const active = category === chip.value;
+          return (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={() => setCategory(chip.value)}
+              className={cn(
+                "pressable rounded-full px-3 py-1.5 text-[11px] font-bold transition-all duration-200 sm:px-4 sm:text-xs",
+                active
+                  ? "bg-gold text-navy shadow-glow-gold"
+                  : "border border-white/14 bg-white/[0.06] text-white/78 hover:bg-white/[0.1] hover:text-white",
+              )}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end xl:gap-3.5">
         <ThemedSelect
           value={state}

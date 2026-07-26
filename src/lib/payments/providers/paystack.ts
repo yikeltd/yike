@@ -5,9 +5,10 @@ import type {
   InitializePaymentResult,
   VerifyPaymentResult,
 } from "@/lib/payments/types";
-import { getPaystackSecretKey } from "@/lib/payments/config";
-
-const PAYSTACK_BASE = "https://api.paystack.co";
+import {
+  getPaystackBaseUrl,
+  getPaystackSecretKey,
+} from "@/lib/payments/config";
 
 function headers(): HeadersInit {
   const secret = getPaystackSecretKey();
@@ -26,6 +27,29 @@ function fromKobo(kobo: number): number {
   return kobo / 100;
 }
 
+function sanitizeGatewayResponse(data: Record<string, unknown>): Record<string, unknown> {
+  const {
+    authorization: _authorization,
+    customer: customerRaw,
+    ...rest
+  } = data;
+
+  const customer =
+    customerRaw && typeof customerRaw === "object"
+      ? {
+          id: (customerRaw as Record<string, unknown>).id ?? null,
+          email: (customerRaw as Record<string, unknown>).email ?? null,
+          customer_code: (customerRaw as Record<string, unknown>).customer_code ?? null,
+        }
+      : null;
+
+  return {
+    ...rest,
+    customer,
+    // Never persist card authorization details
+  };
+}
+
 export const paystackProvider: PaymentProvider = {
   name: "paystack",
 
@@ -38,7 +62,8 @@ export const paystackProvider: PaymentProvider = {
       return { ok: false, error: "Paystack is not configured" };
     }
 
-    const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
+    const base = getPaystackBaseUrl();
+    const res = await fetch(`${base}/transaction/initialize`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({
@@ -78,8 +103,9 @@ export const paystackProvider: PaymentProvider = {
       return { ok: false, error: "Paystack is not configured" };
     }
 
+    const base = getPaystackBaseUrl();
     const res = await fetch(
-      `${PAYSTACK_BASE}/transaction/verify/${encodeURIComponent(reference)}`,
+      `${base}/transaction/verify/${encodeURIComponent(reference)}`,
       { headers: headers(), cache: "no-store" }
     );
 
@@ -92,7 +118,10 @@ export const paystackProvider: PaymentProvider = {
         currency?: string;
         paid_at?: string;
         reference?: string;
+        channel?: string;
+        fees?: number;
         metadata?: Record<string, unknown>;
+        [key: string]: unknown;
       };
     };
 
@@ -104,9 +133,14 @@ export const paystackProvider: PaymentProvider = {
     const mapped =
       providerStatus === "success"
         ? "successful"
-        : providerStatus === "failed"
+        : providerStatus === "failed" || providerStatus === "abandoned"
           ? "failed"
           : "pending";
+
+    const feesKobo =
+      typeof json.data.fees === "number" && Number.isFinite(json.data.fees)
+        ? json.data.fees
+        : null;
 
     return {
       ok: true,
@@ -115,20 +149,32 @@ export const paystackProvider: PaymentProvider = {
       currency: json.data.currency ?? "NGN",
       paidAt: json.data.paid_at,
       providerReference: json.data.reference ?? reference,
+      channel: json.data.channel ?? null,
+      fees: feesKobo != null ? fromKobo(feesKobo) : null,
       metadata: json.data.metadata,
+      raw: sanitizeGatewayResponse(json.data as Record<string, unknown>),
     };
   },
 
+  /**
+   * Paystack signs webhooks with HMAC-SHA512(raw_body, PAYSTACK_SECRET_KEY).
+   * There is no separate webhook secret — same key as API calls.
+   */
   verifyWebhookSignature(rawBody: string, requestHeaders: Headers): boolean {
     const secret = getPaystackSecretKey();
     if (!secret) return false;
 
-    const signature = requestHeaders.get("x-paystack-signature");
-    if (!signature) return false;
+    const signature = requestHeaders.get("x-paystack-signature")?.trim();
+    if (!signature || !/^[a-f0-9]+$/i.test(signature)) return false;
 
-    const hash = createHmac("sha512", secret).update(rawBody).digest("hex");
+    const expected = createHmac("sha512", secret).update(rawBody).digest("hex");
+    if (expected.length !== signature.length) return false;
+
     try {
-      return timingSafeEqual(Buffer.from(hash), Buffer.from(signature));
+      return timingSafeEqual(
+        Buffer.from(expected, "hex"),
+        Buffer.from(signature, "hex")
+      );
     } catch {
       return false;
     }

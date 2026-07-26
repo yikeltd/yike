@@ -78,7 +78,7 @@ export function SavedGuestView() {
           Sign In
         </Button>
         <Link
-          href="/browse"
+          href="/discover"
           className="mt-3 text-sm font-semibold text-gold-dark hover:underline dark:text-gold"
         >
           Browse Homes

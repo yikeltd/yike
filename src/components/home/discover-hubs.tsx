@@ -12,9 +12,9 @@ import {
 
 const HUBS = [
   {
-    href: "/browse",
-    label: "Swipe homes",
-    desc: "Full-screen feed · nationwide",
+    href: "/discover",
+    label: "Discover",
+    desc: "Swipe feed · nationwide",
     icon: Layers,
     accent: "bg-navy/10 text-navy",
   },

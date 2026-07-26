@@ -40,10 +40,6 @@ import { budgetValueFromSearchParams } from "@/lib/budget-ranges";
 import { chipKeyFromParams } from "@/lib/home-search-params";
 import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { addRecentSearch } from "@/lib/search-recent";
-import {
-  getHeroTrustedAgentsConfig,
-  type HeroTrustedAgentsConfig,
-} from "@/lib/home/hero-trusted-agents";
 
 type RailSlice = {
   items: Property[];
@@ -78,7 +74,6 @@ type Props = {
   showingDemoFixtures?: boolean;
   /** Smart homepage ads — only non-null slots render. */
   homepageAds?: Partial<Record<HomepageAdSlot, Advertisement | null>>;
-  trustedAgents?: HeroTrustedAgentsConfig;
 };
 
 function SectionHeader({
@@ -187,7 +182,6 @@ export function HomeMarketplaceExperience({
   marketplaceLocation = null,
   showingDemoFixtures: _showingDemoFixtures = false,
   homepageAds = {},
-  trustedAgents,
 }: Props) {
   void _showingDemoFixtures;
   const router = useRouter();
@@ -195,7 +189,6 @@ export function HomeMarketplaceExperience({
   const searchParams = useSearchParams();
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
   const [, startTransition] = useTransition();
-  const agents = trustedAgents ?? getHeroTrustedAgentsConfig();
 
   const [category, setCategory] = useState<HomeMarketplaceCategory>(() =>
     vehiclesOn ? initialCategory : "property",
@@ -347,7 +340,6 @@ export function HomeMarketplaceExperience({
         category={category}
         onCategoryChange={syncCategory}
         browseInitial={browseInitial}
-        trustedAgents={agents}
         onPropertySearch={handlePropertySearch}
         onVehicleSearch={handleVehicleSearch}
       />
@@ -364,7 +356,7 @@ export function HomeMarketplaceExperience({
       </div>
 
       {/* Shared inventory rails — all breakpoints */}
-      <div className="mx-auto max-w-7xl px-3 pt-2 lg:px-6 lg:pt-6 xl:px-8">
+      <div className="mx-auto max-w-7xl px-3 pt-2 lg:px-6 lg:pt-4 xl:px-8">
         {totallyEmpty ? (
           <section className="pb-4">
             <EmptyRail

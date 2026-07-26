@@ -150,7 +150,7 @@ export function BrowseListingsBlock({
   }
 
   const shellClass = isDesktopPanel
-    ? "yike-search-shell rounded-[1.35rem] border border-white/14 bg-[#031B4E]/96 p-4 shadow-search ring-1 ring-white/12 xl:p-5"
+    ? "yike-search-shell rounded-2xl border border-white/14 bg-[#031B4E]/92 p-3 shadow-search ring-1 ring-white/12 backdrop-blur-sm"
     : isPremium
       ? "yike-search-shell rounded-[1.35rem] border border-white/18 bg-white/[0.08] p-4 shadow-[inset_0_1px_0_rgb(255_255_255_/_14%),0_14px_40px_rgb(2_20_51_/_34%)] ring-1 ring-white/[0.1] lg:p-3.5"
       : isInline
@@ -204,7 +204,7 @@ export function BrowseListingsBlock({
         className={cn(
           "grid grid-cols-4 gap-1 pb-0.5 lg:flex lg:justify-center lg:gap-2",
           isInline ? "mb-2" : "mb-3.5 lg:mb-3",
-          isDesktopPanel && "mb-4 lg:justify-start"
+          isDesktopPanel && "mb-2.5 lg:mb-2.5 lg:justify-start"
         )}
       >
         {HOME_DEAL_TYPES.map((t) => {

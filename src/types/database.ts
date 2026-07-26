@@ -1207,7 +1207,13 @@ export type PaymentOrderType =
   | "verification_fee"
   | "advertisement"
   | "subscription"
-  | "lead_insights";
+  | "lead_insights"
+  | "listing_fee"
+  | "premium_seller"
+  | "vehicle_boost"
+  | "property_boost"
+  | "escrow_hold"
+  | "wallet_topup";
 
 export type PaymentOrderStatus =
   | "pending"
@@ -1227,6 +1233,12 @@ export interface PaymentOrder {
   currency: string;
   status: PaymentOrderStatus;
   entity_id: string | null;
+  listing_id?: string | null;
+  paystack_reference?: string | null;
+  channel?: string | null;
+  fees?: number | null;
+  gateway?: string | null;
+  gateway_response?: Record<string, unknown>;
   metadata: Record<string, unknown>;
   paid_at: string | null;
   created_at: string;
