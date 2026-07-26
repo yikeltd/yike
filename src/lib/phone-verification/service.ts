@@ -249,8 +249,7 @@ export async function sendSellerPhoneVerificationCode(
     return existing;
   }
 
-  let pending!: Promise<SendPhoneVerificationResult>;
-  pending = sendSellerPhoneVerificationCodeUnlocked(admin, {
+  const pending = sendSellerPhoneVerificationCodeUnlocked(admin, {
     userId: params.userId,
     phoneLocal: params.phoneLocal,
     phoneIntl,

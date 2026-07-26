@@ -131,8 +131,8 @@ export function SellerPhoneVerifyRow({
     );
   }
 
-  const sendBusy = sending || sendLockRef.current || cooldown > 0 || verifying;
-  const verifyBusy = verifying || verifyLockRef.current || sending;
+  const sendBusy = sending || cooldown > 0 || verifying;
+  const verifyBusy = verifying || sending;
 
   return (
     <div className="space-y-2">

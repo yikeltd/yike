@@ -421,8 +421,7 @@ export async function sendPhoneOtp(
   const existing = phoneOtpSendInFlight.get(lockKey);
   if (existing) return existing;
 
-  let pending!: Promise<SendOtpResult>;
-  pending = sendPhoneOtpUnlocked(phone, preferredChannel).finally(() => {
+  const pending = sendPhoneOtpUnlocked(phone, preferredChannel).finally(() => {
     if (phoneOtpSendInFlight.get(lockKey) === pending) {
       phoneOtpSendInFlight.delete(lockKey);
     }

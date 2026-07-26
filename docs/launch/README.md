@@ -8,6 +8,8 @@ Operational pack for **Property Marketplace** launch. Complements
 | Doc | Purpose |
 |-----|---------|
 | **[LAUNCH_COMMAND_CENTER.md](./LAUNCH_COMMAND_CENTER.md)** | **Daily executive dashboard — update this only until launch** |
+| [FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md](./FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md) | CTO-style brief (what remains / % / GO?) |
+| [LAUNCH_OPS_AUDIT_2026-07-26.md](./LAUNCH_OPS_AUDIT_2026-07-26.md) | Env / supply / probe audit |
 | [FEATURE_FREEZE.md](./FEATURE_FREEZE.md) | Merge gate (ACTIVE) |
 | [LAUNCH_WAR_ROOM_2026-07-26.md](./LAUNCH_WAR_ROOM_2026-07-26.md) | Critical / Polish / V2 board |
 

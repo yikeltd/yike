@@ -3,33 +3,33 @@
 **Phase:** Launch Operations (not development)  
 **Feature freeze:** [ACTIVE](./FEATURE_FREEZE.md)  
 **Prod:** https://yike.ng · Coolify · Supabase `hlpojfurfldvcxfxhveg`  
-**Last updated:** 2026-07-26  
-**Owner:** Founder + ops
+**Last updated:** 2026-07-26 (War Room execution pass)  
+**Owner:** Founder + ops  
+**Completion (launch readiness):** **~72%** · Feature completeness ~92% · Eng launch-safe ~88%
 
-> **Single source of truth until launch.** Update this document daily. Do not scatter status across chat threads.
+> **Single source of truth until launch.** Update this document daily. Do not scatter status across chat threads.  
+> Executive brief: [FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md](./FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md) · Ops audit: [LAUNCH_OPS_AUDIT_2026-07-26.md](./LAUNCH_OPS_AUDIT_2026-07-26.md)
 
 ---
 
 ## 1. Overall launch status
 
-| Area | Status |
-|------|--------|
-| Core Marketplace | ✅ Ready |
-| Authentication | ✅ Ready (SMS isolated / deferred) |
-| Listings | ✅ Ready |
-| Property | ✅ Ready |
-| Vehicles | ✅ Ready (feature-gated OFF until supply) |
-| Search | ✅ Ready |
-| Profiles | ✅ Ready |
-| Admin (Lex) | ✅ Ready |
-| Media Protection | ✅ Production |
-| Security | ✅ Production (leaked-password still founder action) |
-| Infrastructure | ✅ Production |
-| Documentation | ✅ Comprehensive |
-| Feature Development | 🛑 Frozen |
-| Launch Operations | 🚀 Active |
+| Area | Status | Class |
+|------|--------|-------|
+| Core Marketplace | ✅ Ready | READY |
+| Authentication | ✅ Ready (SMS isolated) | READY |
+| Listings / Property | ✅ Ready | READY |
+| Vehicles | ✅ Code ready · gated · **Coolify may still expose `/vehicles` (200)** | FOUNDER ACTION (env) |
+| Search / Profiles / Admin | ✅ Ready | READY |
+| Media Protection | ✅ Production · **0 live `media_assets` yet** | FOUNDER smoke |
+| Security | ✅ Baseline · leaked-password OFF | FOUNDER (C08) |
+| Infrastructure | ✅ Production | READY |
+| Documentation | ✅ Comprehensive | READY |
+| Feature Development | 🛑 Frozen | READY |
+| Launch Operations | 🚀 Active | READY |
+| **Marketplace supply** | ⚠ **32** approved live (target 250+) | **BLOCKED / FOUNDER** |
 
-**Headline Go / No-Go:** `NO-GO` — waiting on live inventory + founder ops sign-offs (see §8).
+**Headline Go / No-Go:** `NO-GO` — inventory + founder FAT/sign-offs (confidence: high that eng is not the bottleneck).
 
 ---
 
@@ -39,7 +39,7 @@
 |-------|--------|
 | Target soft-launch window | _TBD by founder_ |
 | Days remaining | _update daily_ |
-| Public marketing push | After ≥2 weeks stable supply (per readiness audit) |
+| Public marketing push | After ≥2 weeks stable supply |
 | Freeze start | 2026-07-26 |
 
 ---
@@ -48,19 +48,12 @@
 
 ### WS1 — Marketplace supply (highest priority)
 
-Without inventory, a perfect platform feels empty.
-
-| Metric | Target | Current | Notes |
-|--------|--------|---------|-------|
-| Active property listings (approved) | 250+ | _count_ | Lex Auth → listings |
-| Active vehicle listings | 150+ | 0 / gated | Only if `ENABLE_VEHICLE_MARKETPLACE=true` + supply |
-| Verified agents | 25+ | _count_ | |
-| Estate agencies | _target_ | _count_ | |
-| Independent agents | _target_ | _count_ | |
-| Developers | _target_ | _count_ | |
-| Dealerships | _target_ | _count_ | |
-| Individual sellers | _target_ | _count_ | |
-| Geo coverage | Lagos, Abuja, PH, Enugu, Ibadan, Kano, Benin, Owerri, Asaba, Uyo | _list live cities_ | Soft-launch may start with 1–2 cities if honest framing |
+| Metric | Target | Current | Class |
+|--------|--------|--------:|-------|
+| Active property listings (approved live) | 250+ | **32** | FOUNDER / BLOCKED |
+| Active vehicle listings | 150+ if ON | **0** | NOT REQUIRED FOR LAUNCH if vehicles OFF |
+| Verified agents | 25+ | **~3** verified-ish / **18** agent-like | FOUNDER |
+| Geo coverage | 10 cities listed | _thin_ | FOUNDER |
 
 **Daily supply actions:** recruit · verify · approve queue · freshness · remove fakes.
 
@@ -68,96 +61,81 @@ Without inventory, a perfect platform feels empty.
 
 ### WS2 — Production operations
 
-**Daily checklist** (tick each day):
+**Daily checklist** (Sun 2026-07-26):
 
-| Check | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
-|-------|-----|-----|-----|-----|-----|-----|-----|
-| Coolify latest deploy Ready | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| https://yike.ng responds 200 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Server / container health | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Storage capacity OK | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| DB health / advisors skim | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Backups verified (weekly OK) | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| SSL valid | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Error logs skimmed | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Monitoring / alerts quiet | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-
-**Buckets:** `property-media` public · `listing-media-archive` private · `profile-images` as configured.
+| Check | Sun |
+|-------|-----|
+| Coolify serving latest APIs | ☑ media API 401 gate |
+| https://yike.ng 200 | ☑ |
+| Legal pages 200 | ☑ |
+| SSL valid | ☑ |
+| DB linked + advisors skim | ☑ (C08 warn remains) |
+| Storage buckets correct | ☑ archive private |
+| Backups restore tested | ☐ FOUNDER/OPS |
+| Monitoring / Sentry | ☐ (global-error only) |
+| Error logs skimmed | ☐ |
 
 ---
 
-### WS3 — Trust & safety (operate, don’t build)
+### WS3 — Trust & safety (operate)
 
-| Queue | Owner | Cadence | Status |
-|-------|-------|---------|--------|
-| Listing reports | Lex Auth | Daily | ☐ |
-| Fake / scam listings | Lex Auth | Daily | ☐ |
-| Duplicate / stolen media signals | Tech (manual until V2) | As needed | Fingerprints live; auto-queue is V2 |
-| Verification requests | Lex Auth | Daily | ☐ |
-| Fraud / abuse reports | Support + Auth | Daily | ☐ |
-| Media protection anomalies | Tech | Weekly | Lex → Uploads & Protection |
-
-Primary moderation path: `/lex/auth` (not support as primary).
+| Queue | Class | Notes |
+|-------|-------|-------|
+| Lex Auth moderation | FOUNDER/OPS | Primary path `/lex/auth` |
+| Media protection registry | READY | Lex Tech → Uploads; awaiting first prod row |
+| Stolen-image auto queue | NOT REQUIRED FOR LAUNCH | V2 |
+| SMS fraud / OTP | DEFERRED | WIP off main |
 
 ---
 
 ### WS4 — Quality assurance
 
-**Full journey** (repeat until clean):
+| Journey | Last run | Result | Class |
+|---------|----------|--------|-------|
+| Guest browse / search | 2026-07-26 | Pass (anon probe) | READY |
+| Legal / contact pages | 2026-07-26 | Pass | READY |
+| Signup page loads | 2026-07-26 | Pass | READY |
+| Seller upload + watermark | — | ☐ | FOUNDER FAT |
+| Buyer WA contact | — | ☐ | FOUNDER FAT |
+| Lex moderate | — | ☐ | FOUNDER FAT |
+| Agent profile | — | ☐ | FOUNDER FAT |
+| Media protection live | — | ☐ `media_assets=0` | FOUNDER |
 
-Guest → Register → Verify (email) → Profile → Upload listing → Publish → Search → Open listing → Contact (WhatsApp) → Admin moderate → Listing management
-
-| Journey | Last run | Result | Blocker? |
-|---------|----------|--------|----------|
-| Guest browse / search | _date_ | ☐ Pass / ☐ Fail | |
-| Signup / email OTP login | _date_ | ☐ Pass / ☐ Fail | |
-| Seller upload + watermark | _date_ | ☐ Pass / ☐ Fail | |
-| Buyer WA contact | _date_ | ☐ Pass / ☐ Fail | |
-| Agent profile / storefront | _date_ | ☐ Pass / ☐ Fail | |
-| Lex pending moderate | _date_ | ☐ Pass / ☐ Fail | |
-| Save listing (auth + guest) | _date_ | ☐ Pass / ☐ Fail | |
-| Mobile viewport | _date_ | ☐ Pass / ☐ Fail | |
-| PWA / offline smoke | _date_ | ☐ Pass / ☐ Fail | |
-
-**Defect log** (launch blocker vs post-launch):
+**Defect log**
 
 | ID | Defect | Severity | Disposition |
 |----|--------|----------|-------------|
-| — | — | Critical / High / Medium / Low | Blocker / Post-launch |
+| D1 | Thin inventory (32 live) | Critical (trust) | Blocker — supply |
+| D2 | Leaked-password protection disabled | High | Blocker — founder Auth |
+| D3 | Coolify may leave vehicles ON | Medium | Founder env |
+| D4 | No crash monitoring vendor | Medium | Post-launch OK / optional eng |
+| D5 | CI warning debt (non-error) | Low | Post-launch |
 
 ---
 
-### WS5 — Launch preparation (ops / legal / brand)
+### WS5 — Launch preparation
 
-| Item | Status |
-|------|--------|
-| Privacy Policy | ☐ Verify live `/privacy` |
-| Terms of Service | ☐ Verify live `/terms` |
-| Cookie Policy | ☐ Verify live `/cookies` |
-| Community / moderation guidelines | ☐ `/moderation` + safety |
-| Help / FAQ | ☐ |
-| Contact & support | ☐ `/contact` |
-| Social profiles | ☐ |
-| Play Store / TWA assets | ☐ If shipping app shell |
-| Press kit | ☐ |
-| Brand assets | ☐ Logo / OG |
-| Analytics dashboards | ☐ (WA funnel KPIs; crash monitoring still gap) |
+| Item | Status | Class |
+|------|--------|-------|
+| Privacy / Terms / Cookies / Safety / Moderation / Contact | Live 200 | READY (confirm legal text) |
+| Help / FAQ | ☐ | BUSINESS / NOT REQUIRED if contact+safety cover MVP |
+| Social / press / Play | ☐ | MARKETING — after inventory |
+| Analytics / Sentry | ☐ | ENGINEERING optional |
 
 ---
 
 ## 4. Critical blockers (open only)
 
-| ID | Item | Owner | Status |
-|----|------|-------|--------|
-| C04 | Live supply / honest soft-launch framing | Founder | OPEN |
-| C07 | Rotate OTP token / Sendchamp if exposed | Founder | OPEN |
-| C08 | Enable Auth leaked-password protection | Founder | OPEN |
-| — | Crash monitoring (Sentry or equiv.) | Eng | OPEN (Medium — polish) |
-| — | CI lint green | Eng | OPEN (non-blocking Coolify) |
+| ID | Item | Owner | Status | Class |
+|----|------|-------|--------|-------|
+| C04 | Live supply / soft-launch framing | Founder | OPEN | FOUNDER / BLOCKED |
+| C07 | Rotate OTP / Sendchamp if exposed | Founder | OPEN | FOUNDER ACTION |
+| C08 | Leaked-password protection | Founder | OPEN | FOUNDER ACTION |
+| C10 | Founder Acceptance Test (FAT) | Founder | OPEN | FOUNDER ACTION |
+| C11 | Coolify `ENABLE_VEHICLE_MARKETPLACE=false` until supply | Founder | OPEN | FOUNDER ACTION |
+| C12 | First prod protected upload (`media_assets` ≥ 1) | Founder | OPEN | FOUNDER ACTION |
 
-Closed recently: security migrations, profile column lock, media ownership, media protection, vehicles default OFF, webhooks Link.
-
-SMS OTP: **DEFERRED** as launch blocker (browse-first / email OTP). Keep WIP off `main` until proven.
+**Closed:** C01–C03, C05 deferred, C06 code default OFF, C09 prefer-const + refs lint + webhooks Link, media protection ship, `global-error.tsx`.
 
 ---
 
@@ -165,51 +143,48 @@ SMS OTP: **DEFERRED** as launch blocker (browse-first / email OTP). Keep WIP off
 
 | System | Status | Notes |
 |--------|--------|-------|
-| Coolify / Hetzner | ✅ | Deploys from `main` |
-| Cloudflare / TLS | ✅ | Confirm daily |
-| Supabase prod | ✅ | `hlpojfurfldvcxfxhveg` |
-| Media protection | ✅ | Flag default ON |
-| Paystack featured | ⏸ | Flagged off |
-| Vehicles marketplace | ⏸ | `ENABLE_VEHICLE_MARKETPLACE=false` |
-| SMS Sendchamp | ⏸ | Isolated workstream |
-| Monitoring / Sentry | ⚠ | Not yet production-grade |
+| Coolify / Hetzner | ✅ | |
+| TLS | ✅ | |
+| Supabase | ✅ | Advisors: leaked-password WARN |
+| Media protection code | ✅ | 0 registry rows |
+| Paystack featured | ⏸ | Off |
+| Vehicles | ⚠ | Code default OFF; prod URL still 200 |
+| SMS | ⏸ | Isolated |
+| Monitoring | ⚠ | global-error only |
 
 ---
 
 ## 6. Known risks
 
-1. Empty or thin inventory destroys trust faster than missing features.  
-2. SMS delivery unproven — do not gate browse/signup on phone.  
-3. GH Actions often red on lint — Coolify still deploys; fix after blockers.  
-4. Upload latency +~0.5–2s with media protection — watch Coolify CPU under load.  
-5. No crash monitoring yet — Lex audit logs ≠ runtime crashes.  
-6. Soft-launch cities vs national SEO hubs — keep messaging honest.
+1. Empty/thin inventory destroys trust.  
+2. SMS unproven — do not gate browse/signup.  
+3. Vehicles URL live without vehicle inventory.  
+4. Media protection unproven on a real prod upload.  
+5. No vendor crash monitoring yet.  
+6. GH Actions may still warn; Coolify deploys from `main`.
 
 ---
 
 ## 7. Definition of Launch Ready
 
-Launch when **all** are true (not when “features are done”):
-
-- [ ] Platform is stable (no Critical/High open eng blockers)
-- [ ] Real inventory exists and buyers can find attractive listings
-- [ ] Sellers can successfully publish end-to-end
-- [ ] Admins can moderate effectively
-- [ ] Backups have been tested
-- [ ] Monitoring is active (minimum: deploy health + error visibility)
-- [ ] Media protection verified on a live listing photo
-- [ ] Security audit items for launch are complete (incl. C07/C08 or accepted risk)
-- [ ] No Critical or High launch blockers remain
+- [x] Platform stable for Critical eng items (remaining are founder/ops)
+- [ ] Real inventory / honest soft-launch framing
+- [ ] Sellers publish E2E (FAT)
+- [ ] Admins moderate (FAT)
+- [ ] Backups tested
+- [ ] Monitoring minimum (global-error ✅; Sentry optional)
+- [ ] Media protection verified on live listing photo
+- [ ] C07/C08 done or accepted risk in writing
+- [ ] No Critical/High blockers remain
 
 ---
 
 ## 8. Go / No-Go decision
 
-| Date | Decision | Rationale |
-|------|----------|-----------|
-| 2026-07-26 | **NO-GO** | Feature complete enough; inventory + founder secret/auth actions + full smoke not signed off |
-
-Update this table when the decision flips.
+| Date | Decision | Confidence | Rationale |
+|------|----------|------------|-----------|
+| 2026-07-26 | **NO-GO** | High | 32 listings; FAT unsigned; C08 open; media_assets=0 |
+| 2026-07-26 (eng pass) | **NO-GO** (unchanged) | High | Eng closed what it can; supply/FAT remain |
 
 ---
 
@@ -218,34 +193,36 @@ Update this table when the decision flips.
 | Role | Sign-off | Date | Initials |
 |------|----------|------|----------|
 | Founder — supply & positioning | ☐ | | |
-| Founder — secrets / Auth settings (C07/C08) | ☐ | | |
-| Ops — Coolify / backups / SSL | ☐ | | |
-| Trust — moderation runbook ready | ☐ | | |
-| Eng — smoke journeys green | ☐ | | |
-| Eng — media protection live smoke | ☐ | | |
+| Founder — secrets / Auth (C07/C08) | ☐ | | |
+| Founder — FAT | ☐ | | |
+| Ops — Coolify / backups / SSL / vehicle flag | ☐ | | |
+| Trust — moderation runbook | ☐ | | |
+| Eng — anon probes + CI errors | ☑ 2026-07-26 | Eng | |
 
 ---
 
-## 10. Daily update template
+## 10. Remaining task buckets (hours)
 
-Copy into the top of §1 or a dated note below when updating:
+| Bucket | Hours | Notes |
+|--------|------:|-------|
+| Engineering critical | 0–4 | Optional Sentry / warnings |
+| Founder personal | 6–10 | FAT + C07/C08 + Coolify + first photo |
+| Business supply | 40–120+ | Real listings |
+| Ops | 2–3 | Backup drill |
+| Legal/Marketing | as needed | After supply |
 
-```
-### Daily log — YYYY-MM-DD
-- Supply: properties=N vehicles=N agents=N cities=…
-- Ops: Coolify= / errors=
-- Trust: reports open= / moderated=
-- QA: journeys run= / blockers filed=
-- Decision: still NO-GO / soft-launch candidate because …
-```
+---
 
-### Daily log — 2026-07-26
+## 11. Daily log
 
-- Supply: needs founder push (C04)
-- Ops: Coolify serving media protection API (401 unauth gate confirmed)
-- Trust: media protection production; stolen-image auto-queue is V2
-- QA: founder live listing photo smoke still needed
-- Decision: **NO-GO** — Launch Operations Phase active; feature freeze on
+### Daily log — 2026-07-26 (War Room execution)
+
+- Supply: **32** approved live · **1** pending · **0** vehicles · **18** agents · **3** verified-ish · **0** media_assets  
+- Ops: Coolify OK · SSL OK · archive bucket private · vehicles URL still 200  
+- Trust: media protection shipped; live smoke pending  
+- QA: anon legal/search/signup PASS; authenticated FAT pending  
+- Eng: CI prefer-const + refs-in-render fixed; global-error added  
+- Decision: still **NO-GO** — founder inventory + FAT + C07/C08  
 
 ---
 
@@ -254,8 +231,9 @@ Copy into the top of §1 or a dated note below when updating:
 | Doc | Role |
 |-----|------|
 | [FEATURE_FREEZE.md](./FEATURE_FREEZE.md) | Merge gate |
-| [LAUNCH_WAR_ROOM_2026-07-26.md](./LAUNCH_WAR_ROOM_2026-07-26.md) | Critical / Polish / V2 board |
-| [LAUNCH_READINESS_AUDIT_2026-07-26.md](./LAUNCH_READINESS_AUDIT_2026-07-26.md) | Founder audit |
-| [../media/MEDIA_PROTECTION_LAUNCH_VERIFICATION.md](../media/MEDIA_PROTECTION_LAUNCH_VERIFICATION.md) | Media protection GO |
-| [PROD_DB_SECURITY_VERIFY_2026-07-26.md](./PROD_DB_SECURITY_VERIFY_2026-07-26.md) | DB security verify |
-| [README.md](./README.md) | Launch docs index |
+| [FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md](./FOUNDER_EXECUTIVE_BRIEF_2026-07-26.md) | CTO brief |
+| [LAUNCH_OPS_AUDIT_2026-07-26.md](./LAUNCH_OPS_AUDIT_2026-07-26.md) | Today’s ops audit |
+| [LAUNCH_WAR_ROOM_2026-07-26.md](./LAUNCH_WAR_ROOM_2026-07-26.md) | Critical board |
+| [LAUNCH_READINESS_AUDIT_2026-07-26.md](./LAUNCH_READINESS_AUDIT_2026-07-26.md) | Feature audit |
+| [../media/MEDIA_PROTECTION_LAUNCH_VERIFICATION.md](../media/MEDIA_PROTECTION_LAUNCH_VERIFICATION.md) | Media GO |
+| [README.md](./README.md) | Index |

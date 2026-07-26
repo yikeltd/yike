@@ -118,8 +118,8 @@ export function PhoneSmsVerificationPanel({
   const shellClass = compact
     ? "rounded-2xl border border-border bg-elevated p-4"
     : "space-y-4";
-  const sendBusy = sending || sendLockRef.current || cooldown > 0 || verifying;
-  const verifyBusy = verifying || verifyLockRef.current || sending;
+  const sendBusy = sending || cooldown > 0 || verifying;
+  const verifyBusy = verifying || sending;
 
   return (
     <div className={shellClass}>
