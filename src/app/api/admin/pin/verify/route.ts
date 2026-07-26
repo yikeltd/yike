@@ -2,7 +2,22 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { requireSuperAdminApi } from "@/lib/admin/api-auth";
 import { verifyAdminPin, createPinSession } from "@/lib/admin/pin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAuditLog } from "@/lib/admin/audit";
+
+async function loadAdminPinHash(userId: string): Promise<string | null> {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("profiles")
+      .select("admin_pin_hash")
+      .eq("id", userId)
+      .maybeSingle();
+    return (data?.admin_pin_hash as string | null | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: Request) {
   const auth = await requireSuperAdminApi();
@@ -17,8 +32,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "PIN must be 6 digits" }, { status: 400 });
   }
 
-  const { profile } = auth;
-  const valid = await verifyAdminPin(auth.user.id, pin, profile.admin_pin_hash);
+  const storedHash = await loadAdminPinHash(auth.user.id);
+  const valid = await verifyAdminPin(auth.user.id, pin, storedHash);
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
@@ -26,7 +41,7 @@ export async function POST(req: Request) {
   if (!valid) {
     await writeAuditLog({
       actor_id: auth.user.id,
-      actor_role: profile.role,
+      actor_role: auth.profile.role,
       action: "pin.failed",
       ip,
     });
@@ -36,7 +51,7 @@ export async function POST(req: Request) {
   await createPinSession(auth.user.id);
   await writeAuditLog({
     actor_id: auth.user.id,
-    actor_role: profile.role,
+    actor_role: auth.profile.role,
     action: "pin.verify",
     ip,
   });
@@ -51,9 +66,12 @@ export async function GET() {
   }
 
   const { hasValidPinSession } = await import("@/lib/admin/pin");
-  const valid = await hasValidPinSession(auth.user.id);
+  const [valid, storedHash] = await Promise.all([
+    hasValidPinSession(auth.user.id),
+    loadAdminPinHash(auth.user.id),
+  ]);
   return NextResponse.json({
     valid,
-    hasAdminPin: Boolean(auth.profile.admin_pin_hash),
+    hasAdminPin: Boolean(storedHash),
   });
 }

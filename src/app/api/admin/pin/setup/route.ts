@@ -5,7 +5,7 @@ import {
   hasValidPinSession,
   verifyAdminPin,
 } from "@/lib/admin/pin";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPin } from "@/lib/pin";
 import { writeAuditLog } from "@/lib/admin/audit";
 
@@ -32,8 +32,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "PINs do not match" }, { status: 400 });
   }
 
-  const { profile } = auth;
-  const hasExistingPin = Boolean(profile.admin_pin_hash);
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
+
+  // admin_pin_hash is not selectable by authenticated — load via service_role.
+  const { data: pinRow, error: pinLoadError } = await admin
+    .from("profiles")
+    .select("admin_pin_hash")
+    .eq("id", auth.user.id)
+    .maybeSingle();
+
+  if (pinLoadError) {
+    console.error("[admin/pin/setup] load failed:", pinLoadError.message);
+    return NextResponse.json({ error: "Could not verify PIN state." }, { status: 500 });
+  }
+
+  const storedHash = pinRow?.admin_pin_hash as string | null | undefined;
+  const hasExistingPin = Boolean(storedHash);
 
   if (hasExistingPin) {
     const sessionValid = await hasValidPinSession(auth.user.id);
@@ -45,23 +64,14 @@ export async function POST(req: Request) {
           { status: 403 }
         );
       }
-      const valid = await verifyAdminPin(
-        auth.user.id,
-        currentPin,
-        profile.admin_pin_hash
-      );
+      const valid = await verifyAdminPin(auth.user.id, currentPin, storedHash);
       if (!valid) {
         return NextResponse.json({ error: "Current PIN is incorrect" }, { status: 403 });
       }
     }
   }
 
-  const supabase = await createClient();
-  if (!supabase) {
-    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
-  }
-
-  const { error } = await supabase
+  const { error } = await admin
     .from("profiles")
     .update({ admin_pin_hash: hashPin(pin) })
     .eq("id", auth.user.id);
@@ -79,7 +89,7 @@ export async function POST(req: Request) {
 
   await writeAuditLog({
     actor_id: auth.user.id,
-    actor_role: profile.role,
+    actor_role: auth.profile.role,
     action: hasExistingPin ? "pin.admin_change" : "pin.admin_setup",
     target_type: "profile",
     target_id: auth.user.id,

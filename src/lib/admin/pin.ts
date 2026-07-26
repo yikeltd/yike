@@ -16,11 +16,13 @@ export async function verifyAdminPin(
   return verifyPin(pin, storedHash);
 }
 
-/** Prefer the signed-in user's session client; fall back to service role if configured. */
+/** Prefer service role for PIN session rows; fall back to user session client. */
 async function pinDbClient(): Promise<SupabaseClient | null> {
-  const session = await createClient();
-  if (session) return session;
-  return createAdminClient();
+  try {
+    return createAdminClient();
+  } catch {
+    return createClient();
+  }
 }
 
 export async function createPinSession(userId: string): Promise<string> {

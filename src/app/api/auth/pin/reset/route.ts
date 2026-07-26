@@ -5,6 +5,7 @@ import { logAuthSecurityEvent } from "@/lib/auth/security-events";
 import { getAuthenticatedUserId, getRequestMeta } from "@/lib/auth/session-state";
 import { hashPin } from "@/lib/pin";
 import { pinPolicyError } from "@/lib/pin-policy";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { AccountType, UserRole } from "@/types/database";
 
@@ -70,13 +71,22 @@ export async function POST(request: Request) {
     profile.role as UserRole
   );
 
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+  }
+
+  // pin_hash is not updatable by authenticated — write via service_role after session auth.
   const pinHash = hashPin(pin);
-  const { error } = await supabase
+  const { error } = await admin
     .from("profiles")
     .update({ pin_hash: pinHash, has_pin_set: true })
     .eq("id", userId);
 
   if (error) {
+    console.error("[auth/pin/reset] update failed:", error.message);
     return NextResponse.json({ error: "Could not save PIN. Try again." }, { status: 500 });
   }
 
