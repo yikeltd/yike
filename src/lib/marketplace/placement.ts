@@ -12,7 +12,6 @@ export type PlacementKind = "featured" | "trending" | "new";
 
 export type PlacementListing = Pick<
   Property,
-  | "id"
   | "is_featured"
   | "featured_until"
   | "boosted_until"
@@ -114,7 +113,7 @@ export function placementBadgeLabel(kind: PlacementKind): string {
 }
 
 /** Soft-boost paid Featured toward the front of a discovery feed. */
-export function softBoostFeaturedPlacement<T extends PlacementListing>(
+export function softBoostFeaturedPlacement<T extends PlacementListing & { id: string }>(
   items: T[],
 ): T[] {
   if (items.length <= 1) return items;
