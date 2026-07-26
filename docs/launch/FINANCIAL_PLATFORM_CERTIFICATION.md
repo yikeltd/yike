@@ -13,11 +13,11 @@
 
 | Check | Status |
 |-------|--------|
-| Generate strong `YIKE_PIN_PEPPER` (≥32 chars) in Coolify | ⬜ Ops |
+| Generate strong `YIKE_PIN_PEPPER` (≥32 chars) in Coolify | ✅ Founder set |
 | Startup validates pepper length | ✅ `assertPinPepperProductionReady` |
 | Fail fast in production if missing/weak | ✅ |
 | Diagnostics in Launch Health + env-health | ✅ |
-| No production deploy without pepper | ✅ code gate — confirm Coolify set before ship |
+| No production deploy without pepper | ✅ |
 
 ### Phase 1 — Financial Capability
 
@@ -36,7 +36,8 @@
 | Feature flags config-only | ✅ |
 | Launch Health financial rows | ✅ |
 | Unit / ledger / transaction / plugin tests | ✅ `npm run test:yip` |
-| DB-backed immutable ledger | ✅ migration `20260726212317` — apply on production |
+| DB-backed immutable ledger | ✅ applied on production |
+| Security advisor: ledger search_path + privileged fn EXECUTE | 🟡 apply `20260726213903` |
 | Settlement business workflows | ⬜ Phase 2+ |
 | Full webhook + Paystack FAT on production | ⬜ before ENABLE_PAYMENTS=true |
 | Payment/wallet events → ledger + audit | ✅ wired (fail-soft) |

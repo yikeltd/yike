@@ -12,8 +12,8 @@ Update after each capability stage change. Do not leave blank/unknown rows.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| `YIKE_PIN_PEPPER` in Coolify | 🟡 Code ready | ≥32 chars required; production fail-fast; confirm Coolify |
-| Apply `financial_ledger_immutable_v1` | 🟡 SQL ready | `20260726212317` — SQL Editor or db:push |
+| Apply `financial_ledger_immutable_v1` | ✅ Applied | Founder confirmed 2026-07-26 |
+| `YIKE_PIN_PEPPER` in Coolify | ✅ Set | Founder confirmed; restart app if boot was before set |
 | Email OTP | 🟡 Audit | Browse-first policy; certify path |
 | SMS OTP | 🟡 | Re-enable when provider proven; do not block if email sufficient |
 | Featured / Paystack payments | 🟡 Scaffold | Routes via Financial Platform; flag off until FAT |
