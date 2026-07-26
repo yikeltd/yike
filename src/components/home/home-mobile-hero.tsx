@@ -20,7 +20,12 @@ type HomeMobileHeroProps = {
   onSearch: (payload: BrowseSearchPayload) => void;
 };
 
-/** Mobile browser + installed PWA/TWA — marketplace hero with category rail. */
+/** Mobile browser + installed PWA/TWA — marketplace hero with category rail.
+ *
+ * LOCKED OUT OF HOMEPAGE: `HomeMarketplaceExperience` is inventory-first on mobile
+ * (RC1 / founder-approved). Do not remount this on `/` unless the founder requests it.
+ * Kept for `home-search-hero` / legacy entry points only.
+ */
 export function HomeMobileHero({ browseInitial, onSearch }: HomeMobileHeroProps) {
   return (
     <div

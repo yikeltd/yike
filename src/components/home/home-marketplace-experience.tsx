@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HomeAdSlot } from "@/components/ads/home-ad-slot";
 import { HomeDesktopHero } from "@/components/home/home-desktop-hero";
-import { HomeMobileHero } from "@/components/home/home-mobile-hero";
 import { MarketplaceCategoryToggle } from "@/components/home/marketplace-category-toggle";
 import { HomeTrustBadges } from "@/components/home/home-trust-badges";
 import { PropertyGrid } from "@/components/property/property-grid";
@@ -40,7 +39,6 @@ import { budgetValueFromSearchParams } from "@/lib/budget-ranges";
 import { chipKeyFromParams } from "@/lib/home-search-params";
 import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import { addRecentSearch } from "@/lib/search-recent";
-import { cn } from "@/lib/utils";
 
 type RailSlice = {
   items: Property[];
@@ -139,60 +137,13 @@ function hasAnyInventory(rails: PropertyRails | VehicleRails): boolean {
   return false;
 }
 
-/** Mobile Vehicles | Properties — scrolls with page, then pins under header. */
-function StickyMarketplaceCategoryBar({
-  category,
-  onChange,
-}: {
-  category: HomeMarketplaceCategory;
-  onChange: (category: HomeMarketplaceCategory) => void;
-}) {
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const [stuck, setStuck] = useState(false);
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setStuck(!entry.isIntersecting);
-      },
-      {
-        // Match mobile header height (~3.5rem) so pin starts under chrome.
-        rootMargin: "-56px 0px 0px 0px",
-        threshold: 0,
-      },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <>
-      <div ref={sentinelRef} className="h-px w-full lg:hidden" aria-hidden />
-      <div
-        className={cn(
-          "sticky top-14 z-30 border-b bg-ivory/95 px-3 py-2 backdrop-blur-md transition-[box-shadow,border-color] duration-200 sm:px-6 lg:hidden",
-          stuck
-            ? "border-navy/[0.1] shadow-[0_8px_24px_-16px_rgba(2,20,51,0.45)]"
-            : "border-navy/[0.06] shadow-none",
-        )}
-      >
-        <div className="mx-auto max-w-sm sm:max-w-md">
-          <MarketplaceCategoryToggle
-            category={category}
-            onChange={onChange}
-            compact
-          />
-        </div>
-      </div>
-    </>
-  );
-}
-
 /**
  * Browse-first homepage — Discover → Browse → Trust → Search → Buy.
  * Presentation only: themed rails from existing inventory pools.
+ *
+ * APPROVED MOBILE LAYOUT (locked): inventory-first — sticky Vehicles|Properties,
+ * then listing rails. Do NOT remount HomeMobileHero / search-first chrome on mobile
+ * unless the founder explicitly requests a redesign.
  */
 export function HomeMarketplaceExperience({
   initialCategory,
@@ -361,18 +312,16 @@ export function HomeMarketplaceExperience({
         onVehicleSearch={handleVehicleSearch}
       />
 
-      {/* Mobile: hero scrolls away; category control pins under header */}
-      <div className="lg:hidden">
-        <HomeMobileHero
-          browseInitial={browseInitial}
-          onSearch={handlePropertySearch}
-        />
+      {/* Vehicles | Properties — keep discovery chrome minimal (approved mobile) */}
+      <div className="sticky top-14 z-30 border-b border-navy/[0.06] bg-ivory/95 px-3 py-2 backdrop-blur-md sm:px-6 lg:hidden">
+        <div className="mx-auto max-w-sm sm:max-w-md">
+          <MarketplaceCategoryToggle
+            category={category}
+            onChange={syncCategory}
+            compact
+          />
+        </div>
       </div>
-
-      <StickyMarketplaceCategoryBar
-        category={category}
-        onChange={syncCategory}
-      />
 
       <div className="mx-auto max-w-7xl px-3 pt-3 sm:px-6 lg:px-6 lg:pt-4 xl:px-8">
         {totallyEmpty ? (
