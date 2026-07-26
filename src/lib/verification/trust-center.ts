@@ -87,7 +87,7 @@ export function getTrustProgressItems(
     id: "profile_complete",
     label: "Personal details",
     status: hasBasicListingProfile(profile) ? "complete" : isLister ? "action_needed" : "optional",
-    href: "/agent/profile-setup",
+    href: "/agent/edit-profile",
     group: "listing_setup",
   });
 
@@ -105,7 +105,7 @@ export function getTrustProgressItems(
     id: "profile_photo",
     label: "Profile photo",
     status: profile.avatar_url ? "complete" : "optional",
-    href: "/agent#profile-photo",
+    href: "/agent/edit-profile",
     group: "listing_setup",
   });
 

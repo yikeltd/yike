@@ -26,9 +26,9 @@ import { cn } from "@/lib/utils";
 
 export function ProfileAccountActions({
   email,
-  canList = false,
 }: {
   email: string;
+  /** @deprecated Edit Profile is available to all signed-in users */
   canList?: boolean;
 }) {
   const router = useRouter();
@@ -47,7 +47,7 @@ export function ProfileAccountActions({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const editProfileHref = canList ? "/agent/profile-setup" : "/agent";
+  const editProfileHref = "/agent/edit-profile";
 
   function resetForms() {
     setPanel(null);
@@ -483,7 +483,7 @@ function SettingsRow({
     active ? t.rowActive : t.rowHover
   );
 
-  const body = (
+  const body = (trailing: ReactNode) => (
     <>
       {icon ? (
         <span
@@ -501,24 +501,52 @@ function SettingsRow({
           <span className="mt-0.5 block text-[11px] leading-snug text-muted">{subtitle}</span>
         ) : null}
       </span>
-      <ChevronRight
-        className="h-3.5 w-3.5 shrink-0 text-muted/50 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-navy/40"
-        aria-hidden
-      />
+      {trailing}
     </>
   );
 
-  if (href) {
+  const chevron = (
+    <ChevronRight
+      className="h-3.5 w-3.5 shrink-0 text-muted/50 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-navy/40"
+      aria-hidden
+    />
+  );
+
+  if (onClick) {
     return (
-      <Link href={href} prefetch className={className}>
-        {body}
-      </Link>
+      <button type="button" onClick={onClick} className={className}>
+        {body(
+          active ? (
+            <ChevronDown
+              className="h-3.5 w-3.5 shrink-0 text-navy/45"
+              aria-hidden
+            />
+          ) : (
+            chevron
+          )
+        )}
+      </button>
+    );
+  }
+
+  if (!href) {
+    return (
+      <div
+        className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left opacity-55"
+        aria-disabled="true"
+      >
+        {body(
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-muted">
+            Soon
+          </span>
+        )}
+      </div>
     );
   }
 
   return (
-    <button type="button" onClick={onClick} className={className}>
-      {body}
-    </button>
+    <Link href={href} prefetch className={className}>
+      {body(chevron)}
+    </Link>
   );
 }

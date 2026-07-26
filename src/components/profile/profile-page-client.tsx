@@ -86,6 +86,7 @@ export function ProfilePageClient({
   socialStats = { followersCount: 0, listingLikesCount: 0 },
   subscriptionPlanLabel = null,
   subscriptionExpiresInDays = null,
+  profileSaved = false,
 }: {
   profile: Profile;
   email: string;
@@ -105,6 +106,7 @@ export function ProfilePageClient({
   subscriptionPlanLabel?: string | null;
   subscriptionExpiresInDays?: number | null;
   foundingMember?: boolean;
+  profileSaved?: boolean;
 }) {
   const { isApp } = useStandaloneApp();
   const displayName = profile.full_name ?? profile.username ?? "Your profile";
@@ -125,6 +127,15 @@ export function ProfilePageClient({
 
   return (
     <div className="dashboard-fade-in space-y-4 pb-6">
+      {profileSaved ? (
+        <p
+          role="status"
+          className="rounded-xl border border-emerald-200/70 bg-emerald-50 px-3.5 py-2.5 text-sm font-medium text-emerald-950"
+        >
+          Profile saved.
+        </p>
+      ) : null}
+
       <ProfileCoverHero
         profile={profile}
         email={email}
@@ -327,8 +338,12 @@ function QuickAction({
     );
   }
 
+  if (!href) {
+    return null;
+  }
+
   return (
-    <Link href={href ?? "#"} prefetch data-tone="neutral" className={className}>
+    <Link href={href} prefetch data-tone="neutral" className={className}>
       {content}
     </Link>
   );

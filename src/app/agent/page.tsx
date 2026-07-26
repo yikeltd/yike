@@ -33,10 +33,15 @@ function formatMemberSince(iso: string): string {
   }
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}) {
   const user = await requireAuth("/auth/login?next=/agent");
   const profile = await getProfile(user.id);
   const supabase = await requireServerClient();
+  const { saved } = await searchParams;
 
   if (!profile) {
     return <p className="pt-8 text-center text-muted">Profile not found.</p>;
@@ -114,6 +119,7 @@ export default async function ProfilePage() {
       }
       subscriptionExpiresInDays={subscriptionExpiresInDays(activeSubscription?.expires_at)}
       foundingMember={profile.founding_member ?? false}
+      profileSaved={saved === "profile"}
     />
   );
 }
