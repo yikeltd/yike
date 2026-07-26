@@ -88,18 +88,29 @@ export function SiteFooter() {
         </div>
 
         <section
-          className="site-footer-legal site-footer-divider mt-14 border-t pt-8"
+          className="site-footer-legal site-footer-divider mt-16 border-t pt-10"
           aria-label="Legal information"
         >
-          <p className="text-sm font-medium text-white/70">
-            © {year} {COMPANY_DISPLAY_NAME} All rights reserved.
+          <p className="text-sm font-medium text-white/65">
+            © {year} {COMPANY_DISPLAY_NAME} All rights reserved. {COMPANY_RC}
           </p>
-          <p className="mt-1.5 text-xs tracking-wide text-white/50">
-            {COMPANY_RC}
+          <p className="mt-3.5 max-w-xl text-xs leading-relaxed text-white/40">
+            Yike is a trusted property marketplace. Always inspect listings and
+            complete your due diligence before making payments.
           </p>
-          <p className="mt-4 max-w-xl text-xs leading-relaxed text-white/45">
-            Yike is an online marketplace. Always inspect listings and verify
-            before making payments.
+          <p className="mt-5 text-xs text-white/35">
+            Owned &amp; Operated by Stankings Legacy Ltd.{" "}
+            <span aria-hidden className="text-white/25">
+              •
+            </span>{" "}
+            <a
+              href="https://stankings.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/40 transition-colors hover:text-white/60"
+            >
+              stankings.com
+            </a>
           </p>
         </section>
       </div>

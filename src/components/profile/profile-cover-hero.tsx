@@ -16,7 +16,9 @@ type ProfileCoverHeroProps = {
   email: string;
   displayName: string;
   memberSince: string;
-  badges: ReactNode;
+  badges?: ReactNode;
+  trustBadge?: ReactNode;
+  verifiedLevel?: string | null;
   socialStats?: ProfileSocialStats;
   editable?: boolean;
   showSocialStats?: boolean;
@@ -28,6 +30,8 @@ export function ProfileCoverHero({
   displayName,
   memberSince,
   badges,
+  trustBadge,
+  verifiedLevel,
   socialStats,
   editable = true,
   showSocialStats = true,
@@ -50,18 +54,20 @@ export function ProfileCoverHero({
       showSocialLinks={editable && showSocialStats}
       memberSince={memberSince}
       badges={badges}
+      trustBadge={trustBadge}
+      verifiedLevel={verifiedLevel}
       bio={profile.company_bio}
       avatarSlot={
         <div id="profile-photo" className="scroll-mt-24">
-          <AvatarUpload
-            userId={profile.id}
-            email={email}
-            name={profile.full_name}
-            username={profile.username}
-            avatarUrl={profile.avatar_url}
-            size="xl"
-            className="!h-24 !w-24 rounded-full border-4 border-white ring-2 ring-[#1877F2]/80 lg:!h-28 lg:!w-28"
-          />
+            <AvatarUpload
+              userId={profile.id}
+              email={email}
+              name={profile.full_name}
+              username={profile.username}
+              avatarUrl={profile.avatar_url}
+              size="xl"
+              className="!h-20 !w-20 rounded-full border-[3px] border-white shadow-float ring-2 ring-gold/35 transition-transform duration-300 hover:scale-[1.02] lg:!h-24 lg:!w-24"
+            />
         </div>
       }
       coverControls={

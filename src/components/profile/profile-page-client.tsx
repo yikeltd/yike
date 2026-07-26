@@ -6,10 +6,11 @@ import { useStandaloneApp } from "@/hooks/use-standalone-app";
 import {
   Bell,
   Bookmark,
+  Home,
   List,
   MessageCircle,
   PlusCircle,
-  Search,
+  Shield,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -28,13 +29,44 @@ import {
   profileRoleLabel,
   showAgentBadge,
 } from "@/lib/profile-display";
-import { getTrustStatusChip } from "@/lib/verification/trust-center";
+import { getTrustStatusChip, type TrustStatusChip } from "@/lib/verification/trust-center";
 import { shouldShowTrustCenterOnDashboard } from "@/lib/verification/seller-dashboard-context";
 import { SellerAnalyticsPanel } from "@/components/subscriptions/seller-analytics-panel";
 import { PlansUpgradeCard } from "@/components/subscriptions/plans-upgrade-card";
 import { SubscriptionPlanBadge } from "@/components/subscriptions/subscription-plan-badge";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
 import { cn } from "@/lib/utils";
+
+function TrustChipBadge({ chip }: { chip: TrustStatusChip }) {
+  const label = chip.label
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+  const tone =
+    chip.tone === "premium"
+      ? "border-violet-700/50 from-violet-400 via-violet-500 to-violet-700 text-white shadow-[0_1px_0_rgb(255_255_255/0.28)_inset,0_3px_8px_rgb(139_92_246/0.4)]"
+      : chip.tone === "success"
+        ? "border-emerald-700/45 from-emerald-300 via-emerald-500 to-emerald-700 text-white shadow-[0_1px_0_rgb(255_255_255/0.3)_inset,0_3px_8px_rgb(16_185_129/0.35)]"
+        : chip.tone === "warning"
+          ? "border-amber-700/45 from-amber-200 via-amber-400 to-amber-600 text-amber-950 shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_3px_8px_rgb(245_158_11/0.35)]"
+          : "border-gold-dark/50 from-[#f8e7b4] via-gold to-gold-dark text-navy shadow-[0_1px_0_rgb(255_255_255/0.45)_inset,0_3px_8px_rgb(228_181_71/0.45)]";
+
+  return (
+    <span
+      role="status"
+      className={cn(
+        "inline-flex min-h-[2.25rem] items-center gap-1.5 self-start rounded-full border bg-gradient-to-b px-3 py-1.5",
+        "text-[11px] font-extrabold tracking-wide",
+        "transition-all duration-150 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-[0.98]",
+        tone
+      )}
+    >
+      <Shield className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
+      {label}
+    </span>
+  );
+}
 
 export function ProfilePageClient({
   profile,
@@ -91,21 +123,15 @@ export function ProfilePageClient({
     profile.account_type === "developer" ||
     Boolean(profile.company_name);
 
-  const primaryCtaClass =
-    "yike-btn-primary pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2 text-sm font-bold text-white md:col-span-3";
-
-  const quickGridClass =
-    "grid grid-cols-2 auto-rows-fr gap-1.5 md:grid-cols-3 md:gap-2";
-
   return (
-    <div className="space-y-4 pb-4">
+    <div className="dashboard-fade-in space-y-4 pb-6">
       <ProfileCoverHero
         profile={profile}
         email={email}
         displayName={displayName}
         memberSince={memberSince}
         socialStats={socialStats}
-        showSocialStats={!isLister}
+        showSocialStats
         badges={
           <>
             {showAgentBadge(profile, verified) ? <VerifiedBadge /> : null}
@@ -116,13 +142,10 @@ export function ProfilePageClient({
             />
             {sellerType ? <SellerTypeBadge type={sellerType} /> : null}
             {roleLabel && !sellerType ? (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
+              <span className="rounded-full border border-navy/10 bg-navy/5 px-2.5 py-1 text-[11px] font-semibold text-navy">
                 {roleLabel}
               </span>
             ) : null}
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
-              {trustChip.label}
-            </span>
             {profile.verification_status !== "not_started" &&
               !verified &&
               isLister &&
@@ -131,11 +154,13 @@ export function ProfilePageClient({
               )}
           </>
         }
+        trustBadge={<TrustChipBadge chip={trustChip} />}
+        verifiedLevel={trustChip.label.split(/\s+/)[0] ?? "Basic"}
       />
 
       {statusMessage ? (
         <div
-          className="yike-card rounded-xl border-amber-200/60 bg-amber-50/80 px-3 py-2 text-sm text-amber-950"
+          className="rounded-xl border border-amber-200/60 bg-amber-50/80 px-3.5 py-2.5 text-sm text-amber-950"
           role="status"
         >
           <p className="font-medium">{statusMessage}</p>
@@ -167,10 +192,11 @@ export function ProfilePageClient({
               savedCount={savedCount}
             />
             {(expiringSoon > 0 || expiredCount > 0) && (
-              <p className="px-0.5 text-xs text-muted">
-                {expiringSoon > 0 ? `${expiringSoon} listing${expiringSoon === 1 ? "" : "s"} expiring soon. ` : ""}
-                {expiredCount > 0 ? `${expiredCount} expired.` : ""}
-                {" "}
+              <p className="px-1 text-xs text-muted">
+                {expiringSoon > 0
+                  ? `${expiringSoon} listing${expiringSoon === 1 ? "" : "s"} expiring soon. `
+                  : ""}
+                {expiredCount > 0 ? `${expiredCount} expired.` : ""}{" "}
                 <Link href="/agent/listings" className="font-semibold text-navy">
                   Manage listings
                 </Link>
@@ -179,25 +205,20 @@ export function ProfilePageClient({
           </DashboardSection>
 
           <DashboardSection title="Quick actions">
-            <div className={quickGridClass}>
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
               <Link
                 href="/agent/listings/choose"
                 prefetch
-                className={primaryCtaClass}
+                className="dashboard-primary-cta pressable col-span-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-navy-light to-navy px-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-float hover:brightness-110 active:scale-[0.98]"
               >
                 <PlusCircle className="h-4 w-4" />
-                List a property
+                List a Property
               </Link>
               <QuickAction href="/agent/listings" icon={List} label="My listings" />
               <QuickAction href="/agent/leads" icon={MessageCircle} label="Leads" />
               <QuickAction href="/agent/notifications" icon={Bell} label="Notifications" />
               <QuickAction href="/agent/followers" icon={Users} label="Followers" />
-              <QuickAction
-                icon={MessageCircle}
-                label="Get Help"
-                onClick={openSupport}
-                className={showCompanyQuickAction ? undefined : "col-span-2 md:col-span-1"}
-              />
+              <QuickAction icon={MessageCircle} label="Get Help" onClick={openSupport} />
               {showCompanyQuickAction ? (
                 <QuickAction href="/agent/company" icon={ShieldCheck} label="Company" />
               ) : null}
@@ -211,30 +232,32 @@ export function ProfilePageClient({
               <TrustCenterCard profile={profile} verified={verified} />
             </DashboardSection>
           ) : null}
+
           <DashboardSection title="Your activity">
             <ProfileUserActivityStats
               savedCount={savedCount}
               verificationRequestsCount={verificationRequestsCount}
             />
           </DashboardSection>
+
           <DashboardSection title="Quick actions">
-            <div className="grid grid-cols-2 auto-rows-fr gap-1.5 md:grid-cols-4 md:gap-2">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
               <Link
                 href="/agent/become"
                 prefetch
-                className="yike-btn-primary pressable col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-navy px-3 py-2 text-sm font-bold text-white md:col-span-4"
+                className="dashboard-primary-cta pressable col-span-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-gold to-gold-dark px-3 text-sm font-semibold text-navy shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-float hover:brightness-[1.03] active:scale-[0.98]"
               >
                 <PlusCircle className="h-4 w-4" />
                 List a Property
               </Link>
-              <QuickAction href="/saved" icon={Bookmark} label="Saved Homes" />
-              <QuickAction href="/search" icon={Search} label="Find a Home" />
+              <QuickAction href="/saved" icon={Bookmark} label="Saved" />
+              <QuickAction href="/search" icon={Home} label="Browse" />
               <QuickAction
                 href="/property-verification"
                 icon={ShieldCheck}
-                label="Verify Property"
+                label="Verify"
               />
-              <QuickAction icon={MessageCircle} label="Get Help" onClick={openSupport} />
+              <QuickAction icon={MessageCircle} label="Help" onClick={openSupport} />
             </div>
           </DashboardSection>
         </>
@@ -253,8 +276,8 @@ function DashboardSection({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-1.5">
-      <h2 className="px-0.5 text-[11px] font-bold uppercase tracking-wider text-navy/70">
+    <section className="space-y-2">
+      <h2 className="px-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         {title}
       </h2>
       {children}
@@ -266,42 +289,46 @@ function QuickAction({
   href,
   icon: Icon,
   label,
-  subtitle,
   onClick,
   className: extraClassName,
 }: {
   href?: string;
   icon: typeof List;
   label: string;
-  subtitle?: string;
   onClick?: () => void;
   className?: string;
 }) {
   const className = cn(
-    "yike-card yike-card-interactive pressable flex min-h-[4.25rem] flex-col items-center justify-center gap-0.5 px-2 py-2.5 text-center md:min-h-[4.5rem]",
+    "dashboard-live-card pressable group flex min-w-0 flex-col items-start gap-1.5 rounded-xl border border-navy/[0.05] bg-navy/[0.02] p-2 text-left sm:gap-2 sm:p-3",
+    "hover:border-navy/10 hover:bg-white",
     extraClassName
   );
 
   const content = (
     <>
-      <Icon className="h-4 w-4 text-navy" aria-hidden />
-      <span className="text-[11px] font-semibold leading-tight text-navy">{label}</span>
-      {subtitle ? (
-        <span className="text-[10px] font-medium leading-tight text-muted">{subtitle}</span>
-      ) : null}
+      <span className="dashboard-live-card__icon flex h-6 w-6 items-center justify-center rounded-full bg-gold/15 text-navy shadow-sm sm:h-7 sm:w-7">
+        <Icon
+          className="h-3 w-3 transition-transform duration-200 group-hover:scale-110 sm:h-3.5 sm:w-3.5"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+      </span>
+      <span className="w-full truncate text-[9px] font-semibold leading-tight text-navy transition-colors duration-200 group-hover:text-navy sm:text-xs">
+        {label}
+      </span>
     </>
   );
 
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={className}>
+      <button type="button" onClick={onClick} data-tone="neutral" className={className}>
         {content}
       </button>
     );
   }
 
   return (
-    <Link href={href ?? "#"} prefetch className={className}>
+    <Link href={href ?? "#"} prefetch data-tone="neutral" className={className}>
       {content}
     </Link>
   );

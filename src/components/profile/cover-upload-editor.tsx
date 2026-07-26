@@ -18,6 +18,8 @@ type CoverUploadEditorProps = {
   onRemoved: () => void;
   className?: string;
   iconOnly?: boolean;
+  /** Show explicit "Cover photo" label (clearer vs profile photo) */
+  labeled?: boolean;
 };
 
 export function CoverUploadEditor({
@@ -28,6 +30,7 @@ export function CoverUploadEditor({
   onRemoved,
   className,
   iconOnly = false,
+  labeled = false,
 }: CoverUploadEditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -284,14 +287,17 @@ export function CoverUploadEditor({
           }
         }}
         className={cn(
-          "pressable z-20 flex h-9 items-center gap-1.5 rounded-full bg-black/35 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50",
-          iconOnly ? "w-9 justify-center px-0" : "absolute right-3 top-3 px-3",
+          "pressable z-20 flex h-9 items-center gap-1.5 rounded-full bg-black/45 text-xs font-semibold text-white ring-1 ring-[#E4B547]/40 backdrop-blur-md transition hover:bg-black/60",
+          iconOnly && !labeled ? "w-9 justify-center px-0" : "px-3",
+          !iconOnly && !labeled && "absolute right-3 top-3",
           className
         )}
-        aria-label="Change cover"
+        aria-label={hasCover ? "Edit cover photo" : "Upload cover photo"}
       >
-        <ImageIcon className="h-3.5 w-3.5" />
-        {!iconOnly ? <span className="hidden sm:inline">Edit cover</span> : null}
+        <ImageIcon className="h-3.5 w-3.5 text-[#E4B547]" />
+        {(!iconOnly || labeled) && (
+          <span>{hasCover ? "Cover photo" : "Add cover"}</span>
+        )}
       </button>
       <input
         ref={inputRef}

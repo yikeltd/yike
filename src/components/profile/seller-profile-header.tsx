@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import Image from "next/image";
+import { CalendarDays } from "lucide-react";
 import {
   coverObjectPosition,
   getProfileCoverPositionY,
@@ -28,6 +29,9 @@ type SellerProfileHeaderProps = {
   };
   socialStats?: SocialStats;
   badges?: ReactNode;
+  trustBadge?: ReactNode;
+  /** Short level shown in stats (e.g. BASIC) — display only */
+  verifiedLevel?: string | null;
   actions?: ReactNode;
   avatarSlot?: ReactNode;
   coverControls?: ReactNode;
@@ -44,6 +48,8 @@ export function SellerProfileHeader({
   coverProfile,
   socialStats,
   badges,
+  trustBadge,
+  verifiedLevel,
   actions,
   avatarSlot,
   coverControls,
@@ -67,11 +73,21 @@ export function SellerProfileHeader({
       : null);
 
   const stats = socialStats ?? { followersCount: 0, listingLikesCount: 0 };
+  const level =
+    verifiedLevel?.trim() ||
+    (trustBadge ? "Basic" : null);
 
   return (
-    <section className="overflow-hidden rounded-[1.75rem] bg-white shadow-float ring-1 ring-black/[0.04] lg:rounded-2xl">
-      <div className="relative">
-        <div className="relative h-40 w-full bg-navy sm:h-44 lg:h-52">
+    <section
+      className={cn(
+        "dashboard-fade-in relative overflow-hidden rounded-[28px] sm:rounded-[32px]",
+        "border border-gold/40 bg-navy",
+        "shadow-[0_16px_40px_color-mix(in_srgb,var(--navy)_35%,transparent)]"
+      )}
+    >
+      {/* ZONE A — Cover / background image only (no avatar overlay) */}
+      <div className="relative isolate border-b border-gold/25">
+        <div className="relative h-36 w-full bg-navy-mid sm:h-40 lg:h-48">
           {coverSrc ? (
             <Image
               src={coverSrc}
@@ -86,81 +102,131 @@ export function SellerProfileHeader({
               unoptimized
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-navy via-[#021428] to-[#010d1f]" />
+            <div className="absolute inset-0 bg-gradient-to-br from-navy-light via-navy-mid to-navy" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" aria-hidden />
         </div>
 
         {coverControls ? (
-          <div className="absolute right-3 top-3 z-10">{coverControls}</div>
+          <div className="absolute right-3 top-3 z-10 flex flex-col items-end gap-1">
+            {coverControls}
+          </div>
         ) : null}
       </div>
 
-      {/* Mobile: centered stack */}
-      <div className="relative px-5 pb-5 lg:hidden">
-        <div className="-mt-14 flex flex-col items-center text-center">
-          <div className="relative">
+      {/* ZONE B — Avatar + identity beside each other, fully below cover */}
+      <div className="profile-id relative bg-gradient-to-b from-navy via-navy to-navy-mid px-3.5 pb-4 pt-4 sm:px-5 sm:pb-5 sm:pt-5 lg:px-6 lg:pb-6">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div
+            className={cn(
+              "shrink-0",
+              "[&_#profile-photo_.rounded-full]:!border-2",
+              "[&_#profile-photo_.rounded-full]:!border-gold",
+              "[&_#profile-photo_.rounded-full]:!shadow-[0_0_0_1px_color-mix(in_srgb,var(--gold)_40%,transparent),0_10px_24px_color-mix(in_srgb,var(--navy-dark)_45%,transparent)]",
+              "[&_#profile-photo_.rounded-full]:!ring-0",
+              "[&_#profile-photo_.rounded-full]:hover:!scale-100",
+              "[&_#profile-photo_button]:!border-[1.5px]",
+              "[&_#profile-photo_button]:!border-gold",
+              "[&_#profile-photo_button]:!bg-navy",
+              "[&_#profile-photo_button]:!bg-none",
+              "[&_#profile-photo_button]:!text-gold",
+              "[&_#profile-photo_button]:!shadow-[0_4px_14px_color-mix(in_srgb,var(--navy-dark)_40%,transparent)]",
+              "[&_#profile-photo_button]:hover:!scale-100"
+            )}
+          >
             {avatarSlot ?? (
               <AvatarCircle displayName={displayName} logo={logo} size="lg" />
             )}
           </div>
-          {subtitle ? (
-            <p className="mt-4 text-xs font-bold uppercase tracking-wider text-muted">
-              {subtitle}
-            </p>
-          ) : null}
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-navy">{displayName}</h1>
-          {username ? <p className="mt-0.5 text-sm text-muted">@{username}</p> : null}
-          <ProfileSocialStats stats={stats} centered className="mt-2" showLinks={showSocialLinks} />
-          {memberSince ? (
-            <p className="mt-1 text-xs text-muted">Member since {memberSince}</p>
-          ) : null}
-          {badges ? (
-            <div className="mt-3 flex flex-wrap justify-center gap-2">{badges}</div>
-          ) : null}
-          {actions ? <div className="mt-4 flex justify-center">{actions}</div> : null}
-          {bio ? (
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">{bio}</p>
-          ) : null}
-        </div>
-      </div>
 
-      {/* Desktop: breathing room below cover before profile row */}
-      <div className="hidden lg:block lg:h-2 xl:h-3 2xl:h-3" aria-hidden />
+          <div className="flex min-w-0 flex-1 items-start justify-between gap-2 sm:gap-3">
+            <div className="min-w-0 space-y-1">
+              {subtitle ? (
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-gold">
+                  {subtitle}
+                </p>
+              ) : null}
+              <h1 className="font-[family-name:var(--font-display)] text-[1.25rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-white sm:text-[1.4rem] lg:text-[1.55rem]">
+                {displayName}
+              </h1>
+              {username ? (
+                <p className="font-[family-name:var(--font-display)] text-[12px] font-medium text-gold">
+                  <span className="text-gold-light">@</span>
+                  {username}
+                </p>
+              ) : null}
 
-      {/* Desktop: left overlap — avatar overlaps cover; details sit in white area below */}
-      <div className="relative hidden px-6 pb-6 lg:block lg:px-8 xl:px-8 2xl:px-10">
-        <div className="flex items-start gap-5 xl:gap-6">
-          <div className="-mt-16 shrink-0 lg:-mt-16 xl:-mt-16 2xl:-mt-16">
-            {avatarSlot ?? (
-              <AvatarCircle displayName={displayName} logo={logo} size="xl" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1 pt-6 lg:pt-7 xl:pt-8 2xl:pt-9">
-            {subtitle ? (
-              <p className="text-xs font-bold uppercase tracking-wider text-muted">{subtitle}</p>
-            ) : null}
-            <div className="flex flex-wrap items-start justify-between gap-3 xl:gap-4">
-              <div className="min-w-0">
-                <h1 className="text-2xl font-bold tracking-tight text-navy xl:text-3xl">
-                  {displayName}
-                </h1>
-                {username ? <p className="mt-0.5 text-sm text-muted">@{username}</p> : null}
-                <ProfileSocialStats stats={stats} className="mt-1.5" showLinks={showSocialLinks} />
-                {memberSince ? (
-                  <p className="mt-1 text-xs text-muted">Member since {memberSince}</p>
-                ) : null}
-              </div>
-              {actions ? <div className="shrink-0">{actions}</div> : null}
+              {(trustBadge || badges) && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1.5">
+                  {trustBadge ? (
+                    <div
+                      className={cn(
+                        "inline-flex",
+                        "[&_[role=status]]:!min-h-0",
+                        "[&_[role=status]]:!rounded-full",
+                        "[&_[role=status]]:!border",
+                        "[&_[role=status]]:!border-gold/55",
+                        "[&_[role=status]]:![background-image:none]",
+                        "[&_[role=status]]:!bg-transparent",
+                        "[&_[role=status]]:!px-2.5",
+                        "[&_[role=status]]:!py-1",
+                        "[&_[role=status]]:!text-[10px]",
+                        "[&_[role=status]]:!font-semibold",
+                        "[&_[role=status]]:!tracking-[0.04em]",
+                        "[&_[role=status]]:!text-white",
+                        "[&_[role=status]]:!shadow-none",
+                        "[&_[role=status]]:hover:!-translate-y-0",
+                        "[&_[role=status]]:hover:!brightness-100",
+                        "[&_[role=status]]:active:!scale-100",
+                        "[&_[role=status]_svg]:!text-gold"
+                      )}
+                    >
+                      {trustBadge}
+                    </div>
+                  ) : null}
+                  {badges ? (
+                    <div className="flex flex-wrap items-center gap-1.5 empty:hidden">
+                      {badges}
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
-            {badges ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2">{badges}</div>
-            ) : null}
-            {bio ? (
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted line-clamp-3">{bio}</p>
-            ) : null}
+
+            <div className="flex shrink-0 items-start gap-2">
+              {actions ? <div>{actions}</div> : null}
+              {memberSince ? (
+                <div className="flex flex-col items-end border-l border-gold/25 pl-2.5 sm:pl-4">
+                  <CalendarDays
+                    className="mb-0.5 h-3 w-3 text-gold sm:mb-1 sm:h-3.5 sm:w-3.5"
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                  <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-gold sm:text-[9px] sm:tracking-[0.14em]">
+                    Joined
+                  </span>
+                  <span className="mt-0.5 text-[11px] font-semibold tracking-tight text-white sm:text-sm">
+                    {memberSince}
+                  </span>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
+
+        <div className="mt-4 sm:mt-5">
+          <ProfileSocialStats
+            stats={stats}
+            showLinks={showSocialLinks}
+            variant="executive"
+            verifiedLevel={level}
+          />
+        </div>
+
+        {bio ? (
+          <p className="mt-3.5 max-w-xl text-xs leading-relaxed text-white/60 line-clamp-2 sm:text-sm sm:line-clamp-3">
+            {bio}
+          </p>
+        ) : null}
       </div>
     </section>
   );
@@ -175,13 +241,14 @@ function AvatarCircle({
   logo: string | null;
   size: "lg" | "xl";
 }) {
-  const dim = size === "xl" ? "h-28 w-28" : "h-24 w-24";
-  const text = size === "xl" ? "text-3xl" : "text-2xl";
+  const dim = size === "xl" ? "h-24 w-24" : "h-20 w-20";
+  const text = size === "xl" ? "text-2xl" : "text-xl";
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-full border-4 border-white bg-surface shadow-float-lg ring-2 ring-[#1877F2]/80",
+        "relative overflow-hidden rounded-full border-2 border-gold bg-navy-mid",
+        "shadow-[0_0_0_1px_color-mix(in_srgb,var(--gold)_40%,transparent),0_10px_24px_color-mix(in_srgb,var(--navy-dark)_45%,transparent)]",
         dim
       )}
     >
@@ -190,7 +257,7 @@ function AvatarCircle({
           src={logo}
           alt={displayName}
           fill
-          sizes={size === "xl" ? "112px" : "96px"}
+          sizes={size === "xl" ? "96px" : "80px"}
           className="object-cover"
           decoding="async"
           unoptimized
@@ -198,7 +265,7 @@ function AvatarCircle({
       ) : (
         <span
           className={cn(
-            "flex h-full w-full items-center justify-center font-bold text-navy",
+            "flex h-full w-full items-center justify-center bg-gradient-to-br from-navy-light to-navy font-bold text-white",
             text
           )}
         >

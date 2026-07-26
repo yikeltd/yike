@@ -80,15 +80,16 @@ export function AvatarUpload({
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
         className={cn(
-          "pressable absolute -bottom-1 -right-1 flex h-10 w-10 items-center justify-center rounded-full bg-gold text-navy shadow-glow-gold",
+          "pressable absolute -bottom-0.5 -right-0.5 z-[1] flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-gradient-to-b from-gold to-gold-dark text-navy shadow-float transition-transform duration-200 hover:scale-105",
           uploading && "opacity-70"
         )}
         aria-label="Change profile photo"
+        title="Change profile photo"
       >
         {uploading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
         ) : (
-          <Camera className="h-4 w-4" />
+          <Camera className="h-3.5 w-3.5" strokeWidth={2.5} />
         )}
       </button>
       <input

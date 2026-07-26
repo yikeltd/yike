@@ -13,7 +13,10 @@ export function ProfileFollowList({
   endpoint,
   emptyMessage,
 }: {
-  endpoint: "/api/social/followers" | "/api/social/following";
+  endpoint:
+    | "/api/social/followers"
+    | "/api/social/following"
+    | "/api/social/listing-likers";
   emptyMessage: string;
 }) {
   const [profiles, setProfiles] = useState<PublicFollowProfile[]>([]);

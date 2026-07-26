@@ -17,11 +17,11 @@ Reduce clutter, improve scanning, and strengthen trust with a premium four-colum
 | 3 · Company | About · Contact · Safety Centre · Become Verified |
 | 4 · Legal | Terms · Privacy · Cookies |
 
-**Bottom bar**
+**Bottom bar** (three quiet lines)
 
-- `© 2026 Yike Ltd. All rights reserved.`
-- `RC-9552998`
-- One notice: *Yike is an online marketplace. Always inspect listings and verify before making payments.*
+- `© 2026 Yike Ltd. All rights reserved. RC-9552998`
+- *Yike is a trusted property marketplace. Always inspect listings and complete your due diligence before making payments.*
+- Owned & Operated by Stankings Legacy Ltd. • [stankings.com](https://stankings.com) (muted; link is not a CTA)
 
 ## Removed
 

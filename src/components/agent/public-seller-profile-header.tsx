@@ -55,6 +55,7 @@ export function PublicSellerProfileHeader({
       coverProfile={agent}
       socialStats={socialStats}
       memberSince={joinedLabel}
+      verifiedLevel={verified ? "Verified" : "Basic"}
       badges={
         <>
           {sellerType ? <SellerTypeBadge type={sellerType} /> : null}
