@@ -190,11 +190,24 @@ async function sendVerificationOtp(
   return { ok: true, data: { reference } };
 }
 
+/** OTP SMS routes — DND first (Nigeria transactional), then premium / non-DND. */
+function smsOtpRoutes(): string[] {
+  const fromEnv = process.env.SENDCHAMP_SMS_ROUTE?.trim();
+  if (fromEnv) {
+    return fromEnv
+      .split(",")
+      .map((r) => r.trim())
+      .filter(Boolean);
+  }
+  // Prefer DND / premium so OTP reaches DND-registered Nigerian lines.
+  return ["dnd", "DND_NG", "PREMIUM_NG", "non_dnd", "NON_DND_NG"];
+}
+
 async function sendSmsMessage(
   mobile: string,
   message: string,
   sender_name: string,
-  route: "dnd" | "non_dnd"
+  route: string
 ): Promise<ProviderResult<{ reference?: string }>> {
   const result = await sendchampPost<Record<string, unknown>>("/sms/send", {
     to: [mobile],
@@ -238,7 +251,10 @@ export async function sendWhatsAppText(
   return { ok: true, data: { reference } };
 }
 
-/** Branded production SMS OTP (sender YIKE) — sole SMS delivery path. */
+/**
+ * Branded `/sms/send` OTP (sender YIKE).
+ * Fallback path when Verification API SMS fails — tries DND routes first.
+ */
 export async function sendBrandedSmsOtp(
   phone: string,
   code: string
@@ -248,8 +264,9 @@ export async function sendBrandedSmsOtp(
 
   const mobile = toSendchampPhone(phone);
   const message = buildSmsOtpMessage(code);
+  let lastError = "SMS delivery failed";
 
-  for (const route of ["non_dnd", "dnd"] as const) {
+  for (const route of smsOtpRoutes()) {
     const direct = await sendSmsMessage(mobile, message, config.smsSender, route);
     if (direct.ok) {
       console.info("[sendchamp] sms/send ok", {
@@ -258,14 +275,15 @@ export async function sendBrandedSmsOtp(
       });
       return direct;
     }
+    lastError = direct.error || lastError;
   }
 
-  return { ok: false, error: "SMS delivery failed" };
+  return { ok: false, error: lastError };
 }
 
 /**
- * SMS OTP delivery — branded `/sms/send` only.
- * Do not call `/verification/create` for SMS (duplicate “Hi There” template).
+ * SMS OTP delivery — branded `/sms/send` (fallback helper).
+ * Primary production path is Verification API via phone-verification / otp service.
  */
 export async function sendOtpSms(
   phone: string,
@@ -355,7 +373,7 @@ export async function runSendchampDiagnostics(
     error: auth.ok ? undefined : auth.error,
   });
 
-  for (const route of ["non_dnd", "dnd"] as const) {
+  for (const route of smsOtpRoutes()) {
     const sms = await sendSmsMessage(testMobile, message, config.smsSender, route);
     steps.push({
       step: `sms_send_${route}`,
@@ -364,9 +382,6 @@ export async function runSendchampDiagnostics(
     });
     if (sms.ok) break;
   }
-
-  // Do not probe `/verification/create` with SMS — that delivers Sendchamp’s
-  // default template and is not used in production SMS OTP flows.
 
   if (config.whatsappSender) {
     const waVerify = await sendVerificationOtp(

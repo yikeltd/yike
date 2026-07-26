@@ -1,3 +1,4 @@
+import { SENDCHAMP_OTP_META_MESSAGE } from "@/lib/phone-verification/copy";
 import {
   isSendchampSuccess,
   pickSendchampReference,
@@ -110,11 +111,9 @@ export function isSendchampVerificationConfigured(): boolean {
 }
 
 /**
- * Create a Sendchamp Verification OTP session.
- * - WhatsApp / email: Sendchamp delivers.
- * - SMS: **do not use for delivery**. Production SMS uses `sendBrandedSmsOtp` only.
- *   If channel is sms, `inAppToken` must be true (register without SMS send). Prefer
- *   not calling this for SMS at all.
+ * Create a Sendchamp Verification OTP session and (unless `inAppToken`) deliver it.
+ * Production SMS matches BamSignal: `/verification/create` + approved sender `YIKE`
+ * + optional branded `meta_data.message` (`{{code}}`). Confirm via `/verification/confirm`.
  */
 export async function createSendchampVerificationOtp(params: {
   phoneIntl: string;
@@ -123,6 +122,7 @@ export async function createSendchampVerificationOtp(params: {
   channel?: SendchampVerificationChannel;
   /** Server-generated OTP when registering without Sendchamp delivery. */
   token?: string;
+  /** When true, register session only — Sendchamp does not SMS/WhatsApp the code. */
   inAppToken?: boolean;
 }): Promise<
   | { ok: true; reference: string; expiresMinutes: number }
@@ -132,40 +132,55 @@ export async function createSendchampVerificationOtp(params: {
   const expiresMinutes = otpExpiryMinutes();
   const inAppToken = params.inAppToken ?? false;
 
-  // Block accidental Sendchamp SMS delivery (default “Hi There” template).
-  if (channel === "sms" && !inAppToken) {
-    return {
-      ok: false,
-      error: "SMS must use sendBrandedSmsOtp — Verification API SMS delivery is disabled",
-      status: 400,
-    };
-  }
-
-  const body: Record<string, unknown> = {
-    channel,
-    token_type: "numeric",
-    token_length: otpLength(),
-    expiration_time: expiresMinutes,
-    customer_mobile_number: params.phoneIntl,
-    customer_email_address: params.email?.trim() || "",
-    meta_data: {
+  const tryCreate = async (includeCustomMessage: boolean) => {
+    const meta_data: Record<string, unknown> = {
       app: "Yike",
       brand: "Yike",
       purpose: params.purpose,
-    },
-    in_app_token: inAppToken,
+      description: "Yike phone verification",
+    };
+    // BamSignal-compatible custom OTP copy (Sendchamp substitutes {{code}}).
+    if (channel === "sms" && !inAppToken && includeCustomMessage) {
+      meta_data.message = SENDCHAMP_OTP_META_MESSAGE;
+    }
+
+    const body: Record<string, unknown> = {
+      channel,
+      token_type: "numeric",
+      token_length: otpLength(),
+      expiration_time: expiresMinutes,
+      customer_mobile_number: params.phoneIntl,
+      customer_email_address: params.email?.trim() || "",
+      meta_data,
+      in_app_token: inAppToken,
+    };
+
+    if (params.token) {
+      body.token = params.token;
+    }
+
+    // SMS requires approved sender ID (production: YIKE).
+    if (channel === "sms") {
+      body.sender = resolveSmsSender(process.env.SENDCHAMP_SMS_SENDER ?? "YIKE");
+    }
+
+    return post("/verification/create", body);
   };
 
-  if (params.token) {
-    body.token = params.token;
-  }
+  let result = await tryCreate(true);
 
-  // SMS requires approved sender ID (production: YIKE) when registering a session.
-  if (channel === "sms") {
-    body.sender = resolveSmsSender(process.env.SENDCHAMP_SMS_SENDER ?? "YIKE");
+  // If custom meta message is rejected, retry without it (still delivers via Verification).
+  if (
+    !result.ok &&
+    channel === "sms" &&
+    !inAppToken &&
+    /message|meta_data|template|invalid/i.test(result.error)
+  ) {
+    console.warn(
+      "[sendchamp] verification custom message rejected — retrying without meta_data.message"
+    );
+    result = await tryCreate(false);
   }
-
-  const result = await post("/verification/create", body);
 
   if (!result.ok) {
     return {

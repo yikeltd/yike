@@ -2,10 +2,15 @@ import type { PhoneVerificationChannel } from "./types";
 
 /**
  * Single production SMS OTP body — exact plain text, one line.
- * `{OTP}` is replaced at send time. No line breaks, HTML, emojis, or markdown.
+ * `{OTP}` is replaced for `/sms/send`. Sendchamp Verification uses `{{code}}`.
+ * No line breaks, HTML, emojis, or markdown.
  */
 export const SMS_OTP_MESSAGE_TEMPLATE =
   "Your verification code is: {OTP}. Code is valid for 30 minutes. Never share this code. Welcome to Yike. Happy Listing.";
+
+/** Sendchamp Verification API template — `{{code}}` is substituted by Sendchamp. */
+export const SENDCHAMP_OTP_META_MESSAGE =
+  "Your verification code is: {{code}}. Code is valid for 30 minutes. Never share this code. Welcome to Yike. Happy Listing.";
 
 export function buildSmsOtpMessage(otp: string): string {
   return SMS_OTP_MESSAGE_TEMPLATE.replace("{OTP}", otp.trim());
