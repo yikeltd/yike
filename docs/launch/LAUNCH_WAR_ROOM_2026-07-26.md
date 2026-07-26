@@ -95,6 +95,8 @@ Status legend: `OPEN` · `IN_PROGRESS` · `DONE` · `FOUNDER` · `DEFERRED`
 | 2026-07-26 | **SMS:** Defer proving delivery as launch blocker; phone verification remains non-required for browse/signup. Do not merge unproven OTP WIP to `main`. |
 | 2026-07-26 | **Vehicles:** Prefer default **OFF** until real vehicle supply exists (align code + docs). |
 | 2026-07-26 | **C01:** Security migrations confirmed on prod via `db:status`; advisors clean except leaked-password. |
+| 2026-07-26 | **Media protection:** Declared production-ready; shipped `704163b4`. |
+| 2026-07-26 | **Feature freeze ACTIVE** — see [FEATURE_FREEZE.md](./FEATURE_FREEZE.md). Only security / prod bugs / launch blockers / perf / docs. |
 
 ---
 
