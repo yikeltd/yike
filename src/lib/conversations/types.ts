@@ -4,26 +4,38 @@
  * Governs the 1-per-listing Transaction Conversation Workspace.
  */
 
-import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
-
 export type ConversationStatus =
-  | "inquiry"
-  | "negotiating"
-  | "viewing_scheduled"
-  | "inspection_requested"
-  | "deal_closed"
-  | "archived";
+  | "NEW"
+  | "ACTIVE"
+  | "NEGOTIATING"
+  | "VIEWING_SCHEDULED"
+  | "LIVE_WALKTHROUGH_COMPLETED"
+  | "INSPECTION_REQUESTED"
+  | "INSPECTION_IN_PROGRESS"
+  | "INSPECTION_COMPLETED"
+  | "OFFER_MADE"
+  | "OFFER_ACCEPTED"
+  | "DEAL_COMPLETED"
+  | "DEAL_CANCELLED"
+  | "ARCHIVED";
 
 export type TimelineEventType =
-  | "conversation_started"
+  | "conversation_created"
+  | "seller_replied"
   | "message"
   | "viewing_scheduled"
+  | "viewing_completed"
   | "live_walkthrough_completed"
+  | "offer_submitted"
+  | "offer_accepted"
+  | "offer_rejected"
   | "inspection_requested"
+  | "inspection_started"
   | "inspection_completed"
   | "buyer_assistance_requested"
-  | "offer_submitted"
-  | "deal_completed";
+  | "trust_verification_completed"
+  | "deal_completed"
+  | "deal_cancelled";
 
 export type TransactionActionType =
   | "schedule_viewing"
@@ -31,7 +43,9 @@ export type TransactionActionType =
   | "request_inspection"
   | "buyer_assistance"
   | "make_offer"
+  | "respond_offer"
   | "mark_deal_completed"
+  | "cancel_deal"
   | "toggle_saved";
 
 export type ConnectChannelType =
@@ -61,12 +75,82 @@ export type SellerProfileSummary = {
   phone?: string;
   whatsappPhone?: string;
   trustScore: number;
+  lastVerifiedDate?: string;
   badges: Array<{
     name: string;
     label: string;
     style: "emerald" | "gold" | "blue" | "navy";
   }>;
   verified: boolean;
+};
+
+export type TransactionStateTransition = {
+  fromState: ConversationStatus;
+  toState: ConversationStatus;
+  actorId: string;
+  reason?: string;
+  timestamp: string;
+};
+
+export type OfferStatus = "pending" | "accepted" | "rejected" | "countered" | "withdrawn";
+
+export type OfferRecord = {
+  id: string;
+  conversationId: string;
+  amount: number;
+  proposedBy: "buyer" | "seller";
+  status: OfferStatus;
+  terms?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ViewingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+
+export type ViewingRecord = {
+  id: string;
+  conversationId: string;
+  date: string;
+  time: string;
+  meetingPoint: string;
+  notes?: string;
+  status: ViewingStatus;
+  createdAt: string;
+};
+
+export type BuyerAssistanceServiceType =
+  | "property_search"
+  | "vehicle_search"
+  | "negotiation_help"
+  | "inspection_coordination"
+  | "document_review"
+  | "viewing_coordination";
+
+export type BuyerAssistanceRequest = {
+  id: string;
+  conversationId: string;
+  serviceType: BuyerAssistanceServiceType;
+  notes?: string;
+  createdAt: string;
+};
+
+export type InspectionType = "property_50_point" | "vehicle_50_point" | "legal_title_search";
+
+export type InspectionRequestPayload = {
+  inspectionType: InspectionType;
+  preferredDate: string;
+  notes?: string;
+  contactPreference: "whatsapp" | "phone" | "email";
+};
+
+export type TrustPanelData = {
+  identityVerified: boolean;
+  businessVerified: boolean;
+  inspectionStatus: "none" | "requested" | "in_progress" | "completed";
+  trustScore: number;
+  lastVerificationDate: string;
+  badges: Array<{ name: string; label: string; style: string }>;
+  safetyTips: string[];
 };
 
 export type ConversationTimelineEvent = {
@@ -104,10 +188,15 @@ export type ConversationWorkspace = {
   seller: SellerProfileSummary;
   buyerId: string;
   status: ConversationStatus;
+  stateHistory: TransactionStateTransition[];
   scheduledViewingAt?: string | null;
-  inspectionStatus?: "none" | "requested" | "in_progress" | "completed";
-  offerAmount?: number | null;
+  currentViewing?: ViewingRecord | null;
+  currentOffer?: OfferRecord | null;
+  offerHistory: OfferRecord[];
+  inspectionStatus: "none" | "requested" | "in_progress" | "completed";
+  trustPanel: TrustPanelData;
   unreadCount: number;
+  createdAt: string;
   lastMessageAt: string;
   timeline: ConversationTimelineEvent[];
   messages: ConversationMessage[];

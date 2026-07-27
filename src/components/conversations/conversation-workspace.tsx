@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, MessageSquare, PhoneCall, Send, Shield, Sparkles } from "lucide-react";
-import type { ConversationWorkspace as WorkspaceType, TransactionActionType } from "@/lib/conversations/types";
+import { ArrowLeft, Send } from "lucide-react";
+import type { ConversationWorkspace as WorkspaceType, InspectionType, TransactionActionType } from "@/lib/conversations/types";
+import { BuyerAssistanceModal } from "./buyer-assistance-modal";
 import { ConnectActionSheet } from "./connect-action-sheet";
 import { ConversationTimeline } from "./conversation-timeline";
+import { InspectionRequestModal } from "./inspection-request-modal";
+import { OfferModal } from "./offer-modal";
 import { TransactionActionBar } from "./transaction-action-bar";
-import { formatPrice } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { TransactionSummaryCard } from "./transaction-summary-card";
+import { TrustPanelModal } from "./trust-panel";
+import { ViewingModal } from "./viewing-modal";
 
 export function ConversationWorkspace({
   conversationId,
@@ -22,7 +26,14 @@ export function ConversationWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [sending, setSending] = useState(false);
+
+  // Modal States
   const [connectSheetOpen, setConnectSheetOpen] = useState(false);
+  const [trustPanelOpen, setTrustPanelOpen] = useState(false);
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [viewingModalOpen, setViewingModalOpen] = useState(false);
+  const [buyerAssistanceOpen, setBuyerAssistanceOpen] = useState(false);
+  const [inspectionModalOpen, setInspectionModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,24 +62,30 @@ export function ConversationWorkspace({
     };
   }, [conversationId]);
 
+  async function refreshWorkspace() {
+    if (!workspace) return;
+    try {
+      const res = await fetch(`/api/conversations/${encodeURIComponent(workspace.id)}`);
+      const data = (await res.json()) as { workspace?: WorkspaceType };
+      if (data.workspace) setWorkspace(data.workspace);
+    } catch {
+      // Ignore transient error
+    }
+  }
+
   async function handleSendMessage(e: React.FormEvent) {
     e.preventDefault();
     if (!messageInput.trim() || sending || !workspace) return;
 
     setSending(true);
     try {
-      const res = await fetch(`/api/conversations/${encodeURIComponent(workspace.id)}/messages`, {
+      await fetch(`/api/conversations/${encodeURIComponent(workspace.id)}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: messageInput.trim() }),
       });
-      const data = (await res.json()) as { workspace?: WorkspaceType };
       setMessageInput("");
-
-      // Refresh workspace data
-      const refreshed = await fetch(`/api/conversations/${encodeURIComponent(workspace.id)}`);
-      const refData = (await refreshed.json()) as { workspace?: WorkspaceType };
-      if (refData.workspace) setWorkspace(refData.workspace);
+      await refreshWorkspace();
     } catch {
       // Ignore transient error
     } finally {
@@ -76,18 +93,30 @@ export function ConversationWorkspace({
     }
   }
 
-  async function handleActionClick(action: TransactionActionType) {
+  function handleActionClick(action: TransactionActionType) {
+    if (action === "make_offer") {
+      setOfferModalOpen(true);
+    } else if (action === "schedule_viewing") {
+      setViewingModalOpen(true);
+    } else if (action === "buyer_assistance") {
+      setBuyerAssistanceOpen(true);
+    } else if (action === "request_inspection") {
+      setInspectionModalOpen(true);
+    } else {
+      void executeDirectAction(action);
+    }
+  }
+
+  async function executeDirectAction(action: TransactionActionType, payload?: Record<string, unknown>) {
     if (!workspace) return;
     try {
       const res = await fetch(`/api/conversations/${encodeURIComponent(workspace.id)}/actions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, payload }),
       });
       const data = (await res.json()) as { workspace?: WorkspaceType };
-      if (data.workspace) {
-        setWorkspace(data.workspace);
-      }
+      if (data.workspace) setWorkspace(data.workspace);
     } catch {
       // Ignore transient error
     }
@@ -105,8 +134,8 @@ export function ConversationWorkspace({
     return (
       <div className="flex h-[70vh] flex-col items-center justify-center gap-3 rounded-3xl border border-navy/10 bg-white p-8 text-center">
         <p className="text-sm font-bold text-danger">{error ?? "Workspace unavailable"}</p>
-        <Link href="/agent" className="text-xs font-bold text-navy underline">
-          Return to profile
+        <Link href="/conversations" className="text-xs font-bold text-navy underline">
+          Return to inbox
         </Link>
       </div>
     );
@@ -114,68 +143,25 @@ export function ConversationWorkspace({
 
   return (
     <div className="mx-auto flex h-[85vh] max-w-5xl flex-col overflow-hidden rounded-3xl border border-navy/10 bg-surface shadow-lg">
-      {/* Workspace Header & Listing Summary */}
-      <header className="border-b border-navy/10 bg-white p-4 sm:px-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/properties/${workspace.listing.slug}`}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-navy/5 text-navy transition-all hover:bg-navy/10"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-navy">
-                  Transaction Workspace
-                </span>
-                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wide">
-                  · {workspace.status.replace("_", " ")}
-                </span>
-              </div>
-              <h1 className="mt-0.5 text-base font-bold text-navy sm:text-lg">
-                {workspace.listing.title}
-              </h1>
-              <p className="text-xs font-semibold text-navy/70">
-                {formatPrice(workspace.listing.price, "total", "rent")} · {workspace.listing.locationLabel}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setConnectSheetOpen(true)}
-              className="pressable flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-bold text-navy shadow-sm transition-all hover:bg-gold-light"
-            >
-              <PhoneCall className="h-4 w-4" />
-              <span>Connect</span>
-            </button>
-          </div>
+      {/* Header & Transaction Summary Card */}
+      <header className="border-b border-navy/10 bg-white p-3 sm:p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <Link
+            href="/conversations"
+            className="flex items-center gap-1 text-xs font-semibold text-navy/70 hover:text-navy"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to Inbox
+          </Link>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-navy/40">
+            Workspace ID: {workspace.id}
+          </span>
         </div>
 
-        {/* Transaction Summary Bar */}
-        <div className="mt-3 flex items-center justify-between rounded-2xl border border-navy/10 bg-navy/5 px-4 py-2.5 text-xs text-navy">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-gold-dark" />
-            <span className="font-bold">{workspace.seller.fullName}</span>
-            {workspace.seller.badges.map((b) => (
-              <span
-                key={b.name}
-                className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700"
-              >
-                ✓ {b.label}
-              </span>
-            ))}
-          </div>
-          {workspace.scheduledViewingAt ? (
-            <span className="font-bold text-emerald-700">
-              Viewing: {workspace.scheduledViewingAt}
-            </span>
-          ) : (
-            <span className="font-medium text-navy/60">Inspection: {workspace.inspectionStatus}</span>
-          )}
-        </div>
+        <TransactionSummaryCard
+          workspace={workspace}
+          onOpenConnect={() => setConnectSheetOpen(true)}
+          onToggleTrustPanel={() => setTrustPanelOpen(true)}
+        />
       </header>
 
       {/* Main Conversation Stream */}
@@ -187,11 +173,11 @@ export function ConversationWorkspace({
         />
       </main>
 
-      {/* Transaction Action Bar & Message Input */}
+      {/* Action Bar & Message Composer */}
       <footer className="border-t border-navy/10 bg-white p-4">
         <TransactionActionBar
           availableActions={workspace.availableActions}
-          onActionClick={(action) => void handleActionClick(action)}
+          onActionClick={handleActionClick}
         />
 
         <form onSubmit={(e) => void handleSendMessage(e)} className="mt-3 flex items-center gap-2">
@@ -212,12 +198,79 @@ export function ConversationWorkspace({
         </form>
       </footer>
 
-      {/* Unified Connect Drawer / Sheet */}
+      {/* Unified Connect Sheet */}
       <ConnectActionSheet
         workspace={workspace}
         open={connectSheetOpen}
         onClose={() => setConnectSheetOpen(false)}
-        onTriggerAction={(actionName) => void handleActionClick(actionName as TransactionActionType)}
+        onTriggerAction={(actionName) => handleActionClick(actionName as TransactionActionType)}
+      />
+
+      {/* Embedded Trust Panel Modal */}
+      <TrustPanelModal
+        trustPanel={workspace.trustPanel}
+        sellerName={workspace.seller.fullName}
+        open={trustPanelOpen}
+        onClose={() => setTrustPanelOpen(false)}
+      />
+
+      {/* Offer Modal */}
+      <OfferModal
+        open={offerModalOpen}
+        listingTitle={workspace.listing.title}
+        listingPrice={workspace.listing.price}
+        onClose={() => setOfferModalOpen(false)}
+        onSubmitOffer={async (amount, terms) => {
+          await fetch(`/api/conversations/${encodeURIComponent(workspace.id)}/offers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "submit", amount, terms }),
+          });
+          await refreshWorkspace();
+        }}
+      />
+
+      {/* Viewing Modal */}
+      <ViewingModal
+        open={viewingModalOpen}
+        listingTitle={workspace.listing.title}
+        onClose={() => setViewingModalOpen(false)}
+        onSubmitViewing={async (date, time, meetingPoint, notes) => {
+          await fetch(`/api/conversations/${encodeURIComponent(workspace.id)}/viewings`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date, time, meetingPoint, notes }),
+          });
+          await refreshWorkspace();
+        }}
+      />
+
+      {/* Buyer Assistance Modal */}
+      <BuyerAssistanceModal
+        open={buyerAssistanceOpen}
+        onClose={() => setBuyerAssistanceOpen(false)}
+        onSubmitAssistance={async (serviceType, notes) => {
+          await fetch(`/api/conversations/${encodeURIComponent(workspace.id)}/buyer-assistance`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ serviceType, notes }),
+          });
+          await refreshWorkspace();
+        }}
+      />
+
+      {/* Inspection Request Modal */}
+      <InspectionRequestModal
+        open={inspectionModalOpen}
+        onClose={() => setInspectionModalOpen(false)}
+        onSubmitInspection={async (inspectionType: InspectionType, preferredDate: string, notes?: string) => {
+          await fetch(`/api/conversations/${encodeURIComponent(workspace.id)}/inspections`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ inspectionType, preferredDate, notes }),
+          });
+          await refreshWorkspace();
+        }}
       />
     </div>
   );
