@@ -2,9 +2,18 @@
 
 import { usePathname } from "next/navigation";
 import { useStandaloneApp } from "@/hooks/use-standalone-app";
+import { useAuth } from "@/components/auth/auth-provider";
 
 function shouldHideFooter(pathname: string) {
-  return pathname.startsWith("/auth") || pathname.startsWith("/lex");
+  return (
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/lex") ||
+    pathname.startsWith("/agent") ||
+    pathname === "/profile" ||
+    pathname.startsWith("/profile/") ||
+    pathname === "/saved" ||
+    pathname.startsWith("/saved/")
+  );
 }
 
 export function ConditionalPublicFooter({
@@ -14,10 +23,14 @@ export function ConditionalPublicFooter({
 }) {
   const pathname = usePathname();
   const { isApp } = useStandaloneApp();
+  const auth = useAuth();
 
   if (shouldHideFooter(pathname)) return null;
 
-  // SSR + first paint: show footer in browser (SEO/trust). Hide after standalone detected.
+  // Logged-in users should never see the public marketing footer
+  if (auth?.user) return null;
+
+  // Hide footer in standalone app mode
   if (isApp) return null;
 
   return <>{children}</>;

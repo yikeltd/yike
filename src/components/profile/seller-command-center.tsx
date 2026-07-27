@@ -592,121 +592,40 @@ export function SellerCommandCenter(props: Props) {
         </p>
       ) : null}
 
-      {/* 1. Business header */}
-      <section className="overflow-hidden rounded-[1.75rem] border border-navy/10 bg-gradient-to-br from-navy via-[#072462] to-[#031B4E] p-4 text-white shadow-[0_20px_50px_-28px_rgba(3,27,78,0.65)] sm:p-5 lg:col-span-12 lg:p-6">
-        {/* Living Dashboard Contextual Greeting */}
-        <div className="mb-4 rounded-2xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md">
-          <div className="flex items-center gap-1.5 text-gold">
-            <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            <span className="text-[11px] font-extrabold uppercase tracking-wider">
-              {greeting.prefix}
-            </span>
-          </div>
-          <p className="mt-1 text-xs font-medium leading-relaxed text-white/90 sm:text-sm">
-            {greeting.summary}
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-start gap-3.5">
-            <div className="shrink-0">
-              <AvatarUpload
-                userId={profile.id}
-                email={email}
-                name={profile.full_name}
-                username={profile.username}
-                avatarUrl={profile.avatar_url ?? profile.company_logo_url ?? null}
-                size="lg"
-                className="!h-16 !w-16 rounded-2xl border-2 border-white/25 shadow-float ring-2 ring-gold/40 sm:!h-20 sm:!w-20"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gold/90">
-                Business command center
-              </p>
-              <h1 className="mt-1 truncate text-xl font-bold tracking-tight sm:text-3xl">
-                {displayName}
+      {/* 1. Minimalist Hero Banner */}
+      <section className="overflow-hidden rounded-[1.75rem] border border-navy/10 bg-gradient-to-br from-navy via-[#072462] to-[#031B4E] p-6 text-white shadow-[0_20px_50px_-28px_rgba(3,27,78,0.65)] lg:col-span-12 lg:p-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <AvatarUpload
+              userId={profile.id}
+              email={email}
+              name={profile.full_name}
+              username={profile.username}
+              avatarUrl={profile.avatar_url ?? profile.company_logo_url ?? null}
+              size="lg"
+              className="!h-16 !w-16 rounded-2xl border-2 border-white/25 shadow-float ring-2 ring-gold/40 sm:!h-20 sm:!w-20"
+            />
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-white">
+                {greeting.prefix}
               </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {showAgentBadge(profile, verified) ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2.5 py-0.5 text-[10px] font-bold text-gold">
-                    <ShieldCheck className="h-3 w-3" aria-hidden />
-                    Verified
-                  </span>
-                ) : null}
-                <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold text-white/90">
-                  {trustChip.label}
-                </span>
-                {sellerType ? (
-                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold capitalize text-white/80">
-                    {sellerType}
-                  </span>
-                ) : roleLabel ? (
-                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold text-white/80">
-                    {roleLabel}
-                  </span>
-                ) : null}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/70">
-                <span>
-                  Trust score{" "}
-                  <strong className="tabular-nums text-gold">{trustScore || "—"}</strong>
-                </span>
-                <span>
-                  Plan <strong className="text-white">{planName}</strong>
-                </span>
-                {location ? <span>{location}</span> : null}
-                <span>Member since {memberSince}</span>
-              </div>
+              <p className="mt-1 text-sm text-white/80 font-medium">
+                {totalListings > 0
+                  ? "Ready to sell or rent something today?"
+                  : "You don't have any active listings yet. Publish your first listing to start reaching verified buyers."}
+              </p>
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-[15rem] sm:justify-end">
-            <Link
-              href="/agent/plans"
-              prefetch
-              className="pressable inline-flex h-10 items-center rounded-full bg-gold px-4 text-xs font-bold text-navy shadow-[0_4px_14px_rgba(228,181,71,0.35)]"
-            >
-              {subscriptionPlanLabel ? "Manage plan" : "Upgrade"}
-            </Link>
-            <Link
-              href="/agent/edit-profile"
-              prefetch
-              className="pressable inline-flex h-10 items-center rounded-full bg-white/10 px-4 text-xs font-bold text-white ring-1 ring-white/15"
-            >
-              Edit profile
-            </Link>
+          <div className="flex shrink-0 gap-3">
             <Link
               href="/agent/listings/choose"
               prefetch
-              className="pressable inline-flex h-10 items-center gap-1.5 rounded-full bg-white/10 px-4 text-xs font-bold text-white ring-1 ring-white/15"
+              className="pressable inline-flex h-11 items-center gap-2 rounded-full bg-gold px-6 text-xs font-bold text-navy shadow-[0_4px_16px_rgba(228,181,71,0.4)]"
             >
-              <PlusCircle className="h-3.5 w-3.5" aria-hidden />
-              New listing
+              <PlusCircle className="h-4 w-4" aria-hidden />
+              {totalListings > 0 ? "New listing" : "Create listing"}
             </Link>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-3">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-wider text-white/45">
-              Followers
-            </p>
-            <p className="mt-0.5 text-sm font-bold tabular-nums">{socialStats.followersCount}</p>
-          </div>
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-wider text-white/45">
-              Likes
-            </p>
-            <p className="mt-0.5 text-sm font-bold tabular-nums">
-              {socialStats.listingLikesCount}
-            </p>
-          </div>
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-wider text-white/45">
-              Listings
-            </p>
-            <p className="mt-0.5 text-sm font-bold tabular-nums">{totalListings}</p>
           </div>
         </div>
       </section>
@@ -720,239 +639,82 @@ export function SellerCommandCenter(props: Props) {
         </div>
       ) : null}
 
-      {/* Attention */}
+      {/* Single Focused Attention Banner */}
       {attention.length > 0 ? (
-        <section className="space-y-2 lg:col-span-4">
-          <SectionLabel>Notifications</SectionLabel>
-          <ul className="overflow-hidden rounded-2xl border border-navy/[0.06] bg-white shadow-[0_4px_18px_-14px_rgba(3,27,78,0.22)]">
-            {attention.slice(0, 4).map((item) => (
-              <li key={item.text} className="border-b border-navy/[0.05] last:border-0">
-                <Link
-                  href={item.href}
-                  className="pressable flex items-center gap-3 px-3.5 py-3 text-sm text-navy hover:bg-navy/[0.02]"
-                >
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />
-                  <span className="flex-1 font-medium">{item.text}</span>
-                  <ChevronRight className="h-4 w-4 text-navy/30" aria-hidden />
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <section className="lg:col-span-12">
+          <div className="flex items-center justify-between rounded-2xl border border-amber-200/60 bg-amber-50/80 p-4 text-amber-950">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+              <span className="text-sm font-semibold">{attention[0].text}</span>
+            </div>
+            <Link
+              href={attention[0].href}
+              className="pressable rounded-full bg-amber-600 px-4 py-1.5 text-xs font-bold text-white"
+            >
+              Take Action
+            </Link>
+          </div>
         </section>
       ) : null}
 
-      {/* 2. Quick actions */}
-      <section
-        className={cn(
-          "space-y-2.5",
-          attention.length > 0 ? "lg:col-span-8" : "lg:col-span-12",
-        )}
-      >
-        <SectionLabel>Quick actions</SectionLabel>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {vehiclesOn ? (
-            <ActionTile
-              href="/agent/listings/new/vehicle"
-              icon={Car}
-              label="New vehicle"
-            />
-          ) : null}
-          <ActionTile
-            href="/agent/listings/new"
-            icon={Building2}
-            label="New property"
-          />
-          <ActionTile href="/agent/listings" icon={Zap} label="Boost" />
-          <ActionTile href="/agent/listings" icon={List} label="My listings" />
-          <ActionTile href="/agent/leads" icon={MessageCircle} label="Leads" />
-          <ActionTile href="/agent/notifications" icon={Bell} label="Alerts" />
-          <ActionTile href="/agent/plans" icon={BarChart3} label="Analytics" />
-          <ActionTile href="/agent/plans" icon={CreditCard} label="Payments" />
-          <ActionTile
-            href="/agent/verification"
-            icon={ShieldCheck}
-            label="Verification"
-          />
-          <ActionTile href="/agent/followers" icon={Users} label="Followers" />
-          {showCompany ? (
-            <ActionTile href="/agent/company" icon={LayoutGrid} label="Company" />
-          ) : null}
-          <ActionTile icon={MessageCircle} label="Help" onClick={openSupport} />
-        </div>
-      </section>
-
-      {/* 3. Business overview */}
+      {/* 2. Essential Quick Actions */}
       <section className="space-y-2.5 lg:col-span-12">
-        <div className="flex items-end justify-between gap-2 px-0.5">
-          <SectionLabel>Business overview</SectionLabel>
-          <Link
-            href="/agent/listings"
-            className="text-[11px] font-bold text-navy/55 hover:text-navy"
-          >
-            Manage
-          </Link>
-        </div>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {overview.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="pressable rounded-2xl border border-navy/[0.06] bg-white px-3.5 py-3 shadow-[0_4px_16px_-14px_rgba(3,27,78,0.22)]"
-            >
-              <p className="text-[9px] font-bold uppercase tracking-wider text-navy/40">
-                {item.label}
-              </p>
-              <p className="mt-1 text-xl font-bold tabular-nums text-navy">{item.value}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Profile completion */}
-      <section className="space-y-2.5 lg:col-span-4">
-          <SectionLabel>Profile completion</SectionLabel>
-          <div className="rounded-[1.5rem] border border-navy/[0.06] bg-white p-4 shadow-[0_8px_28px_-18px_rgba(3,27,78,0.28)]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold text-navy">Profile</p>
-                <p className="mt-0.5 text-xs text-navy/55">
-                  Complete verification to increase buyer trust.
-                </p>
-              </div>
-              <div className="relative flex h-14 w-14 shrink-0 items-center justify-center">
-                <svg viewBox="0 0 36 36" className="absolute inset-0 h-14 w-14 -rotate-90">
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="15.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    className="text-navy/[0.06]"
-                  />
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="15.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeDasharray={`${(profileCompletionProgress / 100) * 97.4} 97.4`}
-                    className="text-gold transition-[stroke-dasharray] duration-700"
-                  />
-                </svg>
-                <span className="text-xs font-extrabold tabular-nums text-navy">
-                  {profileCompletionProgress}%
-                </span>
-              </div>
-            </div>
-
-            <ul className="mt-4 space-y-2.5">
-              {profileCompletionItems.map((item) => (
-                <li key={item.label} className="flex items-center gap-2.5 text-sm">
-                  <StatusDot status={item.status} />
-                  <span
-                    className={cn(
-                      "flex-1",
-                      item.status === "complete" ? "text-navy/45" : "font-medium text-navy",
-                    )}
-                  >
-                    {item.label}
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-navy/40">
-                    {statusLabel(item.status)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            <Link
-              href={profileActionHref}
-              prefetch
-              className="pressable mt-4 inline-flex h-10 w-full items-center justify-center rounded-full bg-navy text-xs font-bold text-gold"
-            >
-              {profileActionLabel}
-            </Link>
-          </div>
-      </section>
-
-      {/* 4. Performance */}
-      <section className="space-y-2.5 lg:col-span-8">
-        <SectionLabel>Performance</SectionLabel>
-        <div className="rounded-[1.5rem] border border-navy/[0.06] bg-white p-3.5 shadow-[0_8px_28px_-18px_rgba(3,27,78,0.28)] sm:p-4">
-          <SellerAnalyticsPanel
-            activeCount={activeCount}
-            pending={pending}
-            leadsCount={leadsCount}
-            savedCount={savedCount}
-            responseRate={profile.response_rate ?? null}
-            averageResponseTimeMinutes={profile.avg_response_time_minutes ?? null}
-            initialData={analyticsPreviewData}
-            variant="command"
+        <SectionLabel>Quick actions</SectionLabel>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <ActionTile
+            href="/agent/listings/choose"
+            icon={PlusCircle}
+            label="New listing"
           />
+          <ActionTile href="/agent/listings" icon={List} label="My listings" />
+          <ActionTile href="/agent/leads" icon={MessageCircle} label="Messages" />
+          <ActionTile href="/saved" icon={Sparkles} label="Saved" />
+          <ActionTile href="/agent/edit-profile" icon={Users} label="Profile" />
         </div>
       </section>
 
-      {/* 5. Listing health */}
-      <section className="space-y-2.5 lg:col-span-4">
-        <SectionLabel>Listing health</SectionLabel>
-        <div className="rounded-[1.5rem] border border-navy/[0.06] bg-white p-4 shadow-[0_8px_28px_-18px_rgba(3,27,78,0.28)]">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="text-sm font-bold text-navy">Overall listing health</p>
-              <p
-                className={cn(
-                  "mt-1 text-xs font-semibold",
-                  healthScore >= 90
-                    ? "text-emerald-700"
-                    : healthScore >= 70
-                      ? "text-navy/60"
-                      : "text-amber-700",
-                )}
+      {/* 3. Business overview — Progressive disclosure (render stats when totalListings > 0) */}
+      {totalListings > 0 ? (
+        <section className="space-y-2.5 lg:col-span-12">
+          <div className="flex items-end justify-between gap-2 px-0.5">
+            <SectionLabel>Business overview</SectionLabel>
+            <Link
+              href="/agent/listings"
+              className="text-[11px] font-bold text-navy/55 hover:text-navy"
+            >
+              Manage
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
+            {overview.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="pressable rounded-2xl border border-navy/[0.06] bg-white px-4 py-3.5 shadow-[0_4px_16px_-14px_rgba(3,27,78,0.22)]"
               >
-                {healthLabel}
+                <p className="text-[9px] font-bold uppercase tracking-wider text-navy/40">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-2xl font-black tabular-nums text-navy">{item.value}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* 4. Unified Profile Completion & Verification */}
+      <section className="space-y-2.5 lg:col-span-4">
+        <SectionLabel>Verification & profile</SectionLabel>
+        <div className="rounded-[1.5rem] border border-navy/[0.06] bg-white p-5 shadow-[0_8px_28px_-18px_rgba(3,27,78,0.28)]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-base font-bold text-navy">Trust & Verification</p>
+              <p className="mt-0.5 text-xs text-navy/60">
+                Complete verification steps to increase buyer confidence.
               </p>
             </div>
-            <p className="text-3xl font-bold tabular-nums tracking-tight text-navy">
-              {healthScore}
-              <span className="text-base font-semibold text-navy/35">%</span>
-            </p>
-          </div>
-
-          {healthIssues.length > 0 ? (
-            <ul className="mt-4 space-y-2">
-              {healthIssues.map((issue) => (
-                <li key={issue.label}>
-                  <Link
-                    href={issue.href}
-                    className="pressable flex items-center justify-between rounded-xl bg-navy/[0.03] px-3 py-2.5 text-sm"
-                  >
-                    <span className="font-medium text-navy">{issue.label}</span>
-                    <span className="tabular-nums font-bold text-navy/70">{issue.value}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 text-xs text-navy/55">
-              Inventory looks healthy. Keep photos fresh and renew before expiry.
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* 6. Verification strip */}
-      <section className="space-y-2.5 lg:col-span-8">
-        <SectionLabel>Verification</SectionLabel>
-        <div className="rounded-[1.5rem] border border-navy/[0.06] bg-white p-4 shadow-[0_8px_28px_-18px_rgba(3,27,78,0.28)]">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-gold-dark" aria-hidden />
-              <p className="text-sm font-bold text-navy">Trust checklist</p>
-            </div>
-            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
-              <svg viewBox="0 0 36 36" className="absolute inset-0 h-12 w-12 -rotate-90">
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center">
+              <svg viewBox="0 0 36 36" className="absolute inset-0 h-14 w-14 -rotate-90">
                 <circle
                   cx="18"
                   cy="18"
@@ -970,63 +732,113 @@ export function SellerCommandCenter(props: Props) {
                   stroke="currentColor"
                   strokeWidth="3"
                   strokeLinecap="round"
-                  strokeDasharray={`${(verificationProgress / 100) * 97.4} 97.4`}
+                  strokeDasharray={`${(profileCompletionProgress / 100) * 97.4} 97.4`}
                   className="text-gold transition-[stroke-dasharray] duration-700"
                 />
               </svg>
-              <span className="text-[10px] font-extrabold tabular-nums text-navy">
-                {verificationProgress}%
+              <span className="text-xs font-black tabular-nums text-navy">
+                {profileCompletionProgress}%
               </span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {verificationItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="pressable rounded-xl border border-navy/[0.05] bg-navy/[0.02] px-3 py-2.5"
-              >
-                <div className="flex items-center gap-2">
-                  <StatusDot status={item.status} />
-                  <div className="min-w-0">
-                    <p className="truncate text-[11px] font-bold text-navy">{item.label}</p>
-                    <p className="text-[9px] font-semibold uppercase tracking-wide text-navy/40">
-                      {statusLabel(item.status)}
-                    </p>
-                  </div>
-                </div>
-              </Link>
+
+          <ul className="mt-4 space-y-2.5">
+            {profileCompletionItems.map((item) => (
+              <li key={item.label} className="flex items-center gap-2.5 text-sm">
+                <StatusDot status={item.status} />
+                <span
+                  className={cn(
+                    "flex-1",
+                    item.status === "complete" ? "text-navy/45" : "font-medium text-navy",
+                  )}
+                >
+                  {item.label}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-navy/40">
+                  {statusLabel(item.status)}
+                </span>
+              </li>
             ))}
-          </div>
+          </ul>
+
+          <Link
+            href={profileActionHref}
+            prefetch
+            className="pressable mt-5 inline-flex h-11 w-full items-center justify-center rounded-full bg-navy text-xs font-bold text-gold shadow-sm"
+          >
+            {profileActionLabel}
+          </Link>
         </div>
       </section>
 
-      {/* 7. Plan */}
-      <section className="space-y-2.5 lg:col-span-4">
-        <SectionLabel>Plan & capacity</SectionLabel>
-        <PlansUpgradeCard
-          planLabel={subscriptionPlanLabel}
-          activeCount={activeCount}
-          limit={limit}
-          expiresInDays={subscriptionExpiresInDays}
-          variant="command"
-        />
-      </section>
+      {/* 5. Performance & Listing Health — Progressive Disclosure */}
+      {totalListings > 0 ? (
+        <>
+          <section className="space-y-2.5 lg:col-span-8">
+            <SectionLabel>Performance</SectionLabel>
+            <div className="rounded-[1.5rem] border border-navy/[0.06] bg-white p-4 shadow-[0_8px_28px_-18px_rgba(3,27,78,0.28)]">
+              <SellerAnalyticsPanel
+                activeCount={activeCount}
+                pending={pending}
+                leadsCount={leadsCount}
+                savedCount={savedCount}
+                responseRate={profile.response_rate ?? null}
+                averageResponseTimeMinutes={profile.avg_response_time_minutes ?? null}
+                initialData={analyticsPreviewData}
+                variant="command"
+              />
+            </div>
+          </section>
 
-      {/* 8. Insights */}
-      <section className="space-y-2.5 lg:col-span-4">
-        <SectionLabel>Seller insights</SectionLabel>
-        <ul className="space-y-2">
+          <section className="space-y-2.5 lg:col-span-4">
+            <SectionLabel>Plan & capacity</SectionLabel>
+            <PlansUpgradeCard
+              planLabel={subscriptionPlanLabel}
+              activeCount={activeCount}
+              limit={limit}
+              expiresInDays={subscriptionExpiresInDays}
+              variant="command"
+            />
+          </section>
+        </>
+      ) : (
+        <section className="space-y-2.5 lg:col-span-8">
+          <SectionLabel>Getting started guidance</SectionLabel>
+          <div className="rounded-[1.5rem] border border-gold/30 bg-gradient-to-br from-gold/10 via-white to-white p-6 shadow-sm">
+            <div className="flex items-center gap-2 text-gold-dark font-bold text-sm">
+              <Sparkles className="h-4 w-4" />
+              <span>How to publish your first successful listing</span>
+            </div>
+            <p className="mt-2 text-sm text-navy/80 leading-relaxed">
+              Buyers on Yike trust verified sellers with clear photos and accurate pricing. Complete your profile verification and add detailed property or vehicle descriptions to receive high-intent WhatsApp leads.
+            </p>
+            <div className="mt-4 flex gap-3">
+              <Link
+                href="/agent/listings/choose"
+                prefetch
+                className="pressable inline-flex h-10 items-center gap-1.5 rounded-full bg-navy px-5 text-xs font-bold text-white"
+              >
+                Create First Listing
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 6. Insights */}
+      <section className="space-y-2.5 lg:col-span-12">
+        <SectionLabel>Seller guidance</SectionLabel>
+        <div className="grid gap-3 sm:grid-cols-3">
           {insights.slice(0, 3).map((tip) => (
-            <li
+            <div
               key={tip}
-              className="flex gap-3 rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/10 to-white px-3.5 py-3"
+              className="flex gap-3 rounded-2xl border border-navy/[0.06] bg-white p-4 shadow-sm"
             >
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold-dark" aria-hidden />
-              <p className="text-sm font-medium leading-snug text-navy/85">{tip}</p>
-            </li>
+              <p className="text-xs font-medium leading-relaxed text-navy/85">{tip}</p>
+            </div>
           ))}
-        </ul>
+        </div>
       </section>
 
       {/* Premium aspirational */}
