@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MessageCircle, Phone } from "lucide-react";
+import { MessageCircle, MessageSquare, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   openWhatsAppLead,
@@ -178,7 +178,7 @@ export function ContactButtons({
       )}
       <div
         className={cn(
-          "flex gap-2",
+          "flex flex-col gap-2",
           layout === "detail" && "grid grid-cols-[1fr_auto]"
         )}
       >
@@ -199,6 +199,29 @@ export function ContactButtons({
           aria-label="Call agent"
         >
           <Phone className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="mt-2">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            guardAction(
+              {
+                type: "whatsapp",
+                listingId: propertyId,
+                redirectPath: `/conversations/${propertyId}:buyer_guest_01`,
+              },
+              () => {
+                window.location.href = `/conversations/${propertyId}:buyer_guest_01`;
+              }
+            );
+          }}
+          className="pressable flex w-full items-center justify-center gap-2 rounded-xl border border-navy/10 bg-white py-2.5 text-xs font-bold text-navy shadow-sm transition-all hover:bg-navy/5"
+        >
+          <MessageSquare className="h-4 w-4 text-gold-dark" />
+          <span>Open Transaction Workspace</span>
         </button>
       </div>
       <CallWhatsAppFallbackSheet
