@@ -82,8 +82,41 @@ export function AdminUsersDirectory({
     router.refresh();
   }
 
+  const verifiedCount = rows.filter((r) => r.role === "agent_verified").length;
+  const pendingCount = rows.filter((r) => r.role === "agent_unverified").length;
+  const companyCount = rows.filter((r) => r.account_kind === "company").length;
+  const dealerCount = rows.filter((r) => r.account_kind === "dealer").length;
+  const suspendedCount = rows.filter((r) => r.is_banned).length;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="rounded-xl border border-navy/10 bg-white p-3.5 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Total Users</p>
+          <p className="mt-1 text-2xl font-extrabold text-navy">{total}</p>
+        </div>
+        <div className="rounded-xl border border-emerald-200/60 bg-emerald-50/50 p-3.5 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Verified</p>
+          <p className="mt-1 text-2xl font-extrabold text-emerald-900">{verifiedCount}</p>
+        </div>
+        <div className="rounded-xl border border-amber-200/60 bg-amber-50/50 p-3.5 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-800">Pending</p>
+          <p className="mt-1 text-2xl font-extrabold text-amber-900">{pendingCount}</p>
+        </div>
+        <div className="rounded-xl border border-navy/10 bg-white p-3.5 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Companies</p>
+          <p className="mt-1 text-2xl font-extrabold text-navy">{companyCount}</p>
+        </div>
+        <div className="rounded-xl border border-navy/10 bg-white p-3.5 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Dealers</p>
+          <p className="mt-1 text-2xl font-extrabold text-navy">{dealerCount}</p>
+        </div>
+        <div className="rounded-xl border border-red-200/60 bg-red-50/50 p-3.5 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-red-800">Suspended</p>
+          <p className="mt-1 text-2xl font-extrabold text-red-900">{suspendedCount}</p>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-wrap gap-1 rounded-xl border border-border bg-elevated p-1">
           {FILTER_OPTIONS.map((f) => (

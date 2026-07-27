@@ -32,16 +32,32 @@ type ListingPreview = {
 };
 
 const TABS = [
-  "overview",
-  "listings",
-  "leads",
-  "reports",
+  "profile",
   "verification",
-  "notes",
+  "listings",
+  "activity",
+  "payments",
+  "trust_score",
+  "reports",
   "audit",
+  "sessions",
+  "admin_actions",
 ] as const;
 
 type TabId = (typeof TABS)[number];
+
+const TAB_LABELS: Record<TabId, string> = {
+  profile: "Profile",
+  verification: "Verification",
+  listings: "Listings",
+  activity: "Activity & Leads",
+  payments: "Payments & Plan",
+  trust_score: "Trust Score",
+  reports: "Reports",
+  audit: "Audit Timeline",
+  sessions: "Sessions & Devices",
+  admin_actions: "Admin Actions",
+};
 
 export function AdminUserDetail({
   profile,
@@ -66,7 +82,7 @@ export function AdminUserDetail({
   canViewAccounts?: boolean;
   supportViewSession?: SupportViewSession | null;
 }) {
-  const [tab, setTab] = useState<TabId>("overview");
+  const [tab, setTab] = useState<TabId>("profile");
   const starterInfo = resolveStarterPlanInfo(profile);
   const effectiveListingLimit = getListingLimit(profile);
   const accountStatus = normalizeAccountStatus(profile);
@@ -78,8 +94,7 @@ export function AdminUserDetail({
     isAgent || isListingSellerAccountType(profile.account_type);
 
   const visibleTabs = TABS.filter((t) => {
-    if (t === "verification") return isAgent && verificationSection;
-    if (t === "listings" || t === "leads" || t === "reports") return isAgent;
+    if (t === "verification") return isAgent || verificationSection;
     return true;
   });
 
@@ -149,19 +164,19 @@ export function AdminUserDetail({
             type="button"
             onClick={() => setTab(id)}
             className={cn(
-              "shrink-0 rounded-lg px-3 py-2 text-xs font-bold capitalize transition-colors",
+              "shrink-0 rounded-lg px-3 py-2 text-xs font-bold transition-colors",
               tab === id ? "bg-navy text-white" : "text-muted hover:bg-surface"
             )}
           >
-            {id === "audit" ? "Audit log" : id}
+            {TAB_LABELS[id] ?? id}
           </button>
         ))}
       </nav>
 
-      {tab === "overview" && (
+      {tab === "profile" && (
         <div className="space-y-6">
           <section className="space-y-3 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
-            <h2 className="font-bold text-navy">Overview</h2>
+            <h2 className="font-bold text-navy">Profile Details</h2>
             <dl className="grid gap-2 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-muted">Email</dt>
@@ -190,14 +205,6 @@ export function AdminUserDetail({
                 </dd>
               </div>
               <div>
-                <dt className="text-muted">Last WhatsApp OTP request</dt>
-                <dd className="font-medium">
-                  {profile.whatsapp_verification_requested_at
-                    ? new Date(profile.whatsapp_verification_requested_at).toLocaleString("en-NG")
-                    : "—"}
-                </dd>
-              </div>
-              <div>
                 <dt className="text-muted">Profile type</dt>
                 <dd className="font-medium">
                   {listingSellerAccountTypeLabel(profile.account_type)}
@@ -216,35 +223,6 @@ export function AdminUserDetail({
                 </div>
               ) : null}
               <div>
-                <dt className="text-muted">Listing limit</dt>
-                <dd className="font-medium">
-                  {effectiveListingLimit != null
-                    ? effectiveListingLimit
-                    : isVerifiedAgentProfile(profile)
-                      ? "Unlimited"
-                      : "5 (default)"}
-                </dd>
-              </div>
-              {starterInfo.isStarter ? (
-                <>
-                  <div>
-                    <dt className="text-muted">Starter plan month</dt>
-                    <dd className="font-medium">Month {starterInfo.month}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted">Active listings</dt>
-                    <dd className="font-medium">
-                      {stats.active_listing_count} / {starterInfo.listingLimit}
-                    </dd>
-                  </div>
-                </>
-              ) : (
-                <div>
-                  <dt className="text-muted">Active listings</dt>
-                  <dd className="font-medium">{stats.active_listing_count}</dd>
-                </div>
-              )}
-              <div>
                 <dt className="text-muted">Joined</dt>
                 <dd className="font-medium">
                   {new Date(profile.created_at).toLocaleDateString("en-NG")}
@@ -260,54 +238,30 @@ export function AdminUserDetail({
                     : "—"}
                 </dd>
               </div>
-              <div>
-                <dt className="text-muted">Complaints</dt>
-                <dd className="font-medium">{profile.complaint_count ?? 0}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Rejected listings</dt>
-                <dd className="font-medium">{stats.rejected_listings}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Unresolved reports</dt>
-                <dd className="font-medium">{stats.unresolved_reports}</dd>
-              </div>
             </dl>
-            {profile.profile_status_reason && (
-              <p className="text-sm text-muted">
-                Status note: {profile.profile_status_reason}
-              </p>
-            )}
-            {profile.listing_limit_reason && (
-              <p className="text-sm text-muted">
-                Limit note: {profile.listing_limit_reason}
-              </p>
-            )}
           </section>
 
-          {canChangeSellerType ? <AdminAccountTypeControl profile={profile} /> : null}
-
-          {showListingLimit && isAgent && (
-            <AdminListingLimitControl
-              profile={profile}
-              activeCount={stats.active_listing_count}
-            />
-          )}
-
           <AdminProfileMediaPanel profile={profile} />
-
-          <AdminPinResetPanel
-            profileId={profile.id}
-            pinType="login"
-            label="Reset login PIN"
-          />
         </div>
       )}
 
-      {tab === "listings" && isAgent && (
+      {tab === "verification" && (
+        <div className="space-y-6">
+          {verificationSection ?? (
+            <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+              <h2 className="font-bold text-navy">Verification Status</h2>
+              <p className="mt-2 text-sm text-muted">
+                Status: <strong className="capitalize text-navy">{profile.verification_status ?? "unverified"}</strong>
+              </p>
+            </section>
+          )}
+        </div>
+      )}
+
+      {tab === "listings" && (
         <section className="space-y-3 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-bold text-navy">Listings</h2>
+            <h2 className="font-bold text-navy">Listings ({stats.total_listings})</h2>
             <Link
               href={`/lex/auth/listings?agent=${profile.id}`}
               className="text-xs font-bold text-gold-dark"
@@ -338,11 +292,11 @@ export function AdminUserDetail({
         </section>
       )}
 
-      {tab === "leads" && isAgent && (
+      {tab === "activity" && (
         <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
-          <h2 className="font-bold text-navy">Leads</h2>
+          <h2 className="font-bold text-navy">Activity & Leads</h2>
           <p className="mt-2 text-3xl font-black text-navy tabular-nums">{stats.leads}</p>
-          <p className="mt-1 text-sm text-muted">Total leads routed to this agent.</p>
+          <p className="mt-1 text-sm text-muted">Total leads routed to this user account.</p>
           <Link
             href={`/lex/auth/leads?agent=${profile.id}`}
             className="mt-4 inline-block text-xs font-bold text-gold-dark"
@@ -352,7 +306,68 @@ export function AdminUserDetail({
         </section>
       )}
 
-      {tab === "reports" && isAgent && (
+      {tab === "payments" && (
+        <section className="space-y-4 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+          <h2 className="font-bold text-navy">Payments & Plan</h2>
+          <dl className="grid gap-2 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-muted">Listing limit</dt>
+              <dd className="font-medium">
+                {effectiveListingLimit != null
+                  ? effectiveListingLimit
+                  : isVerifiedAgentProfile(profile)
+                    ? "Unlimited"
+                    : "5 (default)"}
+              </dd>
+            </div>
+            {starterInfo.isStarter && (
+              <>
+                <div>
+                  <dt className="text-muted">Starter plan month</dt>
+                  <dd className="font-medium">Month {starterInfo.month}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Active listings limit</dt>
+                  <dd className="font-medium">
+                    {stats.active_listing_count} / {starterInfo.listingLimit}
+                  </dd>
+                </div>
+              </>
+            )}
+          </dl>
+          <Link
+            href={`/lex/auth/revenue/transactions?user=${profile.id}`}
+            className="inline-block text-xs font-bold text-gold-dark"
+          >
+            View transaction history →
+          </Link>
+        </section>
+      )}
+
+      {tab === "trust_score" && (
+        <div className="space-y-6">
+          <AdminUserTrustActions userId={profile.id} />
+          <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+            <h2 className="font-bold text-navy">Trust Metrics</h2>
+            <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+              <div>
+                <dt className="text-muted">Complaints</dt>
+                <dd className="font-bold text-navy">{profile.complaint_count ?? 0}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Rejected listings</dt>
+                <dd className="font-bold text-navy">{stats.rejected_listings}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Unresolved reports</dt>
+                <dd className="font-bold text-navy">{stats.unresolved_reports}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+      )}
+
+      {tab === "reports" && (
         <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
           <h2 className="font-bold text-navy">Reports</h2>
           <p className="mt-2 text-sm text-muted">
@@ -364,11 +379,6 @@ export function AdminUserDetail({
               5+ open reports — consider putting account on hold for review.
             </p>
           )}
-          {stats.unresolved_reports >= 3 && stats.unresolved_reports < 5 && (
-            <p className="mt-3 rounded-lg bg-amber-50/80 px-3 py-2 text-sm text-amber-900">
-              3+ open reports — flagged for admin review.
-            </p>
-          )}
           <Link
             href="/lex/auth/reports"
             className="mt-4 inline-block text-xs font-bold text-gold-dark"
@@ -378,42 +388,78 @@ export function AdminUserDetail({
         </section>
       )}
 
-      {tab === "verification" && verificationSection}
-
-      {tab === "notes" && <AdminUserNotes profileId={profile.id} />}
-
       {tab === "audit" && (
-        <section className="space-y-3 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
-          <h2 className="font-bold text-navy">Audit log</h2>
-          {!auditLogs.length ? (
-            <p className="text-sm text-muted">No admin actions recorded for this user yet.</p>
-          ) : (
-            <ul className="divide-y divide-navy/5 text-sm">
-              {auditLogs.map((log) => (
-                <li key={log.id} className="py-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-semibold text-navy">
-                      {log.summary ?? log.action}
-                    </span>
-                    <time className="text-xs text-muted">
-                      {new Date(log.created_at).toLocaleString("en-NG")}
-                    </time>
-                  </div>
-                  <p className="mt-0.5 font-mono text-[10px] text-muted">{log.action}</p>
-                  {log.reason ? (
-                    <p className="mt-1 text-xs text-muted">Reason: {log.reason}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="space-y-6">
+          <AdminUserNotes profileId={profile.id} />
+          <section className="space-y-3 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+            <h2 className="font-bold text-navy">Audit Timeline</h2>
+            {!auditLogs.length ? (
+              <p className="text-sm text-muted">No admin actions recorded for this user yet.</p>
+            ) : (
+              <ul className="divide-y divide-navy/5 text-sm">
+                {auditLogs.map((log) => (
+                  <li key={log.id} className="py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-semibold text-navy">
+                        {log.summary ?? log.action}
+                      </span>
+                      <time className="text-xs text-muted">
+                        {new Date(log.created_at).toLocaleString("en-NG")}
+                      </time>
+                    </div>
+                    <p className="mt-0.5 font-mono text-[10px] text-muted">{log.action}</p>
+                    {log.reason ? (
+                      <p className="mt-1 text-xs text-muted">Reason: {log.reason}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link
+              href="/lex/auth/audit-logs"
+              className="inline-block text-xs font-bold text-gold-dark"
+            >
+              Full audit log →
+            </Link>
+          </section>
+        </div>
+      )}
+
+      {tab === "sessions" && (
+        <section className="space-y-4 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+          <h2 className="font-bold text-navy">Sessions & Devices</h2>
+          <p className="text-sm text-muted">Active support sessions and authentication security events.</p>
           <Link
-            href="/lex/auth/audit-logs"
+            href={`/lex/auth/security-events?user=${profile.id}`}
             className="inline-block text-xs font-bold text-gold-dark"
           >
-            Full audit log →
+            View user security logs →
           </Link>
         </section>
+      )}
+
+      {tab === "admin_actions" && (
+        <div className="space-y-6">
+          <section className="space-y-4 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+            <h2 className="font-bold text-navy">Admin Actions & Controls</h2>
+            <AgentStatusActions agentId={profile.id} />
+          </section>
+
+          {canChangeSellerType ? <AdminAccountTypeControl profile={profile} /> : null}
+
+          {showListingLimit && isAgent && (
+            <AdminListingLimitControl
+              profile={profile}
+              activeCount={stats.active_listing_count}
+            />
+          )}
+
+          <AdminPinResetPanel
+            profileId={profile.id}
+            pinType="login"
+            label="Reset login PIN"
+          />
+        </div>
       )}
     </div>
   );
