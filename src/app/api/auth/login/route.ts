@@ -107,26 +107,29 @@ export async function POST(request: Request) {
   const reviewer = isReviewerAccountEmail(email);
   const needsEmailVerify = !data.user.email_confirmed_at && !reviewer;
 
-  const deviceToken = (await getDeviceTokenFromCookies()) ?? (await ensureDeviceToken());
+  const [deviceToken, profileRes] = await Promise.all([
+    getDeviceTokenFromCookies().then((t) => t ?? ensureDeviceToken()),
+    supabase
+      .from("profiles")
+      .select("id, full_name, username, avatar_url, email, role, account_type, has_pin_set")
+      .eq("id", data.user.id)
+      .maybeSingle(),
+  ]);
+
+  const profile = profileRes.data;
   const trusted = await isDeviceTrusted(data.user.id, deviceToken, { userAgent, ip });
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, full_name, username, avatar_url, email, role, account_type, has_pin_set")
-    .eq("id", data.user.id)
-    .maybeSingle();
-
   if (trusted || reviewer) {
-    await registerTrustedDevice({
+    void registerTrustedDevice({
       userId: data.user.id,
       deviceToken,
       userAgent,
       ip,
       isNewDevice: !trusted,
     });
-    await beginUserSession(data.user.id);
+    void beginUserSession(data.user.id);
   } else {
-    await logAuthSecurityEvent({
+    void logAuthSecurityEvent({
       userId: data.user.id,
       eventType: "login.otp_required",
       metadata: { method: "password", reason: "new_device" },
@@ -135,7 +138,7 @@ export async function POST(request: Request) {
     });
   }
 
-  await logAuthSecurityEvent({
+  void logAuthSecurityEvent({
     userId: data.user.id,
     eventType: "login.success",
     metadata: {

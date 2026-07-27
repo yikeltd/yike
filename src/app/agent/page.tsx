@@ -72,18 +72,18 @@ export default async function ProfilePage({
         .eq("agent_id", user.id),
       supabase
         .from("favorites")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("user_id", user.id),
       canList
         ? supabase
             .from("leads")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact", head: true })
             .eq("agent_id", user.id)
             .gte("created_at", offsetDaysIso(-30))
         : Promise.resolve({ count: 0 }),
       supabase
         .from("property_verification_requests")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("requester_user_id", user.id),
       getProfileSocialStats(supabase, user.id),
       admin ? getActiveUserSubscription(admin, user.id) : Promise.resolve(null),

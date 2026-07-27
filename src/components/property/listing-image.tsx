@@ -27,7 +27,7 @@ export function ListingImage({
   const skipNextOptimize = isPreOptimizedListingUrl(optimized);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-surface">
+    <div className="relative h-full w-full overflow-hidden bg-surface contain-paint">
       {!loaded && (
         <div
           className="absolute inset-0 skeleton animate-pulse-soft"
@@ -52,8 +52,8 @@ export function ListingImage({
         blurDataURL={blurDataUrl ?? undefined}
         sizes={sizes ?? "(max-width: 640px) 94vw, 420px"}
         className={cn(
-          "object-cover object-center transition-[opacity,transform] duration-500 ease-out",
-          loaded ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]",
+          "object-cover object-center transition-opacity duration-300 ease-out",
+          loaded ? "opacity-100" : "opacity-0",
           className
         )}
         loading={priority ? undefined : "lazy"}

@@ -44,6 +44,7 @@ function NavTab({
   return (
     <Link
       href={href}
+      prefetch={true}
       className={cn(
         "pressable flex min-w-[52px] flex-col items-center gap-0.5 rounded-full px-1.5 py-1 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200",
         active ? "text-navy" : "text-navy/50",
