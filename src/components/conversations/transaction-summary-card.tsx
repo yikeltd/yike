@@ -77,6 +77,13 @@ export function TransactionSummaryCard({
                 <Shield className="h-3 w-3 text-gold-dark" />
                 <span>Trust Score: {seller.trustScore}/100</span>
               </button>
+              <Link
+                href={`/trust/${encodeURIComponent(seller.id)}`}
+                target="_blank"
+                className="rounded-full bg-navy/10 px-2 py-0.5 text-[10px] font-bold text-navy hover:bg-navy/20"
+              >
+                Yike Passport ↗
+              </Link>
             </div>
 
             <h1 className="mt-1 text-base font-bold tracking-tight text-navy sm:text-lg">
