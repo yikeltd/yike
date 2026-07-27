@@ -6,7 +6,7 @@ import { writeAuditLog } from "@/lib/admin/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { saveReviewDecision } from "@/lib/review-memory/memory";
 import { applyReviewTrustImpact } from "@/lib/review-memory/trust-impact";
-import type { PropertyStatus } from "@/types/database";
+import { approveListingInPipeline, invalidateListingCaches } from "@/lib/listing-approval";
 
 export const runtime = "nodejs";
 
@@ -54,9 +54,24 @@ export async function POST(req: Request) {
 
   for (const id of body.listingIds) {
     try {
+      if (body.action === "approve") {
+        const res = await approveListingInPipeline(admin, {
+          listingId: id,
+          adminId: auth.user.id,
+          adminRole: auth.profile.role,
+          note: body.note,
+        });
+        if (!res.ok) {
+          results.push({ id, ok: false, error: res.error });
+        } else {
+          results.push({ id, ok: true });
+        }
+        continue;
+      }
+
       const { data: listing } = await admin
         .from("properties")
-        .select("id, agent_id, status, title")
+        .select("id, agent_id, status, title, slug, asset_type")
         .eq("id", id)
         .single();
 
@@ -67,12 +82,7 @@ export async function POST(req: Request) {
 
       const patch: Record<string, unknown> = { updated_at: now };
 
-      if (body.action === "approve") {
-        patch.status = "approved" as PropertyStatus;
-        patch.last_refreshed_at = now;
-        patch.listing_activity_status = "active";
-        patch.review_hold_status = "none";
-      } else if (body.action === "hold") {
+      if (body.action === "hold") {
         patch.review_hold_status = "hold";
       } else if (body.action === "lower_visibility") {
         patch.review_visibility_modifier = -15;
@@ -99,14 +109,18 @@ export async function POST(req: Request) {
         continue;
       }
 
+      invalidateListingCaches({
+        listingId: id,
+        slug: listing.slug,
+        assetType: listing.asset_type,
+      });
+
       const decisionType =
-        body.action === "approve"
-          ? "approved"
-          : body.action === "hold"
-            ? "held_for_review"
-            : body.action === "lower_visibility"
-              ? "lowered_visibility"
-              : "requested_update";
+        body.action === "hold"
+          ? "held_for_review"
+          : body.action === "lower_visibility"
+            ? "lowered_visibility"
+            : "requested_update";
 
       await saveReviewDecision(admin, {
         listing: listing as never,

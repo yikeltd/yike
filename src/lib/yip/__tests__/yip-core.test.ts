@@ -120,7 +120,7 @@ describe("createYip bootstrap", () => {
     }
     assert.equal(yip.registry.isEnabled(CAPABILITIES.VEHICLE_KNOWLEDGE), true);
     assert.equal(yip.registry.isEnabled(CAPABILITIES.PRICING_ENGINE), false);
-    assert.equal(yip.registry.isEnabled(CAPABILITIES.TRUST_ASSESSMENT), false);
+    assert.equal(yip.registry.isEnabled(CAPABILITIES.TRUST_ASSESSMENT), true);
   });
 
   it("resolves vehicle knowledge through the registry and returns Toyota models", () => {

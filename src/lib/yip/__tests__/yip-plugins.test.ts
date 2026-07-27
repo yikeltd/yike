@@ -272,7 +272,7 @@ describe("createYip() with the plugin host", () => {
     assert.equal(byId.get("yip.vehicle-knowledge")?.state, "enabled");
     assert.equal(byId.get("yip.recommendation")?.state, "initialized");
     assert.equal(byId.get("yip.pricing")?.state, "initialized");
-    assert.equal(byId.get("yip.trust")?.state, "initialized");
+    assert.equal(byId.get("yip.trust")?.state, "enabled");
     assert.equal(byId.get("yip.media-analysis")?.state, "initialized");
   });
 
@@ -296,11 +296,11 @@ describe("createYip() with the plugin host", () => {
     assert.ok(models.some((m) => m.value === "Camry"));
   });
 
-  it("registry.isEnabled matches CORE defaults — knowledge on, intelligence stubs off", () => {
+  it("registry.isEnabled — knowledge + trust on; pricing/recommendation stubs off", () => {
     const yip = createYip();
     assert.equal(yip.registry.isEnabled(CAPABILITIES.VEHICLE_KNOWLEDGE), true);
     assert.equal(yip.registry.isEnabled(CAPABILITIES.PRICING_ENGINE), false);
-    assert.equal(yip.registry.isEnabled(CAPABILITIES.TRUST_ASSESSMENT), false);
+    assert.equal(yip.registry.isEnabled(CAPABILITIES.TRUST_ASSESSMENT), true);
   });
 
   it("enabling the recommendation plugin at runtime flips its capability on", () => {

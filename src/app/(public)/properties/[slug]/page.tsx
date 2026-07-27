@@ -7,8 +7,10 @@ import { resolvePropertyRoute } from "@/lib/properties";
 import { getSession, getProfile, isAdmin } from "@/lib/auth";
 import {
   canPreviewOwnerListing,
+  isListingPubliclyActive,
   isListingUnderReview,
 } from "@/lib/listing-lifecycle";
+import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
 import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { getAgentRecentLeadsCount } from "@/lib/leads/queries";
 import {
@@ -92,8 +94,7 @@ export async function generateMetadata({
     `${propertyTypeLabel(property.property_type)} in ${property.area}, ${property.city}. ${price}. Contact agent on WhatsApp — ${SITE_NAME}.`;
   const image = listingShareImageUrl(property.media_urls);
   const canonical = propertyAbsoluteUrl(property);
-  const unavailable =
-    property.status !== "approved" || new Date(property.expires_at) <= new Date();
+  const unavailable = !isListingPubliclyActive(property);
 
   return {
     title,
@@ -152,8 +153,7 @@ export default async function PropertyDetailPage({
       }
     : null;
   const isOwner = viewer?.id === property.agent_id;
-  const isExpired = new Date(property.expires_at) <= new Date();
-  const isPubliclyVisible = property.status === "approved" && !isExpired;
+  const isPubliclyVisible = isListingPubliclyActive(property);
   const previewMode =
     !isPubliclyVisible && canPreviewOwnerListing(property, viewerCtx);
 
@@ -161,7 +161,9 @@ export default async function PropertyDetailPage({
     return (
       <ListingUnavailable
         property={property}
-        reason={isExpired ? "expired" : "unpublished"}
+        reason={
+          new Date(property.expires_at) <= new Date() ? "expired" : "unpublished"
+        }
       />
     );
   }
@@ -226,37 +228,23 @@ export default async function PropertyDetailPage({
             />
           </div>
 
-          {previewMode ? (
+          {previewMode && isOwner ? (
+            <OwnerListingStatusBanner
+              property={property}
+              className="mx-4 mt-3 lg:mx-0"
+            />
+          ) : previewMode ? (
             <div className="mx-4 mt-3 rounded-2xl border border-gold/30 bg-gold/5 px-4 py-3 lg:mx-0">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-navy">
-                    {isListingUnderReview(property)
-                      ? "Under review"
-                      : property.status === "rejected"
-                        ? "Not published"
-                        : "Unpublished"}
-                  </p>
-                  {isOwner && isListingUnderReview(property) ? (
-                    <p className="mt-0.5 text-xs text-muted">
-                      Your listing is being checked before it goes live.
-                    </p>
-                  ) : isOwner && property.status === "rejected" ? (
-                    <p className="mt-0.5 text-xs text-muted">
-                      Update and resubmit when you are ready.
-                    </p>
-                  ) : null}
-                </div>
-                {isOwner ? (
-                  <Link
-                    href={`/agent/listings/${property.id}/edit`}
-                    className="pressable shrink-0 rounded-xl bg-gold px-4 py-2 text-xs font-bold text-navy"
-                  >
-                    Edit listing
-                  </Link>
-                ) : null}
-              </div>
+              <p className="text-sm font-semibold text-navy">Staff preview</p>
+              <p className="mt-0.5 text-xs text-muted">
+                This listing is not public. You can view it as admin.
+              </p>
             </div>
+          ) : isOwner && isPubliclyVisible ? (
+            <OwnerListingStatusBanner
+              property={property}
+              className="mx-4 mt-3 lg:mx-0"
+            />
           ) : null}
           <ListingGallery
             images={images}

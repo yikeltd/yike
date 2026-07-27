@@ -9,7 +9,7 @@ import { saveReviewDecision } from "@/lib/review-memory/memory";
 import { applyReviewTrustImpact } from "@/lib/review-memory/trust-impact";
 import type { ReviewDecisionType } from "@/lib/review-memory/constants";
 import type { Property, PropertyStatus } from "@/types/database";
-import { assertCanPublishListing } from "@/lib/seller-trust";
+import { approveListingInPipeline, invalidateListingCaches } from "@/lib/listing-approval";
 
 export const runtime = "nodejs";
 
@@ -77,26 +77,24 @@ export async function POST(req: Request, ctx: RouteCtx) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
-  if (body.action === "approve" && existing.agent_id) {
-    const { data: seller } = await admin
-      .from("profiles")
-      .select(
-        "email_verified, phone_verified, whatsapp_verification_status, whatsapp_verified_at, verification_status, verified_badge, role, is_banned, account_status, profile_status"
-      )
-      .eq("id", existing.agent_id)
-      .maybeSingle();
+  if (body.action === "approve") {
+    const result = await approveListingInPipeline(admin, {
+      listingId: id,
+      adminId: auth.user.id,
+      adminRole: auth.profile.role,
+      agentVerified: body.agent_verified,
+      note: body.note,
+    });
 
-    const publishGate = assertCanPublishListing(seller);
-    if (!publishGate.ok) {
+    if (!result.ok) {
+      const status = result.code ? 403 : 500;
       return NextResponse.json(
-        {
-          error: publishGate.error,
-          code: publishGate.code,
-          hint: "Approve seller verification first, then publish the listing.",
-        },
-        { status: 403 }
+        { error: result.error, code: result.code },
+        { status }
       );
     }
+
+    return NextResponse.json({ listing: result.listing });
   }
 
   const now = new Date().toISOString();
@@ -107,12 +105,6 @@ export async function POST(req: Request, ctx: RouteCtx) {
     updated_at: now,
   };
 
-  if (body.action === "approve") {
-    patch.last_refreshed_at = now;
-    patch.listing_activity_status = "active";
-    patch.is_verified_listing = body.agent_verified === true;
-  }
-
   if (body.action === "rented") {
     patch.listing_activity_status = "rented";
     patch.unavailable_at = now;
@@ -122,7 +114,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
     patch.review_hold_status = "update_requested";
   }
 
-  if (body.clear_duplicate || body.action === "approve") {
+  if (body.clear_duplicate) {
     patch.possible_duplicate = false;
     patch.duplicate_confidence_score = null;
   }
@@ -137,6 +129,12 @@ export async function POST(req: Request, ctx: RouteCtx) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  invalidateListingCaches({
+    listingId: id,
+    slug: data?.slug,
+    assetType: data?.asset_type,
+  });
 
   const auditAction =
     body.action === "flag"

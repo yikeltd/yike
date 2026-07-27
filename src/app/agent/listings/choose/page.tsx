@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2, Car } from "lucide-react";
 import { requireAgentLister } from "@/lib/auth";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import {
   mustCompleteSellerVerification,
   SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
+import { CATEGORY_CHIP_ASSETS } from "@/lib/home/category-chip-assets";
+import { CategoryGatewayCard } from "@/components/marketplace/category-gateway-card";
+import { SellerFlowShell } from "@/components/agent/seller-flow-shell";
 
 export const metadata = {
   title: "Choose Listing Type | Yike",
@@ -25,49 +27,42 @@ export default async function ChooseListingTypePage() {
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
 
   return (
-    <main className="mx-auto max-w-lg space-y-5 px-3 pb-12 pt-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-navy">
-          Choose Listing Type
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Pick a category. The listing form adapts as you go.
-        </p>
-      </div>
-
-      <div className="grid gap-3">
+    <SellerFlowShell
+      eyebrow="Sell on Yike"
+      title="What are you listing?"
+      description="Pick a category. The form adapts as you go — same premium experience as browsing."
+      backHref="/agent"
+      backLabel="Dashboard"
+      maxWidth="md"
+    >
+      <div className={vehiclesOn ? "grid gap-3" : "grid gap-3"}>
         {vehiclesOn ? (
-          <Link
+          <CategoryGatewayCard
             href="/agent/listings/new/vehicle"
-            className="flex items-center gap-4 rounded-2xl border border-navy/10 bg-white p-4 transition hover:border-gold/50 hover:shadow-sm"
-          >
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy text-gold">
-              <Car className="h-6 w-6" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-base font-bold text-navy">Vehicle</span>
-              <span className="mt-0.5 block text-xs text-muted">
-                Cars, SUVs, bikes, trucks, equipment
-              </span>
-            </span>
-          </Link>
+            label="Vehicles"
+            subtitle="Cars · SUVs · Trucks"
+            imageSrc={CATEGORY_CHIP_ASSETS.vehicle.src}
+            size="gateway"
+            priority
+          />
         ) : null}
 
-        <Link
+        <CategoryGatewayCard
           href="/agent/listings/new"
-          className="flex items-center gap-4 rounded-2xl border border-navy/10 bg-white p-4 transition hover:border-gold/50 hover:shadow-sm"
-        >
-          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy text-gold">
-            <Building2 className="h-6 w-6" />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-base font-bold text-navy">Property</span>
-            <span className="mt-0.5 block text-xs text-muted">
-              Houses, flats, land, commercial, short lets
-            </span>
-          </span>
-        </Link>
+          label="Properties"
+          subtitle="Homes · Land · Commercial"
+          imageSrc={CATEGORY_CHIP_ASSETS.property.src}
+          size="gateway"
+          priority
+        />
       </div>
-    </main>
+
+      <p className="text-center text-xs text-navy/45">
+        Need help verifying?{" "}
+        <Link href="/agent/verify" className="font-semibold text-gold-dark underline">
+          Seller verification
+        </Link>
+      </p>
+    </SellerFlowShell>
   );
 }

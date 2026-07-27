@@ -19,9 +19,11 @@ import {
   type ListingValues,
 } from "@/lib/listing-engine";
 import { ListingPhotoManager } from "@/components/agent/listing-photo-manager";
+import { ListingQualityCoach } from "@/components/agent/listing-quality-coach";
 import type { ListingPhotoItem } from "@/components/agent/listing-photo-types";
 import { FieldRenderer } from "@/components/listing-engine/field-renderer";
 import { cn } from "@/lib/utils";
+import { buildListingQualityCoach } from "@/lib/listing-quality";
 import {
   clearVehicleDraft,
   loadVehicleDraft,
@@ -295,22 +297,36 @@ export function ListingEngine({
     }
   }
 
+  const qualityCoach = useMemo(
+    () =>
+      buildListingQualityCoach({
+        title: String(values.title ?? ""),
+        description: String(values.description ?? ""),
+        price: Number(values.price) || 0,
+        city: String(values.city ?? ""),
+        listing_type: String(values.listing_type ?? values.intent ?? "sale"),
+        media_urls: readyMediaUrls(photos),
+        media_items: photos,
+      }),
+    [values, photos],
+  );
+
   if (success) {
     return (
-      <div className="flex flex-col items-center rounded-2xl bg-elevated px-6 py-12 text-center shadow-float">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold/20 text-2xl text-navy">
+      <div className="flex flex-col items-center rounded-2xl border border-navy/[0.06] bg-white px-6 py-12 text-center shadow-[0_8px_28px_-12px_rgba(3,27,78,0.18)]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold/25 text-2xl text-navy">
           ✓
         </div>
-        <p className="mt-4 text-lg font-bold text-navy">
-          Your listing has been submitted for review.
+        <p className="mt-4 text-lg font-bold tracking-tight text-navy">
+          Submitted for review
         </p>
-        <p className="mt-2 max-w-sm text-sm text-muted">
-          Yike checks photos and details before it goes live.
+        <p className="mt-2 max-w-sm text-sm leading-relaxed text-navy/55">
+          Yike checks photos and details before your listing goes live.
         </p>
         <button
           type="button"
           onClick={() => router.push("/agent/listings")}
-          className="mt-6 flex h-12 w-full max-w-xs items-center justify-center rounded-xl bg-gold text-sm font-semibold text-navy shadow-sm"
+          className="pressable mt-6 flex h-12 w-full max-w-xs items-center justify-center rounded-full bg-gold text-sm font-bold text-navy shadow-[0_4px_14px_rgba(228,181,71,0.35)]"
         >
           View my listings
         </button>
@@ -340,12 +356,12 @@ export function ListingEngine({
             type="button"
             onClick={() => setStepIndex(i)}
             className={cn(
-              "rounded-full px-3 py-1.5 text-[11px] font-bold transition",
+              "pressable rounded-full px-3.5 py-1.5 text-[11px] font-bold tracking-tight transition-all duration-200",
               i === stepIndex
-                ? "bg-navy text-gold"
+                ? "bg-navy text-gold shadow-[0_2px_10px_rgba(3,27,78,0.25)]"
                 : i < stepIndex
                   ? "bg-gold/20 text-navy"
-                  : "bg-navy/[0.06] text-navy/45"
+                  : "bg-navy/[0.05] text-navy/40",
             )}
           >
             {i + 1}. {s.title}
@@ -354,29 +370,33 @@ export function ListingEngine({
       </nav>
 
       <div>
-        <h2 className="text-lg font-bold text-navy">{step.title}</h2>
+        <h2 className="text-lg font-bold tracking-tight text-navy">{step.title}</h2>
         {step.description ? (
-          <p className="mt-1 text-sm text-muted">{step.description}</p>
+          <p className="mt-1 text-sm leading-relaxed text-navy/55">{step.description}</p>
         ) : null}
       </div>
 
       {manifest.review.showLivePreview && step.id !== "review" ? (
-        <div className="overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-navy/[0.06] bg-white shadow-[0_6px_20px_-12px_rgba(3,27,78,0.14)]">
           <div className="relative aspect-[16/10] bg-navy/[0.04]">
             {coverUrl ? (
               <Image src={coverUrl} alt="" fill className="object-cover" sizes="640px" unoptimized />
             ) : (
-              <div className="flex h-full items-center justify-center text-xs text-muted">
+              <div className="flex h-full items-center justify-center text-xs text-navy/40">
                 Cover photo preview
               </div>
             )}
           </div>
-          <div className="space-y-1 p-3">
-            <p className="text-base font-bold text-navy">{previewTitle}</p>
+          <div className="space-y-1 p-3.5">
+            <p className="text-base font-bold tracking-tight text-navy">{previewTitle}</p>
             <p className="text-sm font-semibold text-navy/80">{previewPrice}</p>
-            {previewLoc ? <p className="text-xs text-muted">{previewLoc}</p> : null}
+            {previewLoc ? <p className="text-xs text-navy/45">{previewLoc}</p> : null}
           </div>
         </div>
+      ) : null}
+
+      {step.id === "photos" || step.id === "review" ? (
+        <ListingQualityCoach coach={qualityCoach} />
       ) : null}
 
       {step.id === "photos" ? (
@@ -495,12 +515,12 @@ export function ListingEngine({
         </p>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3 pt-1">
+      <div className="flex items-center justify-between gap-3 pt-2">
         <button
           type="button"
           onClick={goBack}
           disabled={stepIndex === 0 || saving}
-          className="rounded-xl px-4 py-2.5 text-sm font-semibold text-navy/70 disabled:opacity-40"
+          className="pressable rounded-full px-4 py-2.5 text-sm font-semibold text-navy/55 transition hover:text-navy disabled:opacity-40"
         >
           Back
         </button>
@@ -509,7 +529,7 @@ export function ListingEngine({
             type="button"
             onClick={() => void onPublish()}
             disabled={saving}
-            className="rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy shadow-sm disabled:opacity-60"
+            className="pressable rounded-full bg-gold px-6 py-2.5 text-sm font-bold text-navy shadow-[0_4px_14px_rgba(228,181,71,0.35)] disabled:opacity-60"
           >
             {saving ? "Publishing…" : "Publish"}
           </button>
@@ -517,7 +537,7 @@ export function ListingEngine({
           <button
             type="button"
             onClick={goNext}
-            className="rounded-xl bg-navy px-5 py-2.5 text-sm font-bold text-gold"
+            className="pressable rounded-full bg-navy px-6 py-2.5 text-sm font-bold text-gold shadow-[0_4px_14px_rgba(3,27,78,0.25)]"
           >
             Continue
           </button>

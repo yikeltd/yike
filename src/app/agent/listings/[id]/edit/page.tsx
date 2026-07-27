@@ -4,10 +4,12 @@ import { requireServerClient } from "@/lib/supabase/require-client";
 import { ListingEngine } from "@/components/listing-engine/listing-engine";
 import { ListingFormErrorBoundary } from "@/components/agent/listing-form-error-boundary";
 import { AgentReviewResponseBox } from "@/components/agent/agent-review-response-box";
+import { SellerFlowShell } from "@/components/agent/seller-flow-shell";
 import { normalizeAssetType } from "@/lib/marketplace/listings";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import type { Property } from "@/types/database";
 import type { ListingValues } from "@/lib/listing-engine";
+import Link from "next/link";
 
 function propertyToEngineValues(listing: Property): ListingValues {
   const extras =
@@ -90,8 +92,21 @@ export default async function EditListingPage({
       redirect("/agent/listings");
     }
     return (
-      <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">
-        <h1 className="text-xl font-bold text-navy lg:text-2xl">Edit vehicle</h1>
+      <SellerFlowShell
+        eyebrow="Vehicle"
+        title="Edit listing"
+        description="Update photos and details — changes go to review when you publish."
+        backHref="/agent/listings"
+        backLabel="My listings"
+        actions={
+          <Link
+            href="/agent/listings/choose"
+            className="pressable text-sm font-semibold text-navy/55 hover:text-navy"
+          >
+            New listing
+          </Link>
+        }
+      >
         <AgentReviewResponseBox listingId={id} />
         <ListingEngine
           categoryId="vehicle"
@@ -99,13 +114,26 @@ export default async function EditListingPage({
           listingId={id}
           initialValues={vehicleToEngineValues(listing)}
         />
-      </div>
+      </SellerFlowShell>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">
-      <h1 className="text-xl font-bold text-navy lg:text-2xl">Edit listing</h1>
+    <SellerFlowShell
+      eyebrow="Property"
+      title="Edit listing"
+      description="Update photos and details — changes go to review when you publish."
+      backHref="/agent/listings"
+      backLabel="My listings"
+      actions={
+        <Link
+          href="/agent/listings/choose"
+          className="pressable text-sm font-semibold text-navy/55 hover:text-navy"
+        >
+          New listing
+        </Link>
+      }
+    >
       <AgentReviewResponseBox listingId={id} />
       <ListingFormErrorBoundary>
         <ListingEngine
@@ -115,6 +143,6 @@ export default async function EditListingPage({
           initialValues={propertyToEngineValues(listing)}
         />
       </ListingFormErrorBoundary>
-    </div>
+    </SellerFlowShell>
   );
 }

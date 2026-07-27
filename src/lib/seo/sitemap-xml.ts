@@ -9,10 +9,12 @@ import {
   getHousesNeighborhoodParams,
   getHousesPropertyTypeParams,
   getAllSeoCitySlugs,
+  PRIORITY_CITY_SLUGS,
 } from "@/lib/seo/paths";
 import { intentInCityPath } from "@/lib/seo/intent-in-city";
 import { getAllBlogSlugs } from "@/constants/blogTopics";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { getCarsSitemapPaths } from "@/lib/seo/vehicle-hubs";
 
 const MAX_PROPERTY_URLS = 5000;
 
@@ -149,6 +151,36 @@ function seoSitemapEntries(): SitemapUrlEntry[] {
       changefreq: "monthly",
       priority: 0.72,
     });
+  }
+
+  entries.push({
+    loc: `${SITE_URL}/properties`,
+    changefreq: "daily",
+    priority: 0.9,
+  });
+  for (const city of PRIORITY_CITY_SLUGS.slice(0, 24)) {
+    entries.push({
+      loc: `${SITE_URL}/properties/in/${city}`,
+      changefreq: "daily",
+      priority: 0.85,
+    });
+  }
+  for (const hub of ["land", "shortlet", "commercial"] as const) {
+    entries.push({
+      loc: `${SITE_URL}/properties/hub/${hub}`,
+      changefreq: "weekly",
+      priority: 0.84,
+    });
+  }
+
+  if (isLaunchFeatureVisible("vehicle_marketplace")) {
+    for (const path of getCarsSitemapPaths()) {
+      entries.push({
+        loc: `${SITE_URL}${path}`,
+        changefreq: "daily",
+        priority: path === "/cars" ? 0.9 : 0.82,
+      });
+    }
   }
 
   return entries;

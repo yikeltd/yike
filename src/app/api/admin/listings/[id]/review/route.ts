@@ -18,6 +18,7 @@ import { saveReviewDecision } from "@/lib/review-memory/memory";
 import { applyReviewTrustImpact } from "@/lib/review-memory/trust-impact";
 import type { Property, Profile, PropertyStatus } from "@/types/database";
 import { assertCanPublishListing } from "@/lib/seller-trust";
+import { approveListingInPipeline, invalidateListingCaches } from "@/lib/listing-approval";
 
 export const runtime = "nodejs";
 
@@ -235,15 +236,42 @@ export async function POST(req: Request, ctx: RouteCtx) {
   }
 
   if (body.action === "approve") {
-    patch.status = "approved" as PropertyStatus;
-    patch.last_refreshed_at = now;
+    const result = await approveListingInPipeline(admin, {
+      listingId: id,
+      adminId: auth.user.id,
+      adminRole: auth.profile.role,
+      note: body.note,
+      decisionType: body.decisionType ?? "approved",
+    });
+
+    if (!result.ok) {
+      const status = result.code ? 403 : 500;
+      return NextResponse.json(
+        { error: result.error, code: result.code },
+        { status }
+      );
+    }
+
+    return NextResponse.json({ listing: result.listing, decisionType: body.decisionType ?? "approved" });
+  }
+
+  if (publishesLive) {
+    let expiresAtIso = property.expires_at;
+    if (!expiresAtIso || new Date(expiresAtIso).getTime() <= new Date().getTime()) {
+      const durationDays = property.listing_duration_days || 14;
+      expiresAtIso = new Date(Date.now() + durationDays * 86_400_000).toISOString();
+    }
+    patch.moderation_state = "approved";
     patch.listing_activity_status = "active";
-    patch.possible_duplicate = false;
-    patch.duplicate_confidence_score = null;
+    patch.approved_at = now;
+    patch.approved_by = auth.user.id;
+    patch.expires_at = expiresAtIso;
     patch.review_hold_status = "none";
-    decisionType = body.decisionType ?? "approved";
-  } else if (body.action === "reject") {
+  }
+
+  if (body.action === "reject") {
     patch.status = "rejected" as PropertyStatus;
+    patch.moderation_state = "rejected";
     decisionType = body.decisionType ?? "rejected";
   } else if (body.action === "hold") {
     patch.review_hold_status = "hold";
@@ -284,6 +312,12 @@ export async function POST(req: Request, ctx: RouteCtx) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  invalidateListingCaches({
+    listingId: id,
+    slug: (updated as Property)?.slug,
+    assetType: (updated as Property)?.asset_type,
+  });
 
   await saveReviewDecision(admin, {
     listing: property,

@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { useStandaloneApp } from "@/hooks/use-standalone-app";
 import {
-  Bell,
   Bookmark,
   Home,
   List,
@@ -12,14 +11,13 @@ import {
   PlusCircle,
   Shield,
   ShieldCheck,
-  Users,
 } from "lucide-react";
 import { openYikeSupportWhatsApp } from "@/lib/support";
 import type { Profile } from "@/types/database";
 import type { ProfileSocialStats } from "@/lib/social/types";
 import { ProfileCoverHero } from "@/components/profile/profile-cover-hero";
+import { SellerCommandCenter } from "@/components/profile/seller-command-center";
 import { VerifiedBadge, StatusBadge, SellerTypeBadge } from "@/components/ui/badge";
-import { SellerTrustBadge } from "@/components/marketplace/seller-trust-badge";
 import { ProfileAccountActions } from "@/components/profile/profile-account-actions";
 import { ProfileUserActivityStats } from "@/components/profile/profile-user-activity-stats";
 import { TrustCenterCard } from "@/components/profile/trust-center-card";
@@ -31,10 +29,9 @@ import {
 } from "@/lib/profile-display";
 import { getTrustStatusChip, type TrustStatusChip } from "@/lib/verification/trust-center";
 import { shouldShowTrustCenterOnDashboard } from "@/lib/verification/seller-dashboard-context";
-import { SellerAnalyticsPanel } from "@/components/subscriptions/seller-analytics-panel";
-import { PlansUpgradeCard } from "@/components/subscriptions/plans-upgrade-card";
 import { SubscriptionPlanBadge } from "@/components/subscriptions/subscription-plan-badge";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
+import type { SellerAnalyticsSummary } from "@/lib/subscriptions/analytics";
 import { cn } from "@/lib/utils";
 
 function TrustChipBadge({ chip }: { chip: TrustStatusChip }) {
@@ -59,7 +56,7 @@ function TrustChipBadge({ chip }: { chip: TrustStatusChip }) {
         "inline-flex min-h-[2.25rem] items-center gap-1.5 self-start rounded-full border bg-gradient-to-b px-3 py-1.5",
         "text-[11px] font-extrabold tracking-wide",
         "transition-all duration-150 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-[0.98]",
-        tone
+        tone,
       )}
     >
       <Shield className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
@@ -80,13 +77,21 @@ export function ProfilePageClient({
   savedCount,
   expiringSoon = 0,
   expiredCount = 0,
+  draftCount = 0,
+  rentedCount = 0,
+  soldCount = 0,
   leadsCount = 0,
+  missingPhotosCount = 0,
+  incompleteListingsCount = 0,
+  lowQualityListingsCount = 0,
+  listingHealthScore = null,
   verificationRequestsCount = 0,
   memberSince,
   socialStats = { followersCount: 0, listingLikesCount: 0 },
   subscriptionPlanLabel = null,
   subscriptionExpiresInDays = null,
   profileSaved = false,
+  analyticsPreviewData,
 }: {
   profile: Profile;
   email: string;
@@ -99,7 +104,14 @@ export function ProfilePageClient({
   savedCount: number;
   expiringSoon?: number;
   expiredCount?: number;
+  draftCount?: number;
+  rentedCount?: number;
+  soldCount?: number;
   leadsCount?: number;
+  missingPhotosCount?: number;
+  incompleteListingsCount?: number;
+  lowQualityListingsCount?: number;
+  listingHealthScore?: number | null;
   verificationRequestsCount?: number;
   memberSince: string;
   socialStats?: ProfileSocialStats;
@@ -107,6 +119,7 @@ export function ProfilePageClient({
   subscriptionExpiresInDays?: number | null;
   foundingMember?: boolean;
   profileSaved?: boolean;
+  analyticsPreviewData?: SellerAnalyticsSummary | null;
 }) {
   const { isApp } = useStandaloneApp();
   const displayName = profile.full_name ?? profile.username ?? "Your profile";
@@ -120,10 +133,37 @@ export function ProfilePageClient({
     canList: isLister,
     totalListings,
   });
-  const showCompanyQuickAction =
-    profile.account_type === "agency" ||
-    profile.account_type === "developer" ||
-    Boolean(profile.company_name);
+
+  if (isLister) {
+    return (
+      <SellerCommandCenter
+        profile={profile}
+        email={email}
+        verified={verified}
+        activeCount={activeCount}
+        pending={pending}
+        totalListings={totalListings}
+        limit={limit}
+        savedCount={savedCount}
+        expiringSoon={expiringSoon}
+        expiredCount={expiredCount}
+        draftCount={draftCount}
+        rentedCount={rentedCount}
+        soldCount={soldCount}
+        leadsCount={leadsCount}
+        missingPhotosCount={missingPhotosCount}
+        incompleteListingsCount={incompleteListingsCount}
+        lowQualityListingsCount={lowQualityListingsCount}
+        listingHealthScore={listingHealthScore}
+        memberSince={memberSince}
+        socialStats={socialStats}
+        subscriptionPlanLabel={subscriptionPlanLabel}
+        subscriptionExpiresInDays={subscriptionExpiresInDays}
+        profileSaved={profileSaved}
+        analyticsPreviewData={analyticsPreviewData}
+      />
+    );
+  }
 
   return (
     <div className="dashboard-fade-in space-y-4 pb-6">
@@ -146,7 +186,6 @@ export function ProfilePageClient({
         badges={
           <>
             {showAgentBadge(profile, verified) ? <VerifiedBadge /> : null}
-            {isLister ? <SellerTrustBadge profile={profile} size="sm" /> : null}
             <SubscriptionPlanBadge
               planCode={profile.subscription_plan_code as SubscriptionPlanCode | null}
               size="md"
@@ -159,7 +198,6 @@ export function ProfilePageClient({
             ) : null}
             {profile.verification_status !== "not_started" &&
               !verified &&
-              isLister &&
               !showTrust && (
                 <StatusBadge status={profile.verification_status} />
               )}
@@ -178,103 +216,41 @@ export function ProfilePageClient({
         </div>
       ) : null}
 
-      {isLister ? (
-        <>
-          {showTrust ? (
-            <DashboardSection title="Profile & verification">
-              <TrustCenterCard profile={profile} verified={verified} />
-            </DashboardSection>
-          ) : null}
+      {showTrust ? (
+        <DashboardSection title="Profile & verification">
+          <TrustCenterCard profile={profile} verified={verified} />
+        </DashboardSection>
+      ) : null}
 
-          <DashboardSection title="Plan & listings">
-            <PlansUpgradeCard
-              planLabel={subscriptionPlanLabel}
-              activeCount={activeCount}
-              limit={limit}
-              expiresInDays={subscriptionExpiresInDays}
-            />
-          </DashboardSection>
+      <DashboardSection title="Your activity">
+        <ProfileUserActivityStats
+          savedCount={savedCount}
+          verificationRequestsCount={verificationRequestsCount}
+        />
+      </DashboardSection>
 
-          <DashboardSection title="Performance">
-            <SellerAnalyticsPanel
-              activeCount={activeCount}
-              pending={pending}
-              leadsCount={leadsCount}
-              savedCount={savedCount}
-            />
-            {(expiringSoon > 0 || expiredCount > 0) && (
-              <p className="px-1 text-xs text-muted">
-                {expiringSoon > 0
-                  ? `${expiringSoon} listing${expiringSoon === 1 ? "" : "s"} expiring soon. `
-                  : ""}
-                {expiredCount > 0 ? `${expiredCount} expired.` : ""}{" "}
-                <Link href="/agent/listings" className="font-semibold text-navy">
-                  Manage listings
-                </Link>
-              </p>
-            )}
-          </DashboardSection>
+      <DashboardSection title="Quick actions">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
+          <Link
+            href="/agent/become"
+            prefetch
+            className="dashboard-primary-cta pressable col-span-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-gold to-gold-dark px-3 text-sm font-semibold text-navy shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-float hover:brightness-[1.03] active:scale-[0.98]"
+          >
+            <PlusCircle className="h-4 w-4" />
+            List on Yike
+          </Link>
+          <QuickAction href="/saved" icon={Bookmark} label="Saved" />
+          <QuickAction href="/search" icon={Home} label="Browse" />
+          <QuickAction
+            href="/property-verification"
+            icon={ShieldCheck}
+            label="Verify"
+          />
+          <QuickAction icon={MessageCircle} label="Help" onClick={openSupport} />
+        </div>
+      </DashboardSection>
 
-          <DashboardSection title="Quick actions">
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
-              <Link
-                href="/agent/listings/choose"
-                prefetch
-                className="dashboard-primary-cta pressable col-span-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-navy-light to-navy px-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-float hover:brightness-110 active:scale-[0.98]"
-              >
-                <PlusCircle className="h-4 w-4" />
-                List on Yike
-              </Link>
-              <QuickAction href="/agent/listings" icon={List} label="My listings" />
-              <QuickAction href="/agent/leads" icon={MessageCircle} label="Leads" />
-              <QuickAction href="/agent/notifications" icon={Bell} label="Notifications" />
-              <QuickAction href="/agent/followers" icon={Users} label="Followers" />
-              <QuickAction icon={MessageCircle} label="Get Help" onClick={openSupport} />
-              {showCompanyQuickAction ? (
-                <QuickAction href="/agent/company" icon={ShieldCheck} label="Company" />
-              ) : null}
-            </div>
-          </DashboardSection>
-        </>
-      ) : (
-        <>
-          {showTrust ? (
-            <DashboardSection title="Profile & verification">
-              <TrustCenterCard profile={profile} verified={verified} />
-            </DashboardSection>
-          ) : null}
-
-          <DashboardSection title="Your activity">
-            <ProfileUserActivityStats
-              savedCount={savedCount}
-              verificationRequestsCount={verificationRequestsCount}
-            />
-          </DashboardSection>
-
-          <DashboardSection title="Quick actions">
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
-              <Link
-                href="/agent/become"
-                prefetch
-                className="dashboard-primary-cta pressable col-span-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-gold to-gold-dark px-3 text-sm font-semibold text-navy shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-float hover:brightness-[1.03] active:scale-[0.98]"
-              >
-                <PlusCircle className="h-4 w-4" />
-                List on Yike
-              </Link>
-              <QuickAction href="/saved" icon={Bookmark} label="Saved" />
-              <QuickAction href="/search" icon={Home} label="Browse" />
-              <QuickAction
-                href="/property-verification"
-                icon={ShieldCheck}
-                label="Verify"
-              />
-              <QuickAction icon={MessageCircle} label="Help" onClick={openSupport} />
-            </div>
-          </DashboardSection>
-        </>
-      )}
-
-      <ProfileAccountActions email={email} canList={isLister} />
+      <ProfileAccountActions email={email} canList={false} />
     </div>
   );
 }
@@ -312,7 +288,7 @@ function QuickAction({
   const className = cn(
     "dashboard-live-card pressable group flex min-w-0 flex-col items-start gap-1.5 rounded-xl border border-navy/[0.05] bg-navy/[0.02] p-2 text-left sm:gap-2 sm:p-3",
     "hover:border-navy/10 hover:bg-white",
-    extraClassName
+    extraClassName,
   );
 
   const content = (

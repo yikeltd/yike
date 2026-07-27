@@ -1,4 +1,4 @@
-import type { Property, PropertyMediaItem } from "@/types/database";
+import type { Property, PropertyMediaItem, ListingType } from "@/types/database";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
 import { normalizePropertyMedia } from "@/lib/media/items";
 import { PREFERRED_COVER_LABELS } from "@/lib/media/labels";
@@ -201,4 +201,129 @@ export type ListingDraft = Pick<
 /** Pre-submit moderation — returns flags for agent form. */
 export function moderateListingDraft(draft: ListingDraft): ListingQualityFlag[] {
   return analyzeListingSignals(draft);
+}
+
+export type ListingQualityCoachTip = {
+  id: string;
+  label: string;
+  kind: "good" | "missing";
+  estimatedLift?: number;
+};
+
+export type ListingQualityCoachResult = {
+  score: number;
+  tips: ListingQualityCoachTip[];
+  estimatedImprovement: number;
+};
+
+/**
+ * Seller-facing quality coach — presentation over existing analyzers.
+ * Does not invent a second scoring kernel.
+ */
+export function buildListingQualityCoach(input: {
+  title?: string | null;
+  description?: string | null;
+  price?: number | null;
+  city?: string | null;
+  listing_type?: string | null;
+  media_urls?: string[];
+  media_items?: PropertyMediaItem[];
+  is_verified_listing?: boolean;
+}): ListingQualityCoachResult {
+  const media_urls = input.media_urls ?? [];
+  const listingType = (["rent", "lease", "sale", "shortlet"] as const).includes(
+    input.listing_type as ListingType,
+  )
+    ? (input.listing_type as ListingType)
+    : ("sale" as ListingType);
+  const draft: ListingDraft = {
+    title: input.title?.trim() || "Untitled",
+    description: input.description ?? "",
+    price: Number(input.price) || 0,
+    city: input.city ?? "",
+    listing_type: listingType,
+    media_urls,
+  };
+
+  const flags = moderateListingDraft(draft);
+  const tips: ListingQualityCoachTip[] = [];
+  let estimatedImprovement = 0;
+
+  if (media_urls.length >= 4) {
+    tips.push({ id: "photos_good", label: "Great photo coverage", kind: "good" });
+  } else {
+    const lift = Math.min(20, (4 - media_urls.length) * 5);
+    tips.push({
+      id: "photos_missing",
+      label: media_urls.length === 0 ? "Add listing photos" : "Add more photos (aim for 4+)",
+      kind: "missing",
+      estimatedLift: lift,
+    });
+    estimatedImprovement += lift;
+  }
+
+  const descLen = (input.description ?? "").trim().length;
+  if (descLen >= 60) {
+    tips.push({ id: "desc_good", label: "Solid description", kind: "good" });
+  } else {
+    const lift = descLen >= 20 ? 8 : 14;
+    tips.push({
+      id: "desc_missing",
+      label: "Write a clearer description (60+ characters)",
+      kind: "missing",
+      estimatedLift: lift,
+    });
+    estimatedImprovement += lift;
+  }
+
+  for (const flag of flags) {
+    if (flag === "few_images" || flag === "thin_description") continue;
+    tips.push({
+      id: flag,
+      label: qualityFlagLabel(flag),
+      kind: "missing",
+      estimatedLift: BLOCKING_QUALITY_FLAGS.includes(flag) ? 12 : 6,
+    });
+    estimatedImprovement += BLOCKING_QUALITY_FLAGS.includes(flag) ? 12 : 6;
+  }
+
+  const labeled = (input.media_items ?? []).filter(
+    (i) => i.room_label && i.room_label !== "Other",
+  );
+  if (media_urls.length > 0 && labeled.length < 2) {
+    tips.push({
+      id: "labels_missing",
+      label: "Tag recommended shots (e.g. exterior, interior, VIN)",
+      kind: "missing",
+      estimatedLift: 8,
+    });
+    estimatedImprovement += 8;
+  } else if (labeled.length >= 2) {
+    tips.push({ id: "labels_good", label: "Photos are well tagged", kind: "good" });
+  }
+
+  if (input.is_verified_listing) {
+    tips.push({ id: "verified", label: "Verified listing", kind: "good" });
+  }
+
+  const synthetic = {
+    id: "coach",
+    title: draft.title,
+    description: draft.description,
+    price: draft.price,
+    city: draft.city,
+    listing_type: draft.listing_type,
+    media_urls,
+    media_items: input.media_items,
+    is_verified_listing: Boolean(input.is_verified_listing),
+    created_at: new Date().toISOString(),
+    contact_clicks: 0,
+  } as Property;
+
+  const score = computeListingQualityScore(synthetic);
+  return {
+    score,
+    tips,
+    estimatedImprovement: Math.min(40, estimatedImprovement),
+  };
 }

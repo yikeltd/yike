@@ -54,7 +54,9 @@
     "test:yip": "tsx --test src/lib/yip/__tests__/*.test.ts",
     "test:review-memory": "tsx scripts/test-review-memory.ts",
     "test:outcome-intelligence": "tsx scripts/test-outcome-intelligence.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:approval-pipeline": "tsx --test src/lib/__tests__/listing-approval-pipeline.test.ts",
+    "test:payments": "tsx --test src/lib/payments/**/__tests__/**/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

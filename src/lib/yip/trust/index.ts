@@ -1,15 +1,19 @@
-import type { YipContext } from "../context/types";
-import type { TrustAssessment, TrustService } from "./types";
-
-/** Stub — no signals computed, no flags raised. Real trust scoring is V2. */
-export class StubTrustService implements TrustService {
-  assess(_context: YipContext): TrustAssessment {
-    return { score: "low", signals: [], flags: [] };
-  }
-}
+/**
+ * Trust assessment service — activates real engines via Trust Platform façade.
+ * Stub retained only for tests that explicitly request it.
+ */
+import type { TrustService } from "./types";
+import { createTrustPlatform } from "../capabilities/trust";
 
 export function createTrustService(): TrustService {
-  return new StubTrustService();
+  return createTrustPlatform();
+}
+
+/** @deprecated Neutral stub — prefer createTrustService() */
+export class StubTrustService implements TrustService {
+  assess() {
+    return { score: "low" as const, signals: [] as string[], flags: [] as string[] };
+  }
 }
 
 export type { TrustAssessment, TrustService } from "./types";

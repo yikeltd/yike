@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -164,11 +165,20 @@ export function SellerVerificationClient({
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 px-3 pb-10 pt-4">
+    <div className="mx-auto max-w-lg space-y-5 px-4 pb-14 pt-5 sm:px-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-navy">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-dark">
+          Seller
+        </p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-navy">
           {SELLER_VERIFICATION_COPY.title}
         </h1>
+        <p className="mt-2 text-sm leading-relaxed text-navy/55">
+          Dealership or agency?{" "}
+          <Link href="/agent/onboard" className="font-semibold text-gold-dark underline">
+            Enterprise onboarding
+          </Link>
+        </p>
       </div>
 
       <SellerTrustProgress

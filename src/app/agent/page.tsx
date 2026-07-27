@@ -66,7 +66,9 @@ export default async function ProfilePage({
   ] = await Promise.all([
       supabase
         .from("properties")
-        .select("status, expires_at")
+        .select(
+          "status, expires_at, media_urls, listing_health_score, hidden_quality_score, image_quality_score, listing_quality_flags"
+        )
         .eq("agent_id", user.id),
       supabase
         .from("favorites")
@@ -87,17 +89,52 @@ export default async function ProfilePage({
       admin ? getActiveUserSubscription(admin, user.id) : Promise.resolve(null),
     ]);
 
-  const rows = (listings ?? []) as Pick<Property, "status" | "expires_at">[];
-  const activeCount = rows.filter((p) =>
-    countAsActiveListing(p.status, p.expires_at)
-  ).length;
+  type AccountListingRow = Pick<
+    Property,
+    | "status"
+    | "expires_at"
+    | "media_urls"
+    | "listing_health_score"
+    | "hidden_quality_score"
+    | "image_quality_score"
+    | "listing_quality_flags"
+  >;
+  const rows = (listings ?? []) as AccountListingRow[];
+  const activeRows = rows.filter((p) => countAsActiveListing(p.status, p.expires_at));
+  const activeCount = activeRows.length;
   const pending = rows.filter((p) => p.status === "pending").length;
+  const rentedCount = rows.filter((p) => p.status === "rented").length;
+  const soldCount = rows.filter((p) => p.status === "archived").length;
   const expiringSoon = rows.filter(
     (p) => p.status === "approved" && isExpiringSoon(p, 3)
   ).length;
   const expiredCount = rows.filter(
     (p) => p.status === "approved" && isListingExpired(p)
   ).length;
+  const qualityFlags = (p: AccountListingRow) =>
+    Array.isArray(p.listing_quality_flags) ? p.listing_quality_flags : [];
+  const missingPhotosCount = activeRows.filter(
+    (p) => (p.media_urls ?? []).length < 2 || qualityFlags(p).includes("few_images")
+  ).length;
+  const incompleteListingsCount = activeRows.filter((p) => {
+    const flags = qualityFlags(p);
+    return flags.includes("thin_description") || flags.includes("missing_contact");
+  }).length;
+  const lowQualityListingsCount = activeRows.filter((p) => {
+    const score =
+      p.listing_health_score ?? p.hidden_quality_score ?? p.image_quality_score ?? null;
+    return score != null && score < 65;
+  }).length;
+  const listingHealthScores = activeRows
+    .map((p) => p.listing_health_score)
+    .filter((score): score is number => typeof score === "number" && Number.isFinite(score));
+  const listingHealthScore =
+    listingHealthScores.length > 0
+      ? Math.round(
+          listingHealthScores.reduce((sum, score) => sum + score, 0) /
+            listingHealthScores.length
+        )
+      : null;
 
   return (
     <ProfilePageClient
@@ -112,7 +149,14 @@ export default async function ProfilePage({
       savedCount={savedCount ?? 0}
       expiringSoon={expiringSoon}
       expiredCount={expiredCount}
+      draftCount={0}
+      rentedCount={rentedCount}
+      soldCount={soldCount}
       leadsCount={leadsCount ?? 0}
+      missingPhotosCount={missingPhotosCount}
+      incompleteListingsCount={incompleteListingsCount}
+      lowQualityListingsCount={lowQualityListingsCount}
+      listingHealthScore={listingHealthScore}
       verificationRequestsCount={verificationCount ?? 0}
       memberSince={formatMemberSince(profile.created_at)}
       socialStats={socialStats}

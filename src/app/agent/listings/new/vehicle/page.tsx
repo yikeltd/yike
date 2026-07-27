@@ -8,6 +8,7 @@ import {
   mustCompleteSellerVerification,
   SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
+import { SellerFlowShell } from "@/components/agent/seller-flow-shell";
 
 export const metadata: Metadata = {
   title: "List a vehicle | Yike",
@@ -27,26 +28,22 @@ export default async function NewVehicleListingPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm text-black/50">
-            <Link href="/vehicles" className="underline-offset-2 hover:underline">
-              Vehicles
-            </Link>
-            {" · "}
-            New listing
-          </p>
-          <h1 className="text-2xl font-bold text-navy">List a vehicle</h1>
-        </div>
+    <SellerFlowShell
+      eyebrow="Vehicle"
+      title="New listing"
+      description="Photos first, then specs — same calm flow as browsing on Yike."
+      backHref="/agent/listings/choose"
+      backLabel="Categories"
+      actions={
         <Link
           href="/agent/listings/new"
-          className="text-sm text-navy underline-offset-2 hover:underline"
+          className="pressable text-sm font-semibold text-navy/55 hover:text-navy"
         >
-          List property instead
+          List property
         </Link>
-      </div>
+      }
+    >
       <ListingEngine categoryId="vehicle" agentId={user.id} />
-    </main>
+    </SellerFlowShell>
   );
 }

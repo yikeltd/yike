@@ -153,20 +153,84 @@ export function canPreviewListingUnderReview(
   return viewer.userId === property.agent_id || viewer.isAdmin;
 }
 
-const OWNER_PREVIEW_STATUSES = new Set<Property["status"]>([
-  "pending",
-  "flagged",
-  "rejected",
-  "hidden",
-]);
-
-/** Owner/admin preview for non-public listings (under review, rejected, draft). */
+/**
+ * Owner/admin can always open their listing — public visibility ≠ owner access.
+ * Public users still only see marketplace-active listings.
+ */
 export function canPreviewOwnerListing(
-  property: Pick<Property, "status" | "agent_id">,
+  property: Pick<Property, "agent_id">,
   viewer: { userId: string; isAdmin: boolean } | null
 ): boolean {
-  if (!viewer || !OWNER_PREVIEW_STATUSES.has(property.status)) return false;
+  if (!viewer) return false;
   return viewer.userId === property.agent_id || viewer.isAdmin;
+}
+
+export function isListingSold(
+  property: Pick<Property, "status" | "availability_status">
+): boolean {
+  const avail = property.availability_status as string | null | undefined;
+  return avail === "sold";
+}
+
+export function isListingRented(
+  property: Pick<Property, "status" | "availability_status">
+): boolean {
+  const avail = property.availability_status as string | null | undefined;
+  return property.status === "rented" || avail === "rented";
+}
+
+export function isListingArchivedHidden(
+  property: Pick<Property, "status" | "availability_status">
+): boolean {
+  return (
+    property.status === "archived" &&
+    property.availability_status !== "sold"
+  );
+}
+
+export type OwnerListingBannerKind =
+  | "pending"
+  | "rejected"
+  | "expired"
+  | "sold"
+  | "rented"
+  | "archived"
+  | "hidden"
+  | "flagged"
+  | "unavailable";
+
+export function resolveOwnerBannerKind(
+  property: Pick<
+    Property,
+    "status" | "expires_at" | "availability_status" | "expired_at"
+  >
+): OwnerListingBannerKind | null {
+  if (isListingSold(property)) return "sold";
+  if (isListingRented(property)) return "rented";
+  if (property.status === "rejected") return "rejected";
+  if (property.status === "flagged") return "flagged";
+  if (property.status === "pending") return "pending";
+  if (property.status === "hidden") return "hidden";
+  if (isListingArchivedHidden(property)) return "archived";
+  if (isListingExpired(property) || property.expired_at) return "expired";
+  if (property.availability_status === "unavailable") return "unavailable";
+  return null;
+}
+
+/** Allow Available Again for closed/expired/archived inventory. */
+export function canMarkAvailableAgain(
+  property: Pick<Property, "status" | "availability_status" | "expires_at">
+): boolean {
+  if (property.status === "rejected" || property.status === "flagged") {
+    return false;
+  }
+  return (
+    isListingSold(property) ||
+    isListingRented(property) ||
+    isListingArchivedHidden(property) ||
+    isListingExpired(property) ||
+    property.availability_status === "unavailable"
+  );
 }
 
 export function maskBankAccount(account: string | null | undefined): string {

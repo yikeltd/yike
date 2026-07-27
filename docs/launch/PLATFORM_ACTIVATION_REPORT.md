@@ -4,7 +4,7 @@
 Update after each capability stage change. Do not leave blank/unknown rows.
 
 **Last updated:** 2026-07-26  
-**Overall:** NOT LAUNCH-CERTIFIED — Financial Platform Phase 1.5 (durable ledger) ready; apply migration + Coolify PIN pepper + Paystack FAT
+**Overall:** NOT LAUNCH-CERTIFIED — Phase 2A payment **code + unit FAT** complete; live Paystack enablement awaits Coolify checklist ([PHASE_2A_PAYSTACK_FAT.md](./PHASE_2A_PAYSTACK_FAT.md))
 
 ---
 
@@ -16,7 +16,7 @@ Update after each capability stage change. Do not leave blank/unknown rows.
 | `YIKE_PIN_PEPPER` in Coolify | ✅ Set | Founder confirmed; restart app if boot was before set |
 | Email OTP | 🟡 Audit | Browse-first policy; certify path |
 | SMS OTP | 🟡 | Re-enable when provider proven; do not block if email sufficient |
-| Featured / Paystack payments | 🟡 Scaffold | Routes via Financial Platform; flag off until FAT |
+| Featured / Paystack payments | 🟡 Code-certified | Unit FAT green; **flags stay off** until live checklist signed |
 | Admin auth / PIN | 🟡 | Service-role PIN fix shipped; re-FAT after pepper set |
 
 ---
@@ -31,12 +31,12 @@ Update after each capability stage change. Do not leave blank/unknown rows.
 | Auth (email OTP / session) | 🟢 | Beta→Production | — | 🟡 | Certify |
 | Auth SMS | 🟢 | Experimental/Beta | SMS flags | 🟡 | Re-enable when ready |
 | **Financial Platform** | 🟢 | Beta | module flags | 🟡 | One capability · many modules · [docs](../architecture/FINANCIAL_PLATFORM.md) |
-| ↳ Payment module | 🟢 | Beta | `ENABLE_PAYMENTS` | 🟡 | App routes migrated off direct service |
+| ↳ Payment module | 🟢 | Beta→Production* | `ENABLE_PAYMENTS` | 🟢 | *Code-certified; live flag after [FAT](./PHASE_2A_PAYSTACK_FAT.md) |
 | ↳ Wallet module | 🟢 | Beta | `ENABLE_WALLET` | 🟡 | Agent wallet façade |
 | ↳ Ledger module | 🟢 | Beta | — | 🟡 | Durable `financial_ledger_entries` · apply migration |
 | ↳ Settlement module | 🟡 | Planned | `ENABLE_SETTLEMENT` | 🔴 | Framework only |
 | Search | 🟢 | Beta | — | 🟡 | Complete autocomplete/ranking/saved |
-| Trust (engine) | 🟢 | Beta | Trust Economy UI off | 🟡 | Backend scores; UI hidden |
+| Trust (engine) | 🟢 | Beta | Trust Economy UI off | 🟡 | Backend scores; YIP bridge in Phase 2B |
 | Media | 🟢 | Production | — | 🟢 | Add duplicate + video prep |
 | Financing | 🟡 | Planned | `ENABLE_FINANCING` | 🔴 | UI hidden |
 | Protection | 🟡 | Planned | `ENABLE_PROTECTION` | 🔴 | UI hidden |
@@ -51,13 +51,14 @@ Update after each capability stage change. Do not leave blank/unknown rows.
 | Item | Notes |
 |------|-------|
 | Financial Platform Phase 0–1 | PIN pepper diagnostics · YIP plugin · route migration · Launch Health |
+| Phase 2A Payment code certification | HMAC + flag gate + webhook idempotency tests · `npm run test:payments` |
 | Platform Constitution | Active |
 
 ## Feature-flagged (implemented, off)
 
 | Item | Flag |
 |------|------|
-| Live Paystack checkout | `ENABLE_PAYMENTS` / `ENABLE_FEATURED_PAYMENTS` |
+| Live Paystack checkout | `ENABLE_PAYMENTS` / `ENABLE_FEATURED_PAYMENTS` — flip only after live FAT |
 | Wallet UI / module | `ENABLE_WALLET` |
 | Settlement | `ENABLE_SETTLEMENT` / `ENABLE_ESCROW` |
 
@@ -67,7 +68,7 @@ Update after each capability stage change. Do not leave blank/unknown rows.
 |------|--------|
 | Consumer Trust Economy UI | Launch freeze / Group 2 hide |
 | Escrow UI | Until Settlement module certified |
-| Featured payments live | Await Paystack webhook FAT |
+| Featured payments live | Await **live** Paystack webhook FAT (code ready) |
 
 ## Known limitations
 
@@ -83,9 +84,10 @@ Update after each capability stage change. Do not leave blank/unknown rows.
 | Lifecycle policy | ✅ Active |
 | Activation program | ✅ Declared |
 | Financial Platform Phase 0–1 | ✅ Scaffold |
-| Financial certification (live payments) | ❌ |
+| Financial certification (code) | ✅ Phase 2A unit FAT |
+| Financial certification (live payments) | ❌ Pending Coolify FAT |
 | Group 1 certified | ❌ |
 | Ops Center (Phase 11) | 🟡 Launch Health expanded |
-| FAT | ❌ |
+| FAT | 🟡 Code done · live open |
 
-**See:** [FINANCIAL_PLATFORM_CERTIFICATION.md](./FINANCIAL_PLATFORM_CERTIFICATION.md)
+**See:** [FINANCIAL_PLATFORM_CERTIFICATION.md](./FINANCIAL_PLATFORM_CERTIFICATION.md) · [PHASE_2A_PAYSTACK_FAT.md](./PHASE_2A_PAYSTACK_FAT.md) · [ENTERPRISE_GROWTH_REPORT.md](./ENTERPRISE_GROWTH_REPORT.md)

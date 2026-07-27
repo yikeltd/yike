@@ -22,6 +22,7 @@ import {
   SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
 import { redirect } from "next/navigation";
+import { SellerFlowShell } from "@/components/agent/seller-flow-shell";
 
 export default async function NewListingPage() {
   const { user, profile } = await requireAgentLister("/agent/listings/new", {
@@ -54,20 +55,33 @@ export default async function NewListingPage() {
   const showAccountNotice = Boolean(statusMessage) && !showTrustNotice;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-3 pt-2 pb-8 lg:px-0 lg:py-8">
-      <div>
-        <h1 className="text-xl font-bold text-navy lg:text-2xl">New listing</h1>
-        {limit !== null ? (
-          <p className="mt-2 text-xs text-muted">
-            {activeCount} of {limit} listing slots used
-          </p>
-        ) : null}
-      </div>
-
+    <SellerFlowShell
+      eyebrow="Property"
+      title="New listing"
+      description={
+        limit !== null
+          ? `${activeCount} of ${limit} listing slots used`
+          : "Add photos and details — we’ll guide you through each step."
+      }
+      backHref="/agent/listings/choose"
+      backLabel="Categories"
+      actions={
+        <Link
+          href="/agent/listings"
+          className="pressable text-sm font-semibold text-navy/55 hover:text-navy"
+        >
+          My listings
+        </Link>
+      }
+    >
       {atLimit ? (
-        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
-          <p className="font-medium">{LISTING_LIMIT_REACHED_MESSAGE}</p>
-          <Link href="/agent/plans" prefetch className="mt-2 inline-flex text-xs font-semibold text-navy">
+        <div className="rounded-2xl border border-amber-200/50 bg-amber-50/90 px-4 py-3.5 text-sm text-amber-950 shadow-[0_4px_16px_-10px_rgba(3,27,78,0.12)]">
+          <p className="font-semibold">{LISTING_LIMIT_REACHED_MESSAGE}</p>
+          <Link
+            href="/agent/plans"
+            prefetch
+            className="mt-2 inline-flex text-xs font-bold text-gold-dark"
+          >
             View plans →
           </Link>
         </div>
@@ -75,12 +89,12 @@ export default async function NewListingPage() {
         <>
           {showTrustNotice ? <TrustGateCompact tasks={verificationTasks} /> : null}
           {showAccountNotice ? (
-            <div className="rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
-              <p className="font-medium">Before you publish</p>
-              <p className="mt-1 text-xs">{statusMessage}</p>
+            <div className="rounded-2xl border border-amber-200/50 bg-amber-50/90 px-4 py-3.5 text-sm text-amber-950 shadow-[0_4px_16px_-10px_rgba(3,27,78,0.12)]">
+              <p className="font-semibold">Before you publish</p>
+              <p className="mt-1 text-xs text-amber-950/80">{statusMessage}</p>
               <Link
                 href={SELLER_VERIFY_PATH}
-                className="mt-2 inline-flex text-xs font-semibold text-navy"
+                className="mt-2 inline-flex text-xs font-bold text-gold-dark"
               >
                 Complete verification →
               </Link>
@@ -94,6 +108,6 @@ export default async function NewListingPage() {
           </ListingFormErrorBoundary>
         </>
       )}
-    </div>
+    </SellerFlowShell>
   );
 }

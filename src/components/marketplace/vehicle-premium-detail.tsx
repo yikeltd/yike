@@ -82,6 +82,7 @@ export function VehiclePremiumDetail({
   featuredActive,
   extraBadges,
   detailAd,
+  ownerBanner,
 }: {
   vehicle: Property;
   similar: Property[];
@@ -92,6 +93,7 @@ export function VehiclePremiumDetail({
   featuredActive: boolean;
   extraBadges: ListingBadgeKind[];
   detailAd: AdPlacement | null;
+  ownerBanner?: React.ReactNode;
 }) {
   const agent = vehicle.agent as AgentInfo | undefined;
   const isDealer = agent?.account_type === "dealer";
@@ -330,6 +332,8 @@ export function VehiclePremiumDetail({
             </span>
           </nav>
         </div>
+
+        {ownerBanner ? <div className="mb-4 mt-2 lg:mt-0">{ownerBanner}</div> : null}
 
         <div className="grid gap-0 lg:grid-cols-12 lg:gap-8 lg:px-0 lg:items-start">
           <div className="lg:col-span-7">

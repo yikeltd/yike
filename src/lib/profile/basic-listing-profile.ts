@@ -20,7 +20,11 @@ export type BasicListingProfileSlice = Pick<
 export function isBusinessAccount(
   accountType: AccountType | null | undefined
 ): boolean {
-  return accountType === "agency" || accountType === "developer";
+  return (
+    accountType === "agency" ||
+    accountType === "developer" ||
+    accountType === "dealer"
+  );
 }
 
 /** @deprecated use isBusinessAccount for business-profile flows */

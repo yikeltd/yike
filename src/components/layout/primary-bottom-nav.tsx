@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/auth/auth-provider";
+import { ListPropertyNavLink } from "@/components/auth/list-property-button";
+import { canListProperties, cn } from "@/lib/utils";
 import {
+  LayoutDashboard,
   Home,
   Heart,
   PlusCircle,
@@ -10,12 +14,9 @@ import {
   LogIn,
   Sparkles,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/components/auth/auth-provider";
-import { ListPropertyNavLink } from "@/components/auth/list-property-button";
 
 /**
- * Canonical mobile bottom nav — Home · Saved · Discover · Sell · Account
+ * Canonical mobile bottom nav — Home · Saved · Discover · Sell · Account/Dashboard
  * Discover is the elevated center signature discovery action.
  * Search lives on homepage + Discover header + listing pages.
  */
@@ -65,7 +66,10 @@ function NavTab({
 
 export function PrimaryBottomNav() {
   const pathname = usePathname();
-  const { user, loading, guardAction, openAuth } = useAuth();
+  const { user, loading, guardAction, openAuth, profile } = useAuth();
+  const isSeller = Boolean(profile && canListProperties(profile));
+  const accountLabel = isSeller ? "Dashboard" : "Account";
+  const AccountIcon = isSeller ? LayoutDashboard : User;
 
   if (pathname.startsWith("/auth") || pathname.startsWith("/lex")) {
     return null;
@@ -163,12 +167,12 @@ export function PrimaryBottomNav() {
                   : "bg-navy/[0.06] text-navy/60",
               )}
             >
-              <User
+              <AccountIcon
                 className="h-[18px] w-[18px]"
                 strokeWidth={accountActive ? 2.5 : 2}
               />
             </span>
-            Account
+            {accountLabel}
           </button>
         ) : (
           <button

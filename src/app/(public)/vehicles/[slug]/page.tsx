@@ -9,10 +9,17 @@ import {
 import { StickyContactBar } from "@/components/property/sticky-contact-bar";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { VehiclePremiumDetail } from "@/components/marketplace/vehicle-premium-detail";
+import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
+import { ListingUnavailable } from "@/components/property/listing-unavailable";
 import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { getActiveAd } from "@/lib/ads";
 import { resolveListingBadges } from "@/lib/design/listing-badges";
+import { getSession, getProfile, isAdmin } from "@/lib/auth";
+import {
+  canPreviewOwnerListing,
+  isListingPubliclyActive,
+} from "@/lib/listing-lifecycle";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -32,9 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = await createClient();
   const v = supabase ? await getVehicleByIdOrSlug(supabase, slug) : null;
   if (!v) return { title: "Vehicle | Yike" };
+  const robots = !isListingPubliclyActive(v)
+    ? { index: false, follow: true }
+    : { index: true, follow: true };
   return {
     title: `${v.title} | Yike Vehicles`,
     description: v.description?.slice(0, 160) || undefined,
+    robots,
   };
 }
 
@@ -45,14 +56,40 @@ export default async function VehicleDetailPage({ params }: Props) {
   if (!supabase) notFound();
 
   const vehicle = await getVehicleByIdOrSlug(supabase, slug);
-  if (!vehicle || vehicle.status !== "approved") notFound();
+  if (!vehicle) notFound();
+
+  const viewer = await getSession();
+  const viewerProfile = viewer ? await getProfile(viewer.id) : null;
+  const viewerCtx = viewer
+    ? {
+        userId: viewer.id,
+        isAdmin: viewerProfile ? isAdmin(viewerProfile.role) : false,
+      }
+    : null;
+  const isOwner = viewer?.id === vehicle.agent_id;
+  const isPubliclyVisible = isListingPubliclyActive(vehicle);
+  const previewMode =
+    !isPubliclyVisible && canPreviewOwnerListing(vehicle, viewerCtx);
+
+  if (!isPubliclyVisible && !previewMode) {
+    return (
+      <ListingUnavailable
+        property={vehicle}
+        reason={
+          new Date(vehicle.expires_at) <= new Date() ? "expired" : "unpublished"
+        }
+      />
+    );
+  }
 
   const [similarRaw, detailAd] = await Promise.all([
-    queryPublicVehicles(supabase, {
-      auto_category: vehicle.auto_category ?? undefined,
-      make: vehicle.make ?? undefined,
-      limit: 8,
-    }),
+    isPubliclyVisible
+      ? queryPublicVehicles(supabase, {
+          auto_category: vehicle.auto_category ?? undefined,
+          make: vehicle.make ?? undefined,
+          limit: 8,
+        })
+      : Promise.resolve([]),
     getActiveAd("vehicle_detail"),
   ]);
 
@@ -82,18 +119,32 @@ export default async function VehicleDetailPage({ params }: Props) {
     .filter(Boolean)
     .join(", ");
 
+  const ownerBanner =
+    isOwner ? (
+      <OwnerListingStatusBanner property={vehicle} className="mx-3 lg:mx-0" />
+    ) : previewMode ? (
+      <div className="mx-3 rounded-2xl border border-gold/30 bg-gold/5 px-4 py-3 lg:mx-0">
+        <p className="text-sm font-semibold text-navy">Staff preview</p>
+        <p className="mt-0.5 text-xs text-muted">
+          This vehicle is not public. You can view it as admin.
+        </p>
+      </div>
+    ) : null;
+
   return (
     <main className="pb-8">
-      <MarketplaceViewTracker
-        id={vehicle.id}
-        title={vehicle.title}
-        image={vehicle.media_urls?.[0] ?? ""}
-        city={vehicle.city}
-        area={vehicle.area || vehicle.city}
-        priceLabel={priceLabel}
-        assetType="VEHICLE"
-        slug={vehicle.slug}
-      />
+      {isPubliclyVisible ? (
+        <MarketplaceViewTracker
+          id={vehicle.id}
+          title={vehicle.title}
+          image={vehicle.media_urls?.[0] ?? ""}
+          city={vehicle.city}
+          area={vehicle.area || vehicle.city}
+          priceLabel={priceLabel}
+          assetType="VEHICLE"
+          slug={vehicle.slug}
+        />
+      ) : null}
 
       <VehiclePremiumDetail
         vehicle={vehicle}
@@ -105,9 +156,10 @@ export default async function VehicleDetailPage({ params }: Props) {
         featuredActive={featuredActive}
         extraBadges={extraBadges}
         detailAd={detailAd}
+        ownerBanner={ownerBanner}
       />
 
-      {agent ? (
+      {agent && isPubliclyVisible ? (
         <div className="lg:hidden">
           <StickyContactBar
             propertyId={vehicle.id}

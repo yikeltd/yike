@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=390, initial-scale=1" />
+    <title>Seller choose — visual reference</title>
+    <style>
+      :root {
+        --navy: #031b4e;
+        --gold: #e4b547;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        background: #f7f8fb;
+        color: var(--navy);
+      }
+      main {
+        max-width: 28rem;
+        margin: 0 auto;
+        padding: 1.25rem 1rem 3rem;
+      }
+      .back {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: rgba(3, 27, 78, 0.55);
+        text-decoration: none;
+      }
+      .eyebrow {
+        margin: 1rem 0 0;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #c49a2e;
+      }
+      h1 {
+        margin: 0.25rem 0 0;
+        font-size: 1.75rem;
+        letter-spacing: -0.02em;
+      }
+      .desc {
+        margin: 0.5rem 0 0;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: rgba(3, 27, 78, 0.55);
+        max-width: 22rem;
+      }
+      .stack {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+      }
+      .card {
+        position: relative;
+        display: block;
+        min-height: 128px;
+        overflow: hidden;
+        border-radius: 1rem;
+        box-shadow: 0 8px 28px -10px rgba(3, 27, 78, 0.22);
+        text-decoration: none;
+      }
+      .card img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .shade {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(3, 27, 78, 0.9),
+          rgba(3, 27, 78, 0.4),
+          rgba(3, 27, 78, 0.15)
+        );
+      }
+      .copy {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 2.5rem 1rem 0.9rem;
+      }
+      .copy strong {
+        display: block;
+        color: #fff;
+        font-size: 18px;
+        letter-spacing: -0.02em;
+      }
+      .copy span {
+        display: block;
+        margin-top: 2px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="#">← Dashboard</a>
+      <p class="eyebrow">Sell on Yike</p>
+      <h1>What are you listing?</h1>
+      <p class="desc">
+        Pick a category. The form adapts as you go — same premium experience as
+        browsing.
+      </p>
+      <div class="stack">
+        <a class="card" href="#">
+          <img src="/public/images/categories/vehicle-banner.webp" alt="" />
+          <div class="shade"></div>
+          <div class="copy">
+            <strong>Vehicles</strong>
+            <span>Cars · SUVs · Trucks</span>
+          </div>
+        </a>
+        <a class="card" href="#">
+          <img src="/public/images/categories/property-banner.webp" alt="" />
+          <div class="shade"></div>
+          <div class="copy">
+            <strong>Properties</strong>
+            <span>Homes · Land · Commercial</span>
+          </div>
+        </a>
+      </div>
+    </main>
+  </body>
+</html>
