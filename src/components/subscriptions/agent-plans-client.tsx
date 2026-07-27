@@ -89,17 +89,28 @@ export function AgentPlansClient() {
         <Link href="/agent" className="text-xs font-semibold text-gold-dark hover:underline">
           ← Back to profile
         </Link>
-        <h1 className="mt-2 text-xl font-bold text-navy">Plans & upgrades</h1>
-        <p className="mt-1 text-sm text-muted">
-          More active listings, analytics, and branding — upgrade only when you need to scale.
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy sm:text-3xl">Plans</h1>
+        <p className="mt-1 text-sm text-navy/70">
+          Choose the plan that fits your selling needs.
         </p>
+
         {!loading ? (
-          <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-elevated px-3 py-1 text-xs font-semibold text-navy">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
-            Current plan: {currentPlanLabel}
-          </p>
+          <div className="mt-4 flex items-center justify-between rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/20 font-bold text-navy">
+                {currentPlanLabel.charAt(0)}
+              </span>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-navy/50">Current Plan</p>
+                <p className="text-base font-bold text-navy">{currentPlanLabel}</p>
+              </div>
+            </div>
+            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-700">
+              Active
+            </span>
+          </div>
         ) : (
-          <p className="mt-2 text-xs text-muted">Loading your plan…</p>
+          <p className="mt-3 text-xs text-muted">Loading your plan…</p>
         )}
       </div>
 

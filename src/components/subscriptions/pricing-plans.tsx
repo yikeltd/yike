@@ -86,13 +86,6 @@ export function PricingPlans({
 
   return (
     <div className="space-y-6">
-      {foundingOfferActive ? (
-        <p className="rounded-xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-navy">
-          Founding offer: launch pricing locked for early subscribers. Manual renewal each month — no
-          auto-charge.
-        </p>
-      ) : null}
-
       {error ? <p className="text-sm text-danger">{error}</p> : null}
 
       {paidPlans.length > 0 && activeBillingTerms.length > 0 ? (
@@ -123,108 +116,85 @@ export function PricingPlans({
             <article
               key={plan.plan_code}
               className={cn(
-                "relative flex flex-col overflow-hidden rounded-xl border",
+                "relative flex flex-col overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md",
                 theme.card,
-                plan.plan_code === "pro_agent" && "xl:z-10",
-                isCurrent && "yike-selected"
+                plan.plan_code === "pro_agent" && "xl:z-10 border-gold/40 ring-1 ring-gold/30",
+                isCurrent && "border-emerald-500/50 bg-emerald-50/20 ring-1 ring-emerald-500/30"
               )}
             >
               {isCurrent ? (
-                <span className="absolute left-3 top-3 z-10 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
-                  Your plan
+                <span className="absolute right-4 top-4 z-10 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                  Current Plan
                 </span>
               ) : null}
 
-              <div className={cn("px-3 pb-2.5 pt-3", theme.header)}>
-                <div className="flex items-start justify-between gap-2 pr-16">
-                  <div
-                    className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
-                      plan.plan_code === "free" && "bg-white text-slate-600",
-                      plan.plan_code === "pro_agent" && "bg-gold/30 text-gold-dark",
-                      plan.plan_code === "agency" && "bg-white/15 text-gold",
-                      plan.plan_code === "developer" && "bg-gold/20 text-gold"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden />
-                  </div>
-                  {theme.badge ? (
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                        plan.plan_code === "pro_agent" && "bg-gold text-navy",
-                        plan.plan_code === "agency" && "bg-gold text-navy",
-                        plan.plan_code === "developer" && "bg-gold/90 text-navy",
-                        plan.plan_code === "free" && "bg-white text-muted"
-                      )}
-                    >
-                      {theme.badge}
-                    </span>
-                  ) : null}
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                    plan.plan_code === "free" && "bg-navy/5 text-navy",
+                    plan.plan_code === "pro_agent" && "bg-gold/20 text-gold-dark",
+                    plan.plan_code === "agency" && "bg-navy/10 text-navy",
+                    plan.plan_code === "developer" && "bg-gold/30 text-navy"
+                  )}
+                >
+                  <Icon className="h-5 w-5" aria-hidden />
                 </div>
-                <h2 className={cn("mt-3 text-lg font-bold", theme.headerText)}>{display.label}</h2>
-                <p className={cn("mt-0.5 text-xs", theme.headerMuted)}>{theme.audience}</p>
+                <div>
+                  <h2 className="text-lg font-bold text-navy">{display.label}</h2>
+                  <p className="text-xs text-navy/60 font-medium">{theme.audience}</p>
+                </div>
               </div>
 
-              <div className="flex flex-1 flex-col p-4 pt-3">
-                <div className="mb-3 flex items-baseline gap-1.5">
-                  <span className={cn("text-3xl font-bold tabular-nums", theme.listingStat)}>
-                    {limitLabel}
-                  </span>
-                  <span className="text-xs font-medium text-muted">active listings</span>
+              <div className="mt-4 flex flex-1 flex-col justify-between">
+                <div>
+                  <div className="mb-2">
+                    {isFree ? (
+                      <p className="text-3xl font-black text-navy tabular-nums">Free</p>
+                    ) : billing && billingMonths > 1 ? (
+                      <div>
+                        <p className="text-3xl font-black text-navy tabular-nums">
+                          {formatPrice(billing.total, "total", "rent")}
+                        </p>
+                        <p className="mt-0.5 text-xs font-semibold text-emerald-700">
+                          Save {formatPrice(billing.savings, "total", "rent")} ({billingMonths} months)
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-3xl font-black text-navy tabular-nums">
+                        {formatPrice(plan.monthly_price, "total", "rent")}
+                        <span className="text-xs font-medium text-navy/60"> / month</span>
+                      </p>
+                    )}
+                  </div>
+
+                  <p className="text-xs font-bold text-navy/80 underline decoration-gold/50 underline-offset-4">
+                    {limitLabel} Active Listings
+                  </p>
+
+                  <ul className="mt-5 space-y-2.5 border-t border-navy/10 pt-4 text-xs font-medium text-navy/85">
+                    {display.highlights.map((item) => (
+                      <li key={item} className="flex items-center gap-2">
+                        <span className="shrink-0 text-emerald-600 font-bold">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                {isFree ? (
-                  <p className="text-2xl font-bold text-navy tabular-nums">₦0</p>
-                ) : billing && billingMonths > 1 ? (
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted line-through tabular-nums">
-                      {formatPrice(billing.subtotal, "total", "rent")} list
-                    </p>
-                    <p className="text-2xl font-bold text-navy tabular-nums">
-                      {formatPrice(billing.total, "total", "rent")}
-                      <span className="text-sm font-medium text-muted">
-                        {" "}
-                        / {billingMonths} mo
-                      </span>
-                    </p>
-                    <p className="text-[11px] font-semibold text-gold-dark">
-                      Save {formatPrice(billing.savings, "total", "rent")} ·{" "}
-                      {formatPrice(billing.effectiveMonthly, "total", "rent")}/mo effective
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-2xl font-bold text-navy tabular-nums">
-                    {formatPrice(plan.monthly_price, "total", "rent")}
-                    <span className="text-sm font-medium text-muted"> / mo</span>
-                  </p>
-                )}
-                <p className="mt-0.5 text-[11px] text-muted">{display.tagline}</p>
-
-                <ul className="mt-4 flex-1 space-y-2 border-t border-border/60 pt-4 text-sm text-navy/90">
-                  {display.highlights.map((item) => (
-                    <li key={item} className="flex gap-2">
-                      <span className={cn("shrink-0 font-bold", theme.check)}>✓</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="mt-5">
+                <div className="mt-6">
                   {isFree ? (
                     <Link
                       href={isLoggedIn ? "/agent/listings/new" : "/auth/signup"}
                       prefetch
                       className={cn(
-                        "pressable flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold",
-                        isCurrent ? theme.ctaMuted : theme.cta
+                        "pressable flex w-full items-center justify-center rounded-full px-4 py-2.5 text-xs font-bold transition-all",
+                        isCurrent
+                          ? "bg-navy/5 text-navy/50 pointer-events-none cursor-default"
+                          : "bg-navy text-white hover:bg-navy/90"
                       )}
                     >
-                      {isLoggedIn
-                        ? isCurrent
-                          ? "Current plan"
-                          : "Continue with Starter"
-                        : "Sign up free"}
+                      {isCurrent ? "Current Plan" : "Choose Plan"}
                     </Link>
                   ) : isLoggedIn ? (
                     <button
@@ -232,25 +202,22 @@ export function PricingPlans({
                       disabled={busy === plan.plan_code || isCurrent}
                       onClick={() => void checkout(plan.plan_code)}
                       className={cn(
-                        "pressable w-full rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-60",
-                        isCurrent ? theme.ctaMuted : theme.cta
+                        "pressable w-full rounded-full px-4 py-2.5 text-xs font-bold transition-all disabled:opacity-60",
+                        isCurrent
+                          ? "bg-navy/5 text-navy/50 cursor-default"
+                          : "bg-gold text-navy hover:bg-gold-light shadow-sm"
                       )}
                     >
                       {isCurrent
-                        ? "Current plan"
+                        ? "Current Plan"
                         : busy === plan.plan_code
                           ? "Starting…"
-                          : billingMonths > 1
-                            ? `Pay ${billing?.total ? formatPrice(billing.total, "total", "rent") : ""} · ${billingMonths} mo`
-                            : `Upgrade to ${display.label}`}
+                          : "Upgrade"}
                     </button>
                   ) : (
                     <Link
                       href="/auth/signup?next=/agent/plans"
-                      className={cn(
-                        "pressable flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold",
-                        theme.cta
-                      )}
+                      className="pressable flex w-full items-center justify-center rounded-full bg-gold px-4 py-2.5 text-xs font-bold text-navy shadow-sm"
                     >
                       Sign in to upgrade
                     </Link>
@@ -261,28 +228,6 @@ export function PricingPlans({
           );
         })}
       </div>
-
-      <p className="text-center text-xs text-muted">
-        Free listings always available. Longer billing saves more — no auto-renewal; you choose when to
-        pay again.
-      </p>
-
-      {paidPlans.length > 0 ? (
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="rounded-xl border border-gold/30 bg-gold/5 px-3 py-2.5 text-center text-xs text-navy">
-            <span className="font-bold text-gold-dark">Pro Agent</span>
-            <p className="mt-0.5 text-muted">Solo agents</p>
-          </div>
-          <div className="rounded-xl border border-navy/20 bg-navy/5 px-3 py-2.5 text-center text-xs text-navy">
-            <span className="font-bold">Agency</span>
-            <p className="mt-0.5 text-muted">Teams & brands</p>
-          </div>
-          <div className="rounded-xl border border-navy/20 bg-gradient-to-r from-navy/5 to-gold/10 px-3 py-2.5 text-center text-xs text-navy">
-            <span className="font-bold">Developer</span>
-            <p className="mt-0.5 text-muted">Project showcases</p>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

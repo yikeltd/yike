@@ -2,11 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { BillingTerm } from "@/lib/subscriptions/billing-terms.shared";
-import {
-  formatBillingOptionSubtitle,
-  formatBillingOptionTitle,
-  maxBillingDiscount,
-} from "@/lib/subscriptions/billing-terms.shared";
+import { formatBillingOptionTitle } from "@/lib/subscriptions/billing-terms.shared";
 
 export function BillingTermPicker({
   terms,
@@ -20,30 +16,20 @@ export function BillingTermPicker({
   className?: string;
 }) {
   const activeTerms = terms.filter((term) => term.active);
-  const maxDiscount = maxBillingDiscount(activeTerms);
 
   if (!activeTerms.length) return null;
 
   return (
-    <section
+    <div
       className={cn(
-        "yike-card overflow-hidden",
+        "inline-flex w-full items-center rounded-2xl border border-navy/10 bg-white p-1.5 shadow-sm sm:w-auto",
         className
       )}
     >
-      <div className="border-b border-border/80 bg-gradient-to-r from-surface/70 to-white px-3 py-2.5 sm:px-4">
-        <h3 className="text-sm font-bold leading-tight text-navy">Billing Period</h3>
-        <p className="mt-0.5 text-[11px] leading-snug text-muted">
-          Choose a plan duration
-          {maxDiscount > 0 ? " and save more on longer terms." : "."}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 p-2.5 sm:gap-2 sm:p-3 lg:grid-cols-4">
+      <div className="grid w-full grid-cols-2 gap-1 sm:flex sm:w-auto sm:items-center">
         {activeTerms.map((term) => {
           const selected = value === term.months;
           const title = formatBillingOptionTitle(term);
-          const subtitle = formatBillingOptionSubtitle(term);
           const hasSavings = term.discountPercent > 0;
 
           return (
@@ -52,46 +38,27 @@ export function BillingTermPicker({
               type="button"
               onClick={() => onChange(term.months)}
               className={cn(
-                "pressable relative flex min-h-[4.25rem] flex-col items-center justify-center rounded-lg border px-2 py-2.5 text-center transition-all sm:min-h-[4.5rem] sm:px-2.5",
+                "pressable flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-all sm:px-5 sm:py-2",
                 selected
-                  ? "yike-selected border-navy bg-navy text-white"
-                  : "border-[var(--border-glass)] bg-elevated/80 text-navy hover:border-[var(--border-glass-strong)] hover:bg-white"
+                  ? "bg-navy text-white shadow-sm"
+                  : "text-navy/70 hover:bg-navy/5 hover:text-navy"
               )}
             >
-              <span
-                className={cn(
-                  "text-sm font-bold leading-tight",
-                  selected ? "text-white" : "text-navy"
-                )}
-              >
-                {title}
-              </span>
-              <span
-                className={cn(
-                  "mt-1.5 text-[11px] font-medium leading-tight",
-                  selected
-                    ? hasSavings
-                      ? "text-gold"
-                      : "text-white/75"
-                    : hasSavings
-                      ? "text-gold-dark"
-                      : "text-muted"
-                )}
-              >
-                {subtitle}
-              </span>
-              {hasSavings && !selected ? (
+              <span>{title}</span>
+              {hasSavings ? (
                 <span
-                  className="absolute right-2 top-2 rounded-full bg-gold/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold-dark"
-                  aria-hidden
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide",
+                    selected ? "bg-gold text-navy" : "bg-gold/20 text-gold-dark"
+                  )}
                 >
-                  −{term.discountPercent}%
+                  Save {term.discountPercent}%
                 </span>
               ) : null}
             </button>
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }
