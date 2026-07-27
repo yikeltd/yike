@@ -222,11 +222,11 @@ function composeDashboardGreeting(props: {
       );
     } else if (props.activeCount > 0) {
       sentences.push(
-        `Your command center is active with ${props.activeCount} live listing${props.activeCount === 1 ? "" : "s"}${props.location ? ` in ${props.location}` : ""}.`
+        `Your portfolio is active with ${props.activeCount} live listing${props.activeCount === 1 ? "" : "s"}${props.location ? ` in ${props.location}` : ""}.`
       );
     } else {
       sentences.push(
-        "Your business command center is online. Publish your first listing to start receiving buyer leads."
+        "Publish your first listing to start receiving buyer leads."
       );
     }
   }
@@ -234,6 +234,97 @@ function composeDashboardGreeting(props: {
   return {
     prefix,
     summary: sentences.slice(0, 2).join(" "),
+  };
+}
+
+export type RoleDashboardConfig = {
+  title: string;
+  greetingSubtext: string;
+  primaryActionLabel: string;
+  primaryActionHref: string;
+};
+
+export function getRoleDashboardConfig(
+  profile: Profile,
+  totalListings: number,
+): RoleDashboardConfig {
+  const accountType = profile.account_type;
+  const role = profile.role;
+
+  if (accountType === "dealer") {
+    return {
+      title: "Dealer Dashboard",
+      greetingSubtext:
+        totalListings > 0
+          ? "Manage your inventory and customer enquiries."
+          : "Add your first vehicle to reach active car buyers.",
+      primaryActionLabel: totalListings > 0 ? "New vehicle" : "Add vehicle",
+      primaryActionHref: "/agent/listings/new/vehicle",
+    };
+  }
+
+  if (accountType === "developer") {
+    return {
+      title: "Developer Dashboard",
+      greetingSubtext:
+        totalListings > 0
+          ? "Manage your projects and reach qualified buyers."
+          : "Create your first project listing to connect with buyers.",
+      primaryActionLabel: totalListings > 0 ? "New project" : "Create project",
+      primaryActionHref: "/agent/listings/choose",
+    };
+  }
+
+  if (accountType === "agency" || profile.company_name) {
+    return {
+      title: "Company Dashboard",
+      greetingSubtext:
+        totalListings > 0
+          ? "Manage your organization, listings, and team activity."
+          : "Publish your organization's first listing on Yike.",
+      primaryActionLabel: totalListings > 0 ? "New listing" : "Create listing",
+      primaryActionHref: "/agent/listings/choose",
+    };
+  }
+
+  if (accountType === "landlord") {
+    return {
+      title: "Landlord Dashboard",
+      greetingSubtext:
+        totalListings > 0
+          ? "Manage your properties and tenant enquiries."
+          : "List your available rental property to receive tenant leads.",
+      primaryActionLabel: totalListings > 0 ? "New property" : "List property",
+      primaryActionHref: "/agent/listings/choose",
+    };
+  }
+
+  if (
+    role === "agent" ||
+    role === "agent_verified" ||
+    role === "agent_unverified" ||
+    accountType === "agent"
+  ) {
+    return {
+      title: "Agent Dashboard",
+      greetingSubtext:
+        totalListings > 0
+          ? "Manage your listings and connect with buyers."
+          : "Publish your first listing to start receiving buyer leads.",
+      primaryActionLabel: totalListings > 0 ? "New listing" : "Create listing",
+      primaryActionHref: "/agent/listings/choose",
+    };
+  }
+
+  // Default: Individual Seller
+  return {
+    title: "Dashboard",
+    greetingSubtext:
+      totalListings > 0
+        ? "Ready to publish your next listing?"
+        : "Create your first listing and start reaching verified buyers.",
+    primaryActionLabel: totalListings > 0 ? "New listing" : "Create listing",
+    primaryActionHref: "/agent/listings/choose",
   };
 }
 
@@ -581,6 +672,8 @@ export function SellerCommandCenter(props: Props) {
     tone: "success" | "warning" | "neutral";
   }[];
 
+  const roleConfig = getRoleDashboardConfig(profile, totalListings);
+
   return (
     <div className="dashboard-fade-in grid gap-5 pb-8 lg:grid-cols-12">
       {profileSaved ? (
@@ -592,7 +685,7 @@ export function SellerCommandCenter(props: Props) {
         </p>
       ) : null}
 
-      {/* 1. Minimalist Hero Banner */}
+      {/* 1. Minimalist Role-Aware Hero Banner */}
       <section className="overflow-hidden rounded-[1.75rem] border border-navy/10 bg-gradient-to-br from-navy via-[#072462] to-[#031B4E] p-6 text-white shadow-[0_20px_50px_-28px_rgba(3,27,78,0.65)] lg:col-span-12 lg:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -606,25 +699,26 @@ export function SellerCommandCenter(props: Props) {
               className="!h-16 !w-16 rounded-2xl border-2 border-white/25 shadow-float ring-2 ring-gold/40 sm:!h-20 sm:!w-20"
             />
             <div>
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-white">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gold">
+                {roleConfig.title}
+              </p>
+              <h1 className="mt-0.5 text-2xl font-bold tracking-tight sm:text-3xl text-white">
                 {greeting.prefix}
               </h1>
               <p className="mt-1 text-sm text-white/80 font-medium">
-                {totalListings > 0
-                  ? "Ready to sell or rent something today?"
-                  : "You don't have any active listings yet. Publish your first listing to start reaching verified buyers."}
+                {roleConfig.greetingSubtext}
               </p>
             </div>
           </div>
 
           <div className="flex shrink-0 gap-3">
             <Link
-              href="/agent/listings/choose"
+              href={roleConfig.primaryActionHref}
               prefetch
               className="pressable inline-flex h-11 items-center gap-2 rounded-full bg-gold px-6 text-xs font-bold text-navy shadow-[0_4px_16px_rgba(228,181,71,0.4)]"
             >
               <PlusCircle className="h-4 w-4" aria-hidden />
-              {totalListings > 0 ? "New listing" : "Create listing"}
+              {roleConfig.primaryActionLabel}
             </Link>
           </div>
         </div>
