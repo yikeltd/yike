@@ -28,11 +28,14 @@ export async function GET() {
   }
 
   const session = await getSession();
-  const [plans, offers, activeSubscription, billingTerms] = await Promise.all([
+  const [plans, offers, activeSubscription, billingTerms, profileRes] = await Promise.all([
     listActivePlans(admin),
     getRevenueOffers(admin),
     session ? getActiveUserSubscription(admin, session.id) : Promise.resolve(null),
     listBillingTerms(admin),
+    session
+      ? admin.from("profiles").select("account_type, role").eq("id", session.id).maybeSingle()
+      : Promise.resolve(null),
   ]);
 
   const validPlans = (plans.length ? plans : fallbackPlans).filter((plan) =>
@@ -56,5 +59,7 @@ export async function GET() {
     currentPlanLabel,
     currentPlanCode,
     billingTerms,
+    accountType: profileRes?.data?.account_type ?? null,
+    role: profileRes?.data?.role ?? null,
   });
 }

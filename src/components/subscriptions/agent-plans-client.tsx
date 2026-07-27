@@ -25,6 +25,8 @@ type PlansPayload = {
   currentPlanLabel?: string;
   currentPlanCode?: SubscriptionPlanCode;
   billingTerms?: BillingTerm[];
+  accountType?: string | null;
+  role?: string | null;
   error?: string;
 };
 
@@ -38,6 +40,8 @@ export function AgentPlansClient() {
   const [currentPlanLabel, setCurrentPlanLabel] = useState("Starter");
   const [currentPlanCode, setCurrentPlanCode] = useState<SubscriptionPlanCode>("free");
   const [billingTerms, setBillingTerms] = useState<BillingTerm[]>(DEFAULT_BILLING_TERMS);
+  const [accountType, setAccountType] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +75,8 @@ export function AgentPlansClient() {
         setBillingTerms(
           data.billingTerms?.length ? data.billingTerms : DEFAULT_BILLING_TERMS
         );
+        setAccountType(data.accountType ?? null);
+        setRole(data.role ?? null);
       } catch {
         if (!cancelled) setLoadError(true);
       } finally {
@@ -142,6 +148,8 @@ export function AgentPlansClient() {
           isLoggedIn
           currentPlanCode={currentPlanCode}
           billingTerms={billingTerms}
+          accountType={accountType}
+          role={role}
         />
       )}
     </div>
