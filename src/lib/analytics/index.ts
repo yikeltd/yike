@@ -1,7 +1,7 @@
 /**
- * Yike Analytics Instrumentation — Phase 1.1 Funnel Tracking
+ * Yike Analytics Instrumentation — Funnel & Operations Tracking (Phase 1.1 & 1.2)
  *
- * Lightweight, zero-dependency analytics logger for transaction lifecycle events.
+ * Lightweight, zero-dependency analytics logger for transaction lifecycle and case operations.
  */
 
 export type AnalyticsEventName =
@@ -15,11 +15,19 @@ export type AnalyticsEventName =
   | "inspection_requested"
   | "buyer_assistance_requested"
   | "deal_completed"
-  | "deal_cancelled";
+  | "deal_cancelled"
+  | "case_created"
+  | "case_assigned"
+  | "case_started"
+  | "case_completed"
+  | "customer_updated"
+  | "officer_changed"
+  | "case_escalated";
 
 export type AnalyticsPayload = {
   conversationId?: string;
   listingId?: string;
+  caseId?: string;
   actorId?: string;
   metadata?: Record<string, unknown>;
   timestamp?: string;

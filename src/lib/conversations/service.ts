@@ -3,6 +3,7 @@
  */
 
 import { trackTransactionEvent } from "@/lib/analytics/index";
+import { createCase } from "@/lib/cases/service";
 import { isFeatureEnabled } from "@/lib/feature-flags/index";
 import type {
   BuyerAssistanceRequest,
@@ -452,6 +453,19 @@ export async function submitInspectionRequest(
   });
 
   trackTransactionEvent("inspection_requested", { conversationId, actorId });
+
+  // Automatically create a managed operational Case
+  void createCase({
+    caseType: payload.inspectionType === "legal_title_search" ? "LEGAL_TITLE_CHECK" : "PROPERTY_INSPECTION",
+    conversationId,
+    listingId: workspace.listing.id,
+    buyerId: actorId,
+    sellerId: workspace.seller.id,
+    title: `Inspection: ${workspace.listing.title}`,
+    description: `Preferred Date: ${payload.preferredDate}${payload.notes ? ` · Notes: ${payload.notes}` : ""}`,
+    autoAssign: true,
+  });
+
   memoryWorkspaceStore.set(conversationId, workspace);
   return workspace;
 }
@@ -490,6 +504,19 @@ export async function engageBuyerAssistance(
   });
 
   trackTransactionEvent("buyer_assistance_requested", { conversationId, actorId });
+
+  // Automatically create a managed operational Case
+  void createCase({
+    caseType: "BUYER_ASSISTANCE",
+    conversationId,
+    listingId: workspace.listing.id,
+    buyerId: actorId,
+    sellerId: workspace.seller.id,
+    title: `Buyer Concierge: ${serviceType.replace(/_/g, " ")}`,
+    description: notes ?? `Assistance requested for listing ${workspace.listing.title}`,
+    autoAssign: true,
+  });
+
   memoryWorkspaceStore.set(conversationId, workspace);
   return req;
 }
