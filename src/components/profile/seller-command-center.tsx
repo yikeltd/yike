@@ -145,7 +145,6 @@ export function SellerCommandCenter(props: Props) {
   } = props;
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
 
   const nameToDisplay =
@@ -726,25 +725,7 @@ export function SellerCommandCenter(props: Props) {
                   <ChevronRight className="h-4 w-4 text-navy/30 shrink-0" />
                 </div>
 
-                {/* 7. Advanced */}
-                <button
-                  type="button"
-                  onClick={() => setShowAdvancedSettings((v) => !v)}
-                  className="pressable group text-left flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15 w-full"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-navy/5 text-navy/60">
-                      <ChevronDown className="h-4.5 w-4.5" />
-                    </span>
-                    <div>
-                      <h3 className="text-xs font-bold text-navy">Advanced</h3>
-                      <p className="text-[10px] font-medium text-navy/45">Manage advanced settings</p>
-                    </div>
-                  </div>
-                  <ChevronDown className={cn("h-4 w-4 text-navy/30 transition-transform", showAdvancedSettings && "rotate-180")} />
-                </button>
-
-                {/* 8. Log Out */}
+                {/* 7. Log Out */}
                 <button
                   type="button"
                   onClick={() => setShowLogoutConfirm(true)}
@@ -761,13 +742,6 @@ export function SellerCommandCenter(props: Props) {
                   </div>
                   <ChevronRight className="h-4 w-4 text-rose-400 group-hover:translate-x-0.5 transition-all" />
                 </button>
-              </div>
-            )}
-
-            {showAdvancedSettings && accountSettingsOpen && (
-              <div className="rounded-2xl border border-navy/10 bg-white p-4 shadow-xs space-y-3">
-                <p className="text-xs font-bold text-navy">Advanced Account Options</p>
-                <ProfileAccountActions email={email} canList />
               </div>
             )}
           </section>
