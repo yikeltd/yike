@@ -92,6 +92,7 @@ export function UnifiedCheckoutModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close checkout modal"
             className="flex h-8 w-8 items-center justify-center rounded-full bg-navy/5 text-navy/60 hover:bg-navy/10"
           >
             <X className="h-4 w-4" />
