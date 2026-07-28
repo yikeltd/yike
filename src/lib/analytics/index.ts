@@ -1,7 +1,7 @@
 /**
- * Yike Analytics Instrumentation — Funnel, Operations, Identity, Commerce & Seller CRM Tracking (Phase 1.1–1.5)
+ * Yike Analytics Instrumentation — Funnel, Operations, Identity, Commerce, Seller CRM & Revenue Tracking (Phase 1.1–1.7)
  *
- * Lightweight, zero-dependency analytics logger for transaction lifecycle, case operations, Yike Passport, Deal, and Seller CRM events.
+ * Lightweight, zero-dependency analytics logger for transaction lifecycle, case operations, Yike Passport, Deal, Seller CRM, and Revenue events.
  */
 
 export type AnalyticsEventName =
@@ -39,7 +39,13 @@ export type AnalyticsEventName =
   | "listing_recommended"
   | "performance_insight_viewed"
   | "activity_opened"
-  | "automation_triggered";
+  | "automation_triggered"
+  | "order_created"
+  | "order_paid"
+  | "order_fulfilled"
+  | "entitlement_granted"
+  | "checkout_abandoned"
+  | "coupon_applied";
 
 export type AnalyticsPayload = {
   conversationId?: string;
@@ -47,6 +53,7 @@ export type AnalyticsPayload = {
   caseId?: string;
   dealId?: string;
   sellerId?: string;
+  orderId?: string;
   userId?: string;
   actorId?: string;
   metadata?: Record<string, unknown>;

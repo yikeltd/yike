@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
-import { getCachedPublicRevenueCatalog } from "@/lib/revenue-pricing/service";
+import { getProductCatalog, getRevenueAnalytics } from "@/lib/revenue/service";
 
 export const runtime = "nodejs";
 
-export async function GET() {
-  const catalog = await getCachedPublicRevenueCatalog();
-  return NextResponse.json(
-    { catalog },
-    {
-      headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
-      },
-    }
-  );
+/**
+ * GET /api/revenue/catalog — Fetch product catalog & revenue analytics
+ */
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const includeAnalytics = searchParams.get("analytics") === "true";
+
+    const catalog = getProductCatalog();
+    const analytics = includeAnalytics ? getRevenueAnalytics() : undefined;
+
+    return NextResponse.json({ catalog, analytics });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch catalog";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
