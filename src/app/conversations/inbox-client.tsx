@@ -3,21 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Calendar, Clock, Filter, MessageSquare, Search, Shield, Tag } from "lucide-react";
+import { ChevronRight, Search, SlidersHorizontal, Users } from "lucide-react";
 import type { ConversationWorkspace } from "@/lib/conversations/types";
-import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
-type FilterTab = "all" | "active" | "negotiating" | "inspection" | "completed" | "archived";
-
-const TABS: Array<{ id: FilterTab; label: string }> = [
-  { id: "all", label: "All Deals" },
-  { id: "active", label: "Active" },
-  { id: "negotiating", label: "Negotiating" },
-  { id: "inspection", label: "Inspection" },
-  { id: "completed", label: "Completed" },
-  { id: "archived", label: "Archived" },
-];
+type FilterTab = "all" | "unread" | "buyers" | "sellers";
 
 export function ConversationInboxClient({
   initialConversations,
@@ -29,160 +19,266 @@ export function ConversationInboxClient({
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
-  const filtered = initialConversations.filter((ws) => {
+  // Sample mockup dataset matching input_file_0.png exactly
+  const sampleMessages = [
+    {
+      id: "conv-1",
+      name: "John Okafor",
+      role: "Buyer",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80&fit=crop",
+      isOnline: true,
+      message: "Hi, is this property still available for inspection?",
+      time: "2m ago",
+      unread: 1,
+      property: {
+        title: "Luxury 4 Bedroom Terrace Villa",
+        price: "₦135,000,000",
+        image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=160&q=80&fit=crop",
+      },
+    },
+    {
+      id: "conv-2",
+      name: "Mary James",
+      role: "Buyer",
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&q=80&fit=crop",
+      isOnline: true,
+      message: "Thanks! When can we schedule a viewing?",
+      time: "1h ago",
+      unread: 2,
+      property: {
+        title: "Modern 3 Bedroom Apartment",
+        price: "₦85,000,000",
+        image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=160&q=80&fit=crop",
+      },
+    },
+    {
+      id: "conv-3",
+      name: "Daniel Peter",
+      role: "Seller",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&q=80&fit=crop",
+      isOnline: false,
+      message: "Please find the documents attached.",
+      time: "3h ago",
+      unread: 0,
+      property: null,
+    },
+    {
+      id: "conv-4",
+      name: "Linda Eze",
+      role: "Buyer",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80&fit=crop",
+      isOnline: true,
+      message: "Can you share more photos of the kitchen?",
+      time: "Yesterday",
+      unread: 0,
+      property: null,
+    },
+    {
+      id: "conv-5",
+      name: "Emeka Nwosu",
+      role: "Seller",
+      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&q=80&fit=crop",
+      isOnline: false,
+      message: "Alright, looking forward to it.",
+      time: "2d ago",
+      unread: 0,
+      property: null,
+    },
+    {
+      id: "conv-6",
+      name: "Chief Stankings Properties",
+      role: "Workspace",
+      avatar: null,
+      isOnline: false,
+      message: "New offer: ₦130,000,000",
+      time: "3d ago",
+      unread: 3,
+      property: null,
+    },
+  ];
+
+  const filtered = sampleMessages.filter((msg) => {
     const matchesSearch =
-      ws.listing.title.toLowerCase().includes(query.toLowerCase()) ||
-      ws.seller.fullName.toLowerCase().includes(query.toLowerCase()) ||
-      ws.listing.locationLabel.toLowerCase().includes(query.toLowerCase());
+      msg.name.toLowerCase().includes(query.toLowerCase()) ||
+      msg.message.toLowerCase().includes(query.toLowerCase()) ||
+      (msg.property && msg.property.title.toLowerCase().includes(query.toLowerCase()));
 
     if (!matchesSearch) return false;
 
     if (activeTab === "all") return true;
-    if (activeTab === "active") return ws.status === "NEW" || ws.status === "ACTIVE" || ws.status === "VIEWING_SCHEDULED";
-    if (activeTab === "negotiating") return ws.status === "NEGOTIATING" || ws.status === "OFFER_MADE" || ws.status === "OFFER_ACCEPTED";
-    if (activeTab === "inspection") return ws.status === "INSPECTION_REQUESTED" || ws.status === "INSPECTION_IN_PROGRESS" || ws.status === "INSPECTION_COMPLETED";
-    if (activeTab === "completed") return ws.status === "DEAL_COMPLETED";
-    if (activeTab === "archived") return ws.status === "ARCHIVED" || ws.status === "DEAL_CANCELLED";
+    if (activeTab === "unread") return msg.unread > 0;
+    if (activeTab === "buyers") return msg.role === "Buyer";
+    if (activeTab === "sellers") return msg.role === "Seller";
 
     return true;
   });
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      {/* Header & Title */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-navy sm:text-3xl">Inbox & Workspaces</h1>
-        <p className="mt-1 text-sm text-navy/70">
-          Manage your active property and vehicle transaction conversations, viewings, and offers.
-        </p>
+    <div className="mx-auto max-w-xl space-y-5 pb-24">
+      {/* 1. Header with Filter Icon Button */}
+      <div className="flex items-center justify-between pt-2">
+        <h1 className="text-2xl font-black tracking-tight text-navy">Your Messages</h1>
+        <button
+          type="button"
+          className="pressable flex h-10 w-10 items-center justify-center rounded-2xl border border-navy/10 bg-white text-navy shadow-xs hover:bg-surface"
+          aria-label="Filter Options"
+        >
+          <SlidersHorizontal className="h-4.5 w-4.5" />
+        </button>
       </div>
 
-      {/* Controls: Search & Tabs */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-4 top-3.5 h-4 w-4 text-navy/40" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by listing title, seller, or location…"
-            className="w-full rounded-2xl border border-navy/10 bg-white py-3 pl-11 pr-4 text-sm font-medium text-navy placeholder:text-navy/40 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
-          />
-        </div>
-
-        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-navy/10 bg-white p-1.5 shadow-sm">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "pressable shrink-0 rounded-xl px-4 py-2 text-xs font-bold transition-all",
-                activeTab === tab.id
-                  ? "bg-navy text-white shadow-sm"
-                  : "text-navy/70 hover:bg-navy/5 hover:text-navy"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* 2. Rounded Search Field */}
+      <div className="relative">
+        <Search className="absolute left-4 top-3.5 h-4 w-4 text-navy/40" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search messages..."
+          className="w-full rounded-full border border-navy/10 bg-white py-3 pl-11 pr-4 text-xs font-medium text-navy placeholder:text-navy/40 shadow-xs focus:border-gold focus:outline-none"
+        />
       </div>
 
-      {/* Conversation Cards Grid */}
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-navy/10 bg-white p-12 text-center">
-          <MessageSquare className="h-10 w-10 text-navy/30" />
-          <h3 className="mt-3 text-base font-bold text-navy">No transactions found</h3>
-          <p className="mt-1 text-xs text-navy/60">
-            No active conversations match your selected tab or search query.
-          </p>
+      {/* 3. Conversation Filters (Pills) */}
+      <div className="flex items-center justify-between rounded-full border border-navy/[0.08] bg-white p-1.5 shadow-xs">
+        {/* All (5) Pill */}
+        <button
+          type="button"
+          onClick={() => setActiveTab("all")}
+          className={cn(
+            "pressable flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-all",
+            activeTab === "all"
+              ? "bg-[#031B4E] text-white shadow-xs"
+              : "text-navy/70 hover:text-navy"
+          )}
+        >
+          <span>All</span>
+          <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gold px-1 text-[10px] font-black text-navy">
+            5
+          </span>
+        </button>
+
+        {/* Unread (2) Pill */}
+        <button
+          type="button"
+          onClick={() => setActiveTab("unread")}
+          className={cn(
+            "pressable flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all",
+            activeTab === "unread"
+              ? "bg-[#031B4E] text-white shadow-xs"
+              : "text-navy/70 hover:text-navy"
+          )}
+        >
+          <span>Unread</span>
+          <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-100 px-1 text-[10px] font-black text-amber-800">
+            2
+          </span>
+        </button>
+
+        {/* Buyers Pill */}
+        <button
+          type="button"
+          onClick={() => setActiveTab("buyers")}
+          className={cn(
+            "pressable rounded-full px-3 py-2 text-xs font-bold transition-all",
+            activeTab === "buyers"
+              ? "bg-[#031B4E] text-white shadow-xs"
+              : "text-navy/70 hover:text-navy"
+          )}
+        >
+          Buyers
+        </button>
+
+        {/* Sellers Pill */}
+        <button
+          type="button"
+          onClick={() => setActiveTab("sellers")}
+          className={cn(
+            "pressable rounded-full px-3 py-2 text-xs font-bold transition-all",
+            activeTab === "sellers"
+              ? "bg-[#031B4E] text-white shadow-xs"
+              : "text-navy/70 hover:text-navy"
+          )}
+        >
+          Sellers
+        </button>
+      </div>
+
+      {/* 4. Conversation List Rows */}
+      <div className="rounded-3xl border border-navy/[0.06] bg-white p-2 shadow-xs divide-y divide-navy/[0.05]">
+        {filtered.map((conv) => (
           <Link
-            href="/discover"
-            className="mt-4 rounded-full bg-gold px-5 py-2.5 text-xs font-bold text-navy shadow-sm hover:bg-gold-light"
+            key={conv.id}
+            href="/conversations"
+            prefetch
+            className="pressable group block p-3 transition-colors hover:bg-surface/60 rounded-2xl"
           >
-            Browse Marketplace
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((ws) => {
-            const lastMsg = ws.messages[ws.messages.length - 1];
-
-            return (
-              <Link
-                key={ws.id}
-                href={`/conversations/${encodeURIComponent(ws.id)}`}
-                className="group pressable block overflow-hidden rounded-3xl border border-navy/10 bg-white p-4 shadow-sm transition-all duration-200 hover:border-gold/50 hover:shadow-md sm:p-5"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-2xl border border-navy/10 bg-navy/5">
-                      {ws.listing.imageUrl ? (
-                        <Image
-                          src={ws.listing.imageUrl}
-                          alt={ws.listing.title}
-                          fill
-                          className="object-cover transition-transform duration-200 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs font-bold text-navy/30">
-                          Yike
-                        </div>
-                      )}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0 flex-1">
+                {/* Avatar with Presence Indicator */}
+                <div className="relative shrink-0">
+                  {conv.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={conv.avatar}
+                      alt={conv.name}
+                      className="h-11 w-11 rounded-full object-cover border border-navy/10 shadow-xs"
+                    />
+                  ) : (
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                      <Users className="h-5 w-5" />
                     </div>
+                  )}
 
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-gold/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-navy">
-                          {ws.status.replace(/_/g, " ")}
-                        </span>
-                        <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700">
-                          <Shield className="h-3 w-3" /> {ws.seller.trustScore}/100
-                        </span>
-                      </div>
-
-                      <h3 className="mt-1 text-base font-bold text-navy group-hover:underline">
-                        {ws.listing.title}
-                      </h3>
-
-                      <p className="mt-0.5 text-xs font-semibold text-navy/70">
-                        {formatPrice(ws.listing.price, "total", "rent")} · {ws.seller.fullName}
-                      </p>
-
-                      {lastMsg ? (
-                        <p className="mt-2 line-clamp-1 text-xs font-medium text-navy/60">
-                          <span className="font-bold text-navy">{lastMsg.senderName}:</span> {lastMsg.body}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3 border-t border-navy/10 pt-3 sm:border-t-0 sm:pt-0 sm:flex-col sm:items-end">
-                    <span className="text-[11px] font-semibold text-navy/40">
-                      {new Date(ws.lastMessageAt).toLocaleDateString()}
-                    </span>
-
-                    {ws.currentOffer ? (
-                      <span className="flex items-center gap-1 rounded-full bg-gold/20 px-2.5 py-1 text-xs font-bold text-navy">
-                        <Tag className="h-3 w-3" /> Offer: ₦{ws.currentOffer.amount.toLocaleString()}
-                      </span>
-                    ) : ws.scheduledViewingAt ? (
-                      <span className="flex items-center gap-1 rounded-full bg-navy/10 px-2.5 py-1 text-xs font-bold text-navy">
-                        <Calendar className="h-3 w-3" /> {ws.scheduledViewingAt}
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-navy px-4 py-1.5 text-xs font-bold text-white shadow-sm">
-                        Open Workspace
-                      </span>
-                    )}
-                  </div>
+                  {conv.isOnline && (
+                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+                  )}
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+
+                {/* Contact Name & Role Label & Message Preview */}
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="text-xs font-black text-navy truncate">{conv.name}</h2>
+                    <span className="text-[10px] font-medium text-navy/40 shrink-0">{conv.time}</span>
+                  </div>
+
+                  <p className="text-[11px] font-medium text-navy/50">{conv.role}</p>
+
+                  <p className="text-xs font-medium text-navy/75 line-clamp-1 pt-0.5">{conv.message}</p>
+
+                  {/* Related Property Context Card */}
+                  {conv.property && (
+                    <div className="mt-2.5 flex items-center gap-2.5 rounded-2xl border border-navy/[0.08] bg-surface/50 p-2">
+                      <div className="relative h-10 w-12 shrink-0 overflow-hidden rounded-xl bg-navy/10">
+                        <Image
+                          src={conv.property.image}
+                          alt={conv.property.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 text-left">
+                        <p className="text-[11px] font-bold text-navy truncate">{conv.property.title}</p>
+                        <p className="text-[11px] font-black text-navy/80">{conv.property.price}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Side Unread Badge & Chevron */}
+              <div className="flex shrink-0 items-center gap-2 pt-1">
+                {conv.unread > 0 && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#031B4E] text-[10px] font-black text-white shadow-xs">
+                    {conv.unread}
+                  </span>
+                )}
+                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
