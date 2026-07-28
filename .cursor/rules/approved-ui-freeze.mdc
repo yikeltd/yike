@@ -1,0 +1,55 @@
+---
+description: Approved consumer UI is locked — no silent visual regressions
+globs: src/components/home/**/*.{tsx,ts,css}
+alwaysApply: false
+---
+
+# Approved UI freeze (homepage / consumer)
+
+Treat founder-approved screens as **production assets**.
+
+## Locked mobile homepage (RC1 inventory-first)
+
+Source of truth: `HomeMarketplaceExperience` mobile path as shipped in `c56ae5c9` / pre-`8cafa761`.
+
+**Approved:**
+
+1. Desktop: `HomeDesktopHero` (`lg+` only)
+2. Mobile: sticky **Vehicles | Properties** under header
+3. Mobile: **inventory rails first** (Featured → Trending → Recent → …)
+4. Mobile: `QuickFinderBar` **after** early rails (not as a full-bleed navy search hero)
+
+**Forbidden without explicit founder request:**
+
+- Remounting `HomeMobileHero` / `BrowseListingsBlock variant="home-premium"` on `/`
+- Replacing inventory-first mobile with search/filter-first chrome
+- “Restoring” older hero layouts while fixing scroll/sticky/deploy bugs
+
+## Locked Business Control Center V1 (Seller Dashboard V3)
+
+Source of truth: `SellerCommandCenter` (`src/components/profile/seller-command-center.tsx`) as shipped in `7d323fa1`.
+
+**Approved & Frozen:**
+1. Dark Hero Header (Left Avatar with lower-right camera icon, Right greeting `Welcome back, Patience`, `Verified Seller`, `Member since Jul 2026`, upper-right notification bell).
+2. Full-width gold `+ New Listing` CTA immediately below greeting.
+3. Business Snapshot KPI bar (3 equal columns: `Active Leads`, `Listings`, `Trust Score`).
+4. Recent Conversations Workspace (active buyer rows with badges).
+5. Quick Actions Grid (4 equal cards: `My Listings`, `Verification`, `Analytics`, `Payments`).
+6. Recent Activity Feed.
+7. Mobile 5-Tab Navigation (`Home`, `Conversations`, `Discover`, `Sell`, `Dashboard`).
+
+**Forbidden without explicit founder request:**
+- Redesigning any section or layout
+- Repositioning components or reordering sections
+- Adding new UI widgets or removing approved UI
+- "Improving" or modernizing the interface beyond the reference design
+
+## Before changing approved UI
+
+1. Diff against the locked commit / production screenshot.
+2. Prefer fixes **beneath** the UI (data, perf, a11y, bugs).
+3. If appearance must change → stop and ask the founder.
+
+## Allowed without redesign
+
+Bug fixes, route fixes, performance, copy typos, a11y, non-visual refactors that keep the same DOM hierarchy and tokens.
