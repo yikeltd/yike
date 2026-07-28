@@ -1,7 +1,7 @@
 /**
- * Yike Analytics Instrumentation — Funnel, Operations & Identity Tracking (Phase 1.1, 1.2, 1.3)
+ * Yike Analytics Instrumentation — Funnel, Operations, Identity & Commerce Tracking (Phase 1.1–1.4)
  *
- * Lightweight, zero-dependency analytics logger for transaction lifecycle, case operations, and Yike Passport events.
+ * Lightweight, zero-dependency analytics logger for transaction lifecycle, case operations, Yike Passport, and Deal events.
  */
 
 export type AnalyticsEventName =
@@ -29,12 +29,17 @@ export type AnalyticsEventName =
   | "badge_awarded"
   | "badge_removed"
   | "trust_profile_viewed"
-  | "review_submitted";
+  | "review_submitted"
+  | "deal_created"
+  | "deal_stage_changed"
+  | "review_unlocked"
+  | "gated_review_submitted";
 
 export type AnalyticsPayload = {
   conversationId?: string;
   listingId?: string;
   caseId?: string;
+  dealId?: string;
   userId?: string;
   actorId?: string;
   metadata?: Record<string, unknown>;

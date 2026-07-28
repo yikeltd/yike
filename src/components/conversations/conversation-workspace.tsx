@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send } from "lucide-react";
 import type { ConversationWorkspace as WorkspaceType, InspectionType, TransactionActionType } from "@/lib/conversations/types";
+import type { Deal } from "@/lib/commerce/types";
+import { DealSummaryCard } from "@/components/commerce/deal-summary-card";
+import { GatedReviewModal } from "@/components/commerce/gated-review-modal";
 import { BuyerAssistanceModal } from "./buyer-assistance-modal";
 import { ConnectActionSheet } from "./connect-action-sheet";
 import { ConversationTimeline } from "./conversation-timeline";
@@ -22,6 +25,7 @@ export function ConversationWorkspace({
   currentUserId: string;
 }) {
   const [workspace, setWorkspace] = useState<WorkspaceType | null>(null);
+  const [deal, setDeal] = useState<Deal | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
@@ -34,6 +38,7 @@ export function ConversationWorkspace({
   const [viewingModalOpen, setViewingModalOpen] = useState(false);
   const [buyerAssistanceOpen, setBuyerAssistanceOpen] = useState(false);
   const [inspectionModalOpen, setInspectionModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +55,21 @@ export function ConversationWorkspace({
         }
 
         setWorkspace(data.workspace);
+
+        // Fetch or sync canonical deal
+        const dealRes = await fetch(`/api/deals`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId: data.workspace.id,
+            listingId: data.workspace.listing.id,
+            buyerId: data.workspace.buyerId,
+            sellerId: data.workspace.seller.id,
+            initialValue: data.workspace.listing.price,
+          }),
+        });
+        const dealData = (await dealRes.json()) as { deal?: Deal };
+        if (dealData.deal) setDeal(dealData.deal);
       } catch {
         if (!cancelled) setError("Network error loading conversation workspace");
       } finally {
@@ -162,6 +182,12 @@ export function ConversationWorkspace({
           onOpenConnect={() => setConnectSheetOpen(true)}
           onToggleTrustPanel={() => setTrustPanelOpen(true)}
         />
+
+        {deal && (
+          <div className="mt-3">
+            <DealSummaryCard deal={deal} onOpenReviewModal={() => setReviewModalOpen(true)} />
+          </div>
+        )}
       </header>
 
       {/* Main Conversation Stream */}
@@ -272,6 +298,28 @@ export function ConversationWorkspace({
           await refreshWorkspace();
         }}
       />
+      {/* Gated Review Modal */}
+      {deal && (
+        <GatedReviewModal
+          open={reviewModalOpen}
+          dealId={deal.id}
+          targetName={workspace.seller.fullName}
+          onClose={() => setReviewModalOpen(false)}
+          onSubmitReview={async (rating, feedback) => {
+            await fetch(`/api/deals/${encodeURIComponent(deal.id)}/reviews`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                reviewerRole: currentUserId === workspace.buyerId ? "buyer" : "seller",
+                targetUserId: currentUserId === workspace.buyerId ? workspace.seller.id : workspace.buyerId,
+                rating,
+                feedback,
+              }),
+            });
+            await refreshWorkspace();
+          }}
+        />
+      )}
     </div>
   );
 }
