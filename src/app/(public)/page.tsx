@@ -270,7 +270,7 @@ export default async function HomePage({
       : featuredProps.length > 0
         ? featuredProps
         : propertyItems,
-    6,
+    12,
     loc,
   );
   const featuredIds = listingIdSet(featuredLive.items);
@@ -279,7 +279,7 @@ export default async function HomePage({
       propertyDemo.isDemo ? propertyItems : nearPool,
       featuredIds,
     ),
-    6,
+    12,
     loc,
   );
   const trendingIds = listingIdSet(trendingLive.items);
@@ -292,56 +292,57 @@ export default async function HomePage({
           : propertyItems,
       [...featuredIds, ...trendingIds],
     ),
-    6,
+    12,
     loc,
   );
-  const nearYouLive = pickNearYouRail(nearPool, preferredCity, 6, loc);
+  const nearYouLive = pickNearYouRail(nearPool, preferredCity, 12, loc);
   const luxuryLive = pickLuxuryRail(
     propertyDemo.isDemo ? propertyItems : propertyPool,
     "property",
-    6,
+    12,
     loc,
   );
   const nationwideLive = pickNationwideFeaturedRail(
     propertyDemo.isDemo ? propertyItems : propertyPool,
-    6,
+    12,
     loc,
   );
 
-  const vFeatured = pickFeaturedRail(vehicleItems, 6, loc);
+  const vFeatured = pickFeaturedRail(vehicleItems, 12, loc);
   const vFeaturedIds = listingIdSet(vFeatured.items);
   const vTrending = pickTrendingRail(
     excludeListingIds(vehicleItems, vFeaturedIds),
-    6,
+    12,
     loc,
   );
   const vTrendingIds = listingIdSet(vTrending.items);
   const vRecent = pickRecentRail(
     excludeListingIds(vehicleItems, [...vFeaturedIds, ...vTrendingIds]),
-    6,
+    12,
     loc,
   );
-  const vLowKm = pickLowMileageRail(vehicleItems, 6, loc);
-  const vLuxury = pickLuxuryRail(vehicleItems, "vehicle", 6, loc);
-  const vNationwide = pickNationwideFeaturedRail(vehicleItems, 6, loc);
-  const vPremium = pickPremiumRail(vehicleItems, 6, loc);
-  const vCommercial = pickCommercialVehicles(vehicleItems, 6);
-  const vBudget = pickBudgetUnder(vehicleItems, BUDGET_UNDER_5M, 6);
-  const vSuv = pickByAutoCategory(vehicleItems, "suv", 6);
-  const vPickup = pickByAutoCategory(vehicleItems, "truck", 6);
-  const vNear = pickNearYouRail(vehicleItems, preferredCity, 6, loc);
+  const vLowKm = pickLowMileageRail(vehicleItems, 12, loc);
+  const vLuxury = pickLuxuryRail(vehicleItems, "vehicle", 12, loc);
+  const vNationwide = pickNationwideFeaturedRail(vehicleItems, 12, loc);
+  const vPremium = pickPremiumRail(vehicleItems, 12, loc);
+  const vCommercial = pickCommercialVehicles(vehicleItems, 12);
+  const vBudget = pickBudgetUnder(vehicleItems, BUDGET_UNDER_5M, 12);
+  const vSuv = pickByAutoCategory(vehicleItems, "suv", 12);
+  const vPickup = pickByAutoCategory(vehicleItems, "truck", 12);
+  const vNear = pickNearYouRail(vehicleItems, preferredCity, 12, loc);
   const dealers = extractDealersFromListings(
     vehicleDemo.isDemo ? vehicleItems : vehiclePool,
-    8,
+    12,
   );
   const vehicleCategoryCounts = countByAutoCategory(vehicleItems);
   const propertyCategoryCounts = countByPropertyType(propertyItems);
   const propertyCommercial = pickPropertyByTypes(
     propertyItems,
     ["shop", "office", "warehouse", "commercial"],
-    6,
+    12,
   );
-  const propertyFeaturedExtra = pickFeaturedRail(propertyItems, 6, loc);
+  const propertyFeaturedExtra = pickFeaturedRail(propertyItems, 12, loc);
+
 
   const homepageAds = await safeLoad(
     "homepage ads",
