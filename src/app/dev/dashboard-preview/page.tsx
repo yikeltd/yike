@@ -7,7 +7,7 @@ export default function DashboardPreviewPage() {
   if (process.env.NODE_ENV === "production") notFound();
 
   const profile = {
-    id: "preview-user",
+    id: "63307-preview-user",
     full_name: "Stanley Okoro",
     username: "stanhan_auto",
     email: "dealer@example.com",
