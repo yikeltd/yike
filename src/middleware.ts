@@ -16,6 +16,8 @@ import {
 } from "@/lib/ambassador/constants";
 import { STAFF_APP_COOKIE } from "@/lib/admin/staff-app";
 
+import { applySecurityHeaders } from "@/lib/security/security-headers";
+
 async function handleMiddleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
@@ -115,6 +117,7 @@ async function handleMiddleware(request: NextRequest): Promise<NextResponse> {
   }
 
   response.headers.set("x-yike-pathname", pathname);
+  applySecurityHeaders(response.headers);
 
   return response;
 }
