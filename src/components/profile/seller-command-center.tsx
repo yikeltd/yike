@@ -128,8 +128,10 @@ function SidebarNavItem({
 }
 
 /**
- * USER DASHBOARD — FINAL PIXEL-PERFECT IMPLEMENTATION
- * Matches reference image input_file_0.png with exact precision across 3 continuous screen sections.
+ * USER DASHBOARD — FINAL SURGICAL REFINEMENTS
+ * 1. Shows first 3 messages in Recent Conversations
+ * 2. 1x4 horizontal grid for Recent Activity
+ * 3. Collapsible Account Settings & Controls
  */
 export function SellerCommandCenter(props: Props) {
   const {
@@ -144,6 +146,7 @@ export function SellerCommandCenter(props: Props) {
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
 
   const nameToDisplay =
     profile.full_name?.trim() ||
@@ -154,7 +157,7 @@ export function SellerCommandCenter(props: Props) {
   const trustScore = profile.trust_score ?? 100;
   const listingsValue = totalListings > 0 ? totalListings : 1;
 
-  // Sample conversations matching reference mockup input_file_0.png
+  // 1. FIRST 3 CONVERSATIONS
   const sampleConversations = [
     {
       id: "conv-1",
@@ -176,14 +179,24 @@ export function SellerCommandCenter(props: Props) {
       time: "1h ago",
       unread: 2,
     },
+    {
+      id: "conv-3",
+      name: "Daniel Peter",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&q=80&fit=crop",
+      badge: "Documents ready",
+      badgeTone: "bg-purple-100 text-purple-800 border-purple-200",
+      message: "Please find the property documents attached.",
+      time: "3h ago",
+      unread: 0,
+    },
   ];
 
-  // Sample activities matching reference mockup input_file_0.png
+  // 2. RECENT ACTIVITY
   const sampleActivities = [
     {
       id: "act-1",
       title: "New lead",
-      subtitle: "John Doe viewed your listing",
+      subtitle: "John Doe viewed listing",
       time: "5m ago",
       icon: Users,
       tone: "bg-emerald-50 text-emerald-600 border border-emerald-200",
@@ -191,7 +204,7 @@ export function SellerCommandCenter(props: Props) {
     {
       id: "act-2",
       title: "New like",
-      subtitle: "Mary liked your listing",
+      subtitle: "Mary liked listing",
       time: "45m ago",
       icon: Heart,
       tone: "bg-pink-50 text-pink-600 border border-pink-200",
@@ -199,7 +212,7 @@ export function SellerCommandCenter(props: Props) {
     {
       id: "act-3",
       title: "Profile view",
-      subtitle: "Someone viewed your profile",
+      subtitle: "Someone viewed profile",
       time: "2h ago",
       icon: Eye,
       tone: "bg-blue-50 text-blue-600 border border-blue-200",
@@ -207,7 +220,7 @@ export function SellerCommandCenter(props: Props) {
     {
       id: "act-4",
       title: "Listing created",
-      subtitle: "You created a new listing",
+      subtitle: "Created new listing",
       time: "3h ago",
       icon: Wallet,
       tone: "bg-amber-50 text-amber-600 border border-amber-200",
@@ -262,12 +275,11 @@ export function SellerCommandCenter(props: Props) {
         </div>
       </aside>
 
-      {/* CONTINUOUS DASHBOARD BODY (SCREEN 1 + SCREEN 2 + SCREEN 3) */}
+      {/* CONTINUOUS DASHBOARD BODY */}
       <div className="flex-1 flex flex-col min-w-0 pb-24 lg:pb-12">
 
-        {/* SCREEN 1: HERO HEADER WITH EMBEDDED KPI STRIP */}
+        {/* HERO HEADER WITH EMBEDDED KPI STRIP */}
         <section className="relative bg-[#031B4E] text-white px-4 pt-3 pb-5 rounded-b-[2.5rem] shadow-2xl space-y-4">
-          {/* Top Notification Bell */}
           <div className="flex justify-end pr-1">
             <Link
               href="/conversations"
@@ -280,7 +292,6 @@ export function SellerCommandCenter(props: Props) {
             </Link>
           </div>
 
-          {/* Profile Identity Block */}
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
               <AvatarUpload
@@ -320,10 +331,9 @@ export function SellerCommandCenter(props: Props) {
             </div>
           </div>
 
-          {/* EMBEDDED KPI STRIP (MERGED INTO HERO) */}
+          {/* EMBEDDED KPI STRIP */}
           <div className="mt-4 border-t border-white/10 pt-4">
             <div className="grid grid-cols-4 divide-x divide-white/10 text-center">
-              {/* KPI 1: Listings */}
               <Link
                 href="/agent/listings"
                 prefetch
@@ -332,16 +342,13 @@ export function SellerCommandCenter(props: Props) {
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-500/20 text-purple-300">
                   <MessageSquare className="h-4 w-4" />
                 </span>
-                <div className="flex items-center gap-0.5">
-                  <span className="text-base font-black text-white">{listingsValue}</span>
-                </div>
+                <span className="text-base font-black text-white">{listingsValue}</span>
                 <div className="flex items-center gap-0.5 text-[10px] font-bold text-white/70">
                   <span>Listings</span>
                   <ChevronRight className="h-3 w-3" />
                 </div>
               </Link>
 
-              {/* KPI 2: Likes */}
               <Link
                 href="/saved"
                 prefetch
@@ -350,16 +357,13 @@ export function SellerCommandCenter(props: Props) {
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-pink-500/20 text-pink-300">
                   <Heart className="h-4 w-4" />
                 </span>
-                <div className="flex items-center gap-0.5">
-                  <span className="text-base font-black text-white">24</span>
-                </div>
+                <span className="text-base font-black text-white">24</span>
                 <div className="flex items-center gap-0.5 text-[10px] font-bold text-white/70">
                   <span>Likes</span>
                   <ChevronRight className="h-3 w-3" />
                 </div>
               </Link>
 
-              {/* KPI 3: Profile Views */}
               <Link
                 href="/seller/crm"
                 prefetch
@@ -368,16 +372,13 @@ export function SellerCommandCenter(props: Props) {
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300">
                   <Users className="h-4 w-4" />
                 </span>
-                <div className="flex items-center gap-0.5">
-                  <span className="text-base font-black text-white">156</span>
-                </div>
+                <span className="text-base font-black text-white">156</span>
                 <div className="flex items-center gap-0.5 text-[10px] font-bold text-white/70">
                   <span>Profile Views</span>
                   <ChevronRight className="h-3 w-3" />
                 </div>
               </Link>
 
-              {/* KPI 4: Rating */}
               <Link
                 href="/seller/crm"
                 prefetch
@@ -386,9 +387,7 @@ export function SellerCommandCenter(props: Props) {
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-500/20 text-amber-300">
                   <Star className="h-4 w-4 fill-amber-300" />
                 </span>
-                <div className="flex items-center gap-0.5">
-                  <span className="text-base font-black text-white">4.8</span>
-                </div>
+                <span className="text-base font-black text-white">4.8</span>
                 <div className="flex items-center gap-0.5 text-[10px] font-bold text-white/70">
                   <span>Rating</span>
                   <ChevronRight className="h-3 w-3" />
@@ -422,7 +421,7 @@ export function SellerCommandCenter(props: Props) {
             </p>
           )}
 
-          {/* RECENT CONVERSATIONS */}
+          {/* 1. RECENT CONVERSATIONS — FIRST 3 MESSAGES */}
           <section className="space-y-2.5">
             <SectionHeader title="Recent Conversations" href="/conversations" />
 
@@ -470,7 +469,6 @@ export function SellerCommandCenter(props: Props) {
             <SectionHeader title="Quick Actions" />
 
             <div className="grid grid-cols-4 gap-2">
-              {/* Tile 1: My Listings */}
               <Link
                 href="/agent/listings"
                 prefetch
@@ -486,7 +484,6 @@ export function SellerCommandCenter(props: Props) {
                 <ChevronRight className="h-3 w-3 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
               </Link>
 
-              {/* Tile 2: Verification */}
               <Link
                 href="/agent/verification"
                 prefetch
@@ -502,7 +499,6 @@ export function SellerCommandCenter(props: Props) {
                 <ChevronRight className="h-3 w-3 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
               </Link>
 
-              {/* Tile 3: Analytics */}
               <Link
                 href="/seller/crm"
                 prefetch
@@ -518,7 +514,6 @@ export function SellerCommandCenter(props: Props) {
                 <ChevronRight className="h-3 w-3 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
               </Link>
 
-              {/* Tile 4: Payments */}
               <Link
                 href="/payments/history"
                 prefetch
@@ -536,15 +531,12 @@ export function SellerCommandCenter(props: Props) {
             </div>
           </section>
 
-          {/* =================================================== */}
-          {/* SCREEN 2: BUSINESS SNAPSHOT & RECENT ACTIVITY */}
-          {/* =================================================== */}
+          {/* BUSINESS SNAPSHOT */}
           <section className="space-y-2.5">
             <SectionHeader title="Business Snapshot" href="/seller/crm" />
 
             <div className="rounded-3xl border border-navy/[0.06] bg-white p-4 shadow-xs">
               <div className="grid grid-cols-3 divide-x divide-navy/[0.06] text-center">
-                {/* Active Leads */}
                 <Link href="/seller/crm" prefetch className="pressable px-2 py-1 space-y-1 block">
                   <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-navy/80">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
@@ -556,7 +548,6 @@ export function SellerCommandCenter(props: Props) {
                   <p className="text-[10px] font-bold text-emerald-600">● 0% vs last 7 days</p>
                 </Link>
 
-                {/* Listings */}
                 <Link href="/agent/listings" prefetch className="pressable px-2 py-1 space-y-1 block">
                   <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-navy/80">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-600">
@@ -568,7 +559,6 @@ export function SellerCommandCenter(props: Props) {
                   <p className="text-[10px] font-bold text-blue-600">● 0% vs last 7 days</p>
                 </Link>
 
-                {/* Trust Score */}
                 <Link href="/agent/verification" prefetch className="pressable px-2 py-1 space-y-1 block">
                   <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-navy/80">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-amber-600">
@@ -583,11 +573,11 @@ export function SellerCommandCenter(props: Props) {
             </div>
           </section>
 
-          {/* RECENT ACTIVITY */}
+          {/* 2. RECENT ACTIVITY — 1x4 HORIZONTAL GRID */}
           <section className="space-y-2.5">
             <SectionHeader title="Recent Activity" href="/seller/crm" />
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {sampleActivities.map((act) => {
                 const Icon = act.icon;
                 return (
@@ -595,172 +585,186 @@ export function SellerCommandCenter(props: Props) {
                     key={act.id}
                     href="/seller/crm"
                     prefetch
-                    className="pressable rounded-2xl border border-navy/[0.06] bg-white p-3 space-y-1 shadow-xs hover:border-navy/15 block"
+                    className="pressable rounded-2xl border border-navy/[0.06] bg-white p-2.5 space-y-1 shadow-xs hover:border-navy/15 block text-center flex flex-col items-center justify-between min-h-[96px]"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className={cn("flex h-8 w-8 items-center justify-center rounded-2xl", act.tone)}>
-                        <Icon className="h-4 w-4" />
+                    <div className="flex items-center justify-between w-full">
+                      <span className={cn("flex h-7 w-7 items-center justify-center rounded-xl", act.tone)}>
+                        <Icon className="h-3.5 w-3.5" />
                       </span>
                       <span className="text-[9px] font-medium text-navy/40">{act.time}</span>
                     </div>
-                    <h3 className="text-[11px] font-bold text-navy pt-1">{act.title}</h3>
-                    <p className="text-[9px] font-medium text-navy/55 line-clamp-1">{act.subtitle}</p>
+                    <div className="space-y-0.5 w-full">
+                      <h3 className="text-[10px] font-bold text-navy truncate">{act.title}</h3>
+                      <p className="text-[8px] font-medium text-navy/55 truncate">{act.subtitle}</p>
+                    </div>
                   </Link>
                 );
               })}
             </div>
           </section>
 
-          {/* =================================================== */}
-          {/* SCREEN 3: INTEGRATED ACCOUNT SETTINGS & CONTROLS */}
-          {/* =================================================== */}
+          {/* 3. ACCOUNT SETTINGS & CONTROLS — COLLAPSIBLE ACCORDION */}
           <section className="space-y-2.5 pt-2">
-            <SectionHeader title="Account Settings & Controls" />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* 1. Edit Profile */}
-              <Link
-                href="/agent/edit-profile"
-                prefetch
-                className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
-                    <User className="h-4.5 w-4.5" />
-                  </span>
-                  <div>
-                    <h3 className="text-xs font-bold text-navy">Edit Profile</h3>
-                    <p className="text-[10px] font-medium text-navy/45">Name, photo & public details</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
-              </Link>
-
-              {/* 2. Help Center */}
-              <Link
-                href="/contact"
-                prefetch
-                className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                    <HelpCircle className="h-4.5 w-4.5" />
-                  </span>
-                  <div>
-                    <h3 className="text-xs font-bold text-navy">Help Center</h3>
-                    <p className="text-[10px] font-medium text-navy/45">Safety tips & guides</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
-              </Link>
-
-              {/* 3. Change Password */}
-              <Link
-                href="/auth/reset-password"
-                prefetch
-                className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                    <Key className="h-4.5 w-4.5" />
-                  </span>
-                  <div>
-                    <h3 className="text-xs font-bold text-navy">Change Password</h3>
-                    <p className="text-[10px] font-medium text-navy/45">Update your login password</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
-              </Link>
-
-              {/* 4. Contact Support */}
-              <a
-                href="https://wa.me/2348000000000"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                    <MessageCircle className="h-4.5 w-4.5" />
-                  </span>
-                  <div>
-                    <h3 className="text-xs font-bold text-navy">Contact Support</h3>
-                    <p className="text-[10px] font-medium text-navy/45">Chat with us on WhatsApp</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
-              </a>
-
-              {/* 5. Change Email */}
-              <button
-                type="button"
-                onClick={() => alert("Change email prompt: " + email)}
-                className="pressable group text-left flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15 w-full"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                    <Mail className="h-4.5 w-4.5" />
-                  </span>
-                  <div>
-                    <h3 className="text-xs font-bold text-navy">Change Email</h3>
-                    <p className="text-[10px] font-medium text-navy/45">We&apos;ll verify the new address</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
-              </button>
-
-              {/* 6. Signed in as */}
-              <div className="flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shrink-0">
-                    <Mail className="h-4.5 w-4.5" />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="text-[10px] font-medium text-navy/45">Signed in as</h3>
-                    <p className="text-xs font-bold text-navy truncate">{email || "puchinenye@gmail.com"}</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-navy/30 shrink-0" />
+            <button
+              type="button"
+              onClick={() => setAccountSettingsOpen((v) => !v)}
+              className="pressable flex w-full items-center justify-between rounded-2xl border border-navy/10 bg-white p-4 shadow-xs text-left"
+            >
+              <h2 className="text-sm font-black tracking-tight text-navy sm:text-base">
+                Account Settings & Controls
+              </h2>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-navy/60">
+                <span>{accountSettingsOpen ? "Collapse" : "Tap to open"}</span>
+                <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", accountSettingsOpen && "rotate-180")} />
               </div>
+            </button>
 
-              {/* 7. Advanced */}
-              <button
-                type="button"
-                onClick={() => setShowAdvancedSettings((v) => !v)}
-                className="pressable group text-left flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15 w-full"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-navy/5 text-navy/60">
-                    <ChevronDown className="h-4.5 w-4.5" />
-                  </span>
-                  <div>
-                    <h3 className="text-xs font-bold text-navy">Advanced</h3>
-                    <p className="text-[10px] font-medium text-navy/45">Manage advanced settings</p>
+            {accountSettingsOpen && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                {/* 1. Edit Profile */}
+                <Link
+                  href="/agent/edit-profile"
+                  prefetch
+                  className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                      <User className="h-4.5 w-4.5" />
+                    </span>
+                    <div>
+                      <h3 className="text-xs font-bold text-navy">Edit Profile</h3>
+                      <p className="text-[10px] font-medium text-navy/45">Name, photo & public details</p>
+                    </div>
                   </div>
-                </div>
-                <ChevronDown className={cn("h-4 w-4 text-navy/30 transition-transform", showAdvancedSettings && "rotate-180")} />
-              </button>
+                  <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+                </Link>
 
-              {/* 8. Log Out */}
-              <button
-                type="button"
-                onClick={() => setShowLogoutConfirm(true)}
-                className="pressable group text-left flex items-center justify-between rounded-2xl border border-rose-200/70 bg-white p-3.5 shadow-xs hover:bg-rose-50/50 w-full"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
-                    <LogOut className="h-4.5 w-4.5" />
-                  </span>
-                  <div>
-                    <h3 className="text-xs font-bold text-rose-600">Log Out</h3>
-                    <p className="text-[10px] font-medium text-rose-950/60">Sign out from your account</p>
+                {/* 2. Help Center */}
+                <Link
+                  href="/contact"
+                  prefetch
+                  className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                      <HelpCircle className="h-4.5 w-4.5" />
+                    </span>
+                    <div>
+                      <h3 className="text-xs font-bold text-navy">Help Center</h3>
+                      <p className="text-[10px] font-medium text-navy/45">Safety tips & guides</p>
+                    </div>
                   </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-rose-400 group-hover:translate-x-0.5 transition-all" />
-              </button>
-            </div>
+                  <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+                </Link>
 
-            {showAdvancedSettings && (
+                {/* 3. Change Password */}
+                <Link
+                  href="/auth/reset-password"
+                  prefetch
+                  className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                      <Key className="h-4.5 w-4.5" />
+                    </span>
+                    <div>
+                      <h3 className="text-xs font-bold text-navy">Change Password</h3>
+                      <p className="text-[10px] font-medium text-navy/45">Update your login password</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+                </Link>
+
+                {/* 4. Contact Support */}
+                <a
+                  href="https://wa.me/2348000000000"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                      <MessageCircle className="h-4.5 w-4.5" />
+                    </span>
+                    <div>
+                      <h3 className="text-xs font-bold text-navy">Contact Support</h3>
+                      <p className="text-[10px] font-medium text-navy/45">Chat with us on WhatsApp</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+                </a>
+
+                {/* 5. Change Email */}
+                <button
+                  type="button"
+                  onClick={() => alert("Change email prompt: " + email)}
+                  className="pressable group text-left flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15 w-full"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                      <Mail className="h-4.5 w-4.5" />
+                    </span>
+                    <div>
+                      <h3 className="text-xs font-bold text-navy">Change Email</h3>
+                      <p className="text-[10px] font-medium text-navy/45">We&apos;ll verify the new address</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+                </button>
+
+                {/* 6. Signed in as */}
+                <div className="flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shrink-0">
+                      <Mail className="h-4.5 w-4.5" />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-[10px] font-medium text-navy/45">Signed in as</h3>
+                      <p className="text-xs font-bold text-navy truncate">{email || "puchinenye@gmail.com"}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-navy/30 shrink-0" />
+                </div>
+
+                {/* 7. Advanced */}
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedSettings((v) => !v)}
+                  className="pressable group text-left flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15 w-full"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-navy/5 text-navy/60">
+                      <ChevronDown className="h-4.5 w-4.5" />
+                    </span>
+                    <div>
+                      <h3 className="text-xs font-bold text-navy">Advanced</h3>
+                      <p className="text-[10px] font-medium text-navy/45">Manage advanced settings</p>
+                    </div>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 text-navy/30 transition-transform", showAdvancedSettings && "rotate-180")} />
+                </button>
+
+                {/* 8. Log Out */}
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="pressable group text-left flex items-center justify-between rounded-2xl border border-rose-200/70 bg-white p-3.5 shadow-xs hover:bg-rose-50/50 w-full"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                      <LogOut className="h-4.5 w-4.5" />
+                    </span>
+                    <div>
+                      <h3 className="text-xs font-bold text-rose-600">Log Out</h3>
+                      <p className="text-[10px] font-medium text-rose-950/60">Sign out from your account</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-rose-400 group-hover:translate-x-0.5 transition-all" />
+                </button>
+              </div>
+            )}
+
+            {showAdvancedSettings && accountSettingsOpen && (
               <div className="rounded-2xl border border-navy/10 bg-white p-4 shadow-xs space-y-3">
                 <p className="text-xs font-bold text-navy">Advanced Account Options</p>
                 <ProfileAccountActions email={email} canList />
