@@ -21,7 +21,7 @@ export default function DashboardPreviewPage() {
     role: "agent_verified",
     verification_status: "approved",
     agent_type: "agency",
-    trust_score: 42,
+    trust_score: 100,
     listing_limit: 40,
     ranking_score: 0,
     verified_badge: true,
@@ -49,9 +49,9 @@ export default function DashboardPreviewPage() {
       email="patience@example.com"
       canList
       verified
-      activeCount={0}
+      activeCount={1}
       pending={0}
-      totalListings={0}
+      totalListings={1}
       limit={40}
       savedCount={0}
       expiringSoon={0}
