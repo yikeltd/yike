@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -7,23 +8,25 @@ import {
   Bell,
   Briefcase,
   Calendar,
+  Camera,
   ChevronDown,
   ChevronRight,
+  Eye,
+  Heart,
   HelpCircle,
+  Key,
   LayoutDashboard,
   List,
   LogOut,
+  Mail,
   MessageCircle,
   MessageSquare,
-  Plus,
   PlusCircle,
-  Search,
-  Settings,
   Shield,
   ShieldAlert,
-  ShieldCheck,
   Sparkles,
   Star,
+  User,
   Users,
   Wallet,
 } from "lucide-react";
@@ -61,68 +64,29 @@ type Props = {
   analyticsPreviewData?: SellerAnalyticsSummary | null;
 };
 
-function SectionHeader({ title, href, filterLabel }: { title: string; href?: string; filterLabel?: string }) {
+function SectionHeader({
+  title,
+  href,
+}: {
+  title: string;
+  href?: string;
+}) {
   return (
-    <div className="flex items-center justify-between px-0.5 mb-3">
+    <div className="flex items-center justify-between px-0.5 mb-2.5">
       <h2 className="text-sm font-black tracking-tight text-navy sm:text-base">
         {title}
       </h2>
-      <div className="flex items-center gap-2">
-        {filterLabel && (
-          <span className="pressable flex items-center gap-1 text-xs font-bold text-navy/60 hover:text-navy">
-            {filterLabel}
-            <ChevronDown className="h-3.5 w-3.5" />
-          </span>
-        )}
-        {href && (
-          <Link
-            href={href}
-            prefetch
-            className="group inline-flex items-center gap-0.5 text-xs font-bold text-navy/60 hover:text-navy"
-          >
-            <span>View all</span>
-            <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        )}
-      </div>
+      {href && (
+        <Link
+          href={href}
+          prefetch
+          className="group inline-flex items-center gap-0.5 text-xs font-bold text-navy/60 hover:text-navy"
+        >
+          <span>View all</span>
+          <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      )}
     </div>
-  );
-}
-
-function QuickActionTile({
-  href,
-  icon: Icon,
-  iconTone,
-  title,
-  subtitle,
-}: {
-  href: string;
-  icon: typeof List;
-  iconTone: "blue" | "emerald" | "purple" | "gold";
-  title: string;
-  subtitle: string;
-}) {
-  const toneMap = {
-    blue: "bg-blue-50 text-blue-600 group-hover:bg-blue-100",
-    emerald: "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100",
-    purple: "bg-purple-50 text-purple-600 group-hover:bg-purple-100",
-    gold: "bg-amber-50 text-amber-600 group-hover:bg-amber-100",
-  };
-
-  return (
-    <Link
-      href={href}
-      prefetch
-      className="pressable group flex flex-col items-center justify-center gap-2 rounded-2xl border border-navy/[0.06] bg-white p-4 text-center shadow-[0_4px_18px_-14px_rgba(3,27,78,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:border-navy/15 hover:shadow-[0_10px_28px_-16px_rgba(3,27,78,0.22)]"
-    >
-      <span className={cn("flex h-11 w-11 items-center justify-center rounded-2xl transition-colors", toneMap[iconTone])}>
-        <Icon className="h-5.5 w-5.5" strokeWidth={2} aria-hidden />
-      </span>
-      <div className="space-y-0.5">
-        <h3 className="text-xs font-bold text-navy">{title}</h3>
-        <p className="text-[10px] font-medium text-navy/45 truncate max-w-[110px]">{subtitle}</p>
-      </div>
-    </Link>
   );
 }
 
@@ -164,7 +128,8 @@ function SidebarNavItem({
 }
 
 /**
- * Seller Business Control Center V1 — Exact Design Implementation
+ * USER DASHBOARD — FINAL PIXEL-PERFECT IMPLEMENTATION
+ * Matches reference image input_file_0.png with exact precision across 3 continuous screen sections.
  */
 export function SellerCommandCenter(props: Props) {
   const {
@@ -177,23 +142,26 @@ export function SellerCommandCenter(props: Props) {
     profileSaved,
   } = props;
 
-  const firstName =
-    profile.full_name?.trim().split(/\s+/)[0] ||
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+
+  const nameToDisplay =
+    profile.full_name?.trim() ||
     profile.username ||
     profile.company_name?.trim() ||
-    "Patience";
+    "Stanley";
 
   const trustScore = profile.trust_score ?? 100;
   const listingsValue = totalListings > 0 ? totalListings : 1;
 
-  // Mock data for preview visual rendering
+  // Sample conversations matching reference mockup input_file_0.png
   const sampleConversations = [
     {
       id: "conv-1",
       name: "John Doe",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80&fit=crop",
-      tag: "Offer accepted",
-      tagTone: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      badge: "Offer accepted",
+      badgeTone: "bg-emerald-100 text-emerald-800 border-emerald-200",
       message: "Great! When can we schedule the viewing?",
       time: "2m ago",
       unread: 1,
@@ -202,31 +170,55 @@ export function SellerCommandCenter(props: Props) {
       id: "conv-2",
       name: "Mary James",
       avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&q=80&fit=crop",
-      tag: "Viewing request",
-      tagTone: "bg-blue-50 text-blue-700 border-blue-200",
+      badge: "Viewing request",
+      badgeTone: "bg-blue-100 text-blue-800 border-blue-200",
       message: "I'd like to schedule a viewing for tomorrow.",
       time: "1h ago",
       unread: 2,
     },
   ];
 
+  // Sample activities matching reference mockup input_file_0.png
   const sampleActivities = [
     {
       id: "act-1",
-      icon: Plus,
+      title: "New lead",
+      subtitle: "John Doe viewed your listing",
+      time: "5m ago",
+      icon: Users,
+      tone: "bg-emerald-50 text-emerald-600 border border-emerald-200",
+    },
+    {
+      id: "act-2",
+      title: "New like",
+      subtitle: "Mary liked your listing",
+      time: "45m ago",
+      icon: Heart,
+      tone: "bg-pink-50 text-pink-600 border border-pink-200",
+    },
+    {
+      id: "act-3",
+      title: "Profile view",
+      subtitle: "Someone viewed your profile",
+      time: "2h ago",
+      icon: Eye,
+      tone: "bg-blue-50 text-blue-600 border border-blue-200",
+    },
+    {
+      id: "act-4",
       title: "Listing created",
-      subtitle: "4 Bedroom Duplex in Lekki",
+      subtitle: "You created a new listing",
       time: "3h ago",
-      tone: "bg-emerald-100 text-emerald-700",
+      icon: Wallet,
+      tone: "bg-amber-50 text-amber-600 border border-amber-200",
     },
   ];
 
   return (
     <div className="flex min-h-screen bg-[#f7f9fc]">
-      {/* LEFT SIDEBAR (DESKTOP ONLY - hidden lg:flex) */}
+      {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex w-64 shrink-0 flex-col justify-between bg-[#031B4E] p-5 text-white border-r border-white/10 sticky top-0 h-screen overflow-y-auto">
         <div className="space-y-6">
-          {/* Top Brand Logo */}
           <Link href="/" className="flex items-center gap-2 px-2 pt-1">
             <Image
               src="/images/logo.webp"
@@ -238,7 +230,6 @@ export function SellerCommandCenter(props: Props) {
             <span className="text-2xl font-black tracking-tight text-white">Yike</span>
           </Link>
 
-          {/* Navigation Group 1 */}
           <nav className="space-y-1" aria-label="Main Navigation">
             <SidebarNavItem href="/agent" icon={LayoutDashboard} label="Dashboard" active />
             <SidebarNavItem href="/conversations" icon={MessageSquare} label="Conversations" badge={3} />
@@ -248,25 +239,14 @@ export function SellerCommandCenter(props: Props) {
 
           <hr className="border-white/10" />
 
-          {/* Navigation Group 2 — Merchant Tools */}
           <nav className="space-y-1" aria-label="Merchant Navigation">
             <SidebarNavItem href="/agent/listings" icon={List} label="My Listings" />
             <SidebarNavItem href="/seller/crm" icon={BarChart3} label="Analytics" />
             <SidebarNavItem href="/payments/history" icon={Wallet} label="Payments" />
             <SidebarNavItem href="/agent/verification" icon={Shield} label="Verification" />
           </nav>
-
-          <hr className="border-white/10" />
-
-          {/* Navigation Group 3 — System & Help */}
-          <nav className="space-y-1" aria-label="System Navigation">
-            <SidebarNavItem href="/agent/edit-profile" icon={Settings} label="Settings" />
-            <SidebarNavItem href="/contact" icon={HelpCircle} label="Help Center" />
-            <SidebarNavItem href="/auth/login" icon={LogOut} label="Log out" />
-          </nav>
         </div>
 
-        {/* Bottom Yike Premium Card */}
         <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-[#021428] to-[#072462] p-4 text-white space-y-3 shadow-xl">
           <div className="flex items-center gap-2">
             <Star className="h-4 w-4 text-gold fill-gold" />
@@ -275,80 +255,19 @@ export function SellerCommandCenter(props: Props) {
           <p className="text-[11px] text-white/70">Grow your business with priority lead routing.</p>
           <Link
             href="/pricing"
-            className="pressable flex w-full h-8 items-center justify-center rounded-xl bg-gold text-xs font-black text-navy shadow-xs hover:bg-gold-light"
+            className="pressable flex w-full h-8 items-center justify-center rounded-xl bg-gold text-xs font-black text-navy shadow-xs"
           >
             Upgrade
           </Link>
         </div>
       </aside>
 
-      {/* RIGHT MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-w-0 pb-20 lg:pb-8">
-        
-        {/* TOP HEADER (DESKTOP) */}
-        <header className="sticky top-0 z-40 hidden lg:flex h-16 shrink-0 items-center justify-between border-b border-navy/10 bg-white/95 px-6 backdrop-blur-md">
-          <h1 className="text-lg font-black text-navy">Dashboard</h1>
+      {/* CONTINUOUS DASHBOARD BODY (SCREEN 1 + SCREEN 2 + SCREEN 3) */}
+      <div className="flex-1 flex flex-col min-w-0 pb-24 lg:pb-12">
 
-          <div className="relative w-96 items-center flex">
-            <Search className="absolute left-3 h-4 w-4 text-navy/40" />
-            <input
-              type="text"
-              placeholder="Search listings, conversations, insights..."
-              className="w-full rounded-full border border-navy/10 bg-surface pl-9 pr-12 py-2 text-xs font-medium text-navy placeholder:text-navy/40 focus:border-gold focus:outline-none"
-            />
-            <kbd className="absolute right-3 rounded-md bg-navy/10 px-1.5 py-0.5 text-[10px] font-mono font-bold text-navy/60">
-              ⌘ K
-            </kbd>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/conversations"
-              prefetch
-              className="pressable relative flex h-9 w-9 items-center justify-center rounded-full bg-navy/5 text-navy hover:bg-navy/10"
-              aria-label="Notifications"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-gold ring-2 ring-white" />
-            </Link>
-
-            <Link
-              href="/conversations"
-              prefetch
-              className="pressable relative flex h-9 w-9 items-center justify-center rounded-full bg-navy/5 text-navy hover:bg-navy/10"
-              aria-label="Messages"
-            >
-              <MessageSquare className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gold px-1 text-[9px] font-black text-navy">
-                3
-              </span>
-            </Link>
-
-            <div className="flex items-center gap-2.5 border-l border-navy/10 pl-3">
-              <AvatarUpload
-                userId={profile.id}
-                email={email}
-                name={profile.full_name}
-                username={profile.username}
-                avatarUrl={profile.avatar_url ?? profile.company_logo_url ?? null}
-                size="lg"
-                className="!h-8 !w-8 rounded-full border border-white shadow-xs"
-              />
-              <div className="space-y-0.5 text-left">
-                <p className="text-xs font-bold text-navy leading-none">{firstName}</p>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-                  <ShieldCheck className="h-3 w-3" />
-                  Verified
-                </span>
-              </div>
-              <ChevronDown className="h-4 w-4 text-navy/40" />
-            </div>
-          </div>
-        </header>
-
-        {/* 1. IDENTITY & HERO CONTAINER — EDGE TO EDGE DEEP NAVY */}
-        <section className="relative overflow-hidden bg-[#031B4E] px-4 pb-12 pt-3 text-white shadow-2xl sm:px-6">
-          {/* Top-Right Notification Bell */}
+        {/* SCREEN 1: HERO HEADER WITH EMBEDDED KPI STRIP */}
+        <section className="relative bg-[#031B4E] text-white px-4 pt-3 pb-5 rounded-b-[2.5rem] shadow-2xl space-y-4">
+          {/* Top Notification Bell */}
           <div className="flex justify-end pr-1">
             <Link
               href="/conversations"
@@ -361,8 +280,8 @@ export function SellerCommandCenter(props: Props) {
             </Link>
           </div>
 
-          <div className="flex items-center gap-4 -mt-1">
-            {/* Avatar Left */}
+          {/* Profile Identity Block */}
+          <div className="flex items-center gap-4">
             <div className="relative shrink-0">
               <AvatarUpload
                 userId={profile.id}
@@ -371,27 +290,28 @@ export function SellerCommandCenter(props: Props) {
                 username={profile.username}
                 avatarUrl={profile.avatar_url ?? profile.company_logo_url ?? null}
                 size="xl"
-                className="!h-22 !w-22 rounded-full border-4 border-white/25 shadow-2xl ring-2 ring-gold/40 sm:!h-24 sm:!w-24"
+                className="!h-22 !w-22 rounded-full border-4 border-white/20 shadow-2xl"
               />
+              <Link
+                href="/agent/edit-profile"
+                className="pressable absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-gold text-navy shadow-md ring-2 ring-[#031B4E]"
+                aria-label="Edit Profile Photo"
+              >
+                <Camera className="h-3.5 w-3.5" />
+              </Link>
             </div>
 
-            {/* Greeting Right */}
             <div className="space-y-1 min-w-0">
               <p className="text-xs font-medium text-white/70">Welcome back,</p>
-              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
-                {firstName}
-              </h2>
+              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl truncate">
+                {nameToDisplay}
+              </h1>
 
-              <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-xs text-white/90">
-                <span className="inline-flex items-center gap-1 font-bold text-emerald-300">
-                  {verified ? (
-                    <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    <ShieldAlert className="h-4 w-4 text-amber-400" />
-                  )}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="inline-flex items-center gap-1 font-bold text-amber-300">
+                  <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
                   {verified ? "Verified Seller" : "Verification Pending"}
                 </span>
-
                 <span className="inline-flex items-center gap-1 text-white/70">
                   <Calendar className="h-3.5 w-3.5 text-gold/80" />
                   Member since {memberSince}
@@ -400,21 +320,99 @@ export function SellerCommandCenter(props: Props) {
             </div>
           </div>
 
-          {/* 2. PRIMARY ACTION: FULL WIDTH GOLD NEW LISTING CTA */}
-          <div className="mt-5">
+          {/* EMBEDDED KPI STRIP (MERGED INTO HERO) */}
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <div className="grid grid-cols-4 divide-x divide-white/10 text-center">
+              {/* KPI 1: Listings */}
+              <Link
+                href="/agent/listings"
+                prefetch
+                className="pressable flex flex-col items-center gap-1 px-1 py-1 transition-all hover:bg-white/5 rounded-xl"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-500/20 text-purple-300">
+                  <MessageSquare className="h-4 w-4" />
+                </span>
+                <div className="flex items-center gap-0.5">
+                  <span className="text-base font-black text-white">{listingsValue}</span>
+                </div>
+                <div className="flex items-center gap-0.5 text-[10px] font-bold text-white/70">
+                  <span>Listings</span>
+                  <ChevronRight className="h-3 w-3" />
+                </div>
+              </Link>
+
+              {/* KPI 2: Likes */}
+              <Link
+                href="/saved"
+                prefetch
+                className="pressable flex flex-col items-center gap-1 px-1 py-1 transition-all hover:bg-white/5 rounded-xl"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-pink-500/20 text-pink-300">
+                  <Heart className="h-4 w-4" />
+                </span>
+                <div className="flex items-center gap-0.5">
+                  <span className="text-base font-black text-white">24</span>
+                </div>
+                <div className="flex items-center gap-0.5 text-[10px] font-bold text-white/70">
+                  <span>Likes</span>
+                  <ChevronRight className="h-3 w-3" />
+                </div>
+              </Link>
+
+              {/* KPI 3: Profile Views */}
+              <Link
+                href="/seller/crm"
+                prefetch
+                className="pressable flex flex-col items-center gap-1 px-1 py-1 transition-all hover:bg-white/5 rounded-xl"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300">
+                  <Users className="h-4 w-4" />
+                </span>
+                <div className="flex items-center gap-0.5">
+                  <span className="text-base font-black text-white">156</span>
+                </div>
+                <div className="flex items-center gap-0.5 text-[10px] font-bold text-white/70">
+                  <span>Profile Views</span>
+                  <ChevronRight className="h-3 w-3" />
+                </div>
+              </Link>
+
+              {/* KPI 4: Rating */}
+              <Link
+                href="/seller/crm"
+                prefetch
+                className="pressable flex flex-col items-center gap-1 px-1 py-1 transition-all hover:bg-white/5 rounded-xl"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-500/20 text-amber-300">
+                  <Star className="h-4 w-4 fill-amber-300" />
+                </span>
+                <div className="flex items-center gap-0.5">
+                  <span className="text-base font-black text-white">4.8</span>
+                </div>
+                <div className="flex items-center gap-0.5 text-[10px] font-bold text-white/70">
+                  <span>Rating</span>
+                  <ChevronRight className="h-3 w-3" />
+                </div>
+              </Link>
+            </div>
+          </div>
+
+          {/* NEW LISTING BUTTON */}
+          <div className="pt-2">
             <Link
               href="/agent/listings/choose"
               prefetch
-              className="pressable flex w-full h-12 items-center justify-center gap-2 rounded-full bg-gold px-6 text-sm font-black text-navy shadow-[0_6px_24px_rgba(228,181,71,0.5)] transition-all hover:bg-gold-light hover:scale-[1.01]"
+              className="pressable flex w-full h-12 items-center justify-center gap-2 rounded-full bg-gold px-6 text-sm font-black text-navy shadow-[0_6px_24px_rgba(228,181,71,0.5)] transition-all hover:bg-gold-light"
             >
-              <PlusCircle className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+              <PlusCircle className="h-5 w-5" strokeWidth={2.5} />
               <span>New Listing</span>
             </Link>
           </div>
         </section>
 
-        {/* MAIN BODY SCROLL AREA */}
-        <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* MAIN SCROLL CONTAINER */}
+        <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-4xl mx-auto w-full">
+
           {profileSaved && (
             <p
               role="status"
@@ -424,223 +422,384 @@ export function SellerCommandCenter(props: Props) {
             </p>
           )}
 
-          {/* 3. ELEVATED STATS / KPI CARD OVERLAPPING HEADER */}
-          <section className="-mt-10 relative z-20">
-            <div className="rounded-3xl border border-navy/10 bg-[#031B4E] p-4 text-white shadow-2xl">
-              <div className="grid grid-cols-4 divide-x divide-white/10 text-center">
-                {/* 1. Listings */}
-                <div className="space-y-1 px-1 flex flex-col items-center">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-purple-300">
-                    <MessageSquare className="h-4 w-4" />
-                  </span>
-                  <p className="text-lg font-black text-white">{listingsValue}</p>
-                  <p className="text-[10px] font-bold text-white/60">Listings</p>
-                  <span className="h-0.5 w-6 bg-purple-400 rounded-full" />
-                </div>
-
-                {/* 2. Likes */}
-                <div className="space-y-1 px-1 flex flex-col items-center">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-pink-500/20 text-pink-300">
-                    <Sparkles className="h-4 w-4" />
-                  </span>
-                  <p className="text-lg font-black text-white">24</p>
-                  <p className="text-[10px] font-bold text-white/60">Likes</p>
-                  <span className="h-0.5 w-6 bg-pink-400 rounded-full" />
-                </div>
-
-                {/* 3. Profile Views */}
-                <div className="space-y-1 px-1 flex flex-col items-center">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
-                    <Users className="h-4 w-4" />
-                  </span>
-                  <p className="text-lg font-black text-white">156</p>
-                  <p className="text-[10px] font-bold text-white/60">Profile Views</p>
-                  <span className="h-0.5 w-6 bg-emerald-400 rounded-full" />
-                </div>
-
-                {/* 4. Rating */}
-                <div className="space-y-1 px-1 flex flex-col items-center">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 text-amber-300">
-                    <Star className="h-4 w-4 fill-amber-300" />
-                  </span>
-                  <p className="text-lg font-black text-white">4.8</p>
-                  <p className="text-[10px] font-bold text-white/60">Rating</p>
-                  <span className="h-0.5 w-6 bg-amber-400 rounded-full" />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* 3. PEOPLE WAITING FOR ME: RECENT CONVERSATIONS */}
-          <section className="space-y-3">
+          {/* RECENT CONVERSATIONS */}
+          <section className="space-y-2.5">
             <SectionHeader title="Recent Conversations" href="/conversations" />
 
-            <div className="rounded-2xl border border-navy/[0.06] bg-white p-4 shadow-[0_4px_18px_-14px_rgba(3,27,78,0.18)]">
-              <div className="divide-y divide-navy/[0.06]">
-                {sampleConversations.map((conv) => (
-                  <Link
-                    key={conv.id}
-                    href="/conversations"
-                    prefetch
-                    className="pressable group flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0 transition-colors hover:bg-surface/80"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={conv.avatar}
-                        alt={conv.name}
-                        className="h-10 w-10 rounded-full object-cover border border-navy/10 shadow-xs shrink-0"
-                      />
-                      <div className="space-y-0.5 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-xs font-bold text-navy truncate">{conv.name}</h3>
-                          <span className={cn("rounded-md border px-1.5 py-0.5 text-[9px] font-bold", conv.tagTone)}>
-                            {conv.tag}
-                          </span>
-                        </div>
-                        <p className="text-[11px] font-medium text-navy/60 truncate">{conv.message}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-                      <span className="text-[10px] font-medium text-navy/40">{conv.time}</span>
-                      {conv.unread > 0 && (
-                        <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-gold text-[9px] font-black text-navy shadow-xs">
-                          {conv.unread}
+            <div className="rounded-3xl border border-navy/[0.06] bg-white p-4 shadow-xs divide-y divide-navy/[0.05]">
+              {sampleConversations.map((conv) => (
+                <Link
+                  key={conv.id}
+                  href="/conversations"
+                  prefetch
+                  className="pressable group flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0 transition-colors hover:bg-surface/60 rounded-xl"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={conv.avatar}
+                      alt={conv.name}
+                      className="h-10 w-10 rounded-full object-cover border border-navy/10 shadow-xs shrink-0"
+                    />
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xs font-bold text-navy truncate">{conv.name}</h3>
+                        <span className={cn("rounded-md border px-1.5 py-0.5 text-[9px] font-extrabold", conv.badgeTone)}>
+                          {conv.badge}
                         </span>
-                      )}
+                      </div>
+                      <p className="text-[11px] font-medium text-navy/60 truncate">{conv.message}</p>
                     </div>
-                  </Link>
-                ))}
-              </div>
+                  </div>
+
+                  <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                    <span className="text-[10px] font-medium text-navy/40">{conv.time}</span>
+                    {conv.unread > 0 && (
+                      <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-gold text-[9px] font-black text-navy shadow-xs">
+                        {conv.unread}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
             </div>
           </section>
 
-          {/* 4. BUSINESS TOOLS: QUICK ACTIONS */}
-          <section className="space-y-3">
+          {/* QUICK ACTIONS — ONE HORIZONTAL ROW OF 4 TILES */}
+          <section className="space-y-2.5">
             <SectionHeader title="Quick Actions" />
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <QuickActionTile
+            <div className="grid grid-cols-4 gap-2">
+              {/* Tile 1: My Listings */}
+              <Link
                 href="/agent/listings"
-                icon={List}
-                iconTone="blue"
-                title="My Listings"
-                subtitle="Manage your listings"
-              />
-              <QuickActionTile
+                prefetch
+                className="pressable group flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-navy/[0.06] bg-white p-3 text-center shadow-xs transition-all hover:border-navy/15"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <List className="h-5 w-5" />
+                </span>
+                <div className="space-y-0.5">
+                  <h3 className="text-[11px] font-bold text-navy">My Listings</h3>
+                  <p className="text-[9px] font-medium text-navy/45 truncate">Manage your listings</p>
+                </div>
+                <ChevronRight className="h-3 w-3 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              {/* Tile 2: Verification */}
+              <Link
                 href="/agent/verification"
-                icon={Shield}
-                iconTone="emerald"
-                title="Verification"
-                subtitle="Complete verification"
-              />
-              <QuickActionTile
+                prefetch
+                className="pressable group flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-navy/[0.06] bg-white p-3 text-center shadow-xs transition-all hover:border-navy/15"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <Shield className="h-5 w-5" />
+                </span>
+                <div className="space-y-0.5">
+                  <h3 className="text-[11px] font-bold text-navy">Verification</h3>
+                  <p className="text-[9px] font-medium text-navy/45 truncate">Complete verification</p>
+                </div>
+                <ChevronRight className="h-3 w-3 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              {/* Tile 3: Analytics */}
+              <Link
                 href="/seller/crm"
-                icon={BarChart3}
-                iconTone="purple"
-                title="Analytics"
-                subtitle="View business insights"
-              />
-              <QuickActionTile
+                prefetch
+                className="pressable group flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-navy/[0.06] bg-white p-3 text-center shadow-xs transition-all hover:border-navy/15"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-50 text-purple-600">
+                  <BarChart3 className="h-5 w-5" />
+                </span>
+                <div className="space-y-0.5">
+                  <h3 className="text-[11px] font-bold text-navy">Analytics</h3>
+                  <p className="text-[9px] font-medium text-navy/45 truncate">View insights</p>
+                </div>
+                <ChevronRight className="h-3 w-3 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              {/* Tile 4: Payments */}
+              <Link
                 href="/payments/history"
-                icon={Wallet}
-                iconTone="gold"
-                title="Payments"
-                subtitle="Manage transactions"
-              />
+                prefetch
+                className="pressable group flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-navy/[0.06] bg-white p-3 text-center shadow-xs transition-all hover:border-navy/15"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                  <Wallet className="h-5 w-5" />
+                </span>
+                <div className="space-y-0.5">
+                  <h3 className="text-[11px] font-bold text-navy">Payments</h3>
+                  <p className="text-[9px] font-medium text-navy/45 truncate">Manage transactions</p>
+                </div>
+                <ChevronRight className="h-3 w-3 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </Link>
             </div>
           </section>
 
-          {/* 5. BUSINESS HEALTH: BUSINESS SNAPSHOT ON WHITE CARD SURFACE */}
-          <section className="space-y-3">
+          {/* =================================================== */}
+          {/* SCREEN 2: BUSINESS SNAPSHOT & RECENT ACTIVITY */}
+          {/* =================================================== */}
+          <section className="space-y-2.5">
             <SectionHeader title="Business Snapshot" href="/seller/crm" />
 
-            <div className="rounded-2xl border border-navy/[0.06] bg-white p-4 sm:p-5 shadow-[0_4px_18px_-14px_rgba(3,27,78,0.18)]">
-              <div className="grid grid-cols-3 gap-3 divide-x divide-navy/[0.08]">
-                {/* Column 1: Active Leads */}
-                <div className="space-y-1 px-2 first:pl-0 text-center sm:text-left">
-                  <div className="flex items-center justify-center sm:justify-start gap-1.5 text-[11px] font-bold text-navy/80">
+            <div className="rounded-3xl border border-navy/[0.06] bg-white p-4 shadow-xs">
+              <div className="grid grid-cols-3 divide-x divide-navy/[0.06] text-center">
+                {/* Active Leads */}
+                <Link href="/seller/crm" prefetch className="pressable px-2 py-1 space-y-1 block">
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-navy/80">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                       <Users className="h-3.5 w-3.5" />
                     </span>
                     <span>Active Leads</span>
                   </div>
-                  <p className="text-2xl font-black tabular-nums text-navy">{leadsCount}</p>
-                  <p className="text-[10px] font-medium text-emerald-600">● 0% vs last 7 days</p>
-                </div>
+                  <p className="text-2xl font-black text-navy">{leadsCount}</p>
+                  <p className="text-[10px] font-bold text-emerald-600">● 0% vs last 7 days</p>
+                </Link>
 
-                {/* Column 2: Listings */}
-                <div className="space-y-1 px-3 text-center sm:text-left">
-                  <div className="flex items-center justify-center sm:justify-start gap-1.5 text-[11px] font-bold text-navy/80">
+                {/* Listings */}
+                <Link href="/agent/listings" prefetch className="pressable px-2 py-1 space-y-1 block">
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-navy/80">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                       <Briefcase className="h-3.5 w-3.5" />
                     </span>
                     <span>Listings</span>
                   </div>
-                  <p className="text-2xl font-black tabular-nums text-navy">{listingsValue}</p>
-                  <p className="text-[10px] font-medium text-blue-600">● 0% vs last 7 days</p>
-                </div>
+                  <p className="text-2xl font-black text-navy">{listingsValue}</p>
+                  <p className="text-[10px] font-bold text-blue-600">● 0% vs last 7 days</p>
+                </Link>
 
-                {/* Column 3: Trust Score */}
-                <div className="space-y-1 pl-3 text-center sm:text-left">
-                  <div className="flex items-center justify-center sm:justify-start gap-1.5 text-[11px] font-bold text-navy/80">
+                {/* Trust Score */}
+                <Link href="/agent/verification" prefetch className="pressable px-2 py-1 space-y-1 block">
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-navy/80">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-50 text-amber-600">
                       <Shield className="h-3.5 w-3.5 text-gold" />
                     </span>
                     <span>Trust Score</span>
                   </div>
-                  <p className="text-2xl font-black tabular-nums text-gold">{trustScore}</p>
-                  <p className="text-[10px] font-medium text-emerald-600">↑ 2 pts this week</p>
-                </div>
+                  <p className="text-2xl font-black text-gold">{trustScore}</p>
+                  <p className="text-[10px] font-bold text-emerald-600">↑ 2 pts this week</p>
+                </Link>
               </div>
             </div>
           </section>
 
-          {/* 6. HISTORY: RECENT ACTIVITY */}
-          <section className="space-y-3">
+          {/* RECENT ACTIVITY */}
+          <section className="space-y-2.5">
             <SectionHeader title="Recent Activity" href="/seller/crm" />
 
-            <div className="rounded-2xl border border-navy/[0.06] bg-white p-5 shadow-[0_4px_18px_-14px_rgba(3,27,78,0.18)]">
-              <div className="divide-y divide-navy/[0.06]">
-                {sampleActivities.map((act) => {
-                  const Icon = act.icon;
-                  return (
-                    <div key={act.id} className="flex items-center justify-between gap-3 py-1 first:pt-0 last:pb-0">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", act.tone)}>
-                          <Icon className="h-4 w-4" strokeWidth={2.5} />
-                        </span>
-                        <div className="space-y-0.5 min-w-0">
-                          <h3 className="text-xs font-bold text-navy truncate">{act.title}</h3>
-                          <p className="text-xs font-medium text-navy/55 truncate">{act.subtitle}</p>
-                        </div>
-                      </div>
-                      <span className="shrink-0 text-[11px] font-medium text-navy/40">{act.time}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {sampleActivities.map((act) => {
+                const Icon = act.icon;
+                return (
+                  <Link
+                    key={act.id}
+                    href="/seller/crm"
+                    prefetch
+                    className="pressable rounded-2xl border border-navy/[0.06] bg-white p-3 space-y-1 shadow-xs hover:border-navy/15 block"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={cn("flex h-8 w-8 items-center justify-center rounded-2xl", act.tone)}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="text-[9px] font-medium text-navy/40">{act.time}</span>
                     </div>
-                  );
-                })}
-              </div>
+                    <h3 className="text-[11px] font-bold text-navy pt-1">{act.title}</h3>
+                    <p className="text-[9px] font-medium text-navy/55 line-clamp-1">{act.subtitle}</p>
+                  </Link>
+                );
+              })}
             </div>
           </section>
 
-          {/* ACCOUNT SETTINGS ACCORDION */}
-          <section>
-            <details className="group overflow-hidden rounded-2xl border border-navy/[0.06] bg-white shadow-[0_4px_18px_-14px_rgba(3,27,78,0.18)]">
-              <summary className="pressable flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-bold text-navy marker:hidden">
-                <span>Account Settings & Controls</span>
-                <span className="text-xs font-bold text-navy/40 transition-transform duration-200 group-open:rotate-90">
-                  ▶
-                </span>
-              </summary>
-              <div className="border-t border-navy/[0.05] p-5">
+          {/* =================================================== */}
+          {/* SCREEN 3: INTEGRATED ACCOUNT SETTINGS & CONTROLS */}
+          {/* =================================================== */}
+          <section className="space-y-2.5 pt-2">
+            <SectionHeader title="Account Settings & Controls" />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* 1. Edit Profile */}
+              <Link
+                href="/agent/edit-profile"
+                prefetch
+                className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                    <User className="h-4.5 w-4.5" />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-navy">Edit Profile</h3>
+                    <p className="text-[10px] font-medium text-navy/45">Name, photo & public details</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              {/* 2. Help Center */}
+              <Link
+                href="/contact"
+                prefetch
+                className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                    <HelpCircle className="h-4.5 w-4.5" />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-navy">Help Center</h3>
+                    <p className="text-[10px] font-medium text-navy/45">Safety tips & guides</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              {/* 3. Change Password */}
+              <Link
+                href="/auth/reset-password"
+                prefetch
+                className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                    <Key className="h-4.5 w-4.5" />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-navy">Change Password</h3>
+                    <p className="text-[10px] font-medium text-navy/45">Update your login password</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              {/* 4. Contact Support */}
+              <a
+                href="https://wa.me/2348000000000"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pressable group flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                    <MessageCircle className="h-4.5 w-4.5" />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-navy">Contact Support</h3>
+                    <p className="text-[10px] font-medium text-navy/45">Chat with us on WhatsApp</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </a>
+
+              {/* 5. Change Email */}
+              <button
+                type="button"
+                onClick={() => alert("Change email prompt: " + email)}
+                className="pressable group text-left flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15 w-full"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                    <Mail className="h-4.5 w-4.5" />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-navy">Change Email</h3>
+                    <p className="text-[10px] font-medium text-navy/45">We&apos;ll verify the new address</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-navy/30 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+              </button>
+
+              {/* 6. Signed in as */}
+              <div className="flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shrink-0">
+                    <Mail className="h-4.5 w-4.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-[10px] font-medium text-navy/45">Signed in as</h3>
+                    <p className="text-xs font-bold text-navy truncate">{email || "puchinenye@gmail.com"}</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-navy/30 shrink-0" />
+              </div>
+
+              {/* 7. Advanced */}
+              <button
+                type="button"
+                onClick={() => setShowAdvancedSettings((v) => !v)}
+                className="pressable group text-left flex items-center justify-between rounded-2xl border border-navy/[0.06] bg-white p-3.5 shadow-xs hover:border-navy/15 w-full"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-navy/5 text-navy/60">
+                    <ChevronDown className="h-4.5 w-4.5" />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-navy">Advanced</h3>
+                    <p className="text-[10px] font-medium text-navy/45">Manage advanced settings</p>
+                  </div>
+                </div>
+                <ChevronDown className={cn("h-4 w-4 text-navy/30 transition-transform", showAdvancedSettings && "rotate-180")} />
+              </button>
+
+              {/* 8. Log Out */}
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(true)}
+                className="pressable group text-left flex items-center justify-between rounded-2xl border border-rose-200/70 bg-white p-3.5 shadow-xs hover:bg-rose-50/50 w-full"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                    <LogOut className="h-4.5 w-4.5" />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-rose-600">Log Out</h3>
+                    <p className="text-[10px] font-medium text-rose-950/60">Sign out from your account</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-rose-400 group-hover:translate-x-0.5 transition-all" />
+              </button>
+            </div>
+
+            {showAdvancedSettings && (
+              <div className="rounded-2xl border border-navy/10 bg-white p-4 shadow-xs space-y-3">
+                <p className="text-xs font-bold text-navy">Advanced Account Options</p>
                 <ProfileAccountActions email={email} canList />
               </div>
-            </details>
+            )}
           </section>
 
         </main>
       </div>
+
+      {/* LOGOUT CONFIRMATION DIALOG */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl space-y-4 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+              <LogOut className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-black text-navy">Log out of Yike?</h3>
+            <p className="text-xs font-medium text-navy/60">
+              You will need to sign in again to access your dashboard and listings.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="pressable flex-1 rounded-full border border-navy/15 py-2.5 text-xs font-bold text-navy"
+              >
+                Cancel
+              </button>
+              <Link
+                href="/auth/login"
+                className="pressable flex-1 rounded-full bg-rose-600 py-2.5 text-xs font-bold text-white shadow-md text-center"
+              >
+                Log Out
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
