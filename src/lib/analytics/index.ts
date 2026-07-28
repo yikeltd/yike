@@ -1,7 +1,7 @@
 /**
- * Yike Analytics Instrumentation — Funnel, Operations, Identity, Commerce, Seller CRM, Revenue & SMS Tracking (Phase 1.1–1.8 Hotfix)
+ * Yike Analytics Instrumentation — Funnel, Operations, Identity, Commerce, Seller CRM, Revenue, SMS & Intelligence Tracking (Phase 1.1–1.9)
  *
- * Lightweight, zero-dependency analytics logger for transaction lifecycle, case operations, Yike Passport, Deal, Seller CRM, Revenue, and SMS events.
+ * Lightweight, zero-dependency analytics logger for transaction lifecycle, case operations, Yike Passport, Deal, Seller CRM, Revenue, SMS, and Intelligence events.
  */
 
 export type AnalyticsEventName =
@@ -48,7 +48,14 @@ export type AnalyticsEventName =
   | "coupon_applied"
   | "sms_otp_sent"
   | "sms_otp_verified"
-  | "sms_notification_sent";
+  | "sms_notification_sent"
+  | "recommendation_viewed"
+  | "recommendation_accepted"
+  | "recommendation_dismissed"
+  | "listing_improved"
+  | "deal_recovered"
+  | "trust_improved"
+  | "crm_insight_clicked";
 
 export type AnalyticsPayload = {
   conversationId?: string;

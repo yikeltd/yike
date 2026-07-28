@@ -15,6 +15,7 @@ import { ActivityFeed } from "@/components/seller-crm/activity-feed";
 import { InventoryHealthGrid } from "@/components/seller-crm/inventory-health-grid";
 import { PipelineKanban } from "@/components/seller-crm/pipeline-kanban";
 import { QuickActionsBar } from "@/components/seller-crm/quick-actions-bar";
+import { InsightCard } from "@/components/intelligence/insight-card";
 import { cn } from "@/lib/utils";
 
 type TabId = "pipeline" | "inventory" | "activity" | "insights";
@@ -157,20 +158,21 @@ export function CrmWorkspaceClient({
         {activeTab === "insights" && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {snapshot.insights.map((ins) => (
-              <div
+              <InsightCard
                 key={ins.id}
-                className="rounded-3xl border border-navy/10 bg-white p-5 shadow-sm space-y-2"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-gold/20 px-2.5 py-0.5 text-[10px] font-bold text-navy uppercase">
-                    {ins.category}
-                  </span>
-                  <span className="text-xs font-bold text-emerald-700">✓ Positive</span>
-                </div>
-                <h4 className="text-sm font-bold text-navy">{ins.title}</h4>
-                <p className="text-2xl font-black text-navy">{ins.metricValue}</p>
-                <p className="text-xs text-navy/70 leading-snug">{ins.suggestion}</p>
-              </div>
+                insight={{
+                  id: ins.id,
+                  category: "seller",
+                  title: ins.title,
+                  priority: ins.trend === "down" ? "high" : "medium",
+                  reason: `${ins.metricLabel}: ${ins.metricValue}`,
+                  recommendation: ins.suggestion,
+                  confidenceScore: 90,
+                  sourcePlatform: "Intelligence Platform (CRM)",
+                  action: { label: "Take Action", href: "/seller/crm" },
+                  createdAt: new Date().toISOString(),
+                }}
+              />
             ))}
           </div>
         )}
