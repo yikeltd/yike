@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import {
-  BarChart3,
-  Check,
   Heart,
   List,
   MessageCircle,
@@ -62,20 +60,29 @@ function ActionTile({
   href,
   icon: Icon,
   label,
+  count,
 }: {
   href: string;
   icon: typeof List;
   label: string;
+  count?: number | string | null;
 }) {
   return (
     <Link
       href={href}
       prefetch
-      className="pressable group flex flex-col items-center justify-center gap-2 rounded-2xl border border-navy/[0.06] bg-white p-4 text-center shadow-[0_4px_18px_-14px_rgba(3,27,78,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:border-navy/10 hover:shadow-[0_10px_28px_-16px_rgba(3,27,78,0.35)]"
+      className="pressable group relative flex flex-col items-center justify-center gap-2 rounded-2xl border border-navy/[0.06] bg-white p-4 text-center shadow-[0_4px_18px_-14px_rgba(3,27,78,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:border-navy/10 hover:shadow-[0_10px_28px_-16px_rgba(3,27,78,0.35)]"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy/[0.04] text-navy transition-colors group-hover:bg-gold/20">
-        <Icon className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-      </span>
+      <div className="relative">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy/[0.04] text-navy transition-colors group-hover:bg-gold/20">
+          <Icon className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+        </span>
+        {count !== undefined && count !== null && (
+          <span className="absolute -top-1.5 -right-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gold px-1.5 text-[10px] font-black text-navy shadow-xs ring-2 ring-white">
+            {count}
+          </span>
+        )}
+      </div>
       <span className="text-xs font-bold text-navy">{label}</span>
     </Link>
   );
@@ -94,7 +101,6 @@ export function SellerCommandCenter(props: Props) {
     totalListings,
     limit,
     savedCount,
-    expiringSoon,
     expiredCount,
     draftCount = 0,
     rentedCount,
@@ -152,10 +158,10 @@ export function SellerCommandCenter(props: Props) {
         <div className="absolute inset-0 bg-navy/85 backdrop-blur-xs" aria-hidden />
 
         <div className="relative z-10 p-6 text-white lg:p-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            {/* Profile Avatar & Info */}
-            <div className="flex items-center gap-4 sm:gap-5">
-              <div className="relative shrink-0">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            {/* Profile Avatar & Info Stack */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="relative shrink-0 self-start sm:self-auto">
                 <AvatarUpload
                   userId={profile.id}
                   email={email}
@@ -167,19 +173,19 @@ export function SellerCommandCenter(props: Props) {
                 />
               </div>
 
-              <div className="space-y-1.5 min-w-0">
+              <div className="space-y-2 min-w-0">
                 <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
                   Welcome back, {firstName}
                 </h1>
 
                 {/* Compact Stat Chips Row */}
                 <div className="flex flex-wrap items-center gap-2 text-xs text-white/90">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 font-medium backdrop-blur-xs">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 font-medium backdrop-blur-xs">
                     Member since {memberSince}
                   </span>
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold backdrop-blur-xs",
+                      "inline-flex items-center gap-1 rounded-full px-3 py-1 font-bold backdrop-blur-xs",
                       verified
                         ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                         : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
@@ -193,12 +199,12 @@ export function SellerCommandCenter(props: Props) {
                     {verificationStatusText}
                   </span>
 
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 font-medium backdrop-blur-xs">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 font-medium backdrop-blur-xs">
                     <Users className="h-3.5 w-3.5 text-gold" />
                     {socialStats.followersCount} Followers
                   </span>
 
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 font-medium backdrop-blur-xs">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 font-medium backdrop-blur-xs">
                     <Heart className="h-3.5 w-3.5 text-rose-400" />
                     {socialStats.listingLikesCount ?? 0} Likes
                   </span>
@@ -206,8 +212,8 @@ export function SellerCommandCenter(props: Props) {
               </div>
             </div>
 
-            {/* Hero CTAs */}
-            <div className="flex shrink-0 items-center gap-3">
+            {/* Hero CTAs Row */}
+            <div className="flex items-center gap-3 pt-2 md:pt-0">
               <Link
                 href="/agent/listings/choose"
                 prefetch
@@ -256,14 +262,13 @@ export function SellerCommandCenter(props: Props) {
         </section>
       )}
 
-      {/* 3. Quick Actions Bar — 5 Clean Equal Height Tiles */}
+      {/* 3. Quick Actions Bar — 4 Clean Equal Height Tiles with Numbers */}
       <section className="space-y-2.5">
         <SectionLabel>Quick actions</SectionLabel>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <ActionTile href="/agent/listings/choose" icon={PlusCircle} label="New Listing" />
-          <ActionTile href="/agent/listings" icon={List} label="My Listings" />
-          <ActionTile href="/agent/leads" icon={MessageCircle} label="Messages" />
-          <ActionTile href="/saved" icon={Sparkles} label="Saved" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <ActionTile href="/agent/listings" icon={List} label="My Listings" count={totalListings} />
+          <ActionTile href="/agent/leads" icon={MessageCircle} label="Messages" count={leadsCount} />
+          <ActionTile href="/saved" icon={Sparkles} label="Saved" count={savedCount} />
           <ActionTile href="/agent/edit-profile" icon={Users} label="Profile" />
         </div>
       </section>
