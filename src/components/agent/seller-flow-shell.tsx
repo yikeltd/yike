@@ -41,36 +41,20 @@ export function SellerFlowShell({
         className,
       )}
     >
-      <header className="space-y-3">
-        {(backHref || actions) && (
-          <div className="flex items-center justify-between gap-3">
-            {backHref ? (
-              <Link
-                href={backHref}
-                className="pressable text-sm font-semibold text-navy/55 transition hover:text-navy"
-              >
-                ← {backLabel}
-              </Link>
-            ) : (
-              <span />
-            )}
-            {actions}
-          </div>
-        )}
-        <div>
-          {eyebrow ? (
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-dark">
-              {eyebrow}
-            </p>
+      <header className="space-y-2">
+        <div className="flex items-center gap-3">
+          {backHref ? (
+            <Link
+              href={backHref}
+              className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-navy/5 text-navy hover:bg-navy/10"
+              aria-label="Back"
+            >
+              ←
+            </Link>
           ) : null}
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-navy sm:text-[1.75rem]">
-            {title}
+          <h1 className="text-xl font-black tracking-tight text-navy sm:text-2xl uppercase">
+            SELL ON YIKE
           </h1>
-          {description ? (
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-navy/55">
-              {description}
-            </p>
-          ) : null}
         </div>
       </header>
       {children}

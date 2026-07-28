@@ -44,6 +44,21 @@ Source of truth: `SellerCommandCenter` (`src/components/profile/seller-command-c
 - Adding new UI widgets or removing approved UI
 - "Improving" or modernizing the interface beyond the reference design
 
+## Locked Navigation Standard (Public & Authenticated)
+
+Source of truth: `PrimaryBottomNav` (`src/components/layout/primary-bottom-nav.tsx`) as shipped in `f0170da7`.
+
+**1. Navigation 1 — Public (Unauthenticated):**
+- Tabs: `Home`, `Saved` (`/saved`), `Discover` (Gold Floating Primary FAB), `Sell`, `Account`.
+
+**2. Navigation 2 — Authenticated:**
+- Tabs: `Home`, `Discover`, `Sell` (Dark Navy Floating Primary FAB), `Messages` (`/conversations` with unread badge 5), `Profile`.
+
+**Forbidden without explicit founder request:**
+- Redesigning or reordering tabs
+- Replacing icons, spacing, or sizing
+- Mixing public and authenticated navigation rules
+
 ## Before changing approved UI
 
 1. Diff against the locked commit / production screenshot.

@@ -346,22 +346,22 @@ export function SellerCommandCenter(props: Props) {
           </div>
         </header>
 
-        {/* 1. IDENTITY & HERO CONTAINER */}
-        <section className="relative overflow-hidden rounded-b-[2rem] border-b border-navy/10 bg-gradient-to-br from-[#021428] via-[#031B4E] to-[#072462] p-6 text-white shadow-2xl">
+        {/* 1. IDENTITY & HERO CONTAINER — EDGE TO EDGE DEEP NAVY */}
+        <section className="relative overflow-hidden bg-[#031B4E] px-4 pb-12 pt-3 text-white shadow-2xl sm:px-6">
           {/* Top-Right Notification Bell */}
-          <div className="flex justify-end">
+          <div className="flex justify-end pr-1">
             <Link
               href="/conversations"
               prefetch
               className="pressable relative flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
               aria-label="Notifications"
             >
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-gold ring-2 ring-[#031B4E]" />
+              <Bell className="h-4.5 w-4.5" />
+              <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-gold ring-2 ring-[#031B4E]" />
             </Link>
           </div>
 
-          <div className="flex items-center gap-5 mt-1">
+          <div className="flex items-center gap-4 -mt-1">
             {/* Avatar Left */}
             <div className="relative shrink-0">
               <AvatarUpload
@@ -371,19 +371,19 @@ export function SellerCommandCenter(props: Props) {
                 username={profile.username}
                 avatarUrl={profile.avatar_url ?? profile.company_logo_url ?? null}
                 size="xl"
-                className="!h-24 !w-24 rounded-full border-4 border-white/25 shadow-2xl ring-2 ring-gold/40 sm:!h-28 sm:!w-28"
+                className="!h-22 !w-22 rounded-full border-4 border-white/25 shadow-2xl ring-2 ring-gold/40 sm:!h-24 sm:!w-24"
               />
             </div>
 
             {/* Greeting Right */}
-            <div className="space-y-1.5 min-w-0">
+            <div className="space-y-1 min-w-0">
               <p className="text-xs font-medium text-white/70">Welcome back,</p>
-              <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
                 {firstName}
               </h2>
 
-              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-white/90">
-                <span className="inline-flex items-center gap-1.5 font-bold text-emerald-300">
+              <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-xs text-white/90">
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-300">
                   {verified ? (
                     <ShieldCheck className="h-4 w-4 text-emerald-400" />
                   ) : (
@@ -392,7 +392,7 @@ export function SellerCommandCenter(props: Props) {
                   {verified ? "Verified Seller" : "Verification Pending"}
                 </span>
 
-                <span className="inline-flex items-center gap-1.5 text-white/70">
+                <span className="inline-flex items-center gap-1 text-white/70">
                   <Calendar className="h-3.5 w-3.5 text-gold/80" />
                   Member since {memberSince}
                 </span>
@@ -401,7 +401,7 @@ export function SellerCommandCenter(props: Props) {
           </div>
 
           {/* 2. PRIMARY ACTION: FULL WIDTH GOLD NEW LISTING CTA */}
-          <div className="mt-6">
+          <div className="mt-5">
             <Link
               href="/agent/listings/choose"
               prefetch
@@ -423,6 +423,53 @@ export function SellerCommandCenter(props: Props) {
               Profile saved.
             </p>
           )}
+
+          {/* 3. ELEVATED STATS / KPI CARD OVERLAPPING HEADER */}
+          <section className="-mt-10 relative z-20">
+            <div className="rounded-3xl border border-navy/10 bg-[#031B4E] p-4 text-white shadow-2xl">
+              <div className="grid grid-cols-4 divide-x divide-white/10 text-center">
+                {/* 1. Listings */}
+                <div className="space-y-1 px-1 flex flex-col items-center">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-purple-300">
+                    <MessageSquare className="h-4 w-4" />
+                  </span>
+                  <p className="text-lg font-black text-white">{listingsValue}</p>
+                  <p className="text-[10px] font-bold text-white/60">Listings</p>
+                  <span className="h-0.5 w-6 bg-purple-400 rounded-full" />
+                </div>
+
+                {/* 2. Likes */}
+                <div className="space-y-1 px-1 flex flex-col items-center">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-pink-500/20 text-pink-300">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  <p className="text-lg font-black text-white">24</p>
+                  <p className="text-[10px] font-bold text-white/60">Likes</p>
+                  <span className="h-0.5 w-6 bg-pink-400 rounded-full" />
+                </div>
+
+                {/* 3. Profile Views */}
+                <div className="space-y-1 px-1 flex flex-col items-center">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+                    <Users className="h-4 w-4" />
+                  </span>
+                  <p className="text-lg font-black text-white">156</p>
+                  <p className="text-[10px] font-bold text-white/60">Profile Views</p>
+                  <span className="h-0.5 w-6 bg-emerald-400 rounded-full" />
+                </div>
+
+                {/* 4. Rating */}
+                <div className="space-y-1 px-1 flex flex-col items-center">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 text-amber-300">
+                    <Star className="h-4 w-4 fill-amber-300" />
+                  </span>
+                  <p className="text-lg font-black text-white">4.8</p>
+                  <p className="text-[10px] font-bold text-white/60">Rating</p>
+                  <span className="h-0.5 w-6 bg-amber-400 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* 3. PEOPLE WAITING FOR ME: RECENT CONVERSATIONS */}
           <section className="space-y-3">
