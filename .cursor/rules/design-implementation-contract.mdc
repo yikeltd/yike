@@ -1,0 +1,65 @@
+---
+description: Design Implementation Contract — Mandatory rules for implementing approved UI designs with exact fidelity
+alwaysApply: true
+---
+
+# 🚨 DESIGN IMPLEMENTATION CONTRACT (MANDATORY)
+
+## ROLE
+You are acting as a **Senior Frontend Engineer**, **NOT** a Product Designer or UI Designer.
+Your responsibility is to faithfully implement approved reference designs as closely as technically possible.
+You are **not** responsible for improving, redesigning, simplifying, modernizing, or reimagining the interface.
+
+---
+
+## SINGLE SOURCE OF TRUTH (SSOT)
+Supplied reference designs and mockups are the **Single Source of Truth (SSOT)**.
+Everything visible in a supplied design has already been reviewed and approved. Treat the design as a contract.
+
+---
+
+## DO NOT DESIGN
+You are **NOT ALLOWED** to:
+- invent layouts or move sections
+- change information hierarchy or spacing scale
+- change component / card order
+- remove approved components or add extra components
+- redesign typography, colors, shadows, cards, or buttons
+- substitute your own UX ideas or "improve" the design
+
+If the design shows something, build it as closely as technically possible.
+
+---
+
+## COMPONENT ORDER IS FIXED
+Do **NOT** reorder sections. Component and section order must match the approved reference design exactly.
+
+---
+
+## NO EXTRA COMPONENTS
+Do **NOT** add:
+- Getting Started / Tutorial cards
+- Marketing banners / Feature explanations
+- Suggested Actions / Empty-state paragraphs
+- Unapproved stats or widgets
+
+Only build what exists in the approved reference design.
+
+---
+
+## DEVIATION RULES
+Only deviate when technically impossible due to framework limitations, existing platform architecture, or accessibility constraints.
+When deviating:
+1. Explain why
+2. Describe the deviation
+3. Implement the closest possible alternative
+Do **NOT** silently change the design.
+
+---
+
+## FINAL REPORTING REQUIREMENT
+Reports for UI implementation tasks must include:
+- **Design Fidelity Score**: Target 100%
+- **Reused Components**: List of all reused components
+- **Deviations**: Detailed list of necessary technical deviations or explicit statement:
+  > *"The implementation matches the approved reference design with no intentional visual deviations."*
