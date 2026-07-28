@@ -8,28 +8,28 @@ export default function DashboardPreviewPage() {
 
   const profile = {
     id: "63307-preview-user",
-    full_name: "Stanley Okoro",
-    username: "stanhan_auto",
-    email: "dealer@example.com",
+    full_name: "Patience",
+    username: "patience_store",
+    email: "patience@example.com",
     phone: "08126775227",
     phone_verified: true,
     email_verified: true,
     whatsapp: "08126775227",
     whatsapp_verified_at: "2026-07-15T10:00:00.000Z",
-    avatar_url: null,
+    avatar_url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&q=80&fit=crop",
     cover_url: null,
     role: "agent_verified",
     verification_status: "approved",
     agent_type: "agency",
-    trust_score: 96,
+    trust_score: 42,
     listing_limit: 40,
     ranking_score: 0,
     verified_badge: true,
     is_banned: false,
     plan: "pro",
     plan_expires_at: null,
-    company_name: "Stanhan Auto Hub",
-    company_bio: "Verified dealer serving Lagos and Abuja buyers.",
+    company_name: "Patience Properties",
+    company_bio: "Verified merchant on Yike.",
     account_type: "dealer",
     company_verified: true,
     bank_verified: false,
@@ -46,40 +46,29 @@ export default function DashboardPreviewPage() {
   return (
     <ProfilePageClient
       profile={profile}
-      email="dealer@example.com"
+      email="patience@example.com"
       canList
       verified
-      activeCount={18}
-      pending={2}
-      totalListings={27}
+      activeCount={0}
+      pending={0}
+      totalListings={0}
       limit={40}
-      savedCount={14}
-      expiringSoon={1}
-      expiredCount={3}
+      savedCount={0}
+      expiringSoon={0}
+      expiredCount={0}
       draftCount={0}
-      rentedCount={1}
-      soldCount={3}
-      leadsCount={9}
-      missingPhotosCount={2}
-      incompleteListingsCount={1}
-      lowQualityListingsCount={2}
+      rentedCount={0}
+      soldCount={0}
+      leadsCount={0}
+      missingPhotosCount={0}
+      incompleteListingsCount={0}
+      lowQualityListingsCount={0}
       listingHealthScore={92}
       verificationRequestsCount={0}
-      memberSince="July 2026"
-      socialStats={{ followersCount: 218, listingLikesCount: 67 }}
+      memberSince="Jul 2026"
+      socialStats={{ followersCount: 0, listingLikesCount: 0 }}
       subscriptionPlanLabel="Starter"
       subscriptionExpiresInDays={28}
-      analyticsPreviewData={{
-        listingViews: 1284,
-        whatsappClicks: 76,
-        callClicks: 31,
-        saves: 84,
-        followers: 218,
-        listingLikes: 67,
-        leadsGenerated: 9,
-        hasAdvanced: false,
-        planCode: "starter",
-      }}
     />
   );
 }
