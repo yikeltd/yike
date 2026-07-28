@@ -8,7 +8,7 @@ import { canListProperties, cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Home,
-  Heart,
+  MessageSquare,
   PlusCircle,
   User,
   LogIn,
@@ -16,9 +16,8 @@ import {
 } from "lucide-react";
 
 /**
- * Canonical mobile bottom nav — Home · Saved · Discover · Sell · Account/Dashboard
+ * Canonical mobile bottom nav — Home · Conversations · Discover · Sell · Account/Dashboard
  * Discover is the elevated center signature discovery action.
- * Search lives on homepage + Discover header + listing pages.
  */
 
 function isNavActive(
@@ -77,7 +76,7 @@ export function PrimaryBottomNav() {
   }
 
   const homeActive = isNavActive("/", pathname, "exact");
-  const savedActive = isNavActive("/saved", pathname, "prefix");
+  const conversationsActive = isNavActive("/conversations", pathname, "prefix");
   const discoverActive =
     pathname === "/discover" ||
     pathname.startsWith("/discover/") ||
@@ -95,7 +94,7 @@ export function PrimaryBottomNav() {
     >
       <div className="relative flex w-full max-w-lg items-end justify-around rounded-full border border-navy/12 bg-[#f4f6fa]/96 px-1 py-1.5 shadow-[0_4px_24px_rgb(2_20_51_/22%),0_1px_0_rgb(255_255_255_/85%)] backdrop-blur-xl">
         <NavTab href="/" label="Home" icon={Home} active={homeActive} />
-        <NavTab href="/saved" label="Saved" icon={Heart} active={savedActive} />
+        <NavTab href="/conversations" label="Conversations" icon={MessageSquare} active={conversationsActive} />
 
         {/* Elevated center Discover FAB */}
         <div className="relative flex min-w-[64px] flex-col items-center justify-end">
