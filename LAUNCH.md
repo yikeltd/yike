@@ -6,10 +6,10 @@
 
 ## 1. Overall Launch Readiness Score
 
-```text
- overall_readiness_score: 92%
+ ```text
+ overall_readiness_score: 96%
  target_launch_threshold: 90%
- status: READY FOR PRE-LAUNCH REVENUE & STAGING
+ status: PRODUCTION READY — REVENUE & ENTITLEMENTS ACTIVE
 ```
 
 ---
@@ -27,7 +27,7 @@
 | **Trust Operations Platform** | 🟢 Complete | `Production` | `/lex/auth/cases` · Operational case engine |
 | **Commerce Platform (Deal Engine)** | 🟢 Complete | `Production` | Canonical Deal pipeline & gated reviews |
 | **Seller Success Platform (Seller CRM)** | 🟢 Complete | `Production` | `/seller/crm` · Kanban pipeline & inventory health |
-| **Revenue Platform** | 🟡 Pending | `Phase 1.7` | Subscriptions, featured boosts, billing |
+| **Revenue Platform** | 🟢 Complete | `Production` | Product catalog, Orders, `hasEntitlement`, Checkout |
 | **Integration & Workflow Audit** | 🟢 Complete | `Validated` | Phase 1.6 end-to-end journey audit |
 | **Performance & Optimization** | 🟢 Complete | `Optimized` | 8GB heap build verified, clean static/ISR routes |
 | **Security & Route Guard Audit** | 🟢 Complete | `Audited` | Role boundaries (`staff`, `agent`, `buyer`, `verifier`) |
