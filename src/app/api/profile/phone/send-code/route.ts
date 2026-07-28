@@ -7,6 +7,7 @@ import {
   sendSellerPhoneVerificationCode,
 } from "@/lib/phone-verification";
 import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
+import { trackTransactionEvent } from "@/lib/analytics/index";
 
 export const runtime = "nodejs";
 
@@ -60,6 +61,8 @@ export async function POST(request: Request) {
       { status: result.status }
     );
   }
+
+  trackTransactionEvent("sms_otp_sent", { userId: user.id, metadata: { channel: result.channel } });
 
   return NextResponse.json({
     ok: true,

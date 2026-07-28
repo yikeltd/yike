@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifySellerPhoneCode } from "@/lib/phone-verification";
+import { recordVerification } from "@/lib/identity/service";
+import { trackTransactionEvent } from "@/lib/analytics/index";
 
 export const runtime = "nodejs";
 
@@ -33,6 +35,14 @@ export async function POST(request: Request) {
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  // Update Yike Passport (Trust Identity) phone verification signal
+  try {
+    await recordVerification(user.id, "phone", "verified", "Sendchamp SMS OTP Verified");
+    trackTransactionEvent("sms_otp_verified", { userId: user.id, metadata: { phone: result.phone } });
+  } catch {
+    // Non-blocking Passport record error
   }
 
   return NextResponse.json({
