@@ -23,6 +23,7 @@ export const HOME_RAIL_GRID_CLASS =
  */
 export const BROWSE_THUMB_ASPECT = "aspect-[4/3]";
 
-/** Horizontal rail card width — ~2 cards visible on phone. */
+/** Horizontal rail card width — exactly 2 cards visible per row on mobile. */
 export const BROWSE_RAIL_CARD_CLASS =
-  "w-[min(46vw,168px)] shrink-0 snap-start sm:w-[180px] lg:w-auto";
+  "w-[calc((100%-0.5rem)/2)] shrink-0 snap-start lg:w-auto";
+

@@ -41,15 +41,15 @@ export function CarouselRail({ items, kind = "vehicle", priorityCount = 2 }: Pro
 
   return (
     <div className="space-y-2">
-      {/* 3 COMPLETE CARDS VISIBLE PER ROW WITH SCROLL SNAPPING */}
+      {/* 2 COMPLETE CARDS VISIBLE PER ROW WITH SCROLL SNAPPING */}
       <div
         ref={containerRef}
-        className="flex gap-1.5 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5"
+        className="flex gap-2 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5"
       >
         {items.map((item, i) => (
           <div
             key={item.id}
-            className="w-[calc((100%-0.75rem)/3)] shrink-0 snap-start"
+            className="w-[calc((100%-0.5rem)/2)] shrink-0 snap-start"
           >
             {kind === "vehicle" || item.asset_type === "VEHICLE" ? (
               <VehicleCard
