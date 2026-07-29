@@ -464,6 +464,20 @@ async function fulfillOrder(
     };
   }
 
+  if (order.order_type === "live_inspection") {
+    const { fulfillLiveInspectionOrder } = await import(
+      "@/lib/payments/fulfillment/live-inspection"
+    );
+    const result = await fulfillLiveInspectionOrder(admin, order);
+    if (!result.ok) return { ok: false, error: result.error };
+
+    return {
+      ok: true,
+      order,
+      alreadyFulfilled: result.alreadyFulfilled,
+    };
+  }
+
   if (
     order.order_type === "escrow_hold" ||
     order.order_type === "wallet_topup" ||

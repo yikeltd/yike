@@ -15,6 +15,7 @@ export type PaymentPurpose =
   | "premium_seller"
   | "vehicle_boost"
   | "property_boost"
+  | "live_inspection"
   | "escrow_hold"
   | "wallet_topup";
 
@@ -111,6 +112,7 @@ export const PAYMENT_PURPOSES: readonly PaymentPurpose[] = [
   "premium_seller",
   "vehicle_boost",
   "property_boost",
+  "live_inspection",
   "escrow_hold",
   "wallet_topup",
 ] as const;
