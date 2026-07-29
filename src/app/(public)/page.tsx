@@ -48,7 +48,7 @@ import {
   BUDGET_UNDER_5M,
 } from "@/lib/home/discovery-from-pool";
 import { getServerMarketplaceLocation } from "@/lib/search-preferences";
-import { getHomepageAds } from "@/lib/advertisements/public";
+import { getSponsoredAd } from "@/lib/advertisements/public";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
 import { BRAND_OG_IMAGE, BRAND_OG_IMAGE_WEBP } from "@/lib/share-images";
 import type { Property } from "@/types/database";
@@ -344,16 +344,10 @@ export default async function HomePage({
   const propertyFeaturedExtra = pickFeaturedRail(propertyItems, 12, loc);
 
 
-  const homepageAds = await safeLoad(
-    "homepage ads",
-    () => getHomepageAds(),
-    {
-      homepage_slot_1: null,
-      homepage_slot_2: null,
-      homepage_slot_3: null,
-      homepage_slot_4: null,
-      homepage_slot_5: null,
-    },
+  const homepageTopAd = await safeLoad(
+    "homepage top ad",
+    () => getSponsoredAd("homepage_top"),
+    null,
   );
 
   return (
@@ -372,7 +366,7 @@ export default async function HomePage({
         <HomeMarketplaceExperience
           initialCategory={category}
           showingDemoFixtures={showingDemoFixtures}
-          homepageAds={homepageAds}
+          homepageTopAd={homepageTopAd}
           marketplaceLocation={
             loc
               ? {

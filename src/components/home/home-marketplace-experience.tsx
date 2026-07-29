@@ -5,20 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  BadgeCheck,
-  Bell,
-  Building,
   Car,
   ChevronRight,
-  Heart,
   Home as HomeIcon,
-  LayoutGrid,
   MapPin,
-  Plus,
-  Search,
-  Sparkles,
-  Store,
-  Truck,
 } from "lucide-react";
 import { HomeAdSlot } from "@/components/ads/home-ad-slot";
 import { PropertyGrid } from "@/components/property/property-grid";
@@ -29,6 +19,7 @@ import {
   QuickFinderBar,
   MarketplaceSection,
   DealerDiscoveryRow,
+  CarouselRail,
 } from "@/components/marketplace/experience";
 import type { DiscoveryDealerCard } from "@/lib/home/discovery-from-pool";
 import {
@@ -37,7 +28,6 @@ import {
   type HomeMarketplaceCategory,
 } from "@/lib/home/marketplace-category";
 import type { Advertisement, Property } from "@/types/database";
-import type { HomepageAdSlot } from "@/lib/advertisements/constants";
 import type { LocationScope } from "@/lib/marketplace-location";
 import {
   featuredRailCopy,
@@ -92,7 +82,7 @@ type Props = {
   vehicleRails: VehicleRails;
   marketplaceLocation?: { city: string; state?: string } | null;
   showingDemoFixtures?: boolean;
-  homepageAds?: Partial<Record<HomepageAdSlot, Advertisement | null>>;
+  homepageTopAd?: Advertisement | null;
   dealers?: DiscoveryDealerCard[];
   categoryCounts?: {
     vehicle?: Record<string, number>;
@@ -144,7 +134,7 @@ export function HomeMarketplaceExperience({
   vehicleRails,
   marketplaceLocation = null,
   showingDemoFixtures: _showingDemoFixtures = false,
-  homepageAds = {},
+  homepageTopAd = null,
   dealers = [],
   categoryCounts: _categoryCounts = {},
 }: Props) {
@@ -384,22 +374,23 @@ export function HomeMarketplaceExperience({
   ];
 
 
-  const quickCategories = [
-    { label: "Featured", icon: Car, bg: "bg-amber-100 text-amber-600", category: "vehicle" },
-    { label: "SUVs", icon: Truck, bg: "bg-blue-100 text-blue-600", category: "vehicle" },
-    { label: "Trucks", icon: Truck, bg: "bg-purple-100 text-purple-600", category: "vehicle" },
-    { label: "Homes", icon: HomeIcon, bg: "bg-emerald-100 text-emerald-600", category: "property" },
-    { label: "Land", icon: Building, bg: "bg-cyan-100 text-cyan-600", category: "property" },
-    { label: "Commercial", icon: Store, bg: "bg-rose-100 text-rose-600", category: "property" },
-    { label: "All", icon: LayoutGrid, bg: "bg-slate-100 text-slate-600", category: "all" },
-  ];
-
   return (
     <div className="home-canvas min-h-[100dvh] pb-24 lg:pb-8 bg-[#f7f9fc]">
-      
+      {homepageTopAd ? (
+        <div className="bg-[#031B4E] px-3 pt-3 sm:px-6 lg:px-6 xl:px-8">
+          <div className="mx-auto max-w-7xl">
+            <HomeAdSlot
+              ad={homepageTopAd}
+              placement="homepage_top"
+              className="pb-2"
+            />
+          </div>
+        </div>
+      ) : null}
+
       {/* 1. HEADER (DEEP NAVY HEADER WITH EMBEDDED SEARCH PILL) */}
       <header className="sticky top-0 z-40 bg-[#031B4E] px-3 pb-2.5 pt-2.5 text-white shadow-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
+        <div className="mx-auto flex max-w-7xl items-center">
           {/* Logo & Search Field Pill */}
           <div className="relative flex flex-1 items-center bg-white rounded-full h-11 px-2.5 shadow-sm border border-white/20">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#031B4E] text-gold font-black text-xs shrink-0">
@@ -421,28 +412,6 @@ export function HomeMarketplaceExperience({
                 <ChevronRight className="h-3 w-3 rotate-90 text-navy/50" />
               </button>
             </div>
-          </div>
-
-          {/* Action Buttons: Add (+) & Notification Bell (with yellow 3 counter) */}
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href="/agent/listings/choose"
-              className="pressable flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white shadow-xs hover:bg-white/20"
-              aria-label="Add Listing"
-            >
-              <Plus className="h-5 w-5" strokeWidth={2.25} />
-            </Link>
-
-            <Link
-              href="/conversations"
-              className="pressable relative flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white shadow-xs hover:bg-white/20"
-              aria-label="Notifications"
-            >
-              <Bell className="h-4.5 w-4.5" />
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gold px-1 text-[9px] font-black text-navy shadow-xs border border-[#031B4E]">
-                3
-              </span>
-            </Link>
           </div>
         </div>
       </header>
@@ -514,55 +483,25 @@ export function HomeMarketplaceExperience({
           </button>
         </section>
 
-        {/* 3. CATEGORY GRID (HORIZONTAL QUICK CATEGORIES WITH ICONS & LABELS) */}
-        <section className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {quickCategories.map((cat) => {
-            const Icon = cat.icon;
-            return (
-              <button
-                key={cat.label}
-                type="button"
-                onClick={() => {
-                  if (cat.category === "vehicle" || cat.category === "property") {
-                    syncCategory(cat.category);
-                  }
-                }}
-                className="pressable flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs hover:border-gold shrink-0 w-20 min-h-[72px]"
-              >
-                <span className={cn("flex h-8 w-8 items-center justify-center rounded-xl", cat.bg)}>
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="text-[11px] font-bold text-navy truncate leading-none">{cat.label}</span>
-              </button>
-            );
-          })}
-        </section>
-
         {/* 4. FEATURED CAROUSEL */}
         <MarketplaceSection title="Featured" href={featuredCopy.href} band="white">
-          {isVehicle ? (
-            <VehicleRail items={featuredNearItems} />
-          ) : (
-            <PropertyRail items={featuredNearItems} trackFeatured />
-          )}
+          <CarouselRail items={featuredNearItems} kind={kind} />
         </MarketplaceSection>
 
         {/* 5. TRENDING CAROUSEL */}
         <MarketplaceSection title="Trending" href={trendingCopy.href} band="warm">
-          {isVehicle ? (
-            <VehicleRail items={vehicleRails.trending.items.slice(0, 4)} />
-          ) : (
-            <PropertyRail items={propertyRails.trending.items.slice(0, 4)} />
-          )}
+          <CarouselRail
+            items={isVehicle ? vehicleRails.trending.items : propertyRails.trending.items}
+            kind={kind}
+          />
         </MarketplaceSection>
 
         {/* 6. RECENTLY ADDED NEAR YOU CAROUSEL */}
         <MarketplaceSection title={recentCopy.title} href={recentCopy.href} band="ivory">
-          {isVehicle ? (
-            <VehicleRail items={vehicleRails.recent.items} />
-          ) : (
-            <PropertyRail items={propertyRails.recent.items} />
-          )}
+          <CarouselRail
+            items={isVehicle ? vehicleRails.recent.items : propertyRails.recent.items}
+            kind={kind}
+          />
         </MarketplaceSection>
 
         {/* 7. VERIFIED DEALERS & DEVELOPERS CAROUSEL */}
@@ -588,158 +527,67 @@ export function HomeMarketplaceExperience({
         </div>
 
         {/* 9. PREMIUM PICKS CAROUSEL */}
-        {isVehicle && vehicleRails.premium.length > 0 ? (
-          <MarketplaceSection title="Premium Picks" href="/vehicles?featured=1" band="sand">
-            <VehicleRail items={vehicleRails.premium} />
-          </MarketplaceSection>
-        ) : null}
+        <MarketplaceSection title="Premium Picks" href="/vehicles?featured=1" band="sand">
+          <CarouselRail
+            items={isVehicle ? (vehicleRails.premium.length > 0 ? vehicleRails.premium : vehicleRails.featured.items) : (propertyRails.featuredExtra.length > 0 ? propertyRails.featuredExtra : propertyRails.featured.items)}
+            kind={kind}
+          />
+        </MarketplaceSection>
 
-        {/* 10-13. CATEGORY TILES (SUVs, Pickups, Commercial, Luxury) */}
-        <section className="grid grid-cols-4 gap-2">
-          {/* SUVs Tile */}
-          <Link
-            href="/vehicles?category=suv"
-            className="pressable relative overflow-hidden rounded-2xl h-24 p-2 text-white flex flex-col justify-between border border-navy/10 shadow-xs group"
-          >
-            <Image
-              src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&q=80&fit=crop"
-              alt="SUVs"
-              fill
-              className="object-cover brightness-[0.55] transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="relative z-10 flex items-center justify-between w-full">
-              <span className="text-xs font-black text-white">SUVs</span>
-              <ChevronRight className="h-3 w-3 text-gold" />
-            </div>
-            <span className="relative z-10 text-[9px] font-bold text-gold">View all →</span>
-          </Link>
+        {/* 10. SUVs CAROUSEL */}
+        <MarketplaceSection title="SUVs" href="/vehicles?category=suv" band="white">
+          <CarouselRail
+            items={isVehicle ? (vehicleRails.suv.length > 0 ? vehicleRails.suv : vehicleRails.recent.items) : propertyRails.recent.items}
+            kind={kind}
+          />
+        </MarketplaceSection>
 
-          {/* Pickups Tile */}
-          <Link
-            href="/vehicles?category=truck"
-            className="pressable relative overflow-hidden rounded-2xl h-24 p-2 text-white flex flex-col justify-between border border-navy/10 shadow-xs group"
-          >
-            <Image
-              src="https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&q=80&fit=crop"
-              alt="Pickups"
-              fill
-              className="object-cover brightness-[0.55] transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="relative z-10 flex items-center justify-between w-full">
-              <span className="text-xs font-black text-white">Pickups</span>
-              <ChevronRight className="h-3 w-3 text-gold" />
-            </div>
-            <span className="relative z-10 text-[9px] font-bold text-gold">View all →</span>
-          </Link>
+        {/* 11. PICKUPS CAROUSEL */}
+        <MarketplaceSection title="Pickups" href="/vehicles?category=truck" band="ivory">
+          <CarouselRail
+            items={isVehicle ? (vehicleRails.pickup.length > 0 ? vehicleRails.pickup : vehicleRails.trending.items) : propertyRails.trending.items}
+            kind={kind}
+          />
+        </MarketplaceSection>
 
-          {/* Commercial Tile */}
-          <Link
-            href="/vehicles?category=commercial"
-            className="pressable relative overflow-hidden rounded-2xl h-24 p-2 text-white flex flex-col justify-between border border-navy/10 shadow-xs group"
-          >
-            <Image
-              src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&q=80&fit=crop"
-              alt="Commercial"
-              fill
-              className="object-cover brightness-[0.55] transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="relative z-10 flex items-center justify-between w-full">
-              <span className="text-xs font-black text-white">Commercial</span>
-              <ChevronRight className="h-3 w-3 text-gold" />
-            </div>
-            <span className="relative z-10 text-[9px] font-bold text-gold">View all →</span>
-          </Link>
+        {/* 12. COMMERCIAL CAROUSEL */}
+        <MarketplaceSection title="Commercial" href="/vehicles?category=commercial" band="warm">
+          <CarouselRail
+            items={isVehicle ? (vehicleRails.commercial.length > 0 ? vehicleRails.commercial : vehicleRails.nationwide) : (propertyRails.commercial.length > 0 ? propertyRails.commercial : propertyRails.nationwide)}
+            kind={kind}
+          />
+        </MarketplaceSection>
 
-          {/* Luxury Tile */}
-          <Link
-            href="/vehicles?luxury=1"
-            className="pressable relative overflow-hidden rounded-2xl h-24 p-2 text-white flex flex-col justify-between border border-navy/10 shadow-xs group"
-          >
-            <Image
-              src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&q=80&fit=crop"
-              alt="Luxury"
-              fill
-              className="object-cover brightness-[0.55] transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="relative z-10 flex items-center justify-between w-full">
-              <span className="text-xs font-black text-white">Luxury</span>
-              <ChevronRight className="h-3 w-3 text-gold" />
-            </div>
-            <span className="relative z-10 text-[9px] font-bold text-gold">View all →</span>
-          </Link>
-        </section>
+        {/* 13. LUXURY CAROUSEL */}
+        <MarketplaceSection title="Luxury" href={luxuryCopy.href} band="sand">
+          <CarouselRail
+            items={isVehicle ? (vehicleRails.luxury.items.length > 0 ? vehicleRails.luxury.items : vehicleRails.featured.items) : (propertyRails.luxury.items.length > 0 ? propertyRails.luxury.items : propertyRails.featured.items)}
+            kind={kind}
+          />
+        </MarketplaceSection>
 
-        {/* 14. NEARBY & ALL LISTINGS BANNERS */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {/* Nearby Banner */}
-          <Link
-            href="/vehicles"
-            className="pressable relative overflow-hidden rounded-2xl h-20 p-3 text-white flex items-center justify-between border border-navy/10 shadow-xs group"
-          >
-            <Image
-              src="https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=600&q=80&fit=crop"
-              alt="Nearby Aba GRA"
-              fill
-              className="object-cover brightness-[0.45] transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="relative z-10 space-y-0.5">
-              <h3 className="text-sm font-black text-white">Nearby • Aba GRA</h3>
-              <p className="text-[10px] font-medium text-white/80">Listings close to your location</p>
-            </div>
-            <span className="relative z-10 text-xs font-bold text-gold flex items-center gap-1">
-              <span>View all</span>
-              <ChevronRight className="h-3.5 w-3.5" />
-            </span>
-          </Link>
-
-          {/* All Listings Banner */}
-          <Link
-            href="/search"
-            className="pressable relative overflow-hidden rounded-2xl h-20 p-3 text-white flex items-center justify-between border border-navy/10 shadow-xs group"
-          >
-            <Image
-              src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=80&fit=crop"
-              alt="All Listings"
-              fill
-              className="object-cover brightness-[0.45] transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="relative z-10 space-y-1">
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-sm font-black text-white">All Listings</h3>
-                <span className="rounded-md bg-amber-500 px-1.5 py-0.5 text-[8px] font-extrabold text-navy">Feat</span>
-                <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[8px] font-extrabold text-white">✓ Verified</span>
-              </div>
-              <p className="text-[10px] font-medium text-white/80">Explore entire nationwide marketplace</p>
-            </div>
-            <span className="relative z-10 text-xs font-bold text-gold flex items-center gap-1">
-              <span>View all</span>
-              <ChevronRight className="h-3.5 w-3.5" />
-            </span>
-          </Link>
-        </section>
+        {/* 14. NEARBY CAROUSEL */}
+        <MarketplaceSection title="Nearby · Aba GRA" href="/vehicles" band="white">
+          <CarouselRail
+            items={isVehicle ? (vehicleRails.nearYou.items.length > 0 ? vehicleRails.nearYou.items : vehicleRails.recent.items) : (propertyRails.nearYou.items.length > 0 ? propertyRails.nearYou.items : propertyRails.recent.items)}
+            kind={kind}
+          />
+        </MarketplaceSection>
 
         {/* 15. ALL LISTINGS GRID */}
-        {(isVehicle ? vehicleRails.nationwide : propertyRails.nationwide).length > 0 ? (
-          <MarketplaceSection title="All Listings" href={nationwideCopy.href} band="white">
-            {isVehicle ? (
-              <VehicleRail items={vehicleRails.nationwide} />
-            ) : (
-              <PropertyRail items={propertyRails.nationwide} />
-            )}
-          </MarketplaceSection>
-        ) : null}
+        <MarketplaceSection title="All Listings" href={nationwideCopy.href} band="white">
+          <CarouselRail
+            items={isVehicle ? vehicleRails.nationwide : propertyRails.nationwide}
+            kind={kind}
+          />
+        </MarketplaceSection>
 
-        {/* ============================================================================== */}
-        {/* ADVERTISEMENT CONTAINER (CLEAN RESERVED CONTAINER, NO DUMMY TEXT OR ICONS) */}
-        {/* ============================================================================== */}
-        <section className="pt-2 pb-2">
-          {homepageAds.homepage_slot_1 ? (
-            <HomeAdSlot ad={homepageAds.homepage_slot_1} placement="homepage_slot_1" />
-          ) : (
-            /* CLEAN RESERVED CONTAINER WITH NO PLACEHOLDER TEXT/ICONS WHEN NO AD IS PUBLISHED */
-            <div className="h-20 w-full rounded-2xl border border-navy/15 bg-white/40 shadow-xs" />
-          )}
-        </section>
+        {/* DYNAMIC FOOTER ADVERTISEMENT (ONLY RENDERS IF ACTIVE CAMPAIGN EXISTS) */}
+        {homepageTopAd ? (
+          <section className="pt-2 pb-2">
+            <HomeAdSlot ad={homepageTopAd} placement="homepage_slot_1" />
+          </section>
+        ) : null}
 
       </div>
     </div>

@@ -1,6 +1,7 @@
 export { TrustBadge, TrustBadgeRow } from "./trust-badge";
 export type { TrustBadgeKind } from "./trust-badge";
 export { MarketplaceSection } from "./marketplace-section";
+export { CarouselRail } from "./carousel-rail";
 export {
   PopularSearchChips,
   VEHICLE_POPULAR_SEARCHES,
@@ -28,3 +29,4 @@ export { DiscoveryEmptyPanel } from "./discovery-empty-panel";
 export { TrustModule } from "./trust-module";
 export { SpecCardGrid, CollapsibleSpecs } from "./collapsible-specs";
 export type { SpecCardItem } from "./collapsible-specs";
+
