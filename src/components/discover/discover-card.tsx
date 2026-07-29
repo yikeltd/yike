@@ -1,233 +1,108 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import { Heart, MapPin, BedDouble, Bath, Gauge } from "lucide-react";
+import { MapPin } from "lucide-react";
 import type { Property } from "@/types/database";
-import { formatPrice, cn } from "@/lib/utils";
-import { VerifiedBadge, FeaturedBadge, TrendingBadge, NewListingBadge } from "@/components/ui/badge";
-import { isTrustVerified } from "@/lib/hub-filters";
-import { resolvePlacementKind } from "@/lib/marketplace/placement";
-import { MotionSlide } from "@/components/browse/motion-slide";
+import { formatPrice } from "@/lib/utils";
 import { buildMotionSlides } from "@/lib/media/items";
-import { normalizeAssetType } from "@/lib/marketplace/listings";
-import { motionEnabled } from "@/lib/swipe/low-data";
+import { optimizeListingImageUrl } from "@/lib/image-url";
+import { DynamicWatermark } from "@/components/ui/dynamic-watermark";
 
 type Props = {
   property: Property;
   priority?: boolean;
   isActive?: boolean;
-  showQuickSpecs?: boolean;
-  saved?: boolean;
-  onToggleSave?: () => void;
   dragHint?: "left" | "right" | "up" | "down" | null;
 };
-
-function QuickSpecs({ property }: { property: Property }) {
-  const isVehicle = normalizeAssetType(property.asset_type) === "VEHICLE";
-
-  if (isVehicle) {
-    const bits = [
-      property.year ? String(property.year) : null,
-      property.make,
-      property.model,
-      property.fuel_type,
-      property.mileage != null
-        ? `${Number(property.mileage).toLocaleString()} km`
-        : null,
-    ].filter(Boolean);
-
-    return (
-      <ul className="mt-3 flex flex-wrap gap-2">
-        {bits.map((bit) => (
-          <li
-            key={bit}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-sm"
-          >
-            <Gauge className="h-3 w-3 text-gold" aria-hidden />
-            {bit}
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
-  return (
-    <ul className="mt-3 flex flex-wrap gap-2">
-      {property.bedrooms != null ? (
-        <li className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
-          <BedDouble className="h-3 w-3 text-gold" aria-hidden />
-          {property.bedrooms} bed
-        </li>
-      ) : null}
-      {property.bathrooms != null ? (
-        <li className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-sm">
-          <Bath className="h-3 w-3 text-gold" aria-hidden />
-          {property.bathrooms} bath
-        </li>
-      ) : null}
-      {property.property_type ? (
-        <li className="rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-semibold capitalize text-white/90 backdrop-blur-sm">
-          {property.property_type.replace(/_/g, " ")}
-        </li>
-      ) : null}
-    </ul>
-  );
-}
 
 export function DiscoverCard({
   property,
   priority,
   isActive = true,
-  showQuickSpecs = false,
-  saved = false,
-  onToggleSave,
   dragHint = null,
 }: Props) {
-  const verified = isTrustVerified(property);
-  const placement = resolvePlacementKind(property);
-  const agent = property.agent;
-  const photoCount = buildMotionSlides(property).length;
+  const slides = buildMotionSlides(property);
+  const photos = slides.map((s) => s.url);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
   const price = formatPrice(
     Number(property.price),
     property.payment_period,
-    property.listing_type,
+    property.listing_type
   );
-  const location = [property.area, property.city].filter(Boolean).join(", ");
-  const useMotion = isActive && motionEnabled();
+
+  const location = [property.area || property.city, property.state || property.city]
+    .filter(Boolean)
+    .join(", ");
+
+  const currentPhoto = photos[photoIndex] || photos[0] || "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80&fit=crop";
+
+  function handlePhotoTap(e: React.MouseEvent<HTMLDivElement>) {
+    if (photos.length <= 1) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+
+    if (clickX < width * 0.35) {
+      // Tap left 35% -> Previous photo
+      setPhotoIndex((i) => Math.max(0, i - 1));
+    } else {
+      // Tap right 65% -> Next photo
+      setPhotoIndex((i) => Math.min(photos.length - 1, i + 1));
+    }
+  }
 
   return (
-    <article className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-navy shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]">
+    <article
+      onClick={handlePhotoTap}
+      className="relative h-full w-full select-none overflow-hidden bg-navy shadow-2xl cursor-pointer"
+    >
+      {/* 1. EDGE-TO-EDGE FULL-SCREEN IMAGE HERO */}
       <div className="absolute inset-0">
-        {useMotion ? (
-          <MotionSlide
-            property={property}
-            isActive={isActive}
-            priority={priority}
-          />
-        ) : (
-          <div className="relative h-full w-full bg-navy">
-            {/* Static cover when inactive / low-data */}
-            <MotionSlide
-              property={property}
-              isActive={false}
-              priority={priority}
-            />
-          </div>
-        )}
+        <Image
+          src={optimizeListingImageUrl(currentPhoto, 1080)}
+          alt={property.title}
+          fill
+          priority={priority}
+          className="object-cover object-center transition-all duration-300 ease-out"
+          sizes="100vw"
+        />
+
+        {/* Dynamic Username Watermark */}
+        <DynamicWatermark className="opacity-[0.06]" />
+
+        {/* Subtle Top & Bottom Gradient Overlays */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-navy/90 via-navy/40 to-transparent z-10" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-navy/95 via-navy/60 to-transparent z-10" />
       </div>
 
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#021433]/92 via-[#021433]/25 to-transparent" />
+      {/* 2. PHOTO COUNTER & AREA BADGE (UNDER TOP BAR) */}
+      <div className="absolute inset-x-0 top-[calc(max(3.75rem,env(safe-area-inset-top))+0.75rem)] z-20 flex items-center justify-between px-4">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-md border border-white/10">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span>New in your area</span>
+        </div>
 
-      {/* Drag intention overlays */}
-      {dragHint === "right" ? (
-        <div className="pointer-events-none absolute inset-0 z-20 flex items-start justify-start bg-emerald-500/15 p-6">
-          <span className="rotate-[-12deg] rounded-xl border-2 border-emerald-400 px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-emerald-300">
-            Interested
-          </span>
-        </div>
-      ) : null}
-      {dragHint === "left" ? (
-        <div className="pointer-events-none absolute inset-0 z-20 flex items-start justify-end bg-rose-500/15 p-6">
-          <span className="rotate-[12deg] rounded-xl border-2 border-rose-400 px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-rose-300">
-            Skip
-          </span>
-        </div>
-      ) : null}
-      {dragHint === "up" ? (
-        <div className="pointer-events-none absolute inset-x-0 top-8 z-20 flex justify-center">
-          <span className="rounded-xl border-2 border-white/70 px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-white">
-            Open listing
-          </span>
-        </div>
-      ) : null}
-      {dragHint === "down" ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-28 z-20 flex justify-center">
-          <span className="rounded-xl border-2 border-gold px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-gold">
-            Quick specs
-          </span>
-        </div>
-      ) : null}
-
-      <div className="absolute left-0 right-0 top-0 z-10 flex items-start justify-between p-4 pt-4">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {verified ? <VerifiedBadge size="sm" /> : null}
-          {placement === "featured" ? <FeaturedBadge /> : null}
-          {placement === "trending" ? <TrendingBadge /> : null}
-          {placement === "new" ? <NewListingBadge /> : null}
-        </div>
-        <div className="flex items-center gap-2">
-          {photoCount > 1 ? (
-            <span className="rounded-full bg-navy/70 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
-              {photoCount} photos
-            </span>
-          ) : null}
-          {onToggleSave ? (
-            <button
-              type="button"
-              className={cn(
-                "pressable pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm transition-colors",
-                saved
-                  ? "bg-gold/25 text-gold"
-                  : "bg-navy/70 text-white",
-              )}
-              aria-label={saved ? "Saved" : "Save listing"}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onToggleSave();
-              }}
-            >
-              <Heart
-                className={cn("h-4 w-4", saved && "fill-current")}
-                strokeWidth={2.4}
-              />
-            </button>
-          ) : null}
+        <div className="rounded-full bg-black/40 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-md border border-white/10">
+          {photoIndex + 1} / {photos.length || 1}
         </div>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 z-10 space-y-2 p-5 pb-5">
-        <p className="text-[clamp(1.55rem,6.5vw,1.9rem)] font-bold leading-none tracking-tight text-white tabular-nums">
+      {/* 3. PINNED BOTTOM INFORMATION (NAME, PRICE, LOCATION ONLY) */}
+      <div className="absolute inset-x-0 bottom-[calc(var(--bottom-nav-stack)+0.75rem)] z-20 space-y-1.5 px-5 text-left pointer-events-none">
+        <h2 className="text-xl sm:text-2xl font-black text-white leading-tight drop-shadow-md line-clamp-2">
+          {property.title}
+        </h2>
+
+        <p className="text-2xl font-black text-gold leading-none drop-shadow-md tracking-tight">
           {price}
         </p>
-        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-white/95">
-          {property.title}
-        </h3>
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white/75">
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-gold" aria-hidden />
-          <span className="truncate">{location}</span>
+
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-white/85 drop-shadow-xs pt-0.5">
+          <MapPin className="h-3.5 w-3.5 text-gold shrink-0" />
+          <span>{location}</span>
         </p>
-
-        <QuickSpecs property={property} />
-
-        {showQuickSpecs ? (
-          <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-white/70">
-            {property.description?.trim() ||
-              "Swipe up to open the full listing for photos, contact, and details."}
-          </p>
-        ) : null}
-        {agent ? (
-          <div className="mt-3 flex items-center gap-2.5">
-            <div className="relative h-8 w-8 overflow-hidden rounded-full bg-white/15 ring-1 ring-white/20">
-              {agent.avatar_url ? (
-                <Image
-                  src={agent.avatar_url}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="32px"
-                />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center text-[10px] font-bold text-white/80">
-                  {(agent.full_name ?? "S").slice(0, 1).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <p className="truncate text-xs font-semibold text-white/70">
-              {agent.full_name ?? "Seller"}
-            </p>
-          </div>
-        ) : null}
       </div>
     </article>
   );

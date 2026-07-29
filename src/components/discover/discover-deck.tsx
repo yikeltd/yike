@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { Property } from "@/types/database";
 import { DiscoverCard } from "@/components/discover/discover-card";
 import { listingPath } from "@/lib/marketplace/listing-path";
-import { motionEnabled } from "@/lib/swipe/low-data";
 import { cn } from "@/lib/utils";
 
 export type DiscoverSwipeAction = "skip" | "interested" | "open" | "specs";
@@ -20,8 +19,8 @@ type Props = {
 
 type DragHint = "left" | "right" | "up" | "down" | null;
 
-const THRESHOLD = 110;
-const EXIT_MS = 280;
+const THRESHOLD = 90;
+const EXIT_MS = 260;
 
 function haptic() {
   try {
@@ -41,18 +40,15 @@ export function DiscoverDeck({
   onAction,
 }: Props) {
   const router = useRouter();
-  const lowData = !motionEnabled();
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [exiting, setExiting] = useState<DragHint>(null);
-  const [specsOpen, setSpecsOpen] = useState(false);
   const start = useRef<{ x: number; y: number } | null>(null);
   const locked = useRef(false);
 
   useEffect(() => {
     setOffset({ x: 0, y: 0 });
     setExiting(null);
-    setSpecsOpen(false);
     locked.current = false;
   }, [property.id]);
 
@@ -70,23 +66,13 @@ export function DiscoverDeck({
         return;
       }
 
-      if (action === "specs") {
-        window.setTimeout(() => {
-          setSpecsOpen((v) => !v);
-          setOffset({ x: 0, y: 0 });
-          setExiting(null);
-          locked.current = false;
-        }, 160);
-        return;
-      }
-
       window.setTimeout(() => {
         onAction(action);
         setOffset({ x: 0, y: 0 });
         setExiting(null);
       }, EXIT_MS);
     },
-    [onAction, property, router],
+    [onAction, property, router]
   );
 
   const resolveGesture = useCallback(
@@ -105,11 +91,11 @@ export function DiscoverDeck({
         else commit("specs", "down");
       }
     },
-    [commit],
+    [commit]
   );
 
   function onPointerDown(e: React.PointerEvent) {
-    if (locked.current || lowData) return;
+    if (locked.current) return;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     start.current = { x: e.clientX, y: e.clientY };
     setDragging(true);
@@ -141,16 +127,16 @@ export function DiscoverDeck({
   })();
 
   const exitX =
-    exiting === "left" ? -480 : exiting === "right" ? 480 : offset.x;
+    exiting === "left" ? -500 : exiting === "right" ? 500 : offset.x;
   const exitY =
-    exiting === "up" ? -640 : exiting === "down" ? 220 : offset.y;
-  const rotate = (exiting ? exitX : offset.x) * 0.04;
+    exiting === "up" ? -700 : exiting === "down" ? 300 : offset.y;
+  const rotate = (exiting ? exitX : offset.x) * 0.035;
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full overflow-hidden">
       {nextProperty ? (
         <div
-          className="absolute inset-0 scale-[0.94] opacity-40"
+          className="absolute inset-0 scale-[0.98] opacity-60 transition-all duration-300"
           aria-hidden
         >
           <DiscoverCard property={nextProperty} isActive={false} />
@@ -161,7 +147,7 @@ export function DiscoverDeck({
         className={cn(
           "absolute inset-0 touch-none will-change-transform",
           !dragging && !exiting && "transition-transform duration-300 ease-out",
-          exiting && "transition-transform duration-280 ease-in",
+          exiting && "transition-transform duration-260 ease-in"
         )}
         style={{
           transform: `translate3d(${exiting ? exitX : offset.x}px, ${exiting ? exitY : offset.y}px, 0) rotate(${rotate}deg)`,
@@ -179,38 +165,9 @@ export function DiscoverDeck({
           property={property}
           priority
           isActive
-          saved={saved}
-          onToggleSave={onToggleSave}
-          showQuickSpecs={specsOpen}
           dragHint={hint}
         />
       </div>
-
-      {lowData ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center gap-2 px-4">
-          <button
-            type="button"
-            className="pointer-events-auto rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm"
-            onClick={() => commit("skip", "left")}
-          >
-            Skip
-          </button>
-          <button
-            type="button"
-            className="pointer-events-auto rounded-full bg-gold px-3 py-1.5 text-[11px] font-bold text-navy"
-            onClick={() => commit("interested", "right")}
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            className="pointer-events-auto rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm"
-            onClick={() => commit("open", "up")}
-          >
-            Open
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }

@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { Filter, Search } from "lucide-react";
+import { SlidersHorizontal, MapPin, ChevronDown } from "lucide-react";
 import type { Property } from "@/types/database";
 import { DiscoverDeck, type DiscoverSwipeAction } from "@/components/discover/discover-deck";
 import { DiscoverEmpty } from "@/components/discover/discover-empty";
 import { DiscoverFilters } from "@/components/discover/discover-filters";
-import { MarketplaceCategoryToggle } from "@/components/home/marketplace-category-toggle";
+import { ShareButton } from "@/components/property/listing-share-menu";
 import { buildDiscoverFeed } from "@/lib/discover/feed";
 import {
   DEFAULT_DISCOVER_FILTERS,
@@ -20,7 +19,6 @@ import {
   trackViewedListing,
 } from "@/lib/browse-preferences";
 import {
-  continueBrowsingHint,
   getSwipeMemory,
   resolveSwipeResumeIndex,
   saveSwipeMemory,
@@ -44,9 +42,7 @@ import {
 } from "@/lib/guest-favorites";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
-import { listingPath } from "@/lib/marketplace/listing-path";
-import type { HomeMarketplaceCategory } from "@/lib/home/marketplace-category";
-import { cn } from "@/lib/utils";
+import { listingPath, listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 
 type Props = {
   properties: Property[];
@@ -63,7 +59,6 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [feed, setFeed] = useState<Property[]>([]);
   const [index, setIndex] = useState(0);
-  const [resumeHint, setResumeHint] = useState<string | null>(null);
   const [savedMap, setSavedMap] = useState<Record<string, boolean>>({});
   const [seed, setSeed] = useState(0);
   const cardEnteredAt = useRef(0);
@@ -75,15 +70,13 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
       const next = buildDiscoverFeed(properties, vehicles, nextFilters, prefs);
       setFeed(next);
       const memory = getSwipeMemory();
-      setResumeHint(continueBrowsingHint(memory));
       setIndex(resolveSwipeResumeIndex(next.map((p) => p.id), memory));
     },
-    [properties, vehicles],
+    [properties, vehicles]
   );
 
   useEffect(() => {
     rebuild(filters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed forces full refresh
   }, [rebuild, filters, seed]);
 
   const count = feed.length;
@@ -142,7 +135,6 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
 
   const advance = useCallback(() => {
     recordSwipePace();
-    setResumeHint(null);
     setIndex((i) => i + 1);
   }, []);
 
@@ -191,7 +183,7 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
           if (!u) return;
           await supabase.from("favorites").upsert(
             { user_id: u.id, property_id: property.id },
-            { onConflict: "user_id,property_id", ignoreDuplicates: true },
+            { onConflict: "user_id,property_id", ignoreDuplicates: true }
           );
           setListingSaved(property.id, true);
           recordEngagementSave();
@@ -201,10 +193,10 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
             listingType: property.listing_type,
             propertyType: property.property_type,
           });
-        },
+        }
       );
     },
-    [guardAction, savedMap, setListingSaved, user?.id],
+    [guardAction, savedMap, setListingSaved, user?.id]
   );
 
   const handleAction = useCallback(
@@ -236,102 +228,81 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
         });
       }
     },
-    [advance, current, saveListing],
+    [advance, current, saveListing]
   );
-
-  const searchHref = useMemo(() => {
-    if (filters.category === "vehicle") return "/vehicles";
-    const params = new URLSearchParams();
-    if (filters.city) params.set("city", filters.city);
-    if (filters.state) params.set("state", filters.state);
-    if (filters.deal === "sale") params.set("type", "sale");
-    if (filters.deal === "rent") params.set("type", "rent");
-    if (filters.featuredOnly) params.set("featured", "1");
-    if (filters.verifiedOnly) params.set("verified", "1");
-    const qs = params.toString();
-    return qs ? `/search?${qs}` : "/search";
-  }, [filters]);
 
   const exhausted = !current || index >= count;
 
   return (
-    <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-[#021433] lg:hidden">
-      <header className="relative z-30 flex shrink-0 items-center justify-between gap-3 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gold">
-            Yike
-          </p>
-          <h1 className="text-lg font-bold tracking-tight text-white">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-navy">
+      {/* TOP OVERLAY BAR MATCHING REFERENCE IMAGE EXACTLY */}
+      <header className="absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 bg-gradient-to-b from-navy/90 via-navy/50 to-transparent">
+        {/* Left: YIKE eyebrow + Discover Title */}
+        <div className="flex flex-col text-left">
+          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-gold">
+            YIKE
+          </span>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-none">
             Discover
           </h1>
         </div>
+
+        {/* Center: Current Location Selector Pill */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen(true)}
+          className="pressable inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-md shadow-sm active:scale-95"
+        >
+          <MapPin className="h-3.5 w-3.5 text-gold shrink-0" />
+          <span className="truncate max-w-[120px] sm:max-w-[160px]">
+            {filters.city || current?.area || "Lekki, Lagos"}
+          </span>
+          <ChevronDown className="h-3.5 w-3.5 text-white/70 shrink-0" />
+        </button>
+
+        {/* Right: Share Button & Filter Icon Button (NO HEART / NO SAVE BUTTON) */}
         <div className="flex items-center gap-2">
+          <ShareButton
+            title={current?.title || "Discover listing on Yike"}
+            text={current?.title || "Check out this listing on Yike"}
+            url={current ? listingAbsoluteUrl(current) : "https://yike.ng/discover"}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-md shadow-sm active:scale-95"
+          />
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}
-            className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm"
-            aria-label="Open filters"
+            className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-md shadow-sm active:scale-95"
+            aria-label="Filter"
           >
-            <Filter className="h-4 w-4" strokeWidth={2.4} />
+            <SlidersHorizontal className="h-4 w-4" />
           </button>
-          <Link
-            href={searchHref}
-            className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm"
-            aria-label="Search listings"
-          >
-            <Search className="h-4 w-4" strokeWidth={2.4} />
-          </Link>
         </div>
       </header>
 
-      {vehiclesOn ? (
-        <div className="relative z-20 mx-auto w-full max-w-sm shrink-0 px-4 pb-2">
-          <MarketplaceCategoryToggle
-            category={filters.category as HomeMarketplaceCategory}
-            onChange={(category) =>
-              setFilters((f) => ({
-                ...f,
-                category,
-                deal: category === "vehicle" ? "" : f.deal,
-              }))
-            }
-            compact
-            tone="onDark"
-          />
-        </div>
-      ) : null}
-
-      {resumeHint ? (
-        <p className="relative z-20 truncate px-4 pb-1 text-center text-[10px] font-semibold text-white/60">
-          {resumeHint}
-        </p>
-      ) : null}
-
-      <div
-        className={cn(
-          "relative mx-auto w-full max-w-lg flex-1 px-3 pb-[calc(var(--bottom-nav-stack)+0.5rem)] pt-1",
-        )}
-      >
+      {/* FULL BLEED CARD STACK */}
+      <div className="relative h-full w-full">
         {exhausted ? (
-          <DiscoverEmpty
-            filters={filters}
-            onRefresh={() => {
-              setIndex(0);
-              setSeed((s) => s + 1);
-            }}
-            onExpandRadius={() =>
-              setFilters((f) => ({ ...f, city: "", state: "" }))
-            }
-            onIncreaseBudget={() =>
-              setFilters((f) => ({
-                ...f,
-                maxBudget:
-                  f.maxBudget == null
-                    ? null
-                    : Math.round(f.maxBudget * 1.35),
-              }))
-            }
-          />
+          <div className="pt-20 h-full">
+            <DiscoverEmpty
+              filters={filters}
+              onRefresh={() => {
+                setIndex(0);
+                setSeed((s) => s + 1);
+              }}
+              onExpandRadius={() =>
+                setFilters((f) => ({ ...f, city: "", state: "" }))
+              }
+              onIncreaseBudget={() =>
+                setFilters((f) => ({
+                  ...f,
+                  maxBudget:
+                    f.maxBudget == null
+                      ? null
+                      : Math.round(f.maxBudget * 1.35),
+                }))
+              }
+            />
+          </div>
         ) : current ? (
           <DiscoverDeck
             key={current.id}
@@ -343,12 +314,6 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
           />
         ) : null}
       </div>
-
-      {!exhausted && count > 0 ? (
-        <p className="pointer-events-none absolute bottom-[calc(var(--bottom-nav-stack)-0.15rem)] left-0 right-0 z-10 text-center text-[10px] font-semibold text-white/45">
-          {Math.min(index + 1, count)} / {count} · ← skip · save → · ↑ open
-        </p>
-      ) : null}
 
       <DiscoverFilters
         open={filtersOpen}
