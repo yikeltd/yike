@@ -1,17 +1,13 @@
-import { Suspense } from "react";
 import { requireAuth } from "@/lib/auth";
-import { AgentPlansClient } from "@/components/subscriptions/agent-plans-client";
+import { SellerPlansView } from "@/components/subscriptions/seller-plans-view";
+
+export const metadata = {
+  title: "Seller Plans | Yike",
+  description: "Simple, transparent seller plans for vehicle dealers, property agents, and enterprise listers.",
+};
 
 export default async function AgentPlansPage() {
   await requireAuth("/auth/login?next=/agent/plans");
 
-  return (
-    <Suspense
-      fallback={
-        <div className="mx-auto max-w-6xl px-3 py-8 text-sm text-muted">Loading plans…</div>
-      }
-    >
-      <AgentPlansClient />
-    </Suspense>
-  );
+  return <SellerPlansView />;
 }
