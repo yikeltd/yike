@@ -1,18 +1,19 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { MobileHeaderBanner } from "@/components/banners/mobile-header-banner";
+import { useAuth } from "@/components/auth/auth-provider";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
-import { MarketplaceCategoryChips } from "@/components/home/marketplace-category-chips";
+import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
 import type { SiteBanner } from "@/types/database";
+import { brand } from "@/lib/design/tokens";
+import { cn } from "@/lib/utils";
 
 /**
- * Mobile chrome — search pill with logo inside + location.
- * On home: premium category banners under search; banners auto-hide on scroll.
- * Hamburger removed — bottom nav covers Sell / Account / Browse.
- * Desktop header is unchanged.
+ * Mobile Header — Deep Yike Navy background (#031B4E).
+ * Order: [Yike Logo] -> [Search Bar] -> [Location Selector] -> [SELL] -> [PROFILE / SIGN IN]
  */
 export function HeaderMobile({
   mobileBanner,
@@ -20,9 +21,11 @@ export function HeaderMobile({
   mobileBanner?: SiteBanner | null;
 }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
+
   const isHome = pathname === "/";
   const isProfile = pathname === "/agent";
-  const isBrowse = pathname === "/browse" || pathname.startsWith("/browse/");
   const isDetail =
     pathname.startsWith("/properties/") ||
     (pathname.startsWith("/vehicles/") && pathname.split("/").length >= 3);
@@ -33,7 +36,6 @@ export function HeaderMobile({
     if (!isHome) return;
 
     let ticking = false;
-
     const update = () => {
       const y = window.scrollY;
       if (y <= 16) {
@@ -60,57 +62,67 @@ export function HeaderMobile({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-surface/70 bg-elevated/95 backdrop-blur-md lg:hidden",
+        "sticky top-0 z-40 border-b border-white/10 bg-[#031B4E] text-white shadow-xl lg:hidden",
       )}
     >
-      <div
-        className={cn(
-          "flex items-center justify-center px-4",
-          isHome ? "min-h-14 py-2.5" : "min-h-12 py-2",
-          isBrowse && "border-b-0",
-        )}
-      >
-        <Suspense
-          fallback={
-            <div
-              className={cn(
-                "w-full rounded-full bg-navy/[0.06]",
-                isHome ? "h-11" : "h-10",
-              )}
+      <div className="flex flex-col gap-2 px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2">
+          {/* Logo */}
+          <Link href="/" className="flex shrink-0 items-center gap-1.5" aria-label="Yike home">
+            <Image
+              src={brand.logoSm}
+              alt="Yike"
+              width={30}
+              height={30}
+              className="h-7.5 w-7.5 object-contain"
             />
-          }
-        >
-          <HeaderUniversalSearch
-            size={isHome ? "large" : "default"}
-            tone="default"
-            placement="header_mobile"
-            placeholder="Search vehicles & properties…"
-            showLocation
-            showLogo
-            className="w-full"
-          />
-        </Suspense>
-      </div>
+            <span className="text-xl font-black tracking-tight text-white">
+              {brand.name}
+            </span>
+          </Link>
 
-      {isHome ? (
-        <div
-          className={cn(
-            "overflow-hidden px-4 transition-[max-height,opacity,transform] duration-200 ease-out",
-            bannersVisible
-              ? "max-h-[110px] translate-y-0 opacity-100"
-              : "pointer-events-none max-h-0 -translate-y-2 opacity-0",
-          )}
-          aria-hidden={!bannersVisible}
-        >
-          <div className="pb-3 pt-0.5">
-            <Suspense fallback={<div className="h-20 rounded-2xl bg-navy/[0.04]" />}>
-              <MarketplaceCategoryChips homeMode />
-            </Suspense>
+          {/* Search Bar */}
+          <div className="flex-1 min-w-0">
+            <HeaderUniversalSearch
+              size="default"
+              tone="hero"
+              placement="header_mobile"
+              placeholder="Search vehicles & properties…"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Link
+              href={isAuthenticated ? "/agent/listings/choose" : "/auth/login?next=/agent/listings/choose"}
+              className="pressable flex items-center justify-center rounded-full bg-gold px-2.5 py-1 text-[10px] font-black uppercase text-navy shadow-xs"
+            >
+              SELL
+            </Link>
+
+            {isAuthenticated ? (
+              <Link
+                href="/agent"
+                className="pressable flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white"
+              >
+                PROFILE
+              </Link>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="pressable flex items-center justify-center rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-navy shadow-xs"
+              >
+                SIGN IN
+              </Link>
+            )}
           </div>
         </div>
-      ) : null}
 
-      {mobileBanner && <MobileHeaderBanner banner={mobileBanner} />}
+        {/* Location Selector Row */}
+        <div className="flex items-center justify-between px-0.5 pt-0.5">
+          <MarketplaceLocationIndicator size="sm" variant="chip" className="!bg-white/10 !border-white/20 !text-white" />
+        </div>
+      </div>
     </header>
   );
 }

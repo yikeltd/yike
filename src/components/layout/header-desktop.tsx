@@ -2,53 +2,86 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Suspense } from "react";
+import { useAuth } from "@/components/auth/auth-provider";
+import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
+import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
 import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
-import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
-import { MarketplaceNavSheet } from "@/components/marketplace/experience";
 
 /**
- * Desktop marketplace chrome — Logo | Search (dominant) | Menu.
- * Nav / Sell / Account live in MarketplaceNavSheet (unchanged open behavior).
+ * Unified Desktop Header — Deep Yike Navy background (#031B4E).
+ * Order: [Yike Logo] -> [Search Bar] -> [Location Selector] -> [SELL] -> [SIGN IN / PROFILE]
+ * Hamburger menu removed completely.
  */
 export function HeaderDesktop({ className }: { className?: string }) {
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
+
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 hidden border-b border-surface/70 bg-white/95 backdrop-blur-md lg:block",
-        className,
+        "sticky top-0 z-50 hidden w-full bg-[#031B4E] text-white shadow-xl lg:block border-b border-white/10",
+        className
       )}
     >
-      <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center gap-4 px-6 xl:gap-5 xl:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-6 xl:px-8">
+        {/* 1. YIKE LOGO */}
         <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Yike home">
           <Image
             src={brand.logoSm}
             alt="Yike"
-            width={40}
-            height={40}
-            className="rounded-lg"
+            width={36}
+            height={36}
+            className="h-9 w-9 object-contain"
             priority
           />
-          <span className="text-xl font-bold tracking-tight text-foreground">
+          <span className="text-2xl font-black tracking-tight text-white">
             {brand.name}
           </span>
         </Link>
 
-        <Suspense
-          fallback={
-            <div className="h-12 min-w-0 flex-1 rounded-full bg-navy/[0.04]" />
-          }
-        >
+        {/* 2. SEARCH BAR */}
+        <div className="flex-1 max-w-2xl">
           <HeaderUniversalSearch
             size="large"
-            tone="desktop"
+            tone="hero"
             placement="header_desktop"
-            showLocation
+            placeholder="Search vehicles & properties…"
           />
-        </Suspense>
+        </div>
 
-        <MarketplaceNavSheet size="md" className="shrink-0" />
+        {/* 3. FUNCTIONAL LOCATION SELECTOR */}
+        <div className="shrink-0">
+          <MarketplaceLocationIndicator size="md" variant="chip" className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20" />
+        </div>
+
+        {/* 4. ACTION BUTTONS: SELL & SIGN IN / PROFILE */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* SELL BUTTON */}
+          <Link
+            href={isAuthenticated ? "/agent/listings/choose" : "/auth/login?next=/agent/listings/choose"}
+            className="pressable flex items-center justify-center rounded-full bg-gold px-4 py-2 text-xs font-black uppercase text-navy shadow-sm transition-all hover:bg-gold-light"
+          >
+            SELL
+          </Link>
+
+          {/* SIGN IN OR PROFILE BUTTON */}
+          {isAuthenticated ? (
+            <Link
+              href="/agent"
+              className="pressable flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-white/20"
+            >
+              PROFILE
+            </Link>
+          ) : (
+            <Link
+              href="/auth/login"
+              className="pressable flex items-center justify-center rounded-full bg-white px-4 py-2 text-xs font-bold text-navy shadow-sm transition-all hover:bg-slate-100"
+            >
+              SIGN IN
+            </Link>
+          )}
+        </div>
       </div>
     </header>
   );

@@ -11,6 +11,7 @@ import { VEHICLE_MAKE_TYPES } from "@/lib/marketplace/vehicle-makes";
 import { isTrustVerified } from "@/lib/hub-filters";
 import { listingPath } from "@/lib/marketplace/listing-path";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
+import { HeaderDesktop } from "@/components/layout/header-desktop";
 
 type Props = {
   featuredItems: Property[];
@@ -139,60 +140,8 @@ export function HomeDesktopView({
 
   return (
     <div className="hidden lg:block min-h-screen bg-[#f8fafc] text-navy pb-16">
-      {/* 1. RESTORED ORIGINAL DESKTOP HEADER */}
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200/80 px-8 py-3.5 shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <Image
-              src="/images/logo.webp"
-              alt="Yike Logo"
-              width={36}
-              height={36}
-              className="h-9 w-9 object-contain"
-            />
-            <span className="text-2xl font-black tracking-tight text-navy">Yike</span>
-          </Link>
-
-          {/* Search Box */}
-          <div className="relative flex-1 max-w-2xl">
-            <div className="flex items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 shadow-xs focus-within:ring-2 focus-within:ring-gold">
-              <Search className="h-4 w-4 text-navy/40 mr-2 shrink-0" />
-              <input
-                type="text"
-                placeholder="Search vehicles & properties..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    router.push(`/search?q=${encodeURIComponent(e.currentTarget.value)}`);
-                  }
-                }}
-                className="w-full bg-transparent text-xs font-medium text-navy placeholder:text-navy/40 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Right Controls: Location Pill & Menu Button */}
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              type="button"
-              className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-bold text-navy shadow-xs hover:bg-slate-100"
-            >
-              <MapPin className="h-3.5 w-3.5 text-gold shrink-0" />
-              <span>Nigeria</span>
-              <ChevronDown className="h-3.5 w-3.5 text-navy/50" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => router.push("/menu")}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-navy hover:bg-slate-100"
-              aria-label="Open Menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* 1. DEEP NAVY UNIFIED DESKTOP HEADER */}
+      <HeaderDesktop />
 
       {/* 2. RESTORED FULL-WIDTH DESKTOP HERO BANNER */}
       <section className="px-8 pt-6">
