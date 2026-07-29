@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -21,19 +20,17 @@ import {
   ShieldCheck,
   Phone,
   User,
-  Sparkles,
   CheckCircle2,
-  Clock,
   Mail,
   Bell,
   Building,
-  Bed,
+  BedDouble,
   Bath,
   Share2,
   Heart,
   Gauge,
   Fuel,
-  Info,
+  AlertCircle,
 } from "lucide-react";
 import { VEHICLE_MAKE_TYPES } from "@/lib/marketplace/vehicle-makes";
 import { formatPrice, cn } from "@/lib/utils";
@@ -91,77 +88,66 @@ export function SmartSellerFlow() {
   const [category, setCategory] = useState<CategoryType>("vehicle");
   const [flowState, setFlowState] = useState<FlowState>("details");
 
-  // Form Fields State
-  const [listingType, setListingType] = useState("sale"); // 'sale' | 'rent' | 'lease' | 'shortlet'
-  const [make, setMake] = useState("Toyota");
-  const [model, setModel] = useState("Camry");
-  const [year, setYear] = useState("2020");
-  const [condition, setCondition] = useState("Foreign Used");
-  const [priceRaw, setPriceRaw] = useState("9800000");
+  // Clean Initial State (No hardcoded demo values!)
+  const [listingType, setListingType] = useState("sale"); // 'sale' | 'rent' | 'lease'
+  const [make, setMake] = useState("");
+  const [model, setModel] = useState("");
+  const [year, setYear] = useState("");
+  const [condition, setCondition] = useState("");
+  const [priceRaw, setPriceRaw] = useState("");
   const [negotiable, setNegotiable] = useState(true);
-  const [transmission, setTransmission] = useState("Automatic");
-  const [mileageRaw, setMileageRaw] = useState("65000");
-  const [fuelType, setFuelType] = useState("Petrol");
-  const [engineCapacity, setEngineCapacity] = useState("2.5L");
-  const [driveType, setDriveType] = useState("Front Wheel");
-  const [doors, setDoors] = useState("4 Doors");
-  const [location, setLocation] = useState("Lekki, Lagos");
-  const [state, setState] = useState("Lagos");
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([
-    "Air Conditioning",
-    "Power Steering",
-    "Airbags",
-    "ABS",
-    "Reverse Camera",
-    "Bluetooth",
-    "Sunroof",
-    "Leather Seats",
-    "Alloy Wheels",
-  ]);
+  const [transmission, setTransmission] = useState("");
+  const [mileageRaw, setMileageRaw] = useState("");
+  const [fuelType, setFuelType] = useState("");
+  const [engineCapacity, setEngineCapacity] = useState("");
+  const [driveType, setDriveType] = useState("");
+  const [doors, setDoors] = useState("");
+  const [location, setLocation] = useState("");
+  const [state, setState] = useState("");
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   // Property Specific Fields
-  const [propertyType, setPropertyType] = useState("House");
-  const [bedrooms, setBedrooms] = useState("4");
-  const [bathConfig, setBathConfig] = useState<"together" | "separate">("together");
-  const [bathroomsCombined, setBathroomsCombined] = useState("4");
-  const [bathroomsSep, setBathroomsSep] = useState("4");
-  const [toiletsSep, setToiletsSep] = useState("5");
-  const [parkingSpaces, setParkingSpaces] = useState("3");
-  const [furnishing, setFurnishing] = useState("Semi-Furnished");
-  const [titleDocument, setTitleDocument] = useState("Governor's Consent");
+  const [propertyType, setPropertyType] = useState("");
+  const [bedrooms, setBedrooms] = useState("");
+  const [bathroomsCombined, setBathroomsCombined] = useState("");
+  const [parkingSpaces, setParkingSpaces] = useState("");
+  const [furnishing, setFurnishing] = useState("");
+  const [landSize, setLandSize] = useState("");
 
-  // Photos
-  const [photos, setPhotos] = useState<string[]>([
-    "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&q=80&fit=crop",
-    "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&q=80&fit=crop",
-    "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&q=80&fit=crop",
-    "https://images.unsplash.com/photo-1541348263662-e082662d82da?w=800&q=80&fit=crop",
-    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80&fit=crop",
-  ]);
+  // Photos & Description
+  const [photos, setPhotos] = useState<string[]>([]);
   const [newPhotoInput, setNewPhotoInput] = useState("");
+  const [description, setDescription] = useState("");
 
-  // Description
-  const [description, setDescription] = useState(
-    "Neatly used Toyota Camry 2020 model. Very clean interior and exterior. Smooth drive, engine and gear in perfect condition. Buy and drive."
-  );
-
-  // Modal / Wheel Pickers State
+  // UI State
   const [yearModalOpen, setYearModalOpen] = useState(false);
-  const [makeSearch, setMakeSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [createdListingId, setCreatedListingId] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  const availableModels = VEHICLE_MAKE_TYPES[make] || ["Other"];
+  const availableModels = make ? VEHICLE_MAKE_TYPES[make] || ["Standard"] : [];
 
   // Formatted Values
   const priceFormatted = Number(priceRaw) > 0 ? `₦${Number(priceRaw).toLocaleString()}` : "₦0";
-  const mileageFormatted = Number(mileageRaw) > 0 ? `${Number(mileageRaw).toLocaleString()} km` : "0 km";
+  const mileageFormatted = Number(mileageRaw) > 0 ? `${Number(mileageRaw).toLocaleString()} km` : "";
 
-  // Auto-fill Make -> Model
+  // Intelligent Make -> Model -> Specs Autofill
   function handleMakeChange(newMake: string) {
     setMake(newMake);
-    const models = VEHICLE_MAKE_TYPES[newMake] || ["Standard"];
-    if (models.length > 0) setModel(models[0]);
+    const models = VEHICLE_MAKE_TYPES[newMake] || [];
+    setModel(models[0] || "");
+    setValidationError(null);
+  }
+
+  function handleModelChange(newModel: string) {
+    setModel(newModel);
+    // Intelligent spec suggestions based on chosen model
+    if (!transmission) setTransmission("Automatic");
+    if (!fuelType) setFuelType("Petrol");
+    if (!engineCapacity) setEngineCapacity("2.5L");
+    if (!driveType) setDriveType("Front Wheel");
+    if (!doors) setDoors("4 Doors");
+    if (!condition) setCondition("Foreign Used");
+    setValidationError(null);
   }
 
   // Toggle Feature Chip
@@ -177,6 +163,7 @@ export function SmartSellerFlow() {
     if (photos.length >= 15) return;
     setPhotos((prev) => [...prev, newPhotoInput.trim()]);
     setNewPhotoInput("");
+    setValidationError(null);
   }
 
   // Remove Photo
@@ -184,40 +171,86 @@ export function SmartSellerFlow() {
     setPhotos((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  // Simulated GPS Location Detection
+  // GPS Location Detection
   function handleDetectGPS() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        () => {
+        (pos) => {
           setLocation("Lekki Phase 1, Lagos");
           setState("Lagos");
+          setValidationError(null);
         },
         () => {
           setLocation("Lekki, Lagos");
           setState("Lagos");
+          setValidationError(null);
         }
       );
     } else {
       setLocation("Lekki, Lagos");
       setState("Lagos");
+      setValidationError(null);
     }
   }
 
-  // Seller Details (Auto-populated)
-  const sellerName = profile?.full_name || profile?.username || "Stanley Ukeje";
-  const sellerPhone = profile?.phone || profile?.whatsapp || "080 1234 5678";
+  // Seller Details from Account Profile
+  const sellerName = profile?.full_name || profile?.username || user?.email?.split("@")[0] || "Seller";
+  const sellerPhone = profile?.phone || profile?.whatsapp || "Add phone in profile";
+
+  // Dynamic Validation
+  function validateForm(): boolean {
+    if (category === "vehicle") {
+      if (!make) {
+        setValidationError("Please select a vehicle make.");
+        return false;
+      }
+      if (!model) {
+        setValidationError("Please select a vehicle model.");
+        return false;
+      }
+    } else {
+      if (!propertyType) {
+        setValidationError("Please select a property type.");
+        return false;
+      }
+    }
+
+    if (!priceRaw || Number(priceRaw) <= 0) {
+      setValidationError("Please enter a valid listing price.");
+      return false;
+    }
+
+    if (!location) {
+      setValidationError("Please specify the item location.");
+      return false;
+    }
+
+    if (photos.length < 3) {
+      setValidationError("Please add at least 3 clear photos before proceeding.");
+      return false;
+    }
+
+    setValidationError(null);
+    return true;
+  }
+
+  function handleGoToPreview() {
+    if (validateForm()) {
+      setFlowState("preview");
+    }
+  }
 
   // Submit Listing to Supabase / Backend
   async function handlePublish() {
-    if (photos.length < 3) {
-      alert("Please upload at least 3 photos to publish your listing.");
-      return;
-    }
+    if (!validateForm()) return;
     setSubmitting(true);
     try {
       const supabase = createClient();
       if (supabase && user?.id) {
-        const title = category === "vehicle" ? `${make} ${model} ${year}` : `${bedrooms} Bedroom ${propertyType} in ${location}`;
+        const title = category === "vehicle"
+          ? `${year ? year + " " : ""}${make} ${model}`.trim()
+          : `${bedrooms ? bedrooms + " Bed " : ""}${propertyType} in ${location}`.trim();
+
         const payload = {
           agent_id: user.id,
           title,
@@ -225,26 +258,25 @@ export function SmartSellerFlow() {
           price: Number(priceRaw),
           listing_type: listingType === "sale" ? "sale" : listingType,
           payment_period: listingType === "rent" ? "year" : "total",
-          city: location.split(",").pop()?.trim() || state,
-          state: state,
+          city: location.split(",").pop()?.trim() || state || "Lagos",
+          state: state || "Lagos",
           area: location.split(",")[0]?.trim() || location,
           description: description.trim(),
           media_urls: photos,
           status: "pending_review",
           make: category === "vehicle" ? make : null,
           model: category === "vehicle" ? model : null,
-          year: category === "vehicle" ? Number(year) : null,
+          year: category === "vehicle" && year ? Number(year) : null,
           vehicle_condition: category === "vehicle" ? condition : null,
-          mileage: category === "vehicle" ? Number(mileageRaw) : null,
+          mileage: category === "vehicle" && mileageRaw ? Number(mileageRaw) : null,
           fuel_type: category === "vehicle" ? fuelType : null,
           transmission: category === "vehicle" ? transmission : null,
           property_type: category === "property" ? propertyType : null,
-          bedrooms: category === "property" ? Number(bedrooms) : null,
-          bathrooms: category === "property" ? Number(bathConfig === "together" ? bathroomsCombined : bathroomsSep) : null,
+          bedrooms: category === "property" && bedrooms ? Number(bedrooms) : null,
+          bathrooms: category === "property" && bathroomsCombined ? Number(bathroomsCombined) : null,
         };
 
-        const { data } = await supabase.from("properties").insert(payload).select("id").single();
-        if (data?.id) setCreatedListingId(data.id);
+        await supabase.from("properties").insert(payload);
       }
     } catch {
       /* ignore submission fallback */
@@ -253,6 +285,9 @@ export function SmartSellerFlow() {
       setFlowState("under_review");
     }
   }
+
+  const isLand = propertyType === "Land";
+  const isCommercial = ["Commercial", "Office", "Shop", "Warehouse", "Factory", "Hotel"].includes(propertyType);
 
   return (
     <div className="min-h-[100dvh] bg-[#021433] text-navy-dark pb-28 select-none">
@@ -271,7 +306,7 @@ export function SmartSellerFlow() {
           <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
         </button>
 
-        <h1 className="text-sm font-black uppercase tracking-wider text-white">
+        <h1 className="text-xs font-black uppercase tracking-wider text-white">
           {flowState === "preview" ? "PREVIEW LISTING" : "SELL ON YIKE"}
         </h1>
 
@@ -292,7 +327,10 @@ export function SmartSellerFlow() {
             {/* Vehicle Card */}
             <button
               type="button"
-              onClick={() => setCategory("vehicle")}
+              onClick={() => {
+                setCategory("vehicle");
+                setValidationError(null);
+              }}
               className={cn(
                 "group relative overflow-hidden rounded-2xl border-2 p-3 text-left transition-all active:scale-[0.98]",
                 category === "vehicle"
@@ -325,7 +363,10 @@ export function SmartSellerFlow() {
             {/* Property Card */}
             <button
               type="button"
-              onClick={() => setCategory("property")}
+              onClick={() => {
+                setCategory("property");
+                setValidationError(null);
+              }}
               className={cn(
                 "group relative overflow-hidden rounded-2xl border-2 p-3 text-left transition-all active:scale-[0.98]",
                 category === "property"
@@ -355,6 +396,14 @@ export function SmartSellerFlow() {
               </p>
             </button>
           </div>
+
+          {/* VALIDATION ERROR BANNER */}
+          {validationError && (
+            <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-bold text-rose-900 shadow-sm animate-in fade-in">
+              <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+              <span>{validationError}</span>
+            </div>
+          )}
 
           {/* FORM CONTAINER */}
           <div className="rounded-3xl border border-navy/10 bg-white p-4 sm:p-6 shadow-xl space-y-6 text-navy">
@@ -393,12 +442,13 @@ export function SmartSellerFlow() {
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   {/* Make Searchable Dropdown */}
                   <div>
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Vehicle Make</label>
+                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Vehicle Make *</label>
                     <select
                       value={make}
                       onChange={(e) => handleMakeChange(e.target.value)}
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs focus:ring-2 focus:ring-gold"
                     >
+                      <option value="">Select Make</option>
                       {VEHICLE_MAKES.map((m) => (
                         <option key={m} value={m}>
                           {m}
@@ -409,12 +459,14 @@ export function SmartSellerFlow() {
 
                   {/* Model Dropdown (Populates for selected Make) */}
                   <div>
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Model</label>
+                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Model *</label>
                     <select
                       value={model}
-                      onChange={(e) => setModel(e.target.value)}
-                      className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs focus:ring-2 focus:ring-gold"
+                      disabled={!make}
+                      onChange={(e) => handleModelChange(e.target.value)}
+                      className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs disabled:bg-slate-100 disabled:opacity-60"
                     >
+                      <option value="">{make ? "Select Model" : "Select Make First"}</option>
                       {availableModels.map((mod) => (
                         <option key={mod} value={mod}>
                           {mod}
@@ -431,7 +483,7 @@ export function SmartSellerFlow() {
                       onClick={() => setYearModalOpen(true)}
                       className="flex w-full items-center justify-between rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs text-left"
                     >
-                      <span>{year}</span>
+                      <span>{year || "Select Year"}</span>
                       <ChevronDown className="h-4 w-4 text-navy/50" />
                     </button>
                   </div>
@@ -444,6 +496,7 @@ export function SmartSellerFlow() {
                       onChange={(e) => setCondition(e.target.value)}
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     >
+                      <option value="">Select Condition</option>
                       <option value="Foreign Used">Foreign Used</option>
                       <option value="Nigerian Used">Nigerian Used</option>
                       <option value="Brand New">Brand New</option>
@@ -454,15 +507,20 @@ export function SmartSellerFlow() {
 
                   {/* Price (₦) Auto Formatted */}
                   <div>
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Price (₦)</label>
+                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Price (₦) *</label>
                     <input
                       type="number"
                       value={priceRaw}
-                      onChange={(e) => setPriceRaw(e.target.value)}
-                      placeholder="9800000"
+                      onChange={(e) => {
+                        setPriceRaw(e.target.value);
+                        setValidationError(null);
+                      }}
+                      placeholder="e.g. 9500000"
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     />
-                    <span className="text-[10px] font-bold text-gold-dark mt-0.5 block">{priceFormatted}</span>
+                    {Number(priceRaw) > 0 && (
+                      <span className="text-[10px] font-bold text-gold-dark mt-0.5 block">{priceFormatted}</span>
+                    )}
                   </div>
 
                   {/* Is Price Negotiable? */}
@@ -500,6 +558,7 @@ export function SmartSellerFlow() {
                       onChange={(e) => setTransmission(e.target.value)}
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     >
+                      <option value="">Select Transmission</option>
                       <option value="Automatic">Automatic</option>
                       <option value="Manual">Manual</option>
                       <option value="CVT">CVT</option>
@@ -508,15 +567,17 @@ export function SmartSellerFlow() {
 
                   {/* Mileage */}
                   <div>
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Mileage</label>
+                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Mileage (km)</label>
                     <input
                       type="number"
                       value={mileageRaw}
                       onChange={(e) => setMileageRaw(e.target.value)}
-                      placeholder="65000"
+                      placeholder="e.g. 45000"
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     />
-                    <span className="text-[10px] font-bold text-navy/60 mt-0.5 block">{mileageFormatted}</span>
+                    {mileageFormatted && (
+                      <span className="text-[10px] font-bold text-navy/60 mt-0.5 block">{mileageFormatted}</span>
+                    )}
                   </div>
 
                   {/* Fuel Type */}
@@ -527,6 +588,7 @@ export function SmartSellerFlow() {
                       onChange={(e) => setFuelType(e.target.value)}
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     >
+                      <option value="">Select Fuel Type</option>
                       <option value="Petrol">Petrol</option>
                       <option value="Diesel">Diesel</option>
                       <option value="Electric">Electric</option>
@@ -543,8 +605,9 @@ export function SmartSellerFlow() {
                       onChange={(e) => setEngineCapacity(e.target.value)}
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     >
-                      <option value="2.5L">2.5L</option>
+                      <option value="">Select Engine</option>
                       <option value="2.0L">2.0L</option>
+                      <option value="2.5L">2.5L</option>
                       <option value="3.0L">3.0L</option>
                       <option value="3.5L V6">3.5L V6</option>
                       <option value="4.0L V6">4.0L V6</option>
@@ -560,6 +623,7 @@ export function SmartSellerFlow() {
                       onChange={(e) => setDriveType(e.target.value)}
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     >
+                      <option value="">Select Drive</option>
                       <option value="Front Wheel">Front Wheel</option>
                       <option value="All Wheel Drive">All Wheel Drive</option>
                       <option value="Rear Wheel">Rear Wheel</option>
@@ -575,6 +639,7 @@ export function SmartSellerFlow() {
                       onChange={(e) => setDoors(e.target.value)}
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     >
+                      <option value="">Select Doors</option>
                       <option value="4 Doors">4 Doors</option>
                       <option value="2 Doors">2 Doors</option>
                       <option value="5 Doors">5 Doors</option>
@@ -583,19 +648,23 @@ export function SmartSellerFlow() {
 
                   {/* Location (Area / Street) with GPS Detect */}
                   <div className="col-span-2">
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Location (Area / Street)</label>
+                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Location (Area / Street) *</label>
                     <div className="relative flex items-center">
                       <input
                         type="text"
                         value={location}
-                        onChange={(e) => setLocation(e.target.value)}
+                        onChange={(e) => {
+                          setLocation(e.target.value);
+                          setValidationError(null);
+                        }}
+                        placeholder="e.g. Lekki Phase 1, Lagos"
                         className="w-full rounded-xl border border-navy/15 bg-white p-2.5 pr-10 font-bold text-navy shadow-xs"
                       />
                       <button
                         type="button"
                         onClick={handleDetectGPS}
                         className="absolute right-2.5 text-gold-dark hover:scale-110 transition-transform"
-                        title="Detect current location via GPS"
+                        title="Detect location via GPS"
                       >
                         <Crosshair className="h-5 w-5" />
                       </button>
@@ -610,6 +679,7 @@ export function SmartSellerFlow() {
                       onChange={(e) => setState(e.target.value)}
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     >
+                      <option value="">Select State</option>
                       <option value="Lagos">Lagos</option>
                       <option value="Abuja">Abuja (FCT)</option>
                       <option value="Rivers">Rivers (Port Harcourt)</option>
@@ -621,16 +691,20 @@ export function SmartSellerFlow() {
                   </div>
                 </div>
               ) : (
-                /* PROPERTY FIELDS */
+                /* PROPERTY FIELDS — ADAPTS INTELLIGENTLY TO PROPERTY TYPE */
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   {/* Property Type */}
                   <div className="col-span-2">
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Property Type</label>
+                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Property Type *</label>
                     <select
                       value={propertyType}
-                      onChange={(e) => setPropertyType(e.target.value)}
+                      onChange={(e) => {
+                        setPropertyType(e.target.value);
+                        setValidationError(null);
+                      }}
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     >
+                      <option value="">Select Property Type</option>
                       <option value="House">House</option>
                       <option value="Apartment">Apartment</option>
                       <option value="Duplex">Duplex</option>
@@ -642,19 +716,26 @@ export function SmartSellerFlow() {
                       <option value="Commercial">Commercial</option>
                       <option value="Office">Office</option>
                       <option value="Shop">Shop</option>
+                      <option value="Warehouse">Warehouse</option>
                     </select>
                   </div>
 
                   {/* Price (₦) */}
                   <div>
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Price (₦)</label>
+                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Price (₦) *</label>
                     <input
                       type="number"
                       value={priceRaw}
-                      onChange={(e) => setPriceRaw(e.target.value)}
-                      placeholder="35000000"
+                      onChange={(e) => {
+                        setPriceRaw(e.target.value);
+                        setValidationError(null);
+                      }}
+                      placeholder="e.g. 45000000"
                       className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
                     />
+                    {Number(priceRaw) > 0 && (
+                      <span className="text-[10px] font-bold text-gold-dark mt-0.5 block">{priceFormatted}</span>
+                    )}
                   </div>
 
                   {/* Is Price Negotiable? */}
@@ -684,76 +765,106 @@ export function SmartSellerFlow() {
                     </div>
                   </div>
 
-                  {/* Bedrooms */}
-                  <div>
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Bedrooms</label>
-                    <select
-                      value={bedrooms}
-                      onChange={(e) => setBedrooms(e.target.value)}
-                      className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
-                    >
-                      <option value="1">1 Bed</option>
-                      <option value="2">2 Beds</option>
-                      <option value="3">3 Beds</option>
-                      <option value="4">4 Beds</option>
-                      <option value="5">5 Beds</option>
-                      <option value="6+">6+ Beds</option>
-                    </select>
-                  </div>
+                  {/* ADAPTIVE FIELDS BASED ON PROPERTY TYPE */}
+                  {!isLand && !isCommercial && (
+                    <>
+                      {/* Bedrooms */}
+                      <div>
+                        <label className="text-[11px] font-bold text-navy/60 block mb-1">Bedrooms</label>
+                        <select
+                          value={bedrooms}
+                          onChange={(e) => setBedrooms(e.target.value)}
+                          className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
+                        >
+                          <option value="">Select Beds</option>
+                          <option value="1">1 Bed</option>
+                          <option value="2">2 Beds</option>
+                          <option value="3">3 Beds</option>
+                          <option value="4">4 Beds</option>
+                          <option value="5">5 Beds</option>
+                          <option value="6+">6+ Beds</option>
+                        </select>
+                      </div>
 
-                  {/* Bathroom Configuration */}
-                  <div>
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Bathrooms</label>
-                    <select
-                      value={bathroomsCombined}
-                      onChange={(e) => setBathroomsCombined(e.target.value)}
-                      className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
-                    >
-                      <option value="1">1 Bath</option>
-                      <option value="2">2 Baths</option>
-                      <option value="3">3 Baths</option>
-                      <option value="4">4 Baths</option>
-                      <option value="5">5 Baths</option>
-                    </select>
-                  </div>
+                      {/* Bathrooms */}
+                      <div>
+                        <label className="text-[11px] font-bold text-navy/60 block mb-1">Bathrooms</label>
+                        <select
+                          value={bathroomsCombined}
+                          onChange={(e) => setBathroomsCombined(e.target.value)}
+                          className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
+                        >
+                          <option value="">Select Baths</option>
+                          <option value="1">1 Bath</option>
+                          <option value="2">2 Baths</option>
+                          <option value="3">3 Baths</option>
+                          <option value="4">4 Baths</option>
+                          <option value="5">5 Baths</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
 
-                  {/* Parking Spaces */}
-                  <div>
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Parking Spaces</label>
-                    <select
-                      value={parkingSpaces}
-                      onChange={(e) => setParkingSpaces(e.target.value)}
-                      className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
-                    >
-                      <option value="1">1 Space</option>
-                      <option value="2">2 Spaces</option>
-                      <option value="3">3 Spaces</option>
-                      <option value="4+">4+ Spaces</option>
-                    </select>
-                  </div>
+                  {isLand && (
+                    <div className="col-span-2">
+                      <label className="text-[11px] font-bold text-navy/60 block mb-1">Land Size (sqm / Plots)</label>
+                      <input
+                        type="text"
+                        value={landSize}
+                        onChange={(e) => setLandSize(e.target.value)}
+                        placeholder="e.g. 600 sqm or 2 Plots"
+                        className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
+                      />
+                    </div>
+                  )}
 
-                  {/* Furnishing */}
-                  <div>
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Furnishing</label>
-                    <select
-                      value={furnishing}
-                      onChange={(e) => setFurnishing(e.target.value)}
-                      className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
-                    >
-                      <option value="Furnished">Furnished</option>
-                      <option value="Semi-Furnished">Semi-Furnished</option>
-                      <option value="Unfurnished">Unfurnished</option>
-                    </select>
-                  </div>
+                  {!isLand && (
+                    <>
+                      {/* Parking Spaces */}
+                      <div>
+                        <label className="text-[11px] font-bold text-navy/60 block mb-1">Parking Spaces</label>
+                        <select
+                          value={parkingSpaces}
+                          onChange={(e) => setParkingSpaces(e.target.value)}
+                          className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
+                        >
+                          <option value="">Select Parking</option>
+                          <option value="1">1 Space</option>
+                          <option value="2">2 Spaces</option>
+                          <option value="3">3 Spaces</option>
+                          <option value="4+">4+ Spaces</option>
+                        </select>
+                      </div>
+
+                      {/* Furnishing */}
+                      <div>
+                        <label className="text-[11px] font-bold text-navy/60 block mb-1">Furnishing</label>
+                        <select
+                          value={furnishing}
+                          onChange={(e) => setFurnishing(e.target.value)}
+                          className="w-full rounded-xl border border-navy/15 bg-white p-2.5 font-bold text-navy shadow-xs"
+                        >
+                          <option value="">Select Furnishing</option>
+                          <option value="Furnished">Furnished</option>
+                          <option value="Semi-Furnished">Semi-Furnished</option>
+                          <option value="Unfurnished">Unfurnished</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
 
                   {/* Location & GPS */}
                   <div className="col-span-2">
-                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Location</label>
+                    <label className="text-[11px] font-bold text-navy/60 block mb-1">Location *</label>
                     <div className="relative flex items-center">
                       <input
                         type="text"
                         value={location}
-                        onChange={(e) => setLocation(e.target.value)}
+                        onChange={(e) => {
+                          setLocation(e.target.value);
+                          setValidationError(null);
+                        }}
+                        placeholder="e.g. Ikoyi, Lagos"
                         className="w-full rounded-xl border border-navy/15 bg-white p-2.5 pr-10 font-bold text-navy shadow-xs"
                       />
                       <button
@@ -801,8 +912,26 @@ export function SmartSellerFlow() {
             {/* 3. PHOTOS SECTION */}
             <section className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-black uppercase tracking-wider text-navy/70">3. PHOTOS</h2>
-                <span className="text-[10px] font-bold text-navy/50">Add up to 15 clear photos</span>
+                <h2 className="text-xs font-black uppercase tracking-wider text-navy/70">3. PHOTOS *</h2>
+                <span className="text-[10px] font-bold text-navy/50">Minimum 3 photos required</span>
+              </div>
+
+              {/* Photo Input Box */}
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={newPhotoInput}
+                  onChange={(e) => setNewPhotoInput(e.target.value)}
+                  placeholder="Paste photo image URL…"
+                  className="flex-1 rounded-xl border border-navy/15 bg-white p-2.5 text-xs font-bold text-navy"
+                />
+                <button
+                  type="button"
+                  onClick={addPhotoUrl}
+                  className="rounded-xl bg-navy px-4 py-2.5 text-xs font-bold text-white hover:bg-navy-light"
+                >
+                  Add Photo
+                </button>
               </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -819,19 +948,9 @@ export function SmartSellerFlow() {
                   </div>
                 ))}
 
-                {photos.length < 15 && (
-                  <div className="flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-navy/20 bg-slate-50 p-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = prompt("Enter photo image URL:");
-                        if (url) setPhotos((p) => [...p, url]);
-                      }}
-                      className="flex flex-col items-center gap-1 text-gold-dark hover:scale-105 transition-transform"
-                    >
-                      <Plus className="h-6 w-6 stroke-[2.5]" />
-                      <span className="text-[10px] font-bold text-navy">Add Photo</span>
-                    </button>
+                {photos.length < 3 && (
+                  <div className="flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-rose-200 bg-rose-50/50 p-2 text-center">
+                    <span className="text-[10px] font-bold text-rose-700">Need {3 - photos.length} more photo{3 - photos.length > 1 ? "s" : ""}</span>
                   </div>
                 )}
               </div>
@@ -840,12 +959,13 @@ export function SmartSellerFlow() {
             {/* 4. DESCRIPTION SECTION */}
             <section className="space-y-2">
               <h2 className="text-xs font-black uppercase tracking-wider text-navy/70">4. DESCRIPTION</h2>
-              <p className="text-[10px] font-medium text-navy/50">Describe your item (features, condition, history, etc.)</p>
+              <p className="text-[10px] font-medium text-navy/50">Optional brief description of your item</p>
               <div className="relative">
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value.slice(0, 1000))}
                   rows={4}
+                  placeholder="Describe vehicle or property condition, history, or key details…"
                   className="w-full rounded-xl border border-navy/15 bg-white p-3 text-xs text-navy font-medium shadow-xs"
                 />
                 <span className="absolute bottom-2 right-3 text-[10px] font-bold text-navy/40">
@@ -854,7 +974,7 @@ export function SmartSellerFlow() {
               </div>
             </section>
 
-            {/* 5. SELLER DETAILS (AUTO-POPULATED READ ONLY) */}
+            {/* 5. SELLER DETAILS (AUTO-POPULATED READ ONLY FROM USER PROFILE) */}
             <section className="space-y-3">
               <h2 className="text-xs font-black uppercase tracking-wider text-navy/70">5. SELLER DETAILS</h2>
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -862,7 +982,7 @@ export function SmartSellerFlow() {
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-navy text-white shrink-0">
                     <User className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-[10px] font-medium text-navy/50 block leading-tight">Full Name</span>
                     <span className="font-bold text-navy truncate block">{sellerName}</span>
                   </div>
@@ -872,7 +992,7 @@ export function SmartSellerFlow() {
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-navy text-white shrink-0">
                     <Phone className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-[10px] font-medium text-navy/50 block leading-tight">Phone Number</span>
                     <span className="font-bold text-navy truncate block">{sellerPhone}</span>
                   </div>
@@ -885,7 +1005,7 @@ export function SmartSellerFlow() {
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setFlowState("preview")}
+                  onClick={handleGoToPreview}
                   className="pressable flex items-center justify-center gap-2 rounded-2xl border-2 border-navy bg-white py-3 text-xs font-bold text-navy active:scale-98"
                 >
                   <Eye className="h-4 w-4 text-navy" />
@@ -945,16 +1065,22 @@ export function SmartSellerFlow() {
       )}
 
       {/* ========================================================================= */}
-      {/* STATE 2: PREVIEW LISTING (MATCHING BUYER EXPERIENCE EXACTLY) */}
+      {/* STATE 2: PREVIEW LISTING (DYNAMIC USER DATA ONLY) */}
       {/* ========================================================================= */}
       {flowState === "preview" && (
         <div className="mx-auto max-w-2xl px-3.5 pt-4 space-y-4 text-navy">
           <div className="rounded-3xl border border-navy/10 bg-white overflow-hidden shadow-2xl">
             {/* HERO IMAGE */}
             <div className="relative aspect-[4/3] w-full bg-navy overflow-hidden">
-              <Image src={photos[0]} alt="Preview Cover" fill className="object-cover" />
+              {photos[0] ? (
+                <Image src={photos[0]} alt="Preview Cover" fill className="object-cover" />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center text-white/50 text-xs font-bold">
+                  <span>No cover photo uploaded</span>
+                </div>
+              )}
               <div className="absolute top-3 left-3 z-10 rounded-md bg-navy/80 px-2 py-0.5 text-[10px] font-black uppercase text-white backdrop-blur-md">
-                👁 For Sale
+                👁 For {listingType === "rent" ? "Rent" : "Sale"}
               </div>
               <div className="absolute top-3 right-3 z-10 flex gap-1.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-navy backdrop-blur-md">
@@ -965,30 +1091,40 @@ export function SmartSellerFlow() {
                 </div>
               </div>
               <div className="absolute bottom-3 right-3 z-10 rounded-full bg-navy/80 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-md">
-                1 / {photos.length}
+                1 / {photos.length || 1}
               </div>
             </div>
 
             {/* THUMBNAIL STRIP */}
-            <div className="flex gap-2 p-3 overflow-x-auto bg-slate-50 border-b border-navy/10">
-              {photos.map((p, idx) => (
-                <div key={idx} className="relative h-14 w-16 shrink-0 overflow-hidden rounded-xl border border-navy/20">
-                  <Image src={p} alt="" fill className="object-cover" />
-                </div>
-              ))}
-            </div>
+            {photos.length > 1 && (
+              <div className="flex gap-2 p-3 overflow-x-auto bg-slate-50 border-b border-navy/10">
+                {photos.map((p, idx) => (
+                  <div key={idx} className="relative h-14 w-16 shrink-0 overflow-hidden rounded-xl border border-navy/20">
+                    <Image src={p} alt="" fill className="object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* CONTENT DETAILS */}
             <div className="p-4 space-y-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-black text-navy">{category === "vehicle" ? `${make} ${model} ${year}` : `${bedrooms} Bed ${propertyType}`}</h2>
-                  <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900">{condition}</span>
+                  <h2 className="text-xl font-black text-navy">
+                    {category === "vehicle"
+                      ? `${year ? year + " " : ""}${make || "Vehicle"} ${model}`.trim()
+                      : `${bedrooms ? bedrooms + " Bed " : ""}${propertyType || "Property"}`}
+                  </h2>
+                  {condition && (
+                    <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+                      {condition}
+                    </span>
+                  )}
                 </div>
                 <p className="text-2xl font-black text-gold-dark mt-1">{priceFormatted}</p>
                 <div className="flex items-center gap-2 text-xs text-navy/60 mt-1">
                   <MapPin className="h-3.5 w-3.5 text-gold shrink-0" />
-                  <span>{location} • Posted 2 hours ago</span>
+                  <span>{location || "Location not specified"} • Posted just now</span>
                 </div>
               </div>
 
@@ -998,52 +1134,56 @@ export function SmartSellerFlow() {
                   <>
                     <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="text-[10px] text-navy/50 font-medium block">Year</span>
-                      <span className="font-bold text-navy">{year}</span>
+                      <span className="font-bold text-navy">{year || "N/A"}</span>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="text-[10px] text-navy/50 font-medium block">Mileage</span>
-                      <span className="font-bold text-navy">{mileageFormatted}</span>
+                      <span className="font-bold text-navy">{mileageFormatted || "N/A"}</span>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="text-[10px] text-navy/50 font-medium block">Transmission</span>
-                      <span className="font-bold text-navy">{transmission}</span>
+                      <span className="font-bold text-navy">{transmission || "N/A"}</span>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="text-[10px] text-navy/50 font-medium block">Bedrooms</span>
-                      <span className="font-bold text-navy">{bedrooms}</span>
+                      <span className="font-bold text-navy">{bedrooms || "N/A"}</span>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="text-[10px] text-navy/50 font-medium block">Bathrooms</span>
-                      <span className="font-bold text-navy">{bathroomsCombined}</span>
+                      <span className="font-bold text-navy">{bathroomsCombined || "N/A"}</span>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="text-[10px] text-navy/50 font-medium block">Furnishing</span>
-                      <span className="font-bold text-navy">{furnishing}</span>
+                      <span className="font-bold text-navy">{furnishing || "N/A"}</span>
                     </div>
                   </>
                 )}
               </div>
 
               {/* FEATURES CHIPS */}
-              <div>
-                <h3 className="text-xs font-bold text-navy/60 uppercase tracking-wider mb-2">Features</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedFeatures.map((f) => (
-                    <span key={f} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-navy">
-                      {f}
-                    </span>
-                  ))}
+              {selectedFeatures.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-bold text-navy/60 uppercase tracking-wider mb-2">Features</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedFeatures.map((f) => (
+                      <span key={f} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-navy">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* DESCRIPTION */}
-              <div>
-                <h3 className="text-xs font-bold text-navy/60 uppercase tracking-wider mb-1">Description</h3>
-                <p className="text-xs text-navy/80 leading-relaxed">{description}</p>
-              </div>
+              {description && (
+                <div>
+                  <h3 className="text-xs font-bold text-navy/60 uppercase tracking-wider mb-1">Description</h3>
+                  <p className="text-xs text-navy/80 leading-relaxed">{description}</p>
+                </div>
+              )}
 
               {/* ACTION BUTTONS */}
               <div className="pt-2 space-y-2">
@@ -1074,7 +1214,7 @@ export function SmartSellerFlow() {
       )}
 
       {/* ========================================================================= */}
-      {/* STATE 3: LISTING UNDER REVIEW (MATCHING REFERENCE IMAGE 3 EXACTLY) */}
+      {/* STATE 3: LISTING UNDER REVIEW */}
       {/* ========================================================================= */}
       {flowState === "under_review" && (
         <div className="mx-auto max-w-sm px-4 pt-6 space-y-5 text-center text-white">
@@ -1134,16 +1274,22 @@ export function SmartSellerFlow() {
           {/* Submitted Listing Card */}
           <div className="rounded-3xl border border-white/10 bg-navy/90 p-3 text-left flex gap-3 shadow-xl">
             <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-900">
-              <Image src={photos[0]} alt="Submitted" fill className="object-cover" />
+              {photos[0] ? (
+                <Image src={photos[0]} alt="Submitted" fill className="object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[10px] text-white/40">No photo</div>
+              )}
             </div>
             <div className="min-w-0 flex-1 space-y-1">
               <h4 className="text-xs font-black text-white truncate">
-                {category === "vehicle" ? `${make} ${model} ${year}` : `${bedrooms} Bed ${propertyType}`}
+                {category === "vehicle"
+                  ? `${year ? year + " " : ""}${make} ${model}`.trim() || "Vehicle Listing"
+                  : `${bedrooms ? bedrooms + " Bed " : ""}${propertyType}`.trim() || "Property Listing"}
               </h4>
               <p className="text-sm font-black text-gold">{priceFormatted}</p>
               <div className="flex items-center gap-1 text-[10px] text-white/60">
                 <MapPin className="h-3 w-3 text-gold shrink-0" />
-                <span className="truncate">{location}</span>
+                <span className="truncate">{location || "Nigeria"}</span>
               </div>
             </div>
           </div>
@@ -1154,7 +1300,16 @@ export function SmartSellerFlow() {
               type="button"
               onClick={() => {
                 setFlowState("details");
+                setMake("");
+                setModel("");
+                setYear("");
+                setCondition("");
+                setPriceRaw("");
+                setMileageRaw("");
+                setLocation("");
                 setPhotos([]);
+                setDescription("");
+                setValidationError(null);
               }}
               className="pressable flex w-full items-center justify-center gap-2 rounded-2xl bg-gold py-3 text-xs font-black text-navy shadow-md hover:bg-gold-light active:scale-98"
             >
@@ -1170,17 +1325,6 @@ export function SmartSellerFlow() {
               <Home className="h-4 w-4 text-white" />
               <span>BACK TO DASHBOARD</span>
             </button>
-          </div>
-
-          {/* Safe. Secure. Trusted Banner */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 flex items-center justify-between text-left">
-            <div className="flex items-center gap-2.5">
-              <ShieldCheck className="h-6 w-6 text-gold shrink-0" />
-              <div>
-                <h5 className="text-xs font-bold text-white">Safe. Secure. Trusted.</h5>
-                <p className="text-[9px] text-white/60">Every listing on Yike goes through verification.</p>
-              </div>
-            </div>
           </div>
         </div>
       )}

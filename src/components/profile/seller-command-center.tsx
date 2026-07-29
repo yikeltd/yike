@@ -160,7 +160,7 @@ export function SellerCommandCenter(props: Props) {
   const sampleConversations = [
     {
       id: "conv-1",
-      name: "John Doe",
+      name: "Emeka Okafor",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80&fit=crop",
       badge: "Offer accepted",
       badgeTone: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -195,7 +195,7 @@ export function SellerCommandCenter(props: Props) {
     {
       id: "act-1",
       title: "New lead",
-      subtitle: "John Doe viewed your listing",
+      subtitle: "Emeka Okafor viewed your listing",
       time: "5m ago",
       icon: Users,
       tone: "bg-emerald-50 text-emerald-600 border border-emerald-200",
