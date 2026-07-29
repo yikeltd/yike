@@ -124,10 +124,8 @@ function VehicleRail({ items }: { items: Property[] }) {
   );
 }
 
-/**
- * YIKE HOMEPAGE — PIXEL-PERFECT IMPLEMENTATION
- * Matches reference image input_file_0.png strictly across all 15 sections.
- */
+import { HomeDesktopView } from "@/components/home/home-desktop-view";
+
 export function HomeMarketplaceExperience({
   initialCategory,
   propertyRails,
@@ -376,20 +374,31 @@ export function HomeMarketplaceExperience({
 
   return (
     <div className="home-canvas min-h-[100dvh] pb-24 lg:pb-8 bg-[#f7f9fc]">
-      {homepageTopAd ? (
-        <div className="bg-[#031B4E] px-3 pt-3 sm:px-6 lg:px-6 xl:px-8">
-          <div className="mx-auto max-w-7xl">
-            <HomeAdSlot
-              ad={homepageTopAd}
-              placement="homepage_top"
-              className="pb-2"
-            />
-          </div>
-        </div>
-      ) : null}
+      {/* DESKTOP EXPERIENCE (RESTORED LEGACY HOMEPAGE) */}
+      <HomeDesktopView
+        featuredItems={featuredNearItems}
+        trendingItems={isVehicle ? vehicleRails.trending.items : propertyRails.trending.items}
+        recentItems={isVehicle ? vehicleRails.recent.items : propertyRails.recent.items}
+        luxuryItems={isVehicle ? (vehicleRails.luxury.items.length > 0 ? vehicleRails.luxury.items : vehicleRails.featured.items) : (propertyRails.luxury.items.length > 0 ? propertyRails.luxury.items : propertyRails.featured.items)}
+        nationwideItems={isVehicle ? vehicleRails.nationwide : propertyRails.nationwide}
+      />
 
-      {/* 1. HEADER (DEEP NAVY HEADER WITH EMBEDDED SEARCH PILL) */}
-      <header className="sticky top-0 z-40 bg-[#031B4E] px-3 pb-2.5 pt-2.5 text-white shadow-xl">
+      {/* MOBILE EXPERIENCE */}
+      <div className="lg:hidden">
+        {homepageTopAd ? (
+          <div className="bg-[#031B4E] px-3 pt-3 sm:px-6">
+            <div className="mx-auto max-w-7xl">
+              <HomeAdSlot
+                ad={homepageTopAd}
+                placement="homepage_top"
+                className="pb-2"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {/* 1. MOBILE HEADER */}
+        <header className="sticky top-0 z-40 bg-[#031B4E] px-3 pb-2.5 pt-2.5 text-white shadow-xl">
         <div className="mx-auto flex max-w-7xl items-center">
           {/* Logo & Search Field Pill */}
           <div className="relative flex flex-1 items-center bg-white rounded-full h-11 px-2.5 shadow-sm border border-white/20">
@@ -589,6 +598,7 @@ export function HomeMarketplaceExperience({
           </section>
         ) : null}
 
+        </div>
       </div>
     </div>
   );
