@@ -350,61 +350,8 @@ export function SellerCommandCenter(props: Props) {
             </div>
           </div>
 
-          {/* Stats Row (KPI Strip) — Smaller Vertical Padding & Tighter Spacing */}
-          <div className="border-t border-white/10 pt-2 mt-2">
-            <div className="grid grid-cols-4 divide-x divide-white/10 text-center">
-              <Link
-                href="/agent/listings"
-                prefetch
-                className="pressable flex flex-col items-center justify-center gap-0.5 py-0.5 transition-all hover:bg-white/5 rounded-lg"
-              >
-                <div className="flex items-center gap-1">
-                  <MessageSquare className="h-3.5 w-3.5 text-purple-300" />
-                  <span className="text-sm font-black text-white">{listingsValue}</span>
-                </div>
-                <span className="text-[10px] font-bold text-white/70">Listings</span>
-              </Link>
-
-              <Link
-                href="/saved"
-                prefetch
-                className="pressable flex flex-col items-center justify-center gap-0.5 py-0.5 transition-all hover:bg-white/5 rounded-lg"
-              >
-                <div className="flex items-center gap-1">
-                  <Heart className="h-3.5 w-3.5 text-pink-300" />
-                  <span className="text-sm font-black text-white">24</span>
-                </div>
-                <span className="text-[10px] font-bold text-white/70">Likes</span>
-              </Link>
-
-              <Link
-                href="/seller/crm"
-                prefetch
-                className="pressable flex flex-col items-center justify-center gap-0.5 py-0.5 transition-all hover:bg-white/5 rounded-lg"
-              >
-                <div className="flex items-center gap-1">
-                  <Users className="h-3.5 w-3.5 text-emerald-300" />
-                  <span className="text-sm font-black text-white">156</span>
-                </div>
-                <span className="text-[10px] font-bold text-white/70">Profile Views</span>
-              </Link>
-
-              <Link
-                href="/seller/crm"
-                prefetch
-                className="pressable flex flex-col items-center justify-center gap-0.5 py-0.5 transition-all hover:bg-white/5 rounded-lg"
-              >
-                <div className="flex items-center gap-1">
-                  <Star className="h-3.5 w-3.5 text-amber-300 fill-amber-300" />
-                  <span className="text-sm font-black text-white">4.8</span>
-                </div>
-                <span className="text-[10px] font-bold text-white/70">Rating</span>
-              </Link>
-            </div>
-          </div>
-
           {/* New Listing Button — Tight Margins, Gold Styling */}
-          <div className="pt-0.5">
+          <div className="pt-1">
             <Link
               href="/agent/listings/choose"
               prefetch
@@ -529,6 +476,69 @@ export function SellerCommandCenter(props: Props) {
                 <div className="w-full">
                   <h3 className="text-[10px] font-bold text-navy leading-tight">Payments</h3>
                   <p className="text-[9px] font-medium text-navy/55 leading-tight mt-0.5">Manage transactions</p>
+                </div>
+              </Link>
+            </div>
+          </section>
+
+          {/* DASHBOARD INSIGHTS — 4 COMPACT CARDS */}
+          <section className="space-y-1">
+            <SectionHeader title="Dashboard Insights" href="/seller/crm" />
+
+            <div className="grid grid-cols-4 gap-2">
+              <Link
+                href="/agent/listings"
+                prefetch
+                className="pressable flex flex-col items-center justify-center gap-1 rounded-2xl border border-navy/[0.06] bg-white p-2.5 text-center shadow-xs transition-all hover:border-navy/15"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <span className="text-sm font-black text-navy block leading-none">{listingsValue}</span>
+                  <span className="text-[9px] font-bold text-navy/60 leading-tight block mt-0.5">Listings</span>
+                </div>
+              </Link>
+
+              <Link
+                href="/saved"
+                prefetch
+                className="pressable flex flex-col items-center justify-center gap-1 rounded-2xl border border-navy/[0.06] bg-white p-2.5 text-center shadow-xs transition-all hover:border-navy/15"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-pink-50 text-pink-600">
+                  <Heart className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <span className="text-sm font-black text-navy block leading-none">24</span>
+                  <span className="text-[9px] font-bold text-navy/60 leading-tight block mt-0.5">Likes</span>
+                </div>
+              </Link>
+
+              <Link
+                href="/seller/crm"
+                prefetch
+                className="pressable flex flex-col items-center justify-center gap-1 rounded-2xl border border-navy/[0.06] bg-white p-2.5 text-center shadow-xs transition-all hover:border-navy/15"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                  <Eye className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <span className="text-sm font-black text-navy block leading-none">156</span>
+                  <span className="text-[9px] font-bold text-navy/60 leading-tight block mt-0.5">Profile Views</span>
+                </div>
+              </Link>
+
+              <Link
+                href="/seller/crm"
+                prefetch
+                className="pressable flex flex-col items-center justify-center gap-1 rounded-2xl border border-navy/[0.06] bg-white p-2.5 text-center shadow-xs transition-all hover:border-navy/15"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+                </span>
+                <div>
+                  <span className="text-sm font-black text-navy block leading-none">4.8</span>
+                  <span className="text-[9px] font-bold text-navy/60 leading-tight block mt-0.5">Rating</span>
                 </div>
               </Link>
             </div>
