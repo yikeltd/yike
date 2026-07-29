@@ -54,6 +54,28 @@ export function UnifiedListingDetail({ listing, ownerBanner }: Props) {
   const [fullscreenGalleryOpen, setFullscreenGalleryOpen] = useState(false);
   const [unapprovedCallModalOpen, setUnapprovedCallModalOpen] = useState(false);
   const [inAppCallActive, setInAppCallActive] = useState(false);
+  const [startingChat, setStartingChat] = useState(false);
+
+  async function handleChatSeller() {
+    setStartingChat(true);
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: listing.id }),
+      });
+      const data = await res.json();
+      if (data.workspace?.id) {
+        router.push(`/conversations/${data.workspace.id}`);
+      } else {
+        router.push("/conversations");
+      }
+    } catch {
+      router.push("/conversations");
+    } finally {
+      setStartingChat(false);
+    }
+  }
 
   const priceFormatted = formatPrice(
     Number(listing.price),
@@ -401,13 +423,15 @@ export function UnifiedListingDetail({ listing, ownerBanner }: Props) {
       <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 border-t border-navy/10 backdrop-blur-md p-3 shadow-2xl">
         <div className="mx-auto max-w-2xl grid grid-cols-2 gap-2.5">
           {/* CHAT SELLER BUTTON */}
-          <Link
-            href={`/agent/${agent?.id || "chat"}`}
-            className="pressable flex items-center justify-center gap-2 rounded-2xl border-2 border-navy bg-white py-3 text-xs font-black text-navy hover:bg-slate-50 active:scale-98 transition-all shadow-sm"
+          <button
+            type="button"
+            onClick={handleChatSeller}
+            disabled={startingChat}
+            className="pressable flex items-center justify-center gap-2 rounded-2xl border-2 border-navy bg-white py-3 text-xs font-black text-navy hover:bg-slate-50 active:scale-98 transition-all shadow-sm disabled:opacity-50"
           >
             <MessageCircle className="h-4 w-4 text-navy" />
-            <span>CHAT SELLER</span>
-          </Link>
+            <span>{startingChat ? "OPENING CHAT…" : "CHAT SELLER"}</span>
+          </button>
 
           {/* CALL SELLER BUTTON */}
           <button

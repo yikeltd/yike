@@ -383,7 +383,7 @@ export function SellerCommandCenter(props: Props) {
               {sampleConversations.map((conv) => (
                 <Link
                   key={conv.id}
-                  href="/conversations"
+                  href={`/conversations/${conv.id}`}
                   prefetch
                   className="pressable group flex items-center justify-between gap-2.5 py-2 first:pt-0.5 last:pb-0.5 transition-colors hover:bg-surface/60 rounded-lg px-1"
                 >

@@ -3,8 +3,8 @@ import { getSession } from "@/lib/auth";
 import { ConversationWorkspace } from "@/components/conversations/conversation-workspace";
 
 export const metadata = {
-  title: "Transaction Workspace | Yike",
-  description: "Manage your listing inquiry, connect, viewing, and transaction actions on Yike.",
+  title: "Conversation | Yike",
+  description: "Direct buyer & seller transaction conversation on Yike.",
 };
 
 export default async function ConversationPage({
@@ -20,7 +20,7 @@ export default async function ConversationPage({
   }
 
   return (
-    <div className="min-h-screen bg-surface p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#f8fafc]">
       <ConversationWorkspace conversationId={id} currentUserId={session.id} />
     </div>
   );

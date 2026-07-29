@@ -209,7 +209,7 @@ export function ConversationInboxClient({
         {filtered.map((conv) => (
           <Link
             key={conv.id}
-            href="/conversations"
+            href={`/conversations/${conv.id}`}
             prefetch
             className="pressable group block p-3 transition-colors hover:bg-surface/60 rounded-2xl"
           >
