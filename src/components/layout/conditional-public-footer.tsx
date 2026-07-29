@@ -12,7 +12,9 @@ function shouldHideFooter(pathname: string) {
     pathname === "/profile" ||
     pathname.startsWith("/profile/") ||
     pathname === "/saved" ||
-    pathname.startsWith("/saved/")
+    pathname.startsWith("/saved/") ||
+    pathname === "/discover" ||
+    pathname.startsWith("/discover/")
   );
 }
 
