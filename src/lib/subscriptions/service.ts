@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Profile } from "@/types/database";
 import { logPaymentAudit } from "@/lib/payments/audit";
 import { getRevenueOffers } from "@/lib/revenue-pricing/service";
+import { toOptionalUuid } from "@/lib/uuid";
 import {
   isPaidPlan,
   isSubscriptionPlanCode,
@@ -295,6 +296,8 @@ export async function activateSubscriptionFromPayment(
   const offers = await getRevenueOffers(admin);
   const foundingLocked = offers.founding_subscription_offer;
 
+  const paymentOrderIdClean = toOptionalUuid(input.paymentOrderId);
+
   const { data: sub, error } = await admin
     .from("user_subscriptions")
     .insert({
@@ -303,8 +306,8 @@ export async function activateSubscriptionFromPayment(
       status: "active",
       starts_at: now.toISOString(),
       expires_at: expires.toISOString(),
-      payment_reference: input.paymentReference,
-      payment_order_id: input.paymentOrderId,
+      payment_reference: input.paymentReference || null,
+      payment_order_id: paymentOrderIdClean,
       founding_price_locked: foundingLocked,
       created_at: now.toISOString(),
       updated_at: now.toISOString(),

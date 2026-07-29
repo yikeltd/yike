@@ -96,34 +96,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, paymentsLive: false, subscription: result.subscription });
   }
 
-  const financial = getFinancialPlatform();
-  const order = await financial.payment.createOrder(admin, {
-    userId: user.id,
-    orderType: "subscription",
-    amount: billing.total,
-    entityId: plan.id,
-    metadata: {
-      plan_code: planCode,
-      duration_days: billing.durationDays,
-      billing_months: billing.months,
-      discount_percent: billing.discountPercent,
-      user_id: user.id,
-    },
-  });
+  try {
+    const financial = getFinancialPlatform();
+    const order = await financial.payment.createOrder(admin, {
+      userId: user.id,
+      orderType: "subscription",
+      amount: billing.total,
+      entityId: plan.id,
+      metadata: {
+        plan_code: planCode,
+        duration_days: billing.durationDays,
+        billing_months: billing.months,
+        discount_percent: billing.discountPercent,
+        user_id: user.id,
+      },
+    });
 
-  const email = user.email ?? profile.email ?? "";
-  const init = await financial.payment.initialize(admin, order.id, email);
-  if (!init.authorizationUrl) {
-    return NextResponse.json({ error: "Could not start payment" }, { status: 500 });
+    const email = user.email ?? profile.email ?? "";
+    const init = await financial.payment.initialize(admin, order.id, email);
+    if (!init.authorizationUrl) {
+      return NextResponse.json(
+        { error: "We couldn't start your payment. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      authorizationUrl: init.authorizationUrl,
+      reference: order.reference,
+      amount: billing.total,
+      billingMonths: billing.months,
+      discountPercent: billing.discountPercent,
+      paymentsLive: true,
+    });
+  } catch (err: unknown) {
+    console.error("[SUBSCRIPTION_CHECKOUT_ERROR]", err);
+    return NextResponse.json(
+      { error: "We couldn't start your payment. Please try again." },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({
-    ok: true,
-    authorizationUrl: init.authorizationUrl,
-    reference: order.reference,
-    amount: billing.total,
-    billingMonths: billing.months,
-    discountPercent: billing.discountPercent,
-    paymentsLive: true,
-  });
 }

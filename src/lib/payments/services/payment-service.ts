@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { toOptionalUuid } from "@/lib/uuid";
 import type { PaymentOrder } from "@/types/database";
 import {
   getPaymentCallbackUrl,
@@ -42,23 +43,30 @@ export async function createPaymentOrder(
   admin: SupabaseClient,
   input: CreatePaymentOrderInput
 ): Promise<PaymentOrder> {
+  const userIdClean = toOptionalUuid(input.userId);
+  if (!userIdClean) {
+    throw new Error("Invalid user ID provided for payment order");
+  }
+
   const reference = generatePaymentReference("YK");
   const provider = input.provider ?? getDefaultPaymentProvider();
   const currency = input.currency ?? getPaymentCurrency();
-  const listingId =
+  const rawListingId =
     input.listingId ??
     (typeof input.metadata?.listing_id === "string" ? input.metadata.listing_id : null);
+  const listingId = toOptionalUuid(rawListingId);
+  const entityId = toOptionalUuid(input.entityId);
 
   // Prefer extended columns when migration is applied; fall back gracefully.
   const baseRow = {
-    user_id: input.userId,
+    user_id: userIdClean,
     order_type: input.orderType,
     reference,
     provider,
     amount: input.amount,
     currency,
     status: "pending" as const,
-    entity_id: input.entityId ?? null,
+    entity_id: entityId,
     metadata: input.metadata ?? {},
   };
 
