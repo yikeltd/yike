@@ -65,9 +65,10 @@ export function ConsumerShell({
           "mx-auto w-full flex-1",
           !isHome &&
             !isListingDetail &&
+            !isProfile &&
             "px-3 lg:max-w-7xl lg:px-6 xl:px-8",
           isListingDetail && "lg:max-w-7xl lg:px-6 xl:px-8",
-          isProfile && "pt-[max(0.75rem,env(safe-area-inset-top))]",
+          isProfile && "w-full",
           isListingDetail ? "safe-bottom-detail" : "safe-bottom",
           "lg:safe-bottom-0 lg:pb-6"
         )}
