@@ -8,7 +8,7 @@ import {
 } from "@/lib/marketplace/listings";
 import { StickyContactBar } from "@/components/property/sticky-contact-bar";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
-import { VehiclePremiumDetail } from "@/components/marketplace/vehicle-premium-detail";
+import { UnifiedListingDetail } from "@/components/marketplace/experience";
 import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
 import { ListingUnavailable } from "@/components/property/listing-unavailable";
 import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
@@ -146,37 +146,11 @@ export default async function VehicleDetailPage({ params }: Props) {
         />
       ) : null}
 
-      <VehiclePremiumDetail
-        vehicle={vehicle}
-        similar={similar}
-        priceLabel={priceLabel}
-        shareUrl={shareUrl}
-        location={location}
-        verified={verified}
-        featuredActive={featuredActive}
-        extraBadges={extraBadges}
-        detailAd={detailAd}
+      <UnifiedListingDetail
+        listing={vehicle}
+        similarListings={similar}
         ownerBanner={ownerBanner}
       />
-
-      {agent && isPubliclyVisible ? (
-        <div className="lg:hidden">
-          <StickyContactBar
-            propertyId={vehicle.id}
-            title={vehicle.title}
-            area={vehicle.area || vehicle.city}
-            city={vehicle.city}
-            listingType={vehicle.listing_type || "sale"}
-            propertyType={vehicle.auto_category}
-            agentId={agent.id}
-            agentName={agent.full_name || "Seller"}
-            price={Number(vehicle.price)}
-            paymentPeriod={vehicle.payment_period || "total"}
-            phone={agent.phone}
-            whatsapp={agent.whatsapp}
-          />
-        </div>
-      ) : null}
     </main>
   );
 }

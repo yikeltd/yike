@@ -29,4 +29,6 @@ export { DiscoveryEmptyPanel } from "./discovery-empty-panel";
 export { TrustModule } from "./trust-module";
 export { SpecCardGrid, CollapsibleSpecs } from "./collapsible-specs";
 export type { SpecCardItem } from "./collapsible-specs";
+export { UnifiedListingDetail } from "./unified-listing-detail";
+
 
