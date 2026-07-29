@@ -25,6 +25,7 @@ import {
   MessageCircle,
   MessageSquare,
   PlusCircle,
+  Rocket,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -514,131 +515,99 @@ export function SellerCommandCenter(props: Props) {
             </div>
           </section>
 
-          {/* 9. QUICK ACTIONS — 1x4 GRID WITH GRACEFUL TEXT WRAPPING */}
+          {/* 9. AGENT TOOLS — 6 CORE TILES */}
           <section className="space-y-1">
-            <SectionHeader title="Quick Actions" />
+            <SectionHeader title="Agent Tools" />
 
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
               <Link
                 href="/agent/listings"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[86px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
-                  <List className="h-4 w-4" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
+                  <List className="h-3.5 w-3.5" />
                 </span>
                 <div className="w-full">
                   <h3 className="text-[10px] font-bold text-navy leading-tight">My Listings</h3>
-                  <p className="text-[9px] font-medium text-navy/55 leading-tight mt-0.5">Manage listings</p>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{totalListings} Active</p>
                 </div>
               </Link>
 
               <Link
-                href="/agent/verification"
+                href="/agent/listings"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[86px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                  <Shield className="h-4 w-4" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-50 text-amber-600 shrink-0">
+                  <Rocket className="h-3.5 w-3.5" />
                 </span>
                 <div className="w-full">
-                  <h3 className="text-[10px] font-bold text-navy leading-tight">Verification</h3>
-                  <p className="text-[9px] font-medium text-navy/55 leading-tight mt-0.5">Complete verification</p>
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">Boost Listing</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">Top ranking</p>
+                </div>
+              </Link>
+
+              <Link
+                href="/agent/promotions"
+                prefetch
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] relative"
+              >
+                <span className="absolute -top-1 -right-1 rounded-md bg-gold px-1 py-0.5 text-[8px] font-black text-navy shadow-xs">NEW</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-50 text-purple-600 shrink-0">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </span>
+                <div className="w-full">
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">Promotions</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">Ad Banners</p>
+                </div>
+              </Link>
+
+              <Link
+                href="/conversations"
+                prefetch
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                </span>
+                <div className="w-full">
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">Leads & Inquiries</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{leadsCount} New</p>
                 </div>
               </Link>
 
               <Link
                 href="/seller/crm"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[86px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600 shrink-0">
-                  <BarChart3 className="h-4 w-4" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
+                  <BarChart3 className="h-3.5 w-3.5" />
                 </span>
                 <div className="w-full">
                   <h3 className="text-[10px] font-bold text-navy leading-tight">Analytics</h3>
-                  <p className="text-[9px] font-medium text-navy/55 leading-tight mt-0.5">View insights</p>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">Insights</p>
                 </div>
               </Link>
 
               <Link
                 href="/payments/history"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[86px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 shrink-0">
-                  <Wallet className="h-4 w-4" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-teal-50 text-teal-600 shrink-0">
+                  <Wallet className="h-3.5 w-3.5" />
                 </span>
                 <div className="w-full">
-                  <h3 className="text-[10px] font-bold text-navy leading-tight">Payments</h3>
-                  <p className="text-[9px] font-medium text-navy/55 leading-tight mt-0.5">Manage transactions</p>
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">Payouts</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">History</p>
                 </div>
               </Link>
             </div>
           </section>
 
-          {/* DASHBOARD INSIGHTS — 4 COMPACT CARDS */}
-          <section className="space-y-1">
-            <SectionHeader title="Dashboard Insights" href="/seller/crm" />
 
-            <div className="grid grid-cols-4 gap-2">
-              <Link
-                href="/agent/listings"
-                prefetch
-                className="pressable flex flex-col items-center justify-center gap-1 rounded-2xl border border-navy/[0.06] bg-white p-2.5 text-center shadow-xs transition-all hover:border-navy/15"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                  <MessageSquare className="h-3.5 w-3.5" />
-                </span>
-                <div>
-                  <span className="text-sm font-black text-navy block leading-none">{listingsValue}</span>
-                  <span className="text-[9px] font-bold text-navy/60 leading-tight block mt-0.5">Listings</span>
-                </div>
-              </Link>
-
-              <Link
-                href="/saved"
-                prefetch
-                className="pressable flex flex-col items-center justify-center gap-1 rounded-2xl border border-navy/[0.06] bg-white p-2.5 text-center shadow-xs transition-all hover:border-navy/15"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-pink-50 text-pink-600">
-                  <Heart className="h-3.5 w-3.5" />
-                </span>
-                <div>
-                  <span className="text-sm font-black text-navy block leading-none">24</span>
-                  <span className="text-[9px] font-bold text-navy/60 leading-tight block mt-0.5">Likes</span>
-                </div>
-              </Link>
-
-              <Link
-                href="/seller/crm"
-                prefetch
-                className="pressable flex flex-col items-center justify-center gap-1 rounded-2xl border border-navy/[0.06] bg-white p-2.5 text-center shadow-xs transition-all hover:border-navy/15"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <Eye className="h-3.5 w-3.5" />
-                </span>
-                <div>
-                  <span className="text-sm font-black text-navy block leading-none">156</span>
-                  <span className="text-[9px] font-bold text-navy/60 leading-tight block mt-0.5">Profile Views</span>
-                </div>
-              </Link>
-
-              <Link
-                href="/seller/crm"
-                prefetch
-                className="pressable flex flex-col items-center justify-center gap-1 rounded-2xl border border-navy/[0.06] bg-white p-2.5 text-center shadow-xs transition-all hover:border-navy/15"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-                </span>
-                <div>
-                  <span className="text-sm font-black text-navy block leading-none">4.8</span>
-                  <span className="text-[9px] font-bold text-navy/60 leading-tight block mt-0.5">Rating</span>
-                </div>
-              </Link>
-            </div>
-          </section>
 
           {/* 10. BUSINESS SNAPSHOT — COMPRESSED CARD HEIGHT & PADDING */}
           <section className="space-y-1">
