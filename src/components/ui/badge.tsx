@@ -340,31 +340,50 @@ export function StatusBadge({
   status: string;
   className?: string;
 }) {
-  const styles: Record<string, string> = {
-    not_started: "bg-surface text-muted",
-    pending: "bg-gold/20 text-gold-dark",
-    approved: "bg-emerald-500/15 text-emerald-800 font-bold",
-    verified: "bg-emerald-500/15 text-emerald-800 font-bold",
-    rejected: "bg-red-500/15 text-red-600",
-    rented: "bg-slate-500/15 text-slate-700",
-    sold: "bg-slate-500/15 text-slate-700",
-    hidden: "bg-surface text-muted",
-    on_hold: "bg-amber-500/15 text-amber-800",
-    pending_verification: "bg-gold/20 text-gold-dark",
-    suspended: "bg-red-500/15 text-red-600",
-    deleted: "bg-surface text-muted line-through",
-    active: "bg-emerald-500/10 text-emerald-700",
-    reinstated: "bg-emerald-500/10 text-emerald-700",
-  };
+  const normalized = String(status || "").toLowerCase();
+
+  let style = "bg-slate-100 text-slate-800 border border-slate-300 font-bold";
+  let label = status;
+
+  if (
+    normalized === "pending" ||
+    normalized === "pending_review" ||
+    normalized === "pending_verification" ||
+    normalized === "under_review"
+  ) {
+    style = "bg-amber-100 text-amber-900 border border-amber-300 font-bold";
+    label = "Verification Pending";
+  } else if (
+    normalized === "verified" ||
+    normalized === "approved" ||
+    normalized === "active" ||
+    normalized === "verified_agent" ||
+    normalized === "verified_company"
+  ) {
+    style = "bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold";
+    label = "Verified";
+  } else if (
+    normalized === "rejected" ||
+    normalized === "unsuccessful" ||
+    normalized === "failed" ||
+    normalized === "suspended"
+  ) {
+    style = "bg-rose-100 text-rose-900 border border-rose-300 font-bold";
+    label = "Verification Unsuccessful";
+  } else if (normalized === "not_started" || normalized === "unverified") {
+    style = "bg-slate-100 text-slate-800 border border-slate-300 font-bold";
+    label = "Not Verified";
+  }
+
   return (
     <span
       className={cn(
-        "rounded-full px-2 py-0.5 text-xs font-medium capitalize",
-        styles[status] ?? "bg-surface text-muted",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold tracking-tight shadow-2xs",
+        style,
         className
       )}
     >
-      {status}
+      {label}
     </span>
   );
 }

@@ -1,8 +1,11 @@
 import type { Profile } from "@/types/database";
 import { normalizeAccountStatus } from "@/lib/account-control";
-import { isVerifiedAgentProfile, isAgentRole } from "@/lib/agent-tiers";
-import type { AdaptiveTrustLevel } from "./constants";
-import { effectiveTrustLevel, type TrustProfileSlice } from "./levels";
+
+export type CanonicalVerificationState =
+  | "NOT_STARTED"
+  | "PENDING_REVIEW"
+  | "VERIFIED"
+  | "REJECTED";
 
 export type VerificationState =
   | "unverified"
@@ -15,74 +18,84 @@ export type VerificationState =
   | "restricted"
   | "suspended";
 
+export const CANONICAL_VERIFICATION_LABELS: Record<CanonicalVerificationState, string> = {
+  NOT_STARTED: "Not Verified",
+  PENDING_REVIEW: "Verification Pending",
+  VERIFIED: "Verified",
+  REJECTED: "Verification Unsuccessful",
+};
+
+export const CANONICAL_VERIFICATION_DESCRIPTIONS: Record<CanonicalVerificationState, string> = {
+  NOT_STARTED: "Verify your identity or business to gain buyer trust and unlock listings.",
+  PENDING_REVIEW: "Your documents are under review. Estimated review time: 1–2 business days.",
+  VERIFIED: "Your identity and business details are verified on Yike.",
+  REJECTED: "Your verification request was not approved. You can resubmit updated documents.",
+};
+
 export const VERIFICATION_STATE_LABELS: Record<VerificationState, string> = {
-  unverified: "Unverified",
-  partially_verified: "Partially verified",
-  verified_contact: "Verified contact",
-  verified_listing: "Verified listing account",
-  verified_agent: "Verified agent",
-  verified_company: "Verified company",
-  enhanced_review_required: "Enhanced review required",
+  unverified: "Not Verified",
+  partially_verified: "Partially Verified",
+  verified_contact: "Verified Contact",
+  verified_listing: "Verified Seller",
+  verified_agent: "Verified",
+  verified_company: "Verified",
+  enhanced_review_required: "Verification Pending",
   restricted: "Restricted",
   suspended: "Suspended",
 };
 
-export function deriveVerificationState(
-  profile: Partial<TrustProfileSlice> & Pick<TrustProfileSlice, "is_banned" | "role">
-): VerificationState {
-  const status = normalizeAccountStatus(profile);
-  if (profile.is_banned || status === "suspended" || status === "deleted") {
-    return "suspended";
-  }
+export function getCanonicalVerificationState(
+  profile: Partial<Profile> | null
+): CanonicalVerificationState {
+  if (!profile) return "NOT_STARTED";
 
-  const level = effectiveTrustLevel(profile);
+  if (profile.is_banned) return "REJECTED";
 
-  if (level >= 5 || status === "on_hold") return "restricted";
-  if (level >= 4 || profile.verification_required) return "enhanced_review_required";
+  const vStatus = String(profile.verification_status || "").toLowerCase();
+  const vLevel = String(profile.seller_verification_level || "").toLowerCase();
+  const role = String(profile.role || "").toLowerCase();
 
   if (
-    profile.company_verified ||
-    profile.account_type === "agency" ||
-    profile.account_type === "developer"
+    profile.verified_badge ||
+    vStatus === "approved" ||
+    vStatus === "verified" ||
+    role === "agent_verified" ||
+    vLevel === "business" ||
+    vLevel === "identity"
   ) {
-    if (isVerifiedAgentProfile({
-      role: profile.role ?? "user",
-      verification_status: profile.verification_status ?? "pending",
-      verified_badge: profile.verified_badge ?? false,
-      listing_limit: null,
-    })) {
-      return "verified_company";
-    }
+    return "VERIFIED";
   }
 
-  if (level >= 3 && isVerifiedAgentProfile({
-    role: profile.role ?? "user",
-    verification_status: profile.verification_status ?? "pending",
-    verified_badge: profile.verified_badge ?? false,
-    listing_limit: null,
-  })) {
-    return "verified_agent";
+  if (
+    vStatus === "pending" ||
+    vStatus === "under_review" ||
+    vStatus === "pending_verification" ||
+    profile.verification_required
+  ) {
+    return "PENDING_REVIEW";
   }
 
-  if (level >= 2 && isAgentRole(profile.role)) return "verified_listing";
-
-  const hasContact =
-    profile.phone_verified ||
-    Boolean(profile.whatsapp?.trim() || profile.phone?.trim());
-  if (hasContact && profile.email_verified) return "verified_contact";
-
-  if (profile.email_verified || hasContact || profile.full_name) {
-    return "partially_verified";
+  if (vStatus === "rejected" || vStatus === "failed") {
+    return "REJECTED";
   }
 
+  return "NOT_STARTED";
+}
+
+export function deriveVerificationState(
+  profile: Pick<Profile, "is_banned" | "role"> & Partial<Profile>
+): VerificationState {
+  const status = getCanonicalVerificationState(profile);
+  if (status === "VERIFIED") return "verified_agent";
+  if (status === "PENDING_REVIEW") return "enhanced_review_required";
+  if (status === "REJECTED") return "suspended";
   return "unverified";
 }
 
-export function levelForEnforcementAction(action: string): AdaptiveTrustLevel | null {
+export function levelForEnforcementAction(action: string): number | null {
   switch (action) {
     case "require_whatsapp":
     case "require_enhanced_review":
-      return 4;
     case "require_bank":
       return 4;
     case "restrict_listing":
