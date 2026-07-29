@@ -24,6 +24,7 @@ import {
   PlusCircle,
   Shield,
   ShieldAlert,
+  ShieldCheck,
   Sparkles,
   Star,
   User,
@@ -141,6 +142,7 @@ export function SellerCommandCenter(props: Props) {
     leadsCount,
     memberSince,
     profileSaved,
+    subscriptionPlanLabel,
   } = props;
   const { signOut } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -262,14 +264,24 @@ export function SellerCommandCenter(props: Props) {
         <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-[#021428] to-[#072462] p-4 text-white space-y-3 shadow-xl">
           <div className="flex items-center gap-2">
             <Star className="h-4 w-4 text-gold fill-gold" />
-            <span className="text-xs font-bold text-white">Yike Premium</span>
+            <span className="text-xs font-bold text-white">
+              {subscriptionPlanLabel && subscriptionPlanLabel !== "Starter"
+                ? `${subscriptionPlanLabel} Subscription`
+                : "Yike Premium"}
+            </span>
           </div>
-          <p className="text-[11px] text-white/70">Grow your business with priority lead routing.</p>
+          <p className="text-[11px] text-white/70">
+            {subscriptionPlanLabel && subscriptionPlanLabel !== "Starter"
+              ? "Active membership & priority lead routing."
+              : "Grow your business with priority lead routing."}
+          </p>
           <Link
-            href="/pricing"
-            className="pressable flex w-full h-8 items-center justify-center rounded-xl bg-gold text-xs font-black text-navy shadow-xs"
+            href="/agent/plans"
+            className="pressable flex w-full h-8 items-center justify-center rounded-xl bg-gold text-xs font-black text-navy shadow-xs hover:bg-gold-light"
           >
-            Upgrade
+            {subscriptionPlanLabel && subscriptionPlanLabel !== "Starter"
+              ? "Manage Subscription"
+              : "Upgrade"}
           </Link>
         </div>
       </aside>
@@ -320,9 +332,15 @@ export function SellerCommandCenter(props: Props) {
               </h1>
 
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
-                <span className="inline-flex items-center gap-1 font-bold text-amber-300">
-                  <ShieldAlert className="h-3 w-3 text-amber-400" />
-                  {verified ? "Verified Seller" : "Verification Pending"}
+                {subscriptionPlanLabel && subscriptionPlanLabel !== "Starter" ? (
+                  <span className="inline-flex items-center gap-1 font-black text-gold border border-gold/40 rounded-full px-2 py-0.5 bg-gold/10">
+                    <Star className="h-3 w-3 fill-gold text-gold" />
+                    {subscriptionPlanLabel} Member
+                  </span>
+                ) : null}
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-400">
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" />
+                  {verified || (subscriptionPlanLabel && subscriptionPlanLabel !== "Starter") ? "Verified Business" : "Verification Pending"}
                 </span>
                 <span className="inline-flex items-center gap-1 text-white/70">
                   <Calendar className="h-3 w-3 text-gold/80" />
