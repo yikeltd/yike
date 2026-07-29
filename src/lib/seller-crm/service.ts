@@ -151,7 +151,7 @@ export function getInventoryHealthList(sellerId: string): InventoryHealth[] {
           title: "Price Review Suggested",
           description: "View-to-inquiry ratio is below market average (1.6%). Consider a 5% price refinement or video walkthrough.",
           actionLabel: "Edit Listing",
-          actionTarget: "/post-property",
+          actionTarget: "/agent/listings/choose",
         },
       ],
     },

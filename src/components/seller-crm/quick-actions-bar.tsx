@@ -13,7 +13,7 @@ export function QuickActionsBar({ sellerId }: { sellerId: string }) {
   return (
     <div className="no-scrollbar flex items-center gap-2 overflow-x-auto rounded-3xl border border-navy/10 bg-white p-3 shadow-sm">
       <Link
-        href="/post-property"
+        href="/agent/listings/choose"
         className="pressable flex shrink-0 items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-bold text-navy shadow-sm hover:bg-gold-light"
       >
         <PlusCircle className="h-4 w-4" />

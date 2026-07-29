@@ -47,7 +47,7 @@ const LINKS = [
     icon: Home,
   },
   {
-    href: "/post-property",
+    href: "/agent/listings/choose",
     label: "Sell",
     icon: Tag,
   },
