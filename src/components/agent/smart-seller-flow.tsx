@@ -17,6 +17,7 @@ import {
   Edit3,
   Search,
   Crosshair,
+  Sparkles,
   ShieldCheck,
   Phone,
   User,
@@ -1294,6 +1295,91 @@ export function SmartSellerFlow() {
             </div>
           </div>
 
+          {/* PUBLISH_SUCCESS UPSELL: INCREASE VISIBILITY */}
+          <div className="rounded-3xl border border-gold/30 bg-gradient-to-b from-navy/90 to-navy p-4 text-left space-y-3 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-black uppercase text-gold">Increase Visibility</h3>
+                <p className="text-[10px] text-white/70">Promote this listing for up to 10x more leads</p>
+              </div>
+              <Sparkles className="h-5 w-5 text-gold shrink-0 animate-pulse" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => router.push(`/agent/listings?checkout=feature_24h`)}
+                className="flex flex-col p-2.5 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 transition-all text-left"
+              >
+                <span className="font-bold text-white text-[11px]">Feature 24 Hours</span>
+                <span className="text-[9px] text-gold font-black">₦3,000</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/agent/listings?checkout=feature_7d`)}
+                className="flex flex-col p-2.5 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 transition-all text-left"
+              >
+                <span className="font-bold text-white text-[11px]">Feature 7 Days</span>
+                <span className="text-[9px] text-gold font-black">₦15,000</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/agent/listings?checkout=feature_30d`)}
+                className="flex flex-col p-2.5 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 transition-all text-left"
+              >
+                <span className="font-bold text-white text-[11px]">Feature 30 Days</span>
+                <span className="text-[9px] text-gold font-black">₦45,000</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/agent/listings?checkout=boost_24h`)}
+                className="flex flex-col p-2.5 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 transition-all text-left"
+              >
+                <span className="font-bold text-white text-[11px]">Boost 24 Hours</span>
+                <span className="text-[9px] text-gold font-black">₦2,000</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/agent/listings?checkout=boost_7d`)}
+                className="flex flex-col p-2.5 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 transition-all text-left"
+              >
+                <span className="font-bold text-white text-[11px]">Boost 7 Days</span>
+                <span className="text-[9px] text-gold font-black">₦10,000</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/agent/listings?checkout=hero_spotlight`)}
+                className="flex flex-col p-2.5 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 transition-all text-left"
+              >
+                <span className="font-bold text-white text-[11px]">Hero Spotlight</span>
+                <span className="text-[9px] text-gold font-black">₦35,000</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/agent/listings?checkout=category_spotlight`)}
+                className="flex flex-col p-2.5 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 transition-all text-left"
+              >
+                <span className="font-bold text-white text-[11px]">Category Spotlight</span>
+                <span className="text-[9px] text-gold font-black">₦20,000</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/agent/listings?checkout=enterprise`)}
+                className="flex flex-col p-2.5 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 transition-all text-left"
+              >
+                <span className="font-bold text-white text-[11px]">Enterprise Ad</span>
+                <span className="text-[9px] text-gold font-black">₦120,000</span>
+              </button>
+            </div>
+          </div>
+
           {/* ACTION BUTTONS */}
           <div className="space-y-2.5 pt-2">
             <button
@@ -1323,7 +1409,7 @@ export function SmartSellerFlow() {
               className="pressable flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 py-3 text-xs font-bold text-white hover:bg-white/10 active:scale-98"
             >
               <Home className="h-4 w-4 text-white" />
-              <span>BACK TO DASHBOARD</span>
+              <span>NOT NOW (BACK TO DASHBOARD)</span>
             </button>
           </div>
         </div>
