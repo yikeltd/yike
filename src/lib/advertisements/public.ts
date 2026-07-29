@@ -31,10 +31,12 @@ export const getSponsoredAd = cache(
     const { data } = await supabase
       .from("advertisements")
       .select("*")
-      .eq("placement", placement)
-      .eq("status", "active")
+      .in("status", ["active", "live"])
+      .not("image_url", "is", null)
+      .neq("image_url", "")
       .or(`starts_at.is.null,starts_at.lte.${now}`)
       .or(`expires_at.is.null,expires_at.gt.${now}`)
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 

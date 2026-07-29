@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Advertisement } from "@/types/database";
@@ -24,17 +24,18 @@ export function SponsoredAdBanner({
   className?: string;
 }) {
   const tracked = useRef(false);
+  const [hasError, setHasError] = useState(false);
   const internal = isInternalPath(ad.destination_url);
 
   useEffect(() => {
-    if (tracked.current) return;
+    if (tracked.current || hasError) return;
     tracked.current = true;
     void fetch("/api/ads/impression", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ advertisementId: ad.id, placement }),
     });
-  }, [ad.id, placement]);
+  }, [ad.id, placement, hasError]);
 
   function handleClick() {
     void fetch("/api/ads/click", {
@@ -46,6 +47,11 @@ export function SponsoredAdBanner({
 
   const imageUrl =
     compact && ad.mobile_image_url ? ad.mobile_image_url : ad.image_url;
+
+  if (hasError || !imageUrl?.trim()) {
+    return null;
+  }
+
   const isSearch = placement === "search_results";
   const isHomepageSlot = placement.startsWith("homepage_slot_");
 
@@ -73,6 +79,7 @@ export function SponsoredAdBanner({
           fill
           loading="lazy"
           className="object-cover"
+          onError={() => setHasError(true)}
           sizes={
             isSearch || isHomepageSlot
               ? "(max-width: 768px) 94vw, 1100px"

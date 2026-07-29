@@ -19,7 +19,7 @@ export type AdServiceResult =
   | { ok: false; error: string; code?: string };
 
 function isLive(ad: Advertisement): boolean {
-  if (ad.status !== "active") return false;
+  if (ad.status !== "active" && ad.status !== "live") return false;
   const now = Date.now();
   if (ad.starts_at && new Date(ad.starts_at).getTime() > now) return false;
   if (ad.expires_at && new Date(ad.expires_at).getTime() <= now) return false;
@@ -35,7 +35,7 @@ export async function getActiveAdvertisement(
     .from("advertisements")
     .select("*")
     .eq("placement", placement)
-    .eq("status", "active")
+    .in("status", ["active", "live"])
     .or(`starts_at.is.null,starts_at.lte.${now}`)
     .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order("created_at", { ascending: false })
