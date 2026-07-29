@@ -19,7 +19,13 @@ export type EmailType =
   | "career_application_received"
   | "career_follow_up_requested"
   | "staff_onboarding"
-  | "founder_welcome";
+  | "founder_welcome"
+  | "campaign_approved"
+  | "campaign_rejected"
+  | "campaign_live"
+  | "campaign_expiring"
+  | "campaign_expired"
+  | "campaign_renewed";
 
 export type ProviderResult<T = void> =
   | { ok: true; data?: T }
