@@ -130,140 +130,56 @@ export const AD_PLACEMENT_CREATIVE_SPECS: Record<AdPlacementKey, AdminCreativeSp
   },
 };
 
+const DEFAULT_AD_SPEC: { desktop: AdminCreativeSpec; mobile: AdminCreativeSpec } = {
+  desktop: {
+    designSize: "1200 × 500 px",
+    aspectRatio: "2.4 : 1",
+    displaySize: "Full banner display",
+    preset: "banner",
+    format: ADMIN_UPLOAD_FORMAT,
+  },
+  mobile: {
+    designSize: "880 × 400 px",
+    aspectRatio: "2.2 : 1",
+    displaySize: "Mobile banner display",
+    preset: "banner",
+    format: ADMIN_UPLOAD_FORMAT,
+  },
+};
+
 export const SPONSORED_AD_CREATIVE_SPECS: Record<
   AdvertisementPlacement,
   { desktop: AdminCreativeSpec; mobile: AdminCreativeSpec }
-> = {
-  homepage_slot_1: {
-    desktop: {
-      designSize: "1200 × 500 px",
-      aspectRatio: "2.4 : 1",
-      displaySize: "Homepage after Featured (~112–128 px tall)",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-    mobile: {
-      designSize: "880 × 400 px",
-      aspectRatio: "2.2 : 1",
-      displaySize: "Full-width mobile banner",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
+> = new Proxy(
+  {
+    homepage_slot_1: DEFAULT_AD_SPEC,
+    homepage_slot_2: DEFAULT_AD_SPEC,
+    homepage_slot_3: DEFAULT_AD_SPEC,
+    homepage_slot_4: DEFAULT_AD_SPEC,
+    homepage_slot_5: DEFAULT_AD_SPEC,
+    homepage_top: DEFAULT_AD_SPEC,
+    homepage_middle: DEFAULT_AD_SPEC,
+    search_results: DEFAULT_AD_SPEC,
+    HOME_HERO: DEFAULT_AD_SPEC,
+    HOME_SECTION: DEFAULT_AD_SPEC,
+    HOME_FOOTER: DEFAULT_AD_SPEC,
+    SEARCH_TOP: DEFAULT_AD_SPEC,
+    SEARCH_INLINE: DEFAULT_AD_SPEC,
+    VEHICLE_CATEGORY: DEFAULT_AD_SPEC,
+    PROPERTY_CATEGORY: DEFAULT_AD_SPEC,
+    LISTING_DETAILS: DEFAULT_AD_SPEC,
+    DEALER_PROFILE: DEFAULT_AD_SPEC,
+    SELLER_DASHBOARD: DEFAULT_AD_SPEC,
+    PUBLISH_SUCCESS: DEFAULT_AD_SPEC,
+    DISCOVER: DEFAULT_AD_SPEC,
+    NEARBY: DEFAULT_AD_SPEC,
+    SAVED: DEFAULT_AD_SPEC,
+    CHAT_RECOMMENDATION: DEFAULT_AD_SPEC,
   },
-  homepage_slot_2: {
-    desktop: {
-      designSize: "1200 × 500 px",
-      aspectRatio: "2.4 : 1",
-      displaySize: "Homepage after Recently Added",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-    mobile: {
-      designSize: "880 × 400 px",
-      aspectRatio: "2.2 : 1",
-      displaySize: "Full-width mobile banner",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-  },
-  homepage_slot_3: {
-    desktop: {
-      designSize: "1200 × 500 px",
-      aspectRatio: "2.4 : 1",
-      displaySize: "Homepage after Near You",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-    mobile: {
-      designSize: "880 × 400 px",
-      aspectRatio: "2.2 : 1",
-      displaySize: "Full-width mobile banner",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-  },
-  homepage_slot_4: {
-    desktop: {
-      designSize: "1200 × 500 px",
-      aspectRatio: "2.4 : 1",
-      displaySize: "Homepage after Luxury Collection",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-    mobile: {
-      designSize: "880 × 400 px",
-      aspectRatio: "2.2 : 1",
-      displaySize: "Full-width mobile banner",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-  },
-  homepage_slot_5: {
-    desktop: {
-      designSize: "1200 × 500 px",
-      aspectRatio: "2.4 : 1",
-      displaySize: "Homepage after Recommended",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-    mobile: {
-      designSize: "880 × 400 px",
-      aspectRatio: "2.2 : 1",
-      displaySize: "Full-width mobile banner",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-  },
-  homepage_top: {
-    desktop: {
-      designSize: "1200 × 500 px",
-      aspectRatio: "2.4 : 1",
-      displaySize: "Below hero search (max ~160 px tall)",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-    mobile: {
-      designSize: "880 × 400 px",
-      aspectRatio: "2.2 : 1",
-      displaySize: "Optional mobile crop",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-      notes: "Falls back to desktop image if omitted.",
-    },
-  },
-  homepage_middle: {
-    desktop: {
-      designSize: "1200 × 500 px",
-      aspectRatio: "2.4 : 1",
-      displaySize: "Between home sections",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-    mobile: {
-      designSize: "880 × 400 px",
-      aspectRatio: "2.2 : 1",
-      displaySize: "Optional mobile crop",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-  },
-  search_results: {
-    desktop: {
-      designSize: "880 × 400 px",
-      aspectRatio: "2.2 : 1",
-      displaySize: "In-feed after listings (max ~120 px tall)",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-    mobile: {
-      designSize: "880 × 400 px",
-      aspectRatio: "2.2 : 1",
-      displaySize: "Same crop used on mobile",
-      preset: "banner",
-      format: ADMIN_UPLOAD_FORMAT,
-    },
-  },
-};
+  {
+    get: (target, prop: AdvertisementPlacement) => target[prop] ?? DEFAULT_AD_SPEC,
+  }
+);
 
 /** Promo banners (site_banners) — text-first; layout notes per placement. */
 export const PROMO_BANNER_PLACEMENT_SPECS: Record<

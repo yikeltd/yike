@@ -1098,14 +1098,36 @@ export type AdvertisementPlacement =
   | "homepage_slot_2"
   | "homepage_slot_3"
   | "homepage_slot_4"
-  | "homepage_slot_5";
+  | "homepage_slot_5"
+  | "HOME_HERO"
+  | "HOME_SECTION"
+  | "HOME_FOOTER"
+  | "SEARCH_TOP"
+  | "SEARCH_INLINE"
+  | "VEHICLE_CATEGORY"
+  | "PROPERTY_CATEGORY"
+  | "LISTING_DETAILS"
+  | "DEALER_PROFILE"
+  | "SELLER_DASHBOARD"
+  | "PUBLISH_SUCCESS"
+  | "DISCOVER"
+  | "NEARBY"
+  | "SAVED"
+  | "CHAT_RECOMMENDATION";
 
 export type AdvertisementStatus =
   | "draft"
   | "pending"
+  | "pending_approval"
+  | "approved"
+  | "scheduled"
+  | "live"
   | "active"
   | "paused"
-  | "expired";
+  | "expired"
+  | "completed"
+  | "rejected"
+  | "archived";
 
 export interface Advertisement {
   id: string;

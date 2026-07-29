@@ -163,5 +163,64 @@ export async function POST(request: Request, ctx: RouteCtx) {
     });
   }
 
+  if (action === "approve") {
+    const { approveAdvertisement } = await import("@/lib/advertisements/service");
+    const result = await approveAdvertisement(admin, id, auth.user.id);
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+    return NextResponse.json({ ok: true, advertisement: result.advertisement });
+  }
+
+  if (action === "reject") {
+    const { rejectAdvertisement } = await import("@/lib/advertisements/service");
+    const result = await rejectAdvertisement(admin, id, auth.user.id, (body as { reason?: string }).reason);
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+    return NextResponse.json({ ok: true, advertisement: result.advertisement });
+  }
+
+  if (action === "duplicate") {
+    const { duplicateAdvertisement } = await import("@/lib/advertisements/service");
+    const result = await duplicateAdvertisement(admin, id, auth.user.id);
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+    return NextResponse.json({ ok: true, advertisement: result.advertisement });
+  }
+
+  if (action === "archive") {
+    const { archiveAdvertisement } = await import("@/lib/advertisements/service");
+    const result = await archiveAdvertisement(admin, id, auth.user.id);
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+    return NextResponse.json({ ok: true, advertisement: result.advertisement });
+  }
+
+  if (action === "resume") {
+    const { data: updated, error } = await admin
+      .from("advertisements")
+      .update({ status: "active", updated_at: now })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error || !updated) return NextResponse.json({ error: error?.message ?? "Could not resume" }, { status: 500 });
+    return NextResponse.json({ ok: true, advertisement: updated });
+  }
+
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+}
+
+export async function DELETE(request: Request, ctx: RouteCtx) {
+  const auth = await requireAdminApi();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const { id } = await ctx.params;
+  const admin = createAdminClient();
+  if (!admin) {
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
+
+  const { error } = await admin.from("advertisements").delete().eq("id", id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }

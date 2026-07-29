@@ -233,10 +233,136 @@ export async function getAdMetrics(
 
 export const AD_STATUS_TABS: AdvertisementStatus[] = [
   "draft",
-  "pending",
+  "pending_approval",
+  "approved",
+  "scheduled",
+  "live",
   "active",
+  "paused",
   "expired",
+  "completed",
+  "rejected",
+  "archived",
 ];
+
+export async function approveAdvertisement(
+  admin: SupabaseClient,
+  id: string,
+  reviewerId: string
+): Promise<AdServiceResult> {
+  const { data: updated, error } = await admin
+    .from("advertisements")
+    .update({
+      status: "approved",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error || !updated) {
+    return { ok: false, error: error?.message ?? "Could not approve campaign" };
+  }
+
+  logPaymentAudit({
+    action: "promotion_activated",
+    actorId: reviewerId,
+    targetId: id,
+    metadata: { status: "approved" },
+  });
+
+  return { ok: true, advertisement: updated as Advertisement };
+}
+
+export async function rejectAdvertisement(
+  admin: SupabaseClient,
+  id: string,
+  reviewerId: string,
+  reason?: string
+): Promise<AdServiceResult> {
+  const { data: updated, error } = await admin
+    .from("advertisements")
+    .update({
+      status: "rejected",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error || !updated) {
+    return { ok: false, error: error?.message ?? "Could not reject campaign" };
+  }
+
+  logPaymentAudit({
+    action: "payment_failed",
+    actorId: reviewerId,
+    targetId: id,
+    metadata: { status: "rejected", reason },
+  });
+
+  return { ok: true, advertisement: updated as Advertisement };
+}
+
+export async function archiveAdvertisement(
+  admin: SupabaseClient,
+  id: string,
+  actorId: string
+): Promise<AdServiceResult> {
+  const { data: updated, error } = await admin
+    .from("advertisements")
+    .update({
+      status: "archived",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error || !updated) {
+    return { ok: false, error: error?.message ?? "Could not archive campaign" };
+  }
+
+  return { ok: true, advertisement: updated as Advertisement };
+}
+
+export async function duplicateAdvertisement(
+  admin: SupabaseClient,
+  id: string,
+  actorId: string
+): Promise<AdServiceResult> {
+  const { data: original } = await admin
+    .from("advertisements")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (!original) {
+    return { ok: false, error: "Campaign not found" };
+  }
+
+  const row = original as Advertisement;
+  const { id: _, created_at: __, updated_at: ___, ...rest } = (row as unknown) as Record<string, unknown>;
+
+  const { data: created, error } = await admin
+    .from("advertisements")
+    .insert({
+      ...rest,
+      title: `${row.title} (Copy)`,
+      status: "draft",
+      created_by: actorId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (error || !created) {
+    return { ok: false, error: error?.message ?? "Could not duplicate campaign" };
+  }
+
+  return { ok: true, advertisement: created as Advertisement };
+}
 
 export type TopPerformingAd = {
   id: string;

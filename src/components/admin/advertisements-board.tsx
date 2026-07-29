@@ -372,57 +372,101 @@ export function AdvertisementsBoard() {
                 </span>
               </div>
               {ad.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={ad.image_url}
-                  alt=""
-                  className="mt-3 max-h-20 rounded-lg object-cover"
-                  loading="lazy"
-                />
+                <div className="mt-3 space-y-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ad.image_url}
+                    alt=""
+                    className="max-h-24 rounded-xl border border-border/50 object-cover shadow-xs"
+                    loading="lazy"
+                  />
+                </div>
               ) : null}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {ad.status === "active" ? (
+
+              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                {ad.status === "pending_approval" || ad.status === "pending" ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={busyId === ad.id}
+                      onClick={() => void runAction(ad.id, "approve")}
+                      className="pressable rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-black text-white shadow-xs hover:bg-emerald-700"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busyId === ad.id}
+                      onClick={() => void runAction(ad.id, "reject")}
+                      className="pressable rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-black text-white shadow-xs hover:bg-rose-700"
+                    >
+                      Reject
+                    </button>
+                  </>
+                ) : null}
+
+                {ad.status === "active" || ad.status === "live" ? (
                   <button
                     type="button"
                     disabled={busyId === ad.id}
-                    onClick={() =>
-                      void runAction(ad.id, "update_schedule", { enabled: false })
-                    }
-                    className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white"
+                    onClick={() => void runAction(ad.id, "update_schedule", { enabled: false })}
+                    className="pressable rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-black text-white shadow-xs hover:bg-amber-600"
                   >
-                    Disable
+                    Pause
                   </button>
                 ) : (
                   <button
                     type="button"
                     disabled={busyId === ad.id}
-                    onClick={() =>
-                      void runAction(ad.id, "update_schedule", { enabled: true })
-                    }
-                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+                    onClick={() => void runAction(ad.id, "update_schedule", { enabled: true })}
+                    className="pressable rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-black text-white shadow-xs hover:bg-emerald-700"
                   >
-                    Enable
+                    Enable / Go Live
                   </button>
                 )}
-                {ad.status === "active" ? (
-                  <button
-                    type="button"
-                    disabled={busyId === ad.id}
-                    onClick={() => void runAction(ad.id, "pause")}
-                    className="rounded-lg bg-surface px-3 py-1.5 text-xs font-semibold text-navy"
-                  >
-                    Pause
-                  </button>
-                ) : null}
+
+                <button
+                  type="button"
+                  disabled={busyId === ad.id}
+                  onClick={() => void runAction(ad.id, "duplicate")}
+                  className="pressable rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-black text-navy hover:bg-slate-200"
+                >
+                  Duplicate
+                </button>
+
+                <button
+                  type="button"
+                  disabled={busyId === ad.id}
+                  onClick={() => void runAction(ad.id, "archive")}
+                  className="pressable rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-black text-navy/70 hover:bg-slate-200"
+                >
+                  Archive
+                </button>
+
+                <button
+                  type="button"
+                  disabled={busyId === ad.id}
+                  onClick={async () => {
+                    if (!confirm("Are you sure you want to delete this ad campaign?")) return;
+                    setBusyId(ad.id);
+                    await fetch(`/api/admin/advertisements/${ad.id}`, { method: "DELETE" });
+                    setBusyId(null);
+                    void load();
+                  }}
+                  className="pressable rounded-xl bg-rose-50 px-3 py-1.5 text-xs font-black text-rose-700 hover:bg-rose-100"
+                >
+                  Delete
+                </button>
+
                 {["draft", "pending"].includes(ad.status) &&
                 !isHomepageAdSlot(ad.placement) ? (
                   <button
                     type="button"
                     disabled={busyId === ad.id}
                     onClick={() => void runAction(ad.id, "checkout")}
-                    className="rounded-lg bg-gold px-3 py-1.5 text-xs font-bold text-navy"
+                    className="pressable rounded-xl bg-gold px-3.5 py-1.5 text-xs font-black text-navy shadow-xs hover:bg-gold-light"
                   >
-                    Pay & activate
+                    Pay & Activate (Unified Engine)
                   </button>
                 ) : null}
               </div>
