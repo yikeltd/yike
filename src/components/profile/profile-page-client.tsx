@@ -134,7 +134,21 @@ export function ProfilePageClient({
     totalListings,
   });
 
-  if (isLister) {
+  const isAgentDashboardActive =
+    totalListings > 0 ||
+    verified ||
+    Boolean(
+      subscriptionPlanLabel &&
+        subscriptionPlanLabel !== "Starter" &&
+        subscriptionPlanLabel !== "Free"
+    ) ||
+    profile.account_type === "agency" ||
+    profile.account_type === "developer" ||
+    profile.account_type === "dealer" ||
+    profile.account_type === "landlord" ||
+    (canList && totalListings > 0);
+
+  if (isAgentDashboardActive) {
     return (
       <SellerCommandCenter
         profile={profile}
