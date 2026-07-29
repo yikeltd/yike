@@ -130,6 +130,8 @@ function SidebarNavItem({
  * YIKE AGENT DASHBOARD – SURGICAL UI REFINEMENT
  * Rebuilt strictly matching input_file_0.png mockup specs.
  */
+import { useAuth } from "@/components/auth/auth-provider";
+
 export function SellerCommandCenter(props: Props) {
   const {
     profile,
@@ -140,7 +142,8 @@ export function SellerCommandCenter(props: Props) {
     memberSince,
     profileSaved,
   } = props;
-
+  const { signOut } = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
 
@@ -747,12 +750,17 @@ export function SellerCommandCenter(props: Props) {
               >
                 Cancel
               </button>
-              <Link
-                href="/auth/login"
-                className="pressable flex-1 rounded-full bg-rose-600 py-2.5 text-xs font-bold text-white shadow-md text-center"
+              <button
+                type="button"
+                disabled={loggingOut}
+                onClick={async () => {
+                  setLoggingOut(true);
+                  await signOut("/");
+                }}
+                className="pressable flex-1 rounded-full bg-rose-600 py-2.5 text-xs font-bold text-white shadow-md text-center disabled:opacity-60"
               >
-                Log Out
-              </Link>
+                {loggingOut ? "Logging out…" : "Log Out"}
+              </button>
             </div>
           </div>
         </div>

@@ -187,7 +187,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSavedListingIds(new Set());
       setLoading(false);
       setModalOpen(false);
-      await performFastLogout();
+
+      // 1. Fire fast logout in background
+      void performFastLogout();
+
+      // 2. Immediately execute hard browser redirect to target (public homepage)
       if (typeof window !== "undefined") {
         window.location.href = redirectTo;
       }

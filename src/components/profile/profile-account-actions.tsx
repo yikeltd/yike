@@ -36,6 +36,7 @@ export function ProfileAccountActions({
   const { signOut } = useAuth();
   const { gateSensitiveAction, sensitiveActionModals } = useSensitiveActionGate(email);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [panel, setPanel] = useState<"password" | "email" | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -329,7 +330,7 @@ export function ProfileAccountActions({
 
         <button
           type="button"
-          onClick={() => void handleSignOut()}
+          onClick={() => setShowLogoutConfirm(true)}
           disabled={loggingOut}
           className="pressable flex w-full items-center justify-center gap-2 rounded-xl border border-navy/10 bg-gradient-to-b from-white to-navy/[0.03] px-3 py-2.5 text-[13px] font-semibold text-navy shadow-sm transition-all hover:-translate-y-0.5 hover:border-navy/15 hover:shadow-float active:scale-[0.99]"
         >
@@ -337,6 +338,41 @@ export function ProfileAccountActions({
           {loggingOut ? "Logging out…" : "Log out"}
         </button>
       </section>
+
+      {showLogoutConfirm ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl space-y-4 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+              <LogOut className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-black text-navy">Log out of Yike?</h3>
+            <p className="text-xs font-medium text-navy/60">
+              Are you sure you want to log out? You will return to the public homepage.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="pressable flex-1 rounded-full border border-navy/15 py-2.5 text-xs font-bold text-navy"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={loggingOut}
+                onClick={() => void handleSignOut()}
+                className="pressable flex-1 rounded-full bg-rose-600 py-2.5 text-xs font-bold text-white shadow-md text-center disabled:opacity-60"
+              >
+                {loggingOut ? "Logging out…" : "Yes, Log Out"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {deleteOpen ? (
         <div

@@ -124,7 +124,7 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
         />
       ) : null}
       <PinSetupModal
-        open={pinSetupOpen}
+        open={Boolean(user && pinSetupOpen)}
         onClose={() => {
           pinPromptDismissed.current = true;
           setPinSetupOpen(false);
