@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -78,12 +78,14 @@ export function HeaderMobile({
 
         {/* 2. SEARCH BAR */}
         <div className="flex-1 min-w-0">
-          <HeaderUniversalSearch
-            size="default"
-            tone="hero"
-            placement="header_mobile"
-            placeholder="Search vehicles & properties…"
-          />
+          <Suspense fallback={<div className="h-9 w-full rounded-full bg-white/10" />}>
+            <HeaderUniversalSearch
+              size="default"
+              tone="hero"
+              placement="header_mobile"
+              placeholder="Search vehicles & properties…"
+            />
+          </Suspense>
         </div>
 
         {/* 3. FUNCTIONAL LOCATION SELECTOR */}

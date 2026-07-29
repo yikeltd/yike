@@ -32,7 +32,7 @@
     "reviewer:ensure": "node scripts/ensure-reviewer-users.mjs",
     "dev": "next dev",
     "typecheck": "tsc --noEmit",
-    "build": "NODE_OPTIONS=\"${NODE_OPTIONS:---max-old-space-size=4096}\" next build --webpack",
+    "build": "NODE_OPTIONS=\"${NODE_OPTIONS:---max-old-space-size=8192}\" next build",
     "start": "next start",
     "lint": "eslint",
     "seed:sql": "node scripts/verify-supabase-project.mjs --require-linked && tsx scripts/seed-supabase.ts --sql",

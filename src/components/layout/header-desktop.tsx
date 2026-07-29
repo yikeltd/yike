@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -42,12 +43,14 @@ export function HeaderDesktop({ className }: { className?: string }) {
 
         {/* 2. SEARCH BAR */}
         <div className="flex-1 max-w-2xl">
-          <HeaderUniversalSearch
-            size="large"
-            tone="hero"
-            placement="header_desktop"
-            placeholder="Search vehicles & properties…"
-          />
+          <Suspense fallback={<div className="h-10 w-full rounded-full bg-white/10" />}>
+            <HeaderUniversalSearch
+              size="large"
+              tone="hero"
+              placement="header_desktop"
+              placeholder="Search vehicles & properties…"
+            />
+          </Suspense>
         </div>
 
         {/* 3. FUNCTIONAL LOCATION SELECTOR */}

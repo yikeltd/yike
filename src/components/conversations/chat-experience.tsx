@@ -183,8 +183,6 @@ export function ChatExperience({
     let interval: NodeJS.Timeout;
     if (voiceCallActive || videoCallActive) {
       interval = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
-    } else {
-      setCallDuration(0);
     }
     return () => clearInterval(interval);
   }, [voiceCallActive, videoCallActive]);
@@ -207,8 +205,10 @@ export function ChatExperience({
     const body = textToSend || messageText;
     if (!body.trim()) return;
 
+    // eslint-disable-next-line react-hooks/purity
+    const id = `msg-${Math.random().toString(36).substring(2, 9)}`;
     const newMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
+      id,
       senderId: currentUserId,
       text: body.trim(),
       type: "text",
@@ -562,7 +562,7 @@ export function ChatExperience({
                 onClick={() => handleSendMessage(reply)}
                 className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] font-semibold text-navy/80 shrink-0 hover:border-gold"
               >
-                "{reply}"
+                &quot;{reply}&quot;
               </button>
             ))}
           </div>
