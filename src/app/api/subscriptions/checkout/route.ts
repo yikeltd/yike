@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getPlanByCode,
   canSubscribe,
+  checkSubscriptionEligibility,
   activateSubscriptionFromPayment,
 } from "@/lib/subscriptions/service";
 import { isPaidPlan, isSubscriptionPlanCode } from "@/lib/subscriptions/constants";
@@ -62,10 +63,11 @@ export async function POST(request: Request) {
   }
 
   const profile = profileRow as Profile;
-  if (!canSubscribe(profile)) {
+  const eligibility = checkSubscriptionEligibility(profile);
+  if (!eligibility.eligible) {
     return NextResponse.json(
-      { error: "Subscriptions are for agents, agencies, and developers." },
-      { status: 403 }
+      { error: eligibility.error || "Subscription eligibility check failed", code: eligibility.code },
+      { status: eligibility.code === "INCOMPLETE_PROFILE" ? 400 : 403 }
     );
   }
 

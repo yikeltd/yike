@@ -547,8 +547,16 @@ export function SellerPlansView() {
             </div>
 
             {errorMessage && (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-900">
-                {errorMessage}
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-900 space-y-2">
+                <p>{errorMessage}</p>
+                {errorMessage.includes("Complete your seller profile") && (
+                  <Link
+                    href="/agent/edit-profile"
+                    className="pressable inline-flex items-center justify-center rounded-xl bg-navy px-3 py-1.5 text-[11px] font-black text-white shadow-xs hover:bg-navy-light"
+                  >
+                    Complete Profile
+                  </Link>
+                )}
               </div>
             )}
 

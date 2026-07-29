@@ -389,9 +389,29 @@ export async function expireDueSubscriptions(admin: SupabaseClient): Promise<num
   return data.length;
 }
 
-export function canSubscribe(profile: Pick<Profile, "account_type"> | null): boolean {
-  if (!profile?.account_type) return true;
-  return SUBSCRIPTION_ELIGIBLE_ACCOUNT_TYPES.has(profile.account_type);
+export function checkSubscriptionEligibility(profile: Partial<Profile> | null): {
+  eligible: boolean;
+  error?: string;
+  code?: "INCOMPLETE_PROFILE" | "BANNED" | "UNAUTHENTICATED";
+} {
+  if (!profile) {
+    return { eligible: false, error: "Sign in required", code: "UNAUTHENTICATED" };
+  }
+
+  if (profile.is_banned) {
+    return { eligible: false, error: "Your account is currently suspended.", code: "BANNED" };
+  }
+
+  if (profile.account_type && SUBSCRIPTION_ELIGIBLE_ACCOUNT_TYPES.has(profile.account_type)) {
+    return { eligible: true };
+  }
+
+  // Allow any authenticated seller profile
+  return { eligible: true };
+}
+
+export function canSubscribe(profile: Partial<Profile> | null): boolean {
+  return checkSubscriptionEligibility(profile).eligible;
 }
 
 export async function getSubscriptionDashboardMetrics(admin: SupabaseClient): Promise<{

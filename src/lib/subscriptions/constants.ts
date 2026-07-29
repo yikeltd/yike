@@ -35,9 +35,20 @@ export const PLAN_CODES: SubscriptionPlanCode[] = [
 ];
 
 export const SUBSCRIPTION_ELIGIBLE_ACCOUNT_TYPES = new Set([
+  "individual",
+  "user",
   "agent",
+  "agent_unverified",
+  "agent_verified",
+  "dealer",
+  "vehicle_dealer",
   "agency",
+  "property_agency",
   "developer",
+  "property_developer",
+  "landlord",
+  "company",
+  "seller",
 ]);
 
 export type PlanFeatures = {
