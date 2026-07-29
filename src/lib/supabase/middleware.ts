@@ -6,10 +6,14 @@ import { logMiddlewareFailure } from "@/lib/middleware/log-failure";
 import type { UserRole } from "@/types/database";
 import { isSupabaseConfigured } from "./config";
 
-/** Preserve refreshed auth cookies when middleware returns a redirect. */
+/** Preserve refreshed auth cookies when middleware returns a redirect without duplicate bloat. */
 function mergeAuthResponse(from: NextResponse, to: NextResponse) {
+  const seen = new Set<string>();
   from.cookies.getAll().forEach((cookie) => {
-    to.cookies.set(cookie);
+    if (!seen.has(cookie.name)) {
+      seen.add(cookie.name);
+      to.cookies.set(cookie);
+    }
   });
   for (const key of ["cache-control", "expires", "pragma"]) {
     const value = from.headers.get(key);
@@ -21,6 +25,17 @@ function hasSupabaseSessionCookie(request: NextRequest): boolean {
   return request.cookies
     .getAll()
     .some((cookie) => cookie.name.startsWith("sb-") && Boolean(cookie.value));
+}
+
+/** Sanitize request & response cookies to prevent HTTP 431 header bloat. */
+function pruneStaleAuthCookies(response: NextResponse) {
+  const allCookies = response.cookies.getAll();
+  // Clear any empty or stale cookies to keep header payload under threshold
+  for (const cookie of allCookies) {
+    if (!cookie.value || cookie.value === "" || cookie.value === "deleted") {
+      response.cookies.delete(cookie.name);
+    }
+  }
 }
 
 export async function updateSession(request: NextRequest) {
@@ -44,7 +59,13 @@ export async function updateSession(request: NextRequest) {
             return request.cookies.getAll();
           },
           setAll(cookiesToSet, headers) {
+            // Update request cookies first
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            // Instantiate response ONCE with updated cookies
             supabaseResponse = NextResponse.next({ request });
+            // Set all refreshed cookies on response
             cookiesToSet.forEach(({ name, value, options }) =>
               supabaseResponse.cookies.set(name, value, options)
             );
@@ -83,11 +104,13 @@ export async function updateSession(request: NextRequest) {
           url.pathname = target;
           const redirectResponse = NextResponse.redirect(url);
           mergeAuthResponse(supabaseResponse, redirectResponse);
+          pruneStaleAuthCookies(redirectResponse);
           return redirectResponse;
         }
       }
     }
 
+    pruneStaleAuthCookies(supabaseResponse);
     return supabaseResponse;
   } catch (error) {
     logMiddlewareFailure("session", request.nextUrl.pathname, error);
