@@ -127,6 +127,19 @@ export function SellerPlansView() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [activatedPlan, setActivatedPlan] = useState<Plan | null>(null);
 
+  const [selectedProvider, setSelectedProvider] = useState<"paystack" | "korapay">("paystack");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("yike_preferred_payment_provider");
+      if (saved === "korapay" || saved === "paystack") {
+        setSelectedProvider(saved);
+      }
+    } catch {
+      /* ignore storage errors */
+    }
+  }, []);
+
   // Discount Multipliers per billing cycle
   const discountPct = billingCycle === 3 ? 10 : billingCycle === 6 ? 20 : billingCycle === 12 ? 30 : 0;
   const multiplier = (100 - discountPct) / 100;
@@ -145,8 +158,8 @@ export function SellerPlansView() {
     setSelectedPlanForCheckout(plan);
   }
 
-  // Real Paystack Checkout & Verification Flow
-  async function handleStartPaystackPayment() {
+  // Real Multi-Gateway Checkout & Server Verification Flow (Paystack & Korapay)
+  async function handleStartPayment() {
     if (!selectedPlanForCheckout) return;
     setErrorMessage(null);
     setPaymentStep("opening_paystack");
@@ -158,6 +171,7 @@ export function SellerPlansView() {
         body: JSON.stringify({
           planCode: selectedPlanForCheckout.backendCode,
           billingMonths: billingCycle,
+          provider: selectedProvider,
         }),
       });
 
@@ -583,15 +597,54 @@ export function SellerPlansView() {
               </div>
             </div>
 
+            <div className="space-y-2 text-xs">
+              <label className="text-[11px] font-black uppercase text-navy/70">Choose Payment Method</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedProvider("paystack");
+                    try { localStorage.setItem("yike_preferred_payment_provider", "paystack"); } catch {}
+                  }}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-3 rounded-2xl border transition-all text-center",
+                    selectedProvider === "paystack"
+                      ? "border-navy bg-navy/5 ring-2 ring-navy/20 font-black"
+                      : "border-slate-200 bg-slate-50 opacity-70 hover:opacity-100"
+                  )}
+                >
+                  <span className="text-xs font-black text-navy">Paystack</span>
+                  <span className="text-[9px] font-medium text-navy/60">Fast Cards & Bank</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedProvider("korapay");
+                    try { localStorage.setItem("yike_preferred_payment_provider", "korapay"); } catch {}
+                  }}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-3 rounded-2xl border transition-all text-center",
+                    selectedProvider === "korapay"
+                      ? "border-navy bg-navy/5 ring-2 ring-navy/20 font-black"
+                      : "border-slate-200 bg-slate-50 opacity-70 hover:opacity-100"
+                  )}
+                >
+                  <span className="text-xs font-black text-navy">Korapay</span>
+                  <span className="text-[9px] font-medium text-navy/60">Cards, Transfers & More</span>
+                </button>
+              </div>
+            </div>
+
             <button
               type="button"
               disabled={paymentStep !== "idle" && paymentStep !== "error"}
-              onClick={handleStartPaystackPayment}
+              onClick={handleStartPayment}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gold py-3.5 text-xs font-black text-navy shadow-md hover:bg-gold-light active:scale-98 disabled:opacity-75"
             >
               <CreditCard className="h-4 w-4" />
               <span>
-                {paymentStep === "opening_paystack" && "Opening Paystack…"}
+                {paymentStep === "opening_paystack" && `Opening ${selectedProvider === "korapay" ? "Korapay" : "Paystack"}…`}
                 {paymentStep === "waiting_payment" && "Waiting for Payment…"}
                 {paymentStep === "verifying" && "Verifying Payment…"}
                 {(paymentStep === "idle" || paymentStep === "error") &&
@@ -601,7 +654,7 @@ export function SellerPlansView() {
 
             <p className="text-center text-[10px] font-bold text-navy/50 flex items-center justify-center gap-1">
               <Lock className="h-3 w-3" />
-              <span>Encrypted & secure Paystack checkout</span>
+              <span>Encrypted & secure checkout via {selectedProvider === "korapay" ? "Korapay" : "Paystack"}</span>
             </p>
           </div>
         </div>

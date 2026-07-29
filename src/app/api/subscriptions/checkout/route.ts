@@ -13,8 +13,12 @@ import {
   findBillingTerm,
   listBillingTerms,
 } from "@/lib/subscriptions/billing-terms";
-import { isFeaturedPaymentsEnabled } from "@/lib/feature-flags";
-import { isPaystackConfigured } from "@/lib/payments/config";
+import {
+  getDefaultPaymentProvider,
+  isPaymentsRuntimeEnabled,
+  isPaystackConfigured,
+} from "@/lib/payments/config";
+import type { PaymentProviderName } from "@/lib/payments/types";
 import { getFinancialPlatform } from "@/lib/financial";
 import type { Profile } from "@/types/database";
 import { friendlyPublicError } from "@/lib/copy/public-errors";
@@ -34,7 +38,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
 
-  let body: { planCode?: string; billingMonths?: number } = {};
+  let body: { planCode?: string; billingMonths?: number; provider?: PaymentProviderName } = {};
   try {
     body = await request.json();
   } catch {
@@ -43,6 +47,11 @@ export async function POST(request: Request) {
 
   const planCode = String(body.planCode ?? "").trim();
   const rawBillingMonths = Number(body.billingMonths);
+  const selectedProvider: PaymentProviderName =
+    body.provider === "korapay" || body.provider === "paystack"
+      ? body.provider
+      : getDefaultPaymentProvider();
+
   if (!isSubscriptionPlanCode(planCode) || !isPaidPlan(planCode)) {
     return NextResponse.json({ error: "Choose a paid plan" }, { status: 400 });
   }
@@ -80,7 +89,7 @@ export async function POST(request: Request) {
   const billingMonths = findBillingTerm(billingTerms, rawBillingMonths)?.months ?? billingTerms[0]?.months ?? 1;
   const billing = calculateSubscriptionBilling(plan.monthly_price, billingMonths, billingTerms);
 
-  const paymentsLive = isFeaturedPaymentsEnabled() && isPaystackConfigured();
+  const paymentsLive = isPaymentsRuntimeEnabled();
 
   if (!paymentsLive) {
     const result = await activateSubscriptionFromPayment(admin, {
@@ -103,12 +112,14 @@ export async function POST(request: Request) {
       orderType: "subscription",
       amount: billing.total,
       entityId: plan.id,
+      provider: selectedProvider,
       metadata: {
         plan_code: planCode,
         duration_days: billing.durationDays,
         billing_months: billing.months,
         discount_percent: billing.discountPercent,
         user_id: user.id,
+        provider: selectedProvider,
       },
     });
 

@@ -16,7 +16,6 @@ export function getSiteBaseUrl(): string {
 
 /**
  * Browser return URL after Paystack Checkout.
- * Must only show Processing / poll status — never activate from this alone.
  */
 export function getPaymentCallbackUrl(): string {
   const configured = process.env.PAYSTACK_CALLBACK_URL?.trim();
@@ -24,38 +23,16 @@ export function getPaymentCallbackUrl(): string {
   return `${getSiteBaseUrl()}/payments/callback`;
 }
 
-/** Documented webhook URL for Paystack dashboard (preferred). */
+/** Documented webhook URL for Paystack dashboard. */
 export function getPaymentWebhookUrl(): string {
   const configured = process.env.PAYSTACK_WEBHOOK_URL?.trim();
   if (configured) return configured.replace(/\/$/, "");
-  return `${getSiteBaseUrl()}/api/payments/webhook`;
+  return `${getSiteBaseUrl()}/api/webhooks/paystack`;
 }
 
 export function getPaystackBaseUrl(): string {
   const raw = process.env.PAYSTACK_BASE_URL?.trim() || "https://api.paystack.co";
   return raw.replace(/\/$/, "");
-}
-
-export function getPaymentCurrency(): string {
-  return (process.env.PAYMENT_CURRENCY?.trim() || "NGN").toUpperCase();
-}
-
-/**
- * Active gateway. PAYMENT_GATEWAY preferred; PAYMENT_PROVIDER kept for compatibility.
- */
-export function getDefaultPaymentProvider(): PaymentProviderName {
-  const raw = (
-    process.env.PAYMENT_GATEWAY?.trim() ||
-    process.env.PAYMENT_PROVIDER?.trim() ||
-    "paystack"
-  ).toLowerCase();
-
-  if (raw === "safehaven") return "safehaven";
-  if (raw === "flutterwave") return "flutterwave";
-  if (raw === "monnify") return "monnify";
-  if (raw === "stripe") return "stripe";
-  if (raw === "wallet") return "wallet";
-  return "paystack";
 }
 
 export function isPaystackConfigured(): boolean {
@@ -70,8 +47,76 @@ export function getPaystackPublicKey(): string | null {
   return process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY?.trim() || null;
 }
 
+/* ============================================================================
+ * KORAPAY CONFIGURATION & HELPERS
+ * ============================================================================ */
+
+export function getKorapayBaseUrl(): string {
+  const raw = process.env.KORAPAY_BASE_URL?.trim() || "https://api.korapay.com";
+  return raw.replace(/\/$/, "");
+}
+
+export function isKorapayConfigured(): boolean {
+  return Boolean(process.env.KORAPAY_SECRET_KEY?.trim());
+}
+
+export function getKorapaySecretKey(): string | null {
+  return process.env.KORAPAY_SECRET_KEY?.trim() || null;
+}
+
+export function getKorapayPublicKey(): string | null {
+  return (
+    process.env.NEXT_PUBLIC_KORAPAY_PUBLIC_KEY?.trim() ||
+    process.env.KORAPAY_PUBLIC_KEY?.trim() ||
+    null
+  );
+}
+
+export function getKorapayCallbackUrl(): string {
+  const configured = process.env.KORAPAY_CALLBACK_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+  return `${getSiteBaseUrl()}/payments/korapay/callback`;
+}
+
+export function getKorapayWebhookUrl(): string {
+  const configured = process.env.KORAPAY_WEBHOOK_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+  return `${getSiteBaseUrl()}/api/webhooks/korapay`;
+}
+
+/* ============================================================================
+ * GENERAL PAYMENT GATEWAY RESOLUTION
+ * ============================================================================ */
+
+export function getPaymentCurrency(): string {
+  return (process.env.PAYMENT_CURRENCY?.trim() || "NGN").toUpperCase();
+}
+
+export function getDefaultPaymentProvider(): PaymentProviderName {
+  const raw = (
+    process.env.PAYMENT_GATEWAY?.trim() ||
+    process.env.PAYMENT_PROVIDER?.trim() ||
+    "paystack"
+  ).toLowerCase();
+
+  if (raw === "korapay" && isKorapayConfigured()) return "korapay";
+  if (raw === "paystack" && isPaystackConfigured()) return "paystack";
+
+  // Fallback to whichever provider is configured
+  if (isPaystackConfigured()) return "paystack";
+  if (isKorapayConfigured()) return "korapay";
+
+  return "paystack";
+}
+
+export function isAnyPaymentProviderConfigured(): boolean {
+  return isPaystackConfigured() || isKorapayConfigured();
+}
+
 export function isPaymentsRuntimeEnabled(): boolean {
   const flag =
-    envFlag("ENABLE_PAYMENTS", false) || envFlag("ENABLE_FEATURED_PAYMENTS", false);
-  return flag && isPaystackConfigured();
+    envFlag("ENABLE_PAYMENTS", false) ||
+    envFlag("ENABLE_FEATURED_PAYMENTS", false) ||
+    isAnyPaymentProviderConfigured();
+  return flag && isAnyPaymentProviderConfigured();
 }

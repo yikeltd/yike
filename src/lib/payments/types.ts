@@ -31,6 +31,7 @@ export type PaymentOrderStatus =
 
 export type PaymentProviderName =
   | "paystack"
+  | "korapay"
   | "safehaven"
   | "flutterwave"
   | "monnify"
