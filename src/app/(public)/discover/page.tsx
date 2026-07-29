@@ -4,6 +4,7 @@ import { getPublicProperties } from "@/lib/properties";
 import { createClient } from "@/lib/supabase/server";
 import { queryPublicVehicles } from "@/lib/marketplace/listings";
 import { withDemoFallback } from "@/lib/mock-listings";
+import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { SITE_NAME } from "@/lib/constants";
 import type { Property } from "@/types/database";
@@ -18,13 +19,19 @@ export default async function DiscoverPage() {
   const propertyRows = await getPublicProperties({}, 48);
   const { items: properties } = withDemoFallback(propertyRows);
 
-  let vehicles: Property[] = [];
+  let vehicleRows: Property[] = [];
   if (isLaunchFeatureVisible("vehicle_marketplace")) {
     const supabase = await createClient();
     if (supabase) {
-      vehicles = await queryPublicVehicles(supabase, { limit: 48 });
+      vehicleRows = await queryPublicVehicles(supabase, { limit: 48 });
     }
   }
+
+  const { items: vehicles } = withEmptyInventoryDemoFixtures(
+    vehicleRows,
+    "vehicle",
+    48
+  );
 
   const desktopItems = [...vehicles, ...properties].slice(0, 12);
 

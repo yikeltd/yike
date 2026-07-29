@@ -109,7 +109,9 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
     };
   }, [skip, user, refreshStatus]);
 
-  const locked = Boolean(session?.locked && user && session.profile);
+  const locked = Boolean(
+    user && session?.authenticated && session?.locked && session.profile
+  );
 
   return (
     <>

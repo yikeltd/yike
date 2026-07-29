@@ -187,12 +187,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSavedListingIds(new Set());
       setLoading(false);
       setModalOpen(false);
-      router.replace(redirectTo);
-      void performFastLogout().finally(() => {
-        signingOutRef.current = false;
-      });
+      await performFastLogout();
+      if (typeof window !== "undefined") {
+        window.location.href = redirectTo;
+      }
     },
-    [router]
+    []
   );
 
   const guardAction = useCallback(
