@@ -305,47 +305,47 @@ export function SellerCommandCenter(props: Props) {
       {/* CONTINUOUS DASHBOARD BODY */}
       <div className="flex-1 flex flex-col min-w-0 pb-24 lg:pb-12">
 
-        {/* 1. HERO CONTAINER — EDGE-TO-EDGE, FULL WIDTH, ZERO WHITE GAPS */}
-        <section className="relative w-full bg-[#031B4E] text-white px-4 sm:px-6 pt-4 pb-6 shadow-xl border-b border-white/10 space-y-4">
+        {/* 1. HERO CONTAINER — EDGE-TO-EDGE FULL-WIDTH DEEP NAVY HEADER */}
+        <section className="relative w-full bg-[#07142B] text-white px-4 sm:px-6 pt-4 pb-5 shadow-xl border-b border-white/10 space-y-4">
           <div className="max-w-4xl mx-auto space-y-4">
             {/* TOP BAR: PLAN BADGE (LEFT) & ACTION BUTTONS (RIGHT) */}
             <div className="flex items-center justify-between">
-              {/* Plan Badge Pill — Displays ONLY: Core, Pro, Elite, or Prime */}
+              {/* Plan Badge Pill (Top-Left) */}
               <Link
                 href="/agent/plans"
-                className="pressable inline-flex items-center gap-1.5 rounded-full border border-gold/50 bg-gold/10 px-3 py-1 text-xs font-black text-gold hover:bg-gold/20 transition-all shadow-xs"
+                className="pressable inline-flex items-center gap-1.5 rounded-full border border-[#E4B547] bg-transparent px-3 py-1 text-xs font-bold text-[#E4B547] hover:bg-[#E4B547]/10 transition-all"
               >
-                <Crown className="h-3.5 w-3.5 fill-gold text-gold" />
+                <Crown className="h-3.5 w-3.5 fill-[#E4B547] text-[#E4B547]" />
                 <span>{getCleanPlanName(subscriptionPlanLabel)}</span>
               </Link>
 
-              {/* Top Right Action Buttons */}
+              {/* Action Buttons (Top-Right): Performance/Analytics & Edit Profile */}
               <div className="flex items-center gap-2">
                 <Link
                   href="/seller/crm"
                   prefetch
-                  className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 text-gold hover:bg-gold/10 transition-colors"
+                  className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-[#E4B547] text-[#E4B547] hover:bg-[#E4B547]/10 transition-colors"
                   aria-label="Analytics"
                   title="Seller Analytics"
                 >
-                  <TrendingUp className="h-4 w-4" />
+                  <TrendingUp className="h-4 w-4 stroke-[2.5]" />
                 </Link>
                 <Link
                   href="/agent/edit-profile"
                   prefetch
-                  className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-gold/40 text-gold hover:bg-gold/10 transition-colors"
+                  className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-[#E4B547] text-[#E4B547] hover:bg-[#E4B547]/10 transition-colors"
                   aria-label="Edit Profile"
                   title="Edit Profile Settings"
                 >
-                  <Edit3 className="h-4 w-4" />
+                  <Edit3 className="h-4 w-4 stroke-[2.5]" />
                 </Link>
               </div>
             </div>
 
-            {/* PROFILE INFO ROW */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              {/* Left: Avatar + Name + Username + Verification Chip */}
-              <div className="flex items-center gap-3.5">
+            {/* MIDDLE PROFILE SECTION */}
+            <div className="flex items-center gap-4">
+              {/* Left: Avatar with thick luxury gold border & camera upload button overlay */}
+              <div className="relative shrink-0">
                 <AvatarUpload
                   userId={profile.id}
                   email={email}
@@ -353,46 +353,63 @@ export function SellerCommandCenter(props: Props) {
                   username={profile.username}
                   avatarUrl={profile.avatar_url ?? profile.company_logo_url ?? null}
                   size="xl"
-                  className="!h-16 !w-16 sm:!h-20 sm:!w-20 rounded-full border-2 border-gold ring-2 ring-gold/20 shadow-lg"
+                  className="!h-20 !w-20 rounded-full border-4 border-[#E4B547] shadow-xl"
                 />
-
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
-                      {nameToDisplay}
-                    </h1>
-                    <Sparkles className="h-4 w-4 text-gold fill-gold shrink-0" />
-                  </div>
-
-                  <p className="text-xs font-semibold text-gold/90 truncate">
-                    @{profile.username || "agent"}
-                  </p>
-
-                  <div className="pt-0.5">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/30 bg-blue-950/60 px-3 py-0.5 text-[11px] font-bold text-blue-200 shadow-xs">
-                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                      <span>{verified ? "Verified Agent" : "Basic Verified"}</span>
-                    </span>
-                  </div>
-                </div>
               </div>
 
-              {/* Right: AGENT SINCE & STATUS */}
-              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 border-t sm:border-t-0 border-white/10 pt-2 sm:pt-0 text-left sm:text-right text-xs">
-                <div>
-                  <span className="text-[10px] font-bold text-gold/80 uppercase tracking-wider block">AGENT SINCE</span>
-                  <span className="font-extrabold text-white text-xs block">{memberSince}</span>
+              {/* Right: Info Column */}
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
+                    {nameToDisplay}
+                  </h1>
+                  <Sparkles className="h-5 w-5 text-[#E4B547] fill-[#E4B547] shrink-0" />
                 </div>
-                <div>
-                  <span className="text-[10px] font-bold text-gold/80 uppercase tracking-wider block">STATUS</span>
-                  <span className="flex items-center gap-1.5 font-extrabold text-white text-xs">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Active</span>
+
+                <p className="text-xs font-semibold text-[#E4B547]/90 truncate">
+                  @{profile.username || "agent"}
+                </p>
+
+                <div className="pt-0.5">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/40 bg-transparent px-3 py-0.5 text-xs font-medium text-white shadow-2xs">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 stroke-[2.5]" />
+                    <span>{verified ? "Verified Agent" : "Basic Verified"}</span>
                   </span>
                 </div>
               </div>
             </div>
 
+            {/* THIN HORIZONTAL DIVIDER LINE */}
+            <hr className="border-white/15 my-3" />
+
+            {/* BOTTOM STATISTICS ROW — 3 EQUAL COLUMNS */}
+            <div className="grid grid-cols-3 gap-2 items-center text-center sm:text-left divide-x divide-white/10">
+              {/* Left Column: AGENT SINCE */}
+              <div className="pr-1">
+                <span className="text-[10px] font-bold text-[#E4B547] tracking-wider uppercase block">AGENT SINCE</span>
+                <span className="font-bold text-white text-xs sm:text-sm block mt-0.5">{memberSince}</span>
+              </div>
+
+              {/* Center Column: LARGE PREMIUM GOLD CTA BUTTON */}
+              <div className="px-2">
+                <Link
+                  href="/agent/listings/choose"
+                  className="pressable flex items-center justify-center gap-1.5 rounded-xl bg-[#F59E0B] py-2.5 px-3 text-xs font-bold text-[#031B4E] shadow-md hover:bg-amber-400 active:scale-98 transition-all w-full"
+                >
+                  <PlusCircle className="h-4 w-4 stroke-[2.5]" />
+                  <span>List on Yike</span>
+                </Link>
+              </div>
+
+              {/* Right Column: STATUS */}
+              <div className="pl-3 text-left">
+                <span className="text-[10px] font-bold text-[#E4B547] tracking-wider uppercase block">STATUS</span>
+                <span className="flex items-center gap-1.5 font-bold text-white text-xs sm:text-sm mt-0.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span>Active</span>
+                </span>
+              </div>
+            </div>
             {/* HERO INNER STATS & LEVEL CARD */}
             <div className="rounded-2xl border border-white/15 bg-[#051C4B]/90 backdrop-blur-md p-4 sm:p-5 shadow-xl space-y-4">
               {/* 3 STATS COLUMNS */}
