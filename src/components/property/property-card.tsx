@@ -1,7 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, MessageCircle, MapPin, BedDouble, Bath, Car } from "lucide-react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import {
+  Heart,
+  MessageCircle,
+  MapPin,
+  BedDouble,
+  Bath,
+  Car,
+  Eye,
+  Share2,
+  ShieldCheck,
+  Award,
+  User,
+  Clock,
+} from "lucide-react";
 import type { Property } from "@/types/database";
 import {
   formatPrice,
@@ -13,15 +28,11 @@ import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { useAuth } from "@/components/auth/auth-provider";
-import {
-  openWhatsAppLead,
-  trackLeadAndRedirect,
-} from "@/lib/leads/client";
+import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
 import { trackEvent } from "@/lib/analytics";
 import { recordEngagementSave } from "@/lib/engagement";
 import { trackSavedListing } from "@/lib/browse-preferences";
 import { listingImageAlt } from "@/lib/image-seo";
-import { useEffect, useState } from "react";
 import { ListingImage } from "./listing-image";
 import { listingCardImage } from "@/lib/listing-gallery-images";
 import { optimizeListingImageUrl } from "@/lib/image-url";
@@ -29,16 +40,14 @@ import { listingPath } from "@/lib/marketplace/listing-path";
 import { ListingDistanceLabel } from "@/components/marketplace/listing-distance-label";
 import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
-import {
-  isGuestFavorite,
-  toggleGuestFavorite,
-} from "@/lib/guest-favorites";
+import { isGuestFavorite, toggleGuestFavorite } from "@/lib/guest-favorites";
 import { logFeaturedAnalyticsEvent } from "@/lib/featured-promotions/analytics-client";
 import {
   PlacementBadge,
   featuredPlacementChrome,
 } from "@/components/marketplace/placement-badge";
 import { resolvePlacementKind } from "@/lib/marketplace/placement";
+import { PropertyQuickPreviewModal } from "./property-quick-preview-modal";
 
 export type PropertyCardLayout = "mobile" | "desktop";
 export type PropertyCardVariant = "default" | "browse";
@@ -61,7 +70,6 @@ export function PropertyCard({
   priorityImage?: boolean;
   inline?: boolean;
   trackFeaturedAnalytics?: boolean;
-  /** Browse = inventory-first poster card (home rails). */
   variant?: PropertyCardVariant;
 }) {
   const isBrowse = variant === "browse";
@@ -69,6 +77,7 @@ export function PropertyCard({
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const [quickPreviewOpen, setQuickPreviewOpen] = useState(false);
 
   const image = optimizeListingImageUrl(
     listingCardImage(property),
@@ -83,6 +92,9 @@ export function PropertyCard({
   const featuredActive = isFeaturedActive(property);
   const placement = resolvePlacementKind(property);
   const parking = hasParking(property);
+
+  const sellerAvatar = agent?.avatar_url;
+  const sellerName = agent?.company_name || agent?.full_name || "Agent";
 
   useEffect(() => {
     if (!trackFeaturedAnalytics || !featuredActive || isDemo) return;
@@ -203,6 +215,12 @@ export function PropertyCard({
     );
   }
 
+  function openQuickPreview(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setQuickPreviewOpen(true);
+  }
+
   const sourcePage =
     typeof window !== "undefined" ? window.location.pathname : href;
 
@@ -266,23 +284,21 @@ export function PropertyCard({
     attrs.push({ icon: Car, label: "Park" });
   }
 
-  /* Inventory-first browse poster — photo · price · title · pin · verified */
-  if (isBrowse) {
-    return (
-      <article className="group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-transparent">
+  return (
+    <>
+      <article
+        className={cn(
+          "group card-lift relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-elevated shadow-card ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
+          inline ? "" : ""
+        )}
+      >
         <Link
           href={href}
           prefetch={!isDemo}
           className="block"
           onClick={handleFeaturedNavigate}
         >
-          <div
-            className={cn(
-              "listing-thumb relative overflow-hidden rounded-[1.25rem] bg-navy/5",
-              BROWSE_THUMB_ASPECT,
-              featuredPlacementChrome(placement === "featured"),
-            )}
-          >
+          <div className="relative aspect-[4/3] overflow-hidden bg-surface">
             <ListingImage
               src={image}
               alt={imageAlt}
@@ -291,9 +307,8 @@ export function PropertyCard({
               width={480}
               className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-navy/35 to-transparent" />
-            <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-1">
-              <span className="rounded-md bg-navy/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-[2px]">
+            <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-4rem)] flex-wrap gap-1">
+              <span className="rounded-md bg-navy/85 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
                 {listingTypeLabel(property.listing_type)}
               </span>
               {placement ? (
@@ -301,7 +316,7 @@ export function PropertyCard({
               ) : null}
               {verified ? (
                 <span
-                  className="rounded-md bg-emerald-600/92 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-[2px]"
+                  className="rounded-md bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm"
                   title="Verified"
                 >
                   ✓ Verified
@@ -311,173 +326,112 @@ export function PropertyCard({
           </div>
         </Link>
 
-        {!isDemo ? (
-          <div className="pointer-events-none absolute right-1.5 top-1.5 z-10">
-            <button
-              type="button"
-              onClick={toggleSave}
-              disabled={saving}
+        {/* OVERLAY ACTION BUTTONS: HEART & QUICK PREVIEW */}
+        <div className="pointer-events-none absolute right-1.5 top-1.5 z-10 flex gap-1">
+          <button
+            type="button"
+            onClick={openQuickPreview}
+            className="pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-navy shadow-sm backdrop-blur-sm transition-transform hover:scale-105"
+            title="Quick Preview"
+          >
+            <Eye className="h-3.5 w-3.5 text-navy/80" />
+          </button>
+          <button
+            type="button"
+            onClick={toggleSave}
+            disabled={saving || isDemo}
+            className={cn(
+              "pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm transition-transform hover:scale-105",
+              saving && "opacity-70"
+            )}
+            aria-label={saved ? "Unsave listing" : "Save listing"}
+          >
+            <Heart
               className={cn(
-                "pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-navy shadow-sm backdrop-blur-sm transition-transform",
-                saving && "opacity-70",
-                !saved && "opacity-90 group-hover:opacity-100 group-hover:scale-105",
+                "h-3.5 w-3.5 transition-transform active:scale-125",
+                saved ? "fill-red-500 text-red-500" : "text-navy/70"
               )}
-              aria-label={saved ? "Unsave listing" : "Save listing"}
-            >
-              <Heart
-                className={cn(
-                  "h-3.5 w-3.5 transition-colors",
-                  saved ? "fill-red-500 text-red-500" : "text-navy/70",
-                )}
-              />
-            </button>
-          </div>
-        ) : null}
+            />
+          </button>
+        </div>
 
-        <div className="flex flex-1 flex-col gap-0.5 pt-1.5">
+        {/* CARD DETAILS */}
+        <div className="flex flex-1 flex-col justify-between p-2.5 sm:p-3">
           <Link
             href={href}
             prefetch={!isDemo}
-            className="block min-w-0"
+            className="block min-w-0 space-y-1"
             onClick={handleFeaturedNavigate}
           >
-            <p className="text-[15px] font-bold tabular-nums leading-tight tracking-tight text-navy sm:text-base">
-              {price}
-            </p>
-            <p className="mt-0.5 line-clamp-1 text-[12px] font-bold leading-snug text-navy/90 sm:text-[13px]">
+            <div className="flex items-baseline justify-between gap-1">
+              <p className="text-sm font-black tabular-nums leading-tight tracking-tight text-foreground sm:text-base">
+                {price}
+              </p>
+              <span className="text-[9px] font-bold text-gold-dark dark:text-gold flex items-center gap-0.5">
+                <Award className="h-2.5 w-2.5" />
+                4.8★
+              </span>
+            </div>
+
+            <p className="line-clamp-2 text-[12px] font-semibold leading-snug text-foreground/90 sm:text-[13px]">
               {property.title}
             </p>
-            {attrs.length > 0 ? (
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/50">
+
+            <p className="flex items-center gap-0.5 text-[10px] font-medium text-muted sm:text-[11px]">
+              <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
+              <span className="line-clamp-1">{locationLabel}</span>
+            </p>
+
+            {attrs.length > 0 && (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-muted pt-0.5">
                 {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
                   <span key={label} className="inline-flex items-center gap-0.5">
                     <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
                     {label}
                   </span>
                 ))}
-              </p>
-            ) : null}
-            {locationLabel ? (
-              <p className="mt-1 flex items-center gap-0.5 text-[10px] font-medium text-navy/50">
-                <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
-                <span className="line-clamp-1">{locationLabel}</span>
-                <ListingDistanceLabel
-                  city={property.city}
-                  state={property.state}
-                  className="ml-auto shrink-0 tabular-nums text-navy/40"
-                />
-              </p>
-            ) : null}
+              </div>
+            )}
           </Link>
-        </div>
-      </article>
-    );
-  }
 
-  return (
-    <article
-      className={cn(
-        "group card-lift relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-elevated shadow-card ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
-        inline ? "" : ""
-      )}
-    >
-      <Link
-        href={href}
-        prefetch={!isDemo}
-        className="block"
-        onClick={handleFeaturedNavigate}
-      >
-        {/* Image ~50–55% of card — fixed aspect for consistent row height */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-surface">
-          <ListingImage
-            src={image}
-            alt={imageAlt}
-            priority={priorityImage}
-            sizes="(max-width: 640px) 46vw, (max-width: 1024px) 25vw, (max-width: 1536px) 14vw, 12vw"
-            width={480}
-            className="transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-          />
-          <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.75rem)] flex-wrap gap-1">
-            <span className="rounded-md bg-navy/85 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-              {listingTypeLabel(property.listing_type)}
-            </span>
-            {placement ? (
-              <PlacementBadge kind={placement} compact />
-            ) : null}
-            {verified ? (
-              <span
-                className="rounded-md bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm"
-                title="Verified"
-              >
-                ✓ Verified
+          {/* AGENT FOOTER & WHATSAPP BUTTON */}
+          <div className="mt-2.5 flex items-center justify-between border-t border-black/5 dark:border-white/5 pt-2 text-[10px] text-muted">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full bg-[#031B4E] text-white flex items-center justify-center font-bold text-[8px]">
+                {sellerAvatar ? (
+                  <Image src={sellerAvatar} alt={sellerName} fill className="object-cover" />
+                ) : (
+                  <User className="h-3 w-3 text-white" />
+                )}
+              </div>
+              <span className="truncate font-medium text-foreground/80 max-w-[80px]">
+                {sellerName}
               </span>
-            ) : null}
+            </div>
+
+            {hasAgent && !isDemo && (
+              <button
+                type="button"
+                onClick={onChatClick}
+                disabled={chatLoading}
+                className="pressable flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[9px] font-bold hover:bg-emerald-100"
+              >
+                <MessageCircle className="h-2.5 w-2.5" />
+                <span>Chat</span>
+              </button>
+            )}
           </div>
         </div>
-      </Link>
+      </article>
 
-      {/* Compact overlay CTAs — primary conversion stays on detail */}
-      <div className="pointer-events-none absolute right-1.5 top-1.5 z-10 flex gap-0.5">
-        <button
-          type="button"
-          onClick={toggleSave}
-          disabled={saving || isDemo}
-          className={cn(
-            "pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm transition-transform hover:scale-105",
-            saving && "opacity-70"
-          )}
-          aria-label={saved ? "Unsave listing" : "Save listing"}
-        >
-          <Heart
-            className={cn(
-              "h-3.5 w-3.5",
-              saved ? "fill-red-500 text-red-500" : "text-navy/70"
-            )}
-          />
-        </button>
-        {hasAgent && !isDemo ? (
-          <button
-            type="button"
-            onClick={onChatClick}
-            disabled={chatLoading}
-            className="pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm transition-transform hover:scale-105 disabled:opacity-70"
-            aria-label="Chat on WhatsApp"
-          >
-            <MessageCircle className="h-3.5 w-3.5 text-navy/70" />
-          </button>
-        ) : null}
-      </div>
-
-      <div className="flex flex-1 flex-col gap-0.5 p-2 sm:px-2 sm:pb-2 sm:pt-1.5">
-        <Link
-          href={href}
-          prefetch={!isDemo}
-          className="block min-w-0"
-          onClick={handleFeaturedNavigate}
-        >
-          <p className="text-sm font-bold tabular-nums leading-tight tracking-tight text-foreground sm:text-[15px]">
-            {price}
-          </p>
-          <p className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-foreground/90 sm:text-[13px]">
-            {property.title}
-          </p>
-          <p className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-muted sm:text-[11px]">
-            <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
-            <span className="line-clamp-1">{locationLabel}</span>
-          </p>
-          {attrs.length > 0 ? (
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-muted sm:text-[11px]">
-              {attrs.slice(0, 3).map(({ icon: Icon, label }) => (
-                <span key={label} className="inline-flex items-center gap-0.5">
-                  <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
-                  {label}
-                </span>
-              ))}
-            </p>
-          ) : null}
-        </Link>
-      </div>
-    </article>
+      {/* QUICK PREVIEW MODAL */}
+      {quickPreviewOpen && (
+        <PropertyQuickPreviewModal
+          property={property}
+          onClose={() => setQuickPreviewOpen(false)}
+        />
+      )}
+    </>
   );
 }
 

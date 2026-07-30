@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { permanentRedirect } from "next/navigation";
-import { resolvePropertyRoute } from "@/lib/properties";
+import { resolvePropertyRoute, getRelatedProperties } from "@/lib/properties";
 import { getSession, getProfile, isAdmin } from "@/lib/auth";
 import {
   canPreviewOwnerListing,
@@ -10,9 +10,8 @@ import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-statu
 import { isVerifiedAgent } from "@/lib/utils";
 import { propertyAbsoluteUrl } from "@/lib/property-url";
 import { listingShareImageUrl } from "@/lib/share-images";
-import { UnifiedListingDetail } from "@/components/marketplace/experience";
+import { PropertyDetailExperience } from "@/components/property/property-detail-experience";
 import { ListingStructuredData } from "@/components/seo/listing-structured-data";
-import { isFeaturedActive } from "@/lib/agent-tiers";
 import { PropertyViewTracker } from "./view-tracker";
 import { ListingUnavailable } from "@/components/property/listing-unavailable";
 import { SITE_NAME } from "@/lib/constants";
@@ -116,11 +115,17 @@ export default async function PropertyDetailPage({
       />
     ) : null;
 
+  const similarListings = await getRelatedProperties(property, 6);
+
   return (
     <div className="detail-band-ivory">
       {isPubliclyVisible ? <ListingStructuredData property={property} /> : null}
       <PropertyViewTracker propertyId={property.id} property={property} slug={slug} />
-      <UnifiedListingDetail listing={property} ownerBanner={ownerBanner} />
+      <PropertyDetailExperience
+        property={property}
+        similarListings={similarListings}
+        ownerBanner={ownerBanner}
+      />
     </div>
   );
 }
