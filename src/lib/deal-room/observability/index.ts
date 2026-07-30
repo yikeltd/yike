@@ -1,12 +1,11 @@
-/**
- * Yike BTOS — Observability & Telemetry Framework (Milestone 5)
- * Structured logging with correlation IDs, latency tracking, & metrics.
- */
+export * from "./tracing";
+export * from "./metrics";
 
 export interface LogPayload {
   level: "info" | "warn" | "error" | "debug";
   message: string;
-  correlationId?: string;
+  traceId?: string;
+  spanId?: string;
   workspaceId?: string;
   durationMs?: number;
   metadata?: Record<string, unknown>;
@@ -26,11 +25,11 @@ export class BTOSLogger {
     }
   }
 
-  public static info(message: string, workspaceId?: string, correlationId?: string): void {
-    this.log({ level: "info", message, workspaceId, correlationId });
+  public static info(message: string, workspaceId?: string, traceId?: string): void {
+    this.log({ level: "info", message, workspaceId, traceId });
   }
 
-  public static error(message: string, workspaceId?: string, correlationId?: string, metadata?: Record<string, unknown>): void {
-    this.log({ level: "error", message, workspaceId, correlationId, metadata });
+  public static error(message: string, workspaceId?: string, traceId?: string, metadata?: Record<string, unknown>): void {
+    this.log({ level: "error", message, workspaceId, traceId, metadata });
   }
 }

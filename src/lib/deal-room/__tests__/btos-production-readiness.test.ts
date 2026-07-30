@@ -1,6 +1,6 @@
 /**
- * Yike BTOS Production Readiness Automated Test Suite (Milestones 1–4)
- * Invariant tests for double-entry ledger, durable event transport, sagas, & CQRS projections.
+ * Yike BTOS Production Readiness Automated Test Suite (Milestones 1–5)
+ * Invariant tests for double-entry ledger, durable event transport, sagas, CQRS, & observability.
  */
 
 import assert from "node:assert/strict";
@@ -10,6 +10,7 @@ import { TransactionSagaManager } from "../workflow/saga";
 import { activeEventTransport } from "../events/transport";
 import { dealRoomEvents } from "../events";
 import { projectionEngine } from "../projections/projection-engine";
+import { btosTracer, btosMetrics } from "../observability";
 import { ResultContainer } from "../kernel/result";
 
 test("Double-Entry Ledger Invariant: Sum(Debits) === Sum(Credits)", () => {
@@ -34,6 +35,23 @@ test("Double-Entry Ledger Invariant: Sum(Debits) === Sum(Credits)", () => {
   assert.equal(entries[0].amount, entries[1].amount);
   assert.equal(entries[0].entryType, "debit");
   assert.equal(entries[1].entryType, "credit");
+});
+
+test("Distributed Tracing & Metrics Telemetry (Milestone 5)", async () => {
+  const span = btosTracer.startSpan("process_escrow_payout", "ws_obs_777", "usr_actor");
+  assert.ok(span.traceId);
+
+  btosMetrics.incrementCounter("escrow_releases", 1);
+  btosMetrics.recordLatency("escrow_releases", 120);
+
+  const snapshot = btosMetrics.getSnapshot("escrow_releases");
+  assert.equal(snapshot.count, 1);
+  assert.equal(snapshot.avgDurationMs, 120);
+
+  btosTracer.endSpan(span.spanId, "ok");
+  const history = btosTracer.getTraceHistory("ws_obs_777");
+  assert.equal(history.length, 1);
+  assert.equal(history[0].status, "ok");
 });
 
 test("CQRS Projection Engine Event Projection (Milestone 4)", async () => {
