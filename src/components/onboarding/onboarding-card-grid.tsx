@@ -55,11 +55,11 @@ export function OnboardingCardGrid({
               }
             }}
             className={cn(
-              "pressable group relative flex flex-col justify-between min-h-[48px] min-w-[48px] rounded-3xl border-2 p-3 sm:p-4 transition-all duration-200 cursor-pointer select-none",
+              "pressable group relative flex flex-col justify-between h-full min-h-[160px] min-w-[48px] rounded-3xl border-2 p-4 transition-all duration-200 cursor-pointer select-none",
               "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E4B547]/50",
               isSelected
-                ? "border-[#E4B547] bg-[#E4B547]/10 ring-2 ring-[#E4B547]/30 shadow-lg scale-[1.01]"
-                : "border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-sm"
+                ? "border-[#F59E0B] bg-[#FFFBEB] ring-4 ring-[#F59E0B]/15 shadow-md scale-[1.01]"
+                : "border-slate-200/90 bg-white hover:border-[#E4B547]/60 hover:shadow-md"
             )}
           >
             {/* OPTIONAL BADGE */}
@@ -72,13 +72,13 @@ export function OnboardingCardGrid({
             {/* SELECTION CHECKMARK */}
             <div
               className={cn(
-                "absolute top-3 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border transition-all shadow-sm",
+                "absolute top-3 right-3 z-10 flex h-6 w-6 items-center justify-center rounded-full border transition-all shadow-xs",
                 isSelected
-                  ? "border-[#E4B547] bg-[#F59E0B] text-[#031B4E] scale-100"
-                  : "border-slate-300 bg-white/90 text-transparent group-hover:border-slate-400"
+                  ? "border-[#F59E0B] bg-[#F59E0B] text-[#031B4E] scale-100"
+                  : "border-slate-300 bg-white/90 text-transparent group-hover:border-slate-400 opacity-60"
               )}
             >
-              <Check className="h-4 w-4 stroke-[3]" />
+              <Check className="h-3.5 w-3.5 stroke-[3]" />
             </div>
 
             {/* RETINA WEBP IMAGE */}
@@ -87,16 +87,16 @@ export function OnboardingCardGrid({
               assetName={item.assetName}
               alt={item.title}
               priority={idx < 4}
-              className="mb-3"
+              className="mb-3 aspect-[16/11] bg-slate-50/50"
             />
 
             {/* CARD CONTENT */}
-            <div className="space-y-1">
-              <h3 className="text-xs sm:text-sm font-extrabold text-[#031B4E] leading-snug">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-black text-[#031B4E] leading-snug">
                 {item.title}
               </h3>
               {item.subtitle && (
-                <p className="text-[11px] sm:text-xs font-medium text-slate-500 line-clamp-2 leading-tight">
+                <p className="text-[11px] font-medium text-slate-500 line-clamp-2 leading-tight">
                   {item.subtitle}
                 </p>
               )}
