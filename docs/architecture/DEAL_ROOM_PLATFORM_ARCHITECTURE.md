@@ -1,8 +1,8 @@
-# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 5 Certified)
+# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 6 Certified)
 
 > **Platform**: Yike.ng (Stankings Marketplace Platform)  
 > **Author**: Antigravity Platform Architecture Team  
-> **Status**: APPROVED & ENTERPRISE COMMUNICATION PLATFORM IMPLEMENTED
+> **Status**: APPROVED & TRUST & VERIFICATION PLATFORM IMPLEMENTED
 
 ---
 
@@ -17,6 +17,9 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  [ BUYER ]  [ SELLER ]  [ AGENT ]  [ FIELD INSPECTOR ]  [ LEGAL PARTNER ]   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ TRUST & VERIFICATION CENTER (Weighted Trust Score Gauge 0–100 / KYC)  │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ COMMUNICATION PLATFORM (Agora RTC Adapter / Voice Sessions / Presence) │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
@@ -27,15 +30,15 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ CONVERSATION INTELLIGENCE STREAM (Slack/Linear/Stripe Style Feed)     │  │
-│  │ ├─ System Event Pills (Buyer Joined, Inspection Requested)            │  │
+│  │ ├─ System Event Pills (Buyer Joined, Verification Approved)           │  │
 │  │ ├─ User Chat Bubbles (Text, Attachments, Read Receipts)               │  │
 │  │ ├─ Embedded Offer Cards (v1, v2 Counter, Accepted, Expired)           │  │
-│  │ ├─ Embedded Voice Call Cards (Requested, Connected, Duration)        │  │
+│  │ ├─ Embedded Verification Cards (Identity, Title, 94% Confidence)      │  │
 │  │ └─ Embedded Document Cards (Title, Version, Verified Badge)           │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Communication Aggregate  │ │ Universal Attachment      │ │ Universal │  │
-│  │ (Provider Adapter Engine)│ │ Engine (Polymorphic Files)│ │ Comment   │  │
+│  │ Verification Aggregate   │ │ Universal Attachment      │ │ Universal │  │
+│  │ (Evidence & Confidence)  │ │ Engine (Polymorphic Files)│ │ Comment   │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
 │  │ Negotiation Aggregate    │ │ Universal Legal Audit Log │ │ Search    │  │
@@ -49,12 +52,12 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 
 ---
 
-## 2. Enterprise Communication Platform Architecture (Phase 5)
+## 2. Trust & Verification Platform Architecture (Phase 6)
 
-- **Provider Abstraction Architecture (`CommunicationProvider`)**: The Transaction Workspace is **never coupled to Agora**. Agora is implemented strictly as a provider adapter (`AgoraCommunicationAdapter` in `src/lib/deal-room/communications/provider.ts`), permitting zero-friction swapping for LiveKit, Daily.co, Twilio, or WebRTC drivers.
-- **`CommunicationAggregate`** (`src/lib/deal-room/communications/types.ts`): Domain aggregate managing real-time session status (`requested`, `ringing`, `connected`, `completed`, `failed`), channel tokens, media state, presence, and duration tracking.
-- **`CommunicationService`** (`src/lib/deal-room/communications/service.ts`): Methods for `initiateVoiceSession()`, `connectVoiceSession()`, `endVoiceSession()`, audit logging, and embedding `call_card` into stream.
-- **`VoiceCallOverlay`** (`src/components/deal-room/voice-call-overlay.tsx`): Premium FaceTime-meets-Stripe styled dark mode in-call UI with live call timer, connection quality indicator, mute controls, speaker controls, and disabled video placeholders for Phase 6.
+- **`VerificationAggregate`** (`src/lib/deal-room/trust/types.ts`): Independent domain aggregate for evidence-backed verifications (`identity`, `business`, `property`, `vehicle`, `ownership`, `title`, `inspection`, `phone`, `email`, `address`, `document`).
+- **Weighted Trust Score Model (`TrustScoreCalculator`)**: Computes a 0–100 workspace trust score using weighted inputs from identity verifications (40%), document verifications (40%), and historical transaction completion (20%).
+- **`VerificationService`** (`src/lib/deal-room/trust/service.ts`): Methods for `submitVerification()`, `approveVerification()`, confidence scoring, stream card embedding, audit logging, and automation hook emissions.
+- **`TrustCenterPanel`** (`src/components/deal-room/trust-center-panel.tsx`): Banking KYC styled dashboard panel featuring a radial Trust Score Gauge, verification checklist, and evidence badges.
 
 ---
 
@@ -79,9 +82,9 @@ src/
 │       ├── negotiation/                 # Phase 3 Negotiation Engine
 │       ├── appointments/                # Phase 4 Appointment & Scheduling Engine
 │       ├── communications/              # Phase 5 Enterprise Communication Platform
-│       │   ├── types.ts                 # CommunicationAggregate & MediaState
-│       │   ├── provider.ts              # CommunicationProvider & AgoraCommunicationAdapter
-│       │   ├── service.ts               # CommunicationService & Repository
+│       ├── trust/                       # Phase 6 Trust & Verification Platform
+│       │   ├── types.ts                 # VerificationAggregate & TrustScoreBreakdown
+│       │   ├── service.ts               # VerificationService & TrustScoreCalculator
 │       │   └── index.ts                 # Barrel exports
 └── components/
     └── deal-room/
@@ -89,11 +92,19 @@ src/
         ├── conversation-workspace.tsx   # Production Conversation Workspace UI
         ├── negotiation-summary-panel.tsx# Pinned Negotiation Summary UI
         ├── appointment-card.tsx         # Rich Embedded Appointment Card UI
-        └── voice-call-overlay.tsx       # FaceTime-styled In-Call UI
+        ├── voice-call-overlay.tsx       # FaceTime-styled In-Call UI
+        └── trust-center-panel.tsx       # Banking-styled Trust Center Dashboard UI
 ```
 
 ---
 
-## 4. Final Phase 5 Certification
+## 4. Architectural Self-Audit (CTO Verification Questions)
 
-The Yike Enterprise Communication Platform (Voice Foundation) is certified. Voice calling operates as a provider-agnostic, scheduled business session inside the Transaction Workspace. Agora is isolated inside `AgoraCommunicationAdapter`. Future Video calling (Phase 6) requires only extending media session types without architectural changes.
+1. **Did this phase introduce any architectural debt?**
+   - **No.** Trust was implemented as an independent aggregate (`VerificationAggregate`) decoupled from messaging, calls, or payments. It publishes events to the existing `AutomationHookBus` and `DealRoomEventBus`.
+2. **If Yike grew to 50 million users tomorrow, what in this phase would need to change?**
+   - The in-memory `VerificationRepository` would transition to PostgreSQL database tables (`verifications`, `trust_scores`) with Redis caching for `TrustScoreCalculator`. The domain interfaces and service methods would remain 100% identical.
+3. **What future phases are now simpler because of the work completed here?**
+   - **Phase 7 (Document Vault)**: Documents will attach directly to `VerificationAggregate` as verified evidence.
+   - **Phase 8 (Inspection Engine)**: Field verifiers will approve `inspection` verification records directly into `TrustScoreCalculator`.
+   - **Phase 11 (Escrow & Payments)**: Escrow release conditions can evaluate `trustScore.overallScore >= 85` programmatically.
