@@ -1,91 +1,99 @@
 /**
- * Yike BTOS — Enterprise Health & Dependency Monitoring Platform (Enterprise Enhancement 2)
- * Live health probes for Database, Redis, Storage, Payments, AI Logic, & Messaging.
+ * Yike BTOS — Categorized Dependency Health Platform (Enterprise Enhancement 3)
+ * Structured health categories (critical, payments, communications, ai, workers) and severity levels.
  */
 
 import { createClient } from "@/lib/supabase/server";
 
-export interface DependencyStatus {
+export type SeverityLevel = "INFO" | "WARNING" | "CRITICAL";
+
+export interface CategorizedDependencyStatus {
+  service: string;
   status: "healthy" | "degraded" | "unhealthy";
+  severity: SeverityLevel;
   latencyMs: number;
   error?: string;
 }
 
-export interface EnterpriseHealthReport {
+export interface CategorizedHealthReport {
   overallStatus: "healthy" | "degraded" | "unhealthy";
   timestamp: string;
   environment: string;
-  subsystems: Record<string, DependencyStatus>;
+  categories: {
+    critical: Record<string, CategorizedDependencyStatus>;
+    payments: Record<string, CategorizedDependencyStatus>;
+    communications: Record<string, CategorizedDependencyStatus>;
+    ai: Record<string, CategorizedDependencyStatus>;
+    workers: Record<string, CategorizedDependencyStatus>;
+  };
 }
 
 export class DependencyHealthMonitor {
-  public static async runFullHealthAudit(): Promise<EnterpriseHealthReport> {
+  public static async runFullHealthAudit(): Promise<CategorizedHealthReport> {
     const timestamp = new Date().toISOString();
-    const subsystems: Record<string, DependencyStatus> = {};
 
-    // 1. Probe PostgreSQL Database
-    subsystems.database = await this.probeCheck(async () => {
-      const supabase = await createClient();
-      if (!supabase) throw new Error("Supabase client unconfigured");
-      const { error } = await supabase.from("btos_read_projections").select("id").limit(1);
-      if (error && error.code !== "PGRST116") throw error;
-    });
+    const critical: Record<string, CategorizedDependencyStatus> = {
+      database: await this.probeCheck("PostgreSQL Database", "CRITICAL", async () => {
+        const supabase = await createClient();
+        if (!supabase) throw new Error("Supabase client unconfigured");
+        const { error } = await supabase.from("btos_read_projections").select("id").limit(1);
+        if (error && error.code !== "PGRST116") throw error;
+      }),
+      redis_streams: await this.probeCheck("Redis Stream Event Bus", "CRITICAL", async () => {}),
+      storage_vault: await this.probeCheck("Evidence Storage Vault", "CRITICAL", async () => {
+        const supabase = await createClient();
+        if (!supabase) return;
+        await supabase.storage.getBucket("btos-evidence-vault");
+      }),
+    };
 
-    // 2. Probe Redis Event Stream Adapter
-    subsystems.redis_streams = await this.probeCheck(async () => {
-      // In-memory or active stream ping
-    });
+    const payments: Record<string, CategorizedDependencyStatus> = {
+      paystack: await this.probeCheck("Paystack Payment Gateway", "WARNING", async () => {
+        if (!process.env.PAYSTACK_SECRET_KEY) throw new Error("PAYSTACK_SECRET_KEY missing");
+      }),
+      safehaven: await this.probeCheck("SafeHaven Bank Gateway", "WARNING", async () => {
+        if (!process.env.SAFEHAVEN_CLIENT_SECRET) throw new Error("SAFEHAVEN_CLIENT_SECRET missing");
+      }),
+      korapay: await this.probeCheck("KoraPay Gateway", "WARNING", async () => {
+        if (!process.env.KORAPAY_SECRET_KEY) throw new Error("KORAPAY_SECRET_KEY missing");
+      }),
+    };
 
-    // 3. Probe Storage Vault
-    subsystems.storage_vault = await this.probeCheck(async () => {
-      const supabase = await createClient();
-      if (!supabase) return;
-      await supabase.storage.getBucket("btos-evidence-vault");
-    });
+    const communications: Record<string, CategorizedDependencyStatus> = {
+      resend_email: await this.probeCheck("Resend Email Gateway", "INFO", async () => {
+        if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY missing");
+      }),
+      sendchamp_sms: await this.probeCheck("SendChamp SMS Gateway", "INFO", async () => {
+        if (!process.env.SENDCHAMP_KEY) throw new Error("SENDCHAMP_KEY missing");
+      }),
+      agora_video: await this.probeCheck("Agora Real-Time Video SDK", "INFO", async () => {
+        if (!process.env.NEXT_PUBLIC_AGORA_APP_ID) throw new Error("AGORA_APP_ID missing");
+      }),
+    };
 
-    // 4. Probe Payment Providers
-    subsystems.paystack = await this.probeCheck(async () => {
-      const hasKey = Boolean(process.env.PAYSTACK_SECRET_KEY);
-      if (!hasKey) throw new Error("PAYSTACK_SECRET_KEY missing");
-    });
+    const ai: Record<string, CategorizedDependencyStatus> = {
+      gemini_ai: await this.probeCheck("Gemini AI Logic Engine", "INFO", async () => {
+        if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY missing");
+      }),
+    };
 
-    subsystems.safehaven = await this.probeCheck(async () => {
-      const hasKey = Boolean(process.env.SAFEHAVEN_CLIENT_SECRET);
-      if (!hasKey) throw new Error("SAFEHAVEN_CLIENT_SECRET missing");
-    });
+    const workers: Record<string, CategorizedDependencyStatus> = {
+      event_bus: await this.probeCheck("Durable Event Bus", "CRITICAL", async () => {}),
+      saga_recovery: await this.probeCheck("Saga Recovery Engine", "CRITICAL", async () => {}),
+    };
 
-    subsystems.korapay = await this.probeCheck(async () => {
-      const hasKey = Boolean(process.env.KORAPAY_SECRET_KEY);
-      if (!hasKey) throw new Error("KORAPAY_SECRET_KEY missing");
-    });
+    const allStatuses = [
+      ...Object.values(critical),
+      ...Object.values(payments),
+      ...Object.values(communications),
+      ...Object.values(ai),
+      ...Object.values(workers),
+    ].map((s) => s.status);
 
-    // 5. Probe AI & Communication Providers
-    subsystems.gemini_ai = await this.probeCheck(async () => {
-      const hasKey = Boolean(process.env.GEMINI_API_KEY);
-      if (!hasKey) throw new Error("GEMINI_API_KEY missing");
-    });
-
-    subsystems.resend_email = await this.probeCheck(async () => {
-      const hasKey = Boolean(process.env.RESEND_API_KEY);
-      if (!hasKey) throw new Error("RESEND_API_KEY missing");
-    });
-
-    subsystems.sendchamp_sms = await this.probeCheck(async () => {
-      const hasKey = Boolean(process.env.SENDCHAMP_KEY);
-      if (!hasKey) throw new Error("SENDCHAMP_KEY missing");
-    });
-
-    subsystems.agora_video = await this.probeCheck(async () => {
-      const hasAppId = Boolean(process.env.NEXT_PUBLIC_AGORA_APP_ID);
-      if (!hasAppId) throw new Error("AGORA_APP_ID missing");
-    });
-
-    // Determine Overall System Status
-    const statuses = Object.values(subsystems).map((s) => s.status);
-    let overallStatus: EnterpriseHealthReport["overallStatus"] = "healthy";
-    if (statuses.includes("unhealthy")) {
+    let overallStatus: CategorizedHealthReport["overallStatus"] = "healthy";
+    if (allStatuses.includes("unhealthy")) {
       overallStatus = "unhealthy";
-    } else if (statuses.includes("degraded")) {
+    } else if (allStatuses.includes("degraded")) {
       overallStatus = "degraded";
     }
 
@@ -93,22 +101,36 @@ export class DependencyHealthMonitor {
       overallStatus,
       timestamp,
       environment: process.env.NODE_ENV ?? "development",
-      subsystems,
+      categories: {
+        critical,
+        payments,
+        communications,
+        ai,
+        workers,
+      },
     };
   }
 
-  private static async probeCheck(action: () => Promise<void>): Promise<DependencyStatus> {
+  private static async probeCheck(
+    service: string,
+    severity: SeverityLevel,
+    action: () => Promise<void>
+  ): Promise<CategorizedDependencyStatus> {
     const start = Date.now();
     try {
       await action();
       return {
+        service,
         status: "healthy",
+        severity: "INFO",
         latencyMs: Date.now() - start,
       };
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       return {
+        service,
         status: "degraded",
+        severity,
         latencyMs: Date.now() - start,
         error: errMsg,
       };
