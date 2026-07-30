@@ -60,8 +60,8 @@ export const DEALER_BUSINESS_TYPES: readonly DealerBusinessType[] = [
   },
   {
     id: "other",
-    label: "Other",
-    description: "Professional seller — we’ll help you set up",
+    label: "Other Professional Seller",
+    description: "Professional merchant listing goods or services",
     accountType: "agency",
   },
 ] as const;
