@@ -249,18 +249,7 @@ export function SellerCommandCenter(props: Props) {
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex w-64 shrink-0 flex-col justify-between bg-[#031B4E] p-5 text-white border-r border-white/10 sticky top-0 h-screen overflow-y-auto">
         <div className="space-y-6">
-          <Link href="/" className="flex items-center gap-2 px-2 pt-1">
-            <Image
-              src="/images/logo.webp"
-              alt="Yike Logo"
-              width={32}
-              height={32}
-              className="h-8 w-8 object-contain drop-shadow-md"
-            />
-            <span className="text-2xl font-black tracking-tight text-white">Yike</span>
-          </Link>
-
-          <nav className="space-y-1" aria-label="Main Navigation">
+          <nav className="space-y-1 pt-2" aria-label="Main Navigation">
             <SidebarNavItem href="/agent" icon={LayoutDashboard} label="Dashboard" active />
             <SidebarNavItem href="/conversations" icon={MessageSquare} label="Conversations" badge={3} />
             <SidebarNavItem href="/discover" icon={Sparkles} label="Discover" />

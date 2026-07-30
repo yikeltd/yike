@@ -27,7 +27,7 @@ export function HeaderDesktop({ className }: { className?: string }) {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-6 xl:px-8">
         {/* 1. YIKE LOGO */}
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Yike home">
+        <Link href="/" className="flex shrink-0 items-center" aria-label="Yike home">
           <Image
             src={brand.logoSm}
             alt="Yike"
@@ -36,9 +36,6 @@ export function HeaderDesktop({ className }: { className?: string }) {
             className="h-9 w-9 object-contain"
             priority
           />
-          <span className="text-2xl font-black tracking-tight text-white">
-            {brand.name}
-          </span>
         </Link>
 
         {/* 2. SEARCH BAR */}

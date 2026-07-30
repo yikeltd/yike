@@ -15,6 +15,7 @@ import { PropertyGrid } from "@/components/property/property-grid";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 import { HOME_RAIL_GRID_CLASS } from "@/lib/marketplace/browse-grid";
+import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
 import {
   QuickFinderBar,
   MarketplaceSection,
@@ -412,14 +413,11 @@ export function HomeMarketplaceExperience({
               <span>Search vehicles & properties</span>
             </Link>
             <div className="flex items-center shrink-0">
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded-full bg-navy/5 border border-navy/10 px-2.5 py-1 text-[10px] font-bold text-navy shadow-xs"
-              >
-                <MapPin className="h-3 w-3 text-gold" />
-                <span>Nigeria</span>
-                <ChevronRight className="h-3 w-3 rotate-90 text-navy/50" />
-              </button>
+              <MarketplaceLocationIndicator
+                size="sm"
+                variant="chip"
+                className="!bg-navy/5 !border-navy/10 !text-navy hover:!bg-navy/10"
+              />
             </div>
           </div>
         </div>

@@ -63,7 +63,7 @@ export function HeaderMobile({
     >
       <div className="flex items-center justify-between gap-2 px-3 py-2.5">
         {/* 1. YIKE LOGO */}
-        <Link href="/" className="flex shrink-0 items-center gap-1.5" aria-label="Yike home">
+        <Link href="/" className="flex shrink-0 items-center" aria-label="Yike home">
           <Image
             src={brand.logoSm}
             alt="Yike"
@@ -71,9 +71,6 @@ export function HeaderMobile({
             height={30}
             className="h-7.5 w-7.5 object-contain"
           />
-          <span className="text-xl font-black tracking-tight text-white">
-            {brand.name}
-          </span>
         </Link>
 
         {/* 2. SEARCH BAR */}
