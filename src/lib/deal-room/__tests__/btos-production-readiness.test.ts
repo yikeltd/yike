@@ -1,16 +1,18 @@
 /**
- * Yike BTOS Production Readiness Automated Test Suite (Milestones 1–5)
- * Invariant tests for double-entry ledger, durable event transport, sagas, CQRS, & observability.
+ * Yike BTOS Production Readiness Automated Test Suite (Milestones 1–6)
+ * Invariant tests for double-entry ledger, durable event transport, sagas, CQRS, observability, & security.
  */
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import crypto from "node:crypto";
 import { LedgerService } from "../settlement/ledger";
 import { TransactionSagaManager } from "../workflow/saga";
 import { activeEventTransport } from "../events/transport";
 import { dealRoomEvents } from "../events";
 import { projectionEngine } from "../projections/projection-engine";
 import { btosTracer, btosMetrics } from "../observability";
+import { BTOSSecurityManager, WebhookSecurityManager, IdempotencyGuard } from "../security";
 import { ResultContainer } from "../kernel/result";
 
 test("Double-Entry Ledger Invariant: Sum(Debits) === Sum(Credits)", () => {
@@ -35,6 +37,26 @@ test("Double-Entry Ledger Invariant: Sum(Debits) === Sum(Credits)", () => {
   assert.equal(entries[0].amount, entries[1].amount);
   assert.equal(entries[0].entryType, "debit");
   assert.equal(entries[1].entryType, "credit");
+});
+
+test("Security Audit: RBAC, HMAC Signatures, & Payment Idempotency (Milestone 6)", () => {
+  // 1. RBAC Check
+  assert.equal(BTOSSecurityManager.isAuthorized("buyer", "settlement:authorize"), true);
+  assert.equal(BTOSSecurityManager.isAuthorized("inspector", "settlement:authorize"), false);
+
+  // 2. HMAC Webhook Signature Verification
+  const secret = "test_secret_key_123";
+  const body = JSON.stringify({ event: "charge.success", amount: 25000000 });
+  const sig = crypto.createHmac("sha512", secret).update(body).digest("hex");
+
+  assert.equal(WebhookSecurityManager.verifyPaystackSignature(body, sig, secret), true);
+  assert.equal(WebhookSecurityManager.verifyPaystackSignature(body, "invalid_sig", secret), false);
+
+  // 3. Payment Idempotency Guard
+  const key = "idem_pay_888999";
+  assert.equal(IdempotencyGuard.isDuplicate(key), false);
+  IdempotencyGuard.recordKey(key);
+  assert.equal(IdempotencyGuard.isDuplicate(key), true);
 });
 
 test("Distributed Tracing & Metrics Telemetry (Milestone 5)", async () => {
