@@ -1,0 +1,23 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "title": "Completed Settlements Volume",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 },
+      "targets": [{ "expr": "btos_escrow_releases_total" }]
+    },
+    {
+      "title": "Active Workspaces Count",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "targets": [{ "expr": "btos_active_workspaces_total" }]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "tags": ["business", "transactions", "btos"],
+  "title": "BTOS Business Dashboard",
+  "uid": "btos-business-dash"
+}

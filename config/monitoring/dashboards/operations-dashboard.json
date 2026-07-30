@@ -1,0 +1,23 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "title": "Subsystem Health Status",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 },
+      "targets": [{ "expr": "btos_health_status" }]
+    },
+    {
+      "title": "Provider Latencies (Seconds)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "targets": [{ "expr": "btos_provider_latency_seconds" }]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "tags": ["operations", "health", "btos"],
+  "title": "BTOS Operations Dashboard",
+  "uid": "btos-operations-dash"
+}

@@ -1,0 +1,42 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "Total Revenue (NGN)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [{ "expr": "sum(btos_escrow_releases_total) * 25000000" }]
+    },
+    {
+      "title": "Active Workspaces",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [{ "expr": "btos_active_workspaces_total" }]
+    },
+    {
+      "title": "Completed Settlements",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [{ "expr": "btos_escrow_releases_total" }]
+    },
+    {
+      "title": "Saga Workflow Success Rate (%)",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [{ "expr": "(btos_sagas_completed_total / (btos_sagas_completed_total + btos_saga_failures_total)) * 100" }]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["executive", "revenue", "btos"],
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "BTOS Executive Dashboard",
+  "uid": "btos-executive-dash"
+}

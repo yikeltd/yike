@@ -1,0 +1,23 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "title": "Saga Step Failures Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 },
+      "targets": [{ "expr": "rate(btos_saga_failures_total[5m])" }]
+    },
+    {
+      "title": "Escrow Settlement Latency (Seconds)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "targets": [{ "expr": "btos_escrow_release_latency_seconds" }]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "tags": ["engineering", "performance", "btos"],
+  "title": "BTOS Engineering Dashboard",
+  "uid": "btos-engineering-dash"
+}
