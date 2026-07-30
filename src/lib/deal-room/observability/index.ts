@@ -3,6 +3,7 @@ export * from "./metrics";
 export * from "./opentelemetry";
 export * from "./dependency-health";
 export * from "./prometheus";
+export * from "./slo-engine";
 
 export interface LogPayload {
   level: "info" | "warn" | "error" | "debug";
