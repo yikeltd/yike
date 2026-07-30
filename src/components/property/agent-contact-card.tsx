@@ -5,10 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ShieldCheck,
-  Heart,
   User,
   MessageCircle,
-  Phone,
   Clock,
   Award,
   Lock,
@@ -34,7 +32,6 @@ export function AgentContactCard({
     listing.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
 
   const [chatLoading, setChatLoading] = useState(false);
-  const [callNoticeOpen, setCallNoticeOpen] = useState(false);
   const [escrowNoticeOpen, setEscrowNoticeOpen] = useState(false);
   const [negotiationOpen, setNegotiationOpen] = useState(false);
 
@@ -55,7 +52,7 @@ export function AgentContactCard({
       agentId: agent.id,
       leadType: "whatsapp",
       sourcePage: href,
-      placement: "contact_card",
+      placement: "agent_card",
       agentName: sellerName,
       title: listing.title,
       area: listing.area,

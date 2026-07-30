@@ -9,14 +9,13 @@ import {
   BedDouble,
   Bath,
   Maximize2,
-  Share2,
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
   MessageCircle,
 } from "lucide-react";
 import type { Property } from "@/types/database";
-import { formatPrice, cn, isVerifiedAgent } from "@/lib/utils";
+import { formatPrice, isVerifiedAgent } from "@/lib/utils";
 import { listingPath } from "@/lib/marketplace/listing-path";
 import { buildMotionSlides } from "@/lib/media/items";
 import { PropertyTrustIndicators } from "./property-trust-indicators";
@@ -54,7 +53,7 @@ export function PropertyQuickPreviewModal({
       agentId: agent.id,
       leadType: "whatsapp",
       sourcePage: typeof window !== "undefined" ? window.location.pathname : href,
-      placement: "quick_preview",
+      placement: "card",
       agentName: agent.full_name ?? "Agent",
       title: property.title,
       area: property.area,

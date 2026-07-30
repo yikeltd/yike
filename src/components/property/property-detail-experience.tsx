@@ -12,10 +12,7 @@ import {
   Home,
   ShieldCheck,
   Building,
-  Heart,
   Maximize2,
-  Calendar,
-  Layers,
   Zap,
   Droplets,
   Car,
@@ -23,10 +20,7 @@ import {
   Wifi,
   Waves,
   Sun,
-  Video,
   Calculator,
-  Lock,
-  Phone,
   MessageCircle,
   TrendingUp,
 } from "lucide-react";
@@ -40,7 +34,7 @@ import { buildMotionSlides } from "@/lib/media/items";
 import { PropertyGalleryModal } from "./property-gallery-modal";
 import { PropertyTrustIndicators } from "./property-trust-indicators";
 import { AgentContactCard } from "./agent-contact-card";
-import { RelatedListings } from "./related-listings";
+import { PropertyCard } from "./property-card";
 import { PropertyNegotiationModal } from "./property-negotiation-modal";
 import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -100,11 +94,10 @@ export function PropertyDetailExperience({
     property.listing_type
   );
 
-  // Monthly estimate breakdown (approximate for display)
   const monthlyEstimate =
     property.listing_type === "rent"
       ? formatPrice(Math.round(listingPrice / 12))
-      : formatPrice(Math.round(listingPrice / 120)); // ~10 yr financing estimate
+      : formatPrice(Math.round(listingPrice / 120));
 
   const cleanLocation = [property.area, property.city, property.state]
     .filter(Boolean)
@@ -132,6 +125,8 @@ export function PropertyDetailExperience({
       ? property.extras.amenities.map(String)
       : defaultAmenities;
 
+  const extrasObj = (property.extras as Record<string, unknown> | null) || {};
+
   const propertyHighlights = [
     { label: "Listing Type", value: property.listing_type === "rent" ? "For Rent" : "For Sale", icon: Building },
     { label: "Bedrooms", value: property.bedrooms ? `${property.bedrooms} Beds` : "3 Beds", icon: BedDouble },
@@ -140,12 +135,12 @@ export function PropertyDetailExperience({
   ];
 
   const detailedSpecs = [
-    { label: "Title Document", value: (property.extras?.title as string) || "Governor's Consent" },
-    { label: "Condition", value: (property.extras?.condition as string) || "Brand New" },
-    { label: "Furnishing", value: (property.extras?.furnishing as string) || "Semi-Furnished" },
-    { label: "Service Charge", value: (property.extras?.service_charge as string) || "₦350,000 / year" },
-    { label: "Caution Deposit", value: (property.extras?.caution as string) || "10%" },
-    { label: "Legal & Agency Fee", value: (property.extras?.legal_fee as string) || "10% / 10%" },
+    { label: "Title Document", value: (extrasObj.title as string) || "Governor's Consent" },
+    { label: "Condition", value: (extrasObj.condition as string) || "Brand New" },
+    { label: "Furnishing", value: (extrasObj.furnishing as string) || "Semi-Furnished" },
+    { label: "Service Charge", value: extrasObj.service_charge ? String(extrasObj.service_charge) : "₦350,000 / year" },
+    { label: "Caution Deposit", value: (extrasObj.caution as string) || "10%" },
+    { label: "Legal & Agency Fee", value: extrasObj.legal_fee ? String(extrasObj.legal_fee) : "10% / 10%" },
   ];
 
   async function handleWhatsAppDirect() {
@@ -157,7 +152,7 @@ export function PropertyDetailExperience({
       agentId: agent.id,
       leadType: "whatsapp",
       sourcePage: href,
-      placement: "sticky_bottom_bar",
+      placement: "sticky",
       agentName: agent.full_name ?? "Agent",
       title: property.title,
       area: property.area,
@@ -296,7 +291,7 @@ export function PropertyDetailExperience({
                     {property.title}
                   </h1>
                   <span className="rounded-xl bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-gold px-3 py-1 text-xs font-extrabold shrink-0">
-                    {property.extras?.condition ? String(property.extras.condition) : "Verified Listing"}
+                    {extrasObj.condition ? String(extrasObj.condition) : "Verified Listing"}
                   </span>
                 </div>
 
@@ -465,7 +460,11 @@ export function PropertyDetailExperience({
                 <h3 className="text-sm font-black uppercase tracking-wider text-navy dark:text-white">
                   Similar Properties You May Like
                 </h3>
-                <RelatedListings listings={similarListings} />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {similarListings.map((p) => (
+                    <PropertyCard key={p.id} property={p} layout="desktop" />
+                  ))}
+                </div>
               </div>
             )}
 

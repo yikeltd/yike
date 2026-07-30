@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, TrendingUp, Check, MessageCircle } from "lucide-react";
+import { X, TrendingUp, MessageCircle } from "lucide-react";
 import type { Property } from "@/types/database";
-import { formatPrice, cn } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
 import { useAuth } from "@/components/auth/auth-provider";
 
@@ -42,7 +42,7 @@ export function PropertyNegotiationModal({
       agentId: property.agent.id,
       leadType: "whatsapp",
       sourcePage: href,
-      placement: "negotiation_offer",
+      placement: "detail",
       agentName: property.agent.full_name ?? "Agent",
       title: property.title,
       area: property.area,

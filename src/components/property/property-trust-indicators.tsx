@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ShieldCheck, FileCheck, CheckCircle2, SearchCheck, Lock, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Property } from "@/types/database";
 
 export type TrustIndicatorType =
   | "identity"
@@ -21,19 +22,20 @@ export interface TrustIndicatorItem {
   active: boolean;
 }
 
-export function getPropertyTrustIndicators(listing: {
+export function getPropertyTrustIndicators(listing: Property | {
   is_verified_listing?: boolean;
   is_verified?: boolean;
-  agent?: { is_verified?: boolean } | null;
+  agent?: unknown;
   extras?: Record<string, unknown> | null;
 }): TrustIndicatorItem[] {
-  const isAgentVerified = Boolean(listing.agent?.is_verified);
+  const agentObj = (listing.agent as Record<string, unknown> | null) || {};
+  const isAgentVerified = Boolean(agentObj.is_verified || agentObj.is_verified_agent || agentObj.verification_status === "verified");
   const isListingVerified = Boolean(
-    listing.is_verified_listing || listing.is_verified
+    listing.is_verified_listing || (listing as unknown as Record<string, unknown>).is_verified
   );
   const extras = listing.extras || {};
-  const isDocVerified = Boolean(extras.documents_verified || isListingVerified);
-  const isInspected = Boolean(extras.inspection_completed || isListingVerified);
+  const isDocVerified = Boolean((extras as Record<string, unknown>).documents_verified || isListingVerified);
+  const isInspected = Boolean((extras as Record<string, unknown>).inspection_completed || isListingVerified);
 
   return [
     {
@@ -93,10 +95,10 @@ export function PropertyTrustIndicators({
   listing,
   className,
 }: {
-  listing: {
+  listing: Property | {
     is_verified_listing?: boolean;
     is_verified?: boolean;
-    agent?: { is_verified?: boolean } | null;
+    agent?: unknown;
     extras?: Record<string, unknown> | null;
   };
   className?: string;
