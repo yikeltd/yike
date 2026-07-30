@@ -1,8 +1,10 @@
 /**
- * Yike Deal Room Platform — Pluggable Timeline & Event Bus Engine
+ * Yike Deal Room Platform — Durable Event Bus Engine (Milestone 2)
+ * Dispatches domain events through Redis Streams durable event adapter.
  */
 
 import type { TimelineEvent, TimelineEventType, ParticipantRole } from "./types";
+import { redisStreamAdapter } from "./events/redis-adapter";
 
 export type EventSubscriber = (event: TimelineEvent) => void | Promise<void>;
 
@@ -25,6 +27,10 @@ class DealRoomEventBus {
   }
 
   async publish(event: TimelineEvent): Promise<void> {
+    // 1. Publish to Redis Stream durable infrastructure
+    await redisStreamAdapter.publishToStream(event, event.correlationId, event.eventVersion);
+
+    // 2. Dispatch to active in-memory listeners
     const roomSubs = this.subscribers.get(event.dealRoomId);
     if (!roomSubs || roomSubs.size === 0) return;
 
@@ -60,7 +66,7 @@ class DealRoomEventBus {
       eventVersion: 1,
       schemaVersion: 1,
       source: "yike_deal_room_engine",
-      correlationId: correlationId || `corr_${dealRoomId}`,
+      correlationId: correlationId || `corr_${dealRoomId}_${Date.now()}`,
       createdBy: actorId,
       createdAt: now,
       updatedAt: now,
