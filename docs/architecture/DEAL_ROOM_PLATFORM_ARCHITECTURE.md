@@ -1,8 +1,8 @@
-# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 9 Certified)
+# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 10 Certified)
 
 > **Platform**: Yike.ng (Stankings Marketplace Platform)  
 > **Author**: Antigravity Platform Architecture Team  
-> **Status**: APPROVED & VISUAL COLLABORATION PLATFORM IMPLEMENTED
+> **Status**: APPROVED & ENTERPRISE INTELLIGENCE PLATFORM IMPLEMENTED
 
 ---
 
@@ -16,6 +16,9 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  [ BUYER ]  [ SELLER ]  [ AGENT ]  [ FIELD INSPECTOR ]  [ LEGAL PARTNER ]   │
 ├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ INTELLIGENCE CENTER (Provider Adapters: Gemini 1.5 Pro / Risk / AI)   │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ VISUAL COLLABORATION STAGE (HD Live Video / Remote Inspection / Snaps) │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
@@ -39,19 +42,19 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ CONVERSATION INTELLIGENCE STREAM (Slack/Linear/Stripe Style Feed)     │  │
-│  │ ├─ System Event Pills (Buyer Joined, Visual Session Started)          │  │
+│  │ ├─ System Event Pills (Buyer Joined, AI Summary Generated)           │  │
 │  │ ├─ User Chat Bubbles (Text, Attachments, Read Receipts)               │  │
 │  │ ├─ Embedded Offer Cards (v1, v2 Counter, Accepted, Expired)           │  │
 │  │ ├─ Embedded Call & Visual Cards (Video Sessions, Duration, Snapshots) │  │
 │  │ └─ Embedded Verification Cards (Identity, Title, 94% Confidence)      │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ VisualSession Aggregate  │ │ Universal Attachment      │ │ Universal │  │
-│  │ (Remote Inspection Snaps)│ │ Engine (Polymorphic Files)│ │ Comment   │  │
+│  │ Intelligence Aggregate   │ │ Universal Attachment      │ │ Universal │  │
+│  │ (Provider Adapters & AI) │ │ Engine (Polymorphic Files)│ │ Comment   │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Evidence Aggregate       │ │ Universal Legal Audit Log │ │ Search    │  │
-│  │ (Immutable Chain/Versions)│ │ Engine (Compliance)       │ │ Index     │  │
+│  │ VisualSession Aggregate  │ │ Universal Legal Audit Log │ │ Search    │  │
+│  │ (Remote Inspection Snaps)│ │ Engine (Compliance)       │ │ Index     │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ DATABASE & SECURE STORAGE LAYER (Supabase / PostgreSQL)               │  │
@@ -61,13 +64,14 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 
 ---
 
-## 2. Visual Collaboration Platform Architecture (Phase 9)
+## 2. Enterprise Intelligence Platform Architecture (Phase 10)
 
-- **`VisualSessionAggregate`** (`src/lib/deal-room/visual/types.ts`): Domain aggregate managing real-time visual collaboration (`video_call`, `remote_inspection`, `screen_share`, `presentation`, `evidence_capture`, `multi_camera`).
-- **Live Evidence Snapshot Capture**: Snapshots taken during live video sessions auto-upload directly to `EvidenceService.uploadEvidence()` as immutable inspection photo evidence attached to the workspace.
-- **Provider-Agnostic Media Adapter**: Plugs directly into `CommunicationProvider` (`AgoraCommunicationAdapter`), maintaining zero vendor lock-in.
-- **`VisualSessionService`** (`src/lib/deal-room/visual/service.ts`): Methods for `startVisualSession()`, `captureSnapshot()`, `endVisualSession()`, audit logging, and embedding `call_card` into stream.
-- **`VisualCollaborationOverlay`** (`src/components/deal-room/visual-collaboration-overlay.tsx`): Premium responsive UI overlay with video stage, floating controls, snapshot trigger button, and Picture-in-Picture window.
+- **Provider Abstraction Architecture (`IntelligenceProvider`)**: Decouples AI reasoning from vendor APIs. Supports `GeminiIntelligenceAdapter` (Google Gemini 1.5 Pro), `OpenAIIntelligenceAdapter` (GPT-4o), and `MockIntelligenceAdapter`.
+- **`IntelligenceRequestAggregate`** (`src/lib/deal-room/intelligence/types.ts`): Domain aggregate tracking AI capability requests (`reasoning`, `vision_analysis`, `ocr`, `summarization`, `classification`, `extraction`, `recommendation`, `translation`, `fraud_detection`, `risk_assessment`).
+- **Structured Output Engine (`IntelligenceOutput`)**: Returns typed summaries, risk recommendations, confidence scores (0–100), execution time (ms), and token counts.
+- **`ContextAssembler`**: Automatically compiles structured workspace context (Trust Scores, Negotiation versions, Evidence records, Execution checklists) for AI reasoning models.
+- **Deterministic Trust Separation**: AI outputs produce recommendations only. Verification policies strictly govern actual Trust Score mutations.
+- **`IntelligencePanel`** (`src/components/deal-room/intelligence-panel.tsx`): Enterprise AI Reasoning Center UI panel displaying recent analyses, provider metrics, confidence scores, and recommendations.
 
 ---
 
@@ -96,8 +100,10 @@ src/
 │       ├── evidence/                    # Phase 7 Enterprise Evidence Platform
 │       ├── execution/                   # Phase 8 Enterprise Execution Platform
 │       ├── visual/                      # Phase 9 Visual Collaboration Platform
-│       │   ├── types.ts                 # VisualSessionAggregate & SnapshotRecord
-│       │   ├── service.ts               # VisualSessionService & Repository
+│       ├── intelligence/                # Phase 10 Enterprise Intelligence Platform
+│       │   ├── types.ts                 # IntelligenceRequestAggregate & Output
+│       │   ├── provider.ts              # IntelligenceProvider & Gemini/OpenAI Adapters
+│       │   ├── service.ts               # IntelligenceService & ContextAssembler
 │       │   └── index.ts                 # Barrel exports
 └── components/
     └── deal-room/
@@ -109,7 +115,8 @@ src/
         ├── trust-center-panel.tsx       # Banking-styled Trust Center Dashboard UI
         ├── evidence-center-panel.tsx    # Enterprise Proof Vault UI
         ├── execution-center-panel.tsx   # Operational Execution Work Center UI
-        └── visual-collaboration-overlay.tsx # Responsive Visual Overlay UI
+        ├── visual-collaboration-overlay.tsx # Responsive Visual Overlay UI
+        └── intelligence-panel.tsx       # Enterprise AI Reasoning Center UI
 ```
 
 ---
@@ -117,9 +124,9 @@ src/
 ## 4. Architectural Self-Audit (CTO Verification Questions)
 
 1. **Did this phase introduce architectural debt?**
-   - **No.** Visual Collaboration extends the existing `CommunicationProvider` adapter pattern cleanly. Live snapshots plug directly into `EvidenceService.uploadEvidence()` without duplicating file or storage logic.
+   - **No.** Intelligence uses provider adapters (`IntelligenceProvider`) isolating Gemini and OpenAI APIs. AI models never mutate state directly; they feed recommendations into deterministic workspace domains.
 2. **What changes at 50 million users?**
-   - The in-memory `VisualSessionRepository` transitions to PostgreSQL database tables (`visual_sessions`, `session_snapshots`) with WebRTC Selective Forwarding Unit (SFU) scaling (e.g. LiveKit or Agora Cloud Recording).
+   - The in-memory `IntelligenceRepository` transitions to PostgreSQL database tables (`intelligence_requests`, `intelligence_outputs`) with Redis caching for repeated context prompts (`ContextAssembler`).
 3. **Which future phases became simpler?**
-   - **Phase 10 (AI Intelligence Platform)**: Live video frames and snapshots can be fed directly to Gemini vision models for automated damage detection or land boundaries.
-   - **Phase 13 (Dispute Resolution)**: Visual session recordings and instant snapshots serve as timestamped evidence in dispute arbitrations.
+   - **Phase 11 (Escrow & Payments)**: Fraud detection AI risk reports can be evaluated programmatically before disbursing escrow funds.
+   - **Phase 13 (Dispute Resolution)**: AI summarization can synthesize 500+ messages and evidence logs into a 1-page arbitration summary for legal partners.
