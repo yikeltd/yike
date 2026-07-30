@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
 import type { SubscriptionPlanCode } from "@/lib/subscriptions/constants";
+import { SellerPlanIllustration } from "@/components/pricing/seller-plan-illustration";
 
 type BillingCycle = 1 | 3 | 6 | 12;
 
@@ -51,7 +52,7 @@ const PLANS: Plan[] = [
     features: ["Basic verification", "Basic insights", "Standard review"],
     theme: "green",
     ctaText: "Current Plan",
-    illustration: "/images/plans/core-illustration.png",
+    illustration: "/assets/seller-plan/core.webp",
     current: true,
   },
   {
@@ -71,7 +72,7 @@ const PLANS: Plan[] = [
     ],
     theme: "gold",
     ctaText: "Choose Pro",
-    illustration: "/images/plans/pro-illustration.png",
+    illustration: "/assets/seller-plan/pro.webp",
   },
   {
     id: "elite",
@@ -90,7 +91,7 @@ const PLANS: Plan[] = [
     ],
     theme: "purple",
     ctaText: "Choose Elite",
-    illustration: "/images/plans/elite-illustration.png",
+    illustration: "/assets/seller-plan/elite.webp",
   },
   {
     id: "prime",
@@ -112,7 +113,7 @@ const PLANS: Plan[] = [
     ],
     theme: "navy",
     ctaText: "Choose Prime",
-    illustration: "/images/plans/prime-illustration.png",
+    illustration: "/assets/seller-plan/prime.webp",
   },
 ];
 
@@ -484,12 +485,11 @@ export function SellerPlansView() {
                       </ul>
 
                       {/* Illustration Image Overlay */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={plan.illustration}
-                        alt={plan.name}
+                      <SellerPlanIllustration
+                        planId={plan.id}
+                        priority={plan.id === "core" || plan.id === "pro"}
                         className={cn(
-                          "absolute right-0 bottom-0 pointer-events-none object-contain opacity-90",
+                          "absolute right-0 bottom-0 pointer-events-none bg-transparent p-0 opacity-95 max-w-[120px] max-h-[95px]",
                           plan.id === "core" && "h-20 w-auto",
                           plan.id === "pro" && "h-24 w-auto",
                           plan.id === "elite" && "h-24 w-auto",
