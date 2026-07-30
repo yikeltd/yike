@@ -1,7 +1,25 @@
 /**
- * Yike Deal Room Platform — Domain Model & Types
- * Enterprise-grade, provider-agnostic transaction workspace architecture.
+ * Yike Transaction Workspace Engine (Deal Room Platform)
+ * Hardened Domain Models, Universal Ownership, & Entity Framework
  */
+
+export type EntityStatus = "active" | "archived" | "deleted";
+
+export interface OwnershipMetadata {
+  createdBy: string;
+  updatedBy?: string;
+  deletedBy?: string;
+  approvedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+  version: number;
+  status: EntityStatus;
+}
+
+export interface BaseEntity extends OwnershipMetadata {
+  id: string;
+}
 
 export type DealRoomStatus =
   | "lead_created"
@@ -31,12 +49,11 @@ export type ParticipantRole =
 
 export type ParticipantStatus = "active" | "invited" | "left" | "blocked";
 
-export interface DealParticipant {
-  id: string;
+export interface DealParticipant extends BaseEntity {
   dealRoomId: string;
   userId: string;
   role: ParticipantRole;
-  status: ParticipantStatus;
+  participantStatus: ParticipantStatus;
   joinedAt: string;
   lastActiveAt?: string;
   metadata?: Record<string, unknown>;
@@ -66,8 +83,7 @@ export type TimelineEventType =
   | "deal_cancelled"
   | "custom_event";
 
-export interface TimelineEvent {
-  id: string;
+export interface TimelineEvent extends BaseEntity {
   dealRoomId: string;
   actorId: string;
   actorRole: ParticipantRole;
@@ -75,22 +91,29 @@ export interface TimelineEvent {
   title: string;
   description?: string;
   payload?: Record<string, unknown>;
-  createdAt: string;
+  eventVersion: number;
+  schemaVersion: number;
+  source: string;
+  correlationId: string;
+  causationId?: string;
 }
 
-export interface DealRoom {
-  id: string;
+/**
+ * Internal Domain Concept: TransactionWorkspace (Exposed as DealRoom in UI)
+ */
+export interface TransactionWorkspace extends BaseEntity {
   listingId: string;
   listingType: "vehicle" | "property" | "equipment" | "project";
   listingTitle: string;
   listingPrice: number;
   currency: "NGN" | "USD";
-  status: DealRoomStatus;
+  workspaceStatus: DealRoomStatus;
   buyerId: string;
   sellerId: string;
   participants: DealParticipant[];
-  createdAt: string;
-  updatedAt: string;
   closedAt?: string;
   metadata?: Record<string, unknown>;
 }
+
+// Backward compatibility alias for UI & API layers
+export type DealRoom = TransactionWorkspace;

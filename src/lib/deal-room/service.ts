@@ -1,16 +1,18 @@
 /**
- * Yike Deal Room Platform — Core Service Layer
- * Enterprise transaction manager binding state transitions, access control, and event streams.
+ * Yike Transaction Workspace Engine — Core Service Layer (Hardened)
+ * Binds state transitions, access control, audit logging, and automation hooks.
  */
 
-import type { DealRoom, DealRoomStatus, ParticipantRole } from "./types";
+import type { TransactionWorkspace, DealRoomStatus, ParticipantRole } from "./types";
 import { validateTransition } from "./state-machine";
 import { hasPermission, type DealAction } from "./permissions";
 import { dealRoomEvents } from "./events";
+import { auditLogService } from "./audit";
+import { automationHooks } from "./hooks";
 
 export class DealRoomService {
   /**
-   * Initializes a new transaction Deal Room
+   * Initializes a new Transaction Workspace (Deal Room)
    */
   static createDealRoom(
     listingId: string,
@@ -19,65 +21,96 @@ export class DealRoomService {
     listingPrice: number,
     buyerId: string,
     sellerId: string
-  ): DealRoom {
-    const roomId = `deal_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  ): TransactionWorkspace {
+    const roomId = `workspace_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const now = new Date().toISOString();
 
-    const room: DealRoom = {
+    const room: TransactionWorkspace = {
       id: roomId,
       listingId,
       listingType,
       listingTitle,
       listingPrice,
       currency: "NGN",
-      status: "lead_created",
+      workspaceStatus: "lead_created",
       buyerId,
       sellerId,
+      createdBy: buyerId,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      status: "active",
       participants: [
         {
           id: `part_b_${buyerId}`,
           dealRoomId: roomId,
           userId: buyerId,
           role: "buyer",
+          participantStatus: "active",
+          joinedAt: now,
+          createdBy: buyerId,
+          createdAt: now,
+          updatedAt: now,
+          version: 1,
           status: "active",
-          joinedAt: new Date().toISOString(),
         },
         {
           id: `part_s_${sellerId}`,
           dealRoomId: roomId,
           userId: sellerId,
           role: "seller",
+          participantStatus: "active",
+          joinedAt: now,
+          createdBy: sellerId,
+          createdAt: now,
+          updatedAt: now,
+          version: 1,
           status: "active",
-          joinedAt: new Date().toISOString(),
         },
       ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
 
+    // 1. Create Timeline Event
     const event = dealRoomEvents.createEvent(
       roomId,
       buyerId,
       "buyer",
       "room_created",
-      "Deal Room Created",
-      `Deal Room initialized for ${listingTitle}`
+      "Workspace Created",
+      `Transaction Workspace initialized for ${listingTitle}`
     );
     void dealRoomEvents.publish(event);
+
+    // 2. Log Legal Audit Record
+    auditLogService.log(
+      roomId,
+      "entity_created",
+      buyerId,
+      "buyer",
+      "TransactionWorkspace",
+      roomId,
+      undefined,
+      { status: "lead_created" },
+      "Workspace initialization"
+    );
+
+    // 3. Emit Automation Hook
+    void automationHooks.emit(event);
 
     return room;
   }
 
   /**
-   * Advances the Deal Room lifecycle state safely
+   * Advances the Transaction Workspace lifecycle state safely
    */
   static transitionState(
-    room: DealRoom,
+    room: TransactionWorkspace,
     actorId: string,
     actorRole: ParticipantRole,
     targetStatus: DealRoomStatus,
     reason?: string
-  ): DealRoom {
-    validateTransition(room.status, targetStatus);
+  ): TransactionWorkspace {
+    validateTransition(room.workspaceStatus, targetStatus);
 
     const actionMap: Partial<Record<DealRoomStatus, DealAction>> = {
       negotiation: "send_message",
@@ -93,13 +126,17 @@ export class DealRoomService {
       throw new Error(`Role '${actorRole}' is not authorized to perform '${requiredAction}'.`);
     }
 
-    const updatedRoom: DealRoom = {
+    const now = new Date().toISOString();
+    const updatedRoom: TransactionWorkspace = {
       ...room,
-      status: targetStatus,
-      updatedAt: new Date().toISOString(),
-      closedAt: targetStatus === "completed" || targetStatus === "cancelled" ? new Date().toISOString() : room.closedAt,
+      workspaceStatus: targetStatus,
+      updatedBy: actorId,
+      updatedAt: now,
+      version: room.version + 1,
+      closedAt: targetStatus === "completed" || targetStatus === "cancelled" ? now : room.closedAt,
     };
 
+    // 1. Publish Timeline Event
     const event = dealRoomEvents.createEvent(
       room.id,
       actorId,
@@ -109,6 +146,51 @@ export class DealRoomService {
       reason
     );
     void dealRoomEvents.publish(event);
+
+    // 2. Log Legal Audit Record
+    auditLogService.log(
+      room.id,
+      "state_transitioned",
+      actorId,
+      actorRole,
+      "TransactionWorkspace",
+      room.id,
+      { status: room.workspaceStatus },
+      { status: targetStatus },
+      reason
+    );
+
+    // 3. Emit Automation Hook
+    void automationHooks.emit(event);
+
+    return updatedRoom;
+  }
+
+  /**
+   * Performs audit-safe soft deletion
+   */
+  static softDeleteWorkspace(room: TransactionWorkspace, actorId: string, reason?: string): TransactionWorkspace {
+    const now = new Date().toISOString();
+    const updatedRoom: TransactionWorkspace = {
+      ...room,
+      status: "deleted",
+      deletedBy: actorId,
+      deletedAt: now,
+      updatedAt: now,
+      version: room.version + 1,
+    };
+
+    auditLogService.log(
+      room.id,
+      "entity_soft_deleted",
+      actorId,
+      "administrator",
+      "TransactionWorkspace",
+      room.id,
+      { status: room.status },
+      { status: "deleted" },
+      reason
+    );
 
     return updatedRoom;
   }

@@ -53,7 +53,7 @@ export function DealRoomShell({ dealRoom, timelineEvents = [] }: Props) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 rounded-2xl bg-white/10 px-3.5 py-2 text-xs font-bold text-slate-200 border border-white/15">
             <Clock className="h-4 w-4 text-[#E4B547]" />
-            <span className="capitalize">{dealRoom.status.replace("_", " ")}</span>
+            <span className="capitalize">{(dealRoom.workspaceStatus || dealRoom.status).replace("_", " ")}</span>
           </div>
 
           <div className="flex items-center gap-1.5">

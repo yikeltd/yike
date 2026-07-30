@@ -44,8 +44,10 @@ class DealRoomEventBus {
     type: TimelineEventType,
     title: string,
     description?: string,
-    payload?: Record<string, unknown>
+    payload?: Record<string, unknown>,
+    correlationId?: string
   ): TimelineEvent {
+    const now = new Date().toISOString();
     return {
       id: `evt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       dealRoomId,
@@ -55,7 +57,15 @@ class DealRoomEventBus {
       title,
       description,
       payload,
-      createdAt: new Date().toISOString(),
+      eventVersion: 1,
+      schemaVersion: 1,
+      source: "yike_deal_room_engine",
+      correlationId: correlationId || `corr_${dealRoomId}`,
+      createdBy: actorId,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      status: "active",
     };
   }
 }
