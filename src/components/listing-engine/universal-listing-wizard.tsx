@@ -24,7 +24,6 @@ import {
   ChevronDown,
   Car,
   Building2,
-  Rocket,
   Edit3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,7 +48,7 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
 
   // Accordion states
   const [openFeatures, setOpenFeatures] = useState(false);
-  const [openLocation, setOpenLocation] = useState(false);
+  const [openMoreDetails, setOpenMoreDetails] = useState(false);
   const [openDocs, setOpenDocs] = useState(false);
 
   // Load draft on mount
@@ -157,7 +156,6 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
   if (published) {
     return (
       <main className="min-h-screen bg-[#F8FAFC] pb-16">
-        {/* NAVY HEADER */}
         <header className="bg-[#031B4E] text-white py-6 px-4 text-center">
           <div className="mx-auto max-w-md space-y-3">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#E4B547]/20 text-[#E4B547]">
@@ -180,16 +178,28 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
     );
   }
 
+  const isProp = activeCategory === "properties";
+
+  // Vehicle Preview Values
   const makeVal = String(formData.make || "Toyota");
   const modelVal = String(formData.model || "Corolla");
   const yearVal = String(formData.year || "2018");
-  const priceVal = formData.price ? Number(formData.price).toLocaleString() : "9,500,000";
-  const conditionVal = String(formData.condition || "Foreign Used");
+  const priceVal = formData.price ? Number(formData.price).toLocaleString() : isProp ? "120,000,000" : "9,500,000";
+  const conditionVal = String(formData.condition || (isProp ? "Newly Built" : "Foreign Used"));
   const mileageVal = String(formData.mileage || "95,000");
   const transVal = String(formData.transmission || "Automatic");
   const fuelVal = String(formData.fuel_type || "Petrol");
   const doorsVal = String(formData.doors || "4 Doors");
   const negotiableVal = String(formData.negotiable || "Yes");
+
+  // Property Preview Values
+  const propTitle = String(formData.title || "4 Bedroom Detached Duplex");
+  const propLocation = `${String(formData.area || "Chevron, Lekki")}, ${String(formData.state || "Lagos")}`;
+  const propBeds = String(formData.bedrooms || "4 Beds");
+  const propBaths = String(formData.bathrooms || "5 Baths");
+  const propBldgSize = String(formData.building_size || "420 sqm");
+  const propLandSize = String(formData.land_size || "600 sqm Land");
+  const propPurpose = String(formData.listing_purpose || "For Sale");
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between select-none">
@@ -301,7 +311,7 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
                       : "text-slate-600 hover:text-slate-900"
                   )}
                 >
-                  <Car className="h-4 w-4 text-[#F59E0B]" />
+                  <Car className={cn("h-4 w-4", activeCategory === "vehicles" ? "text-[#F59E0B]" : "text-slate-400")} />
                   <span>Vehicle</span>
                 </button>
                 <button
@@ -314,12 +324,12 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
                       : "text-slate-600 hover:text-slate-900"
                   )}
                 >
-                  <Building2 className="h-4 w-4 text-slate-400" />
+                  <Building2 className={cn("h-4 w-4", activeCategory === "properties" ? "text-[#F59E0B]" : "text-slate-400")} />
                   <span>Property</span>
                 </button>
               </div>
 
-              {/* Vehicle Type Questions */}
+              {/* Category Questions */}
               {visibleStepFields.map((field) => (
                 <QuestionRenderer
                   key={field.id}
@@ -357,112 +367,198 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
                 </div>
               </div>
 
-              {/* BASIC INFORMATION SECTION */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
-                <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
-                  Basic Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {visibleStepFields
-                    .filter((f) => ["make", "model", "year", "condition", "body_type", "color"].includes(f.id))
-                    .map((field) => (
-                      <QuestionRenderer
-                        key={field.id}
-                        field={field}
-                        value={formData[field.id]}
-                        error={errors[field.id]}
-                        onChange={(val) => handleFieldChange(field.id, val)}
-                      />
-                    ))}
-                </div>
-              </div>
+              {/* VEHICLE STEP 2 FIELDS */}
+              {!isProp && (
+                <>
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+                    <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
+                      Basic Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {visibleStepFields
+                        .filter((f) => ["make", "model", "year", "condition", "body_type", "color"].includes(f.id))
+                        .map((field) => (
+                          <QuestionRenderer
+                            key={field.id}
+                            field={field}
+                            value={formData[field.id]}
+                            error={errors[field.id]}
+                            onChange={(val) => handleFieldChange(field.id, val)}
+                          />
+                        ))}
+                    </div>
+                  </div>
 
-              {/* PRICE & NEGOTIATION SECTION */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
-                <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
-                  Price & Negotiation
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {visibleStepFields
-                    .filter((f) => ["price", "negotiable"].includes(f.id))
-                    .map((field) => (
-                      <QuestionRenderer
-                        key={field.id}
-                        field={field}
-                        value={formData[field.id]}
-                        error={errors[field.id]}
-                        onChange={(val) => handleFieldChange(field.id, val)}
-                      />
-                    ))}
-                </div>
-              </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+                    <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
+                      Price & Negotiation
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {visibleStepFields
+                        .filter((f) => ["price", "negotiable"].includes(f.id))
+                        .map((field) => (
+                          <QuestionRenderer
+                            key={field.id}
+                            field={field}
+                            value={formData[field.id]}
+                            error={errors[field.id]}
+                            onChange={(val) => handleFieldChange(field.id, val)}
+                          />
+                        ))}
+                    </div>
+                  </div>
 
-              {/* KEY SPECIFICATIONS SECTION */}
-              <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
-                <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
-                  Key Specifications
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {visibleStepFields
-                    .filter((f) =>
-                      [
-                        "mileage",
-                        "transmission",
-                        "fuel_type",
-                        "drive_type",
-                        "engine_capacity",
-                        "doors",
-                      ].includes(f.id)
-                    )
-                    .map((field) => (
-                      <QuestionRenderer
-                        key={field.id}
-                        field={field}
-                        value={formData[field.id]}
-                        error={errors[field.id]}
-                        onChange={(val) => handleFieldChange(field.id, val)}
-                      />
-                    ))}
-                </div>
-              </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+                    <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
+                      Key Specifications
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {visibleStepFields
+                        .filter((f) =>
+                          [
+                            "mileage",
+                            "transmission",
+                            "fuel_type",
+                            "drive_type",
+                            "engine_capacity",
+                            "doors",
+                          ].includes(f.id)
+                        )
+                        .map((field) => (
+                          <QuestionRenderer
+                            key={field.id}
+                            field={field}
+                            value={formData[field.id]}
+                            error={errors[field.id]}
+                            onChange={(val) => handleFieldChange(field.id, val)}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* PROPERTY STEP 2 FIELDS */}
+              {isProp && (
+                <>
+                  {/* BASIC INFORMATION */}
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+                    <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
+                      Basic Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {visibleStepFields
+                        .filter((f) =>
+                          ["title", "listing_purpose", "sub_type", "bedrooms", "bathrooms", "furnishing", "condition"].includes(f.id)
+                        )
+                        .map((field) => (
+                          <QuestionRenderer
+                            key={field.id}
+                            field={field}
+                            value={formData[field.id]}
+                            error={errors[field.id]}
+                            onChange={(val) => handleFieldChange(field.id, val)}
+                          />
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* LOCATION */}
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+                    <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
+                      Location
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {visibleStepFields
+                        .filter((f) => ["state", "lga", "area"].includes(f.id))
+                        .map((field) => (
+                          <QuestionRenderer
+                            key={field.id}
+                            field={field}
+                            value={formData[field.id]}
+                            error={errors[field.id]}
+                            onChange={(val) => handleFieldChange(field.id, val)}
+                          />
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* PRICE & TERMS */}
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+                    <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
+                      Price & Terms
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {visibleStepFields
+                        .filter((f) => ["price", "negotiable"].includes(f.id))
+                        .map((field) => (
+                          <QuestionRenderer
+                            key={field.id}
+                            field={field}
+                            value={formData[field.id]}
+                            error={errors[field.id]}
+                            onChange={(val) => handleFieldChange(field.id, val)}
+                          />
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* PROPERTY DETAILS */}
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+                    <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-[#031B4E]">
+                      Property Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {visibleStepFields
+                        .filter((f) => ["land_size", "building_size", "title_document"].includes(f.id))
+                        .map((field) => (
+                          <QuestionRenderer
+                            key={field.id}
+                            field={field}
+                            value={formData[field.id]}
+                            error={errors[field.id]}
+                            onChange={(val) => handleFieldChange(field.id, val)}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* EXPANDABLE SECTIONS */}
               <div className="space-y-3">
-                {/* Features Accordion */}
                 <button
                   type="button"
                   onClick={() => setOpenFeatures(!openFeatures)}
                   className="w-full flex items-center justify-between rounded-2xl border border-slate-200 bg-[#07142B] px-5 py-3.5 text-xs md:text-sm font-bold text-white shadow-xs"
                 >
                   <div className="flex items-center gap-2">
-                    <span>🔐 Features & Specifications</span>
+                    <span>{isProp ? "🔐 Features & Amenities" : "🔐 Features & Specifications"}</span>
                     <span className="text-[10px] text-slate-400">(0 selected)</span>
                   </div>
                   <ChevronDown className={cn("h-4 w-4 transition-transform", openFeatures && "rotate-180")} />
                 </button>
 
-                {/* Location Accordion */}
                 <button
                   type="button"
-                  onClick={() => setOpenLocation(!openLocation)}
+                  onClick={() => setOpenMoreDetails(!openMoreDetails)}
                   className="w-full flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-xs md:text-sm font-bold text-[#031B4E] shadow-xs hover:bg-slate-50"
                 >
                   <div className="flex items-center gap-2">
-                    <span>⚙️ Location</span>
-                    <span className="text-[10px] text-slate-400">(Not set)</span>
+                    <span>{isProp ? "⚙️ More Details" : "⚙️ Location"}</span>
+                    <span className="text-[10px] text-slate-400">(0 filled)</span>
                   </div>
-                  <ChevronDown className={cn("h-4 w-4 transition-transform", openLocation && "rotate-180")} />
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", openMoreDetails && "rotate-180")} />
                 </button>
 
-                {/* Vehicle Documents Accordion */}
                 <button
                   type="button"
                   onClick={() => setOpenDocs(!openDocs)}
                   className="w-full flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-xs md:text-sm font-bold text-[#031B4E] shadow-xs hover:bg-slate-50"
                 >
                   <div className="flex items-center gap-2">
-                    <span>📄 Vehicle Documents</span>
-                    <span className="text-[10px] text-slate-400">(Not set)</span>
+                    <span>📄 Documents</span>
+                    <span className="text-[10px] text-slate-400">(Not added)</span>
                   </div>
                   <ChevronDown className={cn("h-4 w-4 transition-transform", openDocs && "rotate-180")} />
                 </button>
@@ -493,19 +589,19 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
                   <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs font-bold">
                     <div className="flex items-center gap-1.5 text-emerald-600">
                       <CheckCircle2 className="h-4 w-4" />
-                      <span>Front view: Good</span>
+                      <span>{isProp ? "Exterior views: Good" : "Front view: Good"}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-emerald-600">
                       <CheckCircle2 className="h-4 w-4" />
-                      <span>Rear view: Good</span>
+                      <span>{isProp ? "Interior views: Good" : "Rear view: Good"}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-emerald-600">
                       <CheckCircle2 className="h-4 w-4" />
-                      <span>Interior: Good</span>
+                      <span>{isProp ? "Rooms: Good" : "Interior: Good"}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-emerald-600">
                       <CheckCircle2 className="h-4 w-4" />
-                      <span>Lighting: Good</span>
+                      <span>{isProp ? "Lighting: Good" : "Lighting: Good"}</span>
                     </div>
                   </div>
                 </div>
@@ -536,8 +632,8 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
                 <div className="flex flex-col sm:flex-row items-center gap-4">
                   <div className="relative h-24 w-36 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
                     <Image
-                      src="/assets/onboarding/cars/car.webp"
-                      alt="Vehicle preview"
+                      src={isProp ? "/assets/onboarding/props/house.webp" : "/assets/onboarding/cars/car.webp"}
+                      alt="Listing preview"
                       fill
                       className="object-cover"
                     />
@@ -546,7 +642,7 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
                   <div className="space-y-1 w-full">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm md:text-base font-black text-[#031B4E]">
-                        {makeVal} {modelVal} {yearVal}
+                        {isProp ? propTitle : `${makeVal} ${modelVal} ${yearVal}`}
                       </h3>
                       <div className="text-right">
                         <span className="text-sm md:text-base font-black text-[#031B4E]">
@@ -558,18 +654,39 @@ export function UniversalListingWizard({ categoryId: initialCategoryId }: Props)
                       </div>
                     </div>
 
-                    <span className="inline-block rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-extrabold text-blue-600">
-                      {conditionVal}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-extrabold text-blue-600">
+                        {isProp ? propPurpose : conditionVal}
+                      </span>
+                      {isProp && (
+                        <span className="text-[11px] font-medium text-slate-500">
+                          {propLocation}
+                        </span>
+                      )}
+                    </div>
 
                     <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500 pt-1">
-                      <span>🚘 {mileageVal} km</span>
-                      <span>•</span>
-                      <span>⚙️ {transVal}</span>
-                      <span>•</span>
-                      <span>⛽ {fuelVal}</span>
-                      <span>•</span>
-                      <span>🚪 {doorsVal}</span>
+                      {isProp ? (
+                        <>
+                          <span>🛏️ {propBeds}</span>
+                          <span>•</span>
+                          <span>🛁 {propBaths}</span>
+                          <span>•</span>
+                          <span>📐 {propBldgSize}</span>
+                          <span>•</span>
+                          <span>🏗️ {propLandSize}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>🚘 {mileageVal} km</span>
+                          <span>•</span>
+                          <span>⚙️ {transVal}</span>
+                          <span>•</span>
+                          <span>⛽ {fuelVal}</span>
+                          <span>•</span>
+                          <span>🚪 {doorsVal}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
