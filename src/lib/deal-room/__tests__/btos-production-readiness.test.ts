@@ -1,13 +1,13 @@
 /**
- * Yike BTOS Production Readiness Automated Test Suite (Milestone 1 & Milestone 2)
- * Invariant tests for double-entry ledger, durable event streams, & saga rollback.
+ * Yike BTOS Production Readiness Automated Test Suite (Milestone 1, 2 & 3)
+ * Invariant tests for double-entry ledger, durable event transport, & saga orchestrator.
  */
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { LedgerService } from "../settlement/ledger";
 import { TransactionSagaManager } from "../workflow/saga";
-import { redisStreamAdapter } from "../events/redis-adapter";
+import { activeEventTransport } from "../events/transport";
 import { dealRoomEvents } from "../events";
 import { ResultContainer } from "../kernel/result";
 
@@ -35,9 +35,9 @@ test("Double-Entry Ledger Invariant: Sum(Debits) === Sum(Credits)", () => {
   assert.equal(entries[1].entryType, "credit");
 });
 
-test("Durable Event Stream Publishing & Replay (Milestone 2)", async () => {
+test("EventTransport Abstraction & Durable Stream Replay (Milestone 2 Refinement)", async () => {
   let receivedCount = 0;
-  redisStreamAdapter.subscribeConsumer("inspection_completed", async (rec) => {
+  activeEventTransport.subscribe("inspection_completed", async () => {
     receivedCount += 1;
   });
 
@@ -53,36 +53,51 @@ test("Durable Event Stream Publishing & Replay (Milestone 2)", async () => {
   assert.equal(receivedCount, 1);
 
   // Stream replay test
-  const replayed = await redisStreamAdapter.replayStream(undefined, "ws_stream_101");
+  const replayed = await activeEventTransport.replay(undefined, "ws_stream_101");
   assert.equal(replayed.length, 1);
-  assert.equal(receivedCount, 2); // Replay dispatched again
+  assert.equal(receivedCount, 2);
 });
 
-test("TransactionSagaManager Compensating Rollback on Failure", async () => {
-  let step1Compensated = false;
-  const saga = new TransactionSagaManager("ws_test");
+test("TransactionSagaManager Multi-Domain Orchestration & Rollback (Milestone 3)", async () => {
+  let settlementRollback = false;
+  let executionRollback = false;
 
-  saga.addStep({
-    name: "Reserve Escrow",
-    status: "pending",
-    execute: async () => {},
-    compensate: async () => {
-      step1Compensated = true;
+  const saga = new TransactionSagaManager("ws_saga_101");
+
+  saga.addStep(
+    "Hold Settlement Escrow",
+    "settlement",
+    async () => {},
+    async () => {
+      settlementRollback = true;
+    }
+  );
+
+  saga.addStep(
+    "Dispatch Field Inspector",
+    "execution",
+    async () => {},
+    async () => {
+      executionRollback = true;
+    }
+  );
+
+  saga.addStep(
+    "Failing Verification Check",
+    "trust",
+    async () => {
+      throw new Error("KYC Verification Failed");
     },
-  });
+    async () => {},
+    5000,
+    1 // Fail immediately
+  );
 
-  saga.addStep({
-    name: "Failing Execution Step",
-    status: "pending",
-    execute: async () => {
-      throw new Error("Simulated Field Failure");
-    },
-    compensate: async () => {},
-  });
-
-  const success = await saga.execute();
+  const success = await saga.executeSaga();
   assert.equal(success, false);
-  assert.equal(step1Compensated, true);
+  assert.equal(saga.sagaState, "compensated");
+  assert.equal(settlementRollback, true);
+  assert.equal(executionRollback, true);
 });
 
 test("ResultContainer strongly-typed outcomes", () => {
