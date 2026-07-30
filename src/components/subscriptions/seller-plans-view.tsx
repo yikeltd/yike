@@ -341,30 +341,31 @@ export function SellerPlansView() {
                 <div
                   key={plan.id}
                   className={cn(
-                    "relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all shadow-2xs border-2",
+                    "relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all shadow-2xs border-2 flex flex-col sm:flex-row items-stretch justify-between gap-4",
                     plan.theme === "green" && "border-emerald-200/90 bg-white text-[#031B4E]",
-                    plan.theme === "gold" && "border-amber-400/90 bg-gradient-to-r from-amber-50/60 via-amber-50/20 to-amber-100/40 text-[#031B4E]",
-                    plan.theme === "purple" && "border-purple-400/90 bg-gradient-to-r from-purple-50/60 via-purple-50/20 to-purple-100/40 text-[#031B4E]",
+                    plan.theme === "gold" && "border-amber-400/90 bg-gradient-to-r from-amber-50/70 via-white to-amber-50/40 text-[#031B4E]",
+                    plan.theme === "purple" && "border-purple-300/90 bg-gradient-to-r from-purple-50/70 via-white to-purple-50/40 text-[#031B4E]",
                     plan.theme === "navy" && "border-blue-950 bg-[#071330] text-white shadow-2xl"
                   )}
                 >
                   {/* BADGES */}
                   {plan.popularBadge && (
-                    <div className="absolute top-0 right-0 rounded-bl-xl bg-[#F59E0B] px-3 py-1 text-[10px] font-bold uppercase text-white shadow-2xs flex items-center gap-1 tracking-wide">
+                    <div className="absolute top-0 right-0 z-20 rounded-bl-xl bg-[#F59E0B] px-3 py-1 text-[10px] font-extrabold uppercase text-white shadow-2xs flex items-center gap-1 tracking-wide">
                       <span>★</span>
                       <span>{plan.popularBadge}</span>
                     </div>
                   )}
                   {plan.premiumBadge && (
-                    <div className="absolute top-3 right-3 rounded-lg border border-amber-400/60 bg-amber-400/10 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-400 flex items-center gap-1">
+                    <div className="absolute top-3 right-3 z-20 rounded-lg border border-amber-400/60 bg-amber-400/10 px-2.5 py-1 text-[10px] font-extrabold uppercase text-amber-400 flex items-center gap-1">
                       <span>💎</span>
                       <span>{plan.premiumBadge}</span>
                     </div>
                   )}
 
-                  <div className="flex items-start gap-4">
-                    {/* LEFT COLUMN */}
-                    <div className="w-[125px] shrink-0 space-y-2">
+                  {/* LEFT & MIDDLE CONTENT CONTAINER */}
+                  <div className="flex-1 flex flex-col sm:flex-row items-start gap-4 min-w-0 pr-0 sm:pr-2">
+                    {/* LEFT COLUMN: Icon, Name, Price, CTA */}
+                    <div className="w-full sm:w-[130px] shrink-0 space-y-2">
                       {/* Icon */}
                       <div
                         className={cn(
@@ -382,7 +383,7 @@ export function SellerPlansView() {
                       </div>
 
                       <div>
-                        <h2 className="text-lg font-bold tracking-tight leading-tight">{plan.name}</h2>
+                        <h2 className="text-lg font-black tracking-tight leading-tight">{plan.name}</h2>
                         <p
                           className={cn(
                             "text-[11px] font-medium leading-tight",
@@ -395,7 +396,7 @@ export function SellerPlansView() {
 
                       {/* Price */}
                       <div>
-                        <p className="text-xl font-bold tracking-tight leading-none">
+                        <p className="text-xl font-black tracking-tight leading-none">
                           {plan.monthlyBasePrice === 0
                             ? "₦0"
                             : `₦${monthly.toLocaleString()}`}
@@ -418,7 +419,7 @@ export function SellerPlansView() {
                           <button
                             type="button"
                             disabled
-                            className="rounded-xl bg-emerald-100/80 px-3.5 py-2 text-xs font-bold text-emerald-900 cursor-default opacity-95"
+                            className="rounded-xl bg-emerald-100/80 px-3.5 py-2 text-xs font-black text-emerald-900 cursor-default opacity-95"
                           >
                             Current Plan
                           </button>
@@ -427,7 +428,7 @@ export function SellerPlansView() {
                             type="button"
                             onClick={() => handleChoosePlan(plan)}
                             className={cn(
-                              "pressable rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-2xs active:scale-95",
+                              "pressable rounded-xl px-4 py-2 text-xs font-black transition-all shadow-2xs active:scale-95",
                               plan.theme === "gold" && "bg-[#F59E0B] text-[#031B4E] hover:bg-amber-400",
                               plan.theme === "purple" && "border-2 border-purple-500 bg-white text-purple-600 hover:bg-purple-50",
                               plan.theme === "navy" && "bg-[#F59E0B] text-[#031B4E] hover:bg-amber-400"
@@ -439,15 +440,15 @@ export function SellerPlansView() {
                       </div>
                     </div>
 
-                    {/* VERTICAL DIVIDER & RIGHT COLUMN */}
+                    {/* MIDDLE COLUMN: Listings Badge & Checklist */}
                     <div className={cn(
-                      "pl-4 border-l flex-1 min-w-0 space-y-2.5 relative pb-8",
-                      isNavyTheme ? "border-blue-900/60" : "border-slate-200/80"
+                      "pl-0 sm:pl-4 sm:border-l flex-1 min-w-0 space-y-2.5",
+                      isNavyTheme ? "sm:border-blue-900/60" : "sm:border-slate-200/80"
                     )}>
                       {/* Listings Badge */}
                       <div
                         className={cn(
-                          "inline-block rounded-full px-3 py-1 text-xs font-bold",
+                          "inline-block rounded-full px-3 py-1 text-xs font-extrabold",
                           plan.theme === "green" && "bg-emerald-100/70 text-emerald-950",
                           plan.theme === "gold" && "bg-amber-100/90 text-amber-950",
                           plan.theme === "purple" && "bg-purple-100/90 text-purple-950",
@@ -483,20 +484,37 @@ export function SellerPlansView() {
                           </li>
                         ))}
                       </ul>
-
-                      {/* Illustration Image Overlay */}
-                      <SellerPlanIllustration
-                        planId={plan.id}
-                        priority={plan.id === "core" || plan.id === "pro"}
-                        className={cn(
-                          "absolute right-0 bottom-0 pointer-events-none bg-transparent p-0 opacity-95 max-w-[120px] max-h-[95px]",
-                          plan.id === "core" && "h-20 w-auto",
-                          plan.id === "pro" && "h-24 w-auto",
-                          plan.id === "elite" && "h-24 w-auto",
-                          plan.id === "prime" && "h-28 w-auto"
-                        )}
-                      />
                     </div>
+                  </div>
+
+                  {/* RIGHT COLUMN: DEDICATED ILLUSTRATION PANEL WITH RADIAL GLOW & GRADIENT SURFACE */}
+                  <div
+                    className={cn(
+                      "relative shrink-0 w-full sm:w-[32%] min-h-[100px] sm:min-h-[130px] rounded-xl overflow-hidden flex items-center justify-center p-2 transition-all",
+                      plan.theme === "green" && "bg-gradient-to-l from-emerald-100/60 via-emerald-50/20 to-transparent",
+                      plan.theme === "gold" && "bg-gradient-to-l from-amber-200/50 via-amber-100/20 to-transparent",
+                      plan.theme === "purple" && "bg-gradient-to-l from-purple-200/50 via-purple-100/20 to-transparent",
+                      plan.theme === "navy" && "bg-gradient-to-l from-blue-600/30 via-blue-900/10 to-transparent"
+                    )}
+                  >
+                    {/* SOFT RADIAL GLOW */}
+                    <div
+                      className={cn(
+                        "absolute inset-0 rounded-full blur-2xl pointer-events-none opacity-40 transform scale-125",
+                        plan.theme === "green" && "bg-emerald-400",
+                        plan.theme === "gold" && "bg-amber-400",
+                        plan.theme === "purple" && "bg-purple-400",
+                        plan.theme === "navy" && "bg-blue-500"
+                      )}
+                    />
+
+                    {/* ILLUSTRATION COMPONENT */}
+                    <SellerPlanIllustration
+                      planId={plan.id}
+                      priority={plan.id === "core" || plan.id === "pro"}
+                      className="relative z-10 w-full h-full max-h-[110px] bg-transparent p-0 border-none shadow-none"
+                      imageClassName="object-contain object-right"
+                    />
                   </div>
                 </div>
               );
