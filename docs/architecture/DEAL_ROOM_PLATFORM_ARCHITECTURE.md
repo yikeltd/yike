@@ -1,8 +1,8 @@
-# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 12 Certified)
+# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 13 Certified)
 
 > **Platform**: Yike.ng (Stankings Marketplace Platform)  
 > **Author**: Antigravity Platform Architecture Team  
-> **Status**: APPROVED & ENTERPRISE WORKFLOW PLATFORM IMPLEMENTED
+> **Status**: APPROVED & TRANSACTION LIFECYCLE PLATFORM IMPLEMENTED
 
 ---
 
@@ -16,6 +16,9 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  [ BUYER ]  [ SELLER ]  [ AGENT ]  [ FIELD INSPECTOR ]  [ LEGAL PARTNER ]   │
 ├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ TRANSACTION COMPLETION CENTER (Asset Acceptance, Reviews & Disputes)  │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ WORKFLOW & ORCHESTRATION CENTER (Tasks, Approval Chains & Decisions)   │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
@@ -48,19 +51,19 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ CONVERSATION INTELLIGENCE STREAM (Slack/Linear/Stripe Style Feed)     │  │
-│  │ ├─ System Event Pills (Buyer Joined, Task Completed)                  │  │
+│  │ ├─ System Event Pills (Buyer Joined, Review Published, Deal Accepted) │  │
 │  │ ├─ User Chat Bubbles (Text, Attachments, Read Receipts)               │  │
 │  │ ├─ Embedded Offer Cards (v1, v2 Counter, Accepted, Expired)           │  │
 │  │ ├─ Embedded Call & Visual Cards (Video Sessions, Duration, Snapshots) │  │
 │  │ └─ Embedded Verification Cards (Identity, Title, 94% Confidence)      │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Workflow Aggregate       │ │ Universal Attachment      │ │ Universal │  │
-│  │ (Task Engine & Approvals)│ │ Engine (Polymorphic Files)│ │ Comment   │  │
+│  │ TransactionLifecycle     │ │ Universal Attachment      │ │ Universal │  │
+│  │ Aggregate (Post-Deal)    │ │ Engine (Polymorphic Files)│ │ Comment   │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Settlement Aggregate     │ │ Universal Legal Audit Log │ │ Search    │  │
-│  │ (Double-Entry Ledger)    │ │ Engine (Compliance)       │ │ Index     │  │
+│  │ Workflow Aggregate       │ │ Universal Legal Audit Log │ │ Search    │  │
+│  │ (Task Engine & Approvals)│ │ Engine (Compliance)       │ │ Index     │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ DATABASE & SECURE STORAGE LAYER (Supabase / PostgreSQL)               │  │
@@ -70,13 +73,16 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 
 ---
 
-## 2. Enterprise Workflow & Collaboration Platform Architecture (Phase 12)
+## 2. Transaction Lifecycle Platform Architecture (Phase 13)
 
-- **`WorkflowAggregate`** (`src/lib/deal-room/workflow/types.ts`): Domain aggregate managing business workflows (`transaction_workflow`, `property_sale`, `vehicle_sale`, `rental`, `inspection_workflow`, `legal_workflow`, `compliance_workflow`, `settlement_workflow`).
-- **Cross-Domain `TransactionOrchestrator`** (`src/lib/deal-room/workflow/orchestrator.ts`): Event-driven orchestration layer that listens to domain timeline events (`inspection_completed`, `document_verified`, `payment_completed`) and advances task states without coupling domain services.
-- **Configurable Task Engine (`WorkflowTask`)**: Reusable tasks with priority (`low`, `medium`, `high`, `urgent`), task types (`approval`, `review`, `upload_evidence`, `schedule_appointment`, `perform_execution`), dependencies, and role assignments.
-- **Sequential & Multi-Person Approval Chain (`ApprovalChainStep`)**: Supports role-based approvals (Lawyer, Compliance, Finance, Agent).
-- **`WorkflowCenterPanel`** (`src/components/deal-room/workflow-center-panel.tsx`): Linear/Notion-styled Kanban task board UI displaying progress percentage, task status, approval chain stepper, and decision logs.
+- **`TransactionLifecycleAggregate`** (`src/lib/deal-room/lifecycle/types.ts`): Independent domain aggregate governing the post-settlement transaction lifecycle (`pending_completion`, `awaiting_acceptance`, `accepted`, `completed`, `under_warranty`, `disputed`, `refund_pending`, `refunded`, `cancelled`, `archived`).
+- **Acceptance Flow Engine (`AcceptanceService`)**: Coordinates dual-party delivery acceptance (Buyer & Seller) before marking deals completed and releasing escrow.
+- **Immutable Review Engine (`ReviewRecord` & `ReviewVersion`)**: Reviews are immutable upon publication. Edits append to `versions` array (`v1` ➔ `v2`).
+- **Separation of Trust & Reputation (`ReputationService`)**:
+  - **Trust Score**: Deterministic factual verification metrics (KYC, Title Deeds, Field Inspections).
+  - **Reputation Score**: Community experience metrics (review history, transaction volume, reviewer credibility).
+- **Dispute & Warranty Engine (`DisputeRecord` & `WarrantyRecord`)**: Handles dispute freezes, evidence references, mediation, and warranty claims.
+- **`LifecycleCenterPanel`** (`src/components/deal-room/lifecycle-center-panel.tsx`): Enterprise Completion & Dispute Dashboard UI.
 
 ---
 
@@ -108,9 +114,9 @@ src/
 │       ├── intelligence/                # Phase 10 Enterprise Intelligence Platform
 │       ├── settlement/                  # Phase 11 Enterprise Settlement Platform
 │       ├── workflow/                    # Phase 12 Enterprise Workflow Platform
-│       │   ├── types.ts                 # WorkflowAggregate & WorkflowTask
-│       │   ├── orchestrator.ts          # TransactionOrchestrator
-│       │   ├── service.ts               # WorkflowService & Repository
+│       ├── lifecycle/                   # Phase 13 Transaction Lifecycle Platform
+│       │   ├── types.ts                 # TransactionLifecycleAggregate & DisputeRecord
+│       │   ├── service.ts               # TransactionLifecycleService & Engines
 │       │   └── index.ts                 # Barrel exports
 └── components/
     └── deal-room/
@@ -125,7 +131,8 @@ src/
         ├── visual-collaboration-overlay.tsx # Responsive Visual Overlay UI
         ├── intelligence-panel.tsx       # Enterprise AI Reasoning Center UI
         ├── settlement-center-panel.tsx  # Banking-styled Settlement Center Ledger UI
-        └── workflow-center-panel.tsx    # Linear-styled Workflow Task Center UI
+        ├── workflow-center-panel.tsx    # Linear-styled Workflow Task Center UI
+        └── lifecycle-center-panel.tsx   # Completion & Dispute Dashboard UI
 ```
 
 ---
@@ -133,8 +140,8 @@ src/
 ## 4. Architectural Self-Audit (CTO Verification Questions)
 
 1. **Did this phase introduce architectural debt?**
-   - **No.** `TransactionOrchestrator` uses pure event-driven subscriptions (`dealRoomEvents`) to coordinate domains. Domains remain 100% decoupled from each other.
+   - **No.** `TransactionLifecycleAggregate` consumes previous domains (Settlement, Evidence, Workflow) through event orchestration without tight coupling or modifying past models.
 2. **What changes at 50 million users?**
-   - The in-memory `WorkflowRepository` transitions to PostgreSQL database tables (`workflows`, `workflow_tasks`, `approval_chains`) with distributed message queues (e.g. RabbitMQ or Redis Streams) for `TransactionOrchestrator` event consumers.
-3. **Which future phases became simpler?**
-   - **Phase 13 (Transaction Completion & Dispute Resolution)**: Dispute holds and transaction sign-offs become task nodes inside `WorkflowAggregate`.
+   - In-memory lifecycle repositories transition to PostgreSQL database tables (`transaction_lifecycles`, `review_records`, `dispute_records`, `warranty_records`) with cold-storage S3 data archiving for transactions older than 7 years.
+3. **What is still missing before production?**
+   - Production readiness hardening: PostgreSQL persistence migration, distributed event queues, load testing, and security penetration testing (Phase 14).
