@@ -31,13 +31,16 @@ export function UniversalListingWizard({ categoryId }: Props) {
 
   // Load draft on mount
   useEffect(() => {
-    const draft = loadDraftLocal(categoryId);
-    if (draft && draft.data) {
-      setFormData(draft.data);
-      setStepIndex(draft.stepIndex || 0);
-      setCurrentState(draft.currentState || "details_started");
+    async function initDraft() {
+      const draft = await loadDraftLocal(categoryId);
+      if (draft && draft.data) {
+        setFormData(draft.data);
+        setStepIndex(draft.stepIndex || 0);
+        setCurrentState(draft.currentState || "details_started");
+      }
     }
 
+    initDraft();
     trackListingEngineEvent("flow_started", { categoryId });
   }, [categoryId]);
 

@@ -1,7 +1,4 @@
-/**
- * UNIVERSAL LISTING FLOW ENGINE — ANALYTICS TRACKER
- * Instruments drop-off, step duration, validation errors, and completion telemetry.
- */
+import { activeAnalyticsProvider } from "./analytics-adapter";
 
 export type AnalyticsEventName =
   | "flow_started"
@@ -28,19 +25,5 @@ export function trackListingEngineEvent(
   eventName: AnalyticsEventName,
   payload: AnalyticsPayload
 ): void {
-  const eventData = {
-    event: `listing_engine_${eventName}`,
-    timestamp: new Date().toISOString(),
-    ...payload,
-  };
-
-  // Safe client analytics logging
-  if (process.env.NODE_ENV !== "production") {
-    console.log(`[ListingEngine Analytics] ${eventName}:`, eventData);
-  }
-
-  // Push to dataLayer if present
-  if (typeof window !== "undefined" && (window as unknown as { dataLayer?: unknown[] }).dataLayer) {
-    (window as unknown as { dataLayer: unknown[] }).dataLayer.push(eventData);
-  }
+  activeAnalyticsProvider.trackEvent(eventName, payload);
 }
