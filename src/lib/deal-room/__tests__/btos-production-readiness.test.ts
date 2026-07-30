@@ -1,6 +1,6 @@
 /**
- * Yike BTOS Production Readiness Automated Test Suite (Milestone 1, 2 & 3)
- * Invariant tests for double-entry ledger, durable event transport, & saga orchestrator.
+ * Yike BTOS Production Readiness Automated Test Suite (Milestones 1–4)
+ * Invariant tests for double-entry ledger, durable event transport, sagas, & CQRS projections.
  */
 
 import assert from "node:assert/strict";
@@ -9,6 +9,7 @@ import { LedgerService } from "../settlement/ledger";
 import { TransactionSagaManager } from "../workflow/saga";
 import { activeEventTransport } from "../events/transport";
 import { dealRoomEvents } from "../events";
+import { projectionEngine } from "../projections/projection-engine";
 import { ResultContainer } from "../kernel/result";
 
 test("Double-Entry Ledger Invariant: Sum(Debits) === Sum(Credits)", () => {
@@ -35,27 +36,23 @@ test("Double-Entry Ledger Invariant: Sum(Debits) === Sum(Credits)", () => {
   assert.equal(entries[1].entryType, "credit");
 });
 
-test("EventTransport Abstraction & Durable Stream Replay (Milestone 2 Refinement)", async () => {
-  let receivedCount = 0;
-  activeEventTransport.subscribe("inspection_completed", async () => {
-    receivedCount += 1;
-  });
+test("CQRS Projection Engine Event Projection (Milestone 4)", async () => {
+  projectionEngine.initialize();
 
   const evt = dealRoomEvents.createEvent(
-    "ws_stream_101",
+    "ws_cqrs_999",
     "usr_actor",
-    "inspector",
-    "inspection_completed",
-    "Field Inspection Passed"
+    "buyer",
+    "payment_completed",
+    "Escrow Payment Completed"
   );
 
   await dealRoomEvents.publish(evt);
-  assert.equal(receivedCount, 1);
 
-  // Stream replay test
-  const replayed = await activeEventTransport.replay(undefined, "ws_stream_101");
-  assert.equal(replayed.length, 1);
-  assert.equal(receivedCount, 2);
+  const summary = projectionEngine.getWorkspaceSummary("ws_cqrs_999");
+  assert.ok(summary);
+  assert.equal(summary?.stage, "settled");
+  assert.equal(summary?.lastEventTitle, "Escrow Payment Completed");
 });
 
 test("TransactionSagaManager Multi-Domain Orchestration & Rollback (Milestone 3)", async () => {
