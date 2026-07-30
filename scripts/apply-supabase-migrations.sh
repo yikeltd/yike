@@ -10,10 +10,12 @@ cd "$ROOT"
 PROJECT_REF="${SUPABASE_PROJECT_REF:-hlpojfurfldvcxfxhveg}"
 
 if [[ -f .env.local ]]; then
+  set +u
   set -a
   # shellcheck disable=SC1091
   source .env.local
   set +a
+  set -u
 fi
 
 if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
