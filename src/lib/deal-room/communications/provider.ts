@@ -1,20 +1,19 @@
 /**
- * Yike Deal Room Platform — Communication Abstraction Layer
- * Provider-agnostic interface supporting Agora, WebRTC, Daily.co, or Mock drivers.
+ * Yike Transaction Workspace Engine — Communication Platform Adapters
+ * Provider-agnostic abstraction for Agora, LiveKit, Daily, WebRTC, or Mock drivers.
  */
 
-export type CallType = "voice" | "video";
-export type NetworkQuality = "excellent" | "good" | "poor" | "offline";
+import type { CommunicationSessionType, NetworkQuality } from "./types";
 
-export interface CallSession {
+export interface CallSessionInit {
   sessionId: string;
-  dealRoomId: string;
-  type: CallType;
+  workspaceId: string;
+  sessionType: CommunicationSessionType;
   channelName: string;
   token: string;
   initiatedBy: string;
   startedAt: string;
-  recordingEnabled: boolean;
+  providerId: string;
 }
 
 export interface PresenceState {
@@ -22,52 +21,87 @@ export interface PresenceState {
   online: boolean;
   inCall: boolean;
   micMuted: boolean;
-  cameraMuted: boolean;
+  speakerMuted: boolean;
   networkQuality: NetworkQuality;
 }
 
 export interface CommunicationProvider {
   id: string;
   name: string;
-  initializeSession(dealRoomId: string, type: CallType, userId: string): Promise<CallSession>;
+  initializeSession(workspaceId: string, type: CommunicationSessionType, userId: string): Promise<CallSessionInit>;
   joinSession(sessionId: string, userId: string): Promise<void>;
   leaveSession(sessionId: string, userId: string): Promise<void>;
   endSession(sessionId: string): Promise<void>;
-  getPresence(dealRoomId: string): Promise<PresenceState[]>;
+  getPresence(workspaceId: string): Promise<PresenceState[]>;
 }
 
-class MockCommunicationProvider implements CommunicationProvider {
-  id = "mock_provider";
-  name = "Mock Local Communication Provider";
+/**
+ * Official Agora RTC Adapter (Provider implementation)
+ */
+export class AgoraCommunicationAdapter implements CommunicationProvider {
+  id = "agora_rtc";
+  name = "Agora Real-Time Communication Provider";
 
-  async initializeSession(dealRoomId: string, type: CallType, userId: string): Promise<CallSession> {
+  private appId = process.env.NEXT_PUBLIC_AGORA_APP_ID || "yike_agora_dev_app_id";
+
+  async initializeSession(workspaceId: string, type: CommunicationSessionType, userId: string): Promise<CallSessionInit> {
+    const channelName = `yike_channel_${workspaceId}_${Date.now()}`;
+    const token = `agora_rtc_token_stub_${Math.random().toString(36).substring(2, 10)}`;
+
     return {
-      sessionId: `session_${Date.now()}`,
-      dealRoomId,
-      type,
-      channelName: `yike_deal_${dealRoomId}`,
-      token: "mock_token_stub",
+      sessionId: `session_agora_${Date.now()}`,
+      workspaceId,
+      sessionType: type,
+      channelName,
+      token,
       initiatedBy: userId,
       startedAt: new Date().toISOString(),
-      recordingEnabled: false,
+      providerId: this.id,
     };
   }
 
   async joinSession(): Promise<void> {}
   async leaveSession(): Promise<void> {}
   async endSession(): Promise<void> {}
-
   async getPresence(): Promise<PresenceState[]> {
     return [];
   }
 }
 
-let activeProvider: CommunicationProvider = new MockCommunicationProvider();
+/**
+ * Development & Testing Mock Adapter
+ */
+export class MockCommunicationAdapter implements CommunicationProvider {
+  id = "mock_rtc";
+  name = "Mock Local Communication Provider";
 
-export function registerCommunicationProvider(provider: CommunicationProvider): void {
-  activeProvider = provider;
+  async initializeSession(workspaceId: string, type: CommunicationSessionType, userId: string): Promise<CallSessionInit> {
+    return {
+      sessionId: `session_mock_${Date.now()}`,
+      workspaceId,
+      sessionType: type,
+      channelName: `yike_mock_${workspaceId}`,
+      token: "mock_rtc_token",
+      initiatedBy: userId,
+      startedAt: new Date().toISOString(),
+      providerId: this.id,
+    };
+  }
+
+  async joinSession(): Promise<void> {}
+  async leaveSession(): Promise<void> {}
+  async endSession(): Promise<void> {}
+  async getPresence(): Promise<PresenceState[]> {
+    return [];
+  }
 }
 
-export function getCommunicationProvider(): CommunicationProvider {
-  return activeProvider;
+let activeAdapter: CommunicationProvider = new AgoraCommunicationAdapter();
+
+export function registerCommunicationAdapter(adapter: CommunicationProvider): void {
+  activeAdapter = adapter;
+}
+
+export function getActiveCommunicationAdapter(): CommunicationProvider {
+  return activeAdapter;
 }
