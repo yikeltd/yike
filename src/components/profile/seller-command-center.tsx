@@ -174,14 +174,14 @@ export function SellerCommandCenter(props: Props) {
   const trustScore = profile.trust_score ?? 100;
   const listingsValue = totalListings > 0 ? totalListings : 1;
 
-  // 1. EXACT THREE RECENT CONVERSATIONS
+  // 1. EXACT THREE RECENT CONVERSATIONS MATCHING REFERENCE DESIGN
   const sampleConversations = [
     {
       id: "conv-1",
       name: "Emeka Okafor",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80&fit=crop",
       badge: "Offer accepted",
-      badgeTone: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      badgeTone: "bg-emerald-100/90 text-emerald-800 border-emerald-200/70",
       message: "Great! When can we schedule a viewing?",
       time: "2m ago",
       unread: 1,
@@ -191,18 +191,18 @@ export function SellerCommandCenter(props: Props) {
       name: "Mary James",
       avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&q=80&fit=crop",
       badge: "Viewing request",
-      badgeTone: "bg-blue-100 text-blue-800 border-blue-200",
+      badgeTone: "bg-blue-100/90 text-blue-800 border-blue-200/70",
       message: "I'd like to schedule a viewing for this property.",
       time: "1h ago",
       unread: 2,
     },
     {
       id: "conv-3",
-      name: "Daniel Peter",
+      name: "Adams John",
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&q=80&fit=crop",
-      badge: "Documents ready",
-      badgeTone: "bg-purple-100 text-purple-800 border-purple-200",
-      message: "Please find the property documents...",
+      badge: "New inquiry",
+      badgeTone: "bg-purple-100/90 text-purple-800 border-purple-200/70",
+      message: "Is this property still available?",
       time: "3h ago",
       unread: 3,
     },
@@ -489,40 +489,40 @@ export function SellerCommandCenter(props: Props) {
             </p>
           )}
 
-          {/* 8. RECENT CONVERSATIONS — EXACTLY THREE COMPACT ROWS */}
-          <section className="space-y-1">
+          {/* 8. RECENT CONVERSATIONS — FLOATING WHITE CARD MATCHING REFERENCE DESIGN */}
+          <section className="space-y-2">
             <SectionHeader title="Recent Conversations" href="/conversations" />
 
-            <div className="rounded-2xl border border-navy/[0.06] bg-white p-2 shadow-xs divide-y divide-navy/[0.05]">
+            <div className="rounded-2xl border border-slate-100/90 bg-white p-3 sm:p-4 shadow-xs divide-y divide-slate-100">
               {sampleConversations.map((conv) => (
                 <Link
                   key={conv.id}
                   href={`/conversations/${conv.id}`}
                   prefetch
-                  className="pressable group flex items-center justify-between gap-2.5 py-2 first:pt-0.5 last:pb-0.5 transition-colors hover:bg-surface/60 rounded-lg px-1"
+                  className="pressable group flex items-center justify-between gap-3 py-3 first:pt-0.5 last:pb-0.5 transition-colors hover:bg-slate-50/70 rounded-xl px-1"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={conv.avatar}
                       alt={conv.name}
-                      className="h-9 w-9 rounded-full object-cover border border-navy/10 shadow-xs shrink-0"
+                      className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover border border-slate-200/60 shadow-2xs shrink-0"
                     />
                     <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="text-xs font-bold text-navy truncate">{conv.name}</h3>
-                        <span className={cn("rounded-md border px-1.5 py-0.5 text-[9px] font-extrabold shrink-0", conv.badgeTone)}>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xs sm:text-sm font-bold text-[#031B4E] truncate">{conv.name}</h3>
+                        <span className={cn("rounded-md border px-2 py-0.5 text-[10px] font-semibold shrink-0", conv.badgeTone)}>
                           {conv.badge}
                         </span>
                       </div>
-                      <p className="text-[11px] font-medium text-navy/60 truncate">{conv.message}</p>
+                      <p className="text-xs font-normal text-slate-500 truncate">{conv.message}</p>
                     </div>
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-                    <span className="text-[10px] font-medium text-navy/40">{conv.time}</span>
+                    <span className="text-xs font-medium text-slate-400">{conv.time}</span>
                     {conv.unread > 0 && (
-                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[9px] font-black text-navy shadow-xs">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E4B547] text-[10px] font-extrabold text-[#031B4E] shadow-2xs">
                         {conv.unread}
                       </span>
                     )}
