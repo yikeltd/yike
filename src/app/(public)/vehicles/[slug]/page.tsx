@@ -6,16 +6,11 @@ import {
   getVehicleByIdOrSlug,
   queryPublicVehicles,
 } from "@/lib/marketplace/listings";
-import { StickyContactBar } from "@/components/property/sticky-contact-bar";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
-import { UnifiedListingDetail } from "@/components/marketplace/experience";
+import { VehicleDetailExperience } from "@/components/marketplace/vehicle-detail-experience";
 import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
 import { ListingUnavailable } from "@/components/property/listing-unavailable";
-import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
-import { isFeaturedActive } from "@/lib/agent-tiers";
-import { getActiveAd } from "@/lib/ads";
-import { resolveListingBadges } from "@/lib/design/listing-badges";
-import { getSession, getProfile, isAdmin } from "@/lib/auth";
+import { isAdmin, getSession, getProfile } from "@/lib/auth";
 import {
   canPreviewOwnerListing,
   isListingPubliclyActive,
@@ -82,42 +77,16 @@ export default async function VehicleDetailPage({ params }: Props) {
     );
   }
 
-  const [similarRaw, detailAd] = await Promise.all([
-    isPubliclyVisible
-      ? queryPublicVehicles(supabase, {
-          auto_category: vehicle.auto_category ?? undefined,
-          make: vehicle.make ?? undefined,
-          limit: 8,
-        })
-      : Promise.resolve([]),
-    getActiveAd("vehicle_detail"),
-  ]);
+  const similarRaw = isPubliclyVisible
+    ? await queryPublicVehicles(supabase, {
+        auto_category: vehicle.auto_category ?? undefined,
+        make: vehicle.make ?? undefined,
+        limit: 8,
+      })
+    : [];
 
   const similar = similarRaw.filter((x) => x.id !== vehicle.id).slice(0, 4);
-
-  const agent = vehicle.agent as
-    | {
-        id: string;
-        full_name?: string | null;
-        whatsapp?: string | null;
-        phone?: string | null;
-      }
-    | undefined;
-
   const priceLabel = formatNaira(Number(vehicle.price));
-  const shareUrl = listingAbsoluteUrl(vehicle);
-  const featuredActive = isFeaturedActive(vehicle);
-  const verified = !!vehicle.is_verified_listing;
-  const allBadges = resolveListingBadges(vehicle, {
-    agentVerified: verified,
-    featuredActive,
-  });
-  const extraBadges = allBadges.filter(
-    (b) => b !== "verified" && b !== "yike_verified" && b !== "featured",
-  );
-  const location = [vehicle.area, vehicle.city, vehicle.state]
-    .filter(Boolean)
-    .join(", ");
 
   const ownerBanner =
     isOwner ? (
@@ -146,9 +115,9 @@ export default async function VehicleDetailPage({ params }: Props) {
         />
       ) : null}
 
-      <UnifiedListingDetail
-        listing={vehicle}
-        similarListings={similar}
+      <VehicleDetailExperience
+        vehicle={vehicle}
+        similarVehicles={similar}
         ownerBanner={ownerBanner}
       />
     </main>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import type { Property } from "@/types/database";
 import { listingPath } from "@/lib/marketplace/listing-path";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
@@ -16,12 +17,16 @@ import {
   Settings2,
   Calendar,
   ShieldCheck,
+  Eye,
+  Scale,
+  MessageCircle,
 } from "lucide-react";
 import {
   PlacementBadge,
   featuredPlacementChrome,
 } from "@/components/marketplace/placement-badge";
 import { resolvePlacementKind } from "@/lib/marketplace/placement";
+import { VehicleQuickPreviewModal } from "./vehicle-quick-preview-modal";
 
 function formatNaira(n: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -92,12 +97,14 @@ export function VehicleCard({
   vehicle,
   variant = "default",
   priorityImage = false,
+  onToggleCompare,
+  isCompared = false,
 }: {
   vehicle: Property;
-  /** browse = inventory-first poster; marketplace = legacy home compact. */
   variant?: "default" | "marketplace" | "browse";
-  /** Only first above-the-fold thumbs should be true. */
   priorityImage?: boolean;
+  onToggleCompare?: (vehicle: Property) => void;
+  isCompared?: boolean;
 }) {
   const href = listingPath(vehicle);
   const img = vehicle.media_urls?.[0];
@@ -112,16 +119,33 @@ export function VehicleCard({
     vehicle.is_verified_listing ||
     (vehicle.agent ? isVerifiedAgent(vehicle.agent) : false);
   const attrs = buildVehicleAttrs(vehicle);
+  const [quickPreviewOpen, setQuickPreviewOpen] = useState(false);
 
-  if (isBrowse) {
-    return (
-      <article className="group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-transparent">
+  function openPreview(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setQuickPreviewOpen(true);
+  }
+
+  function handleCompareClick(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onToggleCompare) onToggleCompare(vehicle);
+  }
+
+  return (
+    <>
+      <article
+        className={cn(
+          "group card-lift relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-elevated shadow-card ring-1 ring-black/[0.04] dark:ring-white/[0.08]"
+        )}
+      >
         <Link href={href} prefetch={!isDemo} className="block">
           <div
             className={cn(
               "listing-thumb relative overflow-hidden rounded-[1.25rem] bg-navy/5",
               BROWSE_THUMB_ASPECT,
-              featuredPlacementChrome(placement === "featured"),
+              featuredPlacementChrome(placement === "featured")
             )}
           >
             {img ? (
@@ -136,14 +160,17 @@ export function VehicleCard({
               />
             ) : null}
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-navy/35 to-transparent" />
-            <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-1">
+            <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-4.5rem)] flex-wrap gap-1">
+              <span className="rounded-md bg-navy/85 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+                {conditionShort(vehicle.vehicle_condition) || "Vehicle"}
+              </span>
               {placement ? (
                 <PlacementBadge kind={placement} compact />
               ) : null}
               {verified ? (
                 <span
                   className="rounded-md bg-emerald-600/92 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-[2px]"
-                  title="Verified"
+                  title="Verified Vehicle & Dealer"
                 >
                   ✓ Verified
                 </span>
@@ -152,34 +179,54 @@ export function VehicleCard({
           </div>
         </Link>
 
-        {!isDemo ? (
-          <div className="absolute right-1.5 top-1.5 z-10 opacity-90 transition-opacity group-hover:opacity-100">
-            <ListingSaveButton
-              listingId={vehicle.id}
-              compact
-              className="!h-8 !w-8 !bg-white/95 !text-navy shadow-sm backdrop-blur-sm"
-            />
-          </div>
-        ) : null}
+        {/* TOP RIGHT ACTION OVERLAY BUTTONS */}
+        <div className="pointer-events-none absolute right-1.5 top-1.5 z-10 flex gap-1">
+          {onToggleCompare && (
+            <button
+              type="button"
+              onClick={handleCompareClick}
+              className={cn(
+                "pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full shadow-sm backdrop-blur-sm transition-transform hover:scale-105",
+                isCompared
+                  ? "bg-gold text-navy font-black ring-2 ring-gold/40"
+                  : "bg-white/95 text-navy/80"
+              )}
+              title={isCompared ? "Remove from Compare" : "Compare Vehicle"}
+            >
+              <Scale className="h-3.5 w-3.5" />
+            </button>
+          )}
 
-        <div className="flex flex-1 flex-col gap-0.5 pt-1.5">
-          <Link href={href} prefetch={!isDemo} className="min-w-0">
-            <p className="text-[15px] font-bold tabular-nums leading-tight tracking-tight text-navy sm:text-base">
+          <button
+            type="button"
+            onClick={openPreview}
+            className="pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-navy shadow-sm backdrop-blur-sm transition-transform hover:scale-105"
+            title="Quick Preview"
+          >
+            <Eye className="h-3.5 w-3.5 text-navy/80" />
+          </button>
+
+          {!isDemo && (
+            <div className="pointer-events-auto">
+              <ListingSaveButton
+                listingId={vehicle.id}
+                compact
+                className="!h-8 !w-8 !bg-white/95 !text-navy shadow-sm backdrop-blur-sm"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-1 flex-col justify-between p-2.5 sm:p-3">
+          <Link href={href} prefetch={!isDemo} className="block min-w-0 space-y-1">
+            <p className="text-sm font-black tabular-nums leading-tight tracking-tight text-foreground sm:text-base">
               {formatNaira(Number(vehicle.price))}
             </p>
-            <p className="mt-0.5 line-clamp-1 text-[12px] font-bold leading-snug text-navy/90 sm:text-[13px]">
+            <p className="line-clamp-2 text-[12px] font-bold leading-snug text-foreground/90 sm:text-[13px]">
               {vehicle.title}
             </p>
-            {verified ? (
-              <p className="mt-1 flex flex-wrap items-center gap-1">
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-600/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800">
-                  <ShieldCheck className="h-2.5 w-2.5" aria-hidden />
-                  Verified
-                </span>
-              </p>
-            ) : null}
             {attrs.length > 0 ? (
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/50">
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-muted">
                 {attrs.slice(0, 4).map(({ icon: Icon, label }) => (
                   <span key={label} className="inline-flex items-center gap-0.5">
                     <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
@@ -189,7 +236,7 @@ export function VehicleCard({
               </p>
             ) : null}
             {location ? (
-              <p className="mt-1 flex items-center gap-0.5 text-[10px] font-medium text-navy/50">
+              <p className="mt-1 flex items-center gap-0.5 text-[10px] font-medium text-muted">
                 <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
                 <span className="line-clamp-1">{location}</span>
                 <ListingDistanceLabel
@@ -202,79 +249,14 @@ export function VehicleCard({
           </Link>
         </div>
       </article>
-    );
-  }
 
-  return (
-    <article
-      className={
-        isMarketplace
-          ? "group card-lift flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-transparent"
-          : "group card-lift flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-navy/8 bg-white shadow-card ring-1 ring-black/[0.03]"
-      }
-    >
-      <Link href={href} prefetch={!isDemo} className="block">
-        <div className="listing-thumb relative aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-navy/5">
-          {img ? (
-            <Image
-              src={img}
-              alt={vehicle.title}
-              fill
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-              sizes="(max-width: 640px) 46vw, (max-width: 1024px) 25vw, (max-width: 1536px) 14vw, 12vw"
-            />
-          ) : null}
-          <div className="absolute left-1.5 top-1.5 z-10 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-1">
-            {placement ? (
-              <PlacementBadge kind={placement} compact />
-            ) : null}
-            {!isDemo && vehicle.is_verified_listing ? (
-              <span
-                className="rounded-md bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white"
-                title="Verified"
-              >
-                ✓ Verified
-              </span>
-            ) : null}
-          </div>
-        </div>
-      </Link>
-
-      <div className="flex flex-1 flex-col gap-0.5 pt-2">
-        <div className="flex items-start justify-between gap-1">
-          <Link href={href} prefetch={!isDemo} className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-[13px] font-bold leading-snug text-navy sm:text-sm">
-              {vehicle.title}
-            </p>
-            <p className="mt-1 text-base font-bold tabular-nums leading-tight text-navy sm:text-[17px]">
-              {formatNaira(Number(vehicle.price))}
-            </p>
-          </Link>
-          {!isDemo ? (
-            <ListingSaveButton
-              listingId={vehicle.id}
-              compact
-              className="shrink-0"
-            />
-          ) : null}
-        </div>
-        {attrs.length > 0 ? (
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold text-navy/50 sm:text-[11px]">
-            {attrs.slice(0, 4).map(({ icon: Icon, label }) => (
-              <span key={label} className="inline-flex items-center gap-0.5">
-                <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
-                {label}
-              </span>
-            ))}
-          </p>
-        ) : null}
-        {location ? (
-          <p className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-navy/50 sm:text-[11px]">
-            <MapPin className="h-2.5 w-2.5 shrink-0 text-gold" aria-hidden />
-            <span className="line-clamp-1">{location}</span>
-          </p>
-        ) : null}
-      </div>
-    </article>
+      {/* QUICK PREVIEW MODAL */}
+      {quickPreviewOpen && (
+        <VehicleQuickPreviewModal
+          vehicle={vehicle}
+          onClose={() => setQuickPreviewOpen(false)}
+        />
+      )}
+    </>
   );
 }
