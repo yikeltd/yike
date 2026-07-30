@@ -1,8 +1,8 @@
-# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 6 Certified)
+# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 7 Certified)
 
 > **Platform**: Yike.ng (Stankings Marketplace Platform)  
 > **Author**: Antigravity Platform Architecture Team  
-> **Status**: APPROVED & TRUST & VERIFICATION PLATFORM IMPLEMENTED
+> **Status**: APPROVED & ENTERPRISE EVIDENCE PLATFORM IMPLEMENTED
 
 ---
 
@@ -17,6 +17,9 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  [ BUYER ]  [ SELLER ]  [ AGENT ]  [ FIELD INSPECTOR ]  [ LEGAL PARTNER ]   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ ENTERPRISE EVIDENCE VAULT (Cryptographic Chain of Custody / Proof)    │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ TRUST & VERIFICATION CENTER (Weighted Trust Score Gauge 0–100 / KYC)  │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
@@ -30,19 +33,19 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ CONVERSATION INTELLIGENCE STREAM (Slack/Linear/Stripe Style Feed)     │  │
-│  │ ├─ System Event Pills (Buyer Joined, Verification Approved)           │  │
+│  │ ├─ System Event Pills (Buyer Joined, Evidence Verified)               │  │
 │  │ ├─ User Chat Bubbles (Text, Attachments, Read Receipts)               │  │
 │  │ ├─ Embedded Offer Cards (v1, v2 Counter, Accepted, Expired)           │  │
-│  │ ├─ Embedded Verification Cards (Identity, Title, 94% Confidence)      │  │
-│  │ └─ Embedded Document Cards (Title, Version, Verified Badge)           │  │
+│  │ ├─ Embedded Evidence Cards (PDF, Image, Inspection Proof, Hash)       │  │
+│  │ └─ Embedded Verification Cards (Identity, Title, 94% Confidence)      │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Verification Aggregate   │ │ Universal Attachment      │ │ Universal │  │
-│  │ (Evidence & Confidence)  │ │ Engine (Polymorphic Files)│ │ Comment   │  │
+│  │ Evidence Aggregate       │ │ Universal Attachment      │ │ Universal │  │
+│  │ (Immutable Chain/Versions)│ │ Engine (Polymorphic Files)│ │ Comment   │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Negotiation Aggregate    │ │ Universal Legal Audit Log │ │ Search    │  │
-│  │ (Immutable Git-Versions) │ │ Engine (Compliance)       │ │ Index     │  │
+│  │ Verification Aggregate   │ │ Universal Legal Audit Log │ │ Search    │  │
+│  │ (Evidence & Confidence)  │ │ Engine (Compliance)       │ │ Index     │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ DATABASE & SECURE STORAGE LAYER (Supabase / PostgreSQL)               │  │
@@ -52,12 +55,13 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 
 ---
 
-## 2. Trust & Verification Platform Architecture (Phase 6)
+## 2. Enterprise Evidence Platform Architecture (Phase 7)
 
-- **`VerificationAggregate`** (`src/lib/deal-room/trust/types.ts`): Independent domain aggregate for evidence-backed verifications (`identity`, `business`, `property`, `vehicle`, `ownership`, `title`, `inspection`, `phone`, `email`, `address`, `document`).
-- **Weighted Trust Score Model (`TrustScoreCalculator`)**: Computes a 0–100 workspace trust score using weighted inputs from identity verifications (40%), document verifications (40%), and historical transaction completion (20%).
-- **`VerificationService`** (`src/lib/deal-room/trust/service.ts`): Methods for `submitVerification()`, `approveVerification()`, confidence scoring, stream card embedding, audit logging, and automation hook emissions.
-- **`TrustCenterPanel`** (`src/components/deal-room/trust-center-panel.tsx`): Banking KYC styled dashboard panel featuring a radial Trust Score Gauge, verification checklist, and evidence badges.
+- **`EvidenceAggregate`** (`src/lib/deal-room/evidence/types.ts`): Independent domain aggregate for legal proof assets (`pdf`, `image`, `video`, `audio`, `voice_recording`, `inspection_photo`, `drone_image`, `gps_location`, `digital_signature`, `certificate`, `title_document`, `vehicle_registration`, `invoice`, `receipt`, `insurance`, `identity_document`).
+- **Chain of Custody Provenance (`ChainOfCustodyRecord`)**: Logs every upload, review, verification, replacement, or archival action with actor ID, role, exact timestamp, and cryptographic hash (`sha256`).
+- **Immutable Evidence Versioning (`EvidenceVersion`)**: Evidence is never overwritten. Replacements append to the `versions` array (`v1` ➔ `v2` ➔ `v3`).
+- **`EvidenceService`** (`src/lib/deal-room/evidence/service.ts`): Methods for `uploadEvidence()`, `replaceEvidence()`, `verifyEvidence()`, audit logging, and embedding `document_card` into stream.
+- **`EvidenceCenterPanel`** (`src/components/deal-room/evidence-center-panel.tsx`): Enterprise Proof Vault UI panel featuring category filters, immutable version history, and expandable Chain of Custody drawer.
 
 ---
 
@@ -83,8 +87,9 @@ src/
 │       ├── appointments/                # Phase 4 Appointment & Scheduling Engine
 │       ├── communications/              # Phase 5 Enterprise Communication Platform
 │       ├── trust/                       # Phase 6 Trust & Verification Platform
-│       │   ├── types.ts                 # VerificationAggregate & TrustScoreBreakdown
-│       │   ├── service.ts               # VerificationService & TrustScoreCalculator
+│       ├── evidence/                    # Phase 7 Enterprise Evidence Platform
+│       │   ├── types.ts                 # EvidenceAggregate & ChainOfCustodyRecord
+│       │   ├── service.ts               # EvidenceService & Repository
 │       │   └── index.ts                 # Barrel exports
 └── components/
     └── deal-room/
@@ -93,18 +98,19 @@ src/
         ├── negotiation-summary-panel.tsx# Pinned Negotiation Summary UI
         ├── appointment-card.tsx         # Rich Embedded Appointment Card UI
         ├── voice-call-overlay.tsx       # FaceTime-styled In-Call UI
-        └── trust-center-panel.tsx       # Banking-styled Trust Center Dashboard UI
+        ├── trust-center-panel.tsx       # Banking-styled Trust Center Dashboard UI
+        └── evidence-center-panel.tsx    # Enterprise Proof Vault UI
 ```
 
 ---
 
 ## 4. Architectural Self-Audit (CTO Verification Questions)
 
-1. **Did this phase introduce any architectural debt?**
-   - **No.** Trust was implemented as an independent aggregate (`VerificationAggregate`) decoupled from messaging, calls, or payments. It publishes events to the existing `AutomationHookBus` and `DealRoomEventBus`.
-2. **If Yike grew to 50 million users tomorrow, what in this phase would need to change?**
-   - The in-memory `VerificationRepository` would transition to PostgreSQL database tables (`verifications`, `trust_scores`) with Redis caching for `TrustScoreCalculator`. The domain interfaces and service methods would remain 100% identical.
-3. **What future phases are now simpler because of the work completed here?**
-   - **Phase 7 (Document Vault)**: Documents will attach directly to `VerificationAggregate` as verified evidence.
-   - **Phase 8 (Inspection Engine)**: Field verifiers will approve `inspection` verification records directly into `TrustScoreCalculator`.
-   - **Phase 11 (Escrow & Payments)**: Escrow release conditions can evaluate `trustScore.overallScore >= 85` programmatically.
+1. **Did this phase introduce architectural debt?**
+   - **No.** Evidence was created as an independent proof aggregate (`EvidenceAggregate`) with polymorphic ownership (`PolymorphicOwnerType`). It seamlessly feeds `VerificationService` without tight coupling.
+2. **What changes at 50 million users?**
+   - The in-memory `EvidenceRepository` transitions to PostgreSQL database tables (`evidence_aggregates`, `evidence_versions`, `chain_of_custody`) with S3/Supabase Storage signed URL generation and background malware/DLP scanning.
+3. **What future phases became simpler?**
+   - **Phase 8 (Inspection Platform)**: Inspection photos, drone footage, and verifier reports will attach directly as `EvidenceAggregate` records.
+   - **Phase 11 (Escrow & Payments)**: Title documents and invoices are already cryptographically logged and ready for payment disbursement triggers.
+   - **Phase 13 (Dispute Resolution)**: The Chain of Custody provenance log provides zero-tampering legal proof for dispute arbitrations.
