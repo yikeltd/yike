@@ -1,5 +1,5 @@
 /**
- * Yike BTOS — Persistent Saga Repository Abstraction (Enterprise Enhancement 1)
+ * Yike BTOS — Persistent Saga Repository Abstraction (Enterprise Enhancement 1 & 2)
  * Manages durable saga state checkpoints & recovery records in Supabase PostgreSQL.
  */
 
@@ -113,7 +113,8 @@ export class SagaRepository {
   }
 
   public async getResumableSagas(): Promise<PersistentSagaRecord[]> {
-    const resumableStatuses = ["pending", "executing", "waiting", "retrying"];
+    // Only resume active in-flight sagas (executing, waiting, retrying)
+    const resumableStatuses = ["executing", "waiting", "retrying"];
     const inMemResumable = Array.from(this.memoryStore.values()).filter((s) =>
       resumableStatuses.includes(s.status)
     );

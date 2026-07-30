@@ -1,5 +1,5 @@
 /**
- * Yike BTOS — Saga Recovery Engine Automated Test Suite (Enterprise Enhancement 1)
+ * Yike BTOS — Saga Recovery Engine Automated Test Suite (Enterprise Enhancement 1 & 2)
  * Validates checkpoint persistence, automatic startup resume, & durable compensation rollbacks.
  */
 
@@ -48,20 +48,20 @@ test("Persistent Saga Checkpoint & Resume Test", async () => {
   assert.equal(record?.completedSteps.length, 2);
 });
 
-test("SagaRecoveryService Startup Scan & Resumable Sagas Test", async () => {
+test("SagaRecoveryService Startup Scan for In-Flight Executing Sagas Test", async () => {
   const sagaId = `saga_res_${Date.now()}`;
   const wsId = `ws_res_${Date.now()}`;
 
-  // Manually seed a pending saga in repository
+  // Seed an in-flight EXECUTING saga in repository
   await sagaRepository.saveSaga({
     id: `ps_${sagaId}`,
     sagaId,
     workspaceId: wsId,
     correlationId: `corr_${sagaId}`,
     sagaType: "transaction_workflow",
-    currentStep: 0,
-    status: "pending",
-    completedSteps: [],
+    currentStep: 1,
+    status: "executing",
+    completedSteps: ["Step 1"],
     pendingSteps: ["Verify Seller Title"],
     compensationStack: [],
     retryCount: 0,
