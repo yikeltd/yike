@@ -14,11 +14,16 @@ export type SmartSearchResult = Partial<PropertySearchParams> & {
   resolvedLabel?: string;
   listing_type?: string;
   hub?: DiscoverHub;
+  /** Vertical identification */
+  vertical?: "property" | "vehicle" | "agent" | "land" | "shortlet";
   /** Vehicle marketplace signals */
-  vertical?: "property" | "vehicle";
   make?: string;
   model?: string;
   body_type?: string;
+  vehicle_condition?: string;
+  /** Agent search signals */
+  agent_role?: string;
+  agent_verified?: boolean;
   /** When true, caller should switch marketplace location context */
   switchesLocation?: boolean;
 };
@@ -27,9 +32,12 @@ const PROPERTY_PHRASES: { pattern: RegExp; value: string }[] = [
   { pattern: /\bself\s*contain(s)?\b/i, value: "self_contain" },
   { pattern: /\bmini\s*flat(s)?\b/i, value: "mini_flat" },
   { pattern: /\broom\s*(and|&)\s*parlou?r\b/i, value: "room" },
-  { pattern: /\b2\s*bed(room)?\s*flat\b/i, value: "flat_2" },
-  { pattern: /\b3\s*bed(room)?\s*flat\b/i, value: "flat_3" },
+  { pattern: /\b1\s*bed(room)?\s*(flat|apartment)?\b/i, value: "flat_1" },
+  { pattern: /\b2\s*bed(room)?\s*(flat|apartment)?\b/i, value: "flat_2" },
+  { pattern: /\b3\s*bed(room)?\s*(flat|apartment)?\b/i, value: "flat_3" },
+  { pattern: /\b4\s*bed(room)?\s*(flat|apartment)?\b/i, value: "flat_4" },
   { pattern: /\bduplex(es)?\b/i, value: "duplex" },
+  { pattern: /\bterrace(s)?\b/i, value: "terrace" },
   { pattern: /\bbungalow(s)?\b/i, value: "bungalow" },
   { pattern: /\bmansion(s)?\b/i, value: "mansion" },
   { pattern: /\bshop(s)?\b/i, value: "shop" },
@@ -49,14 +57,16 @@ const LISTING_PHRASES: {
   type?: string;
   hub?: string;
   property_type?: string;
+  vertical?: "property" | "shortlet" | "land";
 }[] = [
-  { pattern: /\bshortlet(s)?\b/i, property_type: "hotel" },
-  { pattern: /\bairbnb\b/i, property_type: "hotel" },
-  { pattern: /\bhotel(s)?\b/i, property_type: "hotel" },
+  { pattern: /\bshortlet(s)?\b/i, property_type: "hotel", vertical: "shortlet" },
+  { pattern: /\bairbnb\b/i, property_type: "hotel", vertical: "shortlet" },
   { pattern: /\bfor\s*sale\b/i, type: "sale" },
   { pattern: /\bbuy\b/i, type: "sale" },
   { pattern: /\blease\b/i, type: "lease" },
   { pattern: /\brent\b/i, type: "rent" },
+  { pattern: /\bto\s*let\b/i, type: "rent" },
+  { pattern: /\bland\s*(for\s*sale)?\b/i, hub: "land_sale", vertical: "land" },
 ];
 
 const VEHICLE_BODY: { pattern: RegExp; value: string }[] = [
@@ -64,17 +74,38 @@ const VEHICLE_BODY: { pattern: RegExp; value: string }[] = [
   { pattern: /\bsedan(s)?\b/i, value: "sedan" },
   { pattern: /\bhatchback(s)?\b/i, value: "hatchback" },
   { pattern: /\bpick\s*-?\s*up(s)?\b/i, value: "pickup" },
-  { pattern: /\btruck(s)?\b/i, value: "truck" },
+  { pattern: /\btruck(s)?\b/i, value: "truck text-bold" },
   { pattern: /\bbus(es)?\b/i, value: "bus" },
   { pattern: /\bmotorcycle(s)?|bike(s)?\b/i, value: "motorcycle" },
   { pattern: /\btricycle(s)?|keke\b/i, value: "tricycle" },
 ];
 
+const VEHICLE_CONDITION_PHRASES: { pattern: RegExp; value: string }[] = [
+  { pattern: /\b(tokunbo|foreign\s*used)\b/i, value: "foreign_used" },
+  { pattern: /\b(nigerian?\s*used|local\s*used)\b/i, value: "nigerian_used" },
+  { pattern: /\b(brand\s*new|tear\s*rubber|new)\b/i, value: "brand_new" },
+];
+
+const AGENT_PHRASES: { pattern: RegExp; role?: string }[] = [
+  { pattern: /\b(agent|realtor|broker)(s)?\b/i, role: "agent" },
+  { pattern: /\b(auto\s*dealer|car\s*dealer|showroom)(s)?\b/i, role: "dealer" },
+  { pattern: /\b(verifier|field\s*verifier)(s)?\b/i, role: "verifier" },
+  { pattern: /\b(legal\s*partner|lawyer)(s)?\b/i, role: "legal" },
+];
+
 const BUDGET_PHRASES: { pattern: RegExp; max?: number; min?: number }[] = [
-  { pattern: /\b(cheap|affordable|budget)\b/i, max: 500_000 },
+  { pattern: /\b(cheap|affordable|budget)\b/i, max: 1_000_000 },
   { pattern: /\bunder\s*200k\b/i, max: 200_000 },
   { pattern: /\bunder\s*500k\b/i, max: 500_000 },
   { pattern: /\bunder\s*1m\b/i, max: 1_000_000 },
+  { pattern: /\bunder\s*5m\b/i, max: 5_000_000 },
+  { pattern: /\bunder\s*10m\b/i, max: 10_000_000 },
+  { pattern: /\bunder\s*15m\b/i, max: 15_000_000 },
+  { pattern: /\bunder\s*20m\b/i, max: 20_000_000 },
+  { pattern: /\bunder\s*50m\b/i, max: 50_000_000 },
+  { pattern: /\bunder\s*100m\b/i, max: 100_000_000 },
+  { pattern: /\bunder\s*250m\b/i, max: 250_000_000 },
+  { pattern: /\bunder\s*500m\b/i, max: 500_000_000 },
 ];
 
 /** Parse ₦20m / under 20m / below 15 million / 20 million naira */
@@ -86,7 +117,6 @@ function parseNairaToken(amount: number, unit?: string): number {
   if (u === "k") return Math.round(amount * 1_000);
   if (u === "m" || u === "million") return Math.round(amount * 1_000_000);
   if (u === "bn" || u === "billion") return Math.round(amount * 1_000_000_000);
-  // Bare ₦ amounts under 1000 are usually "m" shorthand in speech ("under 20")
   if (!u && amount < 1000) return Math.round(amount * 1_000_000);
   return Math.round(amount);
 }
@@ -136,7 +166,7 @@ function detectVehicleMakeModel(text: string): {
   return {};
 }
 
-/** Parse natural-language queries into structured search params. */
+/** Parse natural-language queries into structured search params across all verticals. */
 export function parseSmartSearchQuery(raw: string): SmartSearchResult {
   const trimmed = normalizeLocationQuery(raw);
   if (!trimmed) return {};
@@ -151,16 +181,28 @@ export function parseSmartSearchQuery(raw: string): SmartSearchResult {
 
   let listing_type: string | undefined;
   let hub: DiscoverHub | undefined;
+  let explicitVertical: "property" | "vehicle" | "agent" | "land" | "shortlet" | undefined;
+
   for (const {
     pattern,
     type,
     hub: h,
     property_type: listingPropertyType,
+    vertical,
   } of LISTING_PHRASES) {
     if (pattern.test(trimmed)) {
       listing_type = type;
       hub = h as DiscoverHub | undefined;
       if (listingPropertyType) property_type = listingPropertyType;
+      if (vertical) explicitVertical = vertical;
+      break;
+    }
+  }
+
+  let vehicle_condition: string | undefined;
+  for (const { pattern, value } of VEHICLE_CONDITION_PHRASES) {
+    if (pattern.test(trimmed)) {
+      vehicle_condition = value;
       break;
     }
   }
@@ -173,6 +215,15 @@ export function parseSmartSearchQuery(raw: string): SmartSearchResult {
     }
   }
 
+  let agent_role: string | undefined;
+  for (const { pattern, role } of AGENT_PHRASES) {
+    if (pattern.test(trimmed)) {
+      agent_role = role;
+      explicitVertical = "agent";
+      break;
+    }
+  }
+
   const { make, model } = detectVehicleMakeModel(trimmed);
   const budget = parseBudgetFromText(trimmed);
 
@@ -181,6 +232,8 @@ export function parseSmartSearchQuery(raw: string): SmartSearchResult {
     ...LISTING_PHRASES.map((p) => p.pattern),
     ...BUDGET_PHRASES.map((p) => p.pattern),
     ...VEHICLE_BODY.map((p) => p.pattern),
+    ...VEHICLE_CONDITION_PHRASES.map((p) => p.pattern),
+    ...AGENT_PHRASES.map((p) => p.pattern),
     NAIRA_BUDGET_RE,
     /\b(cheap|affordable|budget)\b/i,
     ...(make ? [new RegExp(`\\b${make}\\b`, "i")] : []),
@@ -197,14 +250,18 @@ export function parseSmartSearchQuery(raw: string): SmartSearchResult {
   const locationParsed = parseLocationQuery(locationText || trimmed);
 
   const isVehicle =
-    Boolean(make || model || body_type) &&
+    Boolean(make || model || body_type || vehicle_condition) &&
     !property_type &&
     !listing_type;
+
+  const vertical = explicitVertical || (isVehicle ? "vehicle" : "property");
 
   const labelParts = [
     make,
     model,
+    vehicle_condition ? vehicle_condition.replace(/_/g, " ") : null,
     body_type?.toUpperCase(),
+    agent_role ? `${agent_role.toUpperCase()}S` : null,
     locationParsed.bedrooms ? `${locationParsed.bedrooms} bed` : null,
     property_type
       ? PROPERTY_CATEGORIES.find((c) => c.value === property_type)?.label
@@ -229,20 +286,22 @@ export function parseSmartSearchQuery(raw: string): SmartSearchResult {
     hub,
     min_price: budget.min_price,
     max_price: budget.max_price,
-    vertical: isVehicle ? "vehicle" : "property",
+    vertical,
     make,
     model,
     body_type,
+    vehicle_condition,
+    agent_role,
     switchesLocation,
     resolvedLabel: labelParts.join(" · ") || trimmed,
-    // Keep residual keywords for free-text when nothing structural matched
     q:
       !locationParsed.city &&
       !locationParsed.area &&
       !locationParsed.state &&
       !property_type &&
       !make &&
-      !body_type
+      !body_type &&
+      !agent_role
         ? trimmed
         : locationParsed.q,
   };
@@ -315,16 +374,13 @@ export function smartSearchToUrlParams(
   if (parsed.make) params.set("make", parsed.make);
   if (parsed.model) params.set("model", parsed.model);
   if (parsed.body_type) params.set("body_type", parsed.body_type);
+  if (parsed.vehicle_condition) params.set("vehicle_condition", parsed.vehicle_condition);
+  if (parsed.agent_role) params.set("role", parsed.agent_role);
   if (parsed.q && !parsed.city && !parsed.area && !parsed.state && !parsed.make) {
     params.set("q", parsed.q);
   }
 
   return params;
-}
-
-/** Search commits always land on /search when filters or query exist. */
-export function navigateSearchTarget(pathname: string): "/" | "/search" {
-  return pathname.startsWith("/search") ? "/search" : "/search";
 }
 
 export function buildSearchHref(
@@ -333,9 +389,13 @@ export function buildSearchHref(
 ): string {
   if (parsed.vertical === "vehicle" || parsed.make || parsed.body_type) {
     const params = smartSearchToUrlParams(parsed);
-    // Vehicle routes use max not max for price in some pages — keep consistent
     const qs = params.toString();
     return qs ? `/vehicles?${qs}` : "/vehicles";
+  }
+  if (parsed.vertical === "agent" || parsed.agent_role) {
+    const params = smartSearchToUrlParams(parsed);
+    const qs = params.toString();
+    return qs ? `/agents?${qs}` : "/agents";
   }
   const params = smartSearchToUrlParams(parsed);
   const qs = params.toString();

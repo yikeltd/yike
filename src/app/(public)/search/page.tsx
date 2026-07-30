@@ -30,14 +30,16 @@ import {
   PROPERTY_QUICK_FILTERS,
 } from "@/components/marketplace/experience";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
+import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
+import { SearchClientChrome } from "@/components/search/search-client-chrome";
 
 export const metadata: Metadata = {
-  title: `Search Properties`,
-  description: `Search apartments, houses, land and shops across Nigeria. Filter by city, area, budget and property type on ${SITE_NAME}.`,
+  title: `Universal Search & Discovery | ${SITE_NAME}`,
+  description: `Search properties, vehicles, land, shortlets, and agents across Nigeria with instant AI filters on ${SITE_NAME}.`,
   alternates: { canonical: `${SITE_URL}/search` },
   openGraph: {
-    title: `Search Properties | ${SITE_NAME}`,
-    description: "Verified rentals and homes — mobile-first, WhatsApp contact.",
+    title: `Universal Search & Discovery | ${SITE_NAME}`,
+    description: "Instant AI search across properties, vehicles, land, and verified agents in Nigeria.",
     url: `${SITE_URL}/search`,
   },
 };
@@ -67,7 +69,6 @@ export default async function SearchPage({
     ...(hasQuery ? params : prefs),
   };
 
-  // Nearby chip: apply saved location when city/state not already set.
   if (nearbyFlag && !preloadParams.city && !preloadParams.state) {
     const nearbyPrefs = await getServerSearchPreferences();
     if (nearbyPrefs.city) preloadParams.city = nearbyPrefs.city;
@@ -79,6 +80,7 @@ export default async function SearchPage({
   let feedItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
   let nearbyItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
   let isDemo = false;
+
   if (hasQuery) {
     const bundle = await resolveSearchResults(
       getPublicPropertiesStrict,
@@ -97,7 +99,6 @@ export default async function SearchPage({
       feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   }
 
-  // Dev-only: when live search is empty, fill with [DEMO] UI fixtures (no DB writes).
   if (!hasQuery && feedItems.length === 0) {
     const demo = withEmptyInventoryDemoFixtures([], "property", 24);
     if (demo.isDemo) {
@@ -131,18 +132,17 @@ export default async function SearchPage({
 
   const emptyCopy = buildSearchEmptyCopy(preloadParams);
   const showingNearby = hasQuery && exactCount === 0 && nearbyItems.length > 0;
+  const activeItems = feedItems.length > 0 ? feedItems : nearbyItems;
 
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
       <PrefSync />
-      <div className="px-3 pt-4 lg:px-6 xl:px-8">
-        <MarketplaceCategoryHeader
-          vertical="property"
-          title="Search Properties"
-          className="mb-2"
-        />
+      
+      {/* UNIVERSAL SEARCH BAR & CATEGORIES */}
+      <div className="px-3 pt-4 lg:px-6 xl:px-8 space-y-3">
+        <HeaderUniversalSearch size="large" tone="desktop" showLocation />
         <Suspense fallback={null}>
-          <div className="mb-3">
+          <div>
             <QuickFilterChips
               chips={PROPERTY_QUICK_FILTERS}
               basePath="/search"
@@ -150,32 +150,17 @@ export default async function SearchPage({
           </div>
         </Suspense>
       </div>
+
       <Suspense fallback={<ResultsFallback />}>
-        <SearchResultsChrome
-          resultCount={exactCount}
+        <SearchClientChrome
+          feedItems={activeItems}
+          exactCount={exactCount}
           nearbyCount={nearbyItems.length}
           showingFallback={showingNearby}
           currentHref={currentHref}
-          currentLabel={label || undefined}
-          showEmptySuggestions={false}
-          hideSuggestions
-          filtersDefaultOpen={false}
+          currentLabel={label || "Search Results"}
         >
-          {/* Order: Search → Filters → Summary (in chrome) → Listings → Ads */}
           <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
-            {showingNearby ? (
-              <div className="mb-4">
-                <PropertyFeed
-                  properties={nearbyItems}
-                  isDemo={isDemo}
-                  sponsoredAd={sponsoredSearchAd}
-                  midFeedAd={sponsoredSearchAd ? null : feedAd}
-                  feedAdInsertAfter={5}
-                  adPlacementKey="search_feed_mid"
-                />
-              </div>
-            ) : null}
-
             {feedItems.length > 0 ? (
               <PropertyFeed
                 properties={feedItems}
@@ -185,10 +170,19 @@ export default async function SearchPage({
                 feedAdInsertAfter={5}
                 adPlacementKey="search_feed_mid"
               />
-            ) : showingNearby ? null : (
+            ) : showingNearby ? (
+              <PropertyFeed
+                properties={nearbyItems}
+                isDemo={isDemo}
+                sponsoredAd={sponsoredSearchAd}
+                midFeedAd={sponsoredSearchAd ? null : feedAd}
+                feedAdInsertAfter={5}
+                adPlacementKey="search_feed_mid"
+              />
+            ) : (
               <DiscoveryEmptyPanel
                 category="property"
-                title={hasQuery ? emptyCopy.title : "Start exploring homes"}
+                title={hasQuery ? emptyCopy.title : "Start exploring homes & vehicles"}
                 subtitle={
                   hasQuery
                     ? "Try another filter, or browse popular categories below."
@@ -206,7 +200,7 @@ export default async function SearchPage({
               />
             </div>
           </section>
-        </SearchResultsChrome>
+        </SearchClientChrome>
       </Suspense>
     </div>
   );
