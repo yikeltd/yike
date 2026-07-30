@@ -7,6 +7,7 @@
   "scripts": {
     "optimize:brand": "node scripts/optimize-brand-assets.mjs",
     "optimize:crew": "node scripts/optimize-crew-app-icon.mjs",
+    "optimize:onboarding": "node scripts/optimize-onboarding-assets.mjs",
     "generate:crew-twa": "node scripts/generate-crew-twa-assets.mjs",
     "store:assets": "node scripts/generate-store-assets.mjs",
     "twa:init": "cd twa && npx @bubblewrap/cli init --manifest=https://yike.ng/manifest.json",
