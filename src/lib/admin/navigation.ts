@@ -34,6 +34,9 @@ export type SectionTab = {
 export const TRUST_SECTION_TABS: SectionTab[] = [
   { href: adminPath("trust"), label: "Trust Center" },
   { href: adminPath("trust-review-queue"), label: "Trust Queue" },
+  { href: adminPath("reports"), label: "User Reports" },
+  { href: adminPath("appeals"), label: "Appeals" },
+  { href: adminPath("linked-accounts"), label: "Linked Accounts" },
   { href: adminPath("verification-control"), label: "Verification" },
   { href: adminPath("security-events"), label: "Security" },
   { href: adminPath("trust-metrics"), label: "Metrics" },
