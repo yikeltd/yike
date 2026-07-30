@@ -1,8 +1,8 @@
-# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 11 Certified)
+# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 12 Certified)
 
 > **Platform**: Yike.ng (Stankings Marketplace Platform)  
 > **Author**: Antigravity Platform Architecture Team  
-> **Status**: APPROVED & ENTERPRISE SETTLEMENT PLATFORM IMPLEMENTED
+> **Status**: APPROVED & ENTERPRISE WORKFLOW PLATFORM IMPLEMENTED
 
 ---
 
@@ -16,6 +16,9 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  [ BUYER ]  [ SELLER ]  [ AGENT ]  [ FIELD INSPECTOR ]  [ LEGAL PARTNER ]   │
 ├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ WORKFLOW & ORCHESTRATION CENTER (Tasks, Approval Chains & Decisions)   │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ SETTLEMENT CENTER (Double-Entry Ledger / Multi-Party Escrow Payouts)  │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
@@ -45,19 +48,19 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ CONVERSATION INTELLIGENCE STREAM (Slack/Linear/Stripe Style Feed)     │  │
-│  │ ├─ System Event Pills (Buyer Joined, Escrow Released)                 │  │
+│  │ ├─ System Event Pills (Buyer Joined, Task Completed)                  │  │
 │  │ ├─ User Chat Bubbles (Text, Attachments, Read Receipts)               │  │
 │  │ ├─ Embedded Offer Cards (v1, v2 Counter, Accepted, Expired)           │  │
 │  │ ├─ Embedded Call & Visual Cards (Video Sessions, Duration, Snapshots) │  │
 │  │ └─ Embedded Verification Cards (Identity, Title, 94% Confidence)      │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Settlement Aggregate     │ │ Universal Attachment      │ │ Universal │  │
-│  │ (Double-Entry Ledger)    │ │ Engine (Polymorphic Files)│ │ Comment   │  │
+│  │ Workflow Aggregate       │ │ Universal Attachment      │ │ Universal │  │
+│  │ (Task Engine & Approvals)│ │ Engine (Polymorphic Files)│ │ Comment   │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Intelligence Aggregate   │ │ Universal Legal Audit Log │ │ Search    │  │
-│  │ (Provider Adapters & AI) │ │ Engine (Compliance)       │ │ Index     │  │
+│  │ Settlement Aggregate     │ │ Universal Legal Audit Log │ │ Search    │  │
+│  │ (Double-Entry Ledger)    │ │ Engine (Compliance)       │ │ Index     │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ DATABASE & SECURE STORAGE LAYER (Supabase / PostgreSQL)               │  │
@@ -67,13 +70,13 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 
 ---
 
-## 2. Enterprise Settlement Platform Architecture (Phase 11)
+## 2. Enterprise Workflow & Collaboration Platform Architecture (Phase 12)
 
-- **`SettlementAggregate`** (`src/lib/deal-room/settlement/types.ts`): Independent domain aggregate for financial movements (`escrow`, `marketplace_payment`, `wallet_transfer`, `refund`, `partial_refund`, `milestone_release`, `inspection_fee`, `legal_fee`, `commission`, `platform_fee`, `tax`, `bank_transfer`).
-- **Double-Entry Ledger Engine (`LedgerService` & `LedgerEntry`)**: Enforces strict financial accounting where `Sum(Debits) === Sum(Credits)` with derived account balances.
-- **PSP Provider Abstraction (`SettlementProvider`)**: Decouples payment execution from payment gateways. Supports `PaystackSettlementAdapter`, `KorapaySettlementAdapter`, and `MockSettlementAdapter`.
-- **Deterministic Settlement Rule Engine (`SettlementRuleEngine`)**: Evaluates Trust Scores (>= 65), field execution completion, evidence verification, and AI risk reports before disbursing funds.
-- **`SettlementCenterPanel`** (`src/components/deal-room/settlement-center-panel.tsx`): Banking-styled ledger dashboard UI displaying total escrow balance, multi-party split allocations, rule checklist, and ledger audit timeline.
+- **`WorkflowAggregate`** (`src/lib/deal-room/workflow/types.ts`): Domain aggregate managing business workflows (`transaction_workflow`, `property_sale`, `vehicle_sale`, `rental`, `inspection_workflow`, `legal_workflow`, `compliance_workflow`, `settlement_workflow`).
+- **Cross-Domain `TransactionOrchestrator`** (`src/lib/deal-room/workflow/orchestrator.ts`): Event-driven orchestration layer that listens to domain timeline events (`inspection_completed`, `document_verified`, `payment_completed`) and advances task states without coupling domain services.
+- **Configurable Task Engine (`WorkflowTask`)**: Reusable tasks with priority (`low`, `medium`, `high`, `urgent`), task types (`approval`, `review`, `upload_evidence`, `schedule_appointment`, `perform_execution`), dependencies, and role assignments.
+- **Sequential & Multi-Person Approval Chain (`ApprovalChainStep`)**: Supports role-based approvals (Lawyer, Compliance, Finance, Agent).
+- **`WorkflowCenterPanel`** (`src/components/deal-room/workflow-center-panel.tsx`): Linear/Notion-styled Kanban task board UI displaying progress percentage, task status, approval chain stepper, and decision logs.
 
 ---
 
@@ -104,10 +107,10 @@ src/
 │       ├── visual/                      # Phase 9 Visual Collaboration Platform
 │       ├── intelligence/                # Phase 10 Enterprise Intelligence Platform
 │       ├── settlement/                  # Phase 11 Enterprise Settlement Platform
-│       │   ├── types.ts                 # SettlementAggregate & LedgerEntry
-│       │   ├── provider.ts              # SettlementProvider & Paystack Adapters
-│       │   ├── ledger.ts                # Double-Entry Ledger Engine
-│       │   ├── service.ts               # SettlementService & RuleEngine
+│       ├── workflow/                    # Phase 12 Enterprise Workflow Platform
+│       │   ├── types.ts                 # WorkflowAggregate & WorkflowTask
+│       │   ├── orchestrator.ts          # TransactionOrchestrator
+│       │   ├── service.ts               # WorkflowService & Repository
 │       │   └── index.ts                 # Barrel exports
 └── components/
     └── deal-room/
@@ -121,7 +124,8 @@ src/
         ├── execution-center-panel.tsx   # Operational Execution Work Center UI
         ├── visual-collaboration-overlay.tsx # Responsive Visual Overlay UI
         ├── intelligence-panel.tsx       # Enterprise AI Reasoning Center UI
-        └── settlement-center-panel.tsx  # Banking-styled Settlement Center Ledger UI
+        ├── settlement-center-panel.tsx  # Banking-styled Settlement Center Ledger UI
+        └── workflow-center-panel.tsx    # Linear-styled Workflow Task Center UI
 ```
 
 ---
@@ -129,9 +133,8 @@ src/
 ## 4. Architectural Self-Audit (CTO Verification Questions)
 
 1. **Did this phase introduce architectural debt?**
-   - **No.** Settlement is an independent aggregate (`SettlementAggregate`) with double-entry accounting. Money movements use provider adapters (`SettlementProvider`) without direct dependency on PSP SDKs.
+   - **No.** `TransactionOrchestrator` uses pure event-driven subscriptions (`dealRoomEvents`) to coordinate domains. Domains remain 100% decoupled from each other.
 2. **What changes at 50 million users?**
-   - The in-memory `SettlementRepository` and `LedgerService` transition to PostgreSQL database tables (`settlements`, `ledger_entries`, `settlement_splits`) with ACID transactional locks, webhook idempotency keys, and automated bank reconciliation jobs.
+   - The in-memory `WorkflowRepository` transitions to PostgreSQL database tables (`workflows`, `workflow_tasks`, `approval_chains`) with distributed message queues (e.g. RabbitMQ or Redis Streams) for `TransactionOrchestrator` event consumers.
 3. **Which future phases became simpler?**
-   - **Phase 12 (Enterprise Collaboration)**: Multi-party splits (Agents, Lawyers, Inspectors, Platform) are already calculated and logged.
-   - **Phase 13 (Dispute Resolution)**: Held escrow funds can be programmatically paused or partially refunded via `SettlementService.processRefund()`.
+   - **Phase 13 (Transaction Completion & Dispute Resolution)**: Dispute holds and transaction sign-offs become task nodes inside `WorkflowAggregate`.
