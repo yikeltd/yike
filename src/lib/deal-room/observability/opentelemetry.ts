@@ -1,6 +1,6 @@
 /**
- * Yike BTOS — OpenTelemetry Tracing Integration (Enterprise Enhancement 3)
- * W3C Trace Context propagation & OTel standard span format for Grafana Tempo / Jaeger compatibility.
+ * Yike BTOS — OpenTelemetry Tracing Integration (Enterprise Enhancement 3 & 4)
+ * W3C Trace Context propagation & incoming `traceparent` header parser for Tempo / Jaeger compatibility.
  */
 
 export interface OTelSpanContext {
@@ -34,7 +34,30 @@ export class BTOSOpenTelemetryTracer {
   }
 
   /**
-   * Generates a 16-byte hex traceId and 8-byte hex spanId matching W3C Trace Context spec
+   * Parses an incoming W3C `traceparent` HTTP header
+   * Format: `00-{traceId}-{spanId}-01`
+   */
+  public parseW3CTraceParent(header: string | null): OTelSpanContext | undefined {
+    if (!header) return undefined;
+    const parts = header.trim().split("-");
+    if (parts.length !== 4 || parts[0] !== "00") return undefined;
+
+    const traceId = parts[1];
+    const spanId = parts[2];
+    const traceFlags = parseInt(parts[3], 16) || 1;
+
+    if (traceId.length !== 32 || spanId.length !== 16) return undefined;
+
+    return {
+      traceId,
+      spanId,
+      traceFlags,
+      isRemote: true,
+    };
+  }
+
+  /**
+   * Creates a new OTel span (imports incoming parent context if provided)
    */
   public createOTelSpan(
     name: string,
@@ -48,7 +71,7 @@ export class BTOSOpenTelemetryTracer {
       context: {
         traceId,
         spanId,
-        traceFlags: 1, // Sampled
+        traceFlags: 1,
       },
       parentSpanId: parentContext?.spanId,
       name,
@@ -84,10 +107,6 @@ export class BTOSOpenTelemetryTracer {
     return span;
   }
 
-  /**
-   * Formats trace context as W3C `traceparent` HTTP header
-   * Format: `00-{traceId}-{spanId}-01`
-   */
   public formatW3CTraceParent(context: OTelSpanContext): string {
     return `00-${context.traceId}-${context.spanId}-01`;
   }

@@ -1,0 +1,16 @@
+# Yike BTOS — Production Prometheus Scrape Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alerts.yml"
+
+scrape_configs:
+  - job_name: "yike-btos"
+    metrics_path: "/api/metrics"
+    static_configs:
+      - targets: ["control.stankings.com:443", "localhost:3000"]
+        labels:
+          environment: "production"
+          application: "yike-btos"

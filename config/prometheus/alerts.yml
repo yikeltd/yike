@@ -1,0 +1,30 @@
+# Yike BTOS — Production Prometheus Alert Rules
+groups:
+  - name: btos_alerts
+    rules:
+      - alert: DatabaseDegraded
+        expr: btos_health_status{subsystem="database"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "BTOS Database Connection Failure"
+          description: "PostgreSQL Database connection query failed."
+
+      - alert: PaymentGatewayDegraded
+        expr: btos_health_status{subsystem=~"paystack|safehaven|korapay"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Payment Provider Outage"
+          description: "Payment provider {{ $labels.subsystem }} is degraded or unresponsive."
+
+      - alert: HighSagaFailures
+        expr: rate(btos_saga_failures_total[5m]) > 2
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Saga Workflow Step Failures"
+          description: "Saga step failures exceeding threshold of 2/min."
