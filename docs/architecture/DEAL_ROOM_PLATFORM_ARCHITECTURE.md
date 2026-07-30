@@ -1,8 +1,8 @@
-# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 8 Certified)
+# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 9 Certified)
 
 > **Platform**: Yike.ng (Stankings Marketplace Platform)  
 > **Author**: Antigravity Platform Architecture Team  
-> **Status**: APPROVED & ENTERPRISE EXECUTION PLATFORM IMPLEMENTED
+> **Status**: APPROVED & VISUAL COLLABORATION PLATFORM IMPLEMENTED
 
 ---
 
@@ -16,6 +16,9 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  [ BUYER ]  [ SELLER ]  [ AGENT ]  [ FIELD INSPECTOR ]  [ LEGAL PARTNER ]   │
 ├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ VISUAL COLLABORATION STAGE (HD Live Video / Remote Inspection / Snaps) │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ OPERATIONAL EXECUTION CENTER (Field Worksheets, Personnel & Checklists)│  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
@@ -36,15 +39,15 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ CONVERSATION INTELLIGENCE STREAM (Slack/Linear/Stripe Style Feed)     │  │
-│  │ ├─ System Event Pills (Buyer Joined, Execution Completed)             │  │
+│  │ ├─ System Event Pills (Buyer Joined, Visual Session Started)          │  │
 │  │ ├─ User Chat Bubbles (Text, Attachments, Read Receipts)               │  │
 │  │ ├─ Embedded Offer Cards (v1, v2 Counter, Accepted, Expired)           │  │
-│  │ ├─ Embedded Execution & Inspection Cards (Checklists, Pass/Fail)     │  │
+│  │ ├─ Embedded Call & Visual Cards (Video Sessions, Duration, Snapshots) │  │
 │  │ └─ Embedded Verification Cards (Identity, Title, 94% Confidence)      │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Execution Aggregate      │ │ Universal Attachment      │ │ Universal │  │
-│  │ (Field Worksheets)       │ │ Engine (Polymorphic Files)│ │ Comment   │  │
+│  │ VisualSession Aggregate  │ │ Universal Attachment      │ │ Universal │  │
+│  │ (Remote Inspection Snaps)│ │ Engine (Polymorphic Files)│ │ Comment   │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
 │  │ Evidence Aggregate       │ │ Universal Legal Audit Log │ │ Search    │  │
@@ -58,13 +61,13 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 
 ---
 
-## 2. Enterprise Execution Platform Architecture (Phase 8)
+## 2. Visual Collaboration Platform Architecture (Phase 9)
 
-- **`ExecutionAggregate`** (`src/lib/deal-room/execution/types.ts`): Independent domain aggregate for operational real-world execution tasks (`vehicle_inspection`, `property_inspection`, `drone_survey`, `lawyer_verification`, `surveyor_visit`, `document_pickup`, `asset_delivery`, `installation`, `maintenance`, `commissioning`, `site_visit`, `remote_inspection`).
-- **Configurable Checklist Engine (`ChecklistGroup` / `ChecklistItem`)**: Supports multi-category checklists (Exterior, Engine, Documents, Safety) with item states (`pass`, `fail`, `not_applicable`, `pending`) and real-time completion percentage calculations.
-- **Personnel Assignment**: Supports assigning Inspectors, Mechanics, Lawyers, Surveyors, and Delivery Agents (`ExecutionAssignee`).
-- **`ExecutionService`** (`src/lib/deal-room/execution/service.ts`): Methods for `requestExecution()`, `assignPersonnel()`, `updateChecklistItem()`, audit logging, Trust Platform auto-triggering upon 100% completion, and embedding `inspection_card` into stream.
-- **`ExecutionCenterPanel`** (`src/components/deal-room/execution-center-panel.tsx`): Operational Work Center UI panel featuring personnel badges, progress bar, category accordions, and checklist action triggers.
+- **`VisualSessionAggregate`** (`src/lib/deal-room/visual/types.ts`): Domain aggregate managing real-time visual collaboration (`video_call`, `remote_inspection`, `screen_share`, `presentation`, `evidence_capture`, `multi_camera`).
+- **Live Evidence Snapshot Capture**: Snapshots taken during live video sessions auto-upload directly to `EvidenceService.uploadEvidence()` as immutable inspection photo evidence attached to the workspace.
+- **Provider-Agnostic Media Adapter**: Plugs directly into `CommunicationProvider` (`AgoraCommunicationAdapter`), maintaining zero vendor lock-in.
+- **`VisualSessionService`** (`src/lib/deal-room/visual/service.ts`): Methods for `startVisualSession()`, `captureSnapshot()`, `endVisualSession()`, audit logging, and embedding `call_card` into stream.
+- **`VisualCollaborationOverlay`** (`src/components/deal-room/visual-collaboration-overlay.tsx`): Premium responsive UI overlay with video stage, floating controls, snapshot trigger button, and Picture-in-Picture window.
 
 ---
 
@@ -92,8 +95,9 @@ src/
 │       ├── trust/                       # Phase 6 Trust & Verification Platform
 │       ├── evidence/                    # Phase 7 Enterprise Evidence Platform
 │       ├── execution/                   # Phase 8 Enterprise Execution Platform
-│       │   ├── types.ts                 # ExecutionAggregate & ChecklistGroup
-│       │   ├── service.ts               # ExecutionService & Repository
+│       ├── visual/                      # Phase 9 Visual Collaboration Platform
+│       │   ├── types.ts                 # VisualSessionAggregate & SnapshotRecord
+│       │   ├── service.ts               # VisualSessionService & Repository
 │       │   └── index.ts                 # Barrel exports
 └── components/
     └── deal-room/
@@ -104,7 +108,8 @@ src/
         ├── voice-call-overlay.tsx       # FaceTime-styled In-Call UI
         ├── trust-center-panel.tsx       # Banking-styled Trust Center Dashboard UI
         ├── evidence-center-panel.tsx    # Enterprise Proof Vault UI
-        └── execution-center-panel.tsx   # Operational Execution Work Center UI
+        ├── execution-center-panel.tsx   # Operational Execution Work Center UI
+        └── visual-collaboration-overlay.tsx # Responsive Visual Overlay UI
 ```
 
 ---
@@ -112,10 +117,9 @@ src/
 ## 4. Architectural Self-Audit (CTO Verification Questions)
 
 1. **Did this phase introduce architectural debt?**
-   - **No.** Execution was created as an independent aggregate (`ExecutionAggregate`) managing operational work. Inspections are simply one execution type. It attaches proof to `EvidenceService` and triggers `VerificationService` without tight coupling.
+   - **No.** Visual Collaboration extends the existing `CommunicationProvider` adapter pattern cleanly. Live snapshots plug directly into `EvidenceService.uploadEvidence()` without duplicating file or storage logic.
 2. **What changes at 50 million users?**
-   - The in-memory `ExecutionRepository` transitions to PostgreSQL database tables (`execution_aggregates`, `execution_checklists`, `execution_assignees`) with background worker queues for offline field verifier sync via PWA/offline storage.
+   - The in-memory `VisualSessionRepository` transitions to PostgreSQL database tables (`visual_sessions`, `session_snapshots`) with WebRTC Selective Forwarding Unit (SFU) scaling (e.g. LiveKit or Agora Cloud Recording).
 3. **Which future phases became simpler?**
-   - **Phase 9 (Video Communication Platform)**: Video calls can attach directly to in-progress execution checklists for remote virtual inspections.
-   - **Phase 10 (AI Intelligence Platform)**: AI can parse completed checklist items and photo evidence to detect anomalies or vehicle damage automatically.
-   - **Phase 11 (Escrow & Payments)**: Escrow release conditions can evaluate `execution.executionStatus === "completed"` programmatically.
+   - **Phase 10 (AI Intelligence Platform)**: Live video frames and snapshots can be fed directly to Gemini vision models for automated damage detection or land boundaries.
+   - **Phase 13 (Dispute Resolution)**: Visual session recordings and instant snapshots serve as timestamped evidence in dispute arbitrations.
