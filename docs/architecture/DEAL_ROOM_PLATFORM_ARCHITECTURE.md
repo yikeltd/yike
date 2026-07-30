@@ -1,8 +1,8 @@
-# Yike Transaction Workspace Platform Architecture Specification (Phase 1, 1.5, 2 & Phase 3 Hardened)
+# Yike Transaction Workspace Platform Architecture Specification (Phase 1, 1.5, 2, 3 & Phase 4 Hardened)
 
 > **Platform**: Yike.ng (Stankings Marketplace Platform)  
 > **Author**: Antigravity Platform Architecture Team  
-> **Status**: APPROVED & NEGOTIATION ENGINE IMPLEMENTED
+> **Status**: APPROVED & APPOINTMENT & SCHEDULING ENGINE IMPLEMENTED
 
 ---
 
@@ -17,6 +17,9 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  [ BUYER ]  [ SELLER ]  [ AGENT ]  [ FIELD INSPECTOR ]  [ LEGAL PARTNER ]   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ APPOINTMENT & SCHEDULING ENGINE (Viewings, Inspections, Test Drives)   │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ PINNED NEGOTIATION SUMMARY PANEL (Current vs Original, Difference, vN)│  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
@@ -24,16 +27,16 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  │ ├─ System Event Pills (Buyer Joined, Inspection Requested)            │  │
 │  │ ├─ User Chat Bubbles (Text, Attachments, Read Receipts)               │  │
 │  │ ├─ Embedded Offer Cards (v1, v2 Counter, Accepted, Expired)           │  │
-│  │ ├─ Embedded Inspection Cards (Scheduled, Rating, Summary)            │  │
+│  │ ├─ Embedded Inspection & Appointment Cards (Scheduled, Address, Status)│  │
 │  │ └─ Embedded Document Cards (Title, Version, Verified Badge)           │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Negotiation Aggregate    │ │ Universal Attachment      │ │ Universal │  │
-│  │ (Immutable Git-Versions) │ │ Engine (Polymorphic Files)│ │ Comment   │  │
+│  │ Appointment Aggregate    │ │ Universal Attachment      │ │ Universal │  │
+│  │ (Milestone Scheduling)   │ │ Engine (Polymorphic Files)│ │ Comment   │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Transaction Aggregate    │ │ Universal Legal Audit Log │ │ Search    │  │
-│  │ (Escrow/Payment/Dispute) │ │ Engine (Compliance)       │ │ Index     │  │
+│  │ Negotiation Aggregate    │ │ Universal Legal Audit Log │ │ Search    │  │
+│  │ (Immutable Git-Versions) │ │ Engine (Compliance)       │ │ Index     │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ DATABASE & SECURE STORAGE LAYER (Supabase / PostgreSQL)               │  │
@@ -43,13 +46,13 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 
 ---
 
-## 2. Negotiation Engine Architecture (Phase 3)
+## 2. Appointment & Scheduling Engine Architecture (Phase 4)
 
-- **`NegotiationAggregate`** (`src/lib/deal-room/negotiation/types.ts`): Dedicated business aggregate separate from Conversation and Transaction. Manages commercial intent.
-- **Git-Style Immutable Versioning (`NegotiationVersion`)**: Never overwrites an offer. Revision history builds version array (`v1` ➔ `v2` ➔ `v3` ➔ `v4`).
-- **`NegotiationSummary`**: Pre-calculated summary metrics (`currentAmount`, `originalAskingPrice`, `differenceAmount`, `percentageDifference`, `totalOffersExchanged`, `expiresAt`).
-- **`NegotiationService`** (`src/lib/deal-room/negotiation/service.ts`): Methods for `submitOffer()`, `counterOffer()`, `acceptOffer()`, `getSummary()`, audit logging, and embedding `offer_card` into stream.
-- **`NegotiationSummaryPanel`** (`src/components/deal-room/negotiation-summary-panel.tsx`): Pinned Stripe/Linear-styled UI summary panel displaying live metrics and revision history dropdown.
+- **`AppointmentAggregate`** (`src/lib/deal-room/appointments/types.ts`): Independent domain aggregate representing operational real-world milestones (`property_viewing`, `vehicle_inspection`, `test_drive`, `virtual_meeting`, `office_meeting`, `site_visit`, `document_signing`).
+- **Reschedule Record Tracking (`RescheduleRecord`)**: Logs every reschedule attempt with previous time, new time, actor, and reason.
+- **Provider-Agnostic Calendar Interface**: Exposes hooks for future Google Calendar, Apple Calendar, and Outlook sync without hardcoded dependencies.
+- **`AppointmentService`** (`src/lib/deal-room/appointments/service.ts`): Methods for `requestAppointment()`, `confirmAppointment()`, `rescheduleAppointment()`, audit logging, and embedding `inspection_card` into stream.
+- **`AppointmentCard`** (`src/components/deal-room/appointment-card.tsx`): Rich embedded UI card rendering appointment type, date, time, location, participant count, and action buttons.
 
 ---
 
@@ -72,8 +75,9 @@ src/
 │       ├── service.ts                   # Hardened core service layer
 │       ├── conversation/                # Phase 2 Conversation Intelligence Layer
 │       ├── negotiation/                 # Phase 3 Negotiation Engine
-│       │   ├── types.ts                 # NegotiationAggregate & NegotiationVersion
-│       │   ├── service.ts               # NegotiationService & Repository
+│       ├── appointments/                # Phase 4 Appointment & Scheduling Engine
+│       │   ├── types.ts                 # AppointmentAggregate & AppointmentLocation
+│       │   ├── service.ts               # AppointmentService & Repository
 │       │   └── index.ts                 # Barrel exports
 │       └── communications/
 │           └── provider.ts              # Communication abstraction layer
@@ -81,11 +85,12 @@ src/
     └── deal-room/
         ├── deal-room-shell.tsx          # Reusable Deal Room UI Shell
         ├── conversation-workspace.tsx   # Production Conversation Workspace UI
-        └── negotiation-summary-panel.tsx# Pinned Negotiation Summary UI
+        ├── negotiation-summary-panel.tsx# Pinned Negotiation Summary UI
+        └── appointment-card.tsx         # Rich Embedded Appointment Card UI
 ```
 
 ---
 
-## 4. Final Phase 3 Certification
+## 4. Final Phase 4 Certification
 
-The Yike Structured Negotiation Engine is certified. Negotiations are dedicated, immutable, version-controlled, searchable aggregates rendering inside both the Conversation Stream and the Pinned Summary Panel. Future Voice Calls, Video Calls, and Escrow Payments will attach directly to accepted negotiations without architectural changes.
+The Yike Appointment & Scheduling Engine is certified. Viewings, field inspections, test drives, virtual meetings, and document signings are dedicated business milestones integrated into both the Transaction Workspace and Conversation Stream. Future Agora Voice and Video calls can attach directly to confirmed appointments without altering core architecture.
