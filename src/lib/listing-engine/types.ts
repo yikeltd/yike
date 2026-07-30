@@ -1,13 +1,102 @@
 /**
- * Metadata-driven listing engine — core types.
- *
- * Aligns with docs/architecture/METADATA_LISTING_ENGINE.md. These types are the
- * single source of truth for every listing category's field graph. Engines in
- * this module are category-agnostic: they resolve behaviour from this metadata
- * only, never from `if (vehicle)` / `if (property)` conditionals.
+ * UNIVERSAL LISTING FLOW ENGINE — CORE TYPES & SCHEMAS
+ * Configuration-driven architecture for all Yike marketplace categories.
  */
 
 import type { PhotoSchema, PhotoSchemaVariant } from "./photo-schema/types";
+
+export type FlowState =
+  | "category_selected"
+  | "details_started"
+  | "details_complete"
+  | "media_uploaded"
+  | "review_ready"
+  | "publishing"
+  | "published";
+
+export type QuestionType =
+  | "text"
+  | "number"
+  | "currency"
+  | "dropdown"
+  | "searchable_select"
+  | "radio"
+  | "checkbox"
+  | "toggle"
+  | "date"
+  | "multi_select"
+  | "photo_upload"
+  | "document_upload"
+  | "location_picker"
+  | "card_select";
+
+export type QuestionOption = {
+  id: string;
+  label: string;
+  subtitle?: string;
+  assetCategory?: "cars" | "props";
+  assetName?: string;
+  badge?: string;
+};
+
+export type DependencyCondition = {
+  field: string;
+  operator: "equals" | "not_equals" | "contains" | "in" | "truthy" | "falsy";
+  value?: unknown;
+};
+
+export type ValidationRule =
+  | { type: "required"; message?: string }
+  | { type: "min"; value: number; message?: string }
+  | { type: "max"; value: number; message?: string }
+  | { type: "minLength"; value: number; message?: string }
+  | { type: "maxLength"; value: number; message?: string }
+  | { type: "pattern"; value: string | RegExp; message?: string }
+  | { type: "minPhotos"; value: number; message?: string }
+  | { type: "integer"; message?: string }
+  | { type: "when"; visible?: VisibilityRule; rules: ValidationRule[]; message?: string }
+  | { type: "rule"; id: string; message?: string };
+
+export type QuestionFieldConfig = {
+  id: string;
+  label: string;
+  type: QuestionType;
+  placeholder?: string;
+  helpText?: string;
+  options?: readonly QuestionOption[] | QuestionOption[];
+  validation?: ValidationRule[];
+  dependencies?: DependencyCondition[];
+  defaultValue?: unknown;
+  stepId: string;
+};
+
+export type ListingStepConfig = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  fields: QuestionFieldConfig[];
+};
+
+export type ListingCategoryConfig = {
+  id: string;
+  label: string;
+  description: string;
+  assetCategory: "cars" | "props";
+  defaultAsset: string;
+  steps: ListingStepConfig[];
+};
+
+export type DraftState = {
+  categoryId: string;
+  currentState: FlowState;
+  stepIndex: number;
+  data: Record<string, unknown>;
+  lastSavedAt: string;
+};
+
+/* ========================================================================= */
+/* LEGACY ENGINE BACKWARD COMPATIBILITY TYPES */
+/* ========================================================================= */
 
 export type ListingCategoryId =
   | "vehicle"
@@ -54,22 +143,10 @@ export type VisibilityRule =
   | { op: "rule"; id: string };
 
 export type DependencyRule = {
-  /** Field ids this field's options / value depend on. */
   watch: string[];
-  /** Catalog id (see catalogs/registry.ts) that resolves options from current values. */
   optionsFrom: string;
-  /** Clear this field's value when it is no longer a valid option (default true). */
   clearIfInvalid?: boolean;
 };
-
-export type ValidationRule =
-  | { type: "required" }
-  | { type: "min" | "max"; value: number }
-  | { type: "minLength" | "maxLength"; value: number }
-  | { type: "pattern"; value: string; message?: string }
-  | { type: "integer" }
-  | { type: "when"; visible?: VisibilityRule; rules: ValidationRule[] }
-  | { type: "rule"; id: string };
 
 export type SuggestionSource =
   | { type: "static"; options: FieldOption[] }
@@ -101,14 +178,12 @@ export type ListingFieldDef = {
   description?: string;
   defaultValue?: unknown;
   advanced?: boolean;
-  /** Static option list — for selects with a fixed, non-catalog option set. */
   options?: FieldOption[];
   visible?: VisibilityRule;
   dependsOn?: DependencyRule;
   validation?: ValidationRule[];
   suggestion?: SuggestionSource;
   autofill?: { from?: string; confirmOnly?: boolean };
-  /** Payload key this field maps to on submit; defaults to `id`. */
   submitKey?: string;
   search?: SearchMapping;
   admin?: AdminMapping;
@@ -126,22 +201,12 @@ export type ListingStepDef = {
 export type PhotoRules = {
   min: number;
   max: number;
-  /**
-   * Category photo taxonomy — tags, upload sequence, cover prefs, recommended shots.
-   * UI must render this schema only (never hardcode vehicle/property labels).
-   */
   schema: PhotoSchema;
-  /** Variant taxonomies (e.g. land vs residential) resolved from listing values. */
   schemaVariants?: PhotoSchemaVariant[];
   requiredAngles?: string[];
-  /**
-   * Soft recommended-shot chips. Prefer omitting and using `schema.recommendedShots`
-   * via `photoChecklistStatus` / resolvePhotoSchema.
-   */
   tips?: string[];
   recommendedCover?: "first" | "sharpest";
   accept?: ("image/jpeg" | "image/png" | "image/webp")[];
-  /** Tighten only; never loosen platform MEDIA_LIMITS. */
   maxUploadBytes?: number;
   warnings?: string[];
 };
@@ -177,10 +242,8 @@ export type CategoryManifest = {
   capabilities?: string[];
 };
 
-/** Seller-entered / resolved field values keyed by field id. */
 export type ListingValues = Record<string, unknown>;
 
-/** A field def resolved against current values — value + computed options/suggestions. */
 export type ResolvedField = ListingFieldDef & {
   value: unknown;
   options: FieldOption[];
@@ -205,7 +268,6 @@ export type ValidationResult = {
   errors: Record<string, string>;
 };
 
-/** Named rule evaluator lookups — referenced by metadata `{ op: "rule", id }` / `{ type: "rule", id }`. */
 export type VisibilityRuleEvaluator = (values: ListingValues) => boolean;
 export type ValidationRuleEvaluator = (
   values: ListingValues,

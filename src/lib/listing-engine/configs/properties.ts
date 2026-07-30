@@ -1,0 +1,136 @@
+import type { ListingCategoryConfig } from "../types";
+
+export const PROPERTIES_LISTING_CONFIG: ListingCategoryConfig = {
+  id: "properties",
+  label: "Property & Real Estate",
+  description: "List houses, apartments, land, duplexes, commercial buildings, or warehouses.",
+  assetCategory: "props",
+  defaultAsset: "house",
+  steps: [
+    {
+      id: "type_selection",
+      title: "Select Property Category",
+      subtitle: "Choose the structure type for your property listing.",
+      fields: [
+        {
+          id: "property_type",
+          label: "Property Category",
+          type: "card_select",
+          stepId: "type_selection",
+          validation: [{ type: "required", message: "Please select a property category." }],
+          options: [
+            { id: "house", label: "Detached House", subtitle: "Standalone family home", assetCategory: "props", assetName: "house" },
+            { id: "apartment", label: "Flat / Apartment", subtitle: "Multi-family residential flat", assetCategory: "props", assetName: "apartment", badge: "Popular" },
+            { id: "duplex", label: "Duplex & Terrace", subtitle: "2-story terrace or semi-detached", assetCategory: "props", assetName: "duplex" },
+            { id: "land", label: "Land & Plots", subtitle: "Residential & commercial plots", assetCategory: "props", assetName: "land" },
+            { id: "commercial", label: "Commercial Building", subtitle: "Office space, plaza & shops", assetCategory: "props", assetName: "commercial" },
+            { id: "warehouse", label: "Warehouse & Storage", subtitle: "Industrial space & depots", assetCategory: "props", assetName: "warehouse" },
+            { id: "hotel", label: "Shortlet / Hotel", subtitle: "Serviced apartment & rooms", assetCategory: "props", assetName: "hotel" },
+            { id: "other-property", label: "Other Real Estate", subtitle: "Mixed-use & specialty plots", assetCategory: "props", assetName: "other-property" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "property_details",
+      title: "Property Details & Features",
+      subtitle: "Provide specifications, room counts, and pricing for interested buyers.",
+      fields: [
+        {
+          id: "listing_type",
+          label: "Listing Purpose",
+          type: "radio",
+          stepId: "property_details",
+          defaultValue: "sale",
+          options: [
+            { id: "sale", label: "For Sale" },
+            { id: "rent", label: "For Rent" },
+            { id: "shortlet", label: "Shortlet / Daily" },
+          ],
+          validation: [{ type: "required", message: "Please select listing purpose." }],
+        },
+        {
+          id: "rental_period",
+          label: "Payment Frequency",
+          type: "dropdown",
+          stepId: "property_details",
+          dependencies: [{ field: "listing_type", operator: "equals", value: "rent" }],
+          options: [
+            { id: "year", label: "Per Year" },
+            { id: "month", label: "Per Month" },
+          ],
+        },
+        {
+          id: "bedrooms",
+          label: "Bedrooms",
+          type: "number",
+          placeholder: "e.g. 4",
+          stepId: "property_details",
+          dependencies: [
+            { field: "property_type", operator: "not_equals", value: "land" },
+            { field: "property_type", operator: "not_equals", value: "warehouse" },
+            { field: "property_type", operator: "not_equals", value: "commercial" },
+          ],
+          validation: [{ type: "required", message: "Bedrooms count is required." }],
+        },
+        {
+          id: "bathrooms",
+          label: "Bathrooms",
+          type: "number",
+          placeholder: "e.g. 5",
+          stepId: "property_details",
+          dependencies: [{ field: "property_type", operator: "not_equals", value: "land" }],
+        },
+        {
+          id: "price",
+          label: "Asking Price / Rent (₦)",
+          type: "currency",
+          placeholder: "e.g. 85,000,000",
+          stepId: "property_details",
+          validation: [
+            { type: "required", message: "Price is required." },
+            { type: "min", value: 50000, message: "Price must be at least ₦50,000." },
+          ],
+        },
+        {
+          id: "state",
+          label: "State",
+          type: "text",
+          placeholder: "e.g. Lagos, Rivers, Oyo",
+          stepId: "property_details",
+          validation: [{ type: "required", message: "State is required." }],
+        },
+        {
+          id: "city",
+          label: "City / Area",
+          type: "text",
+          placeholder: "e.g. Lekki Phase 1, Ikoyi, Ikeja GRA",
+          stepId: "property_details",
+          validation: [{ type: "required", message: "City/Area is required." }],
+        },
+      ],
+    },
+    {
+      id: "media_photos",
+      title: "Upload Photos & Complete",
+      subtitle: "Add high-resolution photos of the property exterior and rooms.",
+      fields: [
+        {
+          id: "photos",
+          label: "Property Photos",
+          type: "photo_upload",
+          stepId: "media_photos",
+          helpText: "Upload at least 2 clear photos. Drag to reorder.",
+          validation: [{ type: "minPhotos", value: 2, message: "Please upload at least 2 photos." }],
+        },
+        {
+          id: "description",
+          label: "Property Description",
+          type: "text",
+          placeholder: "Describe the estate amenities, title document type (C of O, Governor's Consent), security...",
+          stepId: "media_photos",
+        },
+      ],
+    },
+  ],
+};
