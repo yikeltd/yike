@@ -15,10 +15,8 @@ import {
   X,
   CreditCard,
   Lock,
-  Sparkles,
   CheckCircle2,
   History,
-  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -38,6 +36,7 @@ type Plan = {
   premiumBadge?: string;
   theme: "green" | "gold" | "purple" | "navy";
   ctaText: string;
+  illustration: string;
   current?: boolean;
 };
 
@@ -52,6 +51,7 @@ const PLANS: Plan[] = [
     features: ["Basic verification", "Basic insights", "Standard review"],
     theme: "green",
     ctaText: "Current Plan",
+    illustration: "/images/plans/core-illustration.png",
     current: true,
   },
   {
@@ -71,6 +71,7 @@ const PLANS: Plan[] = [
     ],
     theme: "gold",
     ctaText: "Choose Pro",
+    illustration: "/images/plans/pro-illustration.png",
   },
   {
     id: "elite",
@@ -89,6 +90,7 @@ const PLANS: Plan[] = [
     ],
     theme: "purple",
     ctaText: "Choose Elite",
+    illustration: "/images/plans/elite-illustration.png",
   },
   {
     id: "prime",
@@ -110,6 +112,7 @@ const PLANS: Plan[] = [
     ],
     theme: "navy",
     ctaText: "Choose Prime",
+    illustration: "/images/plans/prime-illustration.png",
   },
 ];
 
@@ -126,7 +129,6 @@ export function SellerPlansView() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [activatedPlan, setActivatedPlan] = useState<Plan | null>(null);
-
   const [selectedProvider, setSelectedProvider] = useState<"paystack" | "korapay">("paystack");
 
   useEffect(() => {
@@ -140,7 +142,6 @@ export function SellerPlansView() {
     }
   }, []);
 
-  // Discount Multipliers per billing cycle
   const discountPct = billingCycle === 3 ? 10 : billingCycle === 6 ? 20 : billingCycle === 12 ? 30 : 0;
   const multiplier = (100 - discountPct) / 100;
 
@@ -158,7 +159,6 @@ export function SellerPlansView() {
     setSelectedPlanForCheckout(plan);
   }
 
-  // Real Multi-Gateway Checkout & Server Verification Flow (Paystack & Korapay)
   async function handleStartPayment() {
     if (!selectedPlanForCheckout) return;
     setErrorMessage(null);
@@ -182,7 +182,6 @@ export function SellerPlansView() {
         return;
       }
 
-      // Handle Staging / Dev Mode Activation
       if (!data.paymentsLive) {
         setPaymentStep("verifying");
         setActivatedPlan(selectedPlanForCheckout);
@@ -191,12 +190,9 @@ export function SellerPlansView() {
         return;
       }
 
-      // Handle Live Paystack Checkout Window
       if (data.authorizationUrl) {
         setPaymentStep("waiting_payment");
         const popup = window.open(data.authorizationUrl, "_blank", "width=500,height=700");
-
-        // Poll for backend transaction verification
         const reference = data.reference;
         const interval = setInterval(async () => {
           try {
@@ -216,44 +212,36 @@ export function SellerPlansView() {
           }
         }, 2500);
 
-        // Clear poll if popup closed or timeout (5 mins)
         setTimeout(() => clearInterval(interval), 300000);
       }
-    } catch (err: unknown) {
+    } catch {
       setErrorMessage("Network error initializing payment. Please try again.");
       setPaymentStep("error");
     }
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#f8fafc] text-navy pb-24 select-none">
-      {/* FULL-SCREEN SUCCESS CELEBRATION VIEW */}
+    <div className="min-h-[100dvh] bg-white text-[#031B4E] pb-24 select-none">
+      {/* CELEBRATION MODAL */}
       {showCelebration && activatedPlan ? (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-navy p-6 text-white text-center animate-in fade-in zoom-in-95 duration-300">
-          {/* Confetti & Glow Background Effect */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gold/30 via-navy to-navy pointer-events-none" />
-
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#031B4E] p-6 text-white text-center animate-in fade-in zoom-in-95 duration-300">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#E4B547]/30 via-[#031B4E] to-[#031B4E] pointer-events-none" />
           <div className="relative pt-12 space-y-4 max-w-sm mx-auto">
-            {/* Celebration Icon Badge */}
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-gold via-amber-400 to-amber-600 text-navy shadow-2xl ring-4 ring-gold/40 animate-bounce">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#E4B547] via-amber-400 to-amber-600 text-[#031B4E] shadow-2xl ring-4 ring-[#E4B547]/40 animate-bounce">
               <CheckCircle2 className="h-12 w-12 stroke-[2.5]" />
             </div>
-
             <div className="space-y-1">
-              <span className="inline-block rounded-full bg-gold/20 border border-gold/40 px-3 py-1 text-[11px] font-black uppercase text-gold">
+              <span className="inline-block rounded-full bg-[#E4B547]/20 border border-[#E4B547]/40 px-3 py-1 text-[11px] font-black uppercase text-[#E4B547]">
                 Payment Successful
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">
-                Welcome to <span className="text-gold">{activatedPlan.name}</span>!
+                Welcome to <span className="text-[#E4B547]">{activatedPlan.name}</span>!
               </h2>
             </div>
-
             <p className="text-xs font-semibold text-white/80 leading-relaxed px-2">
-              Your subscription is now active. All {activatedPlan.name} membership benefits, verified business status, and listing limits are now unlocked!
+              Your subscription is active. All {activatedPlan.name} membership benefits and listing limits are unlocked!
             </p>
           </div>
-
-          {/* Celebration Action Buttons */}
           <div className="relative pb-10 space-y-2.5 w-full max-w-xs mx-auto">
             <button
               type="button"
@@ -261,112 +249,89 @@ export function SellerPlansView() {
                 setShowCelebration(false);
                 router.push("/agent");
               }}
-              className="pressable flex w-full items-center justify-center gap-2 rounded-2xl bg-gold py-3.5 text-xs font-black text-navy shadow-xl hover:bg-gold-light active:scale-98"
+              className="pressable flex w-full items-center justify-center gap-2 rounded-2xl bg-[#E4B547] py-3.5 text-xs font-black text-[#031B4E] shadow-xl hover:bg-amber-400 active:scale-98"
             >
               <span>View My Profile</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowCelebration(false);
-                router.push("/agent/listings/choose");
-              }}
-              className="pressable flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 py-3.5 text-xs font-bold text-white hover:bg-white/20 active:scale-98"
-            >
-              <span>List Another Property</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowCelebration(false);
-                router.push("/discover");
-              }}
-              className="pressable text-xs font-bold text-white/60 hover:text-white pt-1 block w-full"
-            >
-              Continue Browsing
             </button>
           </div>
         </div>
       ) : (
-        <div className="mx-auto max-w-2xl px-3.5 pt-4 space-y-4">
+        <div className="mx-auto max-w-md px-4 pt-4 space-y-4">
           {/* PAGE TITLE */}
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-navy">
+            <h1 className="text-2xl sm:text-[28px] font-black tracking-tight text-[#031B4E]">
               Seller plans
             </h1>
-
             <button
               type="button"
               onClick={() => setHistorySheetOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-navy/15 bg-white px-3 py-1.5 text-xs font-bold text-navy shadow-xs hover:bg-slate-50"
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-[#031B4E] shadow-2xs hover:bg-slate-50"
             >
-              <History className="h-3.5 w-3.5 text-gold-dark" />
-              <span>Payment History</span>
+              <History className="h-3.5 w-3.5 text-[#E4B547]" />
+              <span>History</span>
             </button>
           </div>
 
-          {/* BILLING SELECTOR TABS */}
-          <div className="grid grid-cols-4 gap-1 rounded-2xl bg-slate-200/70 p-1 border border-slate-300/60 shadow-inner">
+          {/* BILLING CYCLE SELECTOR */}
+          <div className="grid grid-cols-4 gap-1 rounded-xl bg-white p-1 border border-slate-200/90 shadow-2xs text-center items-center">
             <button
               type="button"
               onClick={() => setBillingCycle(1)}
               className={cn(
-                "flex flex-col items-center justify-center py-2 rounded-xl text-xs font-black transition-all",
+                "py-2 rounded-lg text-xs font-bold transition-all",
                 billingCycle === 1
-                  ? "bg-white text-navy shadow-sm ring-1 ring-black/5"
-                  : "text-navy/60 hover:text-navy"
+                  ? "bg-white border border-[#E4B547] text-[#031B4E] shadow-2xs"
+                  : "text-[#031B4E]/60 hover:text-[#031B4E]"
               )}
             >
-              <span>Monthly</span>
+              Monthly
             </button>
 
             <button
               type="button"
               onClick={() => setBillingCycle(3)}
               className={cn(
-                "flex flex-col items-center justify-center py-1.5 rounded-xl text-xs font-black transition-all",
+                "py-1 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center",
                 billingCycle === 3
-                  ? "bg-white text-navy shadow-sm ring-1 ring-black/5"
-                  : "text-navy/60 hover:text-navy"
+                  ? "bg-white border border-[#E4B547] text-[#031B4E] shadow-2xs"
+                  : "text-[#031B4E]/60 hover:text-[#031B4E]"
               )}
             >
               <span>3 Months</span>
-              <span className="text-[9px] font-extrabold text-emerald-600">Save 10%</span>
+              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/90 rounded-md px-1 py-0.5 mt-0.5">Save 10%</span>
             </button>
 
             <button
               type="button"
               onClick={() => setBillingCycle(6)}
               className={cn(
-                "flex flex-col items-center justify-center py-1.5 rounded-xl text-xs font-black transition-all",
+                "py-1 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center",
                 billingCycle === 6
-                  ? "bg-white text-navy shadow-sm ring-1 ring-black/5"
-                  : "text-navy/60 hover:text-navy"
+                  ? "bg-white border border-[#E4B547] text-[#031B4E] shadow-2xs"
+                  : "text-[#031B4E]/60 hover:text-[#031B4E]"
               )}
             >
               <span>6 Months</span>
-              <span className="text-[9px] font-extrabold text-emerald-600">Save 20%</span>
+              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/90 rounded-md px-1 py-0.5 mt-0.5">Save 20%</span>
             </button>
 
             <button
               type="button"
               onClick={() => setBillingCycle(12)}
               className={cn(
-                "flex flex-col items-center justify-center py-1.5 rounded-xl text-xs font-black transition-all",
+                "py-1 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center",
                 billingCycle === 12
-                  ? "bg-white text-navy shadow-sm ring-1 ring-black/5"
-                  : "text-navy/60 hover:text-navy"
+                  ? "bg-white border border-[#E4B547] text-[#031B4E] shadow-2xs"
+                  : "text-[#031B4E]/60 hover:text-[#031B4E]"
               )}
             >
               <span>12 Months</span>
-              <span className="text-[9px] font-extrabold text-emerald-600">Save 30%</span>
+              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/90 rounded-md px-1 py-0.5 mt-0.5">Save 30%</span>
             </button>
           </div>
 
-          {/* PLAN CARDS STACK */}
-          <div className="space-y-4">
+          {/* STACKED FULL-WIDTH PRICING CARDS */}
+          <div className="space-y-3.5">
             {PLANS.map((plan) => {
               const { monthly } = getCalculatedPrice(plan.monthlyBasePrice);
               const isNavyTheme = plan.theme === "navy";
@@ -375,52 +340,52 @@ export function SellerPlansView() {
                 <div
                   key={plan.id}
                   className={cn(
-                    "relative overflow-hidden rounded-3xl p-5 shadow-xl transition-all border-2",
-                    plan.theme === "green" && "border-emerald-300 bg-white text-navy",
-                    plan.theme === "gold" && "border-gold bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 text-navy ring-2 ring-gold/20",
-                    plan.theme === "purple" && "border-purple-300 bg-gradient-to-br from-purple-50/50 via-white to-purple-50/20 text-navy",
-                    plan.theme === "navy" && "border-navy bg-[#031B4E] text-white shadow-2xl"
+                    "relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all shadow-2xs border-2",
+                    plan.theme === "green" && "border-emerald-200/90 bg-white text-[#031B4E]",
+                    plan.theme === "gold" && "border-amber-400/90 bg-gradient-to-r from-amber-50/60 via-amber-50/20 to-amber-100/40 text-[#031B4E]",
+                    plan.theme === "purple" && "border-purple-400/90 bg-gradient-to-r from-purple-50/60 via-purple-50/20 to-purple-100/40 text-[#031B4E]",
+                    plan.theme === "navy" && "border-blue-950 bg-[#071330] text-white shadow-2xl"
                   )}
                 >
-                  {/* POPULAR OR PREMIUM BADGE */}
+                  {/* BADGES */}
                   {plan.popularBadge && (
-                    <div className="absolute top-0 right-0 rounded-bl-2xl bg-gold px-3 py-1 text-[10px] font-black uppercase text-navy shadow-xs flex items-center gap-1">
+                    <div className="absolute top-0 right-0 rounded-bl-xl bg-[#F59E0B] px-3 py-1 text-[10px] font-bold uppercase text-white shadow-2xs flex items-center gap-1 tracking-wide">
                       <span>★</span>
                       <span>{plan.popularBadge}</span>
                     </div>
                   )}
                   {plan.premiumBadge && (
-                    <div className="absolute top-3 right-3 rounded-full border border-gold/40 bg-gold/20 px-3 py-0.5 text-[10px] font-black uppercase text-gold backdrop-blur-md flex items-center gap-1">
+                    <div className="absolute top-3 right-3 rounded-lg border border-amber-400/60 bg-amber-400/10 px-2.5 py-1 text-[10px] font-bold uppercase text-amber-400 flex items-center gap-1">
                       <span>💎</span>
                       <span>{plan.premiumBadge}</span>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-12 gap-3 items-start">
-                    {/* LEFT DETAILS */}
-                    <div className="col-span-6 space-y-2">
+                  <div className="flex items-start gap-4">
+                    {/* LEFT COLUMN */}
+                    <div className="w-[125px] shrink-0 space-y-2">
                       {/* Icon */}
                       <div
                         className={cn(
-                          "flex h-10 w-10 items-center justify-center rounded-2xl border shadow-xs",
-                          plan.theme === "green" && "bg-emerald-100 border-emerald-200 text-emerald-800",
-                          plan.theme === "gold" && "bg-amber-100 border-amber-200 text-amber-900",
-                          plan.theme === "purple" && "bg-purple-100 border-purple-200 text-purple-900",
-                          plan.theme === "navy" && "bg-white/10 border-white/20 text-gold"
+                          "flex h-9 w-9 items-center justify-center rounded-full shrink-0",
+                          plan.theme === "green" && "bg-emerald-100/80 text-emerald-600",
+                          plan.theme === "gold" && "bg-amber-100 text-amber-600",
+                          plan.theme === "purple" && "bg-purple-100 text-purple-600",
+                          plan.theme === "navy" && "bg-blue-950/90 border border-blue-700/60 text-blue-400"
                         )}
                       >
-                        {plan.id === "core" && <User className="h-5 w-5" />}
-                        {plan.id === "pro" && <Crown className="h-5 w-5" />}
-                        {plan.id === "elite" && <Building2 className="h-5 w-5" />}
-                        {plan.id === "prime" && <Gem className="h-5 w-5" />}
+                        {plan.id === "core" && <User className="h-4.5 w-4.5" />}
+                        {plan.id === "pro" && <Crown className="h-4.5 w-4.5" />}
+                        {plan.id === "elite" && <Building2 className="h-4.5 w-4.5" />}
+                        {plan.id === "prime" && <Gem className="h-4.5 w-4.5" />}
                       </div>
 
                       <div>
-                        <h2 className="text-xl font-black tracking-tight">{plan.name}</h2>
+                        <h2 className="text-lg font-bold tracking-tight leading-tight">{plan.name}</h2>
                         <p
                           className={cn(
-                            "text-xs font-semibold",
-                            isNavyTheme ? "text-white/60" : "text-navy/60"
+                            "text-[11px] font-medium leading-tight",
+                            isNavyTheme ? "text-slate-300" : "text-slate-500"
                           )}
                         >
                           {plan.subtitle}
@@ -429,7 +394,7 @@ export function SellerPlansView() {
 
                       {/* Price */}
                       <div>
-                        <p className="text-2xl font-black tracking-tight">
+                        <p className="text-xl font-bold tracking-tight leading-none">
                           {plan.monthlyBasePrice === 0
                             ? "₦0"
                             : `₦${monthly.toLocaleString()}`}
@@ -437,8 +402,8 @@ export function SellerPlansView() {
                         {plan.monthlyBasePrice > 0 && (
                           <span
                             className={cn(
-                              "text-[10px] font-bold block",
-                              isNavyTheme ? "text-white/60" : "text-navy/50"
+                              "text-[11px] font-medium block mt-0.5",
+                              isNavyTheme ? "text-slate-300" : "text-slate-500"
                             )}
                           >
                             / month
@@ -447,12 +412,12 @@ export function SellerPlansView() {
                       </div>
 
                       {/* CTA Button */}
-                      <div className="pt-2">
+                      <div className="pt-1">
                         {plan.current ? (
                           <button
                             type="button"
                             disabled
-                            className="rounded-xl bg-emerald-100 px-4 py-2 text-xs font-black text-emerald-900 cursor-default opacity-90"
+                            className="rounded-xl bg-emerald-100/80 px-3.5 py-2 text-xs font-bold text-emerald-900 cursor-default opacity-95"
                           >
                             Current Plan
                           </button>
@@ -461,10 +426,10 @@ export function SellerPlansView() {
                             type="button"
                             onClick={() => handleChoosePlan(plan)}
                             className={cn(
-                              "pressable rounded-xl px-4 py-2.5 text-xs font-black transition-all shadow-md active:scale-95",
-                              plan.theme === "gold" && "bg-gold text-navy hover:bg-gold-light",
-                              plan.theme === "purple" && "border-2 border-purple-600 bg-white text-purple-900 hover:bg-purple-50",
-                              plan.theme === "navy" && "bg-gold text-navy hover:bg-gold-light"
+                              "pressable rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-2xs active:scale-95",
+                              plan.theme === "gold" && "bg-[#F59E0B] text-[#031B4E] hover:bg-amber-400",
+                              plan.theme === "purple" && "border-2 border-purple-500 bg-white text-purple-600 hover:bg-purple-50",
+                              plan.theme === "navy" && "bg-[#F59E0B] text-[#031B4E] hover:bg-amber-400"
                             )}
                           >
                             {plan.ctaText}
@@ -473,37 +438,43 @@ export function SellerPlansView() {
                       </div>
                     </div>
 
-                    {/* RIGHT FEATURES */}
-                    <div className="col-span-6 space-y-2.5">
+                    {/* VERTICAL DIVIDER & RIGHT COLUMN */}
+                    <div className={cn(
+                      "pl-4 border-l flex-1 min-w-0 space-y-2.5 relative pb-8",
+                      isNavyTheme ? "border-blue-900/60" : "border-slate-200/80"
+                    )}>
                       {/* Listings Badge */}
                       <div
                         className={cn(
-                          "inline-block rounded-xl px-3 py-1 text-xs font-black",
-                          isNavyTheme
-                            ? "bg-blue-900/60 text-blue-200 border border-blue-700/50"
-                            : "bg-slate-100 text-navy border border-slate-200"
+                          "inline-block rounded-full px-3 py-1 text-xs font-bold",
+                          plan.theme === "green" && "bg-emerald-100/70 text-emerald-950",
+                          plan.theme === "gold" && "bg-amber-100/90 text-amber-950",
+                          plan.theme === "purple" && "bg-purple-100/90 text-purple-950",
+                          plan.theme === "navy" && "bg-blue-900/90 text-blue-200 border border-blue-700/60"
                         )}
                       >
                         {plan.listingsBadge}
                       </div>
 
-                      {/* Feature Checkmarks */}
-                      <ul className="space-y-1.5 text-xs font-bold">
+                      {/* Checklist */}
+                      <ul className="space-y-1.5 text-xs font-medium">
                         {plan.features.map((feat, i) => (
                           <li key={i} className="flex items-center gap-2">
-                            <Check
-                              className={cn(
-                                "h-3.5 w-3.5 shrink-0 stroke-[3]",
-                                plan.theme === "green" && "text-emerald-600",
-                                plan.theme === "gold" && "text-amber-600",
-                                plan.theme === "purple" && "text-purple-600",
-                                plan.theme === "navy" && "text-gold"
-                              )}
-                            />
                             <span
                               className={cn(
-                                "leading-tight",
-                                isNavyTheme ? "text-white/90" : "text-navy/90"
+                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full p-0.5 text-white",
+                                plan.theme === "green" && "bg-emerald-500",
+                                plan.theme === "gold" && "bg-[#F59E0B]",
+                                plan.theme === "purple" && "bg-purple-600",
+                                plan.theme === "navy" && "bg-blue-500"
+                              )}
+                            >
+                              <Check className="h-3 w-3 stroke-[3]" />
+                            </span>
+                            <span
+                              className={cn(
+                                "leading-tight truncate",
+                                isNavyTheme ? "text-slate-100" : "text-slate-800"
                               )}
                             >
                               {feat}
@@ -511,6 +482,20 @@ export function SellerPlansView() {
                           </li>
                         ))}
                       </ul>
+
+                      {/* Illustration Image Overlay */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={plan.illustration}
+                        alt={plan.name}
+                        className={cn(
+                          "absolute right-0 bottom-0 pointer-events-none object-contain opacity-90",
+                          plan.id === "core" && "h-20 w-auto",
+                          plan.id === "pro" && "h-24 w-auto",
+                          plan.id === "elite" && "h-24 w-auto",
+                          plan.id === "prime" && "h-28 w-auto"
+                        )}
+                      />
                     </div>
                   </div>
                 </div>
@@ -518,70 +503,62 @@ export function SellerPlansView() {
             })}
           </div>
 
-          {/* BOTTOM COMPARE PLANS FOOTER BANNER */}
-          <div className="flex items-center justify-between rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          {/* BOTTOM COMPARE FOOTER */}
+          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xs">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-800 border border-amber-200">
-                <ShieldCheck className="h-5 w-5" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-800 border border-amber-200">
+                <ShieldCheck className="h-4.5 w-4.5" />
               </div>
               <div>
-                <h3 className="text-xs font-black text-navy">Flexible and risk-free</h3>
-                <p className="text-[10px] font-medium text-navy/60">Upgrade, downgrade or cancel anytime.</p>
+                <h3 className="text-xs font-bold text-[#031B4E]">Flexible & Risk-Free</h3>
+                <p className="text-[10px] font-medium text-slate-500">Upgrade or cancel anytime.</p>
               </div>
             </div>
 
             <button
               type="button"
               onClick={() => setCompareSheetOpen(true)}
-              className="flex items-center gap-1 text-xs font-black text-navy hover:text-gold-dark transition-colors"
+              className="flex items-center gap-1 text-xs font-bold text-[#031B4E] hover:text-amber-600 transition-colors"
             >
-              <span>Compare plans</span>
-              <ArrowRight className="h-4 w-4" />
+              <span>Compare</span>
+              <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       )}
 
-      {/* CHECKOUT MODAL WITH REAL PAYSTACK STATES */}
+      {/* CHECKOUT MODAL */}
       {selectedPlanForCheckout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl space-y-4 text-navy">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#031B4E]/70 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl space-y-4 text-[#031B4E]">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-black uppercase text-navy">Checkout</h3>
+              <h3 className="text-sm font-bold uppercase text-[#031B4E]">Checkout</h3>
               <button
                 type="button"
                 onClick={() => {
                   setSelectedPlanForCheckout(null);
                   setPaymentStep("idle");
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-navy"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-[#031B4E]"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {errorMessage && (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-900 space-y-2">
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-900">
                 <p>{errorMessage}</p>
-                {errorMessage.includes("Complete your seller profile") && (
-                  <Link
-                    href="/agent/edit-profile"
-                    className="pressable inline-flex items-center justify-center rounded-xl bg-navy px-3 py-1.5 text-[11px] font-black text-white shadow-xs hover:bg-navy-light"
-                  >
-                    Complete Profile
-                  </Link>
-                )}
               </div>
             )}
 
             <div className="rounded-2xl bg-slate-50 p-4 space-y-2 border border-slate-200 text-xs">
               <div className="flex justify-between font-bold">
-                <span className="text-navy/60">Plan</span>
-                <span className="text-navy font-black">{selectedPlanForCheckout.name} ({selectedPlanForCheckout.subtitle})</span>
+                <span className="text-slate-500">Plan</span>
+                <span className="text-[#031B4E]">{selectedPlanForCheckout.name} ({selectedPlanForCheckout.subtitle})</span>
               </div>
               <div className="flex justify-between font-bold">
-                <span className="text-navy/60">Billing Cycle</span>
-                <span className="text-navy font-black">{billingCycle} Month{billingCycle > 1 ? "s" : ""}</span>
+                <span className="text-slate-500">Billing Cycle</span>
+                <span className="text-[#031B4E]">{billingCycle} Month{billingCycle > 1 ? "s" : ""}</span>
               </div>
               {discountPct > 0 && (
                 <div className="flex justify-between font-bold text-emerald-700">
@@ -589,49 +566,43 @@ export function SellerPlansView() {
                   <span>{discountPct}% OFF</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm font-black border-t border-slate-200 pt-2">
+              <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-2">
                 <span>Total Billed</span>
-                <span className="text-gold-dark">
+                <span className="text-amber-600">
                   ₦{getCalculatedPrice(selectedPlanForCheckout.monthlyBasePrice).total.toLocaleString()}
                 </span>
               </div>
             </div>
 
             <div className="space-y-2 text-xs">
-              <label className="text-[11px] font-black uppercase text-navy/70">Choose Payment Method</label>
+              <label className="text-[11px] font-bold uppercase text-slate-500">Choose Payment Method</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedProvider("paystack");
-                    try { localStorage.setItem("yike_preferred_payment_provider", "paystack"); } catch {}
-                  }}
+                  onClick={() => setSelectedProvider("paystack")}
                   className={cn(
                     "flex flex-col items-center justify-center p-3 rounded-2xl border transition-all text-center",
                     selectedProvider === "paystack"
-                      ? "border-navy bg-navy/5 ring-2 ring-navy/20 font-black"
-                      : "border-slate-200 bg-slate-50 opacity-70 hover:opacity-100"
+                      ? "border-[#031B4E] bg-[#031B4E]/5 ring-2 ring-[#031B4E]/20 font-bold"
+                      : "border-slate-200 bg-slate-50 opacity-70"
                   )}
                 >
-                  <span className="text-xs font-black text-navy">Paystack</span>
-                  <span className="text-[9px] font-medium text-navy/60">Fast Cards & Bank</span>
+                  <span className="text-xs font-bold text-[#031B4E]">Paystack</span>
+                  <span className="text-[9px] font-medium text-slate-500">Cards & Bank</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedProvider("korapay");
-                    try { localStorage.setItem("yike_preferred_payment_provider", "korapay"); } catch {}
-                  }}
+                  onClick={() => setSelectedProvider("korapay")}
                   className={cn(
                     "flex flex-col items-center justify-center p-3 rounded-2xl border transition-all text-center",
                     selectedProvider === "korapay"
-                      ? "border-navy bg-navy/5 ring-2 ring-navy/20 font-black"
-                      : "border-slate-200 bg-slate-50 opacity-70 hover:opacity-100"
+                      ? "border-[#031B4E] bg-[#031B4E]/5 ring-2 ring-[#031B4E]/20 font-bold"
+                      : "border-slate-200 bg-slate-50 opacity-70"
                   )}
                 >
-                  <span className="text-xs font-black text-navy">Korapay</span>
-                  <span className="text-[9px] font-medium text-navy/60">Cards, Transfers & More</span>
+                  <span className="text-xs font-bold text-[#031B4E]">Korapay</span>
+                  <span className="text-[9px] font-medium text-slate-500">Cards & Transfer</span>
                 </button>
               </div>
             </div>
@@ -640,7 +611,7 @@ export function SellerPlansView() {
               type="button"
               disabled={paymentStep !== "idle" && paymentStep !== "error"}
               onClick={handleStartPayment}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gold py-3.5 text-xs font-black text-navy shadow-md hover:bg-gold-light active:scale-98 disabled:opacity-75"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#F59E0B] py-3.5 text-xs font-bold text-[#031B4E] shadow-md hover:bg-amber-400 active:scale-98 disabled:opacity-75"
             >
               <CreditCard className="h-4 w-4" />
               <span>
@@ -652,7 +623,7 @@ export function SellerPlansView() {
               </span>
             </button>
 
-            <p className="text-center text-[10px] font-bold text-navy/50 flex items-center justify-center gap-1">
+            <p className="text-center text-[10px] font-bold text-slate-400 flex items-center justify-center gap-1">
               <Lock className="h-3 w-3" />
               <span>Encrypted & secure checkout via {selectedProvider === "korapay" ? "Korapay" : "Paystack"}</span>
             </p>
@@ -660,25 +631,24 @@ export function SellerPlansView() {
         </div>
       )}
 
-      {/* FEATURE COMPARISON BOTTOM SHEET */}
+      {/* FEATURE COMPARISON SHEET */}
       {compareSheetOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy/70 backdrop-blur-sm">
-          <div className="w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl space-y-4 text-navy">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#031B4E]/70 backdrop-blur-xs">
+          <div className="w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl space-y-4 text-[#031B4E]">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-black uppercase text-navy">Plan Feature Matrix</h3>
+              <h3 className="text-sm font-bold uppercase text-[#031B4E]">Plan Feature Matrix</h3>
               <button
                 type="button"
                 onClick={() => setCompareSheetOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-navy"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-[#031B4E]"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 font-black text-navy">
+                  <tr className="border-b border-slate-200 bg-slate-50 font-bold text-[#031B4E]">
                     <th className="p-2.5">Feature</th>
                     <th className="p-2.5 text-center">Core</th>
                     <th className="p-2.5 text-center">Pro</th>
@@ -686,29 +656,21 @@ export function SellerPlansView() {
                     <th className="p-2.5 text-center">Prime</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-navy/80">
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   <tr>
-                    <td className="p-2.5 font-bold text-navy">Active Listings</td>
+                    <td className="p-2.5 font-bold text-[#031B4E]">Active Listings</td>
                     <td className="p-2.5 text-center">5</td>
-                    <td className="p-2.5 text-center font-bold text-amber-700">30</td>
-                    <td className="p-2.5 text-center font-bold text-purple-700">100</td>
-                    <td className="p-2.5 text-center font-black text-gold-dark">Unlimited</td>
-                  </tr>
-                  <tr>
-                    <td className="p-2.5 font-bold text-navy">Business Profile</td>
-                    <td className="p-2.5 text-center">✕</td>
-                    <td className="p-2.5 text-center font-bold text-emerald-600">✓</td>
-                    <td className="p-2.5 text-center font-bold text-emerald-600">✓</td>
-                    <td className="p-2.5 text-center font-bold text-emerald-600">✓</td>
+                    <td className="p-2.5 text-center font-bold text-amber-600">30</td>
+                    <td className="p-2.5 text-center font-bold text-purple-600">100</td>
+                    <td className="p-2.5 text-center font-bold text-amber-600">Unlimited</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-
             <button
               type="button"
               onClick={() => setCompareSheetOpen(false)}
-              className="w-full rounded-2xl bg-navy py-3 text-xs font-black text-white hover:bg-navy-light"
+              className="w-full rounded-2xl bg-[#031B4E] py-3 text-xs font-bold text-white"
             >
               Close Comparison
             </button>
@@ -718,38 +680,36 @@ export function SellerPlansView() {
 
       {/* PAYMENT HISTORY SHEET */}
       {historySheetOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy/70 backdrop-blur-sm">
-          <div className="w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl space-y-4 text-navy">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#031B4E]/70 backdrop-blur-xs">
+          <div className="w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl space-y-4 text-[#031B4E]">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-black uppercase text-navy">Payment History</h3>
+              <h3 className="text-sm font-bold uppercase text-[#031B4E]">Payment History</h3>
               <button
                 type="button"
                 onClick={() => setHistorySheetOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-navy"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-[#031B4E]"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-
             <div className="space-y-2 text-xs">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <span className="font-black text-navy block">Pro Plan (3 Months)</span>
-                  <span className="text-[10px] text-navy/60 block">Ref: PST-94021-82 • July 28, 2026</span>
+                <div>
+                  <span className="font-bold text-[#031B4E] block">Pro Plan (3 Months)</span>
+                  <span className="text-[10px] text-slate-500 block">Ref: PST-94021-82 • July 28, 2026</span>
                 </div>
-                <div className="text-right space-y-0.5">
-                  <span className="font-black text-gold-dark block">₦26,997</span>
+                <div className="text-right">
+                  <span className="font-bold text-amber-600 block">₦26,997</span>
                   <span className="inline-block rounded-md bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-800">
                     Successful
                   </span>
                 </div>
               </div>
             </div>
-
             <button
               type="button"
               onClick={() => setHistorySheetOpen(false)}
-              className="w-full rounded-2xl bg-navy py-3 text-xs font-black text-white hover:bg-navy-light"
+              className="w-full rounded-2xl bg-[#031B4E] py-3 text-xs font-bold text-white"
             >
               Close History
             </button>
