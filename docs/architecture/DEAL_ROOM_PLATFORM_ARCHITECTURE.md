@@ -1,8 +1,8 @@
-# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 10 Certified)
+# Yike Transaction Workspace Platform Architecture Specification (Phase 1 to Phase 11 Certified)
 
 > **Platform**: Yike.ng (Stankings Marketplace Platform)  
 > **Author**: Antigravity Platform Architecture Team  
-> **Status**: APPROVED & ENTERPRISE INTELLIGENCE PLATFORM IMPLEMENTED
+> **Status**: APPROVED & ENTERPRISE SETTLEMENT PLATFORM IMPLEMENTED
 
 ---
 
@@ -16,6 +16,9 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  [ BUYER ]  [ SELLER ]  [ AGENT ]  [ FIELD INSPECTOR ]  [ LEGAL PARTNER ]   │
 ├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ SETTLEMENT CENTER (Double-Entry Ledger / Multi-Party Escrow Payouts)  │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ INTELLIGENCE CENTER (Provider Adapters: Gemini 1.5 Pro / Risk / AI)   │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
@@ -42,19 +45,19 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ CONVERSATION INTELLIGENCE STREAM (Slack/Linear/Stripe Style Feed)     │  │
-│  │ ├─ System Event Pills (Buyer Joined, AI Summary Generated)           │  │
+│  │ ├─ System Event Pills (Buyer Joined, Escrow Released)                 │  │
 │  │ ├─ User Chat Bubbles (Text, Attachments, Read Receipts)               │  │
 │  │ ├─ Embedded Offer Cards (v1, v2 Counter, Accepted, Expired)           │  │
 │  │ ├─ Embedded Call & Visual Cards (Video Sessions, Duration, Snapshots) │  │
 │  │ └─ Embedded Verification Cards (Identity, Title, 94% Confidence)      │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ Intelligence Aggregate   │ │ Universal Attachment      │ │ Universal │  │
-│  │ (Provider Adapters & AI) │ │ Engine (Polymorphic Files)│ │ Comment   │  │
+│  │ Settlement Aggregate     │ │ Universal Attachment      │ │ Universal │  │
+│  │ (Double-Entry Ledger)    │ │ Engine (Polymorphic Files)│ │ Comment   │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌──────────────────────────┐ ┌───────────────────────────┐ ┌───────────┐  │
-│  │ VisualSession Aggregate  │ │ Universal Legal Audit Log │ │ Search    │  │
-│  │ (Remote Inspection Snaps)│ │ Engine (Compliance)       │ │ Index     │  │
+│  │ Intelligence Aggregate   │ │ Universal Legal Audit Log │ │ Search    │  │
+│  │ (Provider Adapters & AI) │ │ Engine (Compliance)       │ │ Index     │  │
 │  └──────────────────────────┘ └───────────────────────────┘ └───────────┘  │
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │ DATABASE & SECURE STORAGE LAYER (Supabase / PostgreSQL)               │  │
@@ -64,14 +67,13 @@ A **Transaction Workspace** (UI label: **Deal Room**) is a secure, state-driven,
 
 ---
 
-## 2. Enterprise Intelligence Platform Architecture (Phase 10)
+## 2. Enterprise Settlement Platform Architecture (Phase 11)
 
-- **Provider Abstraction Architecture (`IntelligenceProvider`)**: Decouples AI reasoning from vendor APIs. Supports `GeminiIntelligenceAdapter` (Google Gemini 1.5 Pro), `OpenAIIntelligenceAdapter` (GPT-4o), and `MockIntelligenceAdapter`.
-- **`IntelligenceRequestAggregate`** (`src/lib/deal-room/intelligence/types.ts`): Domain aggregate tracking AI capability requests (`reasoning`, `vision_analysis`, `ocr`, `summarization`, `classification`, `extraction`, `recommendation`, `translation`, `fraud_detection`, `risk_assessment`).
-- **Structured Output Engine (`IntelligenceOutput`)**: Returns typed summaries, risk recommendations, confidence scores (0–100), execution time (ms), and token counts.
-- **`ContextAssembler`**: Automatically compiles structured workspace context (Trust Scores, Negotiation versions, Evidence records, Execution checklists) for AI reasoning models.
-- **Deterministic Trust Separation**: AI outputs produce recommendations only. Verification policies strictly govern actual Trust Score mutations.
-- **`IntelligencePanel`** (`src/components/deal-room/intelligence-panel.tsx`): Enterprise AI Reasoning Center UI panel displaying recent analyses, provider metrics, confidence scores, and recommendations.
+- **`SettlementAggregate`** (`src/lib/deal-room/settlement/types.ts`): Independent domain aggregate for financial movements (`escrow`, `marketplace_payment`, `wallet_transfer`, `refund`, `partial_refund`, `milestone_release`, `inspection_fee`, `legal_fee`, `commission`, `platform_fee`, `tax`, `bank_transfer`).
+- **Double-Entry Ledger Engine (`LedgerService` & `LedgerEntry`)**: Enforces strict financial accounting where `Sum(Debits) === Sum(Credits)` with derived account balances.
+- **PSP Provider Abstraction (`SettlementProvider`)**: Decouples payment execution from payment gateways. Supports `PaystackSettlementAdapter`, `KorapaySettlementAdapter`, and `MockSettlementAdapter`.
+- **Deterministic Settlement Rule Engine (`SettlementRuleEngine`)**: Evaluates Trust Scores (>= 65), field execution completion, evidence verification, and AI risk reports before disbursing funds.
+- **`SettlementCenterPanel`** (`src/components/deal-room/settlement-center-panel.tsx`): Banking-styled ledger dashboard UI displaying total escrow balance, multi-party split allocations, rule checklist, and ledger audit timeline.
 
 ---
 
@@ -101,9 +103,11 @@ src/
 │       ├── execution/                   # Phase 8 Enterprise Execution Platform
 │       ├── visual/                      # Phase 9 Visual Collaboration Platform
 │       ├── intelligence/                # Phase 10 Enterprise Intelligence Platform
-│       │   ├── types.ts                 # IntelligenceRequestAggregate & Output
-│       │   ├── provider.ts              # IntelligenceProvider & Gemini/OpenAI Adapters
-│       │   ├── service.ts               # IntelligenceService & ContextAssembler
+│       ├── settlement/                  # Phase 11 Enterprise Settlement Platform
+│       │   ├── types.ts                 # SettlementAggregate & LedgerEntry
+│       │   ├── provider.ts              # SettlementProvider & Paystack Adapters
+│       │   ├── ledger.ts                # Double-Entry Ledger Engine
+│       │   ├── service.ts               # SettlementService & RuleEngine
 │       │   └── index.ts                 # Barrel exports
 └── components/
     └── deal-room/
@@ -116,7 +120,8 @@ src/
         ├── evidence-center-panel.tsx    # Enterprise Proof Vault UI
         ├── execution-center-panel.tsx   # Operational Execution Work Center UI
         ├── visual-collaboration-overlay.tsx # Responsive Visual Overlay UI
-        └── intelligence-panel.tsx       # Enterprise AI Reasoning Center UI
+        ├── intelligence-panel.tsx       # Enterprise AI Reasoning Center UI
+        └── settlement-center-panel.tsx  # Banking-styled Settlement Center Ledger UI
 ```
 
 ---
@@ -124,9 +129,9 @@ src/
 ## 4. Architectural Self-Audit (CTO Verification Questions)
 
 1. **Did this phase introduce architectural debt?**
-   - **No.** Intelligence uses provider adapters (`IntelligenceProvider`) isolating Gemini and OpenAI APIs. AI models never mutate state directly; they feed recommendations into deterministic workspace domains.
+   - **No.** Settlement is an independent aggregate (`SettlementAggregate`) with double-entry accounting. Money movements use provider adapters (`SettlementProvider`) without direct dependency on PSP SDKs.
 2. **What changes at 50 million users?**
-   - The in-memory `IntelligenceRepository` transitions to PostgreSQL database tables (`intelligence_requests`, `intelligence_outputs`) with Redis caching for repeated context prompts (`ContextAssembler`).
+   - The in-memory `SettlementRepository` and `LedgerService` transition to PostgreSQL database tables (`settlements`, `ledger_entries`, `settlement_splits`) with ACID transactional locks, webhook idempotency keys, and automated bank reconciliation jobs.
 3. **Which future phases became simpler?**
-   - **Phase 11 (Escrow & Payments)**: Fraud detection AI risk reports can be evaluated programmatically before disbursing escrow funds.
-   - **Phase 13 (Dispute Resolution)**: AI summarization can synthesize 500+ messages and evidence logs into a 1-page arbitration summary for legal partners.
+   - **Phase 12 (Enterprise Collaboration)**: Multi-party splits (Agents, Lawyers, Inspectors, Platform) are already calculated and logged.
+   - **Phase 13 (Dispute Resolution)**: Held escrow funds can be programmatically paused or partially refunded via `SettlementService.processRefund()`.
