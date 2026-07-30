@@ -292,30 +292,36 @@ export function SmartSellerFlow() {
 
   return (
     <div className="min-h-[100dvh] bg-[#021433] text-navy-dark pb-28 select-none">
-      {/* HEADER BAR */}
+      {/* SIMPLIFIED MINIMAL HEADER BAR */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-[#031B4E] px-4 py-3 text-white shadow-md">
-        <button
-          type="button"
-          onClick={() => {
-            if (flowState === "preview") setFlowState("details");
-            else if (flowState === "under_review") setFlowState("details");
-            else router.back();
-          }}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all active:scale-95"
-          aria-label="Go back"
-        >
-          <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              if (flowState === "preview") setFlowState("details");
+              else if (flowState === "under_review") setFlowState("details");
+              else router.back();
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all active:scale-95"
+            aria-label="Go back"
+          >
+            <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
+          </button>
 
-        <h1 className="text-xs font-black uppercase tracking-wider text-white">
+          <Image
+            src="/images/logo.webp"
+            alt="Yike Logo"
+            width={28}
+            height={28}
+            className="h-7 w-7 object-contain drop-shadow-sm"
+          />
+        </div>
+
+        <h1 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
           {flowState === "preview" ? "PREVIEW LISTING" : "SELL ON YIKE"}
         </h1>
 
-        <div className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white backdrop-blur-md">
-          <MapPin className="h-3.5 w-3.5 text-gold shrink-0" />
-          <span>Nigeria</span>
-          <ChevronDown className="h-3.5 w-3.5 text-white/70" />
-        </div>
+        <div className="w-9" />
       </header>
 
       {/* ========================================================================= */}
