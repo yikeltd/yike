@@ -11,6 +11,7 @@ export function ApiVersionBadge({
   className?: string;
 }) {
   const styles: Record<ApiVersionStatus, { bg: string; text: string; label: string }> = {
+    active: { bg: "bg-emerald-500/10 border-emerald-500/30", text: "text-emerald-600 dark:text-emerald-400", label: "Active" },
     stable: { bg: "bg-emerald-500/10 border-emerald-500/30", text: "text-emerald-600 dark:text-emerald-400", label: "Stable" },
     ga: { bg: "bg-emerald-500/10 border-emerald-500/30", text: "text-emerald-600 dark:text-emerald-400", label: "GA" },
     preview: { bg: "bg-amber-500/10 border-amber-500/30", text: "text-amber-600 dark:text-amber-400", label: "Preview" },
@@ -19,6 +20,9 @@ export function ApiVersionBadge({
     deprecated: { bg: "bg-rose-500/10 border-rose-500/30", text: "text-rose-600 dark:text-rose-400", label: "Deprecated" },
     sunset: { bg: "bg-slate-500/10 border-slate-500/30", text: "text-slate-600 dark:text-slate-400", label: "Sunset" },
     internal: { bg: "bg-gray-500/10 border-gray-500/30", text: "text-gray-600 dark:text-gray-400", label: "Internal" },
+    compatible: { bg: "bg-emerald-500/10 border-emerald-500/30", text: "text-emerald-600 dark:text-emerald-400", label: "Compatible" },
+    update_recommended: { bg: "bg-amber-500/10 border-amber-500/30", text: "text-amber-600 dark:text-amber-400", label: "Update Rec." },
+    unsupported: { bg: "bg-rose-500/10 border-rose-500/30", text: "text-rose-600 dark:text-rose-400", label: "Unsupported" },
   };
 
   const style = styles[status] || styles.stable;

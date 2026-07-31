@@ -14,6 +14,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
     { href: "/developers/security", label: "Security" },
     { href: "/developers/chaos", label: "Chaos Engineering" },
     { href: "/developers/backup-validation", label: "Backup Validation" },
+    { href: "/developers/api-versioning", label: "API Versions" },
     { href: "/developers/observability", label: "Observability" },
     { href: "/developers/cache", label: "Cache & Edge" },
     { href: "/developers/jobs", label: "Background Jobs" },
@@ -26,8 +27,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
     { href: "/developers/events", label: "Event Catalog" },
     { href: "/developers/health", label: "API Health" },
     { href: "/developers/playground", label: "Playground" },
-    { href: "/developers/sandbox", label: "Sandbox" },
-    { href: "/developers/api", label: "API Versions" },
+    { href: "/developers/sandbox", label: "Sandbox text" },
     { href: "/developers/changelog", label: "Changelog" },
     { href: "/developers/migrations", label: "Migration Guides" },
   ];

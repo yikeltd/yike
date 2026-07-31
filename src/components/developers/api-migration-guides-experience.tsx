@@ -66,7 +66,7 @@ export function ApiMigrationGuidesExperience() {
           </div>
 
           {/* ENDPOINT MIGRATION LIST */}
-          {guide.endpoints.map((ep, idx) => (
+          {guide.endpoints?.map((ep: { oldEndpoint?: string; newEndpoint?: string; parameterChanges?: string[]; exampleRequestOld?: string; exampleRequestNew?: string; exampleResponseOld?: string; exampleResponseNew?: string }, idx: number) => (
             <div key={idx} className="space-y-4 pt-2">
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] font-bold">
@@ -78,7 +78,7 @@ export function ApiMigrationGuidesExperience() {
                 <div className="space-y-1 pt-2">
                   <h4 className="font-black uppercase tracking-wider text-[10px] text-navy/60 dark:text-white/60">Parameter & Schema Changes:</h4>
                   <ul className="list-disc pl-4 space-y-0.5 text-navy/80 dark:text-white/80 font-medium">
-                    {ep.parameterChanges.map((c, cIdx) => (
+                    {ep.parameterChanges?.map((c: string, cIdx: number) => (
                       <li key={cIdx}>{c}</li>
                     ))}
                   </ul>

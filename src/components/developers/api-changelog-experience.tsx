@@ -95,7 +95,7 @@ export function ApiChangelogExperience() {
                   New Features & API Additions
                 </h3>
                 <ul className="space-y-1 pl-4 list-disc text-navy/80 dark:text-white/80 leading-relaxed font-medium">
-                  {entry.features.map((f, fIdx) => (
+                  {entry.features?.map((f: string, fIdx: number) => (
                     <li key={fIdx}>{f}</li>
                   ))}
                 </ul>
@@ -109,7 +109,7 @@ export function ApiChangelogExperience() {
                     Breaking Changes
                   </h3>
                   <ul className="space-y-1 pl-4 list-disc leading-relaxed font-semibold">
-                    {entry.breakingChanges.map((b, bIdx) => (
+                    {entry.breakingChanges.map((b: string, bIdx: number) => (
                       <li key={bIdx}>{b}</li>
                     ))}
                   </ul>
