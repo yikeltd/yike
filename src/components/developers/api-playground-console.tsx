@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Play, ChevronLeft, Code2, Send } from "lucide-react";
+import { DeveloperSubnav } from "./developer-subnav";
 
 export function ApiPlaygroundConsole() {
   const [endpoint, setEndpoint] = useState<"listings" | "escrow" | "trust">("listings");
@@ -58,82 +59,86 @@ export function ApiPlaygroundConsole() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-xs">
-        
-        {/* LEFT: ENDPOINT SELECTOR & REQUEST BUILDER */}
-        <div className="lg:col-span-5 rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
-          <h2 className="text-xs font-black uppercase tracking-wider text-navy dark:text-white">
-            1. Select API Endpoint
-          </h2>
+      <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 space-y-6">
+        <DeveloperSubnav />
 
-          <div className="space-y-2 font-bold">
-            <button
-              type="button"
-              onClick={() => { setEndpoint("listings"); setHasRun(false); }}
-              className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
-                endpoint === "listings" ? "border-gold bg-gold/10 text-navy dark:text-gold font-black shadow-sm" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
-              }`}
-            >
-              <span className="font-mono text-[11px]">GET /api/v1/listings</span>
-              <span className="rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 text-[9px]">GET</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => { setEndpoint("escrow"); setHasRun(false); }}
-              className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
-                endpoint === "escrow" ? "border-gold bg-gold/10 text-navy dark:text-gold font-black shadow-sm" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
-              }`}
-            >
-              <span className="font-mono text-[11px]">GET /api/v1/escrow/ESC_9814</span>
-              <span className="rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 text-[9px]">GET</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => { setEndpoint("trust"); setHasRun(false); }}
-              className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
-                endpoint === "trust" ? "border-gold bg-gold/10 text-navy dark:text-gold font-black shadow-sm" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
-              }`}
-            >
-              <span className="font-mono text-[11px]">GET /api/v1/trust/USR_8810</span>
-              <span className="rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 text-[9px]">GET</span>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setHasRun(true)}
-            className="pressable w-full py-3 rounded-2xl bg-gold text-navy font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-gold-light shadow-md"
-          >
-            <Send className="h-4 w-4" />
-            <span>Execute Request</span>
-          </button>
-        </div>
-
-        {/* RIGHT: LIVE JSON RESPONSE VIEW */}
-        <div className="lg:col-span-7 rounded-3xl border border-navy/10 dark:border-white/10 bg-[#031B4E] text-white p-5 shadow-2xl space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-black uppercase tracking-wider text-gold flex items-center gap-1.5">
-              <Code2 className="h-4 w-4" />
-              Live JSON Response Payload
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-xs">
+          
+          {/* LEFT: ENDPOINT SELECTOR & REQUEST BUILDER */}
+          <div className="lg:col-span-5 rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            <h2 className="text-xs font-black uppercase tracking-wider text-navy dark:text-white">
+              1. Select API Endpoint
             </h2>
-            {hasRun && (
-              <span className="rounded-full bg-emerald-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase">
-                200 OK (32ms)
-              </span>
-            )}
+
+            <div className="space-y-2 font-bold">
+              <button
+                type="button"
+                onClick={() => { setEndpoint("listings"); setHasRun(false); }}
+                className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                  endpoint === "listings" ? "border-gold bg-gold/10 text-navy dark:text-gold font-black shadow-sm" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
+                }`}
+              >
+                <span className="font-mono text-[11px]">GET /api/v1/listings</span>
+                <span className="rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 text-[9px]">GET</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setEndpoint("escrow"); setHasRun(false); }}
+                className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                  endpoint === "escrow" ? "border-gold bg-gold/10 text-navy dark:text-gold font-black shadow-sm" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
+                }`}
+              >
+                <span className="font-mono text-[11px]">GET /api/v1/escrow/ESC_9814</span>
+                <span className="rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 text-[9px]">GET</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setEndpoint("trust"); setHasRun(false); }}
+                className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                  endpoint === "trust" ? "border-gold bg-gold/10 text-navy dark:text-gold font-black shadow-sm" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"
+                }`}
+              >
+                <span className="font-mono text-[11px]">GET /api/v1/trust/USR_8810</span>
+                <span className="rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 text-[9px]">GET</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setHasRun(true)}
+              className="pressable w-full py-3 rounded-2xl bg-gold text-navy font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-gold-light shadow-md"
+            >
+              <Send className="h-4 w-4" />
+              <span>Execute Request</span>
+            </button>
           </div>
 
-          <pre className="p-4 rounded-2xl bg-black/50 border border-white/10 font-mono text-xs text-emerald-400 min-h-[220px] overflow-x-auto">
-            <code>
-              {hasRun
-                ? JSON.stringify(responses[endpoint], null, 2)
-                : "// Click 'Execute Request' to test live API response payload"}
-            </code>
-          </pre>
-        </div>
+          {/* RIGHT: LIVE JSON RESPONSE VIEW */}
+          <div className="lg:col-span-7 rounded-3xl border border-navy/10 dark:border-white/10 bg-[#031B4E] text-white p-5 shadow-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-black uppercase tracking-wider text-gold flex items-center gap-1.5">
+                <Code2 className="h-4 w-4" />
+                Live JSON Response Payload
+              </h2>
+              {hasRun && (
+                <span className="rounded-full bg-emerald-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase">
+                  200 OK (32ms)
+                </span>
+              )}
+            </div>
 
+            <pre className="p-4 rounded-2xl bg-black/50 border border-white/10 font-mono text-xs text-emerald-400 min-h-[220px] overflow-x-auto">
+              <code>
+                {hasRun
+                  ? JSON.stringify(responses[endpoint], null, 2)
+                  : "// Click 'Execute Request' to test live API response payload"}
+              </code>
+            </pre>
+          </div>
+
+        </div>
       </div>
     </div>
   );

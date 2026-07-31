@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Terminal, Key, Webhook, ShieldCheck, Cpu, Play, Copy, Check } from "lucide-react";
+import { DeveloperSubnav } from "./developer-subnav";
+import { ApiVersionBadge } from "./versioning/api-version-badge";
 import { cn } from "@/lib/utils";
 
 export function DeveloperPortalExperience() {
@@ -39,15 +41,22 @@ print(listings)`,
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#f7f9fc] dark:bg-[#021433] text-navy dark:text-white py-10 px-4 sm:px-6 select-none">
+    <div className="min-h-[100dvh] bg-[#f7f9fc] dark:bg-[#021433] text-navy dark:text-white py-8 px-4 sm:px-6 select-none">
       <div className="mx-auto max-w-6xl space-y-8">
         
+        {/* SUBNAV */}
+        <DeveloperSubnav />
+
         {/* HERO */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 dark:border-white/10 pb-8">
           <div className="space-y-2 max-w-2xl">
-            <span className="rounded-full bg-gold/20 text-navy dark:text-gold px-3.5 py-1 text-xs font-black uppercase tracking-wider">
-              Yike Developer Platform v2.0
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-gold/20 text-navy dark:text-gold px-3.5 py-1 text-xs font-black uppercase tracking-wider">
+                Yike Developer Platform v2.0
+              </span>
+              <span className="text-xs font-bold text-navy/70 dark:text-white/70">Current API Version:</span>
+              <ApiVersionBadge status="stable" />
+            </div>
             <h1 className="text-3xl sm:text-4xl font-black text-navy dark:text-white tracking-tight">
               Build on Nigeria&apos;s Real Estate & Automotive Infrastructure
             </h1>
