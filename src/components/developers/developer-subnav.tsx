@@ -11,6 +11,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
     { href: "/developers", label: "Overview" },
     { href: "/developers/passport", label: "Transaction Passport" },
     { href: "/developers/btos", label: "BTOS Engine" },
+    { href: "/developers/partners", label: "Partner Platform" },
     { href: "/developers/production-readiness", label: "Production Readiness" },
     { href: "/developers/launch-certification", label: "Launch Certification" },
     { href: "/developers/production-monitoring", label: "Live Monitoring" },
