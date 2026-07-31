@@ -10,6 +10,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
   const links = [
     { href: "/developers", label: "Overview" },
     { href: "/developers/sdks", label: "SDKs" },
+    { href: "/developers/events", label: "Event Catalog" },
     { href: "/developers/playground", label: "Playground" },
     { href: "/developers/sandbox", label: "Sandbox" },
     { href: "/developers/api", label: "API Versions" },
