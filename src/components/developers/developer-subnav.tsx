@@ -13,6 +13,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
     { href: "/developers/load-testing", label: "Load Testing" },
     { href: "/developers/security", label: "Security" },
     { href: "/developers/chaos", label: "Chaos Engineering" },
+    { href: "/developers/backup-validation", label: "Backup Validation" },
     { href: "/developers/observability", label: "Observability" },
     { href: "/developers/cache", label: "Cache & Edge" },
     { href: "/developers/jobs", label: "Background Jobs" },
