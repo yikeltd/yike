@@ -9,6 +9,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
 
   const links = [
     { href: "/developers", label: "Overview" },
+    { href: "/developers/launch-certification", label: "Launch Certification" },
     { href: "/developers/production-readiness", label: "Production Readiness" },
     { href: "/developers/production-monitoring", label: "Live Monitoring" },
     { href: "/developers/load-testing", label: "Load Testing" },
