@@ -9,6 +9,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
 
   const links = [
     { href: "/developers", label: "Overview" },
+    { href: "/developers/production-readiness", label: "Production Readiness" },
     { href: "/developers/production-monitoring", label: "Live Monitoring" },
     { href: "/developers/load-testing", label: "Load Testing" },
     { href: "/developers/security", label: "Security" },
@@ -27,7 +28,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
     { href: "/developers/events", label: "Event Catalog" },
     { href: "/developers/health", label: "API Health" },
     { href: "/developers/playground", label: "Playground" },
-    { href: "/developers/sandbox", label: "Sandbox text" },
+    { href: "/developers/sandbox", label: "Sandbox" },
     { href: "/developers/changelog", label: "Changelog" },
     { href: "/developers/migrations", label: "Migration Guides" },
   ];
