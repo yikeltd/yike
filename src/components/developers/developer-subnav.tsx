@@ -11,6 +11,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
     { href: "/developers", label: "Overview" },
     { href: "/developers/observability", label: "Observability" },
     { href: "/developers/cache", label: "Cache & Edge" },
+    { href: "/developers/jobs", label: "Background Jobs" },
     { href: "/developers/sdks", label: "SDKs" },
     { href: "/developers/scopes", label: "OAuth Scopes" },
     { href: "/developers/events", label: "Event Catalog" },
