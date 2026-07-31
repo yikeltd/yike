@@ -38,11 +38,11 @@ export function AgentContactCard({
   const sellerName =
     agent?.company_name || agent?.full_name || "Verified Nigerian Seller";
   const sellerAvatar = agent?.avatar_url;
-  const trustScore = "4.9 ★";
-  const memberSince = "Member since 2025";
-  const responseTime = "Replies within 15 mins";
+  const trustScore = "95 / 100";
+  const responseTime = "Replies in <15 min";
 
   const href = typeof window !== "undefined" ? window.location.pathname : `/properties/${listing.id}`;
+  const passportHref = agent?.id ? `/trust/${agent.id}` : "/trust";
 
   async function handleWhatsAppLead() {
     if (!agent?.id) return;
@@ -124,10 +124,14 @@ export function AgentContactCard({
               {agent?.company_name ? "Licensed Real Estate Agency" : "Property Representative"}
             </p>
             <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-navy/70 dark:text-white/70 mt-1">
-              <span className="flex items-center gap-1 text-gold-dark dark:text-gold">
+              <Link
+                href={passportHref}
+                className="flex items-center gap-1 text-gold-dark dark:text-gold hover:underline font-black"
+                title="View Universal Trust Passport"
+              >
                 <Award className="h-3.5 w-3.5" />
                 {trustScore} Trust Score
-              </span>
+              </Link>
               <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
                 <Clock className="h-3.5 w-3.5" />
                 {responseTime}
@@ -136,15 +140,13 @@ export function AgentContactCard({
           </div>
         </div>
 
-        {agent?.id && (
-          <Link
-            href={`/agent/${agent.id}`}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 text-navy dark:text-white hover:bg-slate-200"
-            title="View Seller Profile"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        )}
+        <Link
+          href={passportHref}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 text-navy dark:text-white hover:bg-slate-200"
+          title="View Universal Trust Passport"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Link>
       </div>
 
       {/* TRUST SAFETY BANNER */}

@@ -1,22 +1,38 @@
+import type { Metadata } from "next";
 import { getOrCreateTrustIdentity } from "@/lib/identity/service";
-import { TrustProfileClient } from "./trust-profile-client";
+import { TrustPassportExperience } from "@/components/trust/trust-passport-experience";
+import { createClient } from "@/lib/supabase/server";
 
-export const metadata = {
-  title: "Yike Passport & Trust Identity | Yike",
-  description: "Verified identity credentials, trust score audit, reputation metrics, and badges.",
-};
+type Props = { params: Promise<{ userId: string }> };
 
-export default async function TrustProfilePage({
-  params,
-}: {
-  params: Promise<{ userId: string }>;
-}) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { userId } = await params;
+  const passport = await getOrCreateTrustIdentity(userId);
+  return {
+    title: `${passport.fullName} | Universal Trust Passport | Yike`,
+    description: `View ${passport.fullName}'s verified NIN identity, CAC business status, trust score (${passport.trustScore}/100), and reputation metrics on Yike.`,
+  };
+}
+
+export default async function TrustProfilePage({ params }: Props) {
   const { userId } = await params;
   const passport = await getOrCreateTrustIdentity(userId);
 
+  const supabase = await createClient();
+  let userListings = [];
+  if (supabase) {
+    const { data } = await supabase
+      .from("properties")
+      .select("*")
+      .eq("agent_id", userId)
+      .eq("status", "published")
+      .limit(6);
+    if (data) userListings = data;
+  }
+
   return (
-    <div className="min-h-screen bg-surface p-4 sm:p-6 lg:p-8">
-      <TrustProfileClient passport={passport} />
-    </div>
+    <main>
+      <TrustPassportExperience passport={passport} userListings={userListings} />
+    </main>
   );
 }
