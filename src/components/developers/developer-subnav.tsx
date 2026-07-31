@@ -15,6 +15,7 @@ export function DeveloperSubnav({ className }: { className?: string }) {
     { href: "/developers/semantic-search", label: "AI Search" },
     { href: "/developers/recommendations", label: "AI Recommendations" },
     { href: "/developers/risk-intelligence", label: "Risk Intelligence" },
+    { href: "/developers/ha-dr", label: "HA & Disaster Recovery" },
     { href: "/developers/sdks", label: "SDKs" },
     { href: "/developers/scopes", label: "OAuth Scopes" },
     { href: "/developers/events", label: "Event Catalog" },
