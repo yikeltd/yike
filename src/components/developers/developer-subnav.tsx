@@ -9,8 +9,10 @@ export function DeveloperSubnav({ className }: { className?: string }) {
 
   const links = [
     { href: "/developers", label: "Overview" },
-    { href: "/developers/launch-certification", label: "Launch Certification" },
+    { href: "/developers/passport", label: "Transaction Passport" },
+    { href: "/developers/btos", label: "BTOS Engine" },
     { href: "/developers/production-readiness", label: "Production Readiness" },
+    { href: "/developers/launch-certification", label: "Launch Certification" },
     { href: "/developers/production-monitoring", label: "Live Monitoring" },
     { href: "/developers/load-testing", label: "Load Testing" },
     { href: "/developers/security", label: "Security" },
