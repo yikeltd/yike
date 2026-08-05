@@ -194,27 +194,7 @@ export function HomeDesktopView({
 
               {/* Filter Panel Card */}
               <div className="rounded-3xl border border-white/20 bg-[#031B4E]/90 p-4 backdrop-blur-md shadow-2xl space-y-3">
-                {/* Sub-Category Chips */}
-                <div className="flex items-center gap-2">
-                  {chips.map((chip) => {
-                    const active = selectedChip === chip;
-                    return (
-                      <button
-                        key={chip}
-                        type="button"
-                        onClick={() => setSelectedChip(chip)}
-                        className={cn(
-                          "px-4 py-1.5 rounded-full text-xs font-bold transition-all",
-                          active
-                            ? "bg-gold text-navy font-black shadow-sm"
-                            : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
-                        )}
-                      >
-                        {chip}
-                      </button>
-                    );
-                  })}
-                </div>
+
 
                 {/* Filter Controls Row */}
                 <div className="grid grid-cols-5 gap-3 items-center">

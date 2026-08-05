@@ -1,24 +1,21 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Bell } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
 import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
-import { NotificationCenterModal } from "@/components/notifications/notification-center-modal";
 import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 
 /**
  * Unified Desktop Header — Deep Yike Navy background (#031B4E).
- * Order: [Yike Logo] -> [Search Bar] -> [Location Selector] -> [NOTIFICATIONS] -> [SELL] -> [SIGN IN / PROFILE]
+ * Order: [Yike Logo] -> [Search Bar] -> [Location Selector] -> [SELL] -> [SIGN IN / PROFILE]
  */
 export function HeaderDesktop({ className }: { className?: string }) {
   const { user } = useAuth();
   const isAuthenticated = Boolean(user);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   return (
     <header
@@ -57,20 +54,8 @@ export function HeaderDesktop({ className }: { className?: string }) {
           <MarketplaceLocationIndicator size="md" variant="chip" className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20" />
         </div>
 
-        {/* 4. NOTIFICATION BELL & ACTION BUTTONS */}
+        {/* 4. ACTION BUTTONS */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setNotificationsOpen(true)}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
-            title="Notifications"
-          >
-            <Bell className="h-4 w-4 text-gold" />
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[9px] font-black text-navy shadow-sm">
-              2
-            </span>
-          </button>
-
           {/* SELL BUTTON */}
           <Link
             href={isAuthenticated ? "/agent/listings/choose" : "/auth/login?next=/agent/listings/choose"}
@@ -97,10 +82,6 @@ export function HeaderDesktop({ className }: { className?: string }) {
           )}
         </div>
       </div>
-
-      {notificationsOpen && (
-        <NotificationCenterModal onClose={() => setNotificationsOpen(false)} />
-      )}
     </header>
   );
 }
