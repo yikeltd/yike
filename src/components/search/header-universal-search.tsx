@@ -194,45 +194,7 @@ export function HeaderUniversalSearch({
     <>
       <div ref={wrapRef} className={cn("relative min-w-0 flex-1 space-y-1.5", className)}>
         
-        {/* MULTI-VERTICAL TABS */}
-        <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {[
-            { id: "all", label: "All", icon: Sparkles },
-            { id: "property", label: "Properties", icon: Building2 },
-            { id: "vehicle", label: "Vehicles", icon: Car },
-            { id: "land", label: "Land", icon: MapPin },
-            { id: "agent", label: "Agents", icon: User },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={cn(
-                  "pressable shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black transition-all",
-                  isActive
-                    ? "bg-[#031B4E] dark:bg-gold text-white dark:text-navy shadow-sm"
-                    : "bg-white/80 dark:bg-white/10 text-navy/70 dark:text-white/70 hover:bg-white"
-                )}
-              >
-                <Icon className="h-3 w-3" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
 
-          <button
-            type="button"
-            onClick={() => setSavedDrawerOpen(true)}
-            className="pressable ml-auto shrink-0 flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-gold px-2.5 py-1 text-[11px] font-extrabold hover:bg-amber-200"
-            title="Saved Searches"
-          >
-            <Bookmark className="h-3 w-3" />
-            <span>Saved</span>
-          </button>
-        </div>
 
         {/* SEARCH INPUT BAR */}
         <div
