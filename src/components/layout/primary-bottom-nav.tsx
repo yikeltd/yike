@@ -7,7 +7,6 @@ import { ListPropertyNavLink } from "@/components/auth/list-property-button";
 import { cn } from "@/lib/utils";
 import {
   Home,
-  MessageSquare,
   PlusCircle,
   User,
   LogIn,
@@ -84,7 +83,6 @@ export function PrimaryBottomNav() {
     pathname === "/swipe";
   const sellActive =
     pathname === "/post-property" || pathname.startsWith("/post-property/");
-  const messagesActive = isNavActive("/conversations", pathname, "prefix");
   const profileActive = isNavActive("/agent", pathname, "prefix") || pathname === "/profile";
 
   // ==========================================
@@ -118,29 +116,6 @@ export function PrimaryBottomNav() {
               Sell
             </span>
           </div>
-
-          {/* Messages Tab with Badge 5 */}
-          <Link
-            href="/conversations"
-            prefetch
-            className={cn(
-              "pressable relative flex min-w-[56px] flex-col items-center gap-0.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200",
-              messagesActive ? "text-gold" : "text-white/60 hover:text-white"
-            )}
-          >
-            <span
-              className={cn(
-                "relative flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
-                messagesActive ? "bg-gold text-navy shadow-[0_0_12px_rgba(228,181,71,0.5)] scale-105" : "bg-white/5 text-white/70"
-              )}
-            >
-              <MessageSquare className="h-4.5 w-4.5" strokeWidth={messagesActive ? 2.5 : 2} />
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gold px-1 text-[9px] font-black text-navy shadow-xs border border-[#031B4E]">
-                5
-              </span>
-            </span>
-            Messages
-          </Link>
 
           <Link
             href="/agent"

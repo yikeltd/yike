@@ -18,7 +18,7 @@ export function BookVehicleInspectionModal({
 }) {
   const { guardAction } = useAuth();
   const isTestDrive = mode === "test_drive";
-  const [preferredDate, setPreferredDate] = useState(
+  const [preferredDate, setPreferredDate] = useState(() =>
     new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 10)
   );
   const [preferredTime, setPreferredTime] = useState("11:00 AM");

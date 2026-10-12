@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
-import { ConversationWorkspace } from "@/components/conversations/conversation-workspace";
+import { notFound } from "next/navigation";
 
 export const metadata = {
   title: "Conversation | Yike",
@@ -8,20 +6,12 @@ export const metadata = {
 };
 
 export default async function ConversationPage({
-  params,
+  params: _params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const session = await getSession();
-
-  if (!session) {
-    redirect(`/auth/login?next=/conversations/${encodeURIComponent(id)}`);
-  }
-
-  return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <ConversationWorkspace conversationId={id} currentUserId={session.id} />
-    </div>
-  );
+  // This route previously rendered an in-memory simulator. Keep the route
+  // unavailable until a persistent, participant-authorized service exists.
+  void _params;
+  notFound();
 }

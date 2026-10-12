@@ -13,8 +13,6 @@ import {
   Gauge,
   Home,
   ShieldCheck,
-  Phone,
-  MessageCircle,
   ChevronDown,
   Building,
   BedDouble,
@@ -52,30 +50,6 @@ export function UnifiedListingDetail({ listing, ownerBanner }: Props) {
   const [specsExpanded, setSpecsExpanded] = useState(false);
   const [featuresExpanded, setFeaturesExpanded] = useState(false);
   const [fullscreenGalleryOpen, setFullscreenGalleryOpen] = useState(false);
-  const [unapprovedCallModalOpen, setUnapprovedCallModalOpen] = useState(false);
-  const [inAppCallActive, setInAppCallActive] = useState(false);
-  const [startingChat, setStartingChat] = useState(false);
-
-  async function handleChatSeller() {
-    setStartingChat(true);
-    try {
-      const res = await fetch("/api/conversations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listingId: listing.id }),
-      });
-      const data = await res.json();
-      if (data.workspace?.id) {
-        router.push(`/conversations/${data.workspace.id}`);
-      } else {
-        router.push("/conversations");
-      }
-    } catch {
-      router.push("/conversations");
-    } finally {
-      setStartingChat(false);
-    }
-  }
 
   const priceFormatted = formatPrice(
     Number(listing.price),
@@ -159,14 +133,6 @@ export function UnifiedListingDetail({ listing, ownerBanner }: Props) {
   const visibleFeatures = featuresExpanded ? allFeatures : allFeatures.slice(0, 9);
 
   const mainPhoto = photos[activePhotoIndex] || photos[0] || "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=1200&q=80&fit=crop";
-
-  function handleCallSeller() {
-    if (!isApproved) {
-      setUnapprovedCallModalOpen(true);
-    } else {
-      setInAppCallActive(true);
-    }
-  }
 
   return (
     <div className="min-h-[100dvh] bg-[#021433] text-navy-dark pb-28 select-none">
@@ -418,81 +384,6 @@ export function UnifiedListingDetail({ listing, ownerBanner }: Props) {
           </Link>
         </div>
       </div>
-
-      {/* 8. FIXED BOTTOM ACTION BAR (CHAT SELLER & CALL SELLER) */}
-      <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 border-t border-navy/10 backdrop-blur-md p-3 shadow-2xl">
-        <div className="mx-auto max-w-2xl grid grid-cols-2 gap-2.5">
-          {/* CHAT SELLER BUTTON */}
-          <button
-            type="button"
-            onClick={handleChatSeller}
-            disabled={startingChat}
-            className="pressable flex items-center justify-center gap-2 rounded-2xl border-2 border-navy bg-white py-3 text-xs font-black text-navy hover:bg-slate-50 active:scale-98 transition-all shadow-sm disabled:opacity-50"
-          >
-            <MessageCircle className="h-4 w-4 text-navy" />
-            <span>{startingChat ? "OPENING CHAT…" : "CHAT SELLER"}</span>
-          </button>
-
-          {/* CALL SELLER BUTTON */}
-          <button
-            type="button"
-            onClick={handleCallSeller}
-            className="pressable flex items-center justify-center gap-2 rounded-2xl bg-gold py-3 text-xs font-black text-navy hover:bg-gold-light active:scale-98 transition-all shadow-md"
-          >
-            <Phone className="h-4 w-4 text-navy fill-navy" />
-            <span>CALL SELLER</span>
-          </button>
-        </div>
-      </div>
-
-      {/* MODAL: UNAPPROVED SELLER CALL EXPLANATION */}
-      {unapprovedCallModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center space-y-4 shadow-2xl">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-900">
-              <Phone className="h-6 w-6" />
-            </div>
-            <p className="text-xs font-bold text-navy leading-relaxed">
-              Phone calling becomes available after this seller earns Approved status.
-            </p>
-            <button
-              type="button"
-              onClick={() => setUnapprovedCallModalOpen(false)}
-              className="w-full rounded-2xl bg-navy py-3 text-xs font-black text-white hover:bg-navy-light"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: IN-APP VOICE CALL INTERFACE */}
-      {inAppCallActive && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-navy p-6 text-white text-center">
-          <div className="pt-12 space-y-2">
-            <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-full border-2 border-gold shadow-2xl">
-              {sellerAvatar ? (
-                <Image src={sellerAvatar} alt="" fill className="object-cover" />
-              ) : (
-                <User className="h-12 w-12 text-white m-auto" />
-              )}
-            </div>
-            <h3 className="text-lg font-black text-white">{sellerName}</h3>
-            <p className="text-xs font-bold text-gold animate-pulse">In-App Voice Call Connecting…</p>
-          </div>
-
-          <div className="pb-12 space-y-4 w-full max-w-xs">
-            <p className="text-[10px] text-white/50">Private & encrypted Yike audio channel</p>
-            <button
-              type="button"
-              onClick={() => setInAppCallActive(false)}
-              className="w-full rounded-full bg-rose-600 py-3.5 text-xs font-black text-white shadow-xl hover:bg-rose-700"
-            >
-              End Call
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* FULLSCREEN PHOTO GALLERY MODAL */}
       {fullscreenGalleryOpen && (

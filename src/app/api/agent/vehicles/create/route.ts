@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSession, isEmailVerified } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { getListingLimit, isAgentRole } from "@/lib/agent-tiers";
+import {
+  assertCanCreateListing,
+  ensurePendingManualSellerVerification,
+} from "@/lib/seller-trust";
+import { mustVerifyWhatsappBeforeListing } from "@/lib/whatsapp-verification/profile";
+import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import {
   buildVehicleInsertPayload,
   type VehicleListingInput,
@@ -10,6 +18,17 @@ import type { VehicleCategoryId } from "@/lib/marketplace/vehicle-specs";
 import { VEHICLE_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
 
 export const runtime = "nodejs";
+
+const ACTIVE_LISTING_STATUSES = ["pending", "approved", "flagged"];
+
+function isSafeListingMediaUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname.endsWith(".supabase.co");
+  } catch {
+    return false;
+  }
+}
 
 function parseVehicleBody(body: Record<string, unknown>): VehicleListingInput | null {
   const auto_category = String(body.auto_category ?? "").trim() as VehicleCategoryId;
@@ -33,6 +52,14 @@ function parseVehicleBody(body: Record<string, unknown>): VehicleListingInput | 
   const media = Array.isArray(body.media_urls)
     ? body.media_urls.map(String).filter(Boolean)
     : [];
+
+  if (
+    media.length < 2 ||
+    media.length > 20 ||
+    media.some((url) => !isSafeListingMediaUrl(url))
+  ) {
+    return null;
+  }
 
   return {
     title,
@@ -90,6 +117,49 @@ export async function POST(request: Request) {
   if (!admin) {
     return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   }
+  const supabase = await createClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+  }
+
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select(
+      "role, email_verified, phone_verified, phone_verified_at, is_banned, listing_limit, subscription_plan_code, starter_plan_started_at, created_at, whatsapp, phone, email, full_name, verification_status, verified_badge, account_status, profile_status, whatsapp_verified_at, whatsapp_verification_status, date_of_birth, residential_address, office_address, residential_state, seller_profile_completed_at, verification_submitted_at",
+    )
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
+  }
+
+  const createGate = assertCanCreateListing({
+    ...profile,
+    email_verified:
+      isEmailVerified(user, { email_verified: profile.email_verified }) ||
+      Boolean(profile.email_verified),
+  });
+  if (!createGate.ok) {
+    return NextResponse.json(
+      { error: createGate.error, code: createGate.code },
+      { status: createGate.code === "phone_verification_required" ? 403 : 400 },
+    );
+  }
+
+  if (mustVerifyWhatsappBeforeListing(profile)) {
+    return NextResponse.json(
+      { error: WHATSAPP_VERIFY_COPY.listingPrompt, code: "whatsapp_verification_required" },
+      { status: 403 },
+    );
+  }
+
+  if (profile.is_banned || !isAgentRole(profile.role)) {
+    return NextResponse.json(
+      { error: "Complete seller setup before listing." },
+      { status: 403 },
+    );
+  }
 
   const body = (await request.json().catch(() => null)) as Record<
     string,
@@ -111,7 +181,7 @@ export async function POST(request: Request) {
   const payload = buildVehicleInsertPayload(user.id, input, "pending");
 
   if (id) {
-    const { data: existing } = await admin
+    const { data: existing } = await supabase
       .from("properties")
       .select("id, agent_id, asset_type, status, attributes")
       .eq("id", id)
@@ -146,7 +216,7 @@ export async function POST(request: Request) {
         : {}),
     };
 
-    const { data, error } = await admin
+    const { data, error } = await supabase
       .from("properties")
       .update({
         ...payload,
@@ -163,7 +233,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, listing: data });
   }
 
-  const { data, error } = await admin
+  const limit = getListingLimit(profile);
+  const { count: activeCount } = await supabase
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("agent_id", user.id)
+    .in("status", ACTIVE_LISTING_STATUSES);
+
+  if (limit !== null && (activeCount ?? 0) >= limit) {
+    return NextResponse.json(
+      { error: "You have reached your active listing limit." },
+      { status: 400 },
+    );
+  }
+
+  const { data, error } = await supabase
     .from("properties")
     .insert(payload)
     .select("id, slug, status")
@@ -172,6 +256,13 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  await ensurePendingManualSellerVerification(admin, user.id, {
+    ...profile,
+    email: profile.email ?? user.email ?? null,
+  }).catch((error) => {
+    console.error("[vehicle-create] seller queue failed", error);
+  });
 
   return NextResponse.json({ ok: true, listing: data }, { status: 201 });
 }

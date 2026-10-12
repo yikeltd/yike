@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type Sharp, type WebpOptions } from "sharp";
 import {
   ALLOWED_IMAGE_TYPES,
   AVATAR_PROFILE_SIZES,
@@ -131,11 +131,11 @@ export type ProcessedWebpImage = {
   contentType: typeof WEBP_CONTENT_TYPE;
 };
 
-function stripMetadata(pipeline: sharp.Sharp): sharp.Sharp {
+function stripMetadata(pipeline: Sharp): Sharp {
   return pipeline.withMetadata({ exif: undefined, icc: undefined });
 }
 
-function webpOptions(quality: number): sharp.WebpOptions {
+function webpOptions(quality: number): WebpOptions {
   return {
     quality,
     effort: 6,
@@ -182,7 +182,7 @@ export async function optimizeImagePreset(
 }
 
 async function toWebp(
-  pipeline: sharp.Sharp,
+  pipeline: Sharp,
   width: number,
   quality: number
 ): Promise<Buffer> {
@@ -199,7 +199,7 @@ async function toWebp(
 
 /** Iteratively lower WebP quality until under byte cap — stays ≥ min quality. */
 async function webpSquareToTarget(
-  pipeline: sharp.Sharp,
+  pipeline: Sharp,
   size: number,
   startQuality: number,
   maxBytes: number
@@ -234,7 +234,7 @@ async function webpSquareToTarget(
 }
 
 async function webpCoverToTarget(
-  pipeline: sharp.Sharp,
+  pipeline: Sharp,
   width: number,
   startQuality: number,
   maxBytes: number
@@ -269,7 +269,7 @@ async function webpCoverToTarget(
   return last;
 }
 
-async function toBlurPlaceholder(pipeline: sharp.Sharp): Promise<string> {
+async function toBlurPlaceholder(pipeline: Sharp): Promise<string> {
   const buf = await pipeline
     .clone()
     .resize(IMAGE_SIZES.blur.width, null, {
@@ -346,7 +346,7 @@ export async function optimizeProfileAvatarImage(input: Buffer): Promise<Optimiz
       })
       .webp({ quality: AVATAR_PROFILE_SIZES.blur.quality })
       .toBuffer()
-      .then((buf) => `data:image/webp;base64,${buf.toString("base64")}`),
+      .then((buf: Buffer) => `data:image/webp;base64,${buf.toString("base64")}`),
   ]);
 
   return {

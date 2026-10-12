@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
-import { listUserConversations } from "@/lib/conversations/service";
-import { ConversationInboxClient } from "./inbox-client";
+import { notFound } from "next/navigation";
 
 export const metadata = {
   title: "Inbox & Transaction Workspaces | Yike",
@@ -9,17 +6,7 @@ export const metadata = {
 };
 
 export default async function ConversationsInboxPage() {
-  const session = await getSession();
-
-  if (!session) {
-    redirect("/auth/login?next=/conversations");
-  }
-
-  const conversations = await listUserConversations(session.id);
-
-  return (
-    <div className="min-h-screen bg-surface p-4 sm:p-6 lg:p-8">
-      <ConversationInboxClient initialConversations={conversations} currentUserId={session.id} />
-    </div>
-  );
+  // Persistent marketplace messaging has not shipped. Do not expose the
+  // development simulator as a consumer feature.
+  notFound();
 }

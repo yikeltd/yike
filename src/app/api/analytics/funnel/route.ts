@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   isFunnelEventType,
   type FunnelEventInput,
@@ -15,12 +17,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid event type" }, { status: 400 });
   }
 
+  const listingId = typeof body.listingId === "string" ? body.listingId : null;
+  let agentId: string | null = null;
+  if (listingId) {
+    const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+    }
+    const { data: listing } = await admin
+      .from("properties")
+      .select("agent_id")
+      .eq("id", listingId)
+      .maybeSingle();
+    if (!listing) {
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+    }
+    agentId = listing.agent_id;
+  }
+
+  const user = await getSession();
+
   logFunnelEvent({
     eventType,
-    listingId: typeof body.listingId === "string" ? body.listingId : null,
-    agentId: typeof body.agentId === "string" ? body.agentId : null,
-    leadId: typeof body.leadId === "string" ? body.leadId : null,
-    userId: typeof body.userId === "string" ? body.userId : null,
+    listingId,
+    agentId,
+    userId: user?.id ?? null,
     guestId: typeof body.guestId === "string" ? body.guestId : null,
     sourcePage: typeof body.sourcePage === "string" ? body.sourcePage : null,
     sourceSurface: typeof body.sourceSurface === "string" ? body.sourceSurface : null,

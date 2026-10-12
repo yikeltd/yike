@@ -2,7 +2,7 @@
  * Enterprise media protection pipeline — listing photos.
  * Server-side only. Does not change the public upload API contract.
  */
-import sharp from "sharp";
+import sharp, { type Sharp } from "sharp";
 import { randomUUID } from "crypto";
 import { IMAGE_SIZES, MEDIA_LIMITS } from "@/lib/media/constants";
 import { resolveWatermarkAttribution, type AttributionProfile } from "./attribution";
@@ -78,7 +78,7 @@ function isTinySource(width: number, height: number): boolean {
 }
 
 async function resizeToWebp(
-  pipeline: sharp.Sharp,
+  pipeline: Sharp,
   width: number,
   quality: number
 ): Promise<Buffer> {
@@ -93,7 +93,7 @@ async function resizeToWebp(
     .toBuffer();
 }
 
-async function toBlurPlaceholder(pipeline: sharp.Sharp): Promise<string> {
+async function toBlurPlaceholder(pipeline: Sharp): Promise<string> {
   const buf = await pipeline
     .clone()
     .resize(IMAGE_SIZES.blur.width, null, {

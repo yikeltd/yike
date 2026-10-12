@@ -1055,14 +1055,20 @@ export const DEMO_UI_PROPERTIES: Property[] = PROPERTY_SEEDS.map(toProperty);
 export const DEMO_UI_VEHICLES: Property[] = VEHICLE_SEEDS.map(toVehicle);
 
 /**
- * Empty-inventory UI fixtures — allowed in production when live rails are empty.
- * Disable with YIKE_DISABLE_DEMO_UI=1 or YIKE_EMPTY_INVENTORY_FIXTURES=0.
- * Never writes to the database.
+ * Empty-inventory UI fixtures are development/test-only. They must never make
+ * an empty production marketplace look supplied with real inventory.
  */
 export function canUseEmptyInventoryFixtures(): boolean {
+  const appEnv = process.env.APP_ENV?.trim().toLowerCase();
+  const nonProduction =
+    appEnv === "development" ||
+    appEnv === "test" ||
+    appEnv === "staging" ||
+    process.env.NODE_ENV === "test" ||
+    process.env.NODE_ENV === "development";
+  if (!nonProduction) return false;
   if (process.env.YIKE_DISABLE_DEMO_UI === "1") return false;
-  if (process.env.YIKE_EMPTY_INVENTORY_FIXTURES === "0") return false;
-  return true;
+  return process.env.YIKE_EMPTY_INVENTORY_FIXTURES === "1";
 }
 
 /** @deprecated use canUseEmptyInventoryFixtures */

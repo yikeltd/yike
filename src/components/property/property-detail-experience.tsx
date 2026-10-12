@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -230,6 +229,7 @@ export function PropertyDetailExperience({
                 alt={property.title}
                 fill
                 priority
+                sizes="(max-width: 1024px) 100vw, 66vw"
                 onClick={() => setFullscreenGalleryOpen(true)}
                 className="object-cover cursor-pointer transition-transform duration-500 group-hover:scale-102"
               />

@@ -34,12 +34,12 @@ import { HeaderUniversalSearch } from "@/components/search/header-universal-sear
 import { SearchClientChrome } from "@/components/search/search-client-chrome";
 
 export const metadata: Metadata = {
-  title: `Universal Search & Discovery | ${SITE_NAME}`,
-  description: `Search properties, vehicles, land, shortlets, and agents across Nigeria with instant AI filters on ${SITE_NAME}.`,
+  title: `Search Property Listings | ${SITE_NAME}`,
+  description: `Search verified property listings across Nigeria on ${SITE_NAME}.`,
   alternates: { canonical: `${SITE_URL}/search` },
   openGraph: {
-    title: `Universal Search & Discovery | ${SITE_NAME}`,
-    description: "Instant AI search across properties, vehicles, land, and verified agents in Nigeria.",
+    title: `Search Property Listings | ${SITE_NAME}`,
+    description: "Search verified property listings across Nigeria.",
     url: `${SITE_URL}/search`,
   },
 };
