@@ -1,4 +1,5 @@
 import { notifyActivityChanged } from "@/lib/activity-events";
+import type { AssetType } from "@/types/database";
 
 const KEY = "yike_recently_viewed";
 const MAX = 20;
@@ -13,7 +14,7 @@ export type RecentlyViewedItem = {
   viewedAt: number;
   /** Public href — defaults to /properties/{id} for legacy entries */
   href?: string;
-  assetType?: "PROPERTY" | "VEHICLE";
+  assetType?: AssetType;
 };
 
 export function getRecentlyViewed(): RecentlyViewedItem[] {

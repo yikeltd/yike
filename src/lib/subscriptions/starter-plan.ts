@@ -5,7 +5,7 @@ import { SUBSCRIPTION_DURATION_DAYS } from "@/lib/subscriptions/constants";
 export const STARTER_PLAN_CODE = "free" as const;
 
 /** Listing slots by starter month (1-indexed). Month 3+ uses last value. */
-export const STARTER_MONTHLY_LIMITS = [5, 3, 1] as const;
+export const STARTER_MONTHLY_LIMITS = [3, 2, 1] as const;
 
 export type StarterPlanInfo = {
   isStarter: boolean;

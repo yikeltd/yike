@@ -6,6 +6,7 @@
 export type MarketplaceVerticalId =
   | "property"
   | "vehicle"
+  | "electronics"
   | "jobs"
   | "services"
   | "equipment"
@@ -26,7 +27,7 @@ export type MarketplaceVerticalStatus =
 export type MarketplaceVertical = {
   id: MarketplaceVerticalId;
   /** DB asset_type value */
-  assetType: "PROPERTY" | "VEHICLE" | "FUTURE";
+  assetType: "PROPERTY" | "VEHICLE" | "ELECTRONICS" | "FUTURE";
   label: string;
   pluralLabel: string;
   href: string;
@@ -62,6 +63,16 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     createHref: "/agent/listings/new",
     status: "live",
     description: "Find your next home.",
+  },
+  {
+    id: "electronics",
+    assetType: "ELECTRONICS",
+    label: "Electronics",
+    pluralLabel: "Electronics",
+    href: "/electronics",
+    createHref: "/agent/listings/new/electronics",
+    status: "reserved",
+    description: "Phones, computers, appliances, and electronics.",
   },
   {
     id: "jobs",
@@ -181,5 +192,6 @@ export function verticalFromAssetType(
   assetType: string | null | undefined,
 ): MarketplaceVerticalId {
   if (assetType === "VEHICLE" || assetType === "AUTO") return "vehicle";
+  if (assetType === "ELECTRONICS") return "electronics";
   return "property";
 }

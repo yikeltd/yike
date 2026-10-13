@@ -1,5 +1,14 @@
-export type AssetType = "PROPERTY" | "VEHICLE";
-
+export type AssetType = "PROPERTY" | "VEHICLE" | "ELECTRONICS";
+ 
+/** Universal listing condition for physical goods across all categories */
+export type UniversalListingCondition =
+  | "brand_new"
+  | "open_box"
+  | "refurbished"
+  | "foreign_used"
+  | "nigerian_used"
+  | "for_parts";
+ 
 /** @deprecated Use VEHICLE */
 export type LegacyAutoAssetType = "AUTO";
 
@@ -570,9 +579,12 @@ export interface SupportViewSessionRow {
 export interface Property {
   id: string;
   agent_id: string;
-  /** Marketplace vertical — PROPERTY (default) | VEHICLE */
+  /** Marketplace vertical — PROPERTY (default) | VEHICLE | ELECTRONICS */
   asset_type?: AssetType;
   auto_category?: string | null;
+  /** Universal listing condition */
+  condition?: UniversalListingCondition | string | null;
+  /** Legacy vehicle condition; backwards compatible with condition */
   vehicle_condition?: string | null;
   attributes?: Record<string, unknown> | null;
   make?: string | null;

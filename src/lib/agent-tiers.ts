@@ -19,7 +19,7 @@ import { listingConfidenceRankAdjustment } from "@/lib/trust/confidence";
 import { imageQualityRankAdjustment } from "@/lib/trust/image-quality";
 import { propertySearchRelevance } from "@/lib/search-relevance";
 
-export const UNVERIFIED_AGENT_LISTING_LIMIT = 5;
+export const UNVERIFIED_AGENT_LISTING_LIMIT = 3;
 
 export type AgentProfileSlice = Pick<
   Profile,
@@ -75,11 +75,11 @@ export function getListingLimit(
 ): number | null {
   if (!profile) return UNVERIFIED_AGENT_LISTING_LIMIT;
   if (profile.subscription_plan_code === "developer") return null;
-  if (isOnStarterPlan(profile)) {
-    return getStarterListingLimitForProfile(profile);
-  }
   if (profile.listing_limit !== null && profile.listing_limit !== undefined) {
     return profile.listing_limit;
+  }
+  if (isOnStarterPlan(profile)) {
+    return getStarterListingLimitForProfile(profile);
   }
   return UNVERIFIED_AGENT_LISTING_LIMIT;
 }

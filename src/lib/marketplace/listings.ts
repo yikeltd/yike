@@ -42,6 +42,7 @@ export function normalizeAssetType(
   value: string | null | undefined,
 ): AssetType {
   if (value === "VEHICLE" || value === "AUTO") return "VEHICLE";
+  if (value === "ELECTRONICS") return "ELECTRONICS";
   return "PROPERTY";
 }
 
@@ -54,7 +55,7 @@ export function propertyToListingRow(p: Property): MarketplaceListingRow {
     asset_type: normalizeAssetType(p.asset_type),
     property_category: p.property_type,
     auto_category: p.auto_category ?? null,
-    condition: p.vehicle_condition ?? null,
+    condition: p.condition ?? p.vehicle_condition ?? null,
     verification_status: p.is_verified_listing ? "verified" : "unverified",
     state: p.state,
     city: p.city,
