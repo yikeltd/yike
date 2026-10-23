@@ -259,6 +259,12 @@ export async function resolvePropertyRoute(
     };
   }
 
+  const { getSampleListingBySlugOrId } = await import(
+    "@/lib/sample-listings/query-fixtures"
+  );
+  const sample = getSampleListingBySlugOrId(param, "PROPERTY");
+  if (sample) return { property: sample };
+
   return { property: null };
 }
 

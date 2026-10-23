@@ -6,6 +6,8 @@ import {
   getElectronicsByIdOrSlug,
   queryPublicElectronics,
 } from "@/lib/marketplace/listings";
+import { getSampleListingBySlugOrId, sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
+import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { ElectronicsDetailExperience } from "@/components/marketplace/electronics-detail-experience";
 import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
@@ -24,7 +26,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Electronics | Yike" };
   }
   const supabase = await createClient();
-  const listing = supabase ? await getElectronicsByIdOrSlug(supabase, slug) : null;
+  let listing = supabase ? await getElectronicsByIdOrSlug(supabase, slug) : null;
+  if (!listing) listing = getSampleListingBySlugOrId(slug, "ELECTRONICS");
   if (!listing) return { title: "Electronics | Yike" };
   const robots = !isListingPubliclyActive(listing)
     ? { index: false, follow: true }
@@ -40,10 +43,13 @@ export default async function ElectronicsDetailPage({ params }: Props) {
   if (!isLaunchFeatureVisible("electronics_marketplace")) notFound();
   const { slug } = await params;
   const supabase = await createClient();
-  if (!supabase) notFound();
 
-  const listing = await getElectronicsByIdOrSlug(supabase, slug);
+  let listing = supabase ? await getElectronicsByIdOrSlug(supabase, slug) : null;
+  if (!listing) {
+    listing = getSampleListingBySlugOrId(slug, "ELECTRONICS");
+  }
   if (!listing) notFound();
+  const isSampleFixture = listing.id.startsWith("s3000001-");
 
   const viewer = await getSession();
   const viewerProfile = viewer ? await getProfile(viewer.id) : null;
@@ -70,13 +76,21 @@ export default async function ElectronicsDetailPage({ params }: Props) {
     );
   }
 
-  const similarRaw = isPubliclyVisible
-    ? await queryPublicElectronics(supabase, {
-        auto_category: listing.auto_category ?? undefined,
-        limit: 8,
-      })
-    : [];
-  const similar = similarRaw.filter((x) => x.id !== listing.id).slice(0, 4);
+  const similarRaw =
+    isPubliclyVisible && supabase
+      ? await queryPublicElectronics(supabase, {
+          auto_category: listing.auto_category ?? undefined,
+          limit: 8,
+        })
+      : [];
+  let similar = similarRaw.filter((x) => x.id !== listing.id).slice(0, 4);
+  if (similar.length === 0 && isSampleFixture) {
+    similar = sampleBrowseFallback([], "ELECTRONICS", {
+      auto_category: listing.auto_category ?? undefined,
+    })
+      .filter((x) => x.id !== listing.id)
+      .slice(0, 4);
+  }
 
   const priceLabel = new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -86,6 +100,7 @@ export default async function ElectronicsDetailPage({ params }: Props) {
 
   return (
     <main className="pb-8">
+      {isSampleFixture ? <SampleFixtureBanner /> : null}
       {isPubliclyVisible ? (
         <MarketplaceViewTracker
           id={listing.id}

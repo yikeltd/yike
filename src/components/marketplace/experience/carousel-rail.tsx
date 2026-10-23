@@ -14,7 +14,7 @@ type Props = {
   priorityCount?: number;
 };
 
-export function CarouselRail({ items, kind = "vehicle", priorityCount = 2 }: Props) {
+export function CarouselRail({ items, priorityCount = 2 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -55,7 +55,7 @@ export function CarouselRail({ items, kind = "vehicle", priorityCount = 2 }: Pro
           >
             {(() => {
               const asset = normalizeAssetType(item.asset_type);
-              if (kind === "electronics" || asset === "ELECTRONICS") {
+              if (asset === "ELECTRONICS") {
                 return (
                   <ElectronicsCard
                     listing={item}
@@ -64,7 +64,7 @@ export function CarouselRail({ items, kind = "vehicle", priorityCount = 2 }: Pro
                   />
                 );
               }
-              if (kind === "vehicle" || asset === "VEHICLE") {
+              if (asset === "VEHICLE") {
                 return (
                   <VehicleCard
                     vehicle={item}

@@ -110,11 +110,13 @@ async function safeLoad<T>(
   label: string,
   load: () => Promise<T>,
   fallback: T,
+  onError?: () => void,
 ): Promise<T> {
   try {
     return await load();
   } catch (error) {
     logHomeDataFailure(label, error);
+    onError?.();
     return fallback;
   }
 }
@@ -181,20 +183,25 @@ export default async function HomePage({
 
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
   const electronicsOn = isLaunchFeatureVisible("electronics_marketplace");
+  const fetchHealth = { failed: false };
+  const load = <T,>(label: string, fn: () => Promise<T>, fallback: T) =>
+    safeLoad(label, fn, fallback, () => {
+      fetchHealth.failed = true;
+    });
 
   // Lean fetch: featured + recent pool (+ city when set). Luxury/state derived in-memory.
   const [featuredProps, recentProps, nearYouProps, vehiclePool] =
     await Promise.all([
-      safeLoad("featured properties", () => getFeaturedProperties(8), []),
-      safeLoad("recent properties", () => getPublicProperties({}, 36), []),
+      load("featured properties", () => getFeaturedProperties(8), []),
+      load("recent properties", () => getPublicProperties({}, 36), []),
       preferredCity
-        ? safeLoad(
+        ? load(
             "near-you properties",
             () => getPublicProperties({ city: preferredCity }, 12),
             [],
           )
         : preferredState
-          ? safeLoad(
+          ? load(
               "near-you properties",
               () => getPublicProperties({ state: preferredState }, 12),
               [],
@@ -205,19 +212,19 @@ export default async function HomePage({
             const supabase = await createClient();
             if (!supabase) return [] as Property[];
             const [featured, recent, local] = await Promise.all([
-              safeLoad(
+              load(
                 "featured vehicles",
                 () =>
                   queryPublicVehicles(supabase, { featured: true, limit: 8 }),
                 [],
               ),
-              safeLoad(
+              load(
                 "recent vehicles",
                 () => queryPublicVehicles(supabase, { limit: 36 }),
                 [],
               ),
               preferredCity
-                ? safeLoad(
+                ? load(
                     "local vehicles",
                     () =>
                       queryPublicVehicles(supabase, {
@@ -227,7 +234,7 @@ export default async function HomePage({
                     [],
                   )
                 : preferredState
-                  ? safeLoad(
+                  ? load(
                       "local vehicles",
                       () =>
                         queryPublicVehicles(supabase, {
@@ -247,7 +254,7 @@ export default async function HomePage({
     ? await (async () => {
         const supabase = await createClient();
         if (!supabase) return [] as Property[];
-        return safeLoad(
+        return load(
           "recent electronics",
           () => queryPublicElectronics(supabase, { limit: 12 }),
           [],
@@ -261,7 +268,8 @@ export default async function HomePage({
     ...nearYouProps,
   ]);
 
-  const sampleFixtureMode = isSampleListingFixtureEnabled();
+  const sampleFixtureMode =
+    isSampleListingFixtureEnabled() && !fetchHealth.failed;
   const sampleCatalog = sampleFixtureMode ? buildSampleListingFixtures() : [];
 
   function sampleForAsset(

@@ -166,14 +166,13 @@ export function buildAllSampleDbRows() {
 
 /** Dev fixture shape for homepage / browse (explicit flag only). */
 export function buildSampleListingFixtures(): Property[] {
-  const now = new Date().toISOString();
   const rows = buildAllSampleDbRows();
   return rows.map(
-    (row) =>
+    (row, index) =>
       ({
         ...row,
-        created_at: now,
-        updated_at: now,
+        created_at: new Date(Date.now() - index * 3_600_000).toISOString(),
+        updated_at: new Date(Date.now() - index * 3_600_000).toISOString(),
         agent: null,
       }) as unknown as Property,
   );

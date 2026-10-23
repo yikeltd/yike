@@ -10,6 +10,9 @@ import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { ELECTRONICS_CATEGORIES } from "@/lib/marketplace/electronics-specs";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
+import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import { sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
+import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 
 export const metadata: Metadata = {
   title: "Electronics",
@@ -33,7 +36,7 @@ export default async function ElectronicsPage({
 
   const sp = await searchParams;
   const supabase = await createClient();
-  const items = supabase
+  let items = supabase
     ? await queryPublicElectronics(supabase, {
         q: first(sp.q),
         state: first(sp.state),
@@ -47,8 +50,25 @@ export default async function ElectronicsPage({
       })
     : [];
 
+  let showingSampleFixture = false;
+  if (isSampleListingFixtureEnabled()) {
+    const liveCount = items.length;
+    items = sampleBrowseFallback(items, "ELECTRONICS", {
+      q: first(sp.q),
+      state: first(sp.state),
+      city: first(sp.city),
+      auto_category: first(sp.category),
+      brand: first(sp.brand),
+      condition: first(sp.condition),
+      min_price: first(sp.min_price) ? Number(first(sp.min_price)) : undefined,
+      max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
+    });
+    showingSampleFixture = liveCount === 0 && items.length > 0;
+  }
+
   return (
     <main className="min-h-screen bg-surface pb-24">
+      <SampleFixtureBanner active={showingSampleFixture} />
       <div className="px-3 pt-4 lg:px-6">
         <MarketplaceCategoryHeader vertical="electronics" title="Electronics" className="mb-2" />
       </div>

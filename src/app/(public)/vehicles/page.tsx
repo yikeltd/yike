@@ -10,6 +10,9 @@ import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
+import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import { sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
+import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 import { VehicleSearchResultsChrome } from "@/components/marketplace/vehicle-search-results-chrome";
 import {
   QuickFilterChips,
@@ -114,8 +117,24 @@ export default async function VehiclesPage({
     vehicles = vehicles.filter((v) => Boolean(v.is_verified_listing));
   }
 
-  const vehicleDemo = withEmptyInventoryDemoFixtures(vehicles, "vehicle", 24);
-  vehicles = vehicleDemo.items;
+  let showingSampleFixture = false;
+  if (isSampleListingFixtureEnabled()) {
+    const liveCount = vehicles.length;
+    vehicles = sampleBrowseFallback(vehicles, "VEHICLE", {
+      q: first(sp.q),
+      state,
+      city,
+      auto_category: first(sp.category),
+      make: first(sp.make),
+      min_price: first(sp.min_price) ? Number(first(sp.min_price)) : undefined,
+      max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
+      featured: featuredOnly || undefined,
+    });
+    showingSampleFixture = liveCount === 0 && vehicles.length > 0;
+  } else {
+    const vehicleDemo = withEmptyInventoryDemoFixtures(vehicles, "vehicle", 24);
+    vehicles = vehicleDemo.items;
+  }
 
   if (sort === "price_asc") {
     vehicles = [...vehicles].sort((a, b) => Number(a.price) - Number(b.price));
@@ -197,6 +216,7 @@ export default async function VehiclesPage({
 
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
+      <SampleFixtureBanner active={showingSampleFixture} />
       <PrefSync />
       <div className="px-3 pt-4 lg:px-6 xl:px-8">
         <MarketplaceCategoryHeader

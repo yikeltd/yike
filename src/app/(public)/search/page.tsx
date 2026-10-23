@@ -30,6 +30,9 @@ import {
   PROPERTY_QUICK_FILTERS,
 } from "@/components/marketplace/experience";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
+import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import { samplePropertyBrowse } from "@/lib/sample-listings/query-fixtures";
+import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
 import { SearchClientChrome } from "@/components/search/search-client-chrome";
 
@@ -80,6 +83,7 @@ export default async function SearchPage({
   let feedItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
   let nearbyItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
   let isDemo = false;
+  let showingSampleFixture = false;
 
   if (hasQuery) {
     const bundle = await resolveSearchResults(
@@ -99,7 +103,18 @@ export default async function SearchPage({
       feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   }
 
-  if (!hasQuery && feedItems.length === 0) {
+  if (feedItems.length === 0 && isSampleListingFixtureEnabled()) {
+    feedItems = samplePropertyBrowse({
+      q: preloadParams.q,
+      city: preloadParams.city,
+      state: preloadParams.state,
+      min_price: preloadParams.min_price,
+      max_price: preloadParams.max_price,
+    });
+    exactCount = feedItems.length;
+    showingSampleFixture = feedItems.length > 0;
+    isDemo = showingSampleFixture;
+  } else if (!hasQuery && feedItems.length === 0) {
     const demo = withEmptyInventoryDemoFixtures([], "property", 24);
     if (demo.isDemo) {
       feedItems = demo.items;
@@ -136,6 +151,7 @@ export default async function SearchPage({
 
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
+      <SampleFixtureBanner active={showingSampleFixture} />
       <PrefSync />
       
       {/* UNIVERSAL SEARCH BAR & CATEGORIES */}

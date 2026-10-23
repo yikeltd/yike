@@ -6,6 +6,11 @@ import {
   getVehicleByIdOrSlug,
   queryPublicVehicles,
 } from "@/lib/marketplace/listings";
+import {
+  getSampleListingBySlugOrId,
+  sampleBrowseFallback,
+} from "@/lib/sample-listings/query-fixtures";
+import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { VehicleDetailExperience } from "@/components/marketplace/vehicle-detail-experience";
 import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
@@ -32,7 +37,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Vehicle | Yike" };
   }
   const supabase = await createClient();
-  const v = supabase ? await getVehicleByIdOrSlug(supabase, slug) : null;
+  let v = supabase ? await getVehicleByIdOrSlug(supabase, slug) : null;
+  if (!v) v = getSampleListingBySlugOrId(slug, "VEHICLE");
   if (!v) return { title: "Vehicle | Yike" };
   const robots = !isListingPubliclyActive(v)
     ? { index: false, follow: true }
@@ -48,10 +54,13 @@ export default async function VehicleDetailPage({ params }: Props) {
   if (!isLaunchFeatureVisible("vehicle_marketplace")) notFound();
   const { slug } = await params;
   const supabase = await createClient();
-  if (!supabase) notFound();
 
-  const vehicle = await getVehicleByIdOrSlug(supabase, slug);
+  let vehicle = supabase ? await getVehicleByIdOrSlug(supabase, slug) : null;
+  if (!vehicle) {
+    vehicle = getSampleListingBySlugOrId(slug, "VEHICLE");
+  }
   if (!vehicle) notFound();
+  const isSampleFixture = vehicle.id.startsWith("s3000001-");
 
   const viewer = await getSession();
   const viewerProfile = viewer ? await getProfile(viewer.id) : null;
@@ -77,15 +86,24 @@ export default async function VehicleDetailPage({ params }: Props) {
     );
   }
 
-  const similarRaw = isPubliclyVisible
-    ? await queryPublicVehicles(supabase, {
-        auto_category: vehicle.auto_category ?? undefined,
-        make: vehicle.make ?? undefined,
-        limit: 8,
-      })
-    : [];
+  const similarRaw =
+    isPubliclyVisible && supabase
+      ? await queryPublicVehicles(supabase, {
+          auto_category: vehicle.auto_category ?? undefined,
+          make: vehicle.make ?? undefined,
+          limit: 8,
+        })
+      : [];
 
-  const similar = similarRaw.filter((x) => x.id !== vehicle.id).slice(0, 4);
+  let similar = similarRaw.filter((x) => x.id !== vehicle.id).slice(0, 4);
+  if (similar.length === 0 && isSampleFixture) {
+    similar = sampleBrowseFallback([], "VEHICLE", {
+      make: vehicle.make ?? undefined,
+      auto_category: vehicle.auto_category ?? undefined,
+    })
+      .filter((x) => x.id !== vehicle.id)
+      .slice(0, 4);
+  }
   const priceLabel = formatNaira(Number(vehicle.price));
 
   const ownerBanner =
@@ -102,6 +120,7 @@ export default async function VehicleDetailPage({ params }: Props) {
 
   return (
     <main className="pb-8">
+      {isSampleFixture ? <SampleFixtureBanner /> : null}
       {isPubliclyVisible ? (
         <MarketplaceViewTracker
           id={vehicle.id}

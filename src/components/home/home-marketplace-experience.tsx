@@ -119,6 +119,7 @@ function VehicleRail({ items }: { items: Property[] }) {
 
 import { HomeDesktopView } from "@/components/home/home-desktop-view";
 import { HomeCompactMarketplaceHero } from "@/components/home/home-compact-marketplace-hero";
+import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 
 export function HomeMarketplaceExperience({
   initialCategory,
@@ -423,13 +424,7 @@ export function HomeMarketplaceExperience({
   return (
     <div className="home-canvas min-h-[100dvh] pb-24 lg:pb-8 bg-[#f7f9fc]">
       {showingSampleListingsFixture ? (
-        <div
-          className="border-b border-gold/30 bg-gold/10 px-3 py-2 text-center text-xs font-semibold text-navy lg:text-sm"
-          role="status"
-        >
-          Sample listings (dev fixture) — not live marketplace inventory. Seed DB with{" "}
-          <code className="rounded bg-white/80 px-1">npm run seed:sample-listings</code>.
-        </div>
+        <SampleFixtureBanner />
       ) : null}
       {/* DESKTOP EXPERIENCE (RESTORED LEGACY HOMEPAGE) */}
       <HomeDesktopView
@@ -489,7 +484,7 @@ export function HomeMarketplaceExperience({
       <div className="mx-auto max-w-7xl space-y-3 px-3 pt-2 sm:px-6 lg:px-6 lg:pt-4 xl:px-8">
         {mixedLatest.length > 0 ? (
           <MarketplaceSection title="Latest on Yike" href="/discover" band="white">
-            <CarouselRail items={mixedLatest} kind={kind} />
+            <CarouselRail items={mixedLatest} priorityCount={3} />
           </MarketplaceSection>
         ) : null}
 
