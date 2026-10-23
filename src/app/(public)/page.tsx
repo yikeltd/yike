@@ -10,7 +10,7 @@ import {
   getPublicProperties,
 } from "@/lib/properties";
 import { createClient } from "@/lib/supabase/server";
-import { queryPublicVehicles } from "@/lib/marketplace/listings";
+import { queryPublicElectronics, queryPublicVehicles } from "@/lib/marketplace/listings";
 import { parseHomeCategory } from "@/lib/home/marketplace-category";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import {
@@ -174,6 +174,7 @@ export default async function HomePage({
       : null;
 
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
+  const electronicsOn = isLaunchFeatureVisible("electronics_marketplace");
 
   // Lean fetch: featured + recent pool (+ city when set). Luxury/state derived in-memory.
   const [featuredProps, recentProps, nearYouProps, vehiclePool] =
@@ -236,6 +237,18 @@ export default async function HomePage({
         : Promise.resolve([] as Property[]),
     ]);
 
+  const electronicsRecent = electronicsOn
+    ? await (async () => {
+        const supabase = await createClient();
+        if (!supabase) return [] as Property[];
+        return safeLoad(
+          "recent electronics",
+          () => queryPublicElectronics(supabase, { limit: 12 }),
+          [],
+        );
+      })()
+    : ([] as Property[]);
+
   const propertyPool = dedupeById([
     ...featuredProps,
     ...recentProps,
@@ -259,6 +272,17 @@ export default async function HomePage({
   const propertyItems = propertyDemoFiltered.items;
   const vehicleItems = vehicleDemoFiltered.items;
   const showingDemoFixtures = propertyDemo.isDemo || vehicleDemo.isDemo;
+
+  const mixedLatest = dedupeById([
+    ...propertyItems.slice(0, 8),
+    ...vehicleItems.slice(0, 8),
+    ...electronicsRecent,
+  ])
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
+    .slice(0, 12);
 
   const nearPool = propertyDemo.isDemo
     ? propertyItems
@@ -365,6 +389,8 @@ export default async function HomePage({
       >
         <HomeMarketplaceExperience
           initialCategory={category}
+          electronicsRecent={electronicsRecent}
+          mixedLatest={mixedLatest}
           showingDemoFixtures={showingDemoFixtures}
           homepageTopAd={homepageTopAd}
           marketplaceLocation={

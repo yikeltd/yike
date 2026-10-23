@@ -5,15 +5,28 @@
 import type { LocationScope, MarketplaceLocation, RailCopy } from "./types";
 import { scopeSubtitle } from "./rank";
 
+export type MarketplaceRailKind = "property" | "vehicle" | "electronics";
+
+function featuredBaseHref(kind: MarketplaceRailKind): string {
+  if (kind === "vehicle") return "/vehicles?sort=featured";
+  if (kind === "electronics") return "/electronics";
+  return "/search?featured=1";
+}
+
+function browseBaseHref(kind: MarketplaceRailKind): string {
+  if (kind === "vehicle") return "/vehicles";
+  if (kind === "electronics") return "/electronics";
+  return "/search";
+}
+
 export function featuredRailCopy(
   loc: MarketplaceLocation | null | undefined,
   scope: LocationScope,
-  kind: "property" | "vehicle",
+  kind: MarketplaceRailKind,
 ): RailCopy {
   const city = loc?.city;
   const state = loc?.state;
-  const baseHref =
-    kind === "vehicle" ? "/vehicles?sort=featured" : "/search?featured=1";
+  const baseHref = featuredBaseHref(kind);
   if (city && scope === "city") {
     return {
       title: `Featured in ${city}`,
@@ -44,11 +57,11 @@ export function featuredRailCopy(
 export function recentRailCopy(
   loc: MarketplaceLocation | null | undefined,
   scope: LocationScope,
-  kind: "property" | "vehicle",
+  kind: MarketplaceRailKind,
 ): RailCopy {
   const city = loc?.city;
   const state = loc?.state;
-  const baseHref = kind === "vehicle" ? "/vehicles" : "/search";
+  const baseHref = browseBaseHref(kind);
   if (city && scope === "city") {
     return {
       title: `Recently Added in ${city}`,
@@ -74,11 +87,11 @@ export function recentRailCopy(
 export function trendingRailCopy(
   loc: MarketplaceLocation | null | undefined,
   scope: LocationScope,
-  kind: "property" | "vehicle",
+  kind: MarketplaceRailKind,
 ): RailCopy {
   const city = loc?.city;
   const state = loc?.state;
-  const baseHref = kind === "vehicle" ? "/vehicles" : "/search";
+  const baseHref = browseBaseHref(kind);
   if (city && (scope === "city" || scope === "nearby_city")) {
     return {
       title: "Trending in Your City",
@@ -116,22 +129,24 @@ export function nearbyDealsRailCopy(
   };
 }
 
-export function nationwideRailCopy(kind: "property" | "vehicle"): RailCopy {
+export function nationwideRailCopy(kind: MarketplaceRailKind): RailCopy {
   return {
     title: "Across Nigeria",
-    href: kind === "vehicle" ? "/vehicles" : "/search",
+    href: browseBaseHref(kind),
   };
 }
 
 export function luxuryRailCopy(
   loc: MarketplaceLocation | null | undefined,
   scope: LocationScope,
-  kind: "property" | "vehicle",
+  kind: MarketplaceRailKind,
 ): RailCopy {
   const href =
     kind === "vehicle"
       ? "/vehicles?min_price=25000000"
-      : "/search?min=50000000";
+      : kind === "electronics"
+        ? "/electronics?min_price=500000"
+        : "/search?min=50000000";
   const city = loc?.city;
   return {
     title: "Luxury Collection",

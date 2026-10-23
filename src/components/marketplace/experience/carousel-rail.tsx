@@ -4,11 +4,13 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import type { Property } from "@/types/database";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { PropertyCard } from "@/components/property/property-card";
+import { ElectronicsCard } from "@/components/marketplace/electronics-card";
+import { normalizeAssetType } from "@/lib/marketplace/listings";
 import { cn } from "@/lib/utils";
 
 type Props = {
   items: Property[];
-  kind?: "vehicle" | "property";
+  kind?: "vehicle" | "property" | "electronics";
   priorityCount?: number;
 };
 
@@ -51,19 +53,34 @@ export function CarouselRail({ items, kind = "vehicle", priorityCount = 2 }: Pro
             key={item.id}
             className="w-[calc((100%-0.5rem)/2)] shrink-0 snap-start"
           >
-            {kind === "vehicle" || item.asset_type === "VEHICLE" ? (
-              <VehicleCard
-                vehicle={item}
-                variant="browse"
-                priorityImage={i < priorityCount}
-              />
-            ) : (
-              <PropertyCard
-                property={item}
-                variant="browse"
-                priorityImage={i < priorityCount}
-              />
-            )}
+            {(() => {
+              const asset = normalizeAssetType(item.asset_type);
+              if (kind === "electronics" || asset === "ELECTRONICS") {
+                return (
+                  <ElectronicsCard
+                    listing={item}
+                    variant="browse"
+                    priorityImage={i < priorityCount}
+                  />
+                );
+              }
+              if (kind === "vehicle" || asset === "VEHICLE") {
+                return (
+                  <VehicleCard
+                    vehicle={item}
+                    variant="browse"
+                    priorityImage={i < priorityCount}
+                  />
+                );
+              }
+              return (
+                <PropertyCard
+                  property={item}
+                  variant="browse"
+                  priorityImage={i < priorityCount}
+                />
+              );
+            })()}
           </div>
         ))}
       </div>

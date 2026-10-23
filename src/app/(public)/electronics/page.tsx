@@ -33,7 +33,7 @@ export default async function ElectronicsPage({
 
   const sp = await searchParams;
   const supabase = await createClient();
-  let items = supabase
+  const items = supabase
     ? await queryPublicElectronics(supabase, {
         q: first(sp.q),
         state: first(sp.state),
