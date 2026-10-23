@@ -1,24 +1,11 @@
 import { redirect } from "next/navigation";
-import { requireAgentLister } from "@/lib/auth";
-import {
-  mustCompleteSellerVerification,
-  SELLER_VERIFY_PATH,
-} from "@/lib/seller-trust";
-import { SmartSellerFlow } from "@/components/agent/smart-seller-flow";
 
 export const metadata = {
-  title: "New Property Listing | Yike",
-  description: "Create a property listing on Yike Marketplace.",
+  title: "New Listing | Yike",
+  description: "Choose property, vehicle, or electronics listing on Yike.",
 };
 
-export default async function NewListingPage() {
-  const { profile } = await requireAgentLister("/agent/verify", {
-    skipProfileSetup: true,
-  });
-
-  if (mustCompleteSellerVerification(profile)) {
-    redirect(SELLER_VERIFY_PATH);
-  }
-
-  return <SmartSellerFlow />;
+/** Legacy entry — send sellers to category picker or property engine. */
+export default function NewListingPage() {
+  redirect("/agent/listings/choose");
 }

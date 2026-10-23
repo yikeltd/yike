@@ -43,7 +43,7 @@ export function buildAgentVerificationApprovedEmailHtml(params: {
         "Your agent verification was approved. Your verified badge is live and you can post listings on Yike."
       )}
     `,
-    cta: { label: "Post a listing", href: `${SITE_URL}/agent/listings/new` },
+    cta: { label: "Post a listing", href: `${SITE_URL}/agent/listings/choose` },
   });
 }
 

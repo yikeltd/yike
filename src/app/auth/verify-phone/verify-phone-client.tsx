@@ -15,7 +15,7 @@ import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 export function VerifyPhoneClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/agent/listings/new";
+  const nextPath = searchParams.get("next") || "/agent/listings/choose";
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);

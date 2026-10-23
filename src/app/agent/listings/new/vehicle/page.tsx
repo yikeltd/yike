@@ -1,24 +1,51 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { requireAgentLister } from "@/lib/auth";
+import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import {
   mustCompleteSellerVerification,
   SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
-import { SmartSellerFlow } from "@/components/agent/smart-seller-flow";
+import { ListingEngine } from "@/components/listing-engine/listing-engine";
+import { SellerFlowShell } from "@/components/agent/seller-flow-shell";
 
 export const metadata = {
-  title: "List a Vehicle | Yike",
-  description: "Create a vehicle listing on Yike Marketplace.",
+  title: "List Vehicle or Equipment | Yike",
+  description:
+    "List cars, trucks, buses, heavy equipment and farm machinery on Yike.",
 };
 
 export default async function NewVehicleListingPage() {
-  const { profile } = await requireAgentLister("/agent/verify", {
+  if (!isLaunchFeatureVisible("vehicle_marketplace")) {
+    redirect("/agent/listings/choose");
+  }
+
+  const { user, profile } = await requireAgentLister("/agent/verify", {
     skipProfileSetup: true,
+    returnPath: "/agent/listings/new/vehicle",
   });
 
   if (mustCompleteSellerVerification(profile)) {
     redirect(SELLER_VERIFY_PATH);
   }
 
-  return <SmartSellerFlow />;
+  return (
+    <SellerFlowShell
+      eyebrow="Vehicles & equipment"
+      title="List vehicle or equipment"
+      description="Cars, trucks, excavators, tractors and more — category-specific fields, then review."
+      backHref="/agent/listings/choose"
+      backLabel="Choose category"
+      actions={
+        <Link
+          href="/vehicles"
+          className="pressable text-sm font-semibold text-navy/55 hover:text-navy"
+        >
+          Browse vehicles
+        </Link>
+      }
+    >
+      <ListingEngine categoryId="vehicle" agentId={user.id} />
+    </SellerFlowShell>
+  );
 }

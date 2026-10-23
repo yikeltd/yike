@@ -26,6 +26,7 @@ import {
 } from "@/lib/seller-trust";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 
 export async function getSession() {
   if (!isSupabaseConfigured()) return null;
@@ -108,9 +109,15 @@ export function isEmailVerified(
 
 export async function requireAgentLister(
   redirectTo = SELLER_VERIFY_PATH,
-  options?: { skipProfileSetup?: boolean }
+  options?: { skipProfileSetup?: boolean; returnPath?: string }
 ) {
-  const user = await requireAuth();
+  const loginNext = safeNextPath(
+    options?.returnPath,
+    "/agent/listings/choose",
+  );
+  const user = await requireAuth(
+    `/auth/login?next=${encodeURIComponent(loginNext)}`,
+  );
   const profile = await getProfile(user.id);
   if (!profile || profile.is_banned) redirect("/");
 

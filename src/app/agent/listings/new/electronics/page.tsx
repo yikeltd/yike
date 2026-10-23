@@ -21,6 +21,7 @@ export default async function NewElectronicsListingPage() {
 
   const { user, profile } = await requireAgentLister("/agent/verify", {
     skipProfileSetup: true,
+    returnPath: "/agent/listings/new/electronics",
   });
 
   if (mustCompleteSellerVerification(profile)) {

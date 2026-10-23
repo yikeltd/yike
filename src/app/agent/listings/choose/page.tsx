@@ -14,6 +14,7 @@ export const metadata = {
 export default async function ChooseListingTypePage() {
   const { profile } = await requireAgentLister("/agent/verify", {
     skipProfileSetup: true,
+    returnPath: "/agent/listings/choose",
   });
 
   if (mustCompleteSellerVerification(profile)) {
