@@ -1,4 +1,11 @@
 export { MARKETPLACE_VERTICALS, getVertical, getLiveVerticals, verticalFromAssetType } from "./verticals";
+export {
+  ELECTRONICS_PUBLIC_HREF,
+  getElectronicsVertical,
+  isElectronicsMarketplaceLive,
+  electronicsImplementationProbe,
+  rejectCrossVerticalAssetTypePayload,
+} from "./electronics-vertical";
 export type { MarketplaceVertical, MarketplaceVerticalId } from "./verticals";
 export {
   VEHICLE_CATEGORIES,

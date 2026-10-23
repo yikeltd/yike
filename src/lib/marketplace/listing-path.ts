@@ -13,6 +13,9 @@ export function listingPath(
   if (asset === "VEHICLE") {
     return `/vehicles/${listing.slug || listing.id}`;
   }
+  if (asset === "ELECTRONICS") {
+    return `/electronics/${listing.slug || listing.id}`;
+  }
   return propertyPath(listing);
 }
 

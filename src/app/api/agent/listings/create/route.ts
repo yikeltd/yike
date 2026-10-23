@@ -17,6 +17,7 @@ import {
   migratePhotoLabel,
   resolvePropertyPhotoSchema,
 } from "@/lib/listing-engine/photo-schema";
+import { rejectCrossVerticalAssetTypePayload } from "@/lib/marketplace/electronics-vertical";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -82,6 +83,7 @@ function buildMinimalRow(
 
   return {
     agent_id: userId,
+    asset_type: "PROPERTY",
     title: String(payload.title ?? "").trim(),
     description: payload.description ?? null,
     listing_type: String(payload.listing_type ?? "rent"),
@@ -202,6 +204,14 @@ export async function POST(request: Request) {
   const payload = body.payload ?? {};
   const pricingFields = body.pricingFields ?? {};
   const listingId = body.listingId?.trim() || null;
+
+  const assetGate = rejectCrossVerticalAssetTypePayload(payload);
+  if (!assetGate.ok) {
+    return NextResponse.json(
+      { error: assetGate.error, code: assetGate.code },
+      { status: 400 },
+    );
+  }
 
   const { data: profile, error: profileError } = await admin
     .from("profiles")
