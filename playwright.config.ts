@@ -1,5 +1,9 @@
 import { defineConfig } from "@playwright/test";
 
+const playwrightTestPepper =
+  process.env.YIKE_PIN_PEPPER ??
+  "playwright-local-test-pepper-minimum-32-chars";
+
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
@@ -11,6 +15,13 @@ export default defineConfig({
     : {
         command: "npm run start -- -p 3001",
         port: 3001,
-        reuseExistingServer: true,
+        reuseExistingServer: !process.env.CI,
+        env: {
+          ...process.env,
+          APP_ENV: process.env.APP_ENV ?? "development",
+          YIKE_PIN_PEPPER: playwrightTestPepper,
+          CRON_SECRET:
+            process.env.CRON_SECRET ?? "playwright-test-cron-secret-minimum",
+        },
       },
 });
