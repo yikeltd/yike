@@ -18,12 +18,14 @@ import { NIGERIAN_STATES } from "@/lib/constants";
 import {
   clearIncompatibleFilterFields,
   defaultSmartFilterState,
+  hydrateSmartFilterFormState,
   ELECTRONICS_BRANDS,
   ELECTRONICS_CATEGORIES,
   ELECTRONICS_CONDITIONS,
   type FilterVertical,
   type SmartFilterFormState,
 } from "@/lib/search/smart-filter-engine";
+import { usePathname, useSearchParams } from "next/navigation";
 import { VEHICLE_MAKES, VEHICLE_MAKE_TYPES } from "@/lib/marketplace/vehicle-makes";
 import {
   VEHICLE_CATEGORIES_BROWSE,
@@ -44,17 +46,26 @@ export function SearchContextFilters({
   onClose: () => void;
 }) {
   const electronicsOn = isLaunchFeatureVisible("electronics_marketplace");
-  const [form, setForm] = useState<SmartFilterFormState>(() => ({
-    ...defaultSmartFilterState(activeVertical),
-    vertical: activeVertical,
-  }));
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [form, setForm] = useState<SmartFilterFormState>(() =>
+    hydrateSmartFilterFormState(
+      pathname,
+      new URLSearchParams(searchParams.toString()),
+      activeVertical,
+    ),
+  );
 
   useEffect(() => {
-    setForm((prev) => ({
-      ...prev,
-      vertical: activeVertical,
-    }));
-  }, [activeVertical]);
+    setForm(
+      hydrateSmartFilterFormState(
+        pathname,
+        new URLSearchParams(searchParams.toString()),
+        activeVertical,
+      ),
+    );
+  }, [pathname, searchParams, activeVertical]);
 
   const modelOptions = form.make ? VEHICLE_MAKE_TYPES[form.make] || [] : [];
 
@@ -63,7 +74,10 @@ export function SearchContextFilters({
   }
 
   function handleReset() {
-    setForm(defaultSmartFilterState("all"));
+    const reset = defaultSmartFilterState("all");
+    setForm(reset);
+    onApply(reset);
+    onClose();
   }
 
   function handleFormSubmit(e: React.FormEvent) {

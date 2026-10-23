@@ -139,6 +139,10 @@ export function smartFilterToUrlParams(
     params.set("role", filters.role);
   }
 
+  if (vertical === "all") {
+    params.set("marketplace", "all");
+  }
+
   return params;
 }
 
@@ -304,35 +308,115 @@ export function clearIncompatibleFilterFields(
   };
 }
 
+export function resolveFilterVerticalFromRoute(
+  pathname: string,
+  sp: URLSearchParams,
+): FilterVertical {
+  if (pathname.startsWith("/vehicles")) return "vehicle";
+  if (pathname.startsWith("/electronics")) return "electronics";
+  if (pathname.startsWith("/agents")) return "agent";
+  if (pathname.startsWith("/search")) {
+    if (sp.get("marketplace") === "all") return "all";
+    if (sp.get("hub") === "land_sale") return "land";
+    if (
+      sp.get("property_type") ||
+      sp.get("type") ||
+      sp.get("beds") ||
+      sp.get("baths") ||
+      sp.get("amenity")
+    ) {
+      return "property";
+    }
+    return "property";
+  }
+  return "property";
+}
+
+/** Hydrate smart filter form from current route + query string (SSOT for filter sheet). */
+export function hydrateSmartFilterFormState(
+  pathname: string,
+  sp: URLSearchParams,
+  activeVertical?: FilterVertical,
+): SmartFilterFormState {
+  const vertical = activeVertical ?? resolveFilterVerticalFromRoute(pathname, sp);
+  const base = defaultSmartFilterState(vertical);
+  const minBudget = sp.get("min") ?? sp.get("min_price") ?? "";
+  const maxBudget = sp.get("max") ?? sp.get("max_price") ?? "";
+
+  const shared = {
+    ...base,
+    q: sp.get("q") ?? "",
+    state: sp.get("state") ?? "",
+    city: sp.get("city") ?? "",
+  };
+
+  if (vertical === "vehicle") {
+    return {
+      ...shared,
+      min_price: minBudget,
+      max_price: maxBudget,
+      vehicle_category: sp.get("category") ?? "",
+      vehicle_group: sp.get("group") ?? "",
+      make: sp.get("make") ?? "",
+      model: sp.get("model") ?? "",
+      vehicle_condition: sp.get("condition") ?? "",
+      max_mileage: sp.get("max_mileage") ?? "",
+      max_operating_hours: sp.get("max_operating_hours") ?? "",
+    };
+  }
+
+  if (vertical === "electronics") {
+    return {
+      ...shared,
+      min_price: minBudget,
+      max_price: maxBudget,
+      category: sp.get("category") ?? "",
+      brand: sp.get("brand") ?? "",
+      condition: sp.get("condition") ?? "",
+    };
+  }
+
+  if (vertical === "agent") {
+    return {
+      ...shared,
+      role: sp.get("role") ?? "",
+    };
+  }
+
+  if (vertical === "land") {
+    return {
+      ...shared,
+      listing_type: sp.get("type") ?? "",
+      property_type: sp.get("property_type") ?? "land",
+      min: minBudget,
+      max: maxBudget,
+    };
+  }
+
+  if (vertical === "all") {
+    return {
+      ...shared,
+      min: minBudget,
+      max: maxBudget,
+    };
+  }
+
+  return {
+    ...shared,
+    listing_type: sp.get("type") ?? "",
+    property_type: sp.get("property_type") ?? "",
+    beds: sp.get("beds") ?? "",
+    min: minBudget,
+    max: maxBudget,
+  };
+}
+
+/** @deprecated Use hydrateSmartFilterFormState */
 export function parseSmartFilterFromSearchParams(
   sp: URLSearchParams,
   pathname: string,
 ): Partial<SmartFilterFormState> {
-  const vertical: FilterVertical =
-    pathname.startsWith("/vehicles")
-      ? "vehicle"
-      : pathname.startsWith("/electronics")
-        ? "electronics"
-        : pathname.startsWith("/agents")
-          ? "agent"
-          : sp.get("hub") === "land_sale"
-            ? "land"
-            : "property";
-
-  return {
-    vertical,
-    state: sp.get("state") ?? "",
-    city: sp.get("city") ?? "",
-    q: sp.get("q") ?? "",
-    category: sp.get("category") ?? "",
-    brand: sp.get("brand") ?? "",
-    condition: sp.get("condition") ?? "",
-    make: sp.get("make") ?? "",
-    model: sp.get("model") ?? "",
-    vehicle_condition: sp.get("condition") ?? "",
-    min_price: sp.get("min_price") ?? sp.get("min") ?? "",
-    max_price: sp.get("max_price") ?? sp.get("max") ?? "",
-  };
+  return hydrateSmartFilterFormState(pathname, sp);
 }
 
 export { ELECTRONICS_CATEGORIES, ELECTRONICS_CONDITIONS };

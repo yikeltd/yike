@@ -38,6 +38,11 @@ import { samplePropertyBrowse } from "@/lib/sample-listings/query-fixtures";
 import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
 import { SearchClientChrome } from "@/components/search/search-client-chrome";
+import { createClient } from "@/lib/supabase/server";
+import { isMixedMarketplaceSearch } from "@/lib/search/marketplace-search-mode";
+import { queryMixedMarketplace } from "@/lib/search/mixed-marketplace-search";
+import { MixedMarketplaceFeed } from "@/components/marketplace/mixed-marketplace-feed";
+import type { Property } from "@/types/database";
 
 export const metadata: Metadata = {
   title: `Search Property Listings | ${SITE_NAME}`,
@@ -65,6 +70,7 @@ export default async function SearchPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const rawParams = await searchParams;
+  const mixedMode = isMixedMarketplaceSearch(rawParams);
   const params = parseSearchParams(rawParams);
   const nearbyFlag =
     (typeof rawParams.nearby === "string" && rawParams.nearby === "1") ||
@@ -85,10 +91,33 @@ export default async function SearchPage({
   let exactCount = 0;
   let feedItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
   let nearbyItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
+  let mixedItems: Property[] = [];
   let isDemo = false;
   let showingSampleFixture = false;
+  let mixedFetchFailed = false;
 
-  if (hasQuery) {
+  if (mixedMode) {
+    const minMixed =
+      params.min_price ??
+      (typeof rawParams.min === "string" ? Number(rawParams.min) : undefined);
+    const maxMixed =
+      params.max_price ??
+      (typeof rawParams.max === "string" ? Number(rawParams.max) : undefined);
+    const supabase = await createClient();
+    const mixed = await queryMixedMarketplace(supabase, {
+      q: params.q,
+      state: params.state,
+      city: params.city,
+      min_price: Number.isFinite(minMixed) ? minMixed : undefined,
+      max_price: Number.isFinite(maxMixed) ? maxMixed : undefined,
+      limit: 24,
+    });
+    mixedItems = mixed.items;
+    exactCount = mixedItems.length;
+    showingSampleFixture = mixed.usedSampleFixture;
+    mixedFetchFailed = mixed.fetchFailed;
+    isDemo = showingSampleFixture;
+  } else if (hasQuery) {
     const bundle = await resolveSearchResults(
       getPublicPropertiesStrict,
       preloadParams,
@@ -154,6 +183,15 @@ export default async function SearchPage({
   const showingNearby = hasQuery && exactCount === 0 && nearbyItems.length > 0;
   const activeItems = feedItems.length > 0 ? feedItems : nearbyItems;
 
+  const mixedLabel = [
+    params.q ? `"${params.q}"` : null,
+    params.city,
+    params.state,
+    "All categories",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
       <SampleFixtureBanner active={showingSampleFixture} />
@@ -173,55 +211,86 @@ export default async function SearchPage({
       </div>
 
       <Suspense fallback={<ResultsFallback />}>
-        <SearchClientChrome
-          feedItems={activeItems}
-          exactCount={exactCount}
-          nearbyCount={nearbyItems.length}
-          showingFallback={showingNearby}
-          currentHref={currentHref}
-          currentLabel={label || "Search Results"}
-        >
-          <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
-            {feedItems.length > 0 ? (
-              <PropertyFeed
-                properties={feedItems}
-                isDemo={isDemo}
-                sponsoredAd={sponsoredSearchAd}
-                midFeedAd={sponsoredSearchAd ? null : feedAd}
-                feedAdInsertAfter={5}
-                adPlacementKey="search_feed_mid"
-              />
-            ) : showingNearby ? (
-              <PropertyFeed
-                properties={nearbyItems}
-                isDemo={isDemo}
-                sponsoredAd={sponsoredSearchAd}
-                midFeedAd={sponsoredSearchAd ? null : feedAd}
-                feedAdInsertAfter={5}
-                adPlacementKey="search_feed_mid"
-              />
-            ) : (
-              <DiscoveryEmptyPanel
-                category="property"
-                title={hasQuery ? emptyCopy.title : "Start exploring homes & vehicles"}
-                subtitle={
-                  hasQuery
-                    ? "Try another filter, or browse popular categories below."
-                    : "Recent searches, trending areas, and cities — tap to browse."
-                }
-                showLatestHref="/search"
-              />
-            )}
+        {mixedMode ? (
+          <SearchClientChrome
+            feedItems={mixedItems}
+            exactCount={exactCount}
+            nearbyCount={0}
+            showingFallback={false}
+            currentHref={currentHref}
+            currentLabel={mixedLabel || "All categories"}
+          >
+            <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
+              {mixedFetchFailed ? (
+                <DiscoveryEmptyPanel
+                  category="property"
+                  title="Search temporarily unavailable"
+                  subtitle="We could not load listings right now. Try again shortly."
+                  showLatestHref="/search?marketplace=all"
+                />
+              ) : mixedItems.length > 0 ? (
+                <MixedMarketplaceFeed listings={mixedItems} />
+              ) : (
+                <DiscoveryEmptyPanel
+                  category="property"
+                  title="No listings match"
+                  subtitle="Try another keyword, city or budget range across properties, vehicles and electronics."
+                  showLatestHref="/search?marketplace=all"
+                />
+              )}
+            </section>
+          </SearchClientChrome>
+        ) : (
+          <SearchClientChrome
+            feedItems={activeItems}
+            exactCount={exactCount}
+            nearbyCount={nearbyItems.length}
+            showingFallback={showingNearby}
+            currentHref={currentHref}
+            currentLabel={label || "Search Results"}
+          >
+            <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
+              {feedItems.length > 0 ? (
+                <PropertyFeed
+                  properties={feedItems}
+                  isDemo={isDemo}
+                  sponsoredAd={sponsoredSearchAd}
+                  midFeedAd={sponsoredSearchAd ? null : feedAd}
+                  feedAdInsertAfter={5}
+                  adPlacementKey="search_feed_mid"
+                />
+              ) : showingNearby ? (
+                <PropertyFeed
+                  properties={nearbyItems}
+                  isDemo={isDemo}
+                  sponsoredAd={sponsoredSearchAd}
+                  midFeedAd={sponsoredSearchAd ? null : feedAd}
+                  feedAdInsertAfter={5}
+                  adPlacementKey="search_feed_mid"
+                />
+              ) : (
+                <DiscoveryEmptyPanel
+                  category="property"
+                  title={hasQuery ? emptyCopy.title : "Start exploring homes & vehicles"}
+                  subtitle={
+                    hasQuery
+                      ? "Try another filter, or browse popular categories below."
+                      : "Recent searches, trending areas, and cities — tap to browse."
+                  }
+                  showLatestHref="/search?marketplace=all"
+                />
+              )}
 
-            <div className="mt-6 space-y-4">
-              <AdminPromoSlot placement="search_page" variant="inline" />
-              <AdSlot
-                placement="search_top"
-                className="hidden lg:block"
-              />
-            </div>
-          </section>
-        </SearchClientChrome>
+              <div className="mt-6 space-y-4">
+                <AdminPromoSlot placement="search_page" variant="inline" />
+                <AdSlot
+                  placement="search_top"
+                  className="hidden lg:block"
+                />
+              </div>
+            </section>
+          </SearchClientChrome>
+        )}
       </Suspense>
     </div>
   );

@@ -7,6 +7,7 @@ import {
   clearIncompatibleFilterFields,
   defaultSmartFilterState,
   filterRouteForVertical,
+  hydrateSmartFilterFormState,
   smartFilterToUrlParams,
 } from "@/lib/search/smart-filter-engine";
 
@@ -64,9 +65,30 @@ test("clearIncompatibleFilterFields strips vehicle fields when switching to elec
   assert.equal(next.category, "");
 });
 
-test("buildSmartFilterHref reset state routes to bare /search", () => {
+test("buildSmartFilterHref reset state routes to mixed marketplace search", () => {
   const href = buildSmartFilterHref(defaultSmartFilterState("all"));
-  assert.equal(href, "/search");
+  assert.equal(href, "/search?marketplace=all");
+});
+
+test("hydrateSmartFilterFormState reads vehicle URL params", () => {
+  const sp = new URLSearchParams(
+    "category=excavator&group=heavy&make=Caterpillar&condition=foreign_used&max_operating_hours=5000&state=Lagos&q=320",
+  );
+  const form = hydrateSmartFilterFormState("/vehicles", sp, "vehicle");
+  assert.equal(form.vehicle_category, "excavator");
+  assert.equal(form.vehicle_group, "heavy");
+  assert.equal(form.make, "Caterpillar");
+  assert.equal(form.max_operating_hours, "5000");
+  assert.equal(form.q, "320");
+});
+
+test("hydrateSmartFilterFormState reads all-categories marketplace mode", () => {
+  const sp = new URLSearchParams("marketplace=all&state=FCT&min=1000000&max=5000000");
+  const form = hydrateSmartFilterFormState("/search", sp);
+  assert.equal(form.vertical, "all");
+  assert.equal(form.state, "FCT");
+  assert.equal(form.min, "1000000");
+  assert.equal(form.max, "5000000");
 });
 
 test("mobile header uses unified search layout without sticky positioning classes", () => {
@@ -91,5 +113,6 @@ test("all vertical uses /search with shared params only in builder", () => {
   assert.equal(params.get("state"), "FCT");
   assert.equal(params.get("q"), "duplex");
   assert.equal(params.get("min"), "5000000");
+  assert.equal(params.get("marketplace"), "all");
   assert.equal(filterRouteForVertical("all"), "/search");
 });

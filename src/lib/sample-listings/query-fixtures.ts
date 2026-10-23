@@ -137,3 +137,17 @@ export function sampleVehicleBrowse(filters: SampleBrowseFilters = {}): Property
 export function sampleElectronicsBrowse(filters: SampleBrowseFilters = {}): Property[] {
   return filterSamples("ELECTRONICS", filters);
 }
+
+/** Mixed dev fixture browse — only when sample fixture flag is enabled. */
+export function sampleMixedBrowse(filters: SampleBrowseFilters = {}): Property[] {
+  if (!isSampleListingFixtureEnabled()) return [];
+  const merged = [
+    ...filterSamples("PROPERTY", filters),
+    ...filterSamples("VEHICLE", filters),
+    ...filterSamples("ELECTRONICS", filters),
+  ];
+  return merged.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+}

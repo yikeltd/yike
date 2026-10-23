@@ -67,6 +67,7 @@
     "test:electronics-vertical": "tsx --test src/lib/__tests__/electronics-vertical-qa.test.ts",
     "test:smart-filter": "tsx --test src/lib/__tests__/smart-filter-engine.test.ts",
     "test:vehicle-taxonomy": "tsx --test src/lib/__tests__/vehicle-taxonomy.test.ts",
+    "test:mixed-marketplace": "tsx --test src/lib/__tests__/mixed-marketplace-search.test.ts",
     "test:payments": "tsx --test src/lib/payments/**/__tests__/**/*.test.ts"
   },
   "dependencies": {

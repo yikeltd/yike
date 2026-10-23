@@ -182,6 +182,9 @@ export async function queryPublicVehicles(
   if (params.condition) query = query.eq("vehicle_condition", params.condition);
   if (params.min_mileage != null) query = query.gte("mileage", params.min_mileage);
   if (params.max_mileage != null) query = query.lte("mileage", params.max_mileage);
+  if (params.max_operating_hours != null) {
+    query = query.lte("attributes->operating_hours", params.max_operating_hours);
+  }
   if (params.q) {
     query = query.or(
       `title.ilike.%${params.q}%,description.ilike.%${params.q}%,make.ilike.%${params.q}%,model.ilike.%${params.q}%,city.ilike.%${params.q}%`,
@@ -193,15 +196,7 @@ export async function queryPublicVehicles(
     console.error("[marketplace] queryPublicVehicles", error.message);
     return [];
   }
-  let rows = (data ?? []) as Property[];
-  if (params.max_operating_hours != null) {
-    rows = rows.filter((p) => {
-      const attrs = (p.attributes ?? {}) as Record<string, unknown>;
-      const hours = Number(attrs.operating_hours);
-      return Number.isFinite(hours) && hours <= params.max_operating_hours!;
-    });
-  }
-  return rows;
+  return (data ?? []) as Property[];
 }
 
 /** Publishable listings by id — preserves caller order; omits inactive or missing rows. */
