@@ -56,10 +56,10 @@ import type { LocationScope, MarketplaceLocation } from "@/lib/marketplace-locat
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Yike — Nigeria's Trusted Marketplace for Property & Vehicles",
+    absolute: "Yike — Nigeria's Trusted Marketplace for Property, Vehicles & Electronics",
   },
   description:
-    "Find verified properties and vehicles across Nigeria. One marketplace, WhatsApp contact, trusted sellers.",
+    "Find verified properties, vehicles, and electronics across Nigeria. One marketplace, WhatsApp contact, trusted sellers.",
   alternates: { canonical: SITE_URL },
   openGraph: {
     title: "Yike — Nigeria's Trusted Marketplace",

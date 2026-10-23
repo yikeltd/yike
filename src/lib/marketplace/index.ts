@@ -25,6 +25,9 @@ export {
 } from "./vehicle-makes";
 export {
   queryPublicVehicles,
+  queryPublicElectronics,
+  getElectronicsByIdOrSlug,
+  buildElectronicsInsertPayload,
   getVehicleByIdOrSlug,
   buildVehicleInsertPayload,
   propertyToListingRow,

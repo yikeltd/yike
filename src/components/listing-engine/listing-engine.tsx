@@ -15,6 +15,7 @@ import {
   validateValues,
   valuesToPropertyPayload,
   valuesToVehiclePayload,
+  valuesToElectronicsPayload,
   type ListingCategoryId,
   type ListingValues,
 } from "@/lib/listing-engine";
@@ -221,6 +222,9 @@ export function ListingEngine({
       if (adapter === "vehicle") {
         endpoint = "/api/agent/vehicles/create";
         body = valuesToVehiclePayload(values, { listingId, mediaUrls });
+      } else if (adapter === "electronics") {
+        endpoint = "/api/agent/electronics/create";
+        body = valuesToElectronicsPayload(values, { listingId, mediaUrls });
       } else if (adapter === "property") {
         endpoint = "/api/agent/listings/create";
         body = valuesToPropertyPayload(values, {

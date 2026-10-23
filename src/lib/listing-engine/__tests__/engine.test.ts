@@ -16,6 +16,7 @@ import { CATALOG_REGISTRY } from "../catalogs/registry";
 import { NAMED_VALIDATION_RULES, NAMED_VISIBILITY_RULES } from "../rules/registry";
 import { VEHICLE_CATEGORY_MANIFEST } from "../categories/vehicle";
 import { PROPERTY_CATEGORY_MANIFEST } from "../categories/property";
+import { ELECTRONICS_CATEGORY_MANIFEST } from "../categories/electronics";
 import { valuesToVehiclePayload } from "../adapters/vehicle";
 import { valuesToPropertyPayload } from "../adapters/property";
 import type { CategoryManifest, ListingFieldDef } from "../types";
@@ -238,9 +239,10 @@ describe("resolver", () => {
 });
 
 describe("config validator", () => {
-  it("passes for the shipped vehicle and property manifests", () => {
+  it("passes for the shipped vehicle, property, and electronics manifests", () => {
     assert.doesNotThrow(() => validateCategoryManifest(VEHICLE_CATEGORY_MANIFEST));
     assert.doesNotThrow(() => validateCategoryManifest(PROPERTY_CATEGORY_MANIFEST));
+    assert.doesNotThrow(() => validateCategoryManifest(ELECTRONICS_CATEGORY_MANIFEST));
   });
 
   it("rejects duplicate field ids", () => {

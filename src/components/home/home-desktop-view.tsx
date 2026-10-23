@@ -12,6 +12,7 @@ import { isTrustVerified } from "@/lib/hub-filters";
 import { listingPath } from "@/lib/marketplace/listing-path";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
 import { HeaderDesktop } from "@/components/layout/header-desktop";
+import { HomeThreeVerticalHero } from "@/components/home/home-three-vertical-hero";
 
 type Props = {
   featuredItems: Property[];
@@ -142,6 +143,10 @@ export function HomeDesktopView({
     <div className="hidden lg:block min-h-screen bg-[#f8fafc] text-navy pb-16">
       {/* 1. DEEP NAVY UNIFIED DESKTOP HEADER */}
       <HeaderDesktop />
+
+      <section className="px-8 pt-4">
+        <HomeThreeVerticalHero />
+      </section>
 
       {/* 2. RESTORED FULL-WIDTH DESKTOP HERO BANNER */}
       <section className="px-8 pt-6">

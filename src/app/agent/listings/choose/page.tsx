@@ -4,11 +4,11 @@ import {
   mustCompleteSellerVerification,
   SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
-import { SmartSellerFlow } from "@/components/agent/smart-seller-flow";
+import { SellerCategoryChoose } from "@/components/agent/seller-category-choose";
 
 export const metadata = {
-  title: "Sell on Yike | List Property & Vehicle",
-  description: "Intelligent listing creator for properties and vehicles on Yike Marketplace.",
+  title: "Sell on Yike | Property, Vehicles & Electronics",
+  description: "Create property, vehicle, or electronics listings on Yike Marketplace.",
 };
 
 export default async function ChooseListingTypePage() {
@@ -20,5 +20,5 @@ export default async function ChooseListingTypePage() {
     redirect(SELLER_VERIFY_PATH);
   }
 
-  return <SmartSellerFlow />;
+  return <SellerCategoryChoose />;
 }

@@ -61,7 +61,7 @@ test("Asset type normalization includes PROPERTY, VEHICLE, and ELECTRONICS", () 
   assert.equal(normalizeAssetType("UNKNOWN"), "PROPERTY");
 });
 
-test("Vertical registry recognizes electronics vertical as reserved", () => {
+test("Vertical registry recognizes electronics vertical as live", () => {
   assert.equal(verticalFromAssetType("PROPERTY"), "property");
   assert.equal(verticalFromAssetType("VEHICLE"), "vehicle");
   assert.equal(verticalFromAssetType("AUTO"), "vehicle");
@@ -70,7 +70,7 @@ test("Vertical registry recognizes electronics vertical as reserved", () => {
   const electronicsVertical = MARKETPLACE_VERTICALS.find((v) => v.id === "electronics");
   assert.ok(electronicsVertical);
   assert.equal(electronicsVertical.assetType, "ELECTRONICS");
-  assert.equal(electronicsVertical.status, "reserved");
+  assert.equal(electronicsVertical.status, "live");
 });
 
 test("Vehicle condition compatibility: legacy 'new' and 'certified' map to canonical conditions", () => {

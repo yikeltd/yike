@@ -76,6 +76,7 @@ export { VEHICLE_CATEGORY_MANIFEST } from "./categories/vehicle";
 export { PROPERTY_CATEGORY_MANIFEST } from "./categories/property";
 
 export { valuesToVehiclePayload } from "./adapters/vehicle";
+export { valuesToElectronicsPayload } from "./adapters/electronics";
 export type { VehiclePayload } from "./adapters/vehicle";
 export { valuesToPropertyPayload } from "./adapters/property";
 export type { PropertyPayload } from "./adapters/property";

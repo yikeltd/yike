@@ -126,6 +126,7 @@ function VehicleRail({ items }: { items: Property[] }) {
 }
 
 import { HomeDesktopView } from "@/components/home/home-desktop-view";
+import { HomeThreeVerticalHero } from "@/components/home/home-three-vertical-hero";
 
 export function HomeMarketplaceExperience({
   initialCategory,
@@ -425,68 +426,32 @@ export function HomeMarketplaceExperience({
 
       <div className="mx-auto max-w-7xl px-3 pt-3 sm:px-6 lg:px-6 lg:pt-4 xl:px-8 space-y-4">
         
-        {/* 2. CATEGORY HERO (VEHICLES VS PROPERTIES CARDS) */}
-        <section className="grid grid-cols-2 gap-2.5">
-          {/* Vehicles Hero Card */}
+        <HomeThreeVerticalHero className="!px-0" />
+
+        <section className="grid grid-cols-2 gap-2" aria-label="Feed focus">
           <button
             type="button"
             onClick={() => syncCategory("vehicle")}
             className={cn(
-              "pressable relative overflow-hidden rounded-3xl p-3.5 text-left shadow-md transition-all h-32 flex flex-col justify-between border",
-              isVehicle ? "border-gold ring-2 ring-gold/40" : "border-navy/10"
+              "pressable rounded-2xl border px-3 py-2.5 text-left text-sm font-bold transition-all",
+              isVehicle
+                ? "border-gold bg-gold/10 text-navy"
+                : "border-navy/10 bg-white text-navy/70",
             )}
           >
-            <Image
-              src="https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=600&q=80&fit=crop"
-              alt="Vehicles"
-              fill
-              className="object-cover brightness-[0.55]"
-            />
-            <div className="relative z-10 flex items-start justify-between w-full">
-              <div className="space-y-0.5">
-                <h2 className="text-base font-black text-white leading-tight">Vehicles</h2>
-                <p className="text-[10px] font-bold text-white/80">Cars • SUVs • Trucks</p>
-              </div>
-              <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-gold/90 text-navy shadow-sm">
-                <Car className="h-4 w-4" />
-              </span>
-            </div>
-            <div className="relative z-10 flex items-center">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold text-navy shadow-md">
-                <ChevronRight className="h-3.5 w-3.5 stroke-[3]" />
-              </span>
-            </div>
+            Vehicle feed
           </button>
-
-          {/* Properties Hero Card */}
           <button
             type="button"
             onClick={() => syncCategory("property")}
             className={cn(
-              "pressable relative overflow-hidden rounded-3xl p-3.5 text-left shadow-md transition-all h-32 flex flex-col justify-between border",
-              !isVehicle ? "border-gold ring-2 ring-gold/40" : "border-navy/10"
+              "pressable rounded-2xl border px-3 py-2.5 text-left text-sm font-bold transition-all",
+              !isVehicle
+                ? "border-gold bg-gold/10 text-navy"
+                : "border-navy/10 bg-white text-navy/70",
             )}
           >
-            <Image
-              src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80&fit=crop"
-              alt="Properties"
-              fill
-              className="object-cover brightness-[0.55]"
-            />
-            <div className="relative z-10 flex items-start justify-between w-full">
-              <div className="space-y-0.5">
-                <h2 className="text-base font-black text-white leading-tight">Properties</h2>
-                <p className="text-[10px] font-bold text-white/80">Homes • Land • Commercial</p>
-              </div>
-              <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-gold/90 text-navy shadow-sm">
-                <HomeIcon className="h-4 w-4" />
-              </span>
-            </div>
-            <div className="relative z-10 flex items-center">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold text-navy shadow-md">
-                <ChevronRight className="h-3.5 w-3.5 stroke-[3]" />
-              </span>
-            </div>
+            Property feed
           </button>
         </section>
 

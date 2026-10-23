@@ -74,11 +74,13 @@ function buildCategories(): CategoryItem[] {
     {
       id: "electronics",
       label: "Electronics",
-      description: "Phones & gadgets",
-      href: "#",
+      description: isLaunchFeatureVisible("electronics_marketplace")
+        ? "Phones & appliances"
+        : "Coming soon",
+      href: isLaunchFeatureVisible("electronics_marketplace") ? "/electronics" : "#",
       icon: Sparkles,
-      tone: "soon",
-      badge: "Soon",
+      tone: isLaunchFeatureVisible("electronics_marketplace") ? "live" : "soon",
+      badge: isLaunchFeatureVisible("electronics_marketplace") ? undefined : "Soon",
       prominence: "secondary",
     },
   ];

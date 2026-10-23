@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AssetType, Property, PropertyStatus } from "@/types/database";
 import type { MarketplaceListingRow } from "@/lib/search/types";
 import type { VehicleCategoryId } from "@/lib/marketplace/vehicle-specs";
+import type { ElectronicsCategoryId } from "@/lib/marketplace/electronics-specs";
 
 export type ListingIntent = "sale" | "rent" | "lease" | "shortlet";
 
@@ -79,6 +80,35 @@ export function propertyToListingRow(p: Property): MarketplaceListingRow {
     updated_at: p.updated_at,
   };
 }
+
+export type ElectronicsListingInput = {
+  title: string;
+  description?: string;
+  price: number;
+  state: string;
+  city: string;
+  area?: string;
+  auto_category: ElectronicsCategoryId;
+  media_urls?: string[];
+  video_url?: string | null;
+  brand: string;
+  model: string;
+  condition: string;
+  attributes?: Record<string, unknown>;
+};
+
+export type ElectronicsSearchParams = {
+  q?: string;
+  state?: string;
+  city?: string;
+  auto_category?: string;
+  brand?: string;
+  condition?: string;
+  min_price?: number;
+  max_price?: number;
+  featured?: boolean;
+  limit?: number;
+};
 
 export type VehicleSearchParams = {
   q?: string;
@@ -172,6 +202,104 @@ export async function getVehicleByIdOrSlug(
     .eq("slug", idOrSlug)
     .maybeSingle();
   return (bySlug.data as Property | null) ?? null;
+}
+
+export async function queryPublicElectronics(
+  client: SupabaseClient,
+  params: ElectronicsSearchParams = {},
+): Promise<Property[]> {
+  const limit = Math.min(Math.max(params.limit ?? 24, 1), 48);
+  let query = client
+    .from("properties")
+    .select(VEHICLE_SELECT)
+    .eq("asset_type", "ELECTRONICS")
+    .eq("status", "approved")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (params.featured) query = query.eq("is_featured", true);
+  if (params.state) query = query.ilike("state", `%${params.state}%`);
+  if (params.city) query = query.ilike("city", `%${params.city}%`);
+  if (params.auto_category) query = query.eq("auto_category", params.auto_category);
+  if (params.brand) query = query.ilike("make", `%${params.brand}%`);
+  if (params.condition) query = query.eq("condition", params.condition);
+  if (params.min_price != null) query = query.gte("price", params.min_price);
+  if (params.max_price != null) query = query.lte("price", params.max_price);
+  if (params.q) {
+    query = query.or(
+      `title.ilike.%${params.q}%,description.ilike.%${params.q}%,make.ilike.%${params.q}%,model.ilike.%${params.q}%,city.ilike.%${params.q}%`,
+    );
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("[marketplace] queryPublicElectronics", error.message);
+    return [];
+  }
+  return (data ?? []) as Property[];
+}
+
+export async function getElectronicsByIdOrSlug(
+  client: SupabaseClient,
+  idOrSlug: string,
+): Promise<Property | null> {
+  const byId = await client
+    .from("properties")
+    .select(VEHICLE_SELECT)
+    .eq("asset_type", "ELECTRONICS")
+    .eq("id", idOrSlug)
+    .maybeSingle();
+  if (byId.data) return byId.data as Property;
+
+  const bySlug = await client
+    .from("properties")
+    .select(VEHICLE_SELECT)
+    .eq("asset_type", "ELECTRONICS")
+    .eq("slug", idOrSlug)
+    .maybeSingle();
+  return (bySlug.data as Property | null) ?? null;
+}
+
+export function buildElectronicsInsertPayload(
+  sellerId: string,
+  input: ElectronicsListingInput,
+  status: PropertyStatus = "pending",
+): Record<string, unknown> {
+  const normalizedCondition = normalizeListingCondition(input.condition) ?? input.condition;
+  const attributes = {
+    ...(input.attributes ?? {}),
+    vertical: "electronics",
+    auto_category: input.auto_category,
+    brand: input.brand.trim(),
+  };
+
+  return {
+    agent_id: sellerId,
+    asset_type: "ELECTRONICS",
+    title: input.title.trim(),
+    description: input.description?.trim() || null,
+    price: input.price,
+    listing_type: "sale",
+    property_type: null,
+    bedrooms: 0,
+    bathrooms: 0,
+    toilets: 0,
+    payment_period: "total",
+    state: input.state.trim(),
+    city: input.city.trim(),
+    area: (input.area ?? input.city).trim(),
+    media_urls: input.media_urls ?? [],
+    video_url: input.video_url ?? null,
+    status,
+    auto_category: input.auto_category,
+    make: input.brand.trim(),
+    model: input.model.trim(),
+    year: null,
+    condition: normalizedCondition,
+    vehicle_condition: null,
+    attributes,
+  };
 }
 
 export function buildVehicleInsertPayload(

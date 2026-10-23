@@ -12,22 +12,22 @@ import {
 import { listingPath } from "@/lib/marketplace/listing-path";
 import { getLiveVerticals } from "@/lib/marketplace/verticals";
 
-test("electronics vertical is registered but not live", () => {
+test("electronics vertical is registered and live in registry", () => {
   const v = getElectronicsVertical();
   assert.ok(v);
   assert.equal(v!.assetType, "ELECTRONICS");
-  assert.equal(v!.status, "reserved");
-  assert.equal(isElectronicsMarketplaceLive(), false);
-  assert.ok(!getLiveVerticals().some((x) => x.id === "electronics"));
+  assert.equal(v!.status, "live");
+  assert.equal(isElectronicsMarketplaceLive(), true);
+  assert.ok(getLiveVerticals().some((x) => x.id === "electronics"));
 });
 
-test("implementation probe — no public routes or create API yet", () => {
+test("implementation probe — core routes and engine wired", () => {
   const probe = electronicsImplementationProbe();
-  assert.equal(probe.verticalStatus, "reserved");
-  assert.equal(probe.publicAppRouteExists, false);
-  assert.equal(probe.sellerCreateRouteExists, false);
-  assert.equal(probe.listingEngineCategoryExists, false);
-  assert.equal(probe.dedicatedCreateApiExists, false);
+  assert.equal(probe.verticalStatus, "live");
+  assert.equal(probe.publicAppRouteExists, true);
+  assert.equal(probe.sellerCreateRouteExists, true);
+  assert.equal(probe.listingEngineCategoryExists, true);
+  assert.equal(probe.dedicatedCreateApiExists, true);
 });
 
 test("property create API rejects electronics asset_type override", () => {
@@ -74,6 +74,6 @@ test("universal listing migration includes ELECTRONICS in trigger count", () => 
   assert.match(sql, /check_agent_listing_limit/);
 });
 
-test("documented create href is reserved until vertical goes live", () => {
+test("documented seller create href points at electronics listing engine", () => {
   assert.equal(electronicsCreateHref(), "/agent/listings/new/electronics");
 });

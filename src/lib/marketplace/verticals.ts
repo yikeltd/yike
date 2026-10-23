@@ -36,6 +36,7 @@ export type MarketplaceVertical = {
   /** launch-mode feature key when gated */
   launchFeature?:
     | "vehicle_marketplace"
+    | "electronics_marketplace"
     | "industrial_marketplace"
     | "hospitality_listings"
     | "business_listings";
@@ -71,7 +72,8 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     pluralLabel: "Electronics",
     href: "/electronics",
     createHref: "/agent/listings/new/electronics",
-    status: "reserved",
+    status: "live",
+    launchFeature: "electronics_marketplace",
     description: "Phones, computers, appliances, and electronics.",
   },
   {

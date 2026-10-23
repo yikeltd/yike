@@ -4,7 +4,7 @@ import { MarketplaceVerticalSwitcher } from "@/components/marketplace/vertical-s
 import { cn } from "@/lib/utils";
 
 export type MarketplaceCategoryHeaderProps = {
-  vertical: "property" | "vehicle";
+  vertical: "property" | "vehicle" | "electronics";
   title: string;
   /** @deprecated Marketing taglines removed — kept optional for call-site compatibility. */
   tagline?: string;

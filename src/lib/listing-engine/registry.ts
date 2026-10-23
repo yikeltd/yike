@@ -6,10 +6,12 @@
 import type { CategoryManifest, ListingCategoryId } from "./types";
 import { VEHICLE_CATEGORY_MANIFEST } from "./categories/vehicle";
 import { PROPERTY_CATEGORY_MANIFEST } from "./categories/property";
+import { ELECTRONICS_CATEGORY_MANIFEST } from "./categories/electronics";
 
 export const CATEGORY_REGISTRY: Record<string, CategoryManifest> = {
   vehicle: VEHICLE_CATEGORY_MANIFEST,
   property: PROPERTY_CATEGORY_MANIFEST,
+  electronics: ELECTRONICS_CATEGORY_MANIFEST,
 };
 
 export function getCategoryManifest(id: ListingCategoryId): CategoryManifest {
