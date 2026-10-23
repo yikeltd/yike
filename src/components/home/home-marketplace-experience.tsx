@@ -73,6 +73,8 @@ type Props = {
   mixedLatest?: Property[];
   marketplaceLocation?: { city: string; state?: string } | null;
   showingDemoFixtures?: boolean;
+  /** Explicit dev sample catalog (YIKE_SAMPLE_LISTINGS_FIXTURE=1) — show banner. */
+  showingSampleListingsFixture?: boolean;
   homepageTopAd?: Advertisement | null;
   dealers?: DiscoveryDealerCard[];
   categoryCounts?: {
@@ -126,6 +128,7 @@ export function HomeMarketplaceExperience({
   mixedLatest = [],
   marketplaceLocation = null,
   showingDemoFixtures: _showingDemoFixtures = false,
+  showingSampleListingsFixture = false,
   homepageTopAd = null,
   dealers = [],
   categoryCounts: _categoryCounts = {},
@@ -419,6 +422,15 @@ export function HomeMarketplaceExperience({
 
   return (
     <div className="home-canvas min-h-[100dvh] pb-24 lg:pb-8 bg-[#f7f9fc]">
+      {showingSampleListingsFixture ? (
+        <div
+          className="border-b border-gold/30 bg-gold/10 px-3 py-2 text-center text-xs font-semibold text-navy lg:text-sm"
+          role="status"
+        >
+          Sample listings (dev fixture) — not live marketplace inventory. Seed DB with{" "}
+          <code className="rounded bg-white/80 px-1">npm run seed:sample-listings</code>.
+        </div>
+      ) : null}
       {/* DESKTOP EXPERIENCE (RESTORED LEGACY HOMEPAGE) */}
       <HomeDesktopView
         category={category}

@@ -10,7 +10,13 @@ import {
   getPublicProperties,
 } from "@/lib/properties";
 import { createClient } from "@/lib/supabase/server";
-import { queryPublicElectronics, queryPublicVehicles } from "@/lib/marketplace/listings";
+import {
+  normalizeAssetType,
+  queryPublicElectronics,
+  queryPublicVehicles,
+} from "@/lib/marketplace/listings";
+import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import { buildSampleListingFixtures } from "@/lib/sample-listings/build-rows";
 import { parseHomeCategory } from "@/lib/home/marketplace-category";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import {
@@ -254,12 +260,33 @@ export default async function HomePage({
     ...recentProps,
     ...nearYouProps,
   ]);
-  const propertyDemo = withEmptyInventoryDemoFixtures(
-    propertyPool,
-    "property",
-    12,
-  );
-  const vehicleDemo = withEmptyInventoryDemoFixtures(vehiclePool, "vehicle", 12);
+
+  const sampleFixtureMode = isSampleListingFixtureEnabled();
+  const sampleCatalog = sampleFixtureMode ? buildSampleListingFixtures() : [];
+
+  function sampleForAsset(
+    live: Property[],
+    asset: "PROPERTY" | "VEHICLE" | "ELECTRONICS",
+    limit = 12,
+  ): { items: Property[]; isDemo: boolean } {
+    if (live.length > 0) {
+      return { items: live.slice(0, limit), isDemo: false };
+    }
+    if (!sampleFixtureMode) {
+      return { items: [], isDemo: false };
+    }
+    const items = sampleCatalog
+      .filter((p) => normalizeAssetType(p.asset_type) === asset)
+      .slice(0, limit);
+    return { items, isDemo: items.length > 0 };
+  }
+
+  const propertyDemo = sampleFixtureMode
+    ? sampleForAsset(propertyPool, "PROPERTY", 12)
+    : withEmptyInventoryDemoFixtures(propertyPool, "property", 12);
+  const vehicleDemo = sampleFixtureMode
+    ? sampleForAsset(vehiclePool, "VEHICLE", 12)
+    : withEmptyInventoryDemoFixtures(vehiclePool, "vehicle", 12);
 
   // When using demo fixtures, prefer location-matched DEMO inventory
   const propertyDemoFiltered = propertyDemo.isDemo
@@ -271,12 +298,22 @@ export default async function HomePage({
 
   const propertyItems = propertyDemoFiltered.items;
   const vehicleItems = vehicleDemoFiltered.items;
-  const showingDemoFixtures = propertyDemo.isDemo || vehicleDemo.isDemo;
+  const electronicsSample = sampleFixtureMode
+    ? sampleForAsset(electronicsRecent, "ELECTRONICS", 12)
+    : { items: electronicsRecent, isDemo: false };
+  const electronicsItems =
+    electronicsSample.items.length > 0 ? electronicsSample.items : electronicsRecent;
+
+  const showingDemoFixtures =
+    propertyDemo.isDemo || vehicleDemo.isDemo || electronicsSample.isDemo;
+  const showingSampleListingsFixture =
+    sampleFixtureMode &&
+    (propertyDemo.isDemo || vehicleDemo.isDemo || electronicsSample.isDemo);
 
   const mixedLatest = dedupeById([
     ...propertyItems.slice(0, 8),
     ...vehicleItems.slice(0, 8),
-    ...electronicsRecent,
+    ...electronicsItems,
   ])
     .sort(
       (a, b) =>
@@ -389,9 +426,10 @@ export default async function HomePage({
       >
         <HomeMarketplaceExperience
           initialCategory={category}
-          electronicsRecent={electronicsRecent}
+          electronicsRecent={electronicsItems}
           mixedLatest={mixedLatest}
           showingDemoFixtures={showingDemoFixtures}
+          showingSampleListingsFixture={showingSampleListingsFixture}
           homepageTopAd={homepageTopAd}
           marketplaceLocation={
             loc
