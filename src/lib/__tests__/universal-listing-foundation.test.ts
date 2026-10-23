@@ -5,9 +5,11 @@ import path from "node:path";
 import {
   UNVERIFIED_AGENT_LISTING_LIMIT,
   getListingLimit,
+  countAsActiveListing,
 } from "@/lib/agent-tiers";
 import {
   normalizeAssetType,
+  normalizeListingCondition,
   propertyToListingRow,
 } from "@/lib/marketplace/listings";
 import {
@@ -16,12 +18,25 @@ import {
 } from "@/lib/marketplace/verticals";
 import type { Property } from "@/types/database";
 
-test("Universal Listing Ceiling defaults to 3 for ordinary sellers", () => {
+test("Universal Listing Ceiling defaults to 3 for ordinary sellers regardless of account age", () => {
   assert.equal(UNVERIFIED_AGENT_LISTING_LIMIT, 3);
   assert.equal(getListingLimit(null), 3);
   assert.equal(getListingLimit(undefined), 3);
   assert.equal(getListingLimit({}), 3);
   assert.equal(getListingLimit({ listing_limit: null }), 3);
+
+  // Account age must NOT reduce active listing capacity
+  const oldAccount = {
+    listing_limit: null,
+    subscription_plan_code: "free" as const,
+    created_at: new Date(Date.now() - 90 * 86_400_000).toISOString(),
+    starter_plan_started_at: new Date(Date.now() - 90 * 86_400_000).toISOString(),
+  };
+  assert.equal(
+    getListingLimit(oldAccount),
+    3,
+    "Older ordinary accounts must still receive 3 active listings",
+  );
 });
 
 test("Custom profile listing_limit and developer bypass are preserved", () => {
@@ -58,22 +73,34 @@ test("Vertical registry recognizes electronics vertical as reserved", () => {
   assert.equal(electronicsVertical.status, "reserved");
 });
 
-test("Universal condition mapping and vehicle_condition backward compatibility", () => {
+test("Vehicle condition compatibility: legacy 'new' and 'certified' map to canonical conditions", () => {
+  // normalizeListingCondition helper
+  assert.equal(normalizeListingCondition("new"), "brand_new");
+  assert.equal(normalizeListingCondition("certified"), "refurbished");
+  assert.equal(normalizeListingCondition("foreign_used"), "foreign_used");
+  assert.equal(normalizeListingCondition("nigerian_used"), "nigerian_used");
+  assert.equal(normalizeListingCondition("brand_new"), "brand_new");
+  assert.equal(normalizeListingCondition("refurbished"), "refurbished");
+  assert.equal(normalizeListingCondition("open_box"), "open_box");
+  assert.equal(normalizeListingCondition("for_parts"), "for_parts");
+  assert.equal(normalizeListingCondition(null), null);
+  assert.equal(normalizeListingCondition(undefined), null);
+
   const baseProperty: Property = {
     id: "prop_1",
     agent_id: "agent_1",
-    title: "iPhone 15 Pro Max",
-    price: 1500000,
+    title: "Toyota Camry 2020",
+    price: 15000000,
     state: "Lagos",
     city: "Ikeja",
-    area: "Computer Village",
+    area: "Alausa",
     property_type: null,
     listing_type: "sale",
-    slug: "iphone-15-pro-max",
+    slug: "toyota-camry-2020",
     slug_locked: false,
     seo_title: null,
     seo_description: null,
-    description: "Brand new sealed in box",
+    description: "Brand new vehicle",
     media_urls: ["https://example.com/img1.webp"],
     media_items: [],
     status: "approved",
@@ -83,48 +110,81 @@ test("Universal condition mapping and vehicle_condition backward compatibility",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     expires_at: new Date(Date.now() + 86400000).toISOString(),
-    asset_type: "ELECTRONICS",
-    condition: "brand_new",
+    asset_type: "VEHICLE",
+    vehicle_condition: "new",
   } as unknown as Property;
 
-  // Condition is mapped directly when present
+  // Legacy vehicle_condition 'new' maps to canonical 'brand_new'
   const row1 = propertyToListingRow(baseProperty);
-  assert.equal(row1.asset_type, "ELECTRONICS");
   assert.equal(row1.condition, "brand_new");
 
-  // Fallback to vehicle_condition when condition is not set (backward compatibility)
-  const legacyVehicle: Property = {
+  // Legacy vehicle_condition 'certified' maps to canonical 'refurbished'
+  const certifiedVehicle: Property = {
     ...baseProperty,
-    id: "veh_1",
-    asset_type: "VEHICLE",
-    condition: undefined,
-    vehicle_condition: "foreign_used",
+    id: "veh_cert",
+    vehicle_condition: "certified",
   };
-  const row2 = propertyToListingRow(legacyVehicle);
-  assert.equal(row2.asset_type, "VEHICLE");
-  assert.equal(row2.condition, "foreign_used");
+  const row2 = propertyToListingRow(certifiedVehicle);
+  assert.equal(row2.condition, "refurbished");
+
+  // Canonical condition takes priority when already canonical
+  const canonicalElectronics: Property = {
+    ...baseProperty,
+    id: "elec_1",
+    asset_type: "ELECTRONICS",
+    condition: "open_box",
+    vehicle_condition: null,
+  };
+  const row3 = propertyToListingRow(canonicalElectronics);
+  assert.equal(row3.condition, "open_box");
+});
+
+test("Expiry and capacity consistency: expired listings do not consume active capacity", () => {
+  const futureIso = new Date(Date.now() + 86_400_000).toISOString();
+  const pastIso = new Date(Date.now() - 86_400_000).toISOString();
+
+  // countAsActiveListing behavior
+  assert.equal(countAsActiveListing("approved", futureIso), true);
+  assert.equal(countAsActiveListing("pending", futureIso), true);
+  assert.equal(countAsActiveListing("flagged", futureIso), true);
+  assert.equal(countAsActiveListing("approved", pastIso), false, "Expired listing must not count as active");
+  assert.equal(countAsActiveListing("pending", pastIso), false, "Expired pending listing must not count as active");
+  assert.equal(countAsActiveListing("archived", futureIso), false);
+  assert.equal(countAsActiveListing("rejected", futureIso), false);
+
+  // Seller with 3 listings total, but 1 is expired:
+  // Active count should be 2, allowing a 3rd listing immediately without waiting for archival
+  const sellerListings = [
+    { id: "1", status: "approved", expires_at: futureIso },
+    { id: "2", status: "pending", expires_at: futureIso },
+    { id: "3", status: "approved", expires_at: pastIso }, // EXPIRED
+  ];
+
+  const activeCount = sellerListings.filter((l) => countAsActiveListing(l.status, l.expires_at)).length;
+  assert.equal(activeCount, 2);
+  assert.equal(activeCount < UNVERIFIED_AGENT_LISTING_LIMIT, true, "Seller can immediately reclaim expired slot");
 });
 
 test("Cross-category listing ceiling enforcement: 3 listings combined across Property, Vehicle, and Electronics", () => {
   const sellerId = "agent_universal_1";
+  const futureIso = new Date(Date.now() + 86_400_000).toISOString();
 
-  // Simulate active listings for a seller across mixed categories
   type ListingStub = {
     id: string;
     agent_id: string;
     asset_type: "PROPERTY" | "VEHICLE" | "ELECTRONICS";
     status: "pending" | "approved" | "flagged" | "archived" | "rejected";
+    expires_at: string;
   };
 
   const sellerListings: ListingStub[] = [
-    { id: "1", agent_id: sellerId, asset_type: "PROPERTY", status: "approved" },
-    { id: "2", agent_id: sellerId, asset_type: "VEHICLE", status: "pending" },
-    { id: "3", agent_id: sellerId, asset_type: "ELECTRONICS", status: "flagged" },
+    { id: "1", agent_id: sellerId, asset_type: "PROPERTY", status: "approved", expires_at: futureIso },
+    { id: "2", agent_id: sellerId, asset_type: "VEHICLE", status: "pending", expires_at: futureIso },
+    { id: "3", agent_id: sellerId, asset_type: "ELECTRONICS", status: "flagged", expires_at: futureIso },
   ];
 
-  const activeStatuses = new Set(["pending", "approved", "flagged"]);
   const activeCount = sellerListings.filter(
-    (l) => l.agent_id === sellerId && activeStatuses.has(l.status),
+    (l) => l.agent_id === sellerId && countAsActiveListing(l.status, l.expires_at),
   ).length;
 
   const ceiling = UNVERIFIED_AGENT_LISTING_LIMIT; // 3
@@ -134,14 +194,6 @@ test("Cross-category listing ceiling enforcement: 3 listings combined across Pro
   // Attempting to create a 4th listing (in any category) must be rejected
   const canCreate4th = activeCount < ceiling;
   assert.equal(canCreate4th, false, "4th listing creation should be blocked");
-
-  // If one listing is archived/sold, active count drops to 2, allowing another listing
-  sellerListings[0].status = "archived";
-  const updatedActiveCount = sellerListings.filter(
-    (l) => l.agent_id === sellerId && activeStatuses.has(l.status),
-  ).length;
-  assert.equal(updatedActiveCount, 2);
-  assert.equal(updatedActiveCount < ceiling, true, "New listing should be allowed after archival");
 });
 
 test("Database migration 20261013120000_universal_listing_foundation.sql integrity", () => {
@@ -190,7 +242,21 @@ test("Database migration 20261013120000_universal_listing_foundation.sql integri
     "Active count must check ('pending', 'approved', 'flagged')",
   );
 
-  // 6. Two-way condition sync
+  // 6. Expiry filter in trigger to prevent expired listings from blocking capacity
+  assert.ok(
+    content.includes("(expires_at IS NULL OR expires_at > NOW())"),
+    "Trigger count must filter out expired listings",
+  );
+
+  // 7. Legacy vehicle condition mapping in backfill and trigger
+  assert.ok(
+    content.includes("WHEN vehicle_condition = 'new' THEN 'brand_new'"),
+    "Migration must map 'new' to 'brand_new'",
+  );
+  assert.ok(
+    content.includes("WHEN vehicle_condition = 'certified' THEN 'refurbished'"),
+    "Migration must map 'certified' to 'refurbished'",
+  );
   assert.ok(
     content.includes("CREATE OR REPLACE FUNCTION public.sync_listing_condition"),
     "sync_listing_condition function must be defined",

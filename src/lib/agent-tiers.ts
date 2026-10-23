@@ -1,8 +1,4 @@
 import type { Profile, Property } from "@/types/database";
-import {
-  getStarterListingLimitForProfile,
-  isOnStarterPlan,
-} from "@/lib/subscriptions/starter-plan";
 import { computeListingQualityScore } from "@/lib/listing-quality";
 import {
   isAgentReachable,
@@ -78,20 +74,18 @@ export function getListingLimit(
   if (profile.listing_limit !== null && profile.listing_limit !== undefined) {
     return profile.listing_limit;
   }
-  if (isOnStarterPlan(profile)) {
-    return getStarterListingLimitForProfile(profile);
-  }
   return UNVERIFIED_AGENT_LISTING_LIMIT;
 }
 
 export function countAsActiveListing(
   status: string,
-  expiresAt: string
+  expiresAt?: string | null
 ): boolean {
-  return (
-    (status === "pending" || status === "approved") &&
-    new Date(expiresAt) > new Date()
-  );
+  const isStatusActive =
+    status === "pending" || status === "approved" || status === "flagged";
+  if (!isStatusActive) return false;
+  if (!expiresAt) return true;
+  return new Date(expiresAt) > new Date();
 }
 
 export function isFeaturedActive(property: Property): boolean {

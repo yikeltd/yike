@@ -46,6 +46,16 @@ export function normalizeAssetType(
   return "PROPERTY";
 }
 
+export function normalizeListingCondition(
+  value: string | null | undefined,
+): string | null {
+  if (!value) return null;
+  const v = value.trim().toLowerCase();
+  if (v === "new") return "brand_new";
+  if (v === "certified") return "refurbished";
+  return v;
+}
+
 export function propertyToListingRow(p: Property): MarketplaceListingRow {
   return {
     id: p.id,
@@ -55,7 +65,7 @@ export function propertyToListingRow(p: Property): MarketplaceListingRow {
     asset_type: normalizeAssetType(p.asset_type),
     property_category: p.property_type,
     auto_category: p.auto_category ?? null,
-    condition: p.condition ?? p.vehicle_condition ?? null,
+    condition: normalizeListingCondition(p.condition ?? p.vehicle_condition),
     verification_status: p.is_verified_listing ? "verified" : "unverified",
     state: p.state,
     city: p.city,

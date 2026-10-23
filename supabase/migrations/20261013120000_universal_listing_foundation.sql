@@ -22,9 +22,14 @@ COMMENT ON COLUMN public.properties.asset_type IS
 ALTER TABLE public.properties
   ADD COLUMN IF NOT EXISTS condition TEXT;
 
--- Backfill condition from vehicle_condition where vehicle_condition is set
+-- Backfill condition from vehicle_condition where vehicle_condition is set,
+-- safely mapping legacy vehicle values ('new' -> 'brand_new', 'certified' -> 'refurbished')
 UPDATE public.properties
-SET condition = vehicle_condition
+SET condition = CASE
+  WHEN vehicle_condition = 'new' THEN 'brand_new'
+  WHEN vehicle_condition = 'certified' THEN 'refurbished'
+  ELSE vehicle_condition
+END
 WHERE condition IS NULL AND vehicle_condition IS NOT NULL;
 
 -- Validate condition values (idempotent, forward-only)
@@ -52,14 +57,27 @@ COMMENT ON COLUMN public.properties.condition IS
 CREATE OR REPLACE FUNCTION public.sync_listing_condition()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Sync vehicle_condition -> condition if condition not set
-  IF NEW.condition IS NULL AND NEW.vehicle_condition IS NOT NULL THEN
-    NEW.condition := NEW.vehicle_condition;
-  END IF;
-
-  -- Sync condition -> vehicle_condition for vehicles if vehicle_condition not set
-  IF NEW.vehicle_condition IS NULL AND NEW.condition IS NOT NULL AND NEW.asset_type = 'VEHICLE' THEN
-    NEW.vehicle_condition := NEW.condition;
+  -- 1. Sync & map vehicle_condition -> canonical condition
+  IF (TG_OP = 'INSERT' AND NEW.condition IS NULL AND NEW.vehicle_condition IS NOT NULL)
+     OR (TG_OP = 'UPDATE' AND NEW.vehicle_condition IS DISTINCT FROM OLD.vehicle_condition) THEN
+    NEW.condition := CASE
+      WHEN NEW.vehicle_condition = 'new' THEN 'brand_new'
+      WHEN NEW.vehicle_condition = 'certified' THEN 'refurbished'
+      ELSE NEW.vehicle_condition
+    END;
+  -- 2. Sync & map canonical condition -> vehicle_condition for VEHICLE asset_type
+  ELSIF (TG_OP = 'INSERT' AND NEW.vehicle_condition IS NULL AND NEW.condition IS NOT NULL AND NEW.asset_type = 'VEHICLE')
+     OR (TG_OP = 'UPDATE' AND NEW.condition IS DISTINCT FROM OLD.condition AND NEW.asset_type = 'VEHICLE') THEN
+    NEW.vehicle_condition := CASE
+      WHEN NEW.condition = 'brand_new' THEN 'new'
+      WHEN NEW.condition = 'refurbished' THEN 'certified'
+      ELSE NEW.condition
+    END;
+  -- 3. If condition was set directly to legacy aliases ('new' / 'certified'), normalize it
+  ELSIF NEW.condition = 'new' THEN
+    NEW.condition := 'brand_new';
+  ELSIF NEW.condition = 'certified' THEN
+    NEW.condition := 'refurbished';
   END IF;
 
   RETURN NEW;
@@ -86,7 +104,14 @@ SELECT
   p.asset_type,
   p.property_type AS property_category,
   p.auto_category,
-  COALESCE(p.condition, p.vehicle_condition) AS condition,
+  COALESCE(
+    p.condition,
+    CASE
+      WHEN p.vehicle_condition = 'new' THEN 'brand_new'
+      WHEN p.vehicle_condition = 'certified' THEN 'refurbished'
+      ELSE p.vehicle_condition
+    END
+  ) AS condition,
   p.vehicle_condition,
   CASE
     WHEN p.is_verified_listing THEN 'verified'
@@ -98,7 +123,7 @@ SELECT
   p.media_urls AS images,
   p.attributes,
   p.status AS moderation_status,
-  (p.status = 'approved' AND p.expires_at > NOW()) AS is_active,
+  (p.status = 'approved' AND (p.expires_at IS NULL OR p.expires_at > NOW())) AS is_active,
   p.is_featured,
   p.agent_id AS vendor_id,
   p.listing_type AS intent,
@@ -137,19 +162,21 @@ DECLARE
   becoming_active BOOLEAN;
   was_active BOOLEAN;
 BEGIN
-  -- Active and in-review statuses
-  becoming_active := NEW.status IN ('pending', 'approved', 'flagged');
+  -- Active and in-review statuses that are not expired
+  becoming_active := NEW.status IN ('pending', 'approved', 'flagged')
+    AND (NEW.expires_at IS NULL OR NEW.expires_at > NOW());
 
   -- On UPDATE, if the row was already active and agent_id did not change,
   -- this update does not increment the seller's active listing count.
   IF TG_OP = 'UPDATE' THEN
-    was_active := OLD.status IN ('pending', 'approved', 'flagged');
+    was_active := OLD.status IN ('pending', 'approved', 'flagged')
+      AND (OLD.expires_at IS NULL OR OLD.expires_at > NOW());
     IF (OLD.agent_id = NEW.agent_id) AND (NOT becoming_active OR was_active) THEN
       RETURN NEW;
     END IF;
   END IF;
 
-  -- If row is not becoming active/review (e.g. archived, rejected, rented, sold),
+  -- If row is not becoming active/review (e.g. archived, rejected, rented, sold, expired),
   -- allow without checking listing capacity.
   IF NOT becoming_active THEN
     RETURN NEW;
@@ -202,11 +229,13 @@ BEGIN
   END IF;
 
   -- Count all active/review listings across all categories (PROPERTY, VEHICLE, ELECTRONICS)
+  -- Expired listings do not consume active capacity.
   -- For UPDATE, exclude the row itself.
   SELECT COUNT(*)::INT INTO active_count
   FROM public.properties
   WHERE agent_id = NEW.agent_id
     AND status IN ('pending', 'approved', 'flagged')
+    AND (expires_at IS NULL OR expires_at > NOW())
     AND (TG_OP = 'INSERT' OR id <> NEW.id);
 
   IF active_count >= cap THEN

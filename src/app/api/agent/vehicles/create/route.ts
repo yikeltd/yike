@@ -234,11 +234,13 @@ export async function POST(request: Request) {
   }
 
   const limit = getListingLimit(profile);
+  const nowIso = new Date().toISOString();
   const { count: activeCount } = await supabase
     .from("properties")
     .select("id", { count: "exact", head: true })
     .eq("agent_id", user.id)
-    .in("status", ACTIVE_LISTING_STATUSES);
+    .in("status", ACTIVE_LISTING_STATUSES)
+    .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
 
   if (limit !== null && (activeCount ?? 0) >= limit) {
     return NextResponse.json(

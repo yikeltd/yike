@@ -102,11 +102,13 @@ export async function getStarterPlanAdminMetrics(admin: SupabaseClient): Promise
   const activeCounts = new Map<string, number>();
 
   if (starterIds.length > 0) {
+    const nowIso = new Date().toISOString();
     const { data: listings } = await admin
       .from("properties")
       .select("agent_id")
       .in("agent_id", starterIds)
-      .in("status", ["pending", "approved", "flagged"]);
+      .in("status", ["pending", "approved", "flagged"])
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
 
     for (const row of listings ?? []) {
       const id = row.agent_id as string;

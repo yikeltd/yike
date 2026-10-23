@@ -72,11 +72,13 @@ export default async function AdminAgentsPage({
   ];
   const listingCounts = new Map<string, number>();
   if (agentIds.length > 0) {
+    const nowIso = new Date().toISOString();
     const { data: listingRows } = await supabase
       .from("properties")
       .select("agent_id")
       .in("agent_id", agentIds)
-      .in("status", ["pending", "approved", "flagged"]);
+      .in("status", ["pending", "approved", "flagged"])
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
     for (const row of listingRows ?? []) {
       const id = String((row as { agent_id: string }).agent_id);
       listingCounts.set(id, (listingCounts.get(id) ?? 0) + 1);
