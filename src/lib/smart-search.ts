@@ -15,7 +15,10 @@ export type SmartSearchResult = Partial<PropertySearchParams> & {
   listing_type?: string;
   hub?: DiscoverHub;
   /** Vertical identification */
-  vertical?: "property" | "vehicle" | "agent" | "land" | "shortlet";
+  vertical?: "property" | "vehicle" | "electronics" | "agent" | "land" | "shortlet";
+  brand?: string;
+  condition?: string;
+  auto_category?: string;
   /** Vehicle marketplace signals */
   make?: string;
   model?: string;
@@ -376,6 +379,9 @@ export function smartSearchToUrlParams(
   if (parsed.body_type) params.set("body_type", parsed.body_type);
   if (parsed.vehicle_condition) params.set("vehicle_condition", parsed.vehicle_condition);
   if (parsed.agent_role) params.set("role", parsed.agent_role);
+  if (parsed.brand) params.set("brand", parsed.brand);
+  if (parsed.condition) params.set("condition", parsed.condition);
+  if (parsed.auto_category) params.set("category", parsed.auto_category);
   if (parsed.q && !parsed.city && !parsed.area && !parsed.state && !parsed.make) {
     params.set("q", parsed.q);
   }
@@ -391,6 +397,11 @@ export function buildSearchHref(
     const params = smartSearchToUrlParams(parsed);
     const qs = params.toString();
     return qs ? `/vehicles?${qs}` : "/vehicles";
+  }
+  if (parsed.vertical === "electronics") {
+    const params = smartSearchToUrlParams(parsed);
+    const qs = params.toString();
+    return qs ? `/electronics?${qs}` : "/electronics";
   }
   if (parsed.vertical === "agent" || parsed.agent_role) {
     const params = smartSearchToUrlParams(parsed);

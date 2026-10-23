@@ -1,18 +1,11 @@
 "use client";
 
 import { Suspense } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
-import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
-import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 
-/**
- * Mobile Header — Deep Yike Navy background (#031B4E).
- * Layout: [Yike Logo] -> [Search Bar] -> [Location Selector]
- */
+/** Mobile top search — scrolls with page (not sticky). Unified logo + input + location in one bar. */
 export function HeaderMobile() {
   const pathname = usePathname();
   const isProfile = pathname === "/agent";
@@ -24,42 +17,21 @@ export function HeaderMobile() {
   if (isDetail || isProfile) return null;
 
   return (
-    <header
+    <div
       className={cn(
-        "sticky top-0 z-40 border-b border-white/10 bg-[#031B4E] text-white shadow-xl lg:hidden",
-        "pt-[max(0.25rem,env(safe-area-inset-top))]",
+        "lg:hidden border-b border-white/10 bg-[#031B4E] text-white shadow-md",
+        "px-2.5 pb-2 pt-[max(0.35rem,env(safe-area-inset-top))] sm:px-3",
       )}
     >
-      <div className="flex items-center justify-between gap-2 px-3 py-2 pb-2.5">
-        <Link href="/" className="flex shrink-0 items-center" aria-label="Yike home">
-          <Image
-            src={brand.logoSm}
-            alt="Yike"
-            width={30}
-            height={30}
-            className="h-7.5 w-7.5 object-contain"
-          />
-        </Link>
-
-        <div className="min-w-0 flex-1">
-          <Suspense fallback={<div className="h-9 w-full rounded-full bg-white/10" />}>
-            <HeaderUniversalSearch
-              size="default"
-              tone="hero"
-              placement="header_mobile"
-              placeholder="Search property, vehicles & electronics…"
-            />
-          </Suspense>
-        </div>
-
-        <div className="shrink-0">
-          <MarketplaceLocationIndicator
-            size="sm"
-            variant="chip"
-            className="!border-white/20 !bg-white/10 !text-white hover:!bg-white/20"
-          />
-        </div>
-      </div>
-    </header>
+      <Suspense fallback={<div className="h-10 w-full rounded-full bg-white/10" />}>
+        <HeaderUniversalSearch
+          layout="unified"
+          size="default"
+          tone="hero"
+          placement="header_mobile"
+          placeholder="Search property, vehicles & electronics…"
+        />
+      </Suspense>
+    </div>
   );
 }

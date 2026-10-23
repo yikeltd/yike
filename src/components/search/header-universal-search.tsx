@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search, X, Sparkles, Building2, Car, MapPin, User, SlidersHorizontal, Bookmark } from "lucide-react";
+import { Search, X, SlidersHorizontal } from "lucide-react";
 import {
   buildSearchHref,
   getSmartSearchSuggestions,
@@ -18,33 +18,43 @@ import {
   getRecentSearches,
   TRENDING_AREAS,
 } from "@/lib/search-recent";
-import { saveBrowsePreferences } from "@/lib/browse-preferences";
 import {
   getMarketplaceLocation,
   resolveCityCentroid,
   setMarketplaceLocation,
 } from "@/lib/marketplace-location";
-import { trackEvent } from "@/lib/analytics";
 import { parseHomeCategory } from "@/lib/home/marketplace-category";
-import { VEHICLE_MAKES } from "@/lib/marketplace/vehicle-makes";
-import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { allowNetworkAction } from "@/lib/pwa/offline-ui";
 import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
 import { SearchContextFilters } from "./search-context-filters";
-import { SavedSearchesManager } from "./saved-searches-manager";
+import {
+  buildSmartFilterHref,
+  type FilterVertical,
+} from "@/lib/search/smart-filter-engine";
+import type { SmartFilterFormState } from "@/lib/search/smart-filter-engine";
 
-function matchVehicleMake(text: string): string | null {
-  const q = text.trim().toLowerCase();
-  if (!q) return null;
-  const exact = VEHICLE_MAKES.find((m) => m.toLowerCase() === q);
-  if (exact) return exact;
-  const starts = VEHICLE_MAKES.find((m) => m.toLowerCase().startsWith(q));
-  return starts ?? null;
+type Props = {
+  size?: "default" | "large";
+  tone?: "default" | "hero" | "desktop";
+  layout?: "default" | "unified";
+  className?: string;
+  placement?: string;
+  placeholder?: string;
+  showLocation?: boolean;
+  showLogo?: boolean;
+};
+
+function homeCategoryToFilterVertical(
+  cat: ReturnType<typeof parseHomeCategory>,
+): FilterVertical | null {
+  if (cat === "vehicle") return "vehicle";
+  if (cat === "property") return "property";
+  if (cat === "electronics") return "electronics";
+  return null;
 }
 
-/** Prefer explicit query location; else inherit marketplace scope. */
 function withMarketplaceLocation(parsed: SmartSearchResult): SmartSearchResult {
   if (parsed.city || parsed.state) return parsed;
   const loc = getMarketplaceLocation();
@@ -57,40 +67,45 @@ function withMarketplaceLocation(parsed: SmartSearchResult): SmartSearchResult {
   };
 }
 
-type Props = {
-  size?: "default" | "large";
-  tone?: "default" | "hero" | "desktop";
-  className?: string;
-  placement?: string;
-  placeholder?: string;
-  showLocation?: boolean;
-  showLogo?: boolean;
-};
-
 export function HeaderUniversalSearch({
   size = "default",
   tone = "default",
+  layout = "default",
   className,
   placement = "header_universal",
   placeholder = 'Try "3 bed duplex in Lekki under ₦250m" or "Toyota Corolla"',
   showLocation = false,
   showLogo = false,
 }: Props) {
+  void placement;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
   const homeCategory =
     pathname === "/" ? parseHomeCategory(searchParams.get("category")) : null;
+  const homeVertical = homeCategory ? homeCategoryToFilterVertical(homeCategory) : null;
 
-  const [activeTab, setActiveTab] = useState<"all" | "property" | "vehicle" | "land" | "agent">("all");
+  const isUnified = layout === "unified";
+  const unifiedLogo = isUnified || showLogo;
+  const unifiedLocation = isUnified || showLocation;
+
+  const [activeTab, setActiveTab] = useState<FilterVertical>("all");
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [savedDrawerOpen, setSavedDrawerOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (pathname.startsWith("/vehicles")) setActiveTab("vehicle");
+    else if (pathname.startsWith("/electronics")) setActiveTab("electronics");
+    else if (pathname.startsWith("/agents")) setActiveTab("agent");
+    else if (pathname.startsWith("/search")) {
+      if (searchParams.get("hub") === "land_sale") setActiveTab("land");
+      else setActiveTab("all");
+    } else if (homeVertical) setActiveTab(homeVertical);
+  }, [pathname, homeVertical, searchParams]);
 
   const refreshSuggestions = useCallback((value: string) => {
     setSuggestions(
@@ -113,22 +128,22 @@ export function HeaderUniversalSearch({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
+  function resolveVerticalTab(): FilterVertical | undefined {
+    if (homeVertical) return homeVertical;
+    if (activeTab !== "all") return activeTab;
+    return undefined;
+  }
+
   function commitSearch(text: string) {
     if (!allowNetworkAction()) return;
     const trimmed = text.trim();
     const rawParsed = parseSmartSearchQuery(text);
-
-    const verticalTab =
-      pathname === "/" && homeCategory === "vehicle"
-        ? "vehicle"
-        : pathname === "/" && homeCategory === "property"
-          ? "property"
-          : activeTab !== "all"
-            ? activeTab
-            : undefined;
-    if (verticalTab) {
-      rawParsed.vertical = verticalTab;
-    }
+    const verticalTab = resolveVerticalTab();
+    if (verticalTab === "vehicle") rawParsed.vertical = "vehicle";
+    else if (verticalTab === "property" || verticalTab === "land")
+      rawParsed.vertical = verticalTab === "land" ? "land" : "property";
+    else if (verticalTab === "electronics") rawParsed.vertical = "electronics";
+    else if (verticalTab === "agent") rawParsed.vertical = "agent";
 
     if (rawParsed.switchesLocation && (rawParsed.city || rawParsed.state)) {
       const city = rawParsed.city ?? rawParsed.state!;
@@ -145,6 +160,8 @@ export function HeaderUniversalSearch({
     }
 
     const parsed = withMarketplaceLocation(rawParsed);
+    if (trimmed && !parsed.q) parsed.q = trimmed;
+
     let href = buildSearchHref(pathname, parsed);
     if (pathname === "/" && homeCategory) {
       const params = smartSearchToUrlParams(parsed);
@@ -157,8 +174,8 @@ export function HeaderUniversalSearch({
         href = qs ? `/search?${qs}` : "/search";
       }
     }
-    const label = parsed.resolvedLabel ?? (trimmed || "Search Results");
 
+    const label = parsed.resolvedLabel ?? (trimmed || "Search Results");
     addRecentSearch({ label, href });
     setOpen(false);
     setQuery("");
@@ -179,7 +196,9 @@ export function HeaderUniversalSearch({
       });
 
       const parsed = parseSmartSearchQuery(`${query} ${s.match.area}`.trim() || s.match.label);
-      if (activeTab !== "all") parsed.vertical = activeTab;
+      const verticalTab = resolveVerticalTab();
+      if (verticalTab === "vehicle") parsed.vertical = "vehicle";
+      else if (verticalTab === "electronics") parsed.vertical = "electronics";
       parsed.city = s.match.city;
       parsed.area = s.match.area;
       parsed.state = s.match.state;
@@ -200,10 +219,13 @@ export function HeaderUniversalSearch({
     commitSearch(s.query);
   }
 
-  function handleApplyFilters(filterParams: Record<string, string>) {
-    const qs = new URLSearchParams(filterParams);
-    const targetPath = filterParams.vertical === "vehicle" ? "/vehicles" : filterParams.vertical === "agent" ? "/agents" : "/search";
-    router.push(`${targetPath}?${qs.toString()}`);
+  function handleApplyFilters(filters: SmartFilterFormState) {
+    setActiveTab(filters.vertical);
+    if (filters.q?.trim()) {
+      setQuery("");
+    }
+    const href = buildSmartFilterHref(filters);
+    router.push(href);
   }
 
   const isLarge = size === "large";
@@ -212,52 +234,54 @@ export function HeaderUniversalSearch({
 
   return (
     <>
-      <div ref={wrapRef} className={cn("relative min-w-0 flex-1 space-y-1.5", className)}>
-        
-
-
-        {/* SEARCH INPUT BAR */}
+      <div
+        ref={wrapRef}
+        className={cn(
+          "relative space-y-1.5",
+          isUnified ? "w-full min-w-0" : "min-w-0 flex-1",
+          className,
+        )}
+      >
         <div
           className={cn(
-            "flex items-center gap-1.5 rounded-full border transition-all duration-200",
+            "flex min-w-0 items-center gap-0.5 rounded-full border transition-all duration-200 sm:gap-1",
             isHero &&
               "border-white/15 bg-[#f4f6fa]/95 shadow-[0_2px_12px_rgba(0,0,0,0.12)]",
             isDesktop &&
-              "border-navy/8 bg-white shadow-[0_1px_3px_rgba(3,27,78,0.06),0_8px_24px_-12px_rgba(3,27,78,0.12)] hover:shadow-[0_2px_8px_rgba(3,27,78,0.08),0_12px_28px_-12px_rgba(3,27,78,0.14)]",
+              "border-navy/8 bg-white shadow-[0_1px_3px_rgba(3,27,78,0.06),0_8px_24px_-12px_rgba(3,27,78,0.12)]",
             !isHero &&
               !isDesktop &&
               "border-navy/8 bg-white shadow-[0_1px_3px_rgba(3,27,78,0.06),0_6px_18px_-10px_rgba(3,27,78,0.12)]",
             open && "border-gold/45 shadow-glow-gold ring-2 ring-gold/15",
+            isUnified && "gap-1 px-1 py-0.5 sm:gap-1.5 sm:px-1.5",
           )}
         >
-          {showLogo ? (
+          {unifiedLogo ? (
             <Link
               href="/"
-              className={cn(
-                "ml-2 shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50",
-                isLarge ? "p-0.5" : "p-0.5",
-              )}
+              className="shrink-0 rounded-lg p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
               aria-label="Yike home"
               onClick={(e) => e.stopPropagation()}
             >
               <Image
                 src={brand.logoSm}
                 alt=""
-                width={isLarge ? 28 : 26}
-                height={isLarge ? 28 : 26}
-                className="rounded-md"
+                width={isLarge ? 30 : 28}
+                height={isLarge ? 30 : 28}
+                className="h-7 w-7 rounded-md sm:h-7.5 sm:w-7.5"
                 priority
               />
             </Link>
           ) : (
             <Search
               className={cn(
-                "ml-3.5 shrink-0 text-navy/40",
+                "ml-2 shrink-0 text-navy/40 sm:ml-3.5",
                 isLarge ? "h-[18px] w-[18px]" : "h-4 w-4",
               )}
               aria-hidden
             />
           )}
+
           <input
             ref={inputRef}
             type="search"
@@ -278,9 +302,7 @@ export function HeaderUniversalSearch({
             placeholder={placeholder}
             className={cn(
               "min-w-0 flex-1 bg-transparent py-0 text-navy outline-none placeholder:text-navy/40",
-              isLarge ? "h-11 text-[14px]" : "h-10 text-sm",
-              query || showLocation ? "pr-1" : "pr-3",
-              showLogo && "pl-1",
+              isUnified ? "h-9 text-xs sm:h-10 sm:text-sm" : isLarge ? "h-11 text-[14px]" : "h-10 text-sm",
             )}
             aria-label={placeholder}
             aria-expanded={open}
@@ -289,11 +311,11 @@ export function HeaderUniversalSearch({
 
           <button
             type="button"
-            onClick={() => setFiltersOpen(true)}
-            className="pressable p-2 text-navy/60 hover:text-navy"
-            title="Open Filters"
+            onClick={() => commitSearch(query)}
+            className="pressable shrink-0 rounded-full p-1.5 text-navy/50 hover:bg-navy/5 hover:text-navy sm:p-2"
+            aria-label="Search"
           >
-            <SlidersHorizontal className="h-4 w-4" />
+            <Search className="h-4 w-4" />
           </button>
 
           {query ? (
@@ -303,37 +325,41 @@ export function HeaderUniversalSearch({
                 setQuery("");
                 inputRef.current?.focus();
               }}
-              className="pressable rounded-full p-1.5 text-muted transition-colors duration-150 hover:bg-navy/[0.06]"
+              className="pressable shrink-0 rounded-full p-1.5 text-muted hover:bg-navy/[0.06]"
               aria-label="Clear search"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           ) : null}
 
-          {showLocation ? (
-            <div className="mr-1.5 flex shrink-0 items-center">
-              <span className="mx-0.5 h-5 w-px bg-navy/10" aria-hidden />
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="pressable shrink-0 p-1.5 text-navy/60 hover:text-navy sm:p-2"
+            title="Open Filters"
+            aria-label="Open filters"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </button>
+
+          {unifiedLocation ? (
+            <div className="mr-0.5 flex shrink-0 items-center sm:mr-1">
+              <span className="mx-0.5 hidden h-5 w-px bg-navy/10 sm:block" aria-hidden />
               <Suspense
                 fallback={
-                  <span
-                    className={cn(
-                      "inline-block shrink-0",
-                      isLarge ? "h-8 w-16" : "h-7 w-14",
-                    )}
-                    aria-hidden
-                  />
+                  <span className="inline-block h-7 w-12 shrink-0 rounded-full bg-navy/5 sm:w-14" aria-hidden />
                 }
               >
                 <MarketplaceLocationIndicator
                   size={isLarge ? "md" : "sm"}
                   variant="embedded"
+                  className="max-w-[5.5rem] sm:max-w-none"
                 />
               </Suspense>
             </div>
           ) : null}
         </div>
 
-        {/* SUGGESTIONS DROPDOWN */}
         <div
           id="header-universal-suggestions"
           className={cn(
@@ -358,11 +384,6 @@ export function HeaderUniversalSearch({
                   >
                     <Search className="h-3.5 w-3.5 shrink-0 text-gold" />
                     <span className="truncate">{s.label}</span>
-                    {s.kind === "trending" ? (
-                      <span className="ml-auto text-[10px] font-bold uppercase text-gold-dark">
-                        Hot
-                      </span>
-                    ) : null}
                   </button>
                 </li>
               ))
@@ -371,22 +392,13 @@ export function HeaderUniversalSearch({
         </div>
       </div>
 
-      {/* FILTER DRAWER */}
-      {filtersOpen && (
+      {filtersOpen ? (
         <SearchContextFilters
           activeVertical={activeTab}
           onApply={handleApplyFilters}
           onClose={() => setFiltersOpen(false)}
         />
-      )}
-
-      {/* SAVED SEARCHES DRAWER */}
-      {savedDrawerOpen && (
-        <SavedSearchesManager
-          isOpen={savedDrawerOpen}
-          onClose={() => setSavedDrawerOpen(false)}
-        />
-      )}
+      ) : null}
     </>
   );
 }

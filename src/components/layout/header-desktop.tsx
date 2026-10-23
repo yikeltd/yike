@@ -2,11 +2,8 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
-import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
-import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
 
 /**
@@ -24,37 +21,20 @@ export function HeaderDesktop({ className }: { className?: string }) {
         className
       )}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-6 xl:px-8">
-        {/* 1. YIKE LOGO */}
-        <Link href="/" className="flex shrink-0 items-center" aria-label="Yike home">
-          <Image
-            src={brand.logoSm}
-            alt="Yike"
-            width={36}
-            height={36}
-            className="h-9 w-9 object-contain"
-            priority
-          />
-        </Link>
-
-        {/* 2. SEARCH BAR */}
-        <div className="flex-1 max-w-2xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-6 xl:px-8">
+        <div className="min-w-0 flex-1 max-w-2xl">
           <Suspense fallback={<div className="h-10 w-full rounded-full bg-white/10" />}>
             <HeaderUniversalSearch
+              layout="unified"
               size="large"
               tone="hero"
               placement="header_desktop"
-              placeholder="Search vehicles & properties…"
+              placeholder="Search property, vehicles & electronics…"
             />
           </Suspense>
         </div>
 
-        {/* 3. FUNCTIONAL LOCATION SELECTOR */}
-        <div className="shrink-0">
-          <MarketplaceLocationIndicator size="md" variant="chip" className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20" />
-        </div>
-
-        {/* 4. ACTION BUTTONS */}
+        {/* ACTION BUTTONS */}
         <div className="flex items-center gap-2.5 shrink-0">
           {/* SELL BUTTON */}
           <Link
