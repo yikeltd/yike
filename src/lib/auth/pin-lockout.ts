@@ -1,23 +1,13 @@
-import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashIdentifier, hashIp } from "./security-events";
+import { hashDeviceLockKey } from "./device-lock-key";
+
+export { hashDeviceLockKey };
 
 const MAX_PIN_FAILURES = 5;
 const PIN_LOCK_MS = 15 * 60 * 1000;
 const MAX_PASSWORD_ATTEMPTS = 10;
 const PASSWORD_WINDOW_MS = 15 * 60 * 1000;
-
-export function hashDeviceLockKey(params: {
-  deviceToken?: string | null;
-  ip?: string | null;
-  userAgent?: string | null;
-}): string {
-  if (params.deviceToken) {
-    return createHash("sha256").update(params.deviceToken).digest("hex");
-  }
-  const fallback = `${params.ip ?? ""}:${params.userAgent ?? ""}`;
-  return createHash("sha256").update(fallback).digest("hex");
-}
 
 export async function recordLoginAttempt(params: {
   identifier: string;

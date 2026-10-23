@@ -6,15 +6,16 @@ import {
   createSensitiveConfirmationToken,
   verifySensitiveConfirmationToken,
 } from "../src/lib/auth/sensitive-token";
-import { hashDeviceLockKey } from "../src/lib/auth/pin-lockout";
-import { hashIpSubnet } from "../src/lib/auth/trusted-device";
+import { hashDeviceLockKey } from "../src/lib/auth/device-lock-key";
+import { hashIpSubnet } from "../src/lib/auth/ip-subnet";
 import { hashPin, verifyPin } from "../src/lib/pin";
 
 process.env.YIKE_PIN_PEPPER = "test-pepper-for-ci-only";
 process.env.CRON_SECRET = "test-cron-secret-for-ci";
 
-assert.equal(verifyPin("123456", hashPin("123456")), true);
-assert.equal(verifyPin("000000", hashPin("123456")), false);
+const strongPin = "482917";
+assert.equal(verifyPin(strongPin, hashPin(strongPin)), true);
+assert.equal(verifyPin("739204", hashPin(strongPin)), false);
 
 const deviceA = hashDeviceLockKey({ deviceToken: "token-a", ip: "1.2.3.4" });
 const deviceB = hashDeviceLockKey({ deviceToken: "token-b", ip: "1.2.3.4" });

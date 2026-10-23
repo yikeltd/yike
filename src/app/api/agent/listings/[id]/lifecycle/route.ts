@@ -93,7 +93,8 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
         published_at: property.published_at ?? now,
         unavailable_at: null,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("agent_id", user.id);
 
     if (error) {
       return NextResponse.json({ error: friendlyPublicError(error.message, PUBLIC_ERROR_FALLBACK) }, { status: 500 });
@@ -125,7 +126,11 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     unavailable_at: now,
   };
 
-  const { error } = await supabase.from("properties").update(patch).eq("id", id);
+  const { error } = await supabase
+    .from("properties")
+    .update(patch)
+    .eq("id", id)
+    .eq("agent_id", user.id);
   if (error) {
     return NextResponse.json({ error: friendlyPublicError(error.message, PUBLIC_ERROR_FALLBACK) }, { status: 500 });
   }

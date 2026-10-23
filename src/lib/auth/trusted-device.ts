@@ -2,7 +2,10 @@ import { createHash, randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isStrictDeviceBindingEnabled } from "@/lib/feature-flags";
+import { hashIpSubnet } from "./ip-subnet";
 import { hashIp, hashUserAgent, logAuthSecurityEvent } from "./security-events";
+
+export { hashIpSubnet };
 
 export const DEVICE_COOKIE = "yike_device_token";
 const DEVICE_MAX_AGE_DAYS = 90;
@@ -13,25 +16,6 @@ export function generateDeviceToken(): string {
 
 export function hashDeviceToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
-}
-
-/** Coarse subnet — mobile IP changes within subnet should not revoke trust. */
-export function hashIpSubnet(ip: string | null): string | null {
-  if (!ip) return null;
-  const trimmed = ip.trim();
-  if (trimmed.includes(":")) {
-    const parts = trimmed.split(":");
-    return createHash("sha256")
-      .update(parts.slice(0, 4).join(":"))
-      .digest("hex")
-      .slice(0, 32);
-  }
-  const octets = trimmed.split(".");
-  if (octets.length < 3) return hashIp(trimmed);
-  return createHash("sha256")
-    .update(octets.slice(0, 3).join("."))
-    .digest("hex")
-    .slice(0, 32);
 }
 
 export async function getDeviceTokenFromCookies(): Promise<string | null> {
