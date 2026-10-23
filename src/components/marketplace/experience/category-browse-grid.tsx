@@ -10,6 +10,8 @@ import {
   LandPlot,
   Warehouse,
   Hotel,
+  Tractor,
+  HardHat,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,28 +51,59 @@ export const VEHICLE_CATEGORY_BROWSE: CategoryBrowseItem[] = [
     icon: Gem,
   },
   {
-    id: "truck",
-    label: "Pickups",
+    id: "pickup_van",
+    label: "Pickups & vans",
     description: "Hilux, Ranger and more",
-    href: "/vehicles?category=truck",
+    href: "/vehicles?category=pickup_van",
     icon: Truck,
-    countKey: "truck",
+    countKey: "pickup_van",
   },
   {
-    id: "commercial",
-    label: "Commercial",
-    description: "Vans and work vehicles",
-    href: "/vehicles?category=commercial",
+    id: "commercial_truck",
+    label: "Commercial trucks",
+    description: "Trailers and haulage",
+    href: "/vehicles?category=commercial_truck",
     icon: Truck,
-    countKey: "commercial",
+    countKey: "commercial_truck",
   },
   {
-    id: "motorcycle",
-    label: "Motorcycles",
-    description: "Bikes and scooters",
-    href: "/vehicles?category=motorcycle",
+    id: "bus_minibus",
+    label: "Buses",
+    description: "Coaster and minibuses",
+    href: "/vehicles?category=bus_minibus",
+    icon: Truck,
+    countKey: "bus_minibus",
+  },
+  {
+    id: "motorcycle_tricycle",
+    label: "Bikes & keke",
+    description: "Motorcycles and tricycles",
+    href: "/vehicles?category=motorcycle_tricycle",
     icon: Bike,
-    countKey: "motorcycle",
+    countKey: "motorcycle_tricycle",
+  },
+  {
+    id: "excavator",
+    label: "Excavators",
+    description: "Construction earthmovers",
+    href: "/vehicles?category=excavator",
+    icon: HardHat,
+    countKey: "excavator",
+  },
+  {
+    id: "tractor",
+    label: "Tractors",
+    description: "Farm and ag machinery",
+    href: "/vehicles?category=tractor",
+    icon: Tractor,
+    countKey: "tractor",
+  },
+  {
+    id: "heavy",
+    label: "All heavy equipment",
+    description: "Cranes, loaders and more",
+    href: "/vehicles?group=heavy",
+    icon: HardHat,
   },
   {
     id: "boat",
@@ -89,101 +122,74 @@ export const PROPERTY_CATEGORY_BROWSE: CategoryBrowseItem[] = [
     description: "Flats and mini flats",
     href: "/search?property_type=flat_2",
     icon: Building2,
-    countKey: "flat_2",
   },
   {
-    id: "duplex",
-    label: "Duplexes",
-    description: "Terrace and detached",
+    id: "houses",
+    label: "Houses",
+    description: "Detached homes and duplexes",
     href: "/search?property_type=detached_duplex",
     icon: Home,
-    countKey: "detached_duplex",
   },
   {
     id: "land",
     label: "Land",
-    description: "Plots and estates",
-    href: "/land",
+    description: "Plots and acreage",
+    href: "/search?hub=land_sale",
     icon: LandPlot,
-    countKey: "land",
   },
   {
     id: "commercial",
     label: "Commercial",
-    description: "Shops and offices",
+    description: "Shops, offices and warehouses",
     href: "/search?property_type=shop",
-    icon: Building2,
-    countKey: "shop",
-  },
-  {
-    id: "warehouse",
-    label: "Warehouses",
-    description: "Storage and logistics",
-    href: "/search?property_type=warehouse",
     icon: Warehouse,
-    countKey: "warehouse",
   },
   {
     id: "shortlet",
-    label: "Short Lets",
-    description: "Nightly stays",
+    label: "Short let",
+    description: "Serviced stays",
     href: "/shortlet",
     icon: Hotel,
   },
 ];
 
-function formatCount(n: number | undefined): string | null {
-  if (n == null || n <= 0) return null;
-  return `${n.toLocaleString("en-NG")} available`;
-}
-
-/** Browse-first category cards — link to existing filtered routes. */
 export function CategoryBrowseGrid({
   items,
-  className,
   counts,
+  className,
 }: {
-  items: CategoryBrowseItem[];
-  className?: string;
-  /** Live counts from current inventory pool — never invent numbers. */
+  items: readonly CategoryBrowseItem[];
   counts?: Record<string, number>;
+  className?: string;
 }) {
   return (
-    <ul
+    <div
       className={cn(
-        "grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4",
+        "grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
         className,
       )}
     >
       {items.map((item) => {
         const Icon = item.icon;
-        const countLabel =
-          item.countKey && counts
-            ? formatCount(counts[item.countKey])
-            : null;
+        const count =
+          item.countKey && counts ? counts[item.countKey] : undefined;
         return (
-          <li key={item.id}>
-            <Link
-              href={item.href}
-              className="pressable group flex h-full items-start gap-3 rounded-2xl border border-navy/10 bg-gradient-to-b from-white to-[#f5f7fb] p-3.5 shadow-[0_8px_24px_-18px_rgba(3,27,78,0.35)] transition duration-200 hover:-translate-y-1 hover:border-gold/40 hover:shadow-[0_16px_32px_-16px_rgba(3,27,78,0.42)] active:scale-[0.99]"
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy text-gold transition duration-200 group-hover:scale-105 group-hover:bg-navy-light">
-                <Icon className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-              </span>
-                  <span className="min-w-0 pt-0.5">
-                <span className="block text-sm font-bold text-navy">
-                  {item.label}
-                </span>
-                {countLabel ? (
-                  <span className="mt-0.5 block text-[11px] font-bold tabular-nums text-navy/55">
-                    {countLabel}
-                  </span>
-                ) : null}
-              </span>
-            </Link>
-          </li>
+          <Link
+            key={item.id}
+            href={item.href}
+            className="pressable flex flex-col gap-1 rounded-2xl border border-navy/8 bg-white p-3 shadow-sm transition hover:border-gold/35 hover:shadow-md"
+          >
+            <Icon className="h-5 w-5 text-gold" aria-hidden />
+            <span className="text-sm font-bold text-navy">{item.label}</span>
+            <span className="line-clamp-2 text-[11px] leading-snug text-muted">
+              {item.description}
+            </span>
+            {count != null && count > 0 ? (
+              <span className="text-[10px] font-bold text-navy/50">{count} listings</span>
+            ) : null}
+          </Link>
         );
       })}
-    </ul>
+    </div>
   );
 }

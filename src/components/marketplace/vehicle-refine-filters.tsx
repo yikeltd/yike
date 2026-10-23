@@ -17,7 +17,11 @@ import {
   buildVehicleMakeSelectOptions,
   buildVehicleTypeSelectOptions,
 } from "@/lib/marketplace/vehicle-makes";
-import { VEHICLE_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
+import {
+  VEHICLE_CATEGORIES_BROWSE,
+  VEHICLE_CATEGORY_GROUPS,
+  isMachineryCategory,
+} from "@/lib/marketplace/vehicle-specs";
 import { ThemedSelect } from "@/components/ui/themed-select";
 import { cn } from "@/lib/utils";
 
@@ -31,9 +35,15 @@ export function VehicleRefineFilters({ className }: { className?: string }) {
 
   const state = sp.get("state") ?? "";
   const city = sp.get("city") ?? "";
+  const group = sp.get("group") ?? "";
   const category = sp.get("category") ?? "";
   const make = sp.get("make") ?? "";
   const model = sp.get("model") ?? "";
+  const maxMileage = sp.get("max_mileage") ?? "";
+  const maxOperatingHours = sp.get("max_operating_hours") ?? "";
+  const machineryContext =
+    Boolean(group && group !== "road") ||
+    isMachineryCategory(category || null);
 
   const budgetValue = useMemo(
     () =>
@@ -52,10 +62,17 @@ export function VehicleRefineFilters({ className }: { className?: string }) {
     () => buildCitySelectOptions(state || undefined),
     [state],
   );
+  const groupOptions = useMemo(
+    () => [
+      { value: "", label: "All equipment types" },
+      ...VEHICLE_CATEGORY_GROUPS.map((g) => ({ value: g.id, label: g.label })),
+    ],
+    [],
+  );
   const categoryOptions = useMemo(
     () => [
-      { value: "", label: "Any category" },
-      ...VEHICLE_CATEGORIES.map((c) => ({ value: c.id, label: c.plural })),
+      { value: "", label: "Any subcategory" },
+      ...VEHICLE_CATEGORIES_BROWSE.map((c) => ({ value: c.id, label: c.label })),
     ],
     [],
   );
@@ -103,13 +120,25 @@ export function VehicleRefineFilters({ className }: { className?: string }) {
           ariaLabel="City"
         />
         <ThemedSelect
+          value={group}
+          onChange={(value) => {
+            push({
+              group: value || null,
+              category: value ? null : category || null,
+            });
+          }}
+          options={groupOptions}
+          placeholder="Type group"
+          ariaLabel="Vehicle group"
+        />
+        <ThemedSelect
           value={category}
           onChange={(value) => {
-            push({ category: value || null });
+            push({ category: value || null, group: value ? null : group || null });
           }}
           options={categoryOptions}
-          placeholder="Category"
-          ariaLabel="Vehicle category"
+          placeholder="Subcategory"
+          ariaLabel="Vehicle subcategory"
         />
         <ThemedSelect
           value={budgetValue}
@@ -126,6 +155,38 @@ export function VehicleRefineFilters({ className }: { className?: string }) {
           compactLabel
         />
       </div>
+
+      {!machineryContext ? (
+        <ThemedSelect
+          value={maxMileage}
+          onChange={(value) => {
+            push({ max_mileage: value || null, max_operating_hours: null });
+          }}
+          options={[
+            { value: "", label: "Any mileage" },
+            { value: "50000", label: "Under 50,000 km" },
+            { value: "80000", label: "Under 80,000 km" },
+            { value: "120000", label: "Under 120,000 km" },
+          ]}
+          placeholder="Max mileage"
+          ariaLabel="Maximum mileage"
+        />
+      ) : (
+        <ThemedSelect
+          value={maxOperatingHours}
+          onChange={(value) => {
+            push({ max_operating_hours: value || null, max_mileage: null });
+          }}
+          options={[
+            { value: "", label: "Any hours" },
+            { value: "3000", label: "Under 3,000 hrs" },
+            { value: "6000", label: "Under 6,000 hrs" },
+            { value: "10000", label: "Under 10,000 hrs" },
+          ]}
+          placeholder="Max operating hours"
+          ariaLabel="Maximum operating hours"
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <ThemedSelect

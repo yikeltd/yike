@@ -28,7 +28,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Vehicles",
-  description: `Search cars, SUVs, trucks and more across Nigeria on ${SITE_NAME}.`,
+  description: `Search cars, trucks, buses, heavy equipment and agricultural machinery across Nigeria on ${SITE_NAME}.`,
   alternates: { canonical: `${SITE_URL}/vehicles` },
 };
 
@@ -73,6 +73,9 @@ export default async function VehiclesPage({
   const maxMileage = first(sp.max_mileage)
     ? Number(first(sp.max_mileage))
     : undefined;
+  const maxOperatingHours = first(sp.max_operating_hours)
+    ? Number(first(sp.max_operating_hours))
+    : undefined;
   const conditionParam = first(sp.condition);
   const verifiedOnly = first(sp.verified) === "1";
   const featuredOnly = first(sp.featured) === "1";
@@ -96,6 +99,7 @@ export default async function VehiclesPage({
         state,
         city,
         auto_category: first(sp.category),
+        group: first(sp.group),
         make: first(sp.make),
         model: first(sp.model),
         min_year: Number.isFinite(minYear) ? minYear : undefined,
@@ -103,6 +107,9 @@ export default async function VehiclesPage({
         min_price: first(sp.min_price) ? Number(first(sp.min_price)) : undefined,
         max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
         max_mileage: Number.isFinite(maxMileage) ? maxMileage : undefined,
+        max_operating_hours: Number.isFinite(maxOperatingHours)
+          ? maxOperatingHours
+          : undefined,
         transmission: first(sp.transmission),
         fuel_type: first(sp.fuel),
         condition: queryCondition,
@@ -130,6 +137,11 @@ export default async function VehiclesPage({
       state,
       city,
       auto_category: first(sp.category),
+      group: first(sp.group),
+      max_mileage: Number.isFinite(maxMileage) ? maxMileage : undefined,
+      max_operating_hours: Number.isFinite(maxOperatingHours)
+        ? maxOperatingHours
+        : undefined,
       make: first(sp.make),
       min_price: first(sp.min_price) ? Number(first(sp.min_price)) : undefined,
       max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
@@ -176,6 +188,7 @@ export default async function VehiclesPage({
   for (const key of [
     "q",
     "category",
+    "group",
     "condition",
     "sort",
     "state",
@@ -187,6 +200,7 @@ export default async function VehiclesPage({
     "min_price",
     "max_price",
     "max_mileage",
+    "max_operating_hours",
     "transmission",
     "fuel",
     "verified",

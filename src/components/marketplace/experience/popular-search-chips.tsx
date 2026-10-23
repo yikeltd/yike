@@ -17,8 +17,8 @@ export const VEHICLE_POPULAR_SEARCHES: PopularSearchItem[] = [
   { label: "Prado", href: "/vehicles?q=Prado" },
   { label: "Corolla", href: "/vehicles?q=Corolla" },
   { label: "SUV", href: "/vehicles?category=suv" },
-  { label: "Pickup", href: "/vehicles?category=truck" },
-  { label: "Truck", href: "/vehicles?category=commercial" },
+  { label: "Pickup", href: "/vehicles?category=pickup_van" },
+  { label: "Excavator", href: "/vehicles?category=excavator" },
 ];
 
 export const PROPERTY_POPULAR_SEARCHES: PopularSearchItem[] = [

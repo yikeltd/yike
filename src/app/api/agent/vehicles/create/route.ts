@@ -16,6 +16,7 @@ import {
 } from "@/lib/marketplace/listings";
 import type { VehicleCategoryId } from "@/lib/marketplace/vehicle-specs";
 import { VEHICLE_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
+import { isYearOptionalCategory } from "@/lib/marketplace/vehicle-taxonomy";
 
 export const runtime = "nodejs";
 
@@ -37,7 +38,9 @@ function parseVehicleBody(body: Record<string, unknown>): VehicleListingInput | 
   const title = String(body.title ?? "").trim();
   const make = String(body.make ?? "").trim();
   const model = String(body.model ?? "").trim();
-  const year = Number(body.year);
+  const yearRaw = body.year;
+  const year =
+    yearRaw != null && yearRaw !== "" ? Number(yearRaw) : null;
   const price = Number(body.price);
   const state = String(body.state ?? "").trim();
   const city = String(body.city ?? "").trim();
@@ -46,7 +49,11 @@ function parseVehicleBody(body: Record<string, unknown>): VehicleListingInput | 
   ).trim();
 
   if (!title || !make || !model || !state || !city || !vehicle_condition) return null;
-  if (!Number.isFinite(year) || year < 1980) return null;
+  if (isYearOptionalCategory(auto_category)) {
+    if (year != null && (!Number.isFinite(year) || year < 1980)) return null;
+  } else if (!Number.isFinite(year) || year! < 1980) {
+    return null;
+  }
   if (!Number.isFinite(price) || price <= 0) return null;
 
   const media = Array.isArray(body.media_urls)

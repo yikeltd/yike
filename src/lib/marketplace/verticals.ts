@@ -53,7 +53,7 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     createHref: "/agent/listings/new/vehicle",
     status: "live",
     launchFeature: "vehicle_marketplace",
-    description: "Find your next vehicle.",
+    description: "Cars, trucks, buses, heavy equipment and farm machinery.",
   },
   {
     id: "property",

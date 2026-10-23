@@ -18,7 +18,11 @@ export const VEHICLE_QUICK_FILTERS: QuickFilterChip[] = [
   { id: "diesel", label: "Diesel", params: { fuel: "diesel" } },
   { id: "electric", label: "Electric", params: { fuel: "electric" } },
   { id: "suv", label: "SUV", params: { category: "suv" } },
-  { id: "pickup", label: "Pickup", params: { category: "truck" } },
+  { id: "pickup", label: "Pickup", params: { category: "pickup_van" } },
+  { id: "excavators", label: "Excavators", params: { category: "excavator" } },
+  { id: "tractors", label: "Tractors", params: { category: "tractor" } },
+  { id: "heavy", label: "Heavy equipment", params: { group: "heavy" } },
+  { id: "trucks", label: "Commercial trucks", params: { category: "commercial_truck" } },
   { id: "luxury", label: "Luxury", params: { make: "Mercedes-Benz" } },
   {
     id: "registered",
@@ -30,7 +34,7 @@ export const VEHICLE_QUICK_FILTERS: QuickFilterChip[] = [
     label: "Low Mileage",
     params: { max_mileage: "80000" },
   },
-  { id: "commercial", label: "Commercial", params: { category: "commercial" } },
+  { id: "commercial", label: "Commercial", params: { category: "commercial_truck" } },
   { id: "under5", label: "Under ₦5M", params: { max_price: "5000000" } },
   { id: "newest", label: "Newest", params: { sort: "newest" } },
 ];

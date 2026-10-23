@@ -25,6 +25,11 @@ import {
   type SmartFilterFormState,
 } from "@/lib/search/smart-filter-engine";
 import { VEHICLE_MAKES, VEHICLE_MAKE_TYPES } from "@/lib/marketplace/vehicle-makes";
+import {
+  VEHICLE_CATEGORIES_BROWSE,
+  VEHICLE_CATEGORY_GROUPS,
+  VEHICLE_CONDITION_OPTIONS,
+} from "@/lib/marketplace/vehicle-specs";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 
 export type { FilterVertical };
@@ -248,6 +253,44 @@ export function SearchContextFilters({
               </h4>
               <div className="grid grid-cols-2 gap-2">
                 <select
+                  value={form.vehicle_group ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      vehicle_group: e.target.value,
+                      vehicle_category: e.target.value ? "" : f.vehicle_category,
+                    }))
+                  }
+                  className="w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-xs font-bold dark:border-white/20 dark:bg-navy-light"
+                >
+                  <option value="">All type groups</option>
+                  {VEHICLE_CATEGORY_GROUPS.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={form.vehicle_category ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      vehicle_category: e.target.value,
+                      vehicle_group: e.target.value ? "" : f.vehicle_group,
+                    }))
+                  }
+                  className="w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-xs font-bold dark:border-white/20 dark:bg-navy-light"
+                >
+                  <option value="">All subcategories</option>
+                  {VEHICLE_CATEGORIES_BROWSE.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <select
                   value={form.make ?? ""}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, make: e.target.value, model: "" }))
@@ -281,9 +324,11 @@ export function SearchContextFilters({
                 className="w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-xs font-bold dark:border-white/20 dark:bg-navy-light"
               >
                 <option value="">All conditions</option>
-                <option value="brand_new">Brand new</option>
-                <option value="foreign_used">Foreign used</option>
-                <option value="nigerian_used">Nigerian used</option>
+                {VEHICLE_CONDITION_OPTIONS.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
               </select>
             </div>
           )}

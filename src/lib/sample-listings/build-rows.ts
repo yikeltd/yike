@@ -102,7 +102,10 @@ export function buildSampleVehicleDbRows() {
     fuel_type: v.fuel_type,
     mileage: v.mileage,
     vehicle_condition: v.vehicle_condition,
-    attributes: seedAttributes({ vertical: "vehicle" }),
+    attributes: {
+      ...seedAttributes({ vertical: "vehicle" }),
+      ...(v.attributes ?? {}),
+    },
     extras: {},
     financing_available: false,
     is_boosted: false,

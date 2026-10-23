@@ -1,5 +1,6 @@
 import type { Property } from "@/types/database";
 import { normalizeAssetType } from "@/lib/marketplace/listings";
+import { resolveVehicleCategoryFilter } from "@/lib/marketplace/vehicle-taxonomy";
 import { buildSampleListingFixtures } from "./build-rows";
 import {
   isSampleListingFixtureEnabled,
@@ -33,6 +34,9 @@ export type SampleBrowseFilters = {
   state?: string;
   city?: string;
   auto_category?: string;
+  group?: string;
+  max_mileage?: number;
+  max_operating_hours?: number;
   make?: string;
   brand?: string;
   condition?: string;
@@ -53,8 +57,24 @@ function filterSamples(
   if (filters.city) {
     rows = rows.filter((p) => ilike(p.city, filters.city));
   }
-  if (filters.auto_category) {
-    rows = rows.filter((p) => p.auto_category === filters.auto_category);
+  const categoryIds = resolveVehicleCategoryFilter({
+    category: filters.auto_category,
+    group: filters.group,
+  });
+  if (categoryIds?.length) {
+    rows = rows.filter((p) => categoryIds.includes(p.auto_category as never));
+  }
+  if (filters.max_mileage != null) {
+    rows = rows.filter(
+      (p) => p.mileage != null && Number(p.mileage) <= filters.max_mileage!,
+    );
+  }
+  if (filters.max_operating_hours != null) {
+    rows = rows.filter((p) => {
+      const attrs = (p.attributes ?? {}) as Record<string, unknown>;
+      const h = Number(attrs.operating_hours);
+      return Number.isFinite(h) && h <= filters.max_operating_hours!;
+    });
   }
   if (filters.make) {
     rows = rows.filter((p) => ilike(p.make, filters.make));

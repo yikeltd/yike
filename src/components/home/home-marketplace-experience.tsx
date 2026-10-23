@@ -549,7 +549,7 @@ export function HomeMarketplaceExperience({
                 kind="vehicle"
               />
             </MarketplaceSection>
-            <MarketplaceSection title="Pickups" href="/vehicles?category=truck" band="ivory">
+            <MarketplaceSection title="Pickups" href="/vehicles?category=pickup_van" band="ivory">
               <CarouselRail
                 items={
                   vehicleRails.pickup.length > 0
@@ -559,7 +559,7 @@ export function HomeMarketplaceExperience({
                 kind="vehicle"
               />
             </MarketplaceSection>
-            <MarketplaceSection title="Commercial" href="/vehicles?category=commercial" band="warm">
+            <MarketplaceSection title="Heavy equipment" href="/vehicles?group=heavy" band="warm">
               <CarouselRail
                 items={
                   vehicleRails.commercial.length > 0

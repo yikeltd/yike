@@ -86,9 +86,15 @@ describe("visibility engine", () => {
     assert.equal(carFields.some((f) => f.id === "vin"), true);
 
     const motorcycleFields = filterVisibleFields(VEHICLE_CATEGORY_MANIFEST.fields, {
-      auto_category: "motorcycle",
+      auto_category: "motorcycle_tricycle",
     });
     assert.equal(motorcycleFields.some((f) => f.id === "vin"), false);
+
+    const excavatorFields = filterVisibleFields(VEHICLE_CATEGORY_MANIFEST.fields, {
+      auto_category: "excavator",
+    });
+    assert.equal(excavatorFields.some((f) => f.id === "mileage"), false);
+    assert.equal(excavatorFields.some((f) => f.id === "operating_hours"), true);
   });
 });
 

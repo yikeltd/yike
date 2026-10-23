@@ -7,6 +7,7 @@ import type { AssetType, Property, PropertyStatus } from "@/types/database";
 import type { MarketplaceListingRow } from "@/lib/search/types";
 import { isListingPubliclyActive } from "@/lib/listing-lifecycle";
 import type { VehicleCategoryId } from "@/lib/marketplace/vehicle-specs";
+import { resolveVehicleCategoryFilter } from "@/lib/marketplace/vehicle-taxonomy";
 import type { ElectronicsCategoryId } from "@/lib/marketplace/electronics-specs";
 
 export type ListingIntent = "sale" | "rent" | "lease" | "shortlet";
@@ -23,7 +24,7 @@ export type VehicleListingInput = {
   video_url?: string | null;
   make: string;
   model: string;
-  year: number;
+  year: number | null;
   trim?: string | null;
   transmission?: string | null;
   fuel_type?: string | null;
@@ -127,6 +128,9 @@ export type VehicleSearchParams = {
   condition?: string;
   min_mileage?: number;
   max_mileage?: number;
+  max_operating_hours?: number;
+  /** Browse group — road, heavy, agricultural, industrial */
+  group?: string;
   featured?: boolean;
   limit?: number;
 };
@@ -158,7 +162,15 @@ export async function queryPublicVehicles(
   if (params.featured) query = query.eq("is_featured", true);
   if (params.state) query = query.ilike("state", `%${params.state}%`);
   if (params.city) query = query.ilike("city", `%${params.city}%`);
-  if (params.auto_category) query = query.eq("auto_category", params.auto_category);
+  const categoryIds = resolveVehicleCategoryFilter({
+    category: params.auto_category,
+    group: params.group,
+  });
+  if (categoryIds?.length === 1) {
+    query = query.eq("auto_category", categoryIds[0]!);
+  } else if (categoryIds && categoryIds.length > 1) {
+    query = query.in("auto_category", categoryIds);
+  }
   if (params.make) query = query.ilike("make", `%${params.make}%`);
   if (params.model) query = query.ilike("model", `%${params.model}%`);
   if (params.min_year != null) query = query.gte("year", params.min_year);
@@ -181,7 +193,15 @@ export async function queryPublicVehicles(
     console.error("[marketplace] queryPublicVehicles", error.message);
     return [];
   }
-  return (data ?? []) as Property[];
+  let rows = (data ?? []) as Property[];
+  if (params.max_operating_hours != null) {
+    rows = rows.filter((p) => {
+      const attrs = (p.attributes ?? {}) as Record<string, unknown>;
+      const hours = Number(attrs.operating_hours);
+      return Number.isFinite(hours) && hours <= params.max_operating_hours!;
+    });
+  }
+  return rows;
 }
 
 /** Publishable listings by id — preserves caller order; omits inactive or missing rows. */

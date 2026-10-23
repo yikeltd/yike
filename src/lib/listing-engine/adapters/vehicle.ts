@@ -1,12 +1,28 @@
 /**
  * Vehicle submission adapter — maps engine values to the exact payload shape
- * `VehicleListingForm` posts to `/api/agent/vehicles/create` (see
- * src/components/marketplace/vehicle-listing-form.tsx `onSubmit`). Reuses
- * the existing create API — no parallel listing endpoint.
+ * `VehicleListingForm` posts to `/api/agent/vehicles/create`.
  */
 import type { ListingValues } from "../types";
 
 export type VehiclePayload = Record<string, unknown>;
+
+const ATTRIBUTE_KEYS = [
+  "seller_type",
+  "price_negotiable",
+  "engine_capacity",
+  "vehicle_class",
+  "payload_capacity",
+  "axle_configuration",
+  "trailer_compatible",
+  "operating_hours",
+  "operating_weight",
+  "horsepower",
+  "drive_type",
+  "attachments",
+  "service_history",
+  "suitable_applications",
+  "implement_compatibility",
+] as const;
 
 function numberOrUndefined(value: unknown): number | undefined {
   if (value === undefined || value === null || value === "") return undefined;
@@ -20,10 +36,29 @@ function boolFromFormValue(value: unknown): boolean {
 
 export function valuesToVehiclePayload(
   values: ListingValues,
-  opts: { listingId?: string; mediaUrls?: string[] } = {}
+  opts: { listingId?: string; mediaUrls?: string[] } = {},
 ): VehiclePayload {
   const mediaUrls =
     opts.mediaUrls ?? (Array.isArray(values.media_urls) ? (values.media_urls as string[]) : []);
+
+  const attributes: Record<string, unknown> = {};
+  for (const key of ATTRIBUTE_KEYS) {
+    const raw = values[key];
+    if (raw == null || raw === "") continue;
+    if (key === "trailer_compatible" || key === "price_negotiable") {
+      attributes[key] = boolFromFormValue(raw);
+    } else if (
+      key === "operating_hours" ||
+      key === "operating_weight" ||
+      key === "horsepower" ||
+      key === "payload_capacity"
+    ) {
+      const n = numberOrUndefined(raw);
+      if (n != null) attributes[key] = n;
+    } else {
+      attributes[key] = raw;
+    }
+  }
 
   return {
     id: opts.listingId,
@@ -51,5 +86,6 @@ export function valuesToVehiclePayload(
     engine: values.engine || undefined,
     registration_status: values.registration_status || undefined,
     financing_available: boolFromFormValue(values.financing_available),
+    attributes,
   };
 }

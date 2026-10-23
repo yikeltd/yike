@@ -61,9 +61,13 @@ export type SmartFilterFormState = {
   min?: string;
   max?: string;
   /** Vehicle */
+  vehicle_category?: string;
+  vehicle_group?: string;
   make?: string;
   model?: string;
   vehicle_condition?: string;
+  max_mileage?: string;
+  max_operating_hours?: string;
   /** Electronics */
   category?: string;
   brand?: string;
@@ -114,9 +118,15 @@ export function smartFilterToUrlParams(
   }
 
   if (vertical === "vehicle" || (vertical === "all" && filters.make)) {
+    if (filters.vehicle_group) params.set("group", filters.vehicle_group);
+    if (filters.vehicle_category) params.set("category", filters.vehicle_category);
     if (filters.make) params.set("make", filters.make);
     if (filters.model) params.set("model", filters.model);
     if (filters.vehicle_condition) params.set("condition", filters.vehicle_condition);
+    if (filters.max_mileage) params.set("max_mileage", filters.max_mileage);
+    if (filters.max_operating_hours) {
+      params.set("max_operating_hours", filters.max_operating_hours);
+    }
   }
 
   if (vertical === "electronics") {
@@ -153,7 +163,11 @@ export function defaultSmartFilterState(
     max: "",
     make: "",
     model: "",
+    vehicle_category: "",
+    vehicle_group: "",
     vehicle_condition: "",
+    max_mileage: "",
+    max_operating_hours: "",
     category: "",
     brand: "",
     condition: "",
@@ -181,7 +195,11 @@ export function clearIncompatibleFilterFields(
       beds: "",
       make: "",
       model: "",
-      vehicle_condition: "",
+      vehicle_category: "",
+    vehicle_group: "",
+    vehicle_condition: "",
+    max_mileage: "",
+    max_operating_hours: "",
       role: "",
       min: "",
       max: "",
@@ -211,7 +229,11 @@ export function clearIncompatibleFilterFields(
       beds: "",
       make: "",
       model: "",
-      vehicle_condition: "",
+      vehicle_category: "",
+    vehicle_group: "",
+    vehicle_condition: "",
+    max_mileage: "",
+    max_operating_hours: "",
       category: "",
       brand: "",
       condition: "",
@@ -227,7 +249,11 @@ export function clearIncompatibleFilterFields(
       ...base,
       make: "",
       model: "",
-      vehicle_condition: "",
+      vehicle_category: "",
+    vehicle_group: "",
+    vehicle_condition: "",
+    max_mileage: "",
+    max_operating_hours: "",
       category: "",
       brand: "",
       condition: "",
@@ -242,7 +268,11 @@ export function clearIncompatibleFilterFields(
       ...base,
       make: "",
       model: "",
-      vehicle_condition: "",
+      vehicle_category: "",
+    vehicle_group: "",
+    vehicle_condition: "",
+    max_mileage: "",
+    max_operating_hours: "",
       category: "",
       brand: "",
       condition: "",
@@ -260,7 +290,11 @@ export function clearIncompatibleFilterFields(
     beds: "",
     make: "",
     model: "",
+    vehicle_category: "",
+    vehicle_group: "",
     vehicle_condition: "",
+    max_mileage: "",
+    max_operating_hours: "",
     category: "",
     brand: "",
     condition: "",
