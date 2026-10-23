@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { NotificationCenterModal } from "@/components/notifications/notification-center-modal";
+import { NotificationsPageView } from "./notifications-page-view";
 
 export const metadata: Metadata = {
   title: "Notifications Center | Yike",
@@ -7,9 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function NotificationsPage() {
-  return (
-    <main className="min-h-screen bg-[#f7f9fc] dark:bg-[#021433] p-4 flex items-center justify-center">
-      <NotificationCenterModal onClose={() => {}} />
-    </main>
-  );
+  return <NotificationsPageView />;
 }

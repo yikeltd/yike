@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   experimental: {
+    agentUpgrade: "security",
     optimizePackageImports: ["lucide-react"],
     // Cap static-generation workers on memory-tight Coolify hosts (OOM after SSG).
     ...(Number.isFinite(buildCpus) && buildCpus > 0 ? { cpus: buildCpus } : {}),
