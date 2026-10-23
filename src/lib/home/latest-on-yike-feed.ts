@@ -15,6 +15,7 @@ export type LatestOnYikeFeedInput = {
   manualResolved: Property[];
   gates: { vehicles: boolean; electronics: boolean };
   sampleFixtureMode?: boolean;
+  sampleFixtureForce?: boolean;
   fetchFailed?: boolean;
 };
 
@@ -145,6 +146,15 @@ export function buildLatestOnYikeFeed(
       usedSampleFixture: false,
       unavailableManualCount: 0,
       error: true,
+    };
+  }
+
+  if (input.sampleFixtureMode && input.sampleFixtureForce) {
+    return {
+      items: sampleFixtureFeed(input),
+      usedSampleFixture: true,
+      unavailableManualCount: 0,
+      error: false,
     };
   }
 

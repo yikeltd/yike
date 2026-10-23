@@ -30,7 +30,10 @@ import {
   PROPERTY_QUICK_FILTERS,
 } from "@/components/marketplace/experience";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
-import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import {
+  isSampleListingFixtureEnabled,
+  isSampleListingFixtureForceEnabled,
+} from "@/lib/sample-listings/flags";
 import { samplePropertyBrowse } from "@/lib/sample-listings/query-fixtures";
 import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
@@ -103,7 +106,9 @@ export default async function SearchPage({
       feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   }
 
-  if (feedItems.length === 0 && isSampleListingFixtureEnabled()) {
+  const fixtureOn = isSampleListingFixtureEnabled();
+  const fixtureForce = isSampleListingFixtureForceEnabled();
+  if (fixtureOn && (fixtureForce || feedItems.length === 0)) {
     feedItems = samplePropertyBrowse({
       q: preloadParams.q,
       city: preloadParams.city,

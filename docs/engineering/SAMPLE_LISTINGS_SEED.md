@@ -27,7 +27,15 @@ In `.env.local` (development only):
 YIKE_SAMPLE_LISTINGS_FIXTURE=1
 ```
 
-When live inventory is empty, the homepage uses the same 30-item catalog in-memory and shows a **Sample listings (dev fixture)** banner. This is **not** enabled when Supabase fails silently — only when this flag is set.
+Optional — force the full catalog even when production returns live rows (still dev-only, still labelled):
+
+```bash
+YIKE_SAMPLE_LISTINGS_FIXTURE_FORCE=1
+```
+
+Put each variable on its **own line** in `.env.local`. Restart `npm run dev` after changes.
+
+When live inventory is empty (or force mode is on), routes use the 30-item in-memory catalog and show a **Sample listings (dev fixture)** banner. Fixtures are **never** used when Supabase fetches fail on the homepage (`fetchHealth.failed`).
 
 ## Catalog source
 

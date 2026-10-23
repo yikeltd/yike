@@ -1,7 +1,10 @@
 import type { Property } from "@/types/database";
 import { normalizeAssetType } from "@/lib/marketplace/listings";
 import { buildSampleListingFixtures } from "./build-rows";
-import { isSampleListingFixtureEnabled } from "./flags";
+import {
+  isSampleListingFixtureEnabled,
+  isSampleListingFixtureForceEnabled,
+} from "./flags";
 
 function allSamples(): Property[] {
   if (!isSampleListingFixtureEnabled()) return [];
@@ -96,6 +99,9 @@ export function sampleBrowseFallback(
   asset: "PROPERTY" | "VEHICLE" | "ELECTRONICS",
   filters: SampleBrowseFilters = {},
 ): Property[] {
+  if (isSampleListingFixtureForceEnabled()) {
+    return filterSamples(asset, filters);
+  }
   if (live.length > 0) return live;
   return filterSamples(asset, filters);
 }

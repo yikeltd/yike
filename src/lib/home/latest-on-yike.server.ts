@@ -8,6 +8,7 @@ import {
 } from "@/lib/marketplace/listings";
 import { getPublicProperties } from "@/lib/properties";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { isSampleListingFixtureForceEnabled } from "@/lib/sample-listings/flags";
 import {
   getDefaultLatestOnYikeConfig,
   HOMEPAGE_LATEST_ON_YIKE_KEY,
@@ -89,6 +90,8 @@ export async function resolveLatestOnYikeFeed(options: {
         : Promise.resolve([] as Property[]),
     ]);
 
+  const sampleFixtureForce = isSampleListingFixtureForceEnabled();
+
   return buildLatestOnYikeFeed({
     config,
     livePools: {
@@ -99,6 +102,7 @@ export async function resolveLatestOnYikeFeed(options: {
     manualResolved,
     gates,
     sampleFixtureMode: options.sampleFixtureMode,
+    sampleFixtureForce,
     fetchFailed: false,
   });
 }

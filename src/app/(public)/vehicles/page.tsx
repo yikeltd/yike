@@ -10,7 +10,10 @@ import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
-import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import {
+  isSampleListingFixtureEnabled,
+  isSampleListingFixtureForceEnabled,
+} from "@/lib/sample-listings/flags";
 import { sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
 import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 import { VehicleSearchResultsChrome } from "@/components/marketplace/vehicle-search-results-chrome";
@@ -118,7 +121,9 @@ export default async function VehiclesPage({
   }
 
   let showingSampleFixture = false;
-  if (isSampleListingFixtureEnabled()) {
+  const fixtureOn = isSampleListingFixtureEnabled();
+  const fixtureForce = isSampleListingFixtureForceEnabled();
+  if (fixtureOn) {
     const liveCount = vehicles.length;
     vehicles = sampleBrowseFallback(vehicles, "VEHICLE", {
       q: first(sp.q),
@@ -130,7 +135,8 @@ export default async function VehiclesPage({
       max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
       featured: featuredOnly || undefined,
     });
-    showingSampleFixture = liveCount === 0 && vehicles.length > 0;
+    showingSampleFixture =
+      vehicles.length > 0 && (fixtureForce || liveCount === 0);
   } else {
     const vehicleDemo = withEmptyInventoryDemoFixtures(vehicles, "vehicle", 24);
     vehicles = vehicleDemo.items;

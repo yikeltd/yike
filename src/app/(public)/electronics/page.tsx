@@ -10,7 +10,10 @@ import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { ELECTRONICS_CATEGORIES } from "@/lib/marketplace/electronics-specs";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
-import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import {
+  isSampleListingFixtureEnabled,
+  isSampleListingFixtureForceEnabled,
+} from "@/lib/sample-listings/flags";
 import { sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
 import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 
@@ -51,7 +54,9 @@ export default async function ElectronicsPage({
     : [];
 
   let showingSampleFixture = false;
-  if (isSampleListingFixtureEnabled()) {
+  const fixtureOn = isSampleListingFixtureEnabled();
+  const fixtureForce = isSampleListingFixtureForceEnabled();
+  if (fixtureOn) {
     const liveCount = items.length;
     items = sampleBrowseFallback(items, "ELECTRONICS", {
       q: first(sp.q),
@@ -63,7 +68,8 @@ export default async function ElectronicsPage({
       min_price: first(sp.min_price) ? Number(first(sp.min_price)) : undefined,
       max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
     });
-    showingSampleFixture = liveCount === 0 && items.length > 0;
+    showingSampleFixture =
+      items.length > 0 && (fixtureForce || liveCount === 0);
   }
 
   return (

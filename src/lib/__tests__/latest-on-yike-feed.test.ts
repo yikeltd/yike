@@ -99,6 +99,28 @@ test("fetch failure never returns demo inventory", () => {
   delete process.env.YIKE_SAMPLE_LISTINGS_FIXTURE;
 });
 
+test("fixture force mode uses sample catalog over live pools", () => {
+  process.env.YIKE_SAMPLE_LISTINGS_FIXTURE = "1";
+  process.env.YIKE_SAMPLE_LISTINGS_FIXTURE_FORCE = "1";
+  const result = buildLatestOnYikeFeed({
+    config: getDefaultLatestOnYikeConfig(),
+    livePools: {
+      property: [row("live-p", "PROPERTY", "2026-12-01T00:00:00Z")],
+      vehicle: [],
+      electronics: [],
+    },
+    manualResolved: [],
+    gates: { vehicles: true, electronics: true },
+    sampleFixtureMode: true,
+    sampleFixtureForce: true,
+  });
+  assert.ok(result.usedSampleFixture);
+  assert.ok(result.items.length > 0);
+  assert.ok(result.items.every((i) => i.id.startsWith("s3000001-")));
+  delete process.env.YIKE_SAMPLE_LISTINGS_FIXTURE;
+  delete process.env.YIKE_SAMPLE_LISTINGS_FIXTURE_FORCE;
+});
+
 test("validateLatestOnYikeConfigPatch rejects empty categories", () => {
   const base = getDefaultLatestOnYikeConfig();
   base.enabledCategories = {

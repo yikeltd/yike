@@ -15,7 +15,10 @@ import {
   queryPublicElectronics,
   queryPublicVehicles,
 } from "@/lib/marketplace/listings";
-import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import {
+  isSampleListingFixtureEnabled,
+  isSampleListingFixtureForceEnabled,
+} from "@/lib/sample-listings/flags";
 import { buildSampleListingFixtures } from "@/lib/sample-listings/build-rows";
 import { parseHomeCategory } from "@/lib/home/marketplace-category";
 import { resolveLatestOnYikeFeed } from "@/lib/home/latest-on-yike.server";
@@ -271,6 +274,8 @@ export default async function HomePage({
 
   const sampleFixtureMode =
     isSampleListingFixtureEnabled() && !fetchHealth.failed;
+  const sampleFixtureForce =
+    sampleFixtureMode && isSampleListingFixtureForceEnabled();
   const sampleCatalog = sampleFixtureMode ? buildSampleListingFixtures() : [];
 
   function sampleForAsset(
@@ -278,7 +283,7 @@ export default async function HomePage({
     asset: "PROPERTY" | "VEHICLE" | "ELECTRONICS",
     limit = 12,
   ): { items: Property[]; isDemo: boolean } {
-    if (live.length > 0) {
+    if (!sampleFixtureForce && live.length > 0) {
       return { items: live.slice(0, limit), isDemo: false };
     }
     if (!sampleFixtureMode) {

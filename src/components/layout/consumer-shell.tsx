@@ -13,11 +13,12 @@ import type { SiteBanner } from "@/types/database";
 
 export function ConsumerShell({
   children,
-  mobileBanner,
+  mobileBanner: _mobileBanner,
 }: {
   children: React.ReactNode;
   mobileBanner?: SiteBanner | null;
 }) {
+  void _mobileBanner;
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isProfile = pathname === "/agent";
@@ -59,7 +60,7 @@ export function ConsumerShell({
       <OfflineBanner />
       <OfflineWarmCache />
       {!isHome && <HeaderDesktop />}
-      <HeaderMobile mobileBanner={mobileBanner} />
+      <HeaderMobile />
       <main
         className={cn(
           "mx-auto w-full flex-1",
