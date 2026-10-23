@@ -71,6 +71,7 @@ type Props = {
   vehicleRails: VehicleRails;
   electronicsRecent?: Property[];
   mixedLatest?: Property[];
+  latestOnYikeError?: boolean;
   marketplaceLocation?: { city: string; state?: string } | null;
   showingDemoFixtures?: boolean;
   /** Explicit dev sample catalog (YIKE_SAMPLE_LISTINGS_FIXTURE=1) — show banner. */
@@ -127,6 +128,7 @@ export function HomeMarketplaceExperience({
   vehicleRails,
   electronicsRecent = [],
   mixedLatest = [],
+  latestOnYikeError = false,
   marketplaceLocation = null,
   showingDemoFixtures: _showingDemoFixtures = false,
   showingSampleListingsFixture = false,
@@ -456,6 +458,7 @@ export function HomeMarketplaceExperience({
         }}
         electronicsRecent={electronicsRecent}
         mixedLatest={mixedLatest}
+        latestOnYikeError={latestOnYikeError}
       />
 
       {/* MOBILE EXPERIENCE */}
@@ -482,7 +485,13 @@ export function HomeMarketplaceExperience({
         />
 
       <div className="mx-auto max-w-7xl space-y-3 px-3 pt-2 sm:px-6 lg:px-6 lg:pt-4 xl:px-8">
-        {mixedLatest.length > 0 ? (
+        {latestOnYikeError ? (
+          <MarketplaceSection title="Latest on Yike" href="/discover" band="white">
+            <p className="rounded-2xl border border-navy/10 bg-white px-4 py-6 text-center text-sm text-muted">
+              Latest listings are unavailable right now. Try again in a moment.
+            </p>
+          </MarketplaceSection>
+        ) : mixedLatest.length > 0 ? (
           <MarketplaceSection title="Latest on Yike" href="/discover" band="white">
             <CarouselRail items={mixedLatest} priorityCount={3} />
           </MarketplaceSection>

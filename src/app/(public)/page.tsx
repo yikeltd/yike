@@ -18,6 +18,7 @@ import {
 import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
 import { buildSampleListingFixtures } from "@/lib/sample-listings/build-rows";
 import { parseHomeCategory } from "@/lib/home/marketplace-category";
+import { resolveLatestOnYikeFeed } from "@/lib/home/latest-on-yike.server";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import {
   demoFeaturedRail,
@@ -314,20 +315,21 @@ export default async function HomePage({
 
   const showingDemoFixtures =
     propertyDemo.isDemo || vehicleDemo.isDemo || electronicsSample.isDemo;
+  const supabaseForLatest = await createClient();
+  const latestFeed = await resolveLatestOnYikeFeed({
+    supabase: supabaseForLatest,
+    fetchFailed: fetchHealth.failed,
+    sampleFixtureMode,
+  });
+  const mixedLatest = latestFeed.items;
+  const latestOnYikeError = latestFeed.error;
+
   const showingSampleListingsFixture =
     sampleFixtureMode &&
-    (propertyDemo.isDemo || vehicleDemo.isDemo || electronicsSample.isDemo);
-
-  const mixedLatest = dedupeById([
-    ...propertyItems.slice(0, 8),
-    ...vehicleItems.slice(0, 8),
-    ...electronicsItems,
-  ])
-    .sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    )
-    .slice(0, 12);
+    (latestFeed.usedSampleFixture ||
+      propertyDemo.isDemo ||
+      vehicleDemo.isDemo ||
+      electronicsSample.isDemo);
 
   const nearPool = propertyDemo.isDemo
     ? propertyItems
@@ -436,6 +438,7 @@ export default async function HomePage({
           initialCategory={category}
           electronicsRecent={electronicsItems}
           mixedLatest={mixedLatest}
+          latestOnYikeError={latestOnYikeError}
           showingDemoFixtures={showingDemoFixtures}
           showingSampleListingsFixture={showingSampleListingsFixture}
           homepageTopAd={homepageTopAd}

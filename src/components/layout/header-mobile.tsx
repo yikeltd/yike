@@ -59,9 +59,10 @@ export function HeaderMobile({
     <header
       className={cn(
         "sticky top-0 z-40 border-b border-white/10 bg-[#031B4E] text-white shadow-xl lg:hidden",
+        "pt-[max(0.25rem,env(safe-area-inset-top))]",
       )}
     >
-      <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 pb-2.5">
         {/* 1. YIKE LOGO */}
         <Link href="/" className="flex shrink-0 items-center" aria-label="Yike home">
           <Image
@@ -80,7 +81,7 @@ export function HeaderMobile({
               size="default"
               tone="hero"
               placement="header_mobile"
-              placeholder="Search vehicles & properties…"
+              placeholder="Search property, vehicles & electronics…"
             />
           </Suspense>
         </div>

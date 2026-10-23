@@ -44,6 +44,7 @@
     "seed:sample-listings": "tsx scripts/seed-sample-listings.ts",
     "seed:sample-listings:dry": "tsx scripts/seed-sample-listings.ts --dry-run",
     "test:sample-listings": "tsx --test src/lib/__tests__/sample-listings-catalog.test.ts src/lib/__tests__/sample-listings-query-fixtures.test.ts",
+    "test:latest-on-yike": "tsx --test src/lib/__tests__/latest-on-yike-feed.test.ts",
     "domain:dns": "bash scripts/setup-yike-domain-dns.sh",
     "domain:verify": "bash scripts/verify-yike-domain.sh",
     "email:assets": "node scripts/generate-email-assets.mjs && npx tsx scripts/render-email-previews.ts",

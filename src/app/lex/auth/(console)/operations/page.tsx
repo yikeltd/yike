@@ -82,6 +82,7 @@ export default async function AdminOperationsPage() {
       title: "Growth & leads",
       items: [
         { href: adminPath("featured"), label: "Boost management" },
+        { href: adminPath("homepage-latest"), label: "Latest on Yike feed" },
         { href: adminPath("leads"), label: "Lead analytics (7d)", count: leadSnapshot.count ?? 0 },
         { href: adminPath("trust-metrics"), label: "Trust metrics" },
         { href: adminPath("market-intelligence"), label: "Market intelligence" },

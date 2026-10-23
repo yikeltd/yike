@@ -59,7 +59,7 @@ export function ConsumerShell({
       <OfflineBanner />
       <OfflineWarmCache />
       {!isHome && <HeaderDesktop />}
-      {!isHome && <HeaderMobile mobileBanner={mobileBanner} />}
+      <HeaderMobile mobileBanner={mobileBanner} />
       <main
         className={cn(
           "mx-auto w-full flex-1",

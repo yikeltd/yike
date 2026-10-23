@@ -9,6 +9,7 @@ import {
   buildSearchHref,
   getSmartSearchSuggestions,
   parseSmartSearchQuery,
+  smartSearchToUrlParams,
   type SearchSuggestion,
   type SmartSearchResult,
 } from "@/lib/smart-search";
@@ -117,8 +118,16 @@ export function HeaderUniversalSearch({
     const trimmed = text.trim();
     const rawParsed = parseSmartSearchQuery(text);
 
-    if (activeTab !== "all") {
-      rawParsed.vertical = activeTab;
+    const verticalTab =
+      pathname === "/" && homeCategory === "vehicle"
+        ? "vehicle"
+        : pathname === "/" && homeCategory === "property"
+          ? "property"
+          : activeTab !== "all"
+            ? activeTab
+            : undefined;
+    if (verticalTab) {
+      rawParsed.vertical = verticalTab;
     }
 
     if (rawParsed.switchesLocation && (rawParsed.city || rawParsed.state)) {
@@ -136,7 +145,18 @@ export function HeaderUniversalSearch({
     }
 
     const parsed = withMarketplaceLocation(rawParsed);
-    const href = buildSearchHref(pathname, parsed);
+    let href = buildSearchHref(pathname, parsed);
+    if (pathname === "/" && homeCategory) {
+      const params = smartSearchToUrlParams(parsed);
+      const qs = params.toString();
+      if (homeCategory === "vehicle") {
+        href = qs ? `/vehicles?${qs}` : "/vehicles";
+      } else if (homeCategory === "electronics") {
+        href = qs ? `/electronics?${qs}` : "/electronics";
+      } else {
+        href = qs ? `/search?${qs}` : "/search";
+      }
+    }
     const label = parsed.resolvedLabel ?? (trimmed || "Search Results");
 
     addRecentSearch({ label, href });

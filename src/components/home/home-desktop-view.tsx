@@ -39,6 +39,7 @@ type Props = {
   vehicleRails: RailBundle;
   electronicsRecent: Property[];
   mixedLatest: Property[];
+  latestOnYikeError?: boolean;
 };
 
 function renderDesktopSection(title: string, href: string, items: Property[]) {
@@ -132,6 +133,7 @@ export function HomeDesktopView({
   vehicleRails,
   electronicsRecent,
   mixedLatest,
+  latestOnYikeError = false,
 }: Props) {
   const primary =
     category === "vehicle"
@@ -161,9 +163,18 @@ export function HomeDesktopView({
       />
 
       <div className="mx-auto max-w-7xl space-y-6 px-8">
-        {mixedLatest.length > 0
-          ? renderDesktopSection("Latest on Yike", "/discover", mixedLatest)
-          : null}
+        {latestOnYikeError ? (
+          <section className="space-y-4 pt-6">
+            <h2 className="border-l-4 border-gold pl-3 text-xl font-black tracking-tight text-navy">
+              Latest on Yike
+            </h2>
+            <p className="rounded-2xl border border-navy/10 bg-white px-4 py-6 text-sm text-muted">
+              Latest listings are unavailable right now. Try again in a moment.
+            </p>
+          </section>
+        ) : mixedLatest.length > 0 ? (
+          renderDesktopSection("Latest on Yike", "/discover", mixedLatest)
+        ) : null}
         {renderDesktopSection("Featured", primary === propertyRails ? "/search?featured=1" : category === "vehicle" ? "/vehicles?featured=1" : "/electronics", primary.featuredItems)}
         {renderDesktopSection("Trending", category === "vehicle" ? "/vehicles" : category === "electronics" ? "/electronics" : "/search", primary.trendingItems)}
         {renderDesktopSection("Recently Added", category === "vehicle" ? "/vehicles" : category === "electronics" ? "/electronics" : "/search", primary.recentItems)}

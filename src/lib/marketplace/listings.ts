@@ -5,6 +5,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AssetType, Property, PropertyStatus } from "@/types/database";
 import type { MarketplaceListingRow } from "@/lib/search/types";
+import { isListingPubliclyActive } from "@/lib/listing-lifecycle";
 import type { VehicleCategoryId } from "@/lib/marketplace/vehicle-specs";
 import type { ElectronicsCategoryId } from "@/lib/marketplace/electronics-specs";
 
@@ -181,6 +182,37 @@ export async function queryPublicVehicles(
     return [];
   }
   return (data ?? []) as Property[];
+}
+
+/** Publishable listings by id — preserves caller order; omits inactive or missing rows. */
+export async function getPublicListingsByIds(
+  client: SupabaseClient,
+  ids: string[],
+): Promise<Property[]> {
+  const unique = [...new Set(ids.filter(Boolean))].slice(0, 48);
+  if (unique.length === 0) return [];
+
+  const { data, error } = await client
+    .from("properties")
+    .select(VEHICLE_SELECT)
+    .in("id", unique)
+    .eq("status", "approved")
+    .gt("expires_at", new Date().toISOString());
+
+  if (error) {
+    console.error("[marketplace] getPublicListingsByIds", error.message);
+    return [];
+  }
+
+  const byId = new Map(
+    ((data ?? []) as Property[])
+      .filter((row) => isListingPubliclyActive(row))
+      .map((row) => [row.id, row]),
+  );
+
+  return unique
+    .map((id) => byId.get(id))
+    .filter((row): row is Property => Boolean(row));
 }
 
 export async function getVehicleByIdOrSlug(
