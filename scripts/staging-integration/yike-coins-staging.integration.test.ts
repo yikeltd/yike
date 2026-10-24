@@ -1,0 +1,285 @@
+/**
+ * Database-backed Yike Coins / video allowance tests — linked dev Supabase only.
+ *
+ * Run:
+ *   set -a && source .env.local && set +a
+ *   YIKE_DEV_DB_INTEGRATION=1 npm run verify:dev-target
+ *   YIKE_DEV_DB_INTEGRATION=1 npm run test:dev:integration
+ *
+ * Skips when YIKE_DEV_DB_INTEGRATION is not set or env ref mismatches.
+ */
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
+
+const CANONICAL_DEV_REF = "hlpojfurfldvcxfxhveg";
+
+function supabaseRefFromEnv(): string | null {
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const match = url.match(/^https:\/\/([a-z0-9]+)\.supabase\.co/i);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+const envRef = supabaseRefFromEnv();
+const integrationEnabled =
+  process.env.YIKE_DEV_DB_INTEGRATION === "1" &&
+  envRef === CANONICAL_DEV_REF &&
+  Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+
+function adminClient(): SupabaseClient | null {
+  if (!integrationEnabled) return null;
+  return createClient(
+    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
+}
+
+function anonClient(): SupabaseClient | null {
+  if (!integrationEnabled || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return null;
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
+}
+
+async function resolveTestUserId(admin: SupabaseClient): Promise<{ userId: string; ephemeral: boolean }> {
+  const stable = process.env.YIKE_DEV_TEST_USER_ID?.trim();
+  if (stable) return { userId: stable, ephemeral: false };
+
+  const id = randomUUID();
+  const email = `dev-integration+${id}@yike.dev.invalid`;
+  const { data, error } = await admin.auth.admin.createUser({
+    id,
+    email,
+    email_confirm: true,
+  });
+  if (error || !data.user?.id) {
+    throw new Error(error?.message ?? "Could not create ephemeral test user");
+  }
+  return { userId: data.user.id, ephemeral: true };
+}
+
+async function cleanupDevIntegrationData(admin: SupabaseClient, userId: string) {
+  const { data: sessions } = await admin
+    .from("video_call_sessions")
+    .select("id")
+    .or(`caller_id.eq.${userId},callee_id.eq.${userId}`);
+  const sessionIds = (sessions ?? []).map((r) => r.id as string);
+  if (sessionIds.length > 0) {
+    await admin.from("video_call_free_allowance_claims").delete().in("session_id", sessionIds);
+    await admin.from("video_call_sessions").delete().in("id", sessionIds);
+  }
+  await admin.from("video_call_daily_usage").delete().eq("user_id", userId);
+  await admin
+    .from("yike_coin_ledger")
+    .delete()
+    .eq("user_id", userId)
+    .like("idempotency_key", "dev-integration:%");
+  await admin.from("yike_coin_accounts").delete().eq("user_id", userId);
+}
+
+async function deleteEphemeralUser(admin: SupabaseClient, userId: string) {
+  await cleanupDevIntegrationData(admin, userId);
+  await admin.auth.admin.deleteUser(userId);
+}
+
+/** Write tests must not use real customer profiles — ephemeral users only. */
+async function resolveEphemeralTestUserId(admin: SupabaseClient): Promise<string> {
+  if (process.env.YIKE_DEV_TEST_USER_ID?.trim()) {
+    throw new Error("Unset YIKE_DEV_TEST_USER_ID for mutating integration tests");
+  }
+  const { userId } = await resolveTestUserId(admin);
+  return userId;
+}
+
+test("dev integration prerequisites", { skip: integrationEnabled ? false : "YIKE_DEV_DB_INTEGRATION=1 + .env.local" }, () => {
+  assert.equal(envRef, CANONICAL_DEV_REF);
+});
+
+test(
+  "communications schema tables exist",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    for (const table of [
+      "yike_coin_accounts",
+      "yike_coin_ledger",
+      "marketplace_conversations",
+      "video_call_daily_usage",
+    ]) {
+      const { error } =
+        table === "yike_coin_accounts"
+          ? await admin.from(table).select("user_id").limit(1)
+          : await admin.from(table).select("id").limit(1);
+      assert.ok(!error, `${table}: ${error?.message ?? "ok"}`);
+    }
+  }
+);
+
+test(
+  "duplicate credit idempotency returns already_applied",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    const userId = await resolveEphemeralTestUserId(admin);
+    try {
+      const idempotencyKey = `dev-integration:credit:${randomUUID()}`;
+      const reference = `DEV-CR-${randomUUID().slice(0, 8)}`;
+
+      await admin.rpc("yike_ensure_coin_account", { p_user_id: userId });
+
+      const first = await admin.rpc("yike_coin_credit", {
+        p_user_id: userId,
+        p_amount_coins: 10,
+        p_reference: reference,
+        p_idempotency_key: idempotencyKey,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "dev integration test",
+        p_metadata: { test: true },
+      });
+      assert.ok(!first.error, first.error?.message);
+
+      const second = await admin.rpc("yike_coin_credit", {
+        p_user_id: userId,
+        p_amount_coins: 10,
+        p_reference: reference,
+        p_idempotency_key: idempotencyKey,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "dev integration test replay",
+        p_metadata: { test: true },
+      });
+      assert.ok(!second.error, second.error?.message);
+      const row = Array.isArray(second.data) ? second.data[0] : second.data;
+      assert.equal(Boolean(row?.already_applied), true);
+    } finally {
+      await deleteEphemeralUser(admin, userId);
+    }
+  }
+);
+
+test(
+  "concurrent debits cannot drive balance negative",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    const userId = await resolveEphemeralTestUserId(admin);
+    try {
+      await admin.rpc("yike_ensure_coin_account", { p_user_id: userId });
+
+      const fundKey = `dev-integration:fund:${randomUUID()}`;
+      await admin.rpc("yike_coin_credit", {
+        p_user_id: userId,
+        p_amount_coins: 5,
+        p_reference: `DEV-FUND-${randomUUID().slice(0, 8)}`,
+        p_idempotency_key: fundKey,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "dev fund",
+        p_metadata: {},
+      });
+
+      const debit = (suffix: string) =>
+        admin.rpc("yike_coin_debit", {
+          p_user_id: userId,
+          p_amount_coins: 5,
+          p_reference: `DEV-DB-${suffix}`,
+          p_idempotency_key: `dev-integration:debit:${suffix}:${randomUUID()}`,
+          p_service_code: "video_call_connected",
+          p_reason: "dev concurrent debit",
+          p_metadata: {},
+        });
+
+      const [a, b] = await Promise.all([debit("a"), debit("b")]);
+      const outcomes = [a, b].map((r) => ({
+        ok: !r.error,
+        insufficient: r.error?.message?.includes("insufficient_balance") ?? false,
+      }));
+      const successCount = outcomes.filter((o) => o.ok).length;
+      assert.ok(successCount <= 1, "at most one concurrent debit of full balance may succeed");
+
+      const { data: acct } = await admin
+        .from("yike_coin_accounts")
+        .select("balance_coins")
+        .eq("user_id", userId)
+        .single();
+      assert.ok(Number(acct?.balance_coins ?? 0) >= 0);
+    } finally {
+      await deleteEphemeralUser(admin, userId);
+    }
+  }
+);
+
+test(
+  "anon role cannot invoke yike_coin_debit RPC",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const anon = anonClient()!;
+    const userId = randomUUID();
+    const { error } = await anon.rpc("yike_coin_debit", {
+      p_user_id: userId,
+      p_amount_coins: 1,
+      p_reference: "DEV-EVIL",
+      p_idempotency_key: `evil:${randomUUID()}`,
+      p_service_code: "video_call_connected",
+      p_reason: "should fail",
+      p_metadata: {},
+    });
+    assert.ok(error, "expected permission denied for anon/authenticated debit RPC");
+  }
+);
+
+test(
+  "video free allowance concurrent consume respects limit",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    const userId = await resolveEphemeralTestUserId(admin);
+    const peerId = await resolveEphemeralTestUserId(admin);
+    try {
+      const usageDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Africa/Lagos",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+
+      await admin.from("video_call_daily_usage").delete().eq("user_id", userId);
+
+      const sessionIds = Array.from({ length: 5 }, () => randomUUID());
+      for (const sessionId of sessionIds) {
+        await admin.from("video_call_sessions").insert({
+          id: sessionId,
+          caller_id: userId,
+          callee_id: peerId,
+          call_type: "video",
+          status: "ringing",
+        });
+      }
+      const calls = await Promise.all(
+        sessionIds.map((sessionId) =>
+          admin.rpc("yike_video_try_consume_free_allowance", {
+            p_user_id: userId,
+            p_session_id: sessionId,
+            p_usage_date: usageDate,
+            p_free_limit: 3,
+          })
+        )
+      );
+
+      const consumed = calls.filter((c) => {
+        const row = Array.isArray(c.data) ? c.data[0] : c.data;
+        return Boolean(row?.consumed);
+      }).length;
+      assert.equal(consumed, 3, "exactly three free slots under concurrent load");
+
+    } finally {
+      await deleteEphemeralUser(admin, userId);
+      await deleteEphemeralUser(admin, peerId);
+    }
+  }
+);
