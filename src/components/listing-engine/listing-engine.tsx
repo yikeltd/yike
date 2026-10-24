@@ -255,7 +255,7 @@ export function ListingEngine({
       setSaving(false);
 
       if (!res.ok) {
-        if (json.code === "whatsapp_verification_required" || json.code === "phone_verification_required") {
+        if (json.code === "phone_verification_required") {
           window.location.href = "/agent/verify";
           return;
         }

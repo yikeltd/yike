@@ -21,7 +21,7 @@ export type SendchampVerificationPurpose =
   | "phone_verification"
   | string;
 
-export type SendchampVerificationChannel = "sms" | "whatsapp" | "email";
+export type SendchampVerificationChannel = "sms" | "email";
 
 function getBaseUrl(): string {
   return process.env.SENDCHAMP_LIVE_BASE_URL?.trim() || DEFAULT_BASE_URL;
@@ -39,13 +39,13 @@ function getApiKeys(): string[] {
 }
 
 export function otpLength(): number {
-  const n = Number(process.env.SENDCHAMP_OTP_LENGTH ?? process.env.WHATSAPP_OTP_LENGTH ?? 6);
+  const n = Number(process.env.SENDCHAMP_OTP_LENGTH ?? 6);
   return Number.isFinite(n) && n >= 4 && n <= 8 ? n : 6;
 }
 
 export function otpExpiryMinutes(): number {
   const n = Number(
-    process.env.SENDCHAMP_OTP_EXPIRY_MINUTES ?? process.env.WHATSAPP_OTP_EXPIRY_MINUTES ?? 30
+    process.env.SENDCHAMP_OTP_EXPIRY_MINUTES ?? 30
   );
   return Number.isFinite(n) && n >= 5 && n <= 60 ? n : 30;
 }
@@ -54,11 +54,7 @@ function resolveChannel(
   explicit?: SendchampVerificationChannel
 ): SendchampVerificationChannel {
   if (explicit) return explicit;
-  const raw =
-    process.env.SENDCHAMP_OTP_CHANNEL?.trim().toLowerCase() ||
-    process.env.WHATSAPP_OTP_CHANNEL?.trim().toLowerCase() ||
-    "sms";
-  if (raw === "whatsapp" || raw === "wa") return "whatsapp";
+  const raw = process.env.SENDCHAMP_OTP_CHANNEL?.trim().toLowerCase() || "sms";
   if (raw === "email") return "email";
   return "sms";
 }
@@ -306,25 +302,6 @@ export async function createSendchampVerificationOtp(params: {
   });
 
   return { ok: true, reference, expiresMinutes };
-}
-
-/**
- * @deprecated Prefer createSendchampVerificationOtp with channel whatsapp.
- */
-export async function createSendchampWhatsappVerification(params: {
-  phoneIntl: string;
-  purpose: SendchampVerificationPurpose;
-  email?: string;
-  requestId?: string;
-}): Promise<
-  | { ok: true; reference: string; expiresMinutes: number }
-  | { ok: false; error: string; status: number; code?: "provider_auth_failed" }
-> {
-  return createSendchampVerificationOtp({
-    ...params,
-    channel: "whatsapp",
-    inAppToken: false,
-  });
 }
 
 export async function confirmSendchampVerification(params: {

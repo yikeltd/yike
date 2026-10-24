@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, ShieldCheck } from "lucide-react";
-import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
+import { PHONE_VERIFY_COPY } from "@/lib/phone-verification/copy";
 import type { VerificationTask } from "@/lib/verification/tasks";
 
 type Props = {
@@ -19,14 +19,12 @@ export function VerificationTrustGate({
 }: Props) {
   const pending = tasks.filter((t) => t.required && !t.complete);
   const next = pending[0];
-  const isWhatsApp = next?.id === "whatsapp";
-  const title = isWhatsApp
-    ? WHATSAPP_VERIFY_COPY.listingGate
+  const isPhoneTask = next?.id === "phone";
+  const title = isPhoneTask
+    ? PHONE_VERIFY_COPY.listingGate
     : next?.label ?? "Complete your profile";
-  const href = isWhatsApp ? "/agent/verification" : verificationHref;
-  const actionLabel = isWhatsApp
-    ? WHATSAPP_VERIFY_COPY.profileTitle
-    : "Continue";
+  const href = isPhoneTask ? "/agent/verification" : verificationHref;
+  const actionLabel = isPhoneTask ? PHONE_VERIFY_COPY.profileTitle : "Continue";
 
   return (
     <div

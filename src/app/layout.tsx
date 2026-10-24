@@ -14,11 +14,13 @@ import { GuestFavoriteSync } from "@/components/retention/guest-favorite-sync";
 import { UserActivitySync } from "@/components/retention/user-activity-sync";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
+import { IncomingVideoCallHost } from "@/components/marketplace/incoming-video-call-host";
 import {
   bootSplashArmScript,
   bootSplashCriticalCss,
   bootSplashHideScript,
   twaSwCleanupScript,
+  devSwCleanupScript,
 } from "@/lib/app-mode-inline";
 
 const themeInitScript = `(function(){try{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');localStorage.setItem('yike-theme','light');}catch(e){}})();`;
@@ -184,6 +186,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: bootSplashArmScript }} />
         <script dangerouslySetInnerHTML={{ __html: twaSwCleanupScript }} />
+        {process.env.NODE_ENV === "development" ? (
+          <script dangerouslySetInnerHTML={{ __html: devSwCleanupScript }} />
+        ) : null}
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
         <div id="yike-boot-splash" aria-hidden="true" suppressHydrationWarning>
@@ -232,6 +237,7 @@ export default function RootLayout({
             <GuestFavoriteSync />
             <UserActivitySync />
             <PendingIntentHandler />
+            <IncomingVideoCallHost />
           </AuthProvider>
           <PwaRegister />
         </ThemeProvider>

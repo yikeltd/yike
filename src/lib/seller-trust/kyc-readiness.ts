@@ -9,7 +9,6 @@
 export type VerificationMethodKind =
   | "email_otp"
   | "phone_sms_otp"
-  | "phone_whatsapp_otp"
   | "manual_admin_review"
   | "nin_lookup"
   | "government_id_upload"
@@ -74,7 +73,7 @@ export function plannedKycLevelFromMethods(
   if (verified.has("nin_lookup")) return "nin";
   if (
     verified.has("email_otp") &&
-    (verified.has("phone_sms_otp") || verified.has("phone_whatsapp_otp"))
+    verified.has("phone_sms_otp")
   ) {
     return "basic";
   }

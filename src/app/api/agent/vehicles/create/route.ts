@@ -8,8 +8,6 @@ import {
   assertCanCreateListing,
   ensurePendingManualSellerVerification,
 } from "@/lib/seller-trust";
-import { mustVerifyWhatsappBeforeListing } from "@/lib/whatsapp-verification/profile";
-import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import {
   buildVehicleInsertPayload,
   type VehicleListingInput,
@@ -151,13 +149,6 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: createGate.error, code: createGate.code },
       { status: createGate.code === "phone_verification_required" ? 403 : 400 },
-    );
-  }
-
-  if (mustVerifyWhatsappBeforeListing(profile)) {
-    return NextResponse.json(
-      { error: WHATSAPP_VERIFY_COPY.listingPrompt, code: "whatsapp_verification_required" },
-      { status: 403 },
     );
   }
 

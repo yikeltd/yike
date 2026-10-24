@@ -1,6 +1,7 @@
 export type AuthIntentType =
   | "whatsapp"
   | "call"
+  | "message"
   | "save"
   | "profile"
   | "saved"
@@ -12,13 +13,15 @@ export type AuthIntentType =
 export type AuthProviderId = "email" | "google" | "apple";
 
 /** No sign-in required — required for Play Store / SEO browsing. */
-export const AUTH_PUBLIC_INTENTS = new Set<AuthIntentType>(["whatsapp", "call"]);
+export const AUTH_PUBLIC_INTENTS = new Set<AuthIntentType>(["whatsapp"]);
 
 /** Sign-in only — email verification not required. */
 export const AUTH_LOGIN_ONLY_INTENTS = new Set<AuthIntentType>([
   "review_agent",
   "save",
   "verification_request",
+  "message",
+  "call",
 ]);
 
 export interface AuthIntent {

@@ -11,4 +11,7 @@ export {
   sendSellerPhoneVerificationCode,
   verifySellerPhoneCode,
   markSellerPhoneVerifiedForFatBypass,
+  resetPhoneVerificationOnNumberChange,
+  setAdminRequiredPhoneVerification,
 } from "./service";
+export { getSellerContactPhone, getWhatsappNumber } from "./profile";

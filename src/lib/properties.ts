@@ -22,19 +22,22 @@ import { hasAmenity, isTrustVerified, matchesHub } from "@/lib/hub-filters";
 import { isHotelPropertyType } from "@/constants/listingTypes";
 import type { PropertySearchParams } from "@/lib/property-search";
 import { isProductionEnv } from "@/lib/env";
+import {
+  publicListingAgentSelectSql,
+  redactListingAgentContact,
+  redactListingCollection,
+} from "@/lib/marketplace/public-listing-agent";
 
 export type { PropertySearchParams } from "@/lib/property-search";
 
-const PUBLIC_SELECT = `
+function publicPropertySelect() {
+  return `
   *,
   agent:profiles!properties_agent_id_fkey (
-    id, full_name, phone, whatsapp, avatar_url,
-    verification_status, agent_type, role,
-    verified_badge, ranking_score, listing_limit,
-    availability_status, performance_score, last_activity_at,
-    is_verified_agent, verification_level, is_responsive, response_rate
+    ${publicListingAgentSelectSql()}
   )
 `;
+}
 
 function canUseMockListings() {
   return !isProductionEnv();
@@ -58,7 +61,7 @@ async function queryPublicPropertiesRows(
 
   let query = supabase
     .from("properties")
-    .select(PUBLIC_SELECT)
+    .select(publicPropertySelect() as "*")
     .eq("status", "approved")
     .gt("expires_at", new Date().toISOString())
     .or("asset_type.eq.PROPERTY,asset_type.is.null")
@@ -104,7 +107,7 @@ async function queryPublicPropertiesRows(
   if (merged.property_type === "hotel") {
     rows = rows.filter((p) => isHotelPropertyType(p.property_type));
   }
-  return sortPropertiesByMarketRank(rows, merged).slice(0, limit);
+  return redactListingCollection(sortPropertiesByMarketRank(rows, merged).slice(0, limit));
 }
 
 /** Strict query — never injects unrelated demo listings when filters are active. */
@@ -159,14 +162,14 @@ export async function getVerifiedListings(limit = 8): Promise<Property[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("properties")
-    .select(PUBLIC_SELECT)
+    .select(publicPropertySelect() as "*")
     .eq("status", "approved")
     .eq("is_verified_listing", true)
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(limit);
   const rows = ((data ?? []) as Property[]).filter((p) => isTrustVerified(p));
-  return rows.slice(0, limit);
+  return redactListingCollection(rows.slice(0, limit));
 }
 
 export async function getHubListings(
@@ -191,10 +194,10 @@ export async function getPropertyById(id: string): Promise<Property | null> {
     if (supabase) {
       const { data } = await supabase
         .from("properties")
-        .select(PUBLIC_SELECT)
+        .select(publicPropertySelect() as "*")
         .eq("id", id)
         .single();
-      if (data) return data as Property;
+      if (data) return redactListingAgentContact(data as Property);
     }
   }
 
@@ -213,10 +216,10 @@ export async function getPropertyBySlug(slug: string): Promise<Property | null> 
     if (supabase) {
       const { data } = await supabase
         .from("properties")
-        .select(PUBLIC_SELECT)
+        .select(publicPropertySelect() as "*")
         .eq("slug", slug)
         .single();
-      if (data) return data as Property;
+      if (data) return redactListingAgentContact(data as Property);
     }
   }
 
@@ -320,7 +323,7 @@ export async function getRelatedProperties(
 
   const { data: areaData } = await supabase
     .from("properties")
-    .select(PUBLIC_SELECT)
+    .select(publicPropertySelect() as "*")
     .eq("status", "approved")
     .eq("city", property.city)
     .eq("area", property.area)
@@ -328,19 +331,19 @@ export async function getRelatedProperties(
     .gt("expires_at", new Date().toISOString())
     .limit(limit);
 
-  const areaMatches = (areaData ?? []) as Property[];
+  const areaMatches = redactListingCollection((areaData ?? []) as Property[]);
   if (areaMatches.length >= limit) return areaMatches;
 
   const { data: cityData } = await supabase
     .from("properties")
-    .select(PUBLIC_SELECT)
+    .select(publicPropertySelect() as "*")
     .eq("status", "approved")
     .eq("city", property.city)
     .neq("id", property.id)
     .gt("expires_at", new Date().toISOString())
     .limit(limit);
 
-  const cityMatches = (cityData ?? []) as Property[];
+  const cityMatches = redactListingCollection((cityData ?? []) as Property[]);
   const seen = new Set<string>([property.id]);
   const out: Property[] = [];
   for (const p of [...areaMatches, ...cityMatches]) {
@@ -366,7 +369,7 @@ async function fetchRelatedPool(
 
   const { data } = await supabase
     .from("properties")
-    .select(PUBLIC_SELECT)
+    .select(publicPropertySelect() as "*")
     .eq("status", "approved")
     .eq("city", property.city)
     .neq("id", property.id)
@@ -374,7 +377,7 @@ async function fetchRelatedPool(
     .limit(limit * 4);
 
   const rows = (data ?? []) as Property[];
-  return rows;
+  return redactListingCollection(rows);
 }
 
 function priceBand(price: number, pct = 0.35) {

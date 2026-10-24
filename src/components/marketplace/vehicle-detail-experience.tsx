@@ -43,6 +43,13 @@ import { VehicleGalleryModal } from "./vehicle-gallery-modal";
 import { BookVehicleInspectionModal } from "./book-vehicle-inspection-modal";
 import { PropertyCard } from "@/components/property/property-card";
 import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
+import { ListingInquiryActions } from "@/components/marketplace/listing-inquiry-actions";
+
+function nativeContactEnabled(): boolean {
+  const raw = process.env.NEXT_PUBLIC_ENABLE_MARKETPLACE_NATIVE_CONTACT?.trim().toLowerCase();
+  if (raw === "false" || raw === "0") return false;
+  return true;
+}
 import { useAuth } from "@/components/auth/auth-provider";
 
 function formatNaira(n: number) {
@@ -565,6 +572,14 @@ export function VehicleDetailExperience({
               </div>
 
               <div className="space-y-2 pt-2">
+                {nativeContactEnabled() && agent?.id ? (
+                  <ListingInquiryActions
+                    listingId={vehicle.id}
+                    assetType="VEHICLE"
+                    sellerId={agent.id}
+                    sellerName={sellerName}
+                  />
+                ) : (
                 <button
                   type="button"
                   onClick={onChatClick}
@@ -574,6 +589,7 @@ export function VehicleDetailExperience({
                   <MessageCircle className="h-4 w-4" />
                   <span>{chatLoading ? "OPENING..." : "WHATSAPP DEALER"}</span>
                 </button>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -604,6 +620,17 @@ export function VehicleDetailExperience({
       {/* STICKY MOBILE ACTION BAR */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy/95 border-t border-navy/10 dark:border-white/10 backdrop-blur-md p-3 shadow-2xl">
         <div className="mx-auto max-w-xl grid grid-cols-2 gap-2.5">
+          {nativeContactEnabled() && agent?.id ? (
+            <div className="col-span-2">
+              <ListingInquiryActions
+                listingId={vehicle.id}
+                assetType="VEHICLE"
+                sellerId={agent.id}
+                sellerName={sellerName}
+                layout="compact"
+              />
+            </div>
+          ) : (
           <button
             type="button"
             onClick={onChatClick}
@@ -613,6 +640,7 @@ export function VehicleDetailExperience({
             <MessageCircle className="h-4 w-4 text-navy dark:text-gold" />
             <span>WHATSAPP DEALER</span>
           </button>
+          )}
 
           <button
             type="button"

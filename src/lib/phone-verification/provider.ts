@@ -17,13 +17,9 @@ import type {
   PhoneVerificationProvider,
 } from "./types";
 
-/**
- * Sendchamp provider — production SMS = ONE Verification API create (BamSignal path).
- * Never call `/sms/send` in the same user action (double-charge risk).
- */
 export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
   id: "sendchamp",
-  supportedChannels: ["sms", "whatsapp"] as const,
+  supportedChannels: ["sms"] as const,
 
   isConfigured() {
     return isSendchampVerificationConfigured();
@@ -38,15 +34,6 @@ export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
   }): Promise<PhoneOtpSendResult> {
     const requestId = params.requestId ?? "unknown";
 
-    if (params.channel === "email") {
-      return {
-        ok: false,
-        error: "Email OTP channel is not enabled yet.",
-        status: 501,
-        code: "not_configured",
-      };
-    }
-
     if (!isSendchampVerificationConfigured()) {
       return {
         ok: false,
@@ -56,62 +43,15 @@ export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
       };
     }
 
-    if (params.channel === "sms") {
-      logOtpAudit({
-        event: "provider_sms_start",
-        requestId,
-        phone: params.phoneIntl,
-      });
-
-      const created = await createSendchampVerificationOtp({
-        phoneIntl: params.phoneIntl,
-        channel: "sms",
-        purpose: params.purpose,
-        email: params.email,
-        inAppToken: false,
-        requestId,
-      });
-
-      if (!created.ok) {
-        logOtpAudit({
-          event: "provider_sms_failed",
-          requestId,
-          phone: params.phoneIntl,
-          error: created.error,
-        });
-        console.error("[phone-verification] verification SMS failed", {
-          phoneFp: fingerprintPhone(params.phoneIntl),
-          error: created.error,
-          requestId,
-        });
-        return {
-          ok: false,
-          error: PHONE_VERIFY_COPY.providerUnavailable,
-          status: created.status,
-          code: created.code,
-        };
-      }
-
-      logOtpAudit({
-        event: "provider_sms_ok",
-        requestId,
-        phone: params.phoneIntl,
-        reference: created.reference,
-        deliveryReference: created.reference,
-      });
-
-      return {
-        ok: true,
-        channel: "sms",
-        reference: created.reference,
-        expiresMinutes: created.expiresMinutes,
-        message: PHONE_VERIFY_COPY.sentSms,
-      };
-    }
+    logOtpAudit({
+      event: "provider_sms_start",
+      requestId,
+      phone: params.phoneIntl,
+    });
 
     const created = await createSendchampVerificationOtp({
       phoneIntl: params.phoneIntl,
-      channel: "whatsapp",
+      channel: "sms",
       purpose: params.purpose,
       email: params.email,
       inAppToken: false,
@@ -119,6 +59,17 @@ export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
     });
 
     if (!created.ok) {
+      logOtpAudit({
+        event: "provider_sms_failed",
+        requestId,
+        phone: params.phoneIntl,
+        error: created.error,
+      });
+      console.error("[phone-verification] verification SMS failed", {
+        phoneFp: fingerprintPhone(params.phoneIntl),
+        error: created.error,
+        requestId,
+      });
       return {
         ok: false,
         error: PHONE_VERIFY_COPY.providerUnavailable,
@@ -127,12 +78,20 @@ export const sendchampPhoneVerificationProvider: PhoneVerificationProvider = {
       };
     }
 
+    logOtpAudit({
+      event: "provider_sms_ok",
+      requestId,
+      phone: params.phoneIntl,
+      reference: created.reference,
+      deliveryReference: created.reference,
+    });
+
     return {
       ok: true,
-      channel: "whatsapp",
+      channel: "sms",
       reference: created.reference,
       expiresMinutes: created.expiresMinutes,
-      message: "Verification code sent to WhatsApp.",
+      message: PHONE_VERIFY_COPY.sentSms,
     };
   },
 

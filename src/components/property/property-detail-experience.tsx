@@ -37,6 +37,8 @@ import { PropertyCard } from "./property-card";
 import { PropertyNegotiationModal } from "./property-negotiation-modal";
 import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
 import { useAuth } from "@/components/auth/auth-provider";
+import { ListingInquiryActions } from "@/components/marketplace/listing-inquiry-actions";
+import { isNativeMarketplaceContactEnabled } from "@/lib/marketplace/native-contact";
 
 const AMENITY_ICONS: Record<string, typeof Zap> = {
   power: Zap,
@@ -481,6 +483,17 @@ export function PropertyDetailExperience({
       {/* 8. STICKY MOBILE ACTIONS BAR (ALWAYS VISIBLE ON MOBILE) */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy/95 border-t border-navy/10 dark:border-white/10 backdrop-blur-md p-3 shadow-2xl">
         <div className="mx-auto max-w-xl grid grid-cols-2 gap-2.5">
+          {isNativeMarketplaceContactEnabled() && agent?.id ? (
+            <div className="col-span-2">
+              <ListingInquiryActions
+                listingId={property.id}
+                assetType="PROPERTY"
+                sellerId={agent.id}
+                sellerName={agent.full_name ?? "Seller"}
+                layout="compact"
+              />
+            </div>
+          ) : (
           <button
             type="button"
             onClick={onStickyChatClick}
@@ -490,6 +503,7 @@ export function PropertyDetailExperience({
             <MessageCircle className="h-4 w-4 text-navy dark:text-gold" />
             <span>{chatLoading ? "OPENING..." : "WHATSAPP CHAT"}</span>
           </button>
+          )}
 
           <button
             type="button"

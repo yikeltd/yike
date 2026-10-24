@@ -6,8 +6,6 @@ import { isEmailVerified } from "@/lib/auth";
 import { getListingLimit } from "@/lib/agent-tiers";
 import { LISTING_LIMIT_REACHED_MESSAGE } from "@/lib/copy/user-messages";
 import { computeExpiresAt } from "@/lib/listing-lifecycle";
-import { mustVerifyWhatsappBeforeListing } from "@/lib/whatsapp-verification/profile";
-import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import {
   assertCanCreateListing,
   ensurePendingManualSellerVerification,
@@ -243,16 +241,6 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: createGate.error, code: createGate.code },
       { status }
-    );
-  }
-
-  if (mustVerifyWhatsappBeforeListing(profile)) {
-    return NextResponse.json(
-      {
-        error: WHATSAPP_VERIFY_COPY.listingPrompt,
-        code: "whatsapp_verification_required",
-      },
-      { status: 403 }
     );
   }
 

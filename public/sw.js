@@ -28,6 +28,18 @@ const WARM_DOCUMENT_PATHS = new Set([
   "/safety",
 ]);
 
+/** Never substitute the marketplace offline shell — these need a live app (auth, seller, staff). */
+const NETWORK_REQUIRED_PREFIXES = [
+  "/auth/",
+  "/agent/",
+  "/account/",
+  "/lex/",
+];
+
+function requiresLiveNetwork(pathname) {
+  return NETWORK_REQUIRED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE).then(async (cache) => {
@@ -180,6 +192,11 @@ self.addEventListener("fetch", (event) => {
 
   // Document navigations: network-first, warm-cache fallback, /offline last
   if (event.request.mode === "navigate") {
+    if (requiresLiveNetwork(url.pathname)) {
+      event.respondWith(fetch(event.request, { cache: "no-store" }));
+      return;
+    }
+
     event.respondWith(
       (async () => {
         try {

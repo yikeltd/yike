@@ -15,7 +15,7 @@ import Link from "next/link";
 import { friendlyPublicError, PUBLIC_ERROR_FALLBACK } from "@/lib/copy/public-errors";
 import { cn } from "@/lib/utils";
 import { yikeVerificationWhatsAppLink } from "@/lib/agent-verification";
-import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
+import { PHONE_VERIFY_COPY } from "@/lib/phone-verification/copy";
 import { VerificationOptionCard } from "@/components/verification/verification-option-card";
 import type { AgentVerification, Profile } from "@/types/database";
 
@@ -133,8 +133,8 @@ export function VerificationWizard({
   if (isVerified) {
     return (
       <VerificationOptionCard
-        title={WHATSAPP_VERIFY_COPY.agentBadgeTitle}
-        status={WHATSAPP_VERIFY_COPY.agentBadgeVerified}
+        title={PHONE_VERIFY_COPY.agentBadgeTitle}
+        status={PHONE_VERIFY_COPY.agentBadgeVerified}
         statusVariant="success"
         disabled
       />
@@ -148,8 +148,8 @@ export function VerificationWizard({
     return (
       <div className="space-y-2">
         <VerificationOptionCard
-          title={WHATSAPP_VERIFY_COPY.agentBadgeTitle}
-          status={WHATSAPP_VERIFY_COPY.agentBadgeUnderReview}
+          title={PHONE_VERIFY_COPY.agentBadgeTitle}
+          status={PHONE_VERIFY_COPY.agentBadgeUnderReview}
           statusVariant="pending"
           actionLabel={showDetails ? undefined : "View options"}
           onAction={showDetails ? undefined : () => setShowDetails(true)}
@@ -187,8 +187,8 @@ export function VerificationWizard({
   if (!expanded) {
     return (
       <VerificationOptionCard
-        title={WHATSAPP_VERIFY_COPY.agentBadgeTitle}
-        status={WHATSAPP_VERIFY_COPY.agentBadgeOptional}
+        title={PHONE_VERIFY_COPY.agentBadgeTitle}
+        status={PHONE_VERIFY_COPY.agentBadgeOptional}
         statusVariant="neutral"
         actionLabel="View options"
         onAction={() => setExpanded(true)}
@@ -201,10 +201,10 @@ export function VerificationWizard({
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-navy">
-            {WHATSAPP_VERIFY_COPY.agentBadgeTitle}
+            {PHONE_VERIFY_COPY.agentBadgeTitle}
           </p>
           <p className="mt-0.5 text-xs text-muted">
-            {WHATSAPP_VERIFY_COPY.agentBadgeDescription}
+            {PHONE_VERIFY_COPY.agentBadgeDescription}
           </p>
         </div>
         <button

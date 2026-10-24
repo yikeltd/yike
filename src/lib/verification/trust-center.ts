@@ -2,10 +2,8 @@ import type { Profile } from "@/types/database";
 import { isAgentRole } from "@/lib/agent-tiers";
 import { getProfilePersona } from "@/lib/profile-display";
 import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
-import {
-  isWhatsappNumberVerified,
-  isWhatsappVerificationFeatureActive,
-} from "@/lib/whatsapp-verification/profile";
+import { isPhoneVerificationFeatureActive } from "@/lib/phone-verification/profile";
+import { isPhoneVerifiedForSeller } from "@/lib/seller-trust";
 import { effectiveTrustLevel } from "./levels";
 
 export type TrustItemStatus =
@@ -91,11 +89,11 @@ export function getTrustProgressItems(
     group: "listing_setup",
   });
 
-  if (isWhatsappVerificationFeatureActive(profile)) {
+  if (isPhoneVerificationFeatureActive(profile)) {
     items.push({
-      id: "whatsapp",
-      label: "WhatsApp verified",
-      status: isWhatsappNumberVerified(profile) ? "complete" : "action_needed",
+      id: "phone",
+      label: "Phone verified",
+      status: isPhoneVerifiedForSeller(profile) ? "complete" : "action_needed",
       href: "/agent/verification",
       group: "listing_setup",
     });
@@ -167,8 +165,8 @@ export function getNextStepMessage(
   switch (next.id) {
     case "email":
       return "Verify your email to continue.";
-    case "whatsapp":
-      return "Verify your WhatsApp to unlock seller actions.";
+    case "phone":
+      return "Verify your phone by SMS to unlock seller actions.";
     case "profile_complete":
       return "Add your name, address, and date of birth.";
     case "profile_photo":

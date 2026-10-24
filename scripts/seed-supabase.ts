@@ -4,9 +4,35 @@
  *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx tsx scripts/seed-supabase.ts
  * Or generate SQL only:
  *   npx tsx scripts/seed-supabase.ts --sql > /tmp/yike-seed.sql
+ *
+ * Linked dev database: hlpojfurfldvcxfxhveg (same Supabase project as local .env.local).
+ * Live writes require YIKE_DEV_SEED_WRITES=1 — prefer --sql for review.
  */
 
 import { createClient } from "@supabase/supabase-js";
+
+const CANONICAL_DEV_REF = "hlpojfurfldvcxfxhveg";
+
+function assertDevWriteTarget(sqlOnly: boolean): void {
+  if (sqlOnly) return;
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  if (!url) {
+    console.error("Refusing seed: SUPABASE_URL is not set. Use --sql only or configure .env.local.");
+    process.exit(1);
+  }
+  if (!url.includes(CANONICAL_DEV_REF)) {
+    console.error(
+      `Refusing seed: SUPABASE_URL must target linked dev ref ${CANONICAL_DEV_REF} (or use --sql only).`,
+    );
+    process.exit(1);
+  }
+  if (process.env.YIKE_DEV_SEED_WRITES !== "1") {
+    console.error(
+      "Refusing seed: set YIKE_DEV_SEED_WRITES=1 to acknowledge writes to the linked dev database.",
+    );
+    process.exit(1);
+  }
+}
 import { buildMockListings } from "../src/lib/mock-listings-seed";
 import type { Property } from "../src/types/database";
 
@@ -294,6 +320,7 @@ async function main() {
     process.stdout.write(generateSql(listings));
     return;
   }
+  assertDevWriteTarget(false);
   await seedWithApi(listings);
 }
 

@@ -18,6 +18,8 @@ import { isVerifiedAgent, cn } from "@/lib/utils";
 import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
 import { useAuth } from "@/components/auth/auth-provider";
 import { PropertyNegotiationModal } from "./property-negotiation-modal";
+import { ListingInquiryActions } from "@/components/marketplace/listing-inquiry-actions";
+import { isNativeMarketplaceContactEnabled } from "@/lib/marketplace/native-contact";
 
 export function AgentContactCard({
   listing,
@@ -162,6 +164,14 @@ export function AgentContactCard({
 
       {/* PRIMARY CONTACT ACTIONS */}
       <div className="space-y-2 pt-1">
+        {isNativeMarketplaceContactEnabled() && agent?.id ? (
+          <ListingInquiryActions
+            listingId={listing.id}
+            assetType="PROPERTY"
+            sellerId={agent.id}
+            sellerName={sellerName}
+          />
+        ) : (
         <button
           type="button"
           onClick={onChatClick}
@@ -171,6 +181,7 @@ export function AgentContactCard({
           <MessageCircle className="h-4 w-4" />
           <span>{chatLoading ? "INITIATING LEAD..." : "CONTACT ON WHATSAPP"}</span>
         </button>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <button

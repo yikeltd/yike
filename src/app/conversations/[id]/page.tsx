@@ -1,17 +1,30 @@
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { isMarketplaceMessagingEnabled } from "@/lib/marketplace-messaging/service";
+import { MarketplaceThread } from "./marketplace-thread";
 
 export const metadata = {
   title: "Conversation | Yike",
-  description: "Direct buyer & seller transaction conversation on Yike.",
+  description: "Direct buyer and seller messaging on Yike.",
 };
 
 export default async function ConversationPage({
-  params: _params,
+  params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  // This route previously rendered an in-memory simulator. Keep the route
-  // unavailable until a persistent, participant-authorized service exists.
-  void _params;
-  notFound();
+  if (!isMarketplaceMessagingEnabled()) {
+    redirect("/");
+  }
+
+  const { id } = await params;
+  const supabase = await createClient();
+  if (!supabase) redirect(`/auth/login?next=/conversations/${id}`);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/auth/login?next=/conversations/${id}`);
+
+  return <MarketplaceThread conversationId={id} currentUserId={user.id} />;
 }

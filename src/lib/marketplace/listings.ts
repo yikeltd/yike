@@ -9,6 +9,11 @@ import { isListingPubliclyActive } from "@/lib/listing-lifecycle";
 import type { VehicleCategoryId } from "@/lib/marketplace/vehicle-specs";
 import { resolveVehicleCategoryFilter } from "@/lib/marketplace/vehicle-taxonomy";
 import type { ElectronicsCategoryId } from "@/lib/marketplace/electronics-specs";
+import {
+  publicListingAgentSelectSql,
+  redactListingAgentContact,
+  redactListingCollection,
+} from "@/lib/marketplace/public-listing-agent";
 
 export type ListingIntent = "sale" | "rent" | "lease" | "shortlet";
 
@@ -135,15 +140,16 @@ export type VehicleSearchParams = {
   limit?: number;
 };
 
-const VEHICLE_SELECT = `
+function vehicleListingSelect() {
+  return `
   *,
   agent:profiles!properties_agent_id_fkey (
-    id, full_name, phone, whatsapp, avatar_url,
-    verification_status, agent_type, role, account_type,
-    verified_badge, ranking_score, is_verified_agent,
-    company_name, public_slug, created_at, listing_limit
+    ${publicListingAgentSelectSql(
+      "account_type, company_name, public_slug, created_at"
+    )}
   )
 `;
+}
 
 export async function queryPublicVehicles(
   client: SupabaseClient,
@@ -152,7 +158,7 @@ export async function queryPublicVehicles(
   const limit = Math.min(Math.max(params.limit ?? 24, 1), 48);
   let query = client
     .from("properties")
-    .select(VEHICLE_SELECT)
+    .select(vehicleListingSelect() as "*")
     .eq("asset_type", "VEHICLE")
     .eq("status", "approved")
     .gt("expires_at", new Date().toISOString())
@@ -196,7 +202,7 @@ export async function queryPublicVehicles(
     console.error("[marketplace] queryPublicVehicles", error.message);
     return [];
   }
-  return (data ?? []) as Property[];
+  return redactListingCollection((data ?? []) as Property[]);
 }
 
 /** Publishable listings by id — preserves caller order; omits inactive or missing rows. */
@@ -209,7 +215,7 @@ export async function getPublicListingsByIds(
 
   const { data, error } = await client
     .from("properties")
-    .select(VEHICLE_SELECT)
+    .select(vehicleListingSelect() as "*")
     .in("id", unique)
     .eq("status", "approved")
     .gt("expires_at", new Date().toISOString());
@@ -225,9 +231,11 @@ export async function getPublicListingsByIds(
       .map((row) => [row.id, row]),
   );
 
-  return unique
-    .map((id) => byId.get(id))
-    .filter((row): row is Property => Boolean(row));
+  return redactListingCollection(
+    unique
+      .map((id) => byId.get(id))
+      .filter((row): row is Property => Boolean(row))
+  );
 }
 
 export async function getVehicleByIdOrSlug(
@@ -236,19 +244,20 @@ export async function getVehicleByIdOrSlug(
 ): Promise<Property | null> {
   const byId = await client
     .from("properties")
-    .select(VEHICLE_SELECT)
+    .select(vehicleListingSelect() as "*")
     .eq("asset_type", "VEHICLE")
     .eq("id", idOrSlug)
     .maybeSingle();
-  if (byId.data) return byId.data as Property;
+  if (byId.data) return redactListingAgentContact(byId.data as Property);
 
   const bySlug = await client
     .from("properties")
-    .select(VEHICLE_SELECT)
+    .select(vehicleListingSelect() as "*")
     .eq("asset_type", "VEHICLE")
     .eq("slug", idOrSlug)
     .maybeSingle();
-  return (bySlug.data as Property | null) ?? null;
+  const row = (bySlug.data as Property | null) ?? null;
+  return row ? redactListingAgentContact(row) : null;
 }
 
 export async function queryPublicElectronics(
@@ -258,7 +267,7 @@ export async function queryPublicElectronics(
   const limit = Math.min(Math.max(params.limit ?? 24, 1), 48);
   let query = client
     .from("properties")
-    .select(VEHICLE_SELECT)
+    .select(vehicleListingSelect() as "*")
     .eq("asset_type", "ELECTRONICS")
     .eq("status", "approved")
     .gt("expires_at", new Date().toISOString())
@@ -284,7 +293,7 @@ export async function queryPublicElectronics(
     console.error("[marketplace] queryPublicElectronics", error.message);
     return [];
   }
-  return (data ?? []) as Property[];
+  return redactListingCollection((data ?? []) as Property[]);
 }
 
 export async function getElectronicsByIdOrSlug(
@@ -293,19 +302,20 @@ export async function getElectronicsByIdOrSlug(
 ): Promise<Property | null> {
   const byId = await client
     .from("properties")
-    .select(VEHICLE_SELECT)
+    .select(vehicleListingSelect() as "*")
     .eq("asset_type", "ELECTRONICS")
     .eq("id", idOrSlug)
     .maybeSingle();
-  if (byId.data) return byId.data as Property;
+  if (byId.data) return redactListingAgentContact(byId.data as Property);
 
   const bySlug = await client
     .from("properties")
-    .select(VEHICLE_SELECT)
+    .select(vehicleListingSelect() as "*")
     .eq("asset_type", "ELECTRONICS")
     .eq("slug", idOrSlug)
     .maybeSingle();
-  return (bySlug.data as Property | null) ?? null;
+  const row = (bySlug.data as Property | null) ?? null;
+  return row ? redactListingAgentContact(row) : null;
 }
 
 export function buildElectronicsInsertPayload(

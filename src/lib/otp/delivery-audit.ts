@@ -13,7 +13,8 @@ function auditEnabled(): boolean {
 
 function redact(): boolean {
   const raw = process.env.OTP_DELIVERY_AUDIT_REDACT?.trim().toLowerCase();
-  return raw === "true" || raw === "1" || raw === "yes";
+  if (raw === "false" || raw === "0" || raw === "no") return false;
+  return true;
 }
 
 export function newOtpRequestId(): string {

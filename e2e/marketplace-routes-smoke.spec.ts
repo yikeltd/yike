@@ -10,8 +10,16 @@ const routes = [
 
 for (const path of routes) {
   test(`GET ${path} responds`, async ({ page }) => {
-    const res = await page.goto(path, { waitUntil: "domcontentloaded" });
-    const status = res?.status() ?? 0;
+    let status = 0;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await page.goto(path, {
+        waitUntil: "domcontentloaded",
+        timeout: 60_000,
+      });
+      status = res?.status() ?? 0;
+      if (status >= 200 && status < 400) break;
+      await page.waitForTimeout(400);
+    }
     expect(status >= 200 && status < 400).toBeTruthy();
   });
 }

@@ -1,34 +1,25 @@
 import type { Profile } from "@/types/database";
 import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
-import {
-  getWhatsappNumber,
-  isWhatsappNumberVerified,
-} from "@/lib/whatsapp-verification/profile";
-import { isWhatsappProfileVerificationEnabled } from "@/lib/feature-flags";
+import { getSellerContactPhone } from "@/lib/phone-verification/profile";
+import { isPhoneVerifiedForSeller } from "@/lib/seller-trust";
 
 export type SellerTrustLevel = "none" | "basic" | "business";
 
-export function isWhatsappVerifiedForSellerTrust(
-  profile: Partial<Profile>
-): boolean {
-  if (isWhatsappProfileVerificationEnabled()) {
-    return isWhatsappNumberVerified(profile);
-  }
-  return Boolean(getWhatsappNumber(profile));
+export function isPhoneReadyForSellerTrust(profile: Partial<Profile>): boolean {
+  if (isPhoneVerifiedForSeller(profile)) return true;
+  return Boolean(getSellerContactPhone(profile));
 }
 
-export function isBasicSellerVerified(
-  profile: Partial<Profile>
-): boolean {
+export function isBasicSellerVerified(profile: Partial<Profile>): boolean {
   if (!profile.id) return false;
   if (!profile.email_verified) return false;
-  if (!isWhatsappVerifiedForSellerTrust(profile)) return false;
+  if (!isPhoneVerifiedForSeller(profile)) return false;
   if (!hasBasicListingProfile(profile)) return false;
   return true;
 }
 
 export function getSellerTrustLevel(
-  profile: Partial<Profile> | null | undefined
+  profile: Partial<Profile> | null | undefined,
 ): SellerTrustLevel {
   if (!profile) return "none";
   if (profile.seller_verification_level === "business") return "business";
@@ -60,7 +51,7 @@ export type SellerVerificationDocuments = {
 
 export function validateBusinessVerificationDocuments(
   profile: Partial<Profile>,
-  documents: SellerVerificationDocuments
+  documents: SellerVerificationDocuments,
 ): string | null {
   const business = isBusinessSellerType(profile);
 
@@ -85,9 +76,12 @@ export function validateBusinessVerificationDocuments(
 
 /** Sync profile cache column (basic | business | null). */
 export function resolveSellerVerificationLevel(
-  profile: Partial<Profile>
+  profile: Partial<Profile>,
 ): "basic" | "business" | null {
   if (profile.seller_verification_level === "business") return "business";
   if (isBasicSellerVerified(profile)) return "basic";
   return null;
 }
+
+/** @deprecated Use isPhoneReadyForSellerTrust */
+export const isWhatsappVerifiedForSellerTrust = isPhoneReadyForSellerTrust;

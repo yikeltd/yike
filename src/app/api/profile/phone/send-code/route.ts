@@ -6,7 +6,7 @@ import {
   PHONE_VERIFY_COPY,
   sendSellerPhoneVerificationCode,
 } from "@/lib/phone-verification";
-import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
+import { getSellerContactPhone } from "@/lib/phone-verification/profile";
 import { trackTransactionEvent } from "@/lib/analytics/index";
 
 export const runtime = "nodejs";
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   const phoneLocal = normalizeNigerianPhone(
-    phoneRaw || getWhatsappNumber(profile ?? {}) || ""
+    phoneRaw || getSellerContactPhone(profile ?? {}) || ""
   );
 
   if (!canRequestPhoneOtp(phoneLocal)) {

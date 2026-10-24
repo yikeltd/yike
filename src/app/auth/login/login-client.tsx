@@ -76,6 +76,15 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
     }
   }, [sessionReason]);
 
+  useEffect(() => {
+    if (!nextParam) return;
+    const safe = safeNextPath(nextParam, "/");
+    if (safe === nextParam) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("next", safe);
+    router.replace(`/auth/login?${params.toString()}`);
+  }, [nextParam, router, searchParams]);
+
   async function loadCurrentProfile(): Promise<LoginProfile | null> {
     const supabase = createClient();
     const {

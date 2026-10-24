@@ -122,7 +122,7 @@ export async function requireAgentLister(
   if (!profile || profile.is_banned) redirect("/");
 
   if (!isEmailVerified(user, profile)) {
-    redirect(`/auth/verify-email?next=${encodeURIComponent(redirectTo)}`);
+    redirect(`/auth/verify-email?next=${encodeURIComponent(loginNext)}`);
   }
 
   if (isAdmin(profile.role)) {

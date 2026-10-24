@@ -9,8 +9,6 @@ import {
   createSendchampVerificationOtp,
   confirmSendchampVerification,
 } from "@/lib/notifications/providers/sendchamp-verification";
-import { isWhatsappOtpProviderSendchamp } from "@/lib/feature-flags";
-import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import { otpSentMessage, OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import type { OtpChannel } from "@/lib/notifications/types";
 import { isProductionEnv } from "@/lib/env";
@@ -20,6 +18,10 @@ import {
 } from "@/lib/feature-flags";
 import { isLocalOtpReference } from "@/lib/phone-verification/local-otp";
 import { logOtpAudit, newOtpRequestId } from "@/lib/otp/delivery-audit";
+import {
+  assertAuthPhoneOtpSendAllowedForIp,
+  assertAuthPhoneOtpVerifyAllowedForIp,
+} from "./ip-rate-limit";
 import {
   OTP_EXPIRY_MS,
   OTP_MAX_ATTEMPTS,
@@ -46,7 +48,7 @@ export type SendOtpResult =
       ok: false;
       error: string;
       status: number;
-      code?: "whatsapp_failed" | "phone_otp_disabled";
+      code?: "phone_otp_disabled";
     };
 
 export type VerifyOtpResult =
@@ -84,7 +86,8 @@ async function devFallbackSend(
   db: SupabaseClient,
   phone: string,
   channel: OtpChannel,
-  reason: string
+  reason: string,
+  ipHash?: string | null,
 ): Promise<SendOtpResult> {
   const code = generateOtp();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
@@ -94,6 +97,7 @@ async function devFallbackSend(
     otpHash: hashOtp(code),
     expiresAt,
     channel,
+    ipHash,
   });
 
   if (!inserted) {
@@ -109,7 +113,12 @@ async function devFallbackSend(
     providerError: `dev_fallback: ${reason}`,
   });
 
-  console.info(`[Yike OTP dev fallback] ${phone} (${channel}): ${code} — ${reason}`);
+  const { fingerprintPhone } = await import("@/lib/phone-verification/local-otp");
+  const { toInternationalNigerianPhone } = await import("@/lib/phone");
+  const intl = toInternationalNigerianPhone(phone) ?? phone.replace(/\D/g, "");
+  console.info(
+    `[Yike OTP dev fallback] fp:${fingerprintPhone(intl)} (${channel}) — ${reason} (code omitted; see devOtp in API response only)`,
+  );
 
   return {
     ok: true,
@@ -121,14 +130,20 @@ async function devFallbackSend(
 
 async function sendPhoneOtpUnlocked(
   phone: string,
-  preferredChannel?: OtpChannel
+  preferredChannel?: OtpChannel,
+  request?: Request,
+  ipHash?: string | null,
 ): Promise<SendOtpResult> {
-  const whatsappOnly =
-    preferredChannel === "whatsapp" &&
-    isWhatsappOtpProviderSendchamp() &&
-    !isPhoneOtpEnabled();
+  if (preferredChannel === "whatsapp") {
+    return {
+      ok: false,
+      error: phoneOtpDisabledPublicMessage(),
+      status: 400,
+      code: "phone_otp_disabled",
+    };
+  }
 
-  if (!isPhoneOtpEnabled() && !whatsappOnly) {
+  if (!isPhoneOtpEnabled()) {
     return {
       ok: false,
       error: phoneOtpDisabledPublicMessage(),
@@ -160,7 +175,7 @@ async function sendPhoneOtpUnlocked(
         : "Sendchamp not configured";
 
     if (!isProductionEnv()) {
-      return devFallbackSend(db, phone, channel, envHint);
+      return devFallbackSend(db, phone, channel, envHint, ipHash);
     }
 
     console.error("[otp]", envHint);
@@ -177,58 +192,7 @@ async function sendPhoneOtpUnlocked(
     };
   }
 
-  if (channel === "whatsapp" && isWhatsappOtpProviderSendchamp()) {
-    const phoneIntl = toSendchampPhone(phone);
-    const created = await createSendchampVerificationOtp({
-      phoneIntl,
-      channel: "whatsapp",
-      purpose: "account_verification",
-      inAppToken: false,
-    });
-
-    if (!created.ok) {
-      if (created.code === "provider_auth_failed") {
-        console.error("[otp] provider_auth_failed");
-      }
-      return {
-        ok: false,
-        error: WHATSAPP_VERIFY_COPY.providerUnavailable,
-        status: created.status,
-        code: "whatsapp_failed",
-      };
-    }
-
-    const expiresAt = new Date(
-      Date.now() + created.expiresMinutes * 60_000
-    ).toISOString();
-
-    const inserted = await otpInsertPending(db, {
-      phone,
-      otpHash: hashOtp(created.reference),
-      expiresAt,
-      channel: "whatsapp",
-    });
-
-    if (!inserted) {
-      return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
-    }
-
-    await otpMarkSent(db, inserted.id, "whatsapp", created.reference);
-    await otpLogEvent(db, {
-      phone,
-      channel: "whatsapp",
-      status: "sent",
-      expiresAt,
-    });
-
-    return {
-      ok: true,
-      channel: "whatsapp",
-      message: WHATSAPP_VERIFY_COPY.afterSend,
-    };
-  }
-
-  // SMS (production default): ONE Sendchamp Verification API create — no /sms/send fallback.
+  // SMS: ONE Sendchamp Verification API create — no /sms/send fallback.
   if (channel === "sms") {
     const phoneIntl = toSendchampPhone(phone);
     const requestId = newOtpRequestId();
@@ -275,6 +239,7 @@ async function sendPhoneOtpUnlocked(
       otpHash: hashOtp(created.reference),
       expiresAt,
       channel: "sms",
+      ipHash,
     });
     if (!inserted) {
       return { ok: false, error: OTP_USER_MESSAGES.sendFailed, status: 500 };
@@ -310,6 +275,7 @@ async function sendPhoneOtpUnlocked(
     otpHash: hashOtp(code),
     expiresAt,
     channel,
+    ipHash,
   });
 
   if (!inserted) {
@@ -335,8 +301,11 @@ async function sendPhoneOtpUnlocked(
         expiresAt,
         providerError: `dev_fallback: ${delivered.error ?? "provider_failed"}`,
       });
+      const { fingerprintPhone } = await import("@/lib/phone-verification/local-otp");
+      const { toInternationalNigerianPhone } = await import("@/lib/phone");
+      const intl = toInternationalNigerianPhone(phone) ?? phone.replace(/\D/g, "");
       console.info(
-        `[Yike OTP dev fallback] ${phone} (${channel}): ${code} — ${delivered.error ?? "provider_failed"}`
+        `[Yike OTP dev fallback] fp:${fingerprintPhone(intl)} (${channel}) — ${delivered.error ?? "provider_failed"} (code omitted)`,
       );
       return {
         ok: true,
@@ -354,15 +323,6 @@ async function sendPhoneOtpUnlocked(
       expiresAt,
       providerError: delivered.error,
     });
-
-    if (preferredChannel === "whatsapp") {
-      return {
-        ok: false,
-        error: OTP_USER_MESSAGES.whatsappFailed,
-        status: 502,
-        code: "whatsapp_failed",
-      };
-    }
 
     return {
       ok: false,
@@ -392,14 +352,33 @@ async function sendPhoneOtpUnlocked(
 export async function sendPhoneOtp(
   _admin: SupabaseClient | null,
   phone: string,
-  preferredChannel?: OtpChannel
+  preferredChannel?: OtpChannel,
+  request?: Request,
 ): Promise<SendOtpResult> {
   const channel: OtpChannel = preferredChannel ?? "sms";
   const lockKey = `${phone}:${channel}`;
   const existing = phoneOtpSendInFlight.get(lockKey);
   if (existing) return existing;
 
-  const pending = sendPhoneOtpUnlocked(phone, preferredChannel).finally(() => {
+  let ipHash: string | null = null;
+  if (request && _admin) {
+    const ipGate = await assertAuthPhoneOtpSendAllowedForIp(_admin, request);
+    if (!ipGate.ok) {
+      return {
+        ok: false,
+        error: ipGate.error,
+        status: ipGate.status,
+      };
+    }
+    ipHash = ipGate.ipHash;
+  }
+
+  const pending = sendPhoneOtpUnlocked(
+    phone,
+    preferredChannel,
+    request,
+    ipHash,
+  ).finally(() => {
     if (phoneOtpSendInFlight.get(lockKey) === pending) {
       phoneOtpSendInFlight.delete(lockKey);
     }
@@ -411,12 +390,10 @@ export async function sendPhoneOtp(
 export async function verifyPhoneOtp(
   _admin: SupabaseClient | null,
   phone: string,
-  code: string
+  code: string,
+  request?: Request,
 ): Promise<VerifyOtpResult> {
-  const whatsappSignupOnly =
-    isWhatsappOtpProviderSendchamp() && !isPhoneOtpEnabled();
-
-  if (!isPhoneOtpEnabled() && !whatsappSignupOnly) {
+  if (!isPhoneOtpEnabled()) {
     return {
       ok: false,
       error: phoneOtpDisabledPublicMessage(),
@@ -429,18 +406,17 @@ export async function verifyPhoneOtp(
     return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 503 };
   }
 
+  if (request) {
+    const ipGate = await assertAuthPhoneOtpVerifyAllowedForIp(db, request);
+    if (!ipGate.ok) {
+      return { ok: false, error: ipGate.error, status: ipGate.status };
+    }
+  }
+
   const row = await otpLatestVerifiableRow(db, phone);
 
   if (!row) {
     return { ok: false, error: OTP_USER_MESSAGES.incorrect, status: 400 };
-  }
-
-  if (whatsappSignupOnly && row.channel !== "whatsapp") {
-    return {
-      ok: false,
-      error: phoneOtpDisabledPublicMessage(),
-      status: 403,
-    };
   }
 
   if (row.verified) {
@@ -475,7 +451,7 @@ export async function verifyPhoneOtp(
   const useSendchampConfirm =
     Boolean(providerReference) &&
     !isLocalOtpReference(providerReference!) &&
-    (row.channel === "whatsapp" || row.channel === "sms");
+    row.channel === "sms";
 
   if (useSendchampConfirm) {
     const confirmed = await confirmSendchampVerification({

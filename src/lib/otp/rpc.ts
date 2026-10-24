@@ -91,9 +91,10 @@ export async function otpInsertPending(
     expiresAt: string;
     channel: OtpChannel;
     lastSentAt?: string | null;
+    ipHash?: string | null;
   }
 ): Promise<{ id: string } | null> {
-  const { data, error } = await client.rpc("yike_otp_insert_pending", {
+  const baseArgs = {
     p_token: token(),
     p_phone: params.phone,
     p_otp_hash: params.otpHash,
@@ -101,7 +102,21 @@ export async function otpInsertPending(
     p_channel: params.channel,
     p_provider: OTP_PROVIDER,
     p_last_sent_at: params.lastSentAt ?? null,
+  };
+
+  let { data, error } = await client.rpc("yike_otp_insert_pending", {
+    ...baseArgs,
+    p_ip_hash: params.ipHash ?? null,
   });
+
+  if (
+    error &&
+    /yike_otp_insert_pending/.test(error.message) &&
+    /(does not exist|Could not find the function)/.test(error.message)
+  ) {
+    ({ data, error } = await client.rpc("yike_otp_insert_pending", baseArgs));
+  }
+
   if (error) {
     console.error("[otp-rpc] insert failed", params.phone, error.message);
     return null;

@@ -17,9 +17,25 @@ import {
 import { STAFF_APP_COOKIE } from "@/lib/admin/staff-app";
 
 import { applySecurityHeaders } from "@/lib/security/security-headers";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
+
+function sanitizeUnsafeAuthNextRedirect(request: NextRequest): NextResponse | null {
+  const { pathname } = request.nextUrl;
+  if (!pathname.startsWith("/auth/")) return null;
+  const raw = request.nextUrl.searchParams.get("next");
+  if (!raw) return null;
+  const safe = safeNextPath(raw, "/");
+  if (safe === raw) return null;
+  const url = request.nextUrl.clone();
+  url.searchParams.set("next", safe);
+  return NextResponse.redirect(url, 307);
+}
 
 async function handleMiddleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
+
+  const authNextSanitized = sanitizeUnsafeAuthNextRedirect(request);
+  if (authNextSanitized) return authNextSanitized;
 
   if (
     pathname === "/sitemap.xml" ||

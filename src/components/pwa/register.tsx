@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { isAndroidTwa, isStandaloneApp } from "@/lib/app-environment";
 
-const SW_URL = "/sw.js?v=33";
-const CACHE_RESET_KEY = "yike-cache-reset-v33";
+const SW_URL = "/sw.js?v=35";
+const CACHE_RESET_KEY = "yike-cache-reset-v35";
 
 async function clearServiceWorkers(): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
@@ -22,8 +22,8 @@ async function purgeOldShellCaches(): Promise<void> {
         .filter(
           (key) =>
             /^yike-(shell|listings)-v\d+$/.test(key) &&
-            key !== "yike-shell-v33" &&
-            key !== "yike-listings-v5"
+            key !== "yike-shell-v34" &&
+            key !== "yike-listings-v6"
         )
         .map((key) => caches.delete(key))
     );
@@ -36,6 +36,12 @@ async function purgeOldShellCaches(): Promise<void> {
 export function PwaRegister() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+    // Local dev: avoid SW serving cached /offline for auth routes when the dev server blips.
+    if (process.env.NODE_ENV === "development") {
+      void clearServiceWorkers();
+      return;
+    }
 
     void purgeOldShellCaches();
 

@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import {
   isPhoneOtpEnabled,
-  isWhatsappSignupOtpEnabled,
   phoneOtpDisabledPublicMessage,
 } from "@/lib/feature-flags";
-import { WHATSAPP_VERIFY_COPY } from "@/lib/whatsapp-verification/copy";
 import { isProductionEnv } from "@/lib/env";
 import { OTP_USER_MESSAGES } from "@/lib/notifications/messages";
 import type { OtpChannel } from "@/lib/notifications/types";
@@ -18,18 +16,25 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const phone = normalizeNigerianPhone(String(body.phone ?? ""));
   const preferred: OtpChannel | undefined =
-    body.channel === "whatsapp" ? "whatsapp" : body.channel === "sms" ? "sms" : undefined;
+    body.channel === "sms" ? "sms" : undefined;
 
-  const whatsappOnlySignup =
-    preferred === "whatsapp" && isWhatsappSignupOtpEnabled() && !isPhoneOtpEnabled();
-
-  if (!isPhoneOtpEnabled() && !whatsappOnlySignup) {
+  if (body.channel === "whatsapp") {
     return NextResponse.json(
       {
         error: phoneOtpDisabledPublicMessage(),
         code: "phone_otp_disabled",
       },
-      { status: 403 }
+      { status: 400 },
+    );
+  }
+
+  if (!isPhoneOtpEnabled()) {
+    return NextResponse.json(
+      {
+        error: phoneOtpDisabledPublicMessage(),
+        code: "phone_otp_disabled",
+      },
+      { status: 403 },
     );
   }
 
@@ -42,7 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: OTP_USER_MESSAGES.invalidPhone }, { status: 400 });
   }
 
-  const result = await sendPhoneOtp(db, phone, preferred);
+  const result = await sendPhoneOtp(db, phone, preferred, request);
 
   if (!result.ok) {
     return NextResponse.json(
@@ -50,7 +55,7 @@ export async function POST(request: Request) {
         error: result.error,
         ...(result.code ? { code: result.code } : {}),
       },
-      { status: result.status }
+      { status: result.status },
     );
   }
 
@@ -58,7 +63,6 @@ export async function POST(request: Request) {
     ok: true,
     channel: result.channel,
     message: result.message,
-    ...(whatsappOnlySignup ? { hint: WHATSAPP_VERIFY_COPY.beforeSend } : {}),
     ...(result.devOtp && !isProductionEnv() ? { devOtp: result.devOtp } : {}),
   });
 }

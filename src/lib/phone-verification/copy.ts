@@ -42,12 +42,28 @@ export const PHONE_VERIFY_COPY = {
   rateLimited: "Too many codes sent. Try again in an hour.",
   expired: "This code expired. Request a new one.",
   maxAttempts: "Too many attempts. Request a new code.",
+  phoneAlreadyLinked:
+    "This number is already linked to another Yike account. Use a different number or sign in to that account.",
   requiredToList: "Required to list",
   cardTitle: "Phone verification",
+  listingGate: "Verify your phone number to publish this listing.",
+  profileTitle: "Verify your phone to start selling.",
+  verifiedStatus: "Phone verified",
+  adminRequired: "Phone verification is required before you can list.",
+  modalTitle: "Verify your phone",
+  modalBody: "We will send a 6-digit code by SMS.",
+  modalHelper: "Use the number on your seller profile.",
+  sendCodeButton: "Send code",
+  notYourNumber: "Not your number?",
+  resendCode: "Resend code",
+  agentBadgeTitle: "Phone verification",
+  agentBadgeVerified: "Verified",
+  agentBadgeUnderReview: "Under review",
+  agentBadgeOptional: "Optional",
+  agentBadgeDescription: "Buyers trust sellers with a verified phone number.",
+  listingPrompt: "Verify your phone to start selling.",
 } as const;
 
-export function otpChannelLabel(channel: PhoneVerificationChannel): string {
-  if (channel === "whatsapp") return "WhatsApp";
-  if (channel === "email") return "email";
+export function otpChannelLabel(_channel: PhoneVerificationChannel): string {
   return "SMS";
 }

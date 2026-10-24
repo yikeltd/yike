@@ -6,8 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeNigerianPhone, canRequestPhoneOtp } from "@/lib/phone";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { isBusinessAccount, isDeveloperAccount } from "@/lib/profile/basic-listing-profile";
-import { resetWhatsappVerificationOnNumberChange } from "@/lib/whatsapp-verification/service";
-import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
+import {
+  getSellerContactPhone,
+  resetPhoneVerificationOnNumberChange,
+} from "@/lib/phone-verification";
 
 export const runtime = "nodejs";
 
@@ -144,9 +146,9 @@ export async function POST(request: Request) {
   }
 
   if (phone && existingProfile) {
-    const previous = getWhatsappNumber(existingProfile);
+    const previous = getSellerContactPhone(existingProfile);
     if (phone !== previous) {
-      await resetWhatsappVerificationOnNumberChange(admin, user.id, phone, previous);
+      await resetPhoneVerificationOnNumberChange(admin, user.id, phone, previous);
     }
   }
 

@@ -16,6 +16,13 @@ import {
 } from "./call-routing-sheets";
 import { recentContactNotice } from "@/lib/recently-contacted";
 import type { PaymentPeriod, ListingType } from "@/types/database";
+import { ListingInquiryActions } from "@/components/marketplace/listing-inquiry-actions";
+
+function nativeContactEnabled(): boolean {
+  const raw = process.env.NEXT_PUBLIC_ENABLE_MARKETPLACE_NATIVE_CONTACT?.trim().toLowerCase();
+  if (raw === "false" || raw === "0") return false;
+  return true;
+}
 
 interface ContactButtonsProps {
   propertyId: string;
@@ -162,6 +169,18 @@ export function ContactButtons({
     if (!callResult) return;
     openWhatsAppLead(callResult);
     setConfirmOpen(false);
+  }
+
+  if (nativeContactEnabled()) {
+    return (
+      <ListingInquiryActions
+        listingId={propertyId}
+        assetType="PROPERTY"
+        sellerId={agentId}
+        sellerName={agentName}
+        layout={layout === "card" ? "compact" : "detail"}
+      />
+    );
   }
 
   return (

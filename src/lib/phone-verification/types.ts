@@ -1,5 +1,5 @@
-/** Delivery channels for phone / contact verification. SMS is production-primary. */
-export type PhoneVerificationChannel = "sms" | "whatsapp" | "email";
+/** Phone ownership verification — Sendchamp SMS only. */
+export type PhoneVerificationChannel = "sms";
 
 export type PhoneOtpSendResult =
   | {
@@ -20,9 +20,6 @@ export type PhoneOtpConfirmResult =
   | { ok: true }
   | { ok: false; error: string; status: number };
 
-/**
- * Provider interface — SMS now; WhatsApp / email later without changing business logic.
- */
 export type PhoneVerificationProvider = {
   readonly id: string;
   readonly supportedChannels: readonly PhoneVerificationChannel[];

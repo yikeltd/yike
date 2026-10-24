@@ -14,6 +14,13 @@ import {
   ELECTRONICS_CONDITIONS,
 } from "@/lib/marketplace/electronics-specs";
 import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
+import { ListingInquiryActions } from "@/components/marketplace/listing-inquiry-actions";
+
+function nativeContactEnabled(): boolean {
+  const raw = process.env.NEXT_PUBLIC_ENABLE_MARKETPLACE_NATIVE_CONTACT?.trim().toLowerCase();
+  if (raw === "false" || raw === "0") return false;
+  return true;
+}
 import { useAuth } from "@/components/auth/auth-provider";
 import { ElectronicsCard } from "./electronics-card";
 import { ReportListingForm } from "@/components/property/report-form";
@@ -179,7 +186,16 @@ export function ElectronicsDetailExperience({
           <p className="mt-1 text-sm font-semibold text-navy">
             {agent?.company_name || agent?.full_name || "Seller"}
           </p>
-          {wa ? (
+          {nativeContactEnabled() && agent?.id ? (
+            <div className="mt-3">
+              <ListingInquiryActions
+                listingId={listing.id}
+                assetType="ELECTRONICS"
+                sellerId={agent.id}
+                sellerName={agent?.company_name || agent?.full_name || "Seller"}
+              />
+            </div>
+          ) : wa ? (
             <button
               type="button"
               disabled={chatLoading}

@@ -42,3 +42,10 @@ test("legacy ungated wizard paths redirect to gated new routes", () => {
   assert.match(read("property/page.tsx"), /redirect\("\/agent\/listings\/new\/property"\)/);
   assert.match(read("vehicle/page.tsx"), /redirect\("\/agent\/listings\/new\/vehicle"\)/);
 });
+
+test("requireAgentLister preserves returnPath for login next", () => {
+  const auth = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+  assert.match(auth, /returnPath/);
+  assert.match(auth, /safeNextPath/);
+  assert.match(auth, /loginNext/);
+});
