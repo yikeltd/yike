@@ -21,6 +21,16 @@ export function ngnToCoins(ngnAmount: number): number {
 }
 
 export function formatYikeCoins(amount: number): string {
+  return formatYc(amount);
+}
+
+/** User-facing wallet abbreviation */
+export function formatYc(amount: number): string {
+  return `${amount.toLocaleString("en-NG")} YC`;
+}
+
+/** Full product label where explanation helps */
+export function formatYikeCoinsLong(amount: number): string {
   return `${amount.toLocaleString("en-NG")} ${amount === 1 ? "Yike Coin" : "Yike Coins"}`;
 }
 

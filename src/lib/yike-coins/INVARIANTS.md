@@ -18,3 +18,6 @@
 4. **Video connect billing** — pre-check balance while `ringing`; atomic status claim; then free slot or coin debit; rollback to `failed` if billing fails after claim.
 5. **Separation** — `agent_wallets` (NGN lead billing) is independent of Yike Coins user accounts.
 6. **Admin adjustments** — super-admin API only; unique `admin_adjust:{reference}` idempotency; immutable ledger + audit log.
+7. **Peer transfers** — `yike_coin_peer_transfer` (service_role): atomic debit/credit; idempotency on transfer key; ledger codes `yc_transfer_out` / `yc_transfer_in`.
+8. **Admin grants** — `yike_coin_admin_grant` + `yike_coin_admin_grants` audit; service code `admin_grant`; not peer transfer or Paystack top-up.
+9. **Usernames** — case-insensitive unique index on `profiles`; transfers resolve recipient server-side by username.
