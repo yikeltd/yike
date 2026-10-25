@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isYikeCoinsEnabled } from "@/lib/yike-coins/flags";
-import { formatCoinNairaEquivalent, formatYikeCoins } from "@/lib/yike-coins/constants";
+import { formatCoinNairaEquivalent } from "@/lib/yike-coins/constants";
 import { YikeCoinsLedgerClient } from "./ledger-client";
 import { getYikeCoinBalance } from "@/lib/yike-coins/ledger";
 import { getVideoCallPreflight } from "@/lib/video-calls/allowance";
@@ -10,6 +10,9 @@ import { YikeCoinsTopupClient } from "./topup-client";
 import { WalletUsernameSection } from "./wallet-username-section";
 import { SendYcClient } from "./send-yc-client";
 import { normalizeUsername } from "@/lib/username/rules";
+import { ConsumerSubpageHeader } from "@/components/layout/consumer-subpage-header";
+import { YcAmount } from "@/components/yike-coins/yc-amount";
+import { consumerRoute } from "@/lib/navigation/consumer-routes";
 
 export const metadata = {
   title: "Yike Coins | Yike",
@@ -18,7 +21,7 @@ export const metadata = {
 
 export default async function YikeCoinsAccountPage() {
   if (!isYikeCoinsEnabled()) {
-    redirect("/profile");
+    redirect(consumerRoute("profile"));
   }
 
   const supabase = await createClient();
@@ -41,34 +44,39 @@ export default async function YikeCoinsAccountPage() {
   const hasUsername = Boolean(username && username.length >= 3);
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-8">
-      <h1 className="text-xl font-black text-navy">Yike Coins wallet</h1>
-      <p className="mt-1 text-sm text-navy/60">1 YC ≈ ₦1 nominal on eligible services.</p>
+    <div className="mx-auto w-full max-w-lg px-1 py-6 sm:px-2 lg:py-8">
+      <ConsumerSubpageHeader
+        title="Yike Coins wallet"
+        subtitle="1 YC ≈ ₦1 nominal on eligible services."
+        backHref={consumerRoute("home")}
+        backLabel="Back to home"
+      />
 
       <WalletUsernameSection
         initialUsername={hasUsername ? username : null}
         initialNeedsUsername={!hasUsername}
       />
 
-      <div className="mt-6 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
         <p className="text-xs font-bold uppercase tracking-wide text-muted">Available balance</p>
-        <p className="mt-1 text-3xl font-black text-navy">{formatYikeCoins(balance)}</p>
+        <p className="mt-1 text-3xl font-black text-navy">
+          <YcAmount amount={balance} />
+        </p>
         <p className="mt-2 text-xs text-navy/55">{formatCoinNairaEquivalent(balance)}</p>
       </div>
 
       <div className="mt-4 rounded-2xl border border-navy/10 bg-surface/50 p-4 text-sm text-navy/80">
         <p className="font-semibold text-navy">Video calls today</p>
         <p className="mt-1">
-          {video.freeAllowanceRemaining} of {video.freeAllowanceTotal} free connected video calls
-          remaining.
+          {video.freeAllowanceRemaining} of {video.freeAllowanceTotal} free connected calls left.
         </p>
         <p className="mt-1 text-xs text-muted">{video.resetExplanation}</p>
         {video.billable && video.priceCoins != null ? (
           <p className="mt-2 text-xs">
-            Additional calls: {formatYikeCoins(video.priceCoins)} each when configured.
+            After free allowance: <YcAmount amount={video.priceCoins} /> per call.
           </p>
         ) : video.billable ? (
-          <p className="mt-2 text-xs text-amber-800">Additional call pricing awaits approval.</p>
+          <p className="mt-2 text-xs text-amber-800">Extra call pricing is pending approval.</p>
         ) : null}
       </div>
 
@@ -91,14 +99,9 @@ export default async function YikeCoinsAccountPage() {
       </Link>
 
       <p className="mt-6 text-xs leading-relaxed text-navy/55">
-        YC (Yike Coins) are platform credits for eligible services — not cash and not automatically
-        redeemable for Naira. You may send YC to other Yike users by username. Payment provider fees
-        may apply at Paystack checkout.
+        YC are platform credits for eligible services — not cash and not redeemable for Naira. Sending
+        YC requires a username. Paystack fees may apply at checkout.
       </p>
-
-      <Link href="/conversations" className="pressable mt-4 inline-block text-sm font-bold text-gold-dark">
-        Open messages
-      </Link>
-    </main>
+    </div>
   );
 }

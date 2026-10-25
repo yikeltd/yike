@@ -42,7 +42,10 @@ test("message send supports client dedupe id", () => {
 });
 
 test("platform wallet page is not agent-scoped", () => {
-  const src = readFileSync(join(process.cwd(), "src/app/account/coins/page.tsx"), "utf8");
+  const src = readFileSync(
+    join(process.cwd(), "src/app/(public)/account/coins/page.tsx"),
+    "utf8",
+  );
   assert.doesNotMatch(src, /canListProperties/);
   assert.match(src, /getYikeCoinBalance/);
 });

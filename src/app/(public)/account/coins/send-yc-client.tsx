@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { formatYc } from "@/lib/yike-coins/constants";
+import { YcAmount } from "@/components/yike-coins/yc-amount";
 
 type RecipientPreview = {
   username: string;
@@ -105,7 +106,8 @@ export function SendYcClient({ balanceCoins, hasUsername }: Props) {
     <div className="mt-6 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-black text-navy">Send YC</h2>
       <p className="mt-1 text-xs text-navy/55">
-        Available: <span className="font-bold text-navy">{formatYc(balance)}</span>
+        Available:{" "}
+        <YcAmount amount={balance} className="font-bold text-navy" />
       </p>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">

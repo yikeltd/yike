@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   initialUsername: string | null;
@@ -18,6 +18,11 @@ export function WalletUsernameSection({ initialUsername, initialNeedsUsername }:
   const [username, setUsername] = useState(initialUsername);
   const [needsUsername, setNeedsUsername] = useState(initialNeedsUsername);
 
+  useEffect(() => {
+    setUsername(initialUsername);
+    setNeedsUsername(initialNeedsUsername);
+  }, [initialUsername, initialNeedsUsername]);
+
   async function submitClaim(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -31,6 +36,16 @@ export function WalletUsernameSection({ initialUsername, initialNeedsUsername }:
       });
       const json = await res.json();
       if (!res.ok) {
+        if (json.code === "already_set" || String(json.error ?? "").includes("already have a username")) {
+          const status = await fetch("/api/account/username", { cache: "no-store" });
+          const statusJson = await status.json();
+          if (status.ok && statusJson.username) {
+            setUsername(statusJson.username);
+            setNeedsUsername(false);
+            router.refresh();
+            return;
+          }
+        }
         setError(json.error ?? "Could not save username");
         return;
       }

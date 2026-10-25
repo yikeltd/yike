@@ -47,7 +47,7 @@ test("canonical consumer routes map to existing app pages", () => {
   assert.ok(existsSync(join(app, "(public)/saved/page.tsx")));
   assert.ok(existsSync(join(app, "conversations/page.tsx")));
   assert.ok(existsSync(join(app, "agent/page.tsx")));
-  assert.ok(existsSync(join(app, "account/coins/page.tsx")));
+  assert.ok(existsSync(join(app, "(public)/account/coins/page.tsx")));
 });
 
 test("consumer wallet route is platform-wide not agent-only", () => {

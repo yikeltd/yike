@@ -16,15 +16,25 @@ test("YC abbreviation renders as plain text", () => {
   assert.equal(normalizeYcText("500 Y&#67;"), "500 YC");
 });
 
+test("wallet page lives under public ConsumerShell layout", () => {
+  const page = readFileSync(
+    join(process.cwd(), "src/app/(public)/account/coins/page.tsx"),
+    "utf8",
+  );
+  assert.match(page, /ConsumerSubpageHeader/);
+  assert.match(page, /consumerRoute\("home"\)/);
+  assert.doesNotMatch(page, /<main/);
+});
+
 test("wallet page uses unified username section", () => {
   const page = readFileSync(
-    join(process.cwd(), "src/app/account/coins/page.tsx"),
+    join(process.cwd(), "src/app/(public)/account/coins/page.tsx"),
     "utf8",
   );
   assert.match(page, /WalletUsernameSection/);
   assert.doesNotMatch(page, /UsernameClaimClient/);
   const section = readFileSync(
-    join(process.cwd(), "src/app/account/coins/wallet-username-section.tsx"),
+    join(process.cwd(), "src/app/(public)/account/coins/wallet-username-section.tsx"),
     "utf8",
   );
   assert.match(section, /htmlFor="wallet-username"/);
@@ -40,11 +50,12 @@ test("packages API exposes checkout availability for wallet UI", () => {
   assert.match(route, /getWalletTopupCheckoutStatus/);
   assert.match(route, /checkoutAvailable/);
   const topup = readFileSync(
-    join(process.cwd(), "src/app/account/coins/topup-client.tsx"),
+    join(process.cwd(), "src/app/(public)/account/coins/topup-client.tsx"),
     "utf8",
   );
   assert.match(topup, /checkoutAvailable/);
   assert.match(topup, /checkoutMessage/);
+  assert.match(topup, /YcAmount/);
 });
 
 test("top-up checkout status requires Paystack secret and payments runtime flag", () => {

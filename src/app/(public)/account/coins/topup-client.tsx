@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatYikeCoins } from "@/lib/yike-coins/constants";
+import { YcAmount } from "@/components/yike-coins/yc-amount";
 
 type Pack = {
   id: string;
@@ -93,7 +93,9 @@ export function YikeCoinsTopupClient() {
                 <span className="ml-1 text-[10px] font-semibold text-amber-700">dev</span>
               ) : null}
             </span>
-            <span className="block text-xs text-muted">{formatYikeCoins(pack.coins)}</span>
+            <span className="block text-xs text-muted">
+              <YcAmount amount={pack.coins} />
+            </span>
             {loading === pack.amountNgn ? (
               <span className="text-[10px] text-gold-dark">Starting checkout…</span>
             ) : null}

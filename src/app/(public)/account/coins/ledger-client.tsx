@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatLedgerEntryLabel } from "@/lib/yike-coins/ledger-labels";
-import { formatYc, normalizeYcText, YIKE_COIN_ABBR } from "@/lib/yike-coins/constants";
+import { formatYc, normalizeYcText } from "@/lib/yike-coins/constants";
+import { YcAmount, YcLabelText } from "@/components/yike-coins/yc-amount";
 
 type LedgerEntry = {
   id: string;
@@ -63,7 +64,9 @@ export function YikeCoinsLedgerClient() {
       {entries.map((e) => (
         <li key={e.id} className="flex items-start justify-between gap-3 px-4 py-3 text-sm">
           <div className="min-w-0">
-            <p className="font-semibold text-navy">{normalizeYcText(formatLedgerEntryLabel(e))}</p>
+            <p className="font-semibold text-navy">
+              <YcLabelText text={formatLedgerEntryLabel(e)} />
+            </p>
             <p className="text-[11px] text-muted">
               {new Date(e.created_at).toLocaleString("en-NG")}
               {e.reference ? ` · ${e.reference}` : ""}
@@ -77,7 +80,7 @@ export function YikeCoinsLedgerClient() {
               )}
             >
               {e.direction === "credit" ? "+" : "−"}
-              {e.amount_coins.toLocaleString("en-NG")} {YIKE_COIN_ABBR}
+              <YcAmount amount={e.amount_coins} />
             </p>
             <p className="text-[10px] text-muted">Bal {formatYc(e.balance_after)}</p>
           </div>
