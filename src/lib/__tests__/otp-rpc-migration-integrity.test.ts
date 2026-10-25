@@ -50,7 +50,12 @@ test("auth phone OTP uses service-role admin client with server token — not an
     "utf-8",
   );
   assert.match(rpc, /createAdminClient/);
-  assert.match(rpc, /YIKE_OTP_SERVER_TOKEN/);
+  assert.match(rpc, /getOtpServerTokenFromEnv|requireOtpServerToken/);
+  const serverToken = fs.readFileSync(
+    path.resolve(process.cwd(), "src/lib/otp/server-token.ts"),
+    "utf-8",
+  );
+  assert.match(serverToken, /YIKE_OTP_SERVER_TOKEN/);
   assert.doesNotMatch(signup, /yike_otp_insert_pending/);
   assert.match(signup, /auth-email-otp|sendAuthEmailOtp|isEmailOtpEnabled/);
 });
