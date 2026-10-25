@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isYikeCoinsEnabled } from "@/lib/yike-coins/flags";
+import { getYikeCoinBalance } from "@/lib/yike-coins/ledger";
 
 export const runtime = "nodejs";
 
@@ -35,5 +36,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ entries: entries ?? [] });
+  const balanceCoins = await getYikeCoinBalance(user.id);
+
+  return NextResponse.json({
+    balanceCoins,
+    entries: entries ?? [],
+  });
 }

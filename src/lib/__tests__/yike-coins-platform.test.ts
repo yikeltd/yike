@@ -46,3 +46,39 @@ test("platform wallet page is not agent-scoped", () => {
   assert.doesNotMatch(src, /canListProperties/);
   assert.match(src, /getYikeCoinBalance/);
 });
+
+test("balance and ledger APIs require session not agent role", () => {
+  for (const file of [
+    "src/app/api/yike-coins/balance/route.ts",
+    "src/app/api/yike-coins/ledger/route.ts",
+  ]) {
+    const src = readFileSync(join(process.cwd(), file), "utf8");
+    assert.match(src, /getUser\(\)/);
+    assert.doesNotMatch(src, /canListProperties/);
+    assert.doesNotMatch(src, /isAgentRole/);
+  }
+});
+
+test("Paystack initialize route ignores client amount", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/app/api/payments/initialize/route.ts"),
+    "utf8",
+  );
+  assert.match(src, /delete body\.amount/);
+  assert.match(src, /resolvePayableProduct/);
+});
+
+test("ledger API returns authoritative balance with entries", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/app/api/yike-coins/ledger/route.ts"),
+    "utf8",
+  );
+  assert.match(src, /getYikeCoinBalance/);
+  assert.match(src, /balanceCoins/);
+});
+
+test("payments initialize rejects unknown wallet top-up packs in catalog", () => {
+  const src = readFileSync(join(process.cwd(), "src/lib/payments/catalog.ts"), "utf8");
+  assert.match(src, /Choose a top-up amount/);
+  assert.match(src, /packageId/);
+});
