@@ -76,18 +76,18 @@ BEGIN
   END IF;
 
   IF EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE LOWER(username) = v_normalized AND id <> p_user_id
+    SELECT 1 FROM public.profiles pr_taken
+    WHERE LOWER(pr_taken.username) = v_normalized AND pr_taken.id <> p_user_id
   ) THEN
     RAISE EXCEPTION 'username_taken';
   END IF;
 
   PERFORM set_config('yike.allow_profile_username_change', '1', true);
 
-  UPDATE public.profiles
+  UPDATE public.profiles pr_upd
   SET username = v_normalized, username_updated_at = NOW()
-  WHERE id = p_user_id
-  RETURNING profiles.username, profiles.username_updated_at INTO v_current, v_updated;
+  WHERE pr_upd.id = p_user_id
+  RETURNING pr_upd.username, pr_upd.username_updated_at INTO v_current, v_updated;
 
   RETURN QUERY SELECT v_current, v_updated;
 END;
