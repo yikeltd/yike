@@ -14,7 +14,9 @@ import {
   LogIn,
   Sparkles,
   Bookmark,
+  MessageSquare,
 } from "lucide-react";
+import { consumerRoute } from "@/lib/navigation/consumer-routes";
 
 /**
  * Yike Navigation Standard — Full-Width Deep Navy Bar (LOCKED)
@@ -86,6 +88,7 @@ export function PrimaryBottomNav() {
     pathname === "/swipe";
   const sellActive =
     pathname === "/post-property" || pathname.startsWith("/post-property/");
+  const messagesActive = isNavActive("/conversations", pathname, "prefix");
   const profileActive =
     isNavActive("/agent", pathname, "prefix") || pathname === "/profile";
 
@@ -121,6 +124,13 @@ export function PrimaryBottomNav() {
             </span>
           </div>
 
+          <NavTab
+            href={consumerRoute("messages")}
+            label="Messages"
+            icon={MessageSquare}
+            active={messagesActive}
+          />
+
           <Link
             href={profileHref}
             prefetch
@@ -132,7 +142,9 @@ export function PrimaryBottomNav() {
             <span
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
-                profileActive ? "bg-gold text-navy shadow-[0_0_12px_rgba(228,181,71,0.5)] scale-105" : "bg-white/5 text-white/70"
+                profileActive
+                  ? "bg-gold text-navy shadow-[0_0_12px_rgba(228,181,71,0.5)] scale-105"
+                  : "bg-white/5 text-white/70"
               )}
             >
               <User className="h-4.5 w-4.5" strokeWidth={profileActive ? 2.5 : 2} />
