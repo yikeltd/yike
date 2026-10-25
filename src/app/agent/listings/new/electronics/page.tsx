@@ -3,8 +3,8 @@ import Link from "next/link";
 import { requireAgentLister } from "@/lib/auth";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import {
+  buildSellerVerifyUrl,
   mustCompleteSellerVerification,
-  SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
 import { ListingEngine } from "@/components/listing-engine/listing-engine";
 import { SellerFlowShell } from "@/components/agent/seller-flow-shell";
@@ -25,7 +25,7 @@ export default async function NewElectronicsListingPage() {
   });
 
   if (mustCompleteSellerVerification(profile)) {
-    redirect(SELLER_VERIFY_PATH);
+    redirect(buildSellerVerifyUrl("/agent/listings/new/electronics"));
   }
 
   return (

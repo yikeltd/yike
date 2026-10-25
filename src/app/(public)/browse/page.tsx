@@ -31,11 +31,11 @@ export default async function BrowsePage() {
           image={PAGE_IMAGERY.swipe}
           badge="Swipe"
           variant="dark"
-          cta={{ label: "Open on mobile", href: "/browse" }}
+          cta={{ label: "Open on mobile", href: "/discover" }}
           secondaryCta={{ label: "Search instead", href: "/?focus=search" }}
         />
         <div className="mx-auto max-w-7xl px-6 py-12">
-          <ExploreHubLinks active="/browse" className="mb-8" />
+          <ExploreHubLinks active="/discover" className="mb-8" />
           <div className="rounded-2xl bg-gold/10 p-6">
             <p className="font-bold text-navy">
               Verified homes. Faster discovery. Direct WhatsApp access.

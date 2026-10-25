@@ -6,6 +6,10 @@ export const AUTH_USER_MESSAGES = {
   forgotPin: "Forgot PIN? Use password instead",
   switchAccount: "Switch account",
   newDevice: "For your security, please sign in again.",
+  newDevicePinBlocked:
+    "This device is not approved yet. Sign in with your password to verify it — then you can use your PIN here next time.",
+  pinDeviceCheckFailed: "We could not verify this device. Use your password to continue.",
+  pinDeviceChecking: "Checking this device…",
   sensitiveConfirm: "Confirm it's you to continue.",
   pinIncorrect: "Incorrect PIN. Try again or use your password.",
   pinLocked: "Too many PIN attempts. Use your password instead.",

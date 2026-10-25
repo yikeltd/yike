@@ -6,6 +6,7 @@ import { PinPad } from "./pin-login-panel";
 import { Button } from "@/components/ui/button";
 import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
 import { pinPolicyError } from "@/lib/pin-policy";
+import { fetchAuthJson } from "@/lib/auth/auth-fetch";
 
 export function PinSetupModal({
   open,
@@ -45,21 +46,24 @@ export function PinSetupModal({
           ? { pin: code, password: loginPassword }
           : { pin: code };
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error ?? "Could not save PIN.");
+      const result = await fetchAuthJson<{ error?: string }>(
+        endpoint,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+        20_000
+      );
+      if (!result.ok) {
+        setError(result.data?.error ?? result.message ?? "Could not save PIN.");
         reset();
         return;
       }
       reset();
       onComplete();
     } catch {
-      setError("Network error. Try again.");
+      setError("Could not save PIN. Try again.");
       reset();
     } finally {
       setLoading(false);

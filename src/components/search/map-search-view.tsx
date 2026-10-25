@@ -6,7 +6,8 @@ import Link from "next/link";
 import { MapPin, X, ChevronRight, ShieldCheck, RefreshCw, Car, Home } from "lucide-react";
 import type { Property } from "@/types/database";
 import { formatPrice, cn } from "@/lib/utils";
-import { listingPath } from "@/lib/marketplace/listing-path";
+import { persistBrowseReturn } from "@/lib/marketplace/browse-navigation";
+import { useMarketplaceBrowseReturn } from "@/hooks/use-marketplace-browse-return";
 
 export function MapSearchView({
   items,
@@ -15,6 +16,7 @@ export function MapSearchView({
   items: Property[];
   onCloseMap: () => void;
 }) {
+  const { browseReturn, listingHref } = useMarketplaceBrowseReturn();
   const [selectedItem, setSelectedItem] = useState<Property | null>(items[0] || null);
   const [searchingBounds, setSearchingBounds] = useState(false);
 
@@ -109,7 +111,8 @@ export function MapSearchView({
               </div>
 
               <Link
-                href={listingPath(selectedItem)}
+                href={listingHref(selectedItem)}
+                onClick={() => persistBrowseReturn(browseReturn)}
                 className="pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#031B4E] dark:bg-gold text-white dark:text-navy hover:opacity-90"
               >
                 <ChevronRight className="h-5 w-5" />

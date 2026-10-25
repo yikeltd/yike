@@ -101,10 +101,10 @@ export async function ensurePendingManualSellerVerification(
     phone,
     email,
     status: "pending",
-    nin_provider: "manual_review",
+    nin_provider: "profile_review",
     nin_verified: false,
     selfie_url: null,
-    verification_notes: "Auto-queued on first listing submit (Identity v1).",
+    verification_notes: "Auto-queued on first listing submit (profile review).",
     submitted_at: now,
   });
 

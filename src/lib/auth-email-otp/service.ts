@@ -32,15 +32,28 @@ import {
   emailConfirmUser,
   signupPendingGet,
 } from "./rpc";
-import type { AuthEmailOtpPurpose } from "./types";
+import type { AuthEmailOtpPurpose, EmailOtpDispatchStatus } from "./types";
 
 const MAX_SENDS_PER_EMAIL_HOUR = 5;
 const MAX_SENDS_PER_IP_HOUR = 20;
 const SIGNUP_PENDING_MS = 30 * 60 * 1000;
 
+export type EmailOtpSendLimitReason = "resend_cooldown" | "hourly_email" | "hourly_ip";
+
 export type SendAuthEmailOtpResult =
-  | { ok: true; message: string; devOtp?: string }
-  | { ok: false; error: string; status: number };
+  | {
+      ok: true;
+      message: string;
+      dispatchStatus: EmailOtpDispatchStatus;
+      devOtp?: string;
+    }
+  | {
+      ok: false;
+      error: string;
+      status: number;
+      retryAfterSec?: number;
+      limitReason?: EmailOtpSendLimitReason;
+    };
 
 export type VerifyAuthEmailOtpResult =
   | { ok: true; message: string; userId?: string }
@@ -60,10 +73,16 @@ async function checkSendRateLimits(
   if (lastSentAt) {
     const elapsed = Date.now() - new Date(lastSentAt).getTime();
     if (elapsed < OTP_RESEND_COOLDOWN_MS) {
+      const retryAfterSec = Math.max(
+        1,
+        Math.ceil((OTP_RESEND_COOLDOWN_MS - elapsed) / 1000)
+      );
       return {
         ok: false,
         error: EMAIL_OTP_USER_MESSAGES.cooldown,
         status: 429,
+        retryAfterSec,
+        limitReason: "resend_cooldown",
       };
     }
   }
@@ -72,8 +91,9 @@ async function checkSendRateLimits(
   if (emailSends >= MAX_SENDS_PER_EMAIL_HOUR) {
     return {
       ok: false,
-      error: EMAIL_OTP_USER_MESSAGES.cooldown,
+      error: EMAIL_OTP_USER_MESSAGES.hourlySendLimit,
       status: 429,
+      limitReason: "hourly_email",
     };
   }
 
@@ -81,8 +101,9 @@ async function checkSendRateLimits(
   if (ipSends >= MAX_SENDS_PER_IP_HOUR) {
     return {
       ok: false,
-      error: EMAIL_OTP_USER_MESSAGES.cooldown,
+      error: EMAIL_OTP_USER_MESSAGES.hourlySendLimit,
       status: 429,
+      limitReason: "hourly_ip",
     };
   }
 
@@ -147,7 +168,8 @@ export async function sendAuthEmailOtp(
       console.info(`[Yike auth email OTP dev] ${email} (${params.purpose}): ${code}`);
       return {
         ok: true,
-        message: EMAIL_OTP_USER_MESSAGES.sent,
+        message: EMAIL_OTP_USER_MESSAGES.devConsole,
+        dispatchStatus: "dev_console",
         devOtp: code,
       };
     }
@@ -187,7 +209,11 @@ export async function sendAuthEmailOtp(
       html,
     });
     if (retry.ok) {
-      return { ok: true, message: EMAIL_OTP_USER_MESSAGES.sent };
+      return {
+        ok: true,
+        message: EMAIL_OTP_USER_MESSAGES.sent,
+        dispatchStatus: "provider_accepted",
+      };
     }
     console.error(
       "[auth-email-otp] Resend retry failed:",
@@ -198,14 +224,19 @@ export async function sendAuthEmailOtp(
       console.info(`[Yike auth email OTP dev fallback] ${email}: ${code}`);
       return {
         ok: true,
-        message: EMAIL_OTP_USER_MESSAGES.sent,
+        message: EMAIL_OTP_USER_MESSAGES.devConsole,
+        dispatchStatus: "dev_console",
         devOtp: code,
       };
     }
     return { ok: false, error: EMAIL_OTP_USER_MESSAGES.sendFailed, status: 502 };
   }
 
-  return { ok: true, message: EMAIL_OTP_USER_MESSAGES.sent };
+  return {
+    ok: true,
+    message: EMAIL_OTP_USER_MESSAGES.sent,
+    dispatchStatus: "provider_accepted",
+  };
 }
 
 export async function verifyAuthEmailOtp(

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { scrollRetentionKey } from "@/lib/marketplace/browse-navigation";
 
 const PREFIX = "yike_scroll:";
 
@@ -11,6 +12,7 @@ const PREFIX = "yike_scroll:";
  */
 export function ScrollRetention() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const restoreOnPopRef = useRef(false);
 
   useEffect(() => {
@@ -27,7 +29,9 @@ export function ScrollRetention() {
   }, []);
 
   useEffect(() => {
-    const key = `${PREFIX}${pathname}`;
+    const qs = searchParams.toString();
+    const retentionPath = scrollRetentionKey(pathname, qs ? `?${qs}` : "");
+    const key = `${PREFIX}${retentionPath}`;
     const shouldRestore = restoreOnPopRef.current;
     restoreOnPopRef.current = false;
 
@@ -53,7 +57,7 @@ export function ScrollRetention() {
       window.removeEventListener("scroll", onScroll);
       sessionStorage.setItem(key, String(window.scrollY));
     };
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   return null;
 }

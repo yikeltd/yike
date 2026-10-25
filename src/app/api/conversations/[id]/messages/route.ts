@@ -62,7 +62,7 @@ export async function POST(
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
 
-  let body: { body?: string } = {};
+  let body: { body?: string; clientMessageId?: string } = {};
   try {
     body = await request.json();
   } catch {
@@ -73,6 +73,7 @@ export async function POST(
     conversationId: id,
     senderId: user.id,
     body: body.body ?? "",
+    clientMessageId: body.clientMessageId,
   });
 
   if (!result.ok) {

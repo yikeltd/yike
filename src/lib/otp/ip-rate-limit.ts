@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hashClientIp } from "@/lib/auth-email-otp/request-meta";
 import { PHONE_VERIFY_COPY } from "@/lib/phone-verification/copy";
+import { sellerSmsSendCountsTowardHourlyLimit } from "@/lib/phone-verification/seller-sms-rate-limit";
 
 /** Align with auth email OTP IP budget (signup abuse). */
 function isMissingOtpIpSchema(message: string): boolean {
@@ -31,14 +32,14 @@ export function ipVerifyLimitExceeded(count: number): boolean {
 
 const HOUR_AGO_ISO = () => new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-/** WhatsApp / seller SMS session sends for this IP in the last hour. */
+/** WhatsApp / seller SMS sends for this IP in the last hour (provider-accepted only). */
 export async function countWhatsappSessionSendsForIp(
   admin: SupabaseClient,
   ipHash: string,
 ): Promise<number | null> {
-  const { count, error } = await admin
+  const { data, error } = await admin
     .from("whatsapp_otp_sessions")
-    .select("id", { count: "exact", head: true })
+    .select("status, provider_reference")
     .eq("ip_hash", ipHash)
     .gte("created_at", HOUR_AGO_ISO());
 
@@ -46,7 +47,9 @@ export async function countWhatsappSessionSendsForIp(
     console.error("[otp-ip-limit] whatsapp send count failed", error.message);
     return null;
   }
-  return count ?? 0;
+  return (data ?? []).filter((row) =>
+    sellerSmsSendCountsTowardHourlyLimit(row),
+  ).length;
 }
 
 /** Sum of verify_attempts on sessions tied to this IP (cross-session budget). */

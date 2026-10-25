@@ -17,14 +17,23 @@ import {
 import { STAFF_APP_COOKIE } from "@/lib/admin/staff-app";
 
 import { applySecurityHeaders } from "@/lib/security/security-headers";
-import { safeNextPath } from "@/lib/auth/safe-next-path";
+import { coerceLoginNextForPortal } from "@/lib/marketplace/browse-navigation";
 
 function sanitizeUnsafeAuthNextRedirect(request: NextRequest): NextResponse | null {
   const { pathname } = request.nextUrl;
   if (!pathname.startsWith("/auth/")) return null;
   const raw = request.nextUrl.searchParams.get("next");
   if (!raw) return null;
-  const safe = safeNextPath(raw, "/");
+  const referer = request.headers.get("referer");
+  let refererPath = "/";
+  if (referer) {
+    try {
+      refererPath = new URL(referer).pathname;
+    } catch {
+      refererPath = "/";
+    }
+  }
+  const safe = coerceLoginNextForPortal(refererPath, raw, "/");
   if (safe === raw) return null;
   const url = request.nextUrl.clone();
   url.searchParams.set("next", safe);
@@ -33,6 +42,11 @@ function sanitizeUnsafeAuthNextRedirect(request: NextRequest): NextResponse | nu
 
 async function handleMiddleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
+
+  // Legacy /admin browser alias removed — never redirect or expose staff login.
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return new NextResponse(null, { status: 404 });
+  }
 
   const authNextSanitized = sanitizeUnsafeAuthNextRedirect(request);
   if (authNextSanitized) return authNextSanitized;

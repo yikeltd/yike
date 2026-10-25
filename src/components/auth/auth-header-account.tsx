@@ -10,6 +10,7 @@ import {
   isSuperAdmin,
   staffRoleLabel,
 } from "@/lib/admin/roles";
+import { resolveProfilePath } from "@/lib/account/account-home";
 import type { Profile, UserRole } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { allowNetworkAction } from "@/lib/pwa/offline-ui";
@@ -28,9 +29,8 @@ function accountLabel(user: User, profile: Profile | null, role: UserRole | null
   return "Profile";
 }
 
-function accountHref(role: UserRole | null) {
-  if (role && isStaffRole(role)) return getDefaultConsolePath(role);
-  return "/agent";
+function accountHref(role: UserRole | null, profile: Profile | null) {
+  return resolveProfilePath(profile, role);
 }
 
 export function AuthHeaderAccount({
@@ -59,7 +59,7 @@ export function AuthHeaderAccount({
       const label = accountLabel(user, profile, role);
       return (
         <Link
-          href={accountHref(role)}
+          href={accountHref(role, profile)}
           className={cn(
             "pressable flex max-w-[11rem] items-center gap-2.5 rounded-xl px-1 py-1 transition-colors hover:bg-surface/80",
             className
@@ -110,7 +110,7 @@ export function AuthHeaderAccount({
       const label = accountLabel(user, profile, role);
       return (
         <Link
-          href="/agent"
+          href={accountHref(role, profile)}
           className={cn(
             "pressable flex items-center gap-2 rounded-xl border border-surface bg-elevated px-3 py-1.5 text-sm font-semibold text-foreground",
             className
@@ -129,7 +129,7 @@ export function AuthHeaderAccount({
 
     return (
       <Link
-        href="/agent"
+        href={accountHref(role, profile)}
         className={cn(
           "pressable rounded-xl border border-surface px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-gold/40",
           className

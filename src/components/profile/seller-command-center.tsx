@@ -41,6 +41,7 @@ import type { ProfileSocialStats } from "@/lib/social/types";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import type { SellerAnalyticsSummary } from "@/lib/subscriptions/analytics";
 import { cn } from "@/lib/utils";
+import { YikeCoinsWalletCard } from "@/components/agent/yike-coins-wallet-card";
 
 type Props = {
   profile: Profile;
@@ -404,6 +405,8 @@ export function SellerCommandCenter(props: Props) {
 
         {/* MAIN SCROLL CONTAINER — TIGHT COMPRESSED PADDING & MARGINS */}
         <main className="p-3.5 sm:p-4 space-y-3.5 max-w-4xl mx-auto w-full">
+
+          <YikeCoinsWalletCard />
 
           {profileSaved && (
             <p

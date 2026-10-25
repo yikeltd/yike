@@ -7,7 +7,7 @@ const HUBS = [
   { href: "/buy", label: "Buy" },
   { href: "/shortlet", label: "Shortlet" },
   { href: "/land", label: "Land" },
-  { href: "/browse", label: "Swipe" },
+  { href: "/discover", label: "Swipe" },
   { href: "/post-property", label: "List" },
   { href: "/request-property", label: "Request" },
   { href: "/blog", label: "Guides" },

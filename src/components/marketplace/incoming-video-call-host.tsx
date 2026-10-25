@@ -8,6 +8,7 @@ import {
   finalizeVideoCallSession,
   type VideoCallTerminalStatus,
 } from "@/lib/video-calls/client";
+import { AgoraCallRoom } from "@/components/marketplace/agora-call-room";
 
 type IncomingCall = {
   id: string;
@@ -30,6 +31,7 @@ export function IncomingVideoCallHost() {
   const [accepted, setAccepted] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [mediaSessionId, setMediaSessionId] = useState<string | null>(null);
   const finalizingRef = useRef(false);
   const ringDeadlineRef = useRef<number | null>(null);
   const activeSessionRef = useRef<string | null>(null);
@@ -42,6 +44,7 @@ export function IncomingVideoCallHost() {
     setCall(null);
     setAccepted(false);
     setNotice(null);
+    setMediaSessionId(null);
   }, []);
 
   const finalizeOnce = useCallback(
@@ -102,10 +105,11 @@ export function IncomingVideoCallHost() {
             provider?: { configured?: boolean; channelName?: string; token?: string };
             error?: string;
           };
-          if (tokenRes.ok && tokenJson.provider?.configured && tokenJson.provider.channelName) {
-            setNotice(`Connected — channel ${tokenJson.provider.channelName}.`);
+          if (tokenRes.ok && tokenJson.provider?.configured && tokenJson.provider.token) {
+            setMediaSessionId(next.id);
+            setNotice(null);
           } else if (tokenRes.ok) {
-            setNotice("Call connected. Media is not configured in this environment.");
+            setNotice("Call connected. Agora media is not configured in this environment.");
           }
         }
       }
@@ -135,7 +139,21 @@ export function IncomingVideoCallHost() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup reads latest call status once on unmount
   }, [accepted, call?.status]);
 
-  if (!user || !isNativeMarketplaceContactEnabled() || !call) {
+  if (!user || !isNativeMarketplaceContactEnabled()) {
+    return null;
+  }
+
+  if (mediaSessionId && call) {
+    return (
+      <AgoraCallRoom
+        sessionId={mediaSessionId}
+        label={`Call with ${call.caller_label}`}
+        onHangUp={() => void finalizeOnce(call.id, "ended")}
+      />
+    );
+  }
+
+  if (!call) {
     return null;
   }
 

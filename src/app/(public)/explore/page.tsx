@@ -42,7 +42,7 @@ export default async function ExplorePage() {
         badge="Explore"
         variant="dark"
         cta={{ label: "Search homes", href: "/search" }}
-        secondaryCta={{ label: "Swipe feed", href: "/browse" }}
+        secondaryCta={{ label: "Swipe feed", href: "/discover" }}
       />
 
       <div className="mx-auto max-w-7xl px-3 pt-6 lg:px-8">

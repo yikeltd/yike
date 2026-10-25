@@ -50,9 +50,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function VehicleDetailPage({ params }: Props) {
+export default async function VehicleDetailPage({
+  params,
+  searchParams,
+}: Props & {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   if (!isLaunchFeatureVisible("vehicle_marketplace")) notFound();
   const { slug } = await params;
+  const query = (await searchParams) ?? {};
+  const browseReturnParam =
+    typeof query.browseReturn === "string" ? query.browseReturn : null;
   const supabase = await createClient();
 
   let vehicle = supabase ? await getVehicleByIdOrSlug(supabase, slug) : null;
@@ -138,6 +146,7 @@ export default async function VehicleDetailPage({ params }: Props) {
         vehicle={vehicle}
         similarVehicles={similar}
         ownerBanner={ownerBanner}
+        browseReturnParam={browseReturnParam}
       />
     </main>
   );

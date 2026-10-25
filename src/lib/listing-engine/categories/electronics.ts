@@ -1,7 +1,10 @@
 import type { CategoryManifest } from "../types";
-import { VEHICLE_PHOTO_RULES } from "../photo-schema/rules";
+import { ELECTRONICS_PHOTO_RULES } from "../photo-schema/rules";
 
-const PHONE_COMPUTER = ["phones_tablets", "computers", "gaming"];
+const PHONE_TABLET = ["phones_tablets"];
+const COMPUTER_GAMING = ["computers", "gaming"];
+const PHONE_COMPUTER = [...PHONE_TABLET, ...COMPUTER_GAMING];
+const TV = ["tv_audio"];
 const POWER = ["generators", "inverters_batteries", "solar_equipment"];
 const FRIDGE = ["refrigerators_freezers"];
 
@@ -14,18 +17,22 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
   capabilities: [],
   steps: [
     { id: "type", title: "Category", fieldIds: ["auto_category"] },
-    { id: "identity", title: "Product", fieldIds: ["brand", "model", "condition"] },
+    {
+      id: "identity",
+      title: "Product",
+      fieldIds: ["brand", "model", "condition", "warranty_status"],
+    },
     {
       id: "specs",
       title: "Specifications",
       fieldIds: [
+        "warranty_note",
         "storage_gb",
         "ram_gb",
         "screen_size",
         "power_kva",
         "capacity_liters",
         "battery_capacity_ah",
-        "warranty_months",
       ],
     },
     { id: "location", title: "Location", fieldIds: ["state", "city", "area"] },
@@ -36,9 +43,10 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
   fields: [
     {
       id: "auto_category",
-      label: "Electronics category",
+      label: "What are you selling?",
       input: "select",
       required: true,
+      description: "Pick the closest match — we only ask specs that fit this type.",
       dependsOn: { watch: [], optionsFrom: "electronics.categories" },
       submitKey: "auto_category",
     },
@@ -47,7 +55,7 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
       label: "Brand",
       input: "text",
       required: true,
-      placeholder: "e.g. Samsung, HP, Binatone",
+      placeholder: "e.g. Samsung, HP, Thermocool, Mikano",
       submitKey: "brand",
     },
     {
@@ -55,7 +63,7 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
       label: "Model / variant",
       input: "text",
       required: true,
-      placeholder: "e.g. Galaxy S24, 5.5kVA",
+      placeholder: "e.g. Galaxy A54, 5.5kVA, 350L double door",
       submitKey: "model",
     },
     {
@@ -63,20 +71,39 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
       label: "Condition",
       input: "select",
       required: true,
+      description: "UK used means imported fairly-used; Nigerian used means bought and used locally.",
       dependsOn: { watch: [], optionsFrom: "electronics.conditions" },
       submitKey: "condition",
+    },
+    {
+      id: "warranty_status",
+      label: "Warranty",
+      input: "select",
+      description: "No need to count months — just say if warranty still applies.",
+      dependsOn: { watch: [], optionsFrom: "electronics.warranty_status" },
+      submitKey: "warranty_status",
+    },
+    {
+      id: "warranty_note",
+      label: "Warranty details (optional)",
+      input: "text",
+      placeholder: "e.g. Valid till Dec 2026, shop receipt available",
+      visible: { op: "equals", field: "warranty_status", value: "with_warranty" },
+      submitKey: "warranty_note",
     },
     {
       id: "storage_gb",
       label: "Storage (GB)",
       input: "text",
-      visible: { op: "equals", field: "auto_category", value: PHONE_COMPUTER },
+      placeholder: "128",
+      visible: { op: "equals", field: "auto_category", value: PHONE_TABLET },
       submitKey: "storage_gb",
     },
     {
       id: "ram_gb",
       label: "RAM (GB)",
       input: "text",
+      placeholder: "8",
       visible: { op: "equals", field: "auto_category", value: PHONE_COMPUTER },
       submitKey: "ram_gb",
     },
@@ -84,13 +111,19 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
       id: "screen_size",
       label: "Screen size (inches)",
       input: "text",
-      visible: { op: "equals", field: "auto_category", value: [...PHONE_COMPUTER, "tv_audio"] },
+      placeholder: "55",
+      visible: {
+        op: "equals",
+        field: "auto_category",
+        value: [...TV, ...COMPUTER_GAMING],
+      },
       submitKey: "screen_size",
     },
     {
       id: "power_kva",
       label: "Power (kVA)",
       input: "text",
+      placeholder: "e.g. 3.5",
       visible: { op: "equals", field: "auto_category", value: POWER },
       submitKey: "power_kva",
     },
@@ -98,6 +131,7 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
       id: "capacity_liters",
       label: "Capacity (liters)",
       input: "text",
+      placeholder: "e.g. 350",
       visible: { op: "equals", field: "auto_category", value: FRIDGE },
       submitKey: "capacity_liters",
     },
@@ -105,14 +139,9 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
       id: "battery_capacity_ah",
       label: "Battery (Ah)",
       input: "text",
+      placeholder: "e.g. 200",
       visible: { op: "equals", field: "auto_category", value: ["inverters_batteries", "solar_equipment"] },
       submitKey: "battery_capacity_ah",
-    },
-    {
-      id: "warranty_months",
-      label: "Warranty (months)",
-      input: "number",
-      submitKey: "warranty_months",
     },
     {
       id: "state",
@@ -157,10 +186,11 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
       id: "description",
       label: "Description",
       input: "textarea",
+      placeholder: "Include accessories, box contents, and anything the buyer should know.",
       submitKey: "description",
     },
   ],
-  photo: VEHICLE_PHOTO_RULES,
+  photo: ELECTRONICS_PHOTO_RULES,
   autofill: {
     titleRecipe: ["brand", "model", "auto_category"],
     descriptionRecipe: "off",

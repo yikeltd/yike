@@ -3,6 +3,10 @@ import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { getSupabaseAdminConfig } from "@/lib/supabase/admin";
 import { isResendConfigured } from "@/lib/notifications/providers/resend";
+import {
+  getOtpServerTokenFromEnv,
+  hydrateOtpServerTokenForLocalDev,
+} from "@/lib/otp/server-token";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +16,7 @@ export const dynamic = "force-dynamic";
  * Used to diagnose production "We could not start signup" without staff auth.
  */
 export async function GET() {
+  await hydrateOtpServerTokenForLocalDev();
   let serviceRolePresent = false;
   let supabaseUrlPresent = false;
   try {
@@ -22,7 +27,7 @@ export async function GET() {
     serviceRolePresent = false;
   }
 
-  const otpServerToken = Boolean(process.env.YIKE_OTP_SERVER_TOKEN?.trim());
+  const otpServerToken = Boolean(getOtpServerTokenFromEnv());
   const otpDbClient = Boolean(createAuthEmailOtpDbClient());
   const emailOtpEnabled = isEmailOtpEnabled();
   const resendConfigured = isResendConfigured();

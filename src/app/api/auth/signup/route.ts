@@ -13,11 +13,7 @@ import {
   isUsernameAvailable,
 } from "@/lib/auth/signup-rpc";
 import { allocateSignupUsername } from "@/lib/auth/signup-username";
-import {
-  isLocalNigerianSignupPhone,
-  normalizeNigerianPhone,
-  normalizePhoneForDuplicateCheck,
-} from "@/lib/phone";
+import { normalizeNigerianPhone, parseNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
 import { PIN_RE, pinPolicyError } from "@/lib/pin-policy";
 import { signupCredentialError } from "@/lib/password-policy";
@@ -30,12 +26,18 @@ import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
 import { parseAmbassadorRefFromCookieHeader } from "@/lib/ambassador/cookie";
 import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
 import { createVerifiedAdminClient } from "@/lib/supabase/admin";
+import {
+  getOtpServerTokenFromEnv,
+  hydrateOtpServerTokenForLocalDev,
+} from "@/lib/otp/server-token";
 
 export const runtime = "nodejs";
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,24}$/;
 
 export async function POST(request: Request) {
+  await hydrateOtpServerTokenForLocalDev();
+
   const db = createAuthEmailOtpDbClient();
   if (!db) {
     return NextResponse.json(
@@ -105,18 +107,15 @@ export async function POST(request: Request) {
   if (!phone) {
     return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
   }
-  // Local 11-digit only (0803…) — reject +234 / 10-digit / padded intl bypass.
-  if (!isLocalNigerianSignupPhone(phoneRaw) && !isLocalNigerianSignupPhone(phone)) {
+  const parsedPhone = parseNigerianPhone(phoneRaw) ?? parseNigerianPhone(phone);
+  if (!parsedPhone) {
     return NextResponse.json(
       { error: "Enter a valid 11-digit Nigerian phone number." },
       { status: 400 }
     );
   }
 
-  const normalizedForStorage = normalizePhoneForDuplicateCheck(phone);
-  const phoneLocal = normalizedForStorage
-    ? `0${normalizedForStorage.slice(3)}`
-    : phone;
+  const phoneLocal = parsedPhone.local11;
 
   if (!username) {
     const allocated = await allocateSignupUsername(fullName);
@@ -142,7 +141,7 @@ export async function POST(request: Request) {
   const pendingSignup = await signupPendingGet(db, email);
 
   const { data: dupeData, error: dupeError } = await db.rpc("yike_check_signup_duplicates", {
-    p_token: process.env.YIKE_OTP_SERVER_TOKEN?.trim() ?? "",
+    p_token: getOtpServerTokenFromEnv() ?? "",
     p_email: email,
     p_phone: phoneRaw,
   });
@@ -271,7 +270,8 @@ export async function POST(request: Request) {
     resume: resumeSignup,
     message: resumeSignup
       ? "Let's finish verifying your email."
-      : EMAIL_OTP_USER_MESSAGES.sent,
+      : otpResult.message,
+    dispatchStatus: otpResult.dispatchStatus,
     ...(!isProductionEnv() && otpResult.devOtp ? { devOtp: otpResult.devOtp } : {}),
   });
 }

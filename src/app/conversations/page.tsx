@@ -28,8 +28,20 @@ export default async function ConversationsInboxPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-xl font-black text-navy">Messages</h1>
-      <p className="mt-1 text-sm text-navy/60">Secure Yike conversations with sellers and buyers.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-black text-navy">Messages</h1>
+          <p className="mt-1 text-sm text-navy/60">
+            Secure Yike conversations with sellers and buyers.
+          </p>
+        </div>
+        <a
+          href="/account/coins"
+          className="pressable rounded-xl border border-navy/10 bg-white px-3 py-2 text-xs font-bold text-navy"
+        >
+          Yike Coins
+        </a>
+      </div>
       <div className="mt-6">
         <MarketplaceInbox conversations={conversations} currentUserId={user.id} />
       </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { getSession } from "@/lib/auth";
+import { getOrCreateOwnProfile, getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { resolveProfilePath } from "@/lib/account/account-home";
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -11,7 +12,8 @@ export const metadata: Metadata = {
 export default async function ProfileAliasPage() {
   const user = await getSession();
   if (user) {
-    redirect("/agent");
+    const profile = await getOrCreateOwnProfile(user);
+    redirect(resolveProfilePath(profile));
   }
   redirect("/");
 }

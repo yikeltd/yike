@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Property } from "@/types/database";
 import { DiscoverCard } from "@/components/discover/discover-card";
-import { listingPath } from "@/lib/marketplace/listing-path";
+import { persistBrowseReturn } from "@/lib/marketplace/browse-navigation";
+import { useMarketplaceBrowseReturn } from "@/hooks/use-marketplace-browse-return";
 import { cn } from "@/lib/utils";
 
 export type DiscoverSwipeAction = "skip" | "interested" | "open" | "specs";
@@ -40,6 +41,7 @@ export function DiscoverDeck({
   onAction,
 }: Props) {
   const router = useRouter();
+  const { browseReturn, listingHref } = useMarketplaceBrowseReturn();
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [exiting, setExiting] = useState<DragHint>(null);
@@ -61,7 +63,8 @@ export function DiscoverDeck({
 
       if (action === "open") {
         window.setTimeout(() => {
-          router.push(listingPath(property));
+          persistBrowseReturn(browseReturn);
+          router.push(listingHref(property));
         }, EXIT_MS * 0.6);
         return;
       }
@@ -72,7 +75,7 @@ export function DiscoverDeck({
         setExiting(null);
       }, EXIT_MS);
     },
-    [onAction, property, router]
+    [browseReturn, listingHref, onAction, property, router]
   );
 
   const resolveGesture = useCallback(

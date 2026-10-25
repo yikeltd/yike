@@ -8,6 +8,8 @@ export type CallProviderSession = {
   channelName: string;
   token: string | null;
   uid: number;
+  appId: string | null;
+  callType: "voice" | "video";
   configured: boolean;
   expiresAt: number | null;
 };
@@ -32,6 +34,9 @@ export async function createCallProviderSession(input: {
   const channelName = `yike-call-${input.sessionId.replace(/-/g, "").slice(0, 32)}`;
   const uid = agoraUidForUser(input.participantUserId);
 
+  const publicAppId =
+    process.env.NEXT_PUBLIC_AGORA_APP_ID?.trim() || appId || null;
+
   if (!appId || !appCert) {
     return {
       providerId: "not_configured",
@@ -39,6 +44,8 @@ export async function createCallProviderSession(input: {
       channelName,
       token: null,
       uid,
+      appId: publicAppId,
+      callType: input.callType,
       configured: false,
       expiresAt: null,
     };
@@ -51,6 +58,8 @@ export async function createCallProviderSession(input: {
       channelName,
       token: null,
       uid,
+      appId: publicAppId,
+      callType: input.callType,
       configured: false,
       expiresAt: null,
     };
@@ -74,6 +83,8 @@ export async function createCallProviderSession(input: {
     channelName,
     token,
     uid,
+    appId: publicAppId,
+    callType: input.callType,
     configured: true,
     expiresAt: privilegeExpire * 1000,
   };

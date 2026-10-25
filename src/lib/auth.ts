@@ -22,7 +22,7 @@ import { repairUserProfile } from "@/lib/auth/profile-repair";
 import { tryCreateAdminClient } from "@/lib/supabase/admin";
 import {
   mustCompleteSellerVerification,
-  SELLER_VERIFY_PATH,
+  buildSellerVerifyUrl,
 } from "@/lib/seller-trust";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
@@ -108,7 +108,7 @@ export function isEmailVerified(
 }
 
 export async function requireAgentLister(
-  redirectTo = SELLER_VERIFY_PATH,
+  _redirectTo?: string,
   options?: { skipProfileSetup?: boolean; returnPath?: string }
 ) {
   const loginNext = safeNextPath(
@@ -134,15 +134,15 @@ export async function requireAgentLister(
       !options?.skipProfileSetup &&
       mustCompleteSellerVerification(profile)
     ) {
-      redirect(SELLER_VERIFY_PATH);
+      redirect(buildSellerVerifyUrl(loginNext));
     }
     if (!options?.skipProfileSetup && !hasBasicListingProfile(profile)) {
-      redirect(SELLER_VERIFY_PATH);
+      redirect(buildSellerVerifyUrl(loginNext));
     }
     return { user, profile };
   }
 
-  redirect(redirectTo);
+  redirect(buildSellerVerifyUrl(loginNext));
 }
 
 /** @deprecated use requireAgentLister */

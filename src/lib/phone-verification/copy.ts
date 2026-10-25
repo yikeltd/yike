@@ -6,11 +6,11 @@ import type { PhoneVerificationChannel } from "./types";
  * No line breaks, HTML, emojis, or markdown.
  */
 export const SMS_OTP_MESSAGE_TEMPLATE =
-  "Your verification code is: {OTP}. Code is valid for 30 minutes. Never share this code. Welcome to Yike. Happy Listing.";
+  "Hi There, Your Yike OTP is {OTP}. Expires in 30 minutes.";
 
 /** Sendchamp Verification API template — `{{code}}` is substituted by Sendchamp. */
 export const SENDCHAMP_OTP_META_MESSAGE =
-  "Your verification code is: {{code}}. Code is valid for 30 minutes. Never share this code. Welcome to Yike. Happy Listing.";
+  "Hi There, Your Yike OTP is {{code}}. Expires in 30 minutes.";
 
 export function buildSmsOtpMessage(otp: string): string {
   return SMS_OTP_MESSAGE_TEMPLATE.replace("{OTP}", otp.trim());
@@ -38,6 +38,20 @@ export const PHONE_VERIFY_COPY = {
   verified: "Phone verified. You can continue listing.",
   providerUnavailable:
     "We could not send an SMS right now. Please try again shortly.",
+  providerMisconfigured:
+    "SMS verification is unavailable due to a provider configuration issue.",
+  devConsoleSms:
+    "Local development: SMS is not sent. Check the terminal running npm run dev for your 6-digit code.",
+  smsFailureAuth:
+    "SMS could not be sent: provider authentication failed. Check Sendchamp API keys in your environment.",
+  smsFailureInvalidNumber:
+    "SMS could not be sent: this phone number was rejected by the provider.",
+  smsFailureProviderRejected:
+    "SMS could not be sent: the provider rejected the request (balance, routing, or account limits).",
+  smsFailureNetwork:
+    "SMS could not be sent: network error reaching the SMS provider. Try again shortly.",
+  smsFailureNotConfigured:
+    "SMS could not be sent: Sendchamp is not configured (missing SENDCHAMP_PUBLIC_KEY).",
   cooldown: "Please wait a moment before requesting another code.",
   rateLimited: "Too many codes sent. Try again in an hour.",
   expired: "This code expired. Request a new one.",

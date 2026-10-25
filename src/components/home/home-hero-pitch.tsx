@@ -16,7 +16,7 @@ export function HomeHeroPitch() {
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
-            href="/browse"
+            href="/discover"
             className="pressable rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-navy shadow-glow-gold"
           >
             Swipe homes

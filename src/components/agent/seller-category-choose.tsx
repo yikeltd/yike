@@ -32,7 +32,13 @@ const cards = [
   },
 ] as const;
 
-export function SellerCategoryChoose() {
+export function SellerCategoryChoose({
+  statusNote,
+  verified,
+}: {
+  statusNote?: string | null;
+  verified?: boolean;
+}) {
   const visible = cards.filter((c) => c.visible());
 
   return (
@@ -49,6 +55,12 @@ export function SellerCategoryChoose() {
       </header>
 
       <div className="mx-auto max-w-lg px-4 py-6">
+        {statusNote ? (
+          <p className="mb-3 rounded-xl border border-gold/30 bg-gold/10 px-3 py-2 text-sm font-medium text-navy">
+            {statusNote}
+            {verified ? null : " You can still create listings; publishing may wait until verification completes."}
+          </p>
+        ) : null}
         <p className="mb-4 text-sm text-navy/70">
           Choose a category. You can have up to three active listings across property, vehicles, and
           electronics combined.

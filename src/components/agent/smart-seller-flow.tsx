@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { CONSUMER_ROUTES } from "@/lib/navigation/consumer-routes";
 import {
   ChevronLeft,
   ChevronDown,
@@ -300,7 +301,9 @@ export function SmartSellerFlow() {
             onClick={() => {
               if (flowState === "preview") setFlowState("details");
               else if (flowState === "under_review") setFlowState("details");
-              else router.back();
+              else {
+                router.push(CONSUMER_ROUTES.agentListings);
+              }
             }}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all active:scale-95"
             aria-label="Go back"

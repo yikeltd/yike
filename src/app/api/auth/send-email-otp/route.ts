@@ -9,10 +9,13 @@ import {
 import { isProductionEnv } from "@/lib/env";
 import { isEmailOtpEnabled } from "@/lib/feature-flags";
 import { EMAIL_OTP_USER_MESSAGES } from "@/lib/notifications/messages";
+import { hydrateOtpServerTokenForLocalDev } from "@/lib/otp/server-token";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  await hydrateOtpServerTokenForLocalDev();
+
   if (!isEmailOtpEnabled()) {
     return NextResponse.json(
       { error: EMAIL_OTP_USER_MESSAGES.unavailable },
@@ -56,12 +59,20 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return NextResponse.json(
+      {
+        error: result.error,
+        ...(result.retryAfterSec != null ? { retryAfterSec: result.retryAfterSec } : {}),
+        ...(result.limitReason ? { limitReason: result.limitReason } : {}),
+      },
+      { status: result.status }
+    );
   }
 
   return NextResponse.json({
     ok: true,
     message: result.message,
+    dispatchStatus: result.dispatchStatus,
     ...(result.devOtp && !isProductionEnv() ? { devOtp: result.devOtp } : {}),
   });
 }

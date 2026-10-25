@@ -31,10 +31,14 @@ export const EMAIL_USER_MESSAGES = {
 
 export const EMAIL_OTP_USER_MESSAGES = {
   sent: "We sent a 6-digit code to your email.",
+  devConsole:
+    "Local development: email is not sent. Check the terminal running npm run dev for your 6-digit code.",
   verified: "Email verified. Welcome to Yike.",
   incorrect: "That code looks incorrect. Please check your email and try again.",
   expired: "This code has expired. Please request a new one.",
   cooldown: "Please wait a moment before requesting another code.",
+  hourlySendLimit:
+    "You've requested several codes. Try again in about an hour, or use your latest code if you still have it.",
   maxAttempts: "Too many attempts. Please request a new code.",
   noCode: "No code found for this email. Request a new one.",
   sendFailed: "We could not send the code right now. Please try again.",

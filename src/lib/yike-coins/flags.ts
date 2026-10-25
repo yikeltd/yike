@@ -1,4 +1,5 @@
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { isProductionEnv } from "@/lib/env";
 import { isWalletEnabled } from "@/lib/yip/capabilities/financial/flags";
 
 function envFlag(name: string, fallback: boolean): boolean {
@@ -11,7 +12,7 @@ function envFlag(name: string, fallback: boolean): boolean {
 
 /** User-facing Yike Coins wallet + ledger (distinct from agent lead-billing wallets). */
 export function isYikeCoinsEnabled(): boolean {
-  if (envFlag("ENABLE_YIKE_COINS", false)) return true;
+  if (envFlag("ENABLE_YIKE_COINS", !isProductionEnv())) return true;
   return isWalletEnabled() || isLaunchFeatureVisible("wallet");
 }
 

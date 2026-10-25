@@ -16,7 +16,7 @@ import {
   isListingSold,
   isListingUnderReview,
 } from "@/lib/listing-lifecycle";
-import { listingPath } from "@/lib/marketplace/listing-path";
+import { useMarketplaceBrowseReturn } from "@/hooks/use-marketplace-browse-return";
 import { normalizeAssetType } from "@/lib/marketplace/listings";
 import {
   clearListingDraft,
@@ -71,6 +71,7 @@ export function AgentListingsClient({
   featuredPaymentsEnabled?: boolean;
 }) {
   const router = useRouter();
+  const { listingHref } = useMarketplaceBrowseReturn();
   const [tab, setTab] = useState<Tab>("all");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [localDraft, setLocalDraft] = useState<ListingDraft | null>(null);
@@ -271,7 +272,7 @@ export function AgentListingsClient({
               month: "short",
             });
             const isVehicle = normalizeAssetType(p.asset_type) === "VEHICLE";
-            const previewHref = listingPath(p);
+            const previewHref = listingHref(p);
             const canRestore = canMarkAvailableAgain(p);
             const showMarkSold =
               p.status === "approved" &&

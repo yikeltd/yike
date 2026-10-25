@@ -39,9 +39,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ElectronicsDetailPage({ params }: Props) {
+export default async function ElectronicsDetailPage({
+  params,
+  searchParams,
+}: Props & {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   if (!isLaunchFeatureVisible("electronics_marketplace")) notFound();
   const { slug } = await params;
+  const query = await searchParams;
+  const browseReturnParam =
+    typeof query.browseReturn === "string" ? query.browseReturn : null;
   const supabase = await createClient();
 
   let listing = supabase ? await getElectronicsByIdOrSlug(supabase, slug) : null;
@@ -116,6 +124,7 @@ export default async function ElectronicsDetailPage({ params }: Props) {
       <ElectronicsDetailExperience
         listing={listing}
         similar={similar}
+        browseReturnParam={browseReturnParam}
         ownerBanner={
           previewMode ? (
             <OwnerListingStatusBanner property={listing} className="mx-3 mt-3" />

@@ -11,6 +11,7 @@ import {
   finalizeVideoCallSession,
   type VideoCallTerminalStatus,
 } from "@/lib/video-calls/client";
+import { AgoraCallRoom } from "@/components/marketplace/agora-call-room";
 
 type Props = {
   listingId: string;
@@ -39,6 +40,7 @@ export function ListingInquiryActions({
   const [backendReady, setBackendReady] = useState<boolean | null>(null);
   const [backendReason, setBackendReason] = useState<string | null>(null);
   const [activeCallSessionId, setActiveCallSessionId] = useState<string | null>(null);
+  const [mediaSessionId, setMediaSessionId] = useState<string | null>(null);
   const activeCallSessionRef = useRef<string | null>(null);
 
   async function finalizeActiveCall(status: VideoCallTerminalStatus) {
@@ -192,11 +194,12 @@ export function ListingInquiryActions({
         activeCallSessionRef.current = null;
         setActiveCallSessionId(null);
         setCallNotice(
-          "Call could not start media on this environment. Your free allowance was not kept if billing rolled back."
+          "Call connected in Yike but live media is not configured (Agora credentials missing)."
         );
         return;
       }
-      setCallNotice(`Calling ${sellerName}… Join channel ${provider.channelName}.`);
+      setMediaSessionId(sessionId);
+      setCallNotice(`Calling ${sellerName}…`);
     } finally {
       setLoading(null);
     }
@@ -284,7 +287,18 @@ export function ListingInquiryActions({
       )}
       {callNotice && <p className="text-xs text-amber-800">{callNotice}</p>}
 
-      {activeCallSessionId && (
+      {mediaSessionId ? (
+        <AgoraCallRoom
+          sessionId={mediaSessionId}
+          label={`Call with ${sellerName}`}
+          onHangUp={() => {
+            void finalizeActiveCall("ended");
+            setMediaSessionId(null);
+          }}
+        />
+      ) : null}
+
+      {activeCallSessionId && !mediaSessionId && (
         <div className="flex flex-wrap gap-2 pt-1">
           <button
             type="button"

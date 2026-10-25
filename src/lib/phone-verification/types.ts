@@ -1,6 +1,16 @@
 /** Phone ownership verification — Sendchamp SMS only. */
 export type PhoneVerificationChannel = "sms";
 
+export type PhoneOtpDeliveryMode = "provider" | "dev_console";
+
+export type SmsProviderFailureCategory =
+  | "authentication"
+  | "invalid_number"
+  | "provider_rejection"
+  | "network"
+  | "not_configured"
+  | "unknown";
+
 export type PhoneOtpSendResult =
   | {
       ok: true;
@@ -8,12 +18,14 @@ export type PhoneOtpSendResult =
       reference: string;
       expiresMinutes: number;
       message: string;
+      deliveryMode: PhoneOtpDeliveryMode;
     }
   | {
       ok: false;
       error: string;
       status: number;
       code?: "provider_auth_failed" | "rate_limited" | "cooldown" | "not_configured";
+      failureCategory?: SmsProviderFailureCategory;
     };
 
 export type PhoneOtpConfirmResult =

@@ -57,10 +57,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PropertyDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const query = await searchParams;
+  const browseReturnParam =
+    typeof query.browseReturn === "string" ? query.browseReturn : null;
   const { property, redirectTo } = await resolvePropertyRoute(slug);
 
   if (redirectTo) {
@@ -125,6 +130,7 @@ export default async function PropertyDetailPage({
         property={property}
         similarListings={similarListings}
         ownerBanner={ownerBanner}
+        browseReturnParam={browseReturnParam}
       />
     </div>
   );

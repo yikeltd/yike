@@ -177,7 +177,6 @@ export function BasicProfileForm({
             <Input
               value={residentialAddress}
               onChange={(e) => setResidentialAddress(e.target.value)}
-              required
               autoComplete="street-address"
               className="h-12 rounded-xl"
             />
@@ -222,7 +221,6 @@ export function BasicProfileForm({
             <Input
               value={residentialAddress}
               onChange={(e) => setResidentialAddress(e.target.value)}
-              required
               autoComplete="street-address"
               className="h-12 rounded-xl"
             />
@@ -244,7 +242,6 @@ export function BasicProfileForm({
         <Input
           value={residentialCity}
           onChange={(e) => setResidentialCity(e.target.value)}
-          required
           autoComplete="address-level2"
           className="h-12 rounded-xl"
         />
@@ -255,7 +252,6 @@ export function BasicProfileForm({
         <Select
           value={residentialState}
           onChange={(e) => setResidentialState(e.target.value)}
-          required
           className="h-12 rounded-xl"
         >
           <option value="">Select state</option>

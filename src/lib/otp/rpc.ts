@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { OtpChannel } from "@/lib/notifications/types";
+import { getOtpServerTokenFromEnv, requireOtpServerToken } from "./server-token";
 import { OTP_PROVIDER } from "./constants";
 
 export type OtpRow = {
@@ -15,7 +16,7 @@ export type OtpRow = {
 };
 
 function otpServerToken(): string | null {
-  return process.env.YIKE_OTP_SERVER_TOKEN?.trim() || null;
+  return getOtpServerTokenFromEnv();
 }
 
 /** Server OTP DB access via service-role RPC. */
@@ -31,9 +32,7 @@ export function createOtpDbClient(): SupabaseClient | null {
 }
 
 function token(): string {
-  const t = otpServerToken();
-  if (!t) throw new Error("YIKE_OTP_SERVER_TOKEN not configured");
-  return t;
+  return requireOtpServerToken();
 }
 
 export async function otpLastSentAt(

@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 import { ListPropertyNavLink } from "@/components/auth/list-property-button";
 import { cn } from "@/lib/utils";
+import { resolveProfilePath } from "@/lib/account/account-home";
+import type { Profile } from "@/types/database";
 import {
   Home,
   PlusCircle,
@@ -67,7 +69,8 @@ function NavTab({
 
 export function PrimaryBottomNav() {
   const pathname = usePathname();
-  const { user, loading, openAuth } = useAuth();
+  const { user, profile, loading, openAuth } = useAuth();
+  const profileHref = resolveProfilePath(profile as Profile | null);
 
   if (pathname.startsWith("/auth") || pathname.startsWith("/lex")) {
     return null;
@@ -83,7 +86,8 @@ export function PrimaryBottomNav() {
     pathname === "/swipe";
   const sellActive =
     pathname === "/post-property" || pathname.startsWith("/post-property/");
-  const profileActive = isNavActive("/agent", pathname, "prefix") || pathname === "/profile";
+  const profileActive =
+    isNavActive("/agent", pathname, "prefix") || pathname === "/profile";
 
   // ==========================================
   // NAVIGATION 2 — AUTHENTICATED (FULL-WIDTH DEEP NAVY)
@@ -118,7 +122,7 @@ export function PrimaryBottomNav() {
           </div>
 
           <Link
-            href="/agent"
+            href={profileHref}
             prefetch
             className={cn(
               "pressable flex min-w-[56px] flex-col items-center gap-0.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200",

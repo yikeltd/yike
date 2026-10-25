@@ -41,12 +41,15 @@ export function ConsumerShell({
     );
   }
 
-  /* Discover: immersive deck — no site headers, keep bottom nav */
+  /* Discover: immersive deck — desktop site header + mobile bottom nav */
   if (isDiscover) {
     return (
       <>
         <OfflineBanner />
         <OfflineWarmCache />
+        <div className="hidden lg:block">
+          <HeaderDesktop />
+        </div>
         <main className="flex-1">{children}</main>
         <Suspense fallback={null}>
           <BottomNavMobile />

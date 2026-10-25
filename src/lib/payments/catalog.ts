@@ -12,10 +12,8 @@ import {
 import { getPaymentCurrency } from "@/lib/payments/config";
 import type { PaymentPurpose } from "@/lib/payments/types";
 import { isPaymentPurpose } from "@/lib/payments/types";
-import {
-  YIKE_COIN_TOPUP_DENOMINATIONS_NGN,
-  ngnToCoins,
-} from "@/lib/yike-coins/constants";
+import { ngnToCoins } from "@/lib/yike-coins/constants";
+import { getYikeCoinTopupPackages } from "@/lib/yike-coins/topup-packages";
 import { isYikeCoinsEnabled } from "@/lib/yike-coins/flags";
 
 export type InitializeCatalogInput = {
@@ -151,11 +149,8 @@ export async function resolvePayableProduct(
       return { ok: false, error: "Yike Coins are not available", code: "disabled" };
     }
     const packNgn = Number(input.packageId ?? input.durationDays);
-    if (
-      !YIKE_COIN_TOPUP_DENOMINATIONS_NGN.includes(
-        packNgn as (typeof YIKE_COIN_TOPUP_DENOMINATIONS_NGN)[number]
-      )
-    ) {
+    const allowed = getYikeCoinTopupPackages().some((p) => p.amountNgn === packNgn);
+    if (!Number.isInteger(packNgn) || packNgn <= 0 || !allowed) {
       return { ok: false, error: "Choose a top-up amount", code: "invalid_pack" };
     }
     const coins = ngnToCoins(packNgn);

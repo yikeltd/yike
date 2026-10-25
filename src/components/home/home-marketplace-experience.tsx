@@ -484,7 +484,7 @@ export function HomeMarketplaceExperience({
           onElectronicsSearch={handleElectronicsSearch}
         />
 
-      <div className="mx-auto max-w-7xl space-y-3 px-3 pt-2 sm:px-6 lg:px-6 lg:pt-4 xl:px-8">
+      <div className="mx-auto max-w-7xl space-y-3 px-3 pt-3 sm:px-6 lg:px-6 lg:pt-4 xl:px-8">
         {latestOnYikeError ? (
           <MarketplaceSection title="Latest on Yike" href="/discover" band="white">
             <p className="rounded-2xl border border-navy/10 bg-white px-4 py-6 text-center text-sm text-muted">

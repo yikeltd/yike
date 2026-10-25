@@ -1,6 +1,21 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("auth security API contracts", () => {
+  test("PIN preflight requires identifier", async ({ request }) => {
+    const res = await request.post("/api/auth/pin/preflight", { data: {} });
+    expect(res.status()).toBe(400);
+  });
+
+  test("PIN preflight returns password step for unknown account", async ({ request }) => {
+    const res = await request.post("/api/auth/pin/preflight", {
+      data: { identifier: "no-such-user@example.com" },
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.canUsePin).toBe(false);
+    expect(body.step).toBe("password");
+  });
+
   test("PIN login rejects invalid payload", async ({ request }) => {
     const res = await request.post("/api/auth/pin/login", {
       data: { identifier: "test@example.com", pin: "123" },

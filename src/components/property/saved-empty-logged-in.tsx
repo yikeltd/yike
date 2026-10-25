@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
+import { SAVED_EMPTY_BROWSE_HREF } from "@/lib/navigation/consumer-routes";
 
 export function SavedEmptyLoggedIn() {
   return (
@@ -14,7 +15,8 @@ export function SavedEmptyLoggedIn() {
         Tap the heart on any listing to keep it here.
       </p>
       <Link
-        href="/browse"
+        href={SAVED_EMPTY_BROWSE_HREF}
+        data-testid="saved-empty-browse"
         className="pressable mt-6 rounded-xl bg-gold px-5 py-2.5 text-sm font-bold text-navy"
       >
         Browse Homes

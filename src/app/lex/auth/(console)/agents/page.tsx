@@ -9,6 +9,7 @@ import { parseAdminPage } from "@/lib/admin/pagination";
 import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
 import {
   deriveSellerLaunchStatus,
+  parseSellerProfileReviewNotes,
   SELLER_DB_STATUS_LABELS,
   SELLER_LAUNCH_STATUS_LABELS,
 } from "@/lib/seller-trust";
@@ -92,9 +93,8 @@ export default async function AdminAgentsPage({
       <section>
         <h1 className="text-2xl font-bold">Seller verification queue</h1>
         <p className="mt-1 text-sm text-muted">
-          Manual Yike review — photo, identity, address, DOB, and contact. Phone alone
-          does not grant Verified Seller. Approve / Reject / Request more info / Suspend
-          are audited.
+          Profiles auto-approve when evidence is strong; others queue here with AI
+          recommendations for staff. Approve / Reject / Request more info are audited.
         </p>
         <ul className="mt-4 space-y-4">
           {(verifications ?? []).map((v) => {
@@ -114,6 +114,8 @@ export default async function AdminAgentsPage({
             const photo = agent?.avatar_url ?? row.selfie_url ?? null;
             const notes =
               row.verification_notes ?? agent?.verification_notes ?? null;
+            const parsedReview = parseSellerProfileReviewNotes(notes);
+            const aiReview = parsedReview?.aiReview;
 
             return (
               <li
@@ -233,7 +235,35 @@ export default async function AdminAgentsPage({
                     </a>
                   </>
                 ) : null}
-                {notes ? (
+                {aiReview ? (
+                  <dl className="mt-2 rounded-lg border border-border bg-surface/60 p-2 text-xs text-navy/85">
+                    <div className="font-semibold text-navy">Profile review (staff)</div>
+                    <div className="mt-1">
+                      <dt className="inline font-semibold text-muted">Recommendation: </dt>
+                      <dd className="inline capitalize">{aiReview.recommendation}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-semibold text-muted">Confidence: </dt>
+                      <dd className="inline">{Math.round(aiReview.confidence * 100)}%</dd>
+                    </div>
+                    {aiReview.reasonCodes.length > 0 ? (
+                      <div>
+                        <dt className="inline font-semibold text-muted">Reason codes: </dt>
+                        <dd className="inline">{aiReview.reasonCodes.join(", ")}</dd>
+                      </div>
+                    ) : null}
+                    <div>
+                      <dt className="inline font-semibold text-muted">Model: </dt>
+                      <dd className="inline">{aiReview.modelVersion}</dd>
+                    </div>
+                    {aiReview.reviewedAt ? (
+                      <div>
+                        <dt className="inline font-semibold text-muted">Reviewed: </dt>
+                        <dd className="inline">{formatRegDate(aiReview.reviewedAt)}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                ) : notes ? (
                   <p className="mt-2 text-xs text-muted">Notes: {notes}</p>
                 ) : null}
                 <div className="mt-3">

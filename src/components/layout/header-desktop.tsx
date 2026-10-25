@@ -3,6 +3,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-provider";
+import { resolveProfilePath } from "@/lib/account/account-home";
+import type { Profile } from "@/types/database";
 import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
 import { cn } from "@/lib/utils";
 
@@ -11,8 +13,9 @@ import { cn } from "@/lib/utils";
  * Order: [Yike Logo] -> [Search Bar] -> [Location Selector] -> [SELL] -> [SIGN IN / PROFILE]
  */
 export function HeaderDesktop({ className }: { className?: string }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const isAuthenticated = Boolean(user);
+  const profileHref = resolveProfilePath(profile as Profile | null);
 
   return (
     <header
@@ -47,7 +50,7 @@ export function HeaderDesktop({ className }: { className?: string }) {
           {/* SIGN IN OR PROFILE BUTTON */}
           {isAuthenticated ? (
             <Link
-              href="/agent"
+              href={profileHref}
               className="pressable flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-white/20"
             >
               PROFILE

@@ -634,17 +634,18 @@ export function ListingForm({
       }
 
       const pendingId = getPendingListingId(agentId);
-      void getListingSubmitIdempotencyKey(agentId);
+      const idempotencyKey = getListingSubmitIdempotencyKey(agentId);
 
       let res = await requestListingCreate({
         listingId: pendingId ?? undefined,
         payload,
         pricingFields,
+        idempotencyKey,
       });
 
       if (!res.ok && pendingId) {
         clearPendingListingId(agentId);
-        res = await requestListingCreate({ payload, pricingFields });
+        res = await requestListingCreate({ payload, pricingFields, idempotencyKey });
       }
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;

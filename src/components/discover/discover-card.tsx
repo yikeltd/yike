@@ -8,6 +8,9 @@ import { formatPrice } from "@/lib/utils";
 import { buildMotionSlides } from "@/lib/media/items";
 import { optimizeListingImageUrl } from "@/lib/image-url";
 import { DynamicWatermark } from "@/components/ui/dynamic-watermark";
+import { listingDiscoverCategoryLabel } from "@/lib/discover/categories";
+import { normalizeAssetType } from "@/lib/marketplace/listings";
+import { electronicsCategoryLabel } from "@/lib/marketplace/electronics-specs";
 
 type Props = {
   property: Property;
@@ -35,6 +38,12 @@ export function DiscoverCard({
   const location = [property.area || property.city, property.state || property.city]
     .filter(Boolean)
     .join(", ");
+
+  const asset = normalizeAssetType(property.asset_type);
+  const categoryBadge =
+    asset === "ELECTRONICS"
+      ? electronicsCategoryLabel(property.auto_category)
+      : listingDiscoverCategoryLabel(property.asset_type);
 
   const currentPhoto = photos[photoIndex] || photos[0] || "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&q=80&fit=crop";
 
@@ -78,10 +87,11 @@ export function DiscoverCard({
       </div>
 
       {/* 2. PHOTO COUNTER & AREA BADGE (UNDER TOP BAR) */}
-      <div className="absolute inset-x-0 top-[calc(max(3.75rem,env(safe-area-inset-top))+0.75rem)] z-20 flex items-center justify-between px-4">
+      <div className="absolute inset-x-0 top-[calc(max(3.75rem,env(safe-area-inset-top))+5.5rem)] z-20 flex items-center justify-between px-4">
         <div className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-md border border-white/10">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-          <span>New in your area</span>
+          <span className="rounded-md bg-gold/90 px-1.5 py-0.5 text-[10px] font-black uppercase text-navy">
+            {categoryBadge}
+          </span>
         </div>
 
         <div className="rounded-full bg-black/40 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-md border border-white/10">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { MarketplaceBackButton } from "@/components/marketplace/marketplace-back-button";
 import {
   ChevronLeft,
   MapPin,
@@ -66,10 +67,12 @@ export function PropertyDetailExperience({
   property,
   similarListings = [],
   ownerBanner,
+  browseReturnParam,
 }: {
   property: Property;
   similarListings?: Property[];
   ownerBanner?: React.ReactNode;
+  browseReturnParam?: string | null;
 }) {
   const router = useRouter();
   const { guardAction } = useAuth();
@@ -190,14 +193,11 @@ export function PropertyDetailExperience({
 
       {/* TOP HEADER BAR */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-navy/10 dark:border-white/10 bg-[#031B4E] px-4 py-3 text-white shadow-md">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all active:scale-95 hover:bg-white/20"
-          aria-label="Go back"
-        >
-          <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
-        </button>
+        <MarketplaceBackButton
+          variant="overlay"
+          fallback="/search"
+          browseReturnParam={browseReturnParam}
+        />
 
         <h1 className="text-xs font-black uppercase tracking-wider text-gold">
           PROPERTY DETAILS

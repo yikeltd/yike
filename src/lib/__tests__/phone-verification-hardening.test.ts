@@ -52,6 +52,6 @@ test("local OTP migration revokes anon execute on yike_otp RPCs", () => {
 test("phone OTP RPC calls require server token via admin client", () => {
   const rpcPath = path.resolve(process.cwd(), "src/lib/otp/rpc.ts");
   const src = fs.readFileSync(rpcPath, "utf-8");
-  assert.match(src, /YIKE_OTP_SERVER_TOKEN/);
+  assert.match(src, /requireOtpServerToken|getOtpServerTokenFromEnv/);
   assert.match(src, /createAdminClient/);
 });

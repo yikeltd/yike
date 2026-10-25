@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { ChevronLeft, MapPin, MessageCircle, ShieldCheck } from "lucide-react";
+import { MapPin, MessageCircle, ShieldCheck } from "lucide-react";
+import { MarketplaceBackButton } from "@/components/marketplace/marketplace-back-button";
 import type { Property } from "@/types/database";
 import { formatPrice, cn, isVerifiedAgent } from "@/lib/utils";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
@@ -12,6 +12,7 @@ import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import {
   electronicsCategoryLabel,
   ELECTRONICS_CONDITIONS,
+  electronicsWarrantyStatusLabel,
 } from "@/lib/marketplace/electronics-specs";
 import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
 import { ListingInquiryActions } from "@/components/marketplace/listing-inquiry-actions";
@@ -34,10 +35,12 @@ export function ElectronicsDetailExperience({
   listing,
   similar = [],
   ownerBanner,
+  browseReturnParam,
 }: {
   listing: Property;
   similar?: Property[];
   ownerBanner?: React.ReactNode;
+  browseReturnParam?: string | null;
 }) {
   const { guardAction } = useAuth();
   const [chatLoading, setChatLoading] = useState(false);
@@ -56,6 +59,22 @@ export function ElectronicsDetailExperience({
     { label: "Model", value: listing.model ?? "—" },
     { label: "Condition", value: conditionLabel(listing.condition) },
   ];
+  const warrantyStatus = electronicsWarrantyStatusLabel(
+    String(attrs.warranty_status ?? ""),
+  );
+  if (warrantyStatus) {
+    specRows.push({ label: "Warranty", value: warrantyStatus });
+  }
+  if (attrs.warranty_note != null && String(attrs.warranty_note).trim()) {
+    specRows.push({ label: "Warranty details", value: String(attrs.warranty_note).trim() });
+  }
+  if (attrs.warranty_months != null && String(attrs.warranty_months).trim()) {
+    specRows.push({
+      label: "Warranty (legacy)",
+      value: `${String(attrs.warranty_months)} months`,
+    });
+  }
+
   for (const [key, label] of [
     ["storage_gb", "Storage"],
     ["ram_gb", "RAM"],
@@ -63,7 +82,6 @@ export function ElectronicsDetailExperience({
     ["power_kva", "Power (kVA)"],
     ["capacity_liters", "Capacity (L)"],
     ["battery_capacity_ah", "Battery (Ah)"],
-    ["warranty_months", "Warranty (months)"],
   ] as const) {
     if (attrs[key] != null && String(attrs[key]).trim()) {
       specRows.push({ label, value: String(attrs[key]) });
@@ -103,14 +121,12 @@ export function ElectronicsDetailExperience({
   return (
     <div className="min-h-screen bg-surface pb-24">
       <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-navy/10 bg-white/95 px-3 py-2 backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => window.history.back()}
-          className="pressable flex h-10 w-10 items-center justify-center rounded-full bg-navy/5"
-          aria-label="Go back"
-        >
-          <ChevronLeft className="h-5 w-5 text-navy" />
-        </button>
+        <MarketplaceBackButton
+          browseReturnParam={browseReturnParam}
+          fallback="/electronics"
+          variant="overlay"
+          className="h-10 w-10 bg-navy/5 text-navy hover:bg-navy/10 backdrop-blur-none"
+        />
         <span className="flex-1 truncate text-sm font-bold text-navy">Electronics</span>
         <ListingSaveButton listingId={listing.id} />
         <ShareButton url={shareUrl} title={listing.title} text={listing.title} />

@@ -22,6 +22,10 @@ export function getCategoryManifest(id: ListingCategoryId): CategoryManifest {
   return manifest;
 }
 
+export function tryGetCategoryManifest(id: string): CategoryManifest | null {
+  return CATEGORY_REGISTRY[id] ?? null;
+}
+
 export function listCategoryIds(): string[] {
   return Object.keys(CATEGORY_REGISTRY);
 }

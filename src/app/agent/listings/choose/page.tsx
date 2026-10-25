@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { requireAgentLister } from "@/lib/auth";
 import {
+  buildSellerVerifyUrl,
+  deriveSellerCustomerVerificationStatus,
   mustCompleteSellerVerification,
-  SELLER_VERIFY_PATH,
+  SELLER_CUSTOMER_STATUS_LABELS,
 } from "@/lib/seller-trust";
 import { SellerCategoryChoose } from "@/components/agent/seller-category-choose";
 
@@ -18,8 +20,21 @@ export default async function ChooseListingTypePage() {
   });
 
   if (mustCompleteSellerVerification(profile)) {
-    redirect(SELLER_VERIFY_PATH);
+    redirect(buildSellerVerifyUrl("/agent/listings/choose"));
   }
 
-  return <SellerCategoryChoose />;
+  const customerStatus = deriveSellerCustomerVerificationStatus(profile);
+  const statusNote =
+    customerStatus === "checking"
+      ? SELLER_CUSTOMER_STATUS_LABELS.checking
+      : customerStatus === "action_needed"
+        ? SELLER_CUSTOMER_STATUS_LABELS.action_needed
+        : null;
+
+  return (
+    <SellerCategoryChoose
+      statusNote={statusNote}
+      verified={customerStatus === "verified"}
+    />
+  );
 }

@@ -2,11 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isYikeCoinsEnabled } from "@/lib/yike-coins/flags";
-import {
-  YIKE_COIN_TOPUP_DENOMINATIONS_NGN,
-  formatCoinNairaEquivalent,
-  formatYikeCoins,
-} from "@/lib/yike-coins/constants";
+import { formatCoinNairaEquivalent, formatYikeCoins } from "@/lib/yike-coins/constants";
+import { YikeCoinsLedgerClient } from "./ledger-client";
 import { getYikeCoinBalance } from "@/lib/yike-coins/ledger";
 import { getVideoCallPreflight } from "@/lib/video-calls/allowance";
 import { YikeCoinsTopupClient } from "./topup-client";
@@ -61,7 +58,21 @@ export default async function YikeCoinsAccountPage() {
         ) : null}
       </div>
 
-      <YikeCoinsTopupClient packs={[...YIKE_COIN_TOPUP_DENOMINATIONS_NGN]} />
+      <YikeCoinsTopupClient />
+
+      <div className="mt-8">
+        <h2 className="text-sm font-black text-navy">Transaction history</h2>
+        <div className="mt-3">
+          <YikeCoinsLedgerClient />
+        </div>
+      </div>
+
+      <Link
+        href="/payments/history"
+        className="pressable mt-4 inline-block text-sm font-bold text-navy/70 underline-offset-2 hover:underline"
+      >
+        Paystack payment history
+      </Link>
 
       <p className="mt-6 text-xs leading-relaxed text-navy/55">
         Yike Coins are platform credits for eligible services — not cash, not transferable, and not

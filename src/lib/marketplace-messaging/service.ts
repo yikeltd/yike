@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isFeatureEnabled } from "@/lib/feature-flags/index";
 import { isMarketplaceNativeContactEnabled } from "@/lib/yike-coins/flags";
+import { normalizeAssetType } from "@/lib/marketplace/listings";
 
 export type MarketplaceAssetType = "PROPERTY" | "VEHICLE" | "ELECTRONICS";
 
@@ -22,6 +23,7 @@ export type MarketplaceMessageRow = {
   body: string;
   read_at: string | null;
   created_at: string;
+  client_message_id?: string | null;
 };
 
 export function isMarketplaceMessagingEnabled(): boolean {
@@ -36,32 +38,20 @@ export async function resolveListingSeller(
   listingId: string,
   assetType: MarketplaceAssetType
 ): Promise<{ sellerId: string } | null> {
-  if (assetType === "PROPERTY") {
-    const { data } = await admin
-      .from("properties")
-      .select("agent_id")
-      .eq("id", listingId)
-      .maybeSingle();
-    if (data?.agent_id) return { sellerId: data.agent_id as string };
+  const { data } = await admin
+    .from("properties")
+    .select("agent_id, asset_type")
+    .eq("id", listingId)
+    .maybeSingle();
+
+  if (!data?.agent_id) return null;
+
+  const rowAsset = normalizeAssetType(data.asset_type as string) as MarketplaceAssetType;
+  if (rowAsset !== assetType) {
+    return null;
   }
-  if (assetType === "VEHICLE") {
-    const { data } = await admin
-      .from("vehicles")
-      .select("agent_id")
-      .eq("id", listingId)
-      .maybeSingle();
-    if (data?.agent_id) return { sellerId: data.agent_id as string };
-  }
-  if (assetType === "ELECTRONICS") {
-    const { data } = await admin
-      .from("listings")
-      .select("agent_id")
-      .eq("id", listingId)
-      .eq("asset_type", "ELECTRONICS")
-      .maybeSingle();
-    if (data?.agent_id) return { sellerId: data.agent_id as string };
-  }
-  return null;
+
+  return { sellerId: data.agent_id as string };
 }
 
 async function assertMessagingSchemaReady(
@@ -135,6 +125,24 @@ export async function getOrCreateMarketplaceConversation(input: {
     .single();
 
   if (error || !created) {
+    const duplicate =
+      error?.code === "23505" ||
+      (error?.message ?? "").toLowerCase().includes("duplicate");
+    if (duplicate) {
+      const { data: raced } = await admin
+        .from("marketplace_conversations")
+        .select("*")
+        .eq("listing_id", input.listingId)
+        .eq("buyer_id", input.buyerId)
+        .maybeSingle();
+      if (raced) {
+        return {
+          ok: true,
+          conversation: raced as MarketplaceConversationRow,
+          created: false,
+        };
+      }
+    }
     return { ok: false, error: error?.message ?? "Could not start conversation", code: "create_failed" };
   }
 
@@ -143,6 +151,33 @@ export async function getOrCreateMarketplaceConversation(input: {
     conversation: created as MarketplaceConversationRow,
     created: true,
   };
+}
+
+export async function getMarketplaceConversationForUser(
+  conversationId: string,
+  userId: string,
+): Promise<
+  | { ok: true; conversation: MarketplaceConversationRow }
+  | { ok: false; error: string; code: string }
+> {
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Database unavailable", code: "unavailable" };
+
+  const schema = await assertMessagingSchemaReady(admin);
+  if (!schema.ok) return schema;
+
+  const { data: conv } = await admin
+    .from("marketplace_conversations")
+    .select("*")
+    .eq("id", conversationId)
+    .maybeSingle();
+
+  if (!conv) return { ok: false, error: "Conversation not found", code: "not_found" };
+  if (conv.buyer_id !== userId && conv.seller_id !== userId) {
+    return { ok: false, error: "Forbidden", code: "forbidden" };
+  }
+
+  return { ok: true, conversation: conv as MarketplaceConversationRow };
 }
 
 export async function listConversationsForUser(
@@ -197,6 +232,7 @@ export async function sendMessage(input: {
   conversationId: string;
   senderId: string;
   body: string;
+  clientMessageId?: string | null;
 }): Promise<
   | { ok: true; message: MarketplaceMessageRow }
   | { ok: false; error: string; code: string }
@@ -220,18 +256,45 @@ export async function sendMessage(input: {
     return { ok: false, error: "Forbidden", code: "forbidden" };
   }
 
+  const clientMessageId = input.clientMessageId?.trim() || null;
+  if (clientMessageId) {
+    const { data: existing } = await admin
+      .from("marketplace_messages")
+      .select("*")
+      .eq("conversation_id", input.conversationId)
+      .eq("client_message_id", clientMessageId)
+      .maybeSingle();
+    if (existing) {
+      return { ok: true, message: existing as MarketplaceMessageRow };
+    }
+  }
+
   const now = new Date().toISOString();
+  const insertRow: Record<string, unknown> = {
+    conversation_id: input.conversationId,
+    sender_id: input.senderId,
+    body,
+  };
+  if (clientMessageId) insertRow.client_message_id = clientMessageId;
+
   const { data: message, error } = await admin
     .from("marketplace_messages")
-    .insert({
-      conversation_id: input.conversationId,
-      sender_id: input.senderId,
-      body,
-    })
+    .insert(insertRow)
     .select("*")
     .single();
 
   if (error || !message) {
+    if (clientMessageId && error?.code === "23505") {
+      const { data: raced } = await admin
+        .from("marketplace_messages")
+        .select("*")
+        .eq("conversation_id", input.conversationId)
+        .eq("client_message_id", clientMessageId)
+        .maybeSingle();
+      if (raced) {
+        return { ok: true, message: raced as MarketplaceMessageRow };
+      }
+    }
     return { ok: false, error: error?.message ?? "Send failed", code: "send_failed" };
   }
 

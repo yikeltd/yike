@@ -1,17 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SlidersHorizontal, MapPin, ChevronDown } from "lucide-react";
+import { CONSUMER_ROUTES } from "@/lib/navigation/consumer-routes";
 import type { Property } from "@/types/database";
 import { DiscoverDeck, type DiscoverSwipeAction } from "@/components/discover/discover-deck";
 import { DiscoverEmpty } from "@/components/discover/discover-empty";
 import { DiscoverFilters } from "@/components/discover/discover-filters";
+import { DiscoverCategoryRail } from "@/components/discover/discover-category-rail";
+import { discoverHref } from "@/lib/discover/categories";
+import {
+  discoverLocationPillLabel,
+  discoverStateScopeFromMarketplaceLocation,
+} from "@/lib/discover/location-scope";
+import {
+  ensureMarketplaceLocationPersisted,
+  getMarketplaceLocation,
+} from "@/lib/marketplace-location/preference";
 import { ShareButton } from "@/components/property/listing-share-menu";
 import { buildDiscoverFeed } from "@/lib/discover/feed";
 import {
   DEFAULT_DISCOVER_FILTERS,
   type DiscoverFilterState,
 } from "@/lib/discover/filters";
+import { resolveDiscoverEmptyReason } from "@/lib/discover/empty-state";
 import {
   getBrowsePreferences,
   syncBrowseFromRecentSearches,
@@ -41,39 +55,93 @@ import {
   toggleGuestFavorite,
 } from "@/lib/guest-favorites";
 import { isDemoProperty } from "@/lib/mock-listings";
-import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { listingPath, listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 
 type Props = {
   properties: Property[];
   vehicles: Property[];
+  electronics: Property[];
+  initialFilters?: DiscoverFilterState;
 };
 
-export function DiscoverExperience({ properties, vehicles }: Props) {
-  const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
+export function DiscoverExperience({
+  properties,
+  vehicles,
+  electronics,
+  initialFilters,
+}: Props) {
+  const router = useRouter();
   const { user, guardAction, isListingSaved, setListingSaved } = useAuth();
   const [filters, setFilters] = useState<DiscoverFilterState>(() => ({
     ...DEFAULT_DISCOVER_FILTERS,
-    category: vehiclesOn ? "vehicle" : "property",
+    ...initialFilters,
   }));
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [electronicsTypesOpen, setElectronicsTypesOpen] = useState(false);
   const [feed, setFeed] = useState<Property[]>([]);
   const [index, setIndex] = useState(0);
   const [savedMap, setSavedMap] = useState<Record<string, boolean>>({});
   const [seed, setSeed] = useState(0);
   const cardEnteredAt = useRef(0);
 
+  const syncFiltersToUrl = useCallback(
+    (nextFilters: DiscoverFilterState) => {
+      const href = discoverHref({
+        category: nextFilters.category,
+        electronicsSub: nextFilters.electronicsSub,
+      });
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (href !== current) {
+        router.replace(href, { scroll: false });
+      }
+    },
+    [router],
+  );
+
+  const applyFilters = useCallback(
+    (nextFilters: DiscoverFilterState) => {
+      setFilters(nextFilters);
+      syncFiltersToUrl(nextFilters);
+    },
+    [syncFiltersToUrl],
+  );
+
   const rebuild = useCallback(
     (nextFilters: DiscoverFilterState) => {
       syncBrowseFromRecentSearches();
       const prefs = getBrowsePreferences();
-      const next = buildDiscoverFeed(properties, vehicles, nextFilters, prefs);
+      const next = buildDiscoverFeed(
+        properties,
+        vehicles,
+        nextFilters,
+        prefs,
+        electronics,
+      );
       setFeed(next);
       const memory = getSwipeMemory();
       setIndex(resolveSwipeResumeIndex(next.map((p) => p.id), memory));
     },
-    [properties, vehicles]
+    [properties, vehicles, electronics],
   );
+
+  useEffect(() => {
+    if (!initialFilters) return;
+    setFilters((prev) => ({
+      ...prev,
+      ...initialFilters,
+    }));
+  }, [initialFilters]);
+
+  useEffect(() => {
+    ensureMarketplaceLocationPersisted();
+    const loc = getMarketplaceLocation();
+    const scope = discoverStateScopeFromMarketplaceLocation(loc);
+    if (!scope.state) return;
+    setFilters((prev) => {
+      if (prev.state || prev.city) return prev;
+      return { ...prev, ...scope };
+    });
+  }, []);
 
   useEffect(() => {
     rebuild(filters);
@@ -231,7 +299,8 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
     [advance, current, saveListing]
   );
 
-  const exhausted = !current || index >= count;
+  const showEmpty = count === 0 || index >= count;
+  const emptyReason = resolveDiscoverEmptyReason(count, index);
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-navy">
@@ -239,9 +308,12 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
       <header className="absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 bg-gradient-to-b from-navy/90 via-navy/50 to-transparent">
         {/* Left: YIKE eyebrow + Discover Title */}
         <div className="flex flex-col text-left">
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-gold">
+          <Link
+            href={CONSUMER_ROUTES.home}
+            className="text-[10px] font-black uppercase tracking-[0.18em] text-gold hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50 rounded-sm"
+          >
             YIKE
-          </span>
+          </Link>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-none">
             Discover
           </h1>
@@ -255,7 +327,7 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
         >
           <MapPin className="h-3.5 w-3.5 text-gold shrink-0" />
           <span className="truncate max-w-[120px] sm:max-w-[160px]">
-            {filters.city || current?.area || "Lekki, Lagos"}
+            {discoverLocationPillLabel(filters)}
           </span>
           <ChevronDown className="h-3.5 w-3.5 text-white/70 shrink-0" />
         </button>
@@ -279,28 +351,59 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
         </div>
       </header>
 
+      <DiscoverCategoryRail
+        filters={filters}
+        onChange={(next) => {
+          if (next.category !== "electronics") {
+            setElectronicsTypesOpen(false);
+          }
+          applyFilters(next);
+        }}
+        electronicsTypesOpen={
+          electronicsTypesOpen || Boolean(filters.electronicsSub)
+        }
+        onToggleElectronicsTypes={() =>
+          setElectronicsTypesOpen((open) => !open)
+        }
+      />
+
       {/* FULL BLEED CARD STACK */}
       <div className="relative h-full w-full">
-        {exhausted ? (
-          <div className="pt-20 h-full">
+        {showEmpty ? (
+          <div className="h-full pt-[calc(max(3.75rem,env(safe-area-inset-top))+5.5rem)]">
             <DiscoverEmpty
+              reason={emptyReason}
               filters={filters}
               onRefresh={() => {
                 setIndex(0);
                 setSeed((s) => s + 1);
               }}
-              onExpandRadius={() =>
-                setFilters((f) => ({ ...f, city: "", state: "" }))
-              }
-              onIncreaseBudget={() =>
-                setFilters((f) => ({
-                  ...f,
+              onClearFilters={() => {
+                setIndex(0);
+                applyFilters({ ...DEFAULT_DISCOVER_FILTERS });
+              }}
+              onBrowseAllCategories={() => {
+                setIndex(0);
+                applyFilters({
+                  ...filters,
+                  category: "all",
+                  electronicsSub: "",
+                });
+              }}
+              onExpandRadius={() => {
+                setIndex(0);
+                applyFilters({ ...filters, city: "", state: "" });
+              }}
+              onIncreaseBudget={() => {
+                setIndex(0);
+                applyFilters({
+                  ...filters,
                   maxBudget:
-                    f.maxBudget == null
+                    filters.maxBudget == null
                       ? null
-                      : Math.round(f.maxBudget * 1.35),
-                }))
-              }
+                      : Math.round(filters.maxBudget * 1.35),
+                });
+              }}
             />
           </div>
         ) : current ? (
@@ -318,7 +421,7 @@ export function DiscoverExperience({ properties, vehicles }: Props) {
       <DiscoverFilters
         open={filtersOpen}
         filters={filters}
-        onChange={setFilters}
+        onChange={applyFilters}
         onClose={() => setFiltersOpen(false)}
       />
     </div>

@@ -3,12 +3,17 @@ import { normalizeAssetType } from "@/lib/marketplace/listings";
 import { isTrustVerified } from "@/lib/hub-filters";
 import { isLandPropertyType } from "@/constants/listingTypes";
 
-export type DiscoverCategory = "property" | "vehicle";
+export type DiscoverCategoryFilter = "all" | "property" | "vehicle" | "electronics";
+
+/** @deprecated Use DiscoverCategoryFilter */
+export type DiscoverCategory = DiscoverCategoryFilter;
 
 export type DiscoverDeal = "" | "sale" | "rent" | "land";
 
 export type DiscoverFilterState = {
-  category: DiscoverCategory;
+  category: DiscoverCategoryFilter;
+  /** Electronics `auto_category` when filtering phones, computers, etc. */
+  electronicsSub: string;
   deal: DiscoverDeal;
   state: string;
   city: string;
@@ -18,7 +23,8 @@ export type DiscoverFilterState = {
 };
 
 export const DEFAULT_DISCOVER_FILTERS: DiscoverFilterState = {
-  category: "vehicle",
+  category: "all",
+  electronicsSub: "",
   deal: "",
   state: "",
   city: "",
@@ -34,11 +40,23 @@ export function applyDiscoverFilters(
   return items.filter((p) => {
     const asset = normalizeAssetType(p.asset_type);
     const isVehicle = asset === "VEHICLE";
+    const isElectronics = asset === "ELECTRONICS";
+    const isProperty = asset === "PROPERTY";
 
-    if (filters.category === "property" && isVehicle) return false;
+    if (filters.category === "property" && !isProperty) return false;
     if (filters.category === "vehicle" && !isVehicle) return false;
+    if (filters.category === "electronics" && !isElectronics) return false;
 
-    if (filters.category === "property" && filters.deal) {
+    if (filters.electronicsSub) {
+      if (!isElectronics) return false;
+      if ((p.auto_category ?? "") !== filters.electronicsSub) return false;
+    }
+
+    if (
+      filters.deal &&
+      isProperty &&
+      (filters.category === "property" || filters.category === "all")
+    ) {
       if (filters.deal === "land") {
         if (!isLandPropertyType(p.property_type)) return false;
       } else if (filters.deal === "sale") {

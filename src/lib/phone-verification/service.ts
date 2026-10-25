@@ -16,41 +16,23 @@ import { resolveDefaultPhoneVerificationChannel } from "./channel";
 import { PHONE_VERIFY_COPY } from "./copy";
 import { isNormalizedPhoneTakenByOtherAccount } from "./phone-ownership";
 import { getPhoneVerificationProvider } from "./provider";
-import type { PhoneVerificationChannel } from "./types";
+import {
+  countProviderAcceptedSendsLastHour,
+  lastProviderAcceptedSentAt,
+} from "./seller-sms-rate-limit-queries";
+import { SELLER_SMS_MAX_SENDS_PER_PHONE_HOUR } from "./seller-sms-rate-limit";
+import type {
+  PhoneOtpDeliveryMode,
+  PhoneVerificationChannel,
+  SmsProviderFailureCategory,
+} from "./types";
 
-const MAX_SENDS_PER_PHONE_HOUR = 3;
+const MAX_SENDS_PER_PHONE_HOUR = SELLER_SMS_MAX_SENDS_PER_PHONE_HOUR;
 const MAX_VERIFY_ATTEMPTS = 5;
 const RESEND_COOLDOWN_MS = 60_000;
 
 /** In-flight send locks: one user action → one OTP generation + one SMS (per process). */
 const sendInFlight = new Map<string, Promise<SendPhoneVerificationResult>>();
-
-async function countSendsLastHour(
-  admin: SupabaseClient,
-  phoneIntl: string
-): Promise<number> {
-  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const { count } = await admin
-    .from("whatsapp_otp_sessions")
-    .select("id", { count: "exact", head: true })
-    .eq("phone_intl", phoneIntl)
-    .gte("created_at", since);
-  return count ?? 0;
-}
-
-async function lastSentAt(
-  admin: SupabaseClient,
-  userId: string
-): Promise<string | null> {
-  const { data } = await admin
-    .from("whatsapp_otp_sessions")
-    .select("created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data?.created_at ?? null;
-}
 
 export type SendPhoneVerificationResult =
   | {
@@ -58,13 +40,20 @@ export type SendPhoneVerificationResult =
       message: string;
       channel: PhoneVerificationChannel;
       expiresMinutes: number;
+      deliveryMode?: PhoneOtpDeliveryMode;
       /** FAT only — phone marked verified without SMS. */
       bypass?: true;
       phoneVerified?: true;
       phoneVerifiedAt?: string;
       phone?: string;
     }
-  | { ok: false; error: string; status: number; code?: string };
+  | {
+      ok: false;
+      error: string;
+      status: number;
+      code?: string;
+      failureCategory?: SmsProviderFailureCategory;
+    };
 
 export type VerifyPhoneVerificationResult =
   | {
@@ -215,12 +204,13 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     };
   }
 
-  const sends = await countSendsLastHour(admin, params.phoneIntl);
+  const sends = await countProviderAcceptedSendsLastHour(admin, params.phoneIntl);
   if (sends >= MAX_SENDS_PER_PHONE_HOUR) {
     logOtpAudit({
       event: "seller_send_rate_limited",
       requestId,
       phone: params.phoneIntl,
+      error: `provider_accepted_count=${sends}`,
     });
     return {
       ok: false,
@@ -230,7 +220,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     };
   }
 
-  const last = await lastSentAt(admin, params.userId);
+  const last = await lastProviderAcceptedSentAt(admin, params.userId);
   if (last) {
     const elapsed = Date.now() - new Date(last).getTime();
     if (elapsed < RESEND_COOLDOWN_MS) {
@@ -288,7 +278,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     .eq("phone_intl", params.phoneIntl)
     .eq("status", "sent");
 
-  // Claim a DB row before provider call so cooldown starts immediately (blocks races).
+  // Claim a DB row before provider call so concurrent sends serialize and failed sends can expire cleanly.
   const claimExpiresAt = new Date(Date.now() + 30 * 60_000).toISOString();
   const claimReference = `pending:${randomUUID()}`;
   const { data: claimRow, error: claimError } = await admin
@@ -363,6 +353,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
       error: created.error,
       status: created.status,
       code: created.code ?? "provider_failed",
+      failureCategory: created.failureCategory,
     };
   }
 
@@ -379,6 +370,13 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     .eq("id", claimRow.id);
 
   logOtpAudit({
+    event: "seller_send_provider_accepted",
+    requestId,
+    phone: params.phoneIntl,
+    reference: created.reference,
+    deliveryReference: created.reference,
+  });
+  logOtpAudit({
     event: "seller_send_ok",
     requestId,
     phone: params.phoneIntl,
@@ -391,6 +389,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     message: created.message,
     channel: created.channel,
     expiresMinutes: created.expiresMinutes,
+    deliveryMode: created.deliveryMode,
   };
 }
 

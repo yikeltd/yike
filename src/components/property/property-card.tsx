@@ -36,7 +36,8 @@ import { listingImageAlt } from "@/lib/image-seo";
 import { ListingImage } from "./listing-image";
 import { listingCardImage } from "@/lib/listing-gallery-images";
 import { optimizeListingImageUrl } from "@/lib/image-url";
-import { listingPath } from "@/lib/marketplace/listing-path";
+import { persistBrowseReturn } from "@/lib/marketplace/browse-navigation";
+import { useMarketplaceBrowseReturn } from "@/hooks/use-marketplace-browse-return";
 import { ListingDistanceLabel } from "@/components/marketplace/listing-distance-label";
 import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
@@ -88,7 +89,8 @@ export function PropertyCard({
     property.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
   const hasAgent = !!agent?.id;
   const isDemo = isDemoProperty(property.id);
-  const href = listingPath(property);
+  const { browseReturn, listingHref } = useMarketplaceBrowseReturn();
+  const href = listingHref(property);
   const featuredActive = isFeaturedActive(property);
   const placement = resolvePlacementKind(property);
   const parking = hasParking(property);
@@ -105,6 +107,11 @@ export function PropertyCard({
     if (trackFeaturedAnalytics && featuredActive && !isDemo) {
       logFeaturedAnalyticsEvent(property.id, "featured_click");
     }
+  }
+
+  function handleListingLinkClick() {
+    handleFeaturedNavigate();
+    persistBrowseReturn(browseReturn);
   }
 
   const price = formatPrice(
@@ -296,7 +303,7 @@ export function PropertyCard({
           href={href}
           prefetch={!isDemo}
           className="block"
-          onClick={handleFeaturedNavigate}
+          onClick={handleListingLinkClick}
         >
           <div className="relative aspect-[4/3] overflow-hidden bg-surface">
             <ListingImage
@@ -361,7 +368,7 @@ export function PropertyCard({
             href={href}
             prefetch={!isDemo}
             className="block min-w-0 space-y-1"
-            onClick={handleFeaturedNavigate}
+            onClick={handleListingLinkClick}
           >
             <div className="flex items-baseline justify-between gap-1">
               <p className="text-sm font-black tabular-nums leading-tight tracking-tight text-foreground sm:text-base">

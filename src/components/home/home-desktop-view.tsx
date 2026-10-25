@@ -162,9 +162,9 @@ export function HomeDesktopView({
         className="!px-8 !pt-4 xl:!px-8"
       />
 
-      <div className="mx-auto max-w-7xl space-y-6 px-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-8 pt-4">
         {latestOnYikeError ? (
-          <section className="space-y-4 pt-6">
+          <section className="space-y-4">
             <h2 className="border-l-4 border-gold pl-3 text-xl font-black tracking-tight text-navy">
               Latest on Yike
             </h2>

@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, ShieldCheck } from "lucide-react";
 import type { Property } from "@/types/database";
-import { listingPath } from "@/lib/marketplace/listing-path";
+import { persistBrowseReturn } from "@/lib/marketplace/browse-navigation";
+import { useMarketplaceBrowseReturn } from "@/hooks/use-marketplace-browse-return";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
 import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
 import { electronicsCategoryLabel } from "@/lib/marketplace/electronics-specs";
@@ -27,7 +28,8 @@ export function ElectronicsCard({
   variant?: "browse" | "compact";
   priorityImage?: boolean;
 }) {
-  const href = listingPath(listing);
+  const { browseReturn, listingHref } = useMarketplaceBrowseReturn();
+  const href = listingHref(listing);
   const photo = listing.media_urls?.[0] ?? "/images/logo.webp";
   const verified =
     listing.is_verified_listing ||
@@ -42,7 +44,11 @@ export function ElectronicsCard({
         variant === "compact" && "rounded-xl",
       )}
     >
-      <Link href={href} className="relative block w-full overflow-hidden bg-navy/5">
+      <Link
+        href={href}
+        className="relative block w-full overflow-hidden bg-navy/5"
+        onClick={() => persistBrowseReturn(browseReturn)}
+      >
         <div className={cn("relative w-full", BROWSE_THUMB_ASPECT)}>
           <Image
             src={photo}

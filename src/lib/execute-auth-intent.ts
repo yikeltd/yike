@@ -3,9 +3,9 @@ import { createClient } from "@/lib/supabase/client";
 import type { AuthIntent } from "@/lib/auth-intent";
 import { canListProperties } from "@/lib/utils";
 import {
+  buildSellerVerifyUrl,
   isSellerReadyToList,
   SELLER_CHOOSE_LISTING_PATH,
-  SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
 
 export async function executeAuthIntent(
@@ -77,7 +77,7 @@ export async function executeAuthIntent(
       ) {
         router.push(SELLER_CHOOSE_LISTING_PATH);
       } else {
-        router.push(SELLER_VERIFY_PATH);
+        router.push(buildSellerVerifyUrl(SELLER_CHOOSE_LISTING_PATH));
       }
       break;
     }

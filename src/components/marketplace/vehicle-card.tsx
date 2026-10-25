@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import type { Property } from "@/types/database";
-import { listingPath } from "@/lib/marketplace/listing-path";
+import { persistBrowseReturn } from "@/lib/marketplace/browse-navigation";
+import { useMarketplaceBrowseReturn } from "@/hooks/use-marketplace-browse-return";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
 import { ListingDistanceLabel } from "@/components/marketplace/listing-distance-label";
 import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
@@ -106,7 +107,8 @@ export function VehicleCard({
   onToggleCompare?: (vehicle: Property) => void;
   isCompared?: boolean;
 }) {
-  const href = listingPath(vehicle);
+  const { browseReturn, listingHref } = useMarketplaceBrowseReturn();
+  const href = listingHref(vehicle);
   const img = vehicle.media_urls?.[0];
   const placement = resolvePlacementKind(vehicle);
   const isBrowse = variant === "browse";
@@ -120,6 +122,10 @@ export function VehicleCard({
     (vehicle.agent ? isVerifiedAgent(vehicle.agent) : false);
   const attrs = buildVehicleAttrs(vehicle);
   const [quickPreviewOpen, setQuickPreviewOpen] = useState(false);
+
+  function handleListingLinkClick() {
+    persistBrowseReturn(browseReturn);
+  }
 
   function openPreview(e: React.MouseEvent) {
     e.preventDefault();
@@ -140,7 +146,12 @@ export function VehicleCard({
           "group card-lift relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-elevated shadow-card ring-1 ring-black/[0.04] dark:ring-white/[0.08]"
         )}
       >
-        <Link href={href} prefetch={!isDemo} className="block">
+        <Link
+          href={href}
+          prefetch={!isDemo}
+          className="block"
+          onClick={handleListingLinkClick}
+        >
           <div
             className={cn(
               "listing-thumb relative overflow-hidden rounded-[1.25rem] bg-navy/5",
@@ -218,7 +229,12 @@ export function VehicleCard({
         </div>
 
         <div className="flex flex-1 flex-col justify-between p-2.5 sm:p-3">
-          <Link href={href} prefetch={!isDemo} className="block min-w-0 space-y-1">
+          <Link
+            href={href}
+            prefetch={!isDemo}
+            className="block min-w-0 space-y-1"
+            onClick={handleListingLinkClick}
+          >
             <p className="text-sm font-black tabular-nums leading-tight tracking-tight text-foreground sm:text-base">
               {formatNaira(Number(vehicle.price))}
             </p>

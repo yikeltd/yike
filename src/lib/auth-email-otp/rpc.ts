@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  getOtpServerTokenFromEnv,
+  requireOtpServerToken,
+} from "@/lib/otp/server-token";
 import type { AuthEmailOtpPurpose } from "./types";
 
 export type AuthOtpRow = {
@@ -21,7 +25,7 @@ export type SignupPendingRow = {
 };
 
 function otpServerToken(): string | null {
-  return process.env.YIKE_OTP_SERVER_TOKEN?.trim() || null;
+  return getOtpServerTokenFromEnv();
 }
 
 function createOptionalAdminClient(): SupabaseClient | null {
@@ -40,9 +44,7 @@ export function createAuthEmailOtpDbClient(): SupabaseClient | null {
 }
 
 function token(): string {
-  const t = otpServerToken();
-  if (!t) throw new Error("YIKE_OTP_SERVER_TOKEN not configured");
-  return t;
+  return requireOtpServerToken();
 }
 
 export async function emailIsRegistered(

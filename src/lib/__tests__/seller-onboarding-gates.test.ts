@@ -23,7 +23,7 @@ test("incomplete seller must complete verification before listing", () => {
   assert.equal(mustCompleteSellerVerification(profile), true);
 });
 
-test("seller with phone and profile can enter listing flow before manual review approval", () => {
+test("seller with phone and profile can enter listing flow while details are checked", () => {
   const profile = {
     email_verified: true,
     phone_verified: true,
@@ -38,6 +38,25 @@ test("seller with phone and profile can enter listing flow before manual review 
   };
   assert.equal(isSellerReadyToList(profile), true);
   assert.equal(mustCompleteSellerVerification(profile), false);
+});
+
+test("buildSellerTrustProgress uses customer-friendly review step label", () => {
+  const steps = buildSellerTrustProgress(
+    {
+      email_verified: true,
+      phone_verified: true,
+      phone_verified_at: new Date().toISOString(),
+      seller_profile_completed_at: new Date().toISOString(),
+      residential_address: "12 Example Rd",
+      residential_state: "Lagos",
+      date_of_birth: "1990-01-01",
+      verification_status: "pending",
+      verification_submitted_at: new Date().toISOString(),
+    },
+    { emailVerified: true }
+  );
+  const review = steps.find((s) => s.id === "seller_review");
+  assert.equal(review?.label, "Checking your details");
 });
 
 test("buildSellerTrustProgress points to phone when email done but phone missing", () => {

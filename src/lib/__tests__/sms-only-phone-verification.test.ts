@@ -52,6 +52,15 @@ test("feature flags do not expose WhatsApp OTP toggles", () => {
   assert.doesNotMatch(src, /ENABLE_WHATSAPP_OTP/);
 });
 
+test("Sendchamp verification uses native HTTPS client instead of fetch", () => {
+  const src = readFileSync(
+    path.join(repoRoot, "src/lib/notifications/providers/sendchamp-verification.ts"),
+    "utf8",
+  );
+  assert.match(src, /sendchampJsonPost/);
+  assert.doesNotMatch(src, /await fetch\(/);
+});
+
 test("auth phone send rejects whatsapp channel", () => {
   const src = readFileSync(
     path.join(repoRoot, "src/app/api/auth/phone/send/route.ts"),

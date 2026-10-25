@@ -125,7 +125,8 @@ export default async function EditListingPage({
             power_kva: attrs.power_kva,
             capacity_liters: attrs.capacity_liters,
             battery_capacity_ah: attrs.battery_capacity_ah,
-            warranty_months: attrs.warranty_months,
+            warranty_status: attrs.warranty_status,
+            warranty_note: attrs.warranty_note,
           }}
         />
       </SellerFlowShell>
