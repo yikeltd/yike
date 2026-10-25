@@ -62,6 +62,44 @@ async function resolveTestUserId(admin: SupabaseClient): Promise<{ userId: strin
   return { userId: data.user.id, ephemeral: true };
 }
 
+async function setTestUsername(admin: SupabaseClient, userId: string, username: string) {
+  const { error: rpcError } = await admin.rpc("yike_profile_set_username", {
+    p_user_id: userId,
+    p_username: username,
+    p_allow_change: true,
+  });
+  if (!rpcError?.message?.includes("Could not find the function")) {
+    if (rpcError) throw new Error(rpcError.message);
+    return;
+  }
+  const { error } = await admin.from("profiles").update({ username }).eq("id", userId);
+  if (error) throw new Error(error.message);
+}
+
+async function ycTransferRpcReady(admin: SupabaseClient): Promise<boolean> {
+  const { error } = await admin.rpc("yike_coin_peer_transfer", {
+    p_sender_id: "00000000-0000-0000-0000-000000000001",
+    p_recipient_username: "missing_user_xyz",
+    p_amount_coins: 1,
+    p_idempotency_key: "dev-integration:probe",
+  });
+  if (error?.message?.includes("Could not find the function")) return false;
+  return true;
+}
+
+async function ycAdminGrantRpcReady(admin: SupabaseClient): Promise<boolean> {
+  const { error } = await admin.rpc("yike_coin_admin_grant", {
+    p_actor_id: "00000000-0000-0000-0000-000000000001",
+    p_recipient_id: "00000000-0000-0000-0000-000000000002",
+    p_amount_coins: 1,
+    p_reason: "probe",
+    p_idempotency_key: "dev-integration:grant-probe",
+    p_grant_reference: "PROBE",
+  });
+  if (error?.message?.includes("Could not find the function")) return false;
+  return true;
+}
+
 async function cleanupDevIntegrationData(admin: SupabaseClient, userId: string) {
   const { data: sessions } = await admin
     .from("video_call_sessions")
@@ -73,6 +111,11 @@ async function cleanupDevIntegrationData(admin: SupabaseClient, userId: string) 
     await admin.from("video_call_sessions").delete().in("id", sessionIds);
   }
   await admin.from("video_call_daily_usage").delete().eq("user_id", userId);
+  await admin.from("yike_coin_transfers").delete().or(`sender_id.eq.${userId},recipient_id.eq.${userId}`);
+  await admin
+    .from("yike_coin_admin_grants")
+    .delete()
+    .or(`recipient_id.eq.${userId},actor_id.eq.${userId}`);
   await admin
     .from("yike_coin_purchase_entitlements")
     .delete()
@@ -398,27 +441,18 @@ test(
   { skip: integrationEnabled ? false : "dev integration not enabled" },
   async () => {
     const admin = adminClient()!;
-    const { error: probeErr } = await admin.rpc("yike_coin_peer_transfer", {
-      p_sender_id: "00000000-0000-0000-0000-000000000000",
-      p_recipient_username: "nobody",
-      p_amount_coins: 1,
-      p_idempotency_key: "probe",
-    });
-    if (probeErr?.message?.includes("Could not find the function")) {
-      return;
+    if (!(await ycTransferRpcReady(admin))) {
+      assert.fail("yike_coin_peer_transfer RPC missing — apply 20261026120000_yc_transfers_admin_grants.sql");
     }
 
     const senderId = await resolveEphemeralTestUserId(admin);
     const recipientId = await resolveEphemeralTestUserId(admin);
     const recipientUsername = `dev_${randomUUID().slice(0, 8)}`;
     try {
-      await admin
-        .from("profiles")
-        .update({ username: recipientUsername })
-        .eq("id", recipientId);
+      await setTestUsername(admin, recipientId, recipientUsername);
 
       await admin.rpc("yike_ensure_coin_account", { p_user_id: senderId });
-      await admin.rpc("yike_coin_credit", {
+      const fund = await admin.rpc("yike_coin_credit", {
         p_user_id: senderId,
         p_amount_coins: 50,
         p_reference: `DEV-FUND-${randomUUID().slice(0, 8)}`,
@@ -428,13 +462,9 @@ test(
         p_reason: "fund transfer test",
         p_metadata: {},
       });
+      assert.ok(!fund.error, fund.error?.message);
 
-      await admin
-        .from("profiles")
-        .update({ username: `sender_${randomUUID().slice(0, 6)}` })
-        .eq("id", senderId);
-
-      const idem = `dev-integration:transfer:${randomUUID()}`;
+      const idem = `dev-integration:atomic:${randomUUID()}`;
       const first = await admin.rpc("yike_coin_peer_transfer", {
         p_sender_id: senderId,
         p_recipient_username: recipientUsername,
@@ -459,8 +489,228 @@ test(
         .eq("user_id", recipientId)
         .single();
       assert.equal(Number(recipientAcct?.balance_coins ?? 0), 12);
+
+      const { data: senderAcct } = await admin
+        .from("yike_coin_accounts")
+        .select("balance_coins")
+        .eq("user_id", senderId)
+        .single();
+      assert.equal(Number(senderAcct?.balance_coins ?? 0), 38);
+
+      const { count: transferRows } = await admin
+        .from("yike_coin_transfers")
+        .select("id", { count: "exact", head: true })
+        .eq("idempotency_key", idem);
+      assert.equal(transferRows, 1);
     } finally {
       await deleteEphemeralUser(admin, senderId);
+      await deleteEphemeralUser(admin, recipientId);
+    }
+  }
+);
+
+test(
+  "peer transfer rejects self-transfer and insufficient balance",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    if (!(await ycTransferRpcReady(admin))) {
+      assert.fail("yike_coin_peer_transfer RPC missing — apply migration");
+    }
+    const userId = await resolveEphemeralTestUserId(admin);
+    const uname = `self_${randomUUID().slice(0, 8)}`;
+    try {
+      await setTestUsername(admin, userId, uname);
+      const self = await admin.rpc("yike_coin_peer_transfer", {
+        p_sender_id: userId,
+        p_recipient_username: uname,
+        p_amount_coins: 1,
+        p_idempotency_key: `dev-integration:self:${randomUUID()}`,
+      });
+      assert.match(self.error?.message ?? "", /self_transfer/);
+
+      await admin.rpc("yike_coin_credit", {
+        p_user_id: userId,
+        p_amount_coins: 2,
+        p_reference: `DEV-FUND-${randomUUID().slice(0, 8)}`,
+        p_idempotency_key: `dev-integration:fund:${randomUUID()}`,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "fund",
+        p_metadata: {},
+      });
+
+      const recipientId = await resolveEphemeralTestUserId(admin);
+      const recipientUsername = `peer_${randomUUID().slice(0, 8)}`;
+      await setTestUsername(admin, recipientId, recipientUsername);
+
+      const broke = await admin.rpc("yike_coin_peer_transfer", {
+        p_sender_id: userId,
+        p_recipient_username: recipientUsername,
+        p_amount_coins: 50,
+        p_idempotency_key: `dev-integration:transfer:${randomUUID()}`,
+      });
+      assert.match(broke.error?.message ?? "", /insufficient_balance/);
+
+      await deleteEphemeralUser(admin, recipientId);
+    } finally {
+      await deleteEphemeralUser(admin, userId);
+    }
+  }
+);
+
+test(
+  "peer transfer idempotency mismatch rejects different amount",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    if (!(await ycTransferRpcReady(admin))) {
+      assert.fail("yike_coin_peer_transfer RPC missing — apply migration");
+    }
+    const senderId = await resolveEphemeralTestUserId(admin);
+    const recipientId = await resolveEphemeralTestUserId(admin);
+    const recipientUsername = `mm_${randomUUID().slice(0, 8)}`;
+    const idem = `dev-integration:transfer:${randomUUID()}`;
+    try {
+      await setTestUsername(admin, recipientId, recipientUsername);
+      await admin.rpc("yike_coin_credit", {
+        p_user_id: senderId,
+        p_amount_coins: 20,
+        p_reference: `DEV-FUND-${randomUUID().slice(0, 8)}`,
+        p_idempotency_key: `dev-integration:fund:${randomUUID()}`,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "fund",
+        p_metadata: {},
+      });
+      await admin.rpc("yike_coin_peer_transfer", {
+        p_sender_id: senderId,
+        p_recipient_username: recipientUsername,
+        p_amount_coins: 5,
+        p_idempotency_key: idem,
+      });
+      const mismatch = await admin.rpc("yike_coin_peer_transfer", {
+        p_sender_id: senderId,
+        p_recipient_username: recipientUsername,
+        p_amount_coins: 6,
+        p_idempotency_key: idem,
+      });
+      assert.match(mismatch.error?.message ?? "", /idempotency_key_mismatch/);
+    } finally {
+      await deleteEphemeralUser(admin, senderId);
+      await deleteEphemeralUser(admin, recipientId);
+    }
+  }
+);
+
+test(
+  "concurrent peer transfers cannot double-spend sender balance",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    if (!(await ycTransferRpcReady(admin))) {
+      assert.fail("yike_coin_peer_transfer RPC missing — apply migration");
+    }
+    const senderId = await resolveEphemeralTestUserId(admin);
+    const recipientA = await resolveEphemeralTestUserId(admin);
+    const recipientB = await resolveEphemeralTestUserId(admin);
+    const userA = `ca_${randomUUID().slice(0, 8)}`;
+    const userB = `cb_${randomUUID().slice(0, 8)}`;
+    try {
+      await setTestUsername(admin, recipientA, userA);
+      await setTestUsername(admin, recipientB, userB);
+      await admin.rpc("yike_coin_credit", {
+        p_user_id: senderId,
+        p_amount_coins: 10,
+        p_reference: `DEV-FUND-${randomUUID().slice(0, 8)}`,
+        p_idempotency_key: `dev-integration:fund:${randomUUID()}`,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "fund",
+        p_metadata: {},
+      });
+
+      const [t1, t2] = await Promise.all([
+        admin.rpc("yike_coin_peer_transfer", {
+          p_sender_id: senderId,
+          p_recipient_username: userA,
+          p_amount_coins: 10,
+          p_idempotency_key: `dev-integration:transfer:${randomUUID()}`,
+        }),
+        admin.rpc("yike_coin_peer_transfer", {
+          p_sender_id: senderId,
+          p_recipient_username: userB,
+          p_amount_coins: 10,
+          p_idempotency_key: `dev-integration:transfer:${randomUUID()}`,
+        }),
+      ]);
+
+      const okCount = [t1, t2].filter((r) => !r.error).length;
+      assert.ok(okCount <= 1, "only one concurrent full-balance transfer may succeed");
+
+      const { data: senderAcct } = await admin
+        .from("yike_coin_accounts")
+        .select("balance_coins")
+        .eq("user_id", senderId)
+        .single();
+      assert.ok(Number(senderAcct?.balance_coins ?? 0) >= 0);
+    } finally {
+      await deleteEphemeralUser(admin, senderId);
+      await deleteEphemeralUser(admin, recipientA);
+      await deleteEphemeralUser(admin, recipientB);
+    }
+  }
+);
+
+test(
+  "admin grant credits once with audit row and idempotent replay",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    if (!(await ycAdminGrantRpcReady(admin))) {
+      assert.fail("yike_coin_admin_grant RPC missing — apply migration");
+    }
+    const actorId = await resolveEphemeralTestUserId(admin);
+    const recipientId = await resolveEphemeralTestUserId(admin);
+    const idem = `dev-integration:grant:${randomUUID()}`;
+    const ref = `GRT-${randomUUID().slice(0, 8)}`;
+    try {
+      const first = await admin.rpc("yike_coin_admin_grant", {
+        p_actor_id: actorId,
+        p_recipient_id: recipientId,
+        p_amount_coins: 15,
+        p_reason: "dev integration grant",
+        p_idempotency_key: idem,
+        p_grant_reference: ref,
+      });
+      assert.ok(!first.error, first.error?.message);
+
+      const replay = await admin.rpc("yike_coin_admin_grant", {
+        p_actor_id: actorId,
+        p_recipient_id: recipientId,
+        p_amount_coins: 15,
+        p_reason: "dev integration grant",
+        p_idempotency_key: idem,
+        p_grant_reference: ref,
+      });
+      assert.ok(!replay.error, replay.error?.message);
+      const replayRow = Array.isArray(replay.data) ? replay.data[0] : replay.data;
+      assert.equal(Boolean(replayRow?.already_applied), true);
+
+      const { count } = await admin
+        .from("yike_coin_admin_grants")
+        .select("id", { count: "exact", head: true })
+        .eq("idempotency_key", idem);
+      assert.equal(count, 1);
+
+      const { data: acct } = await admin
+        .from("yike_coin_accounts")
+        .select("balance_coins")
+        .eq("user_id", recipientId)
+        .single();
+      assert.equal(Number(acct?.balance_coins ?? 0), 15);
+    } finally {
+      await deleteEphemeralUser(admin, actorId);
       await deleteEphemeralUser(admin, recipientId);
     }
   }

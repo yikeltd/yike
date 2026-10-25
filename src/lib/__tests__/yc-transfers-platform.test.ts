@@ -42,6 +42,25 @@ test("username lookup selects only public profile fields", () => {
   assert.doesNotMatch(lookup, /select\("[^"]*email/);
 });
 
+test("username change guard migration blocks direct profile updates", () => {
+  const sql = fs.readFileSync(
+    path.resolve(process.cwd(), "supabase/migrations/20261026140000_profile_username_change_guard.sql"),
+    "utf-8",
+  );
+  assert.match(sql, /yike_profile_guard_username_update/);
+  assert.match(sql, /yike_profile_set_username/);
+  assert.match(sql, /REVOKE ALL ON FUNCTION public\.yike_profile_set_username/);
+});
+
+test("signup route uses shared username rules", () => {
+  const signup = fs.readFileSync(
+    path.resolve(process.cwd(), "src/app/api/auth/signup/route.ts"),
+    "utf-8",
+  );
+  assert.match(signup, /validateUsername/);
+  assert.doesNotMatch(signup, /USERNAME_RE/);
+});
+
 test("ledger labels distinguish transfer grant and top-up", () => {
   const labels = fs.readFileSync(
     path.resolve(process.cwd(), "src/lib/yike-coins/ledger-labels.ts"),
