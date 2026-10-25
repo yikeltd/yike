@@ -50,20 +50,29 @@ export async function POST(request: Request) {
 
   const idempotencyKey = `admin_adjust:${reference}`;
 
+  const admin = createAdminClient();
+  if (!admin) return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+
   const result =
     direction === "credit"
-      ? await creditYikeCoins({
-          userId,
-          amountCoins: amountCoins!,
-          reference: `ADM-${reference}`,
-          idempotencyKey,
-          serviceCode: "wallet_topup",
-          reason: `Admin adjustment: ${reason}`,
-          metadata: {
-            admin_actor_id: auth.user.id,
-            adjustment_reference: reference,
-          },
-        })
+      ? await (async () => {
+          const { executeAdminYcGrant } = await import("@/lib/yike-coins/transfer");
+          const grant = await executeAdminYcGrant(admin, {
+            actorId: auth.user.id,
+            recipientId: userId,
+            amountCoins: amountCoins!,
+            reason,
+            idempotencyKey,
+            grantReference: `ADM-${reference}`,
+          });
+          if (!grant.ok) return grant;
+          return {
+            ok: true as const,
+            ledgerId: grant.ledgerId,
+            balanceAfter: grant.balanceAfter,
+            alreadyApplied: grant.alreadyApplied,
+          };
+        })()
       : await debitYikeCoins({
           userId,
           amountCoins: amountCoins!,

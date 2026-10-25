@@ -394,6 +394,79 @@ test(
 );
 
 test(
+  "peer transfer moves YC atomically between ephemeral users",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    const { error: probeErr } = await admin.rpc("yike_coin_peer_transfer", {
+      p_sender_id: "00000000-0000-0000-0000-000000000000",
+      p_recipient_username: "nobody",
+      p_amount_coins: 1,
+      p_idempotency_key: "probe",
+    });
+    if (probeErr?.message?.includes("Could not find the function")) {
+      return;
+    }
+
+    const senderId = await resolveEphemeralTestUserId(admin);
+    const recipientId = await resolveEphemeralTestUserId(admin);
+    const recipientUsername = `dev_${randomUUID().slice(0, 8)}`;
+    try {
+      await admin
+        .from("profiles")
+        .update({ username: recipientUsername })
+        .eq("id", recipientId);
+
+      await admin.rpc("yike_ensure_coin_account", { p_user_id: senderId });
+      await admin.rpc("yike_coin_credit", {
+        p_user_id: senderId,
+        p_amount_coins: 50,
+        p_reference: `DEV-FUND-${randomUUID().slice(0, 8)}`,
+        p_idempotency_key: `dev-integration:fund:${randomUUID()}`,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "fund transfer test",
+        p_metadata: {},
+      });
+
+      await admin
+        .from("profiles")
+        .update({ username: `sender_${randomUUID().slice(0, 6)}` })
+        .eq("id", senderId);
+
+      const idem = `dev-integration:transfer:${randomUUID()}`;
+      const first = await admin.rpc("yike_coin_peer_transfer", {
+        p_sender_id: senderId,
+        p_recipient_username: recipientUsername,
+        p_amount_coins: 12,
+        p_idempotency_key: idem,
+      });
+      assert.ok(!first.error, first.error?.message);
+
+      const replay = await admin.rpc("yike_coin_peer_transfer", {
+        p_sender_id: senderId,
+        p_recipient_username: recipientUsername,
+        p_amount_coins: 12,
+        p_idempotency_key: idem,
+      });
+      assert.ok(!replay.error, replay.error?.message);
+      const replayRow = Array.isArray(replay.data) ? replay.data[0] : replay.data;
+      assert.equal(Boolean(replayRow?.already_applied), true);
+
+      const { data: recipientAcct } = await admin
+        .from("yike_coin_accounts")
+        .select("balance_coins")
+        .eq("user_id", recipientId)
+        .single();
+      assert.equal(Number(recipientAcct?.balance_coins ?? 0), 12);
+    } finally {
+      await deleteEphemeralUser(admin, senderId);
+      await deleteEphemeralUser(admin, recipientId);
+    }
+  }
+);
+
+test(
   "video free allowance concurrent consume respects limit",
   { skip: integrationEnabled ? false : "dev integration not enabled" },
   async () => {

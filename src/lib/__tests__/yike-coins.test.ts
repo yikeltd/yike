@@ -5,6 +5,7 @@ import {
   YIKE_COINS_TIMEZONE,
   ngnToCoins,
   formatYikeCoins,
+  formatYikeCoinsLong,
 } from "@/lib/yike-coins/constants";
 
 test("ngnToCoins uses 1:1 nominal mapping", () => {
@@ -12,9 +13,9 @@ test("ngnToCoins uses 1:1 nominal mapping", () => {
   assert.equal(ngnToCoins(0), 0);
 });
 
-test("formatYikeCoins uses official product name", () => {
-  assert.match(formatYikeCoins(2), /Yike Coins/);
-  assert.match(formatYikeCoins(1), /Yike Coin/);
+test("formatYikeCoins uses YC abbreviation in wallet UI", () => {
+  assert.match(formatYikeCoins(2), /2 YC/);
+  assert.match(formatYikeCoinsLong(1), /Yike Coin/);
 });
 
 test("free video allowance constant matches brief", () => {

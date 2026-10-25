@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { formatLedgerEntryLabel } from "@/lib/yike-coins/ledger-labels";
+import { formatYc } from "@/lib/yike-coins/constants";
 
 type LedgerEntry = {
   id: string;
@@ -11,6 +13,7 @@ type LedgerEntry = {
   reason: string | null;
   reference: string | null;
   service_code: string | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
 };
 
@@ -60,7 +63,7 @@ export function YikeCoinsLedgerClient() {
       {entries.map((e) => (
         <li key={e.id} className="flex items-start justify-between gap-3 px-4 py-3 text-sm">
           <div className="min-w-0">
-            <p className="font-semibold text-navy">{e.reason ?? e.service_code ?? e.direction}</p>
+            <p className="font-semibold text-navy">{formatLedgerEntryLabel(e)}</p>
             <p className="text-[11px] text-muted">
               {new Date(e.created_at).toLocaleString("en-NG")}
               {e.reference ? ` · ${e.reference}` : ""}
@@ -74,9 +77,9 @@ export function YikeCoinsLedgerClient() {
               )}
             >
               {e.direction === "credit" ? "+" : "−"}
-              {e.amount_coins}
+              {e.amount_coins.toLocaleString("en-NG")} YC
             </p>
-            <p className="text-[10px] text-muted">Bal {e.balance_after}</p>
+            <p className="text-[10px] text-muted">Bal {formatYc(e.balance_after)}</p>
           </div>
         </li>
       ))}

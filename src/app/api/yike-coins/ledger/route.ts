@@ -27,7 +27,9 @@ export async function GET(request: Request) {
 
   const { data: entries, error } = await supabase
     .from("yike_coin_ledger")
-    .select("id, direction, amount_coins, balance_after, reason, reference, service_code, created_at")
+    .select(
+      "id, direction, amount_coins, balance_after, reason, reference, service_code, metadata, created_at"
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(limit);

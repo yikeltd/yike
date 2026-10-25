@@ -7,6 +7,9 @@ import { YikeCoinsLedgerClient } from "./ledger-client";
 import { getYikeCoinBalance } from "@/lib/yike-coins/ledger";
 import { getVideoCallPreflight } from "@/lib/video-calls/allowance";
 import { YikeCoinsTopupClient } from "./topup-client";
+import { UsernameClaimClient } from "./username-claim-client";
+import { SendYcClient } from "./send-yc-client";
+import { normalizeUsername } from "@/lib/username/rules";
 
 export const metadata = {
   title: "Yike Coins | Yike",
@@ -29,12 +32,23 @@ export default async function YikeCoinsAccountPage() {
   const balance = await getYikeCoinBalance(user.id);
   const video = await getVideoCallPreflight(user.id);
 
+  const { data: profileRow } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", user.id)
+    .maybeSingle();
+  const hasUsername = Boolean(
+    profileRow?.username && normalizeUsername(profileRow.username).length >= 3
+  );
+
   return (
     <main className="mx-auto max-w-lg px-4 py-8">
-      <h1 className="text-xl font-black text-navy">Yike Coins</h1>
+      <h1 className="text-xl font-black text-navy">Yike Coins wallet</h1>
       <p className="mt-1 text-sm text-navy/60">
-        One balance for approved Yike services. {formatCoinNairaEquivalent(1).replace("1 ", "")}
+        YC powers eligible Yike services. {formatCoinNairaEquivalent(1).replace("1 ", "")}
       </p>
+
+      <UsernameClaimClient />
 
       <div className="mt-6 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
         <p className="text-xs font-bold uppercase tracking-wide text-muted">Available balance</p>
@@ -60,6 +74,8 @@ export default async function YikeCoinsAccountPage() {
 
       <YikeCoinsTopupClient />
 
+      <SendYcClient balanceCoins={balance} hasUsername={hasUsername} />
+
       <div className="mt-8">
         <h2 className="text-sm font-black text-navy">Transaction history</h2>
         <div className="mt-3">
@@ -75,8 +91,9 @@ export default async function YikeCoinsAccountPage() {
       </Link>
 
       <p className="mt-6 text-xs leading-relaxed text-navy/55">
-        Yike Coins are platform credits for eligible services — not cash, not transferable, and not
-        automatically redeemable. Payment provider fees may apply at checkout.
+        YC (Yike Coins) are platform credits for eligible services — not cash and not automatically
+        redeemable for Naira. You may send YC to other Yike users by username. Payment provider fees
+        may apply at Paystack checkout.
       </p>
 
       <Link href="/conversations" className="pressable mt-4 inline-block text-sm font-bold text-gold-dark">
