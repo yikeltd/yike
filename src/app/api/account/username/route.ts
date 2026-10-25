@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { setProfileUsername } from "@/lib/username/profile-username";
+import { nextUsernameChangeAt, setProfileUsername } from "@/lib/username/profile-username";
 import { normalizeUsername } from "@/lib/username/rules";
 
 export const runtime = "nodejs";
@@ -22,10 +22,14 @@ export async function GET() {
 
   const username = profile?.username ? normalizeUsername(profile.username) : null;
 
+  const usernameUpdatedAt = profile?.username_updated_at ?? null;
+  const nextChangeEligibleAt = nextUsernameChangeAt(usernameUpdatedAt)?.toISOString() ?? null;
+
   return NextResponse.json({
     username,
     needsUsername: !username,
-    usernameUpdatedAt: profile?.username_updated_at ?? null,
+    usernameUpdatedAt,
+    nextChangeEligibleAt,
   });
 }
 

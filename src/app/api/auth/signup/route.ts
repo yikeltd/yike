@@ -13,6 +13,7 @@ import {
   isUsernameAvailable,
 } from "@/lib/auth/signup-rpc";
 import { allocateSignupUsername } from "@/lib/auth/signup-username";
+import { validateUsername } from "@/lib/username/rules";
 import { normalizeNigerianPhone, parseNigerianPhone } from "@/lib/phone";
 import { hashPin } from "@/lib/pin";
 import { PIN_RE, pinPolicyError } from "@/lib/pin-policy";
@@ -32,8 +33,6 @@ import {
 } from "@/lib/otp/server-token";
 
 export const runtime = "nodejs";
-
-const USERNAME_RE = /^[a-zA-Z0-9_]{3,24}$/;
 
 export async function POST(request: Request) {
   await hydrateOtpServerTokenForLocalDev();
@@ -123,12 +122,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not verify username" }, { status: 503 });
     }
     username = allocated;
-  } else if (!USERNAME_RE.test(username)) {
-    return NextResponse.json(
-      { error: "Username: 3–24 letters, numbers, or underscores" },
-      { status: 400 }
-    );
   } else {
+    const usernameCheck = validateUsername(username);
+    if (!usernameCheck.ok) {
+      return NextResponse.json({ error: usernameCheck.error }, { status: 400 });
+    }
+    username = usernameCheck.username;
     const usernameFree = await isUsernameAvailable(username);
     if (usernameFree === null) {
       return NextResponse.json({ error: "Could not verify username" }, { status: 503 });
