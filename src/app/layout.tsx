@@ -233,7 +233,9 @@ export default function RootLayout({
             <Suspense fallback={null}>
               <AnalyticsProvider />
             </Suspense>
-            <ScrollRetention />
+            <Suspense fallback={null}>
+              <ScrollRetention />
+            </Suspense>
             <GuestFavoriteSync />
             <UserActivitySync />
             <PendingIntentHandler />
