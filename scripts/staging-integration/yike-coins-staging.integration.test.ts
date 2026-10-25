@@ -74,6 +74,11 @@ async function cleanupDevIntegrationData(admin: SupabaseClient, userId: string) 
   }
   await admin.from("video_call_daily_usage").delete().eq("user_id", userId);
   await admin
+    .from("yike_coin_purchase_entitlements")
+    .delete()
+    .eq("user_id", userId)
+    .like("idempotency_key", "dev-integration:%");
+  await admin
     .from("yike_coin_ledger")
     .delete()
     .eq("user_id", userId)
@@ -104,16 +109,15 @@ test(
   { skip: integrationEnabled ? false : "dev integration not enabled" },
   async () => {
     const admin = adminClient()!;
-    for (const table of [
-      "yike_coin_accounts",
-      "yike_coin_ledger",
-      "marketplace_conversations",
-      "video_call_daily_usage",
-    ]) {
-      const { error } =
-        table === "yike_coin_accounts"
-          ? await admin.from(table).select("user_id").limit(1)
-          : await admin.from(table).select("id").limit(1);
+    const probes: { table: string; select: string }[] = [
+      { table: "yike_coin_accounts", select: "user_id" },
+      { table: "yike_coin_ledger", select: "id" },
+      { table: "yike_coin_purchase_entitlements", select: "id" },
+      { table: "marketplace_conversations", select: "id" },
+      { table: "video_call_daily_usage", select: "user_id, usage_date" },
+    ];
+    for (const { table, select } of probes) {
+      const { error } = await admin.from(table).select(select).limit(1);
       assert.ok(!error, `${table}: ${error?.message ?? "ok"}`);
     }
   }
@@ -230,6 +234,162 @@ test(
       p_metadata: {},
     });
     assert.ok(error, "expected permission denied for anon/authenticated debit RPC");
+  }
+);
+
+test(
+  "credit idempotency key mismatch is rejected",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    const userId = await resolveEphemeralTestUserId(admin);
+    try {
+      const idempotencyKey = `dev-integration:credit:${randomUUID()}`;
+      const reference = `DEV-CR-${randomUUID().slice(0, 8)}`;
+
+      await admin.rpc("yike_ensure_coin_account", { p_user_id: userId });
+      const first = await admin.rpc("yike_coin_credit", {
+        p_user_id: userId,
+        p_amount_coins: 3,
+        p_reference: reference,
+        p_idempotency_key: idempotencyKey,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "dev integration test",
+        p_metadata: {},
+      });
+      assert.ok(!first.error, first.error?.message);
+
+      const mismatch = await admin.rpc("yike_coin_credit", {
+        p_user_id: userId,
+        p_amount_coins: 99,
+        p_reference: reference,
+        p_idempotency_key: idempotencyKey,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "dev mismatch attempt",
+        p_metadata: {},
+      });
+      assert.match(mismatch.error?.message ?? "", /idempotency_key_mismatch/);
+    } finally {
+      await deleteEphemeralUser(admin, userId);
+    }
+  }
+);
+
+test(
+  "debit replay is idempotent and insufficient balance fails",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    const userId = await resolveEphemeralTestUserId(admin);
+    try {
+      await admin.rpc("yike_ensure_coin_account", { p_user_id: userId });
+      await admin.rpc("yike_coin_credit", {
+        p_user_id: userId,
+        p_amount_coins: 4,
+        p_reference: `DEV-FUND-${randomUUID().slice(0, 8)}`,
+        p_idempotency_key: `dev-integration:fund:${randomUUID()}`,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "dev fund",
+        p_metadata: {},
+      });
+
+      const idempotencyKey = `dev-integration:debit:${randomUUID()}`;
+      const reference = `DEV-DB-${randomUUID().slice(0, 8)}`;
+      const debitArgs = {
+        p_user_id: userId,
+        p_amount_coins: 4,
+        p_reference: reference,
+        p_idempotency_key: idempotencyKey,
+        p_service_code: "video_call_connected",
+        p_reason: "dev debit",
+        p_metadata: {},
+      };
+
+      const first = await admin.rpc("yike_coin_debit", debitArgs);
+      assert.ok(!first.error, first.error?.message);
+      const replay = await admin.rpc("yike_coin_debit", debitArgs);
+      assert.ok(!replay.error, replay.error?.message);
+      const replayRow = Array.isArray(replay.data) ? replay.data[0] : replay.data;
+      assert.equal(Boolean(replayRow?.already_applied), true);
+
+      const broke = await admin.rpc("yike_coin_debit", {
+        ...debitArgs,
+        p_amount_coins: 1,
+        p_reference: `DEV-DB-${randomUUID().slice(0, 8)}`,
+        p_idempotency_key: `dev-integration:debit:${randomUUID()}`,
+      });
+      assert.match(broke.error?.message ?? "", /insufficient_balance/);
+    } finally {
+      await deleteEphemeralUser(admin, userId);
+    }
+  }
+);
+
+test(
+  "reverse_debit restores balance once per reversal key",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    const userId = await resolveEphemeralTestUserId(admin);
+    try {
+      await admin.rpc("yike_ensure_coin_account", { p_user_id: userId });
+      await admin.rpc("yike_coin_credit", {
+        p_user_id: userId,
+        p_amount_coins: 7,
+        p_reference: `DEV-FUND-${randomUUID().slice(0, 8)}`,
+        p_idempotency_key: `dev-integration:fund:${randomUUID()}`,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "fund before debit",
+        p_metadata: {},
+      });
+
+      const debitKey = `dev-integration:debit:${randomUUID()}`;
+      const reference = `DEV-DB-${randomUUID().slice(0, 8)}`;
+      const debit = await admin.rpc("yike_coin_debit", {
+        p_user_id: userId,
+        p_amount_coins: 7,
+        p_reference: reference,
+        p_idempotency_key: debitKey,
+        p_service_code: "video_call_connected",
+        p_reason: "dev debit for reversal",
+        p_metadata: {},
+      });
+      assert.ok(!debit.error, debit.error?.message);
+
+      const reversalKey = `dev-integration:reversal:${randomUUID()}`;
+      const rev1 = await admin.rpc("yike_coin_reverse_debit", {
+        p_user_id: userId,
+        p_original_idempotency_key: debitKey,
+        p_reversal_idempotency_key: reversalKey,
+        p_reason: "dev reversal",
+      });
+      assert.ok(!rev1.error, rev1.error?.message);
+      const revRow1 = Array.isArray(rev1.data) ? rev1.data[0] : rev1.data;
+      assert.equal(Boolean(revRow1?.already_applied), false);
+
+      const rev2 = await admin.rpc("yike_coin_reverse_debit", {
+        p_user_id: userId,
+        p_original_idempotency_key: debitKey,
+        p_reversal_idempotency_key: reversalKey,
+        p_reason: "dev reversal replay",
+      });
+      assert.ok(!rev2.error, rev2.error?.message);
+      const revRow2 = Array.isArray(rev2.data) ? rev2.data[0] : rev2.data;
+      assert.equal(Boolean(revRow2?.already_applied), true);
+
+      const { data: acct } = await admin
+        .from("yike_coin_accounts")
+        .select("balance_coins")
+        .eq("user_id", userId)
+        .single();
+      assert.equal(Number(acct?.balance_coins ?? 0), 7);
+    } finally {
+      await deleteEphemeralUser(admin, userId);
+    }
   }
 );
 
