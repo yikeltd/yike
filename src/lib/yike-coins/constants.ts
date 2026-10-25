@@ -24,9 +24,20 @@ export function formatYikeCoins(amount: number): string {
   return formatYc(amount);
 }
 
+/** User-facing wallet abbreviation (plain text, never HTML entities). */
+export const YIKE_COIN_ABBR = "YC";
+
+/** Normalize legacy/double-encoded YC labels from ledger or copy. */
+export function normalizeYcText(text: string): string {
+  return text
+    .replace(/Y&#x43;/gi, YIKE_COIN_ABBR)
+    .replace(/Y&#67;/gi, YIKE_COIN_ABBR)
+    .replace(/Y&(?:#x3[Cc]|#60);?/gi, YIKE_COIN_ABBR);
+}
+
 /** User-facing wallet abbreviation */
 export function formatYc(amount: number): string {
-  return `${amount.toLocaleString("en-NG")} YC`;
+  return `${amount.toLocaleString("en-NG")} ${YIKE_COIN_ABBR}`;
 }
 
 /** Full product label where explanation helps */

@@ -98,11 +98,7 @@ export function SendYcClient({ balanceCoins, hasUsername }: Props) {
   }
 
   if (!hasUsername) {
-    return (
-      <p className="mt-4 text-sm text-navy/60">
-        Claim a username above to send YC to others.
-      </p>
-    );
+    return null;
   }
 
   return (

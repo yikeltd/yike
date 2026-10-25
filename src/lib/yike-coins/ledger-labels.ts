@@ -1,3 +1,5 @@
+import { normalizeYcText } from "@/lib/yike-coins/constants";
+
 type LedgerRow = {
   direction: "credit" | "debit";
   amount_coins: number;
@@ -24,7 +26,7 @@ export function formatLedgerEntryLabel(entry: LedgerRow): string {
   if (code === "wallet_topup") {
     return "Top-up (Paystack)";
   }
-  if (entry.reason?.trim()) return entry.reason.trim();
-  if (code) return code.replace(/_/g, " ");
+  if (entry.reason?.trim()) return normalizeYcText(entry.reason.trim());
+  if (code) return normalizeYcText(code.replace(/_/g, " "));
   return entry.direction === "credit" ? "YC credit" : "YC debit";
 }

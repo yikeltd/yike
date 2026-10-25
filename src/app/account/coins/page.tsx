@@ -7,7 +7,7 @@ import { YikeCoinsLedgerClient } from "./ledger-client";
 import { getYikeCoinBalance } from "@/lib/yike-coins/ledger";
 import { getVideoCallPreflight } from "@/lib/video-calls/allowance";
 import { YikeCoinsTopupClient } from "./topup-client";
-import { UsernameClaimClient } from "./username-claim-client";
+import { WalletUsernameSection } from "./wallet-username-section";
 import { SendYcClient } from "./send-yc-client";
 import { normalizeUsername } from "@/lib/username/rules";
 
@@ -37,18 +37,18 @@ export default async function YikeCoinsAccountPage() {
     .select("username")
     .eq("id", user.id)
     .maybeSingle();
-  const hasUsername = Boolean(
-    profileRow?.username && normalizeUsername(profileRow.username).length >= 3
-  );
+  const username = profileRow?.username ? normalizeUsername(profileRow.username) : null;
+  const hasUsername = Boolean(username && username.length >= 3);
 
   return (
     <main className="mx-auto max-w-lg px-4 py-8">
       <h1 className="text-xl font-black text-navy">Yike Coins wallet</h1>
-      <p className="mt-1 text-sm text-navy/60">
-        YC powers eligible Yike services. {formatCoinNairaEquivalent(1).replace("1 ", "")}
-      </p>
+      <p className="mt-1 text-sm text-navy/60">1 YC ≈ ₦1 nominal on eligible services.</p>
 
-      <UsernameClaimClient />
+      <WalletUsernameSection
+        initialUsername={hasUsername ? username : null}
+        initialNeedsUsername={!hasUsername}
+      />
 
       <div className="mt-6 rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
         <p className="text-xs font-bold uppercase tracking-wide text-muted">Available balance</p>
