@@ -2,7 +2,11 @@ import type { ListingValues } from "../types";
 
 export function valuesToElectronicsPayload(
   values: ListingValues,
-  opts: { listingId?: string; mediaUrls?: string[] } = {},
+  opts: {
+    listingId?: string;
+    mediaUrls?: string[];
+    idempotencyKey?: string;
+  } = {},
 ): Record<string, unknown> {
   const mediaUrls =
     opts.mediaUrls ?? (Array.isArray(values.media_urls) ? (values.media_urls as string[]) : []);
@@ -14,8 +18,10 @@ export function valuesToElectronicsPayload(
     "screen_size",
     "power_kva",
     "capacity_liters",
-    "warranty_months",
     "battery_capacity_ah",
+    "warranty_status",
+    "warranty_note",
+    "warranty_months",
   ] as const) {
     if (values[key] != null && values[key] !== "") {
       attributes[key] = values[key];
@@ -24,6 +30,7 @@ export function valuesToElectronicsPayload(
 
   return {
     id: opts.listingId,
+    ...(opts.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : {}),
     auto_category: values.auto_category,
     title: values.title,
     description: values.description,

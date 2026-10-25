@@ -12,6 +12,13 @@ export {
   storyOrderForSchemaLabel,
 } from "./helpers";
 export { VEHICLE_PHOTO_SCHEMA } from "./vehicle";
+export { MOTORCYCLE_PHOTO_SCHEMA } from "./motorcycle";
+export {
+  ELECTRONICS_GENERIC_PHOTO_SCHEMA,
+  ELECTRONICS_PHONE_PHOTO_SCHEMA,
+  ELECTRONICS_LAPTOP_PHOTO_SCHEMA,
+  ELECTRONICS_TV_PHOTO_SCHEMA,
+} from "./electronics";
 export {
   PROPERTY_RESIDENTIAL_PHOTO_SCHEMA,
   PROPERTY_SHORTLET_PHOTO_SCHEMA,
@@ -26,4 +33,8 @@ export {
   resolvePropertyPhotoSchema,
   resolveVehiclePhotoSchema,
 } from "./resolve";
-export { PROPERTY_PHOTO_RULES, VEHICLE_PHOTO_RULES } from "./rules";
+export {
+  ELECTRONICS_PHOTO_RULES,
+  PROPERTY_PHOTO_RULES,
+  VEHICLE_PHOTO_RULES,
+} from "./rules";

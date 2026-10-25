@@ -16,6 +16,22 @@ import {
   resolvePropertyPhotoSchema,
 } from "@/lib/listing-engine/photo-schema";
 import { rejectCrossVerticalAssetTypePayload } from "@/lib/marketplace/electronics-vertical";
+import { normalizePropertyCreateRequest } from "@/lib/listing-create/property-api-body";
+import {
+  LISTING_CREATE_MAX_PHOTOS,
+  LISTING_CREATE_MIN_PHOTOS,
+} from "@/lib/listing-create/constants";
+import {
+  deterministicListingCreateId,
+  insertPropertyRowWithReservedId,
+  isUuid,
+  normalizeIdempotencyKey,
+  type PropertiesInsertClient,
+} from "@/lib/listing-create/idempotency";
+import {
+  fingerprintListingCreatePayload,
+  withListingCreateIdempotencyExtras,
+} from "@/lib/listing-create/payload-fingerprint";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -198,10 +214,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json().catch(() => ({}))) as Body;
-  const payload = body.payload ?? {};
-  const pricingFields = body.pricingFields ?? {};
-  const listingId = body.listingId?.trim() || null;
+  const rawBody = (await request.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+  const normalized = normalizePropertyCreateRequest(rawBody);
+  const payload = normalized.payload ?? {};
+  const pricingFields = normalized.pricingFields ?? {};
+  const listingId = normalized.listingId?.trim() || null;
+  const idempotencyKey = normalizeIdempotencyKey(normalized.idempotencyKey);
 
   const assetGate = rejectCrossVerticalAssetTypePayload(payload);
   if (!assetGate.ok) {
@@ -263,9 +284,14 @@ export async function POST(request: Request) {
     );
   }
 
-  if (mediaUrls.length < 2 || mediaUrls.length > 20) {
+  if (
+    mediaUrls.length < LISTING_CREATE_MIN_PHOTOS ||
+    mediaUrls.length > LISTING_CREATE_MAX_PHOTOS
+  ) {
     return NextResponse.json(
-      { error: "Upload between 2 and 20 photos." },
+      {
+        error: `Upload between ${LISTING_CREATE_MIN_PHOTOS} and ${LISTING_CREATE_MAX_PHOTOS} photos.`,
+      },
       { status: 400 }
     );
   }
@@ -341,8 +367,104 @@ export async function POST(request: Request) {
         message: updateError.message,
         code: updateError.code,
       });
+      return NextResponse.json(
+        { error: publicListingError(updateError.message, updateError.code) },
+        { status: 400 },
+      );
     }
-    // Stale pending id — fall through to fresh insert
+
+    // First create with a reserved client listing id (pending / idempotent).
+    const reservedId =
+      listingId && isUuid(listingId)
+        ? listingId
+        : idempotencyKey
+          ? deterministicListingCreateId("property", user.id, idempotencyKey)
+          : null;
+
+    if (!reservedId) {
+      return NextResponse.json(
+        { error: "listingId or idempotencyKey is required for new listings." },
+        { status: 400 },
+      );
+    }
+
+    const limitBeforeInsert = getListingLimit(profile);
+    const nowForInsert = new Date().toISOString();
+    const { count: activeBeforeInsert } = await admin
+      .from("properties")
+      .select("id", { count: "exact", head: true })
+      .eq("agent_id", user.id)
+      .in("status", ["pending", "approved", "flagged"])
+      .or(`expires_at.is.null,expires_at.gt.${nowForInsert}`);
+
+    if (
+      limitBeforeInsert !== null &&
+      (activeBeforeInsert ?? 0) >= limitBeforeInsert
+    ) {
+      return NextResponse.json({ error: LISTING_LIMIT_REACHED_MESSAGE }, { status: 400 });
+    }
+
+    const idempotencyKeyForInsert = idempotencyKey ?? "listing-reserved";
+    const propertyFingerprint = fingerprintListingCreatePayload("property", fullRow);
+    const propertyRow = withListingCreateIdempotencyExtras(fullRow, {
+      scope: "property",
+      fingerprint: propertyFingerprint,
+      idempotency_key: idempotencyKeyForInsert,
+    });
+
+    const idempotentInsert = await insertPropertyRowWithReservedId(
+      supabase as unknown as PropertiesInsertClient,
+      reservedId,
+      propertyRow,
+      {
+        agentId: user.id,
+        assetType: "PROPERTY",
+        scope: "property",
+        payloadFingerprint: propertyFingerprint,
+        idempotencyKey: idempotencyKeyForInsert,
+      },
+    );
+
+    if (!idempotentInsert.ok) {
+      logStage("listing_insert_failed", {
+        userId: user.id,
+        listingId: reservedId,
+        message: idempotentInsert.error,
+      });
+      return NextResponse.json(
+        { error: idempotentInsert.error, code: idempotentInsert.code },
+        { status: idempotentInsert.status },
+      );
+    }
+
+    if (idempotentInsert.created) {
+      await ensurePendingManualSellerVerification(admin, user.id, {
+        ...profile,
+        email: profile.email ?? user.email ?? null,
+      }).catch((err) => {
+        console.error("[listing-create] seller queue failed:", err);
+      });
+    }
+
+    logStage("listing_insert_success", {
+      userId: user.id,
+      listingId: idempotentInsert.listing.id,
+      mode: idempotentInsert.created ? "insert_reserved" : "idempotent_replay",
+      durationMs: Date.now() - startedAt,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      listingId: idempotentInsert.listing.id,
+      idempotentReplay: !idempotentInsert.created,
+    });
+  }
+
+  if (!idempotencyKey) {
+    return NextResponse.json(
+      { error: "idempotencyKey is required for new property listings." },
+      { status: 400 },
+    );
   }
 
   const limit = getListingLimit(profile);
@@ -358,41 +480,63 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: LISTING_LIMIT_REACHED_MESSAGE }, { status: 400 });
   }
 
-  let result = await insertListing(supabase, fullRow);
-  if ("error" in result) {
-    logStage("listing_insert_retry", {
-      userId: user.id,
-      message: result.error,
-      code: result.code,
-    });
-    result = await insertListing(supabase, minimal);
-  }
+  const reservedId = deterministicListingCreateId(
+    "property",
+    user.id,
+    idempotencyKey,
+  );
+  const propertyFingerprint = fingerprintListingCreatePayload("property", fullRow);
+  const propertyRow = withListingCreateIdempotencyExtras(fullRow, {
+    scope: "property",
+    fingerprint: propertyFingerprint,
+    idempotency_key: idempotencyKey,
+  });
 
-  if ("error" in result) {
-    logStage("listing_insert_failed", {
+  const idempotentInsert = await insertPropertyRowWithReservedId(
+    supabase as unknown as PropertiesInsertClient,
+    reservedId,
+    propertyRow,
+    {
+      agentId: user.id,
+      assetType: "PROPERTY",
+      scope: "property",
+      payloadFingerprint: propertyFingerprint,
+      idempotencyKey,
+    },
+  );
+
+  if (idempotentInsert.ok) {
+    if (idempotentInsert.created) {
+      await ensurePendingManualSellerVerification(admin, user.id, {
+        ...profile,
+        email: profile.email ?? user.email ?? null,
+      }).catch((err) => {
+        console.error("[listing-create] seller queue failed:", err);
+      });
+    }
+    logStage("listing_insert_success", {
       userId: user.id,
-      message: result.error,
-      code: result.code,
+      listingId: idempotentInsert.listing.id,
+      mode: idempotentInsert.created ? "insert_idempotent" : "idempotent_replay",
       durationMs: Date.now() - startedAt,
     });
-    return NextResponse.json(
-      { error: publicListingError(result.error, result.code), code: result.code },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      ok: true,
+      listingId: idempotentInsert.listing.id,
+      idempotentReplay: !idempotentInsert.created,
+    });
   }
 
-  logStage("listing_insert_success", {
+  logStage("listing_insert_failed", {
     userId: user.id,
-    listingId: result.id,
+    message: idempotentInsert.error,
     durationMs: Date.now() - startedAt,
   });
-
-  await ensurePendingManualSellerVerification(admin, user.id, {
-    ...profile,
-    email: profile.email ?? user.email ?? null,
-  }).catch((err) => {
-    console.error("[listing-create] seller queue failed:", err);
-  });
-
-  return NextResponse.json({ ok: true, listingId: result.id });
+  return NextResponse.json(
+    {
+      error: publicListingError(idempotentInsert.error),
+      code: idempotentInsert.code,
+    },
+    { status: idempotentInsert.status },
+  );
 }

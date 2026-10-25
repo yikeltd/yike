@@ -36,7 +36,11 @@ function boolFromFormValue(value: unknown): boolean {
 
 export function valuesToVehiclePayload(
   values: ListingValues,
-  opts: { listingId?: string; mediaUrls?: string[] } = {},
+  opts: {
+    listingId?: string;
+    mediaUrls?: string[];
+    idempotencyKey?: string;
+  } = {},
 ): VehiclePayload {
   const mediaUrls =
     opts.mediaUrls ?? (Array.isArray(values.media_urls) ? (values.media_urls as string[]) : []);
@@ -62,6 +66,7 @@ export function valuesToVehiclePayload(
 
   return {
     id: opts.listingId,
+    ...(opts.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : {}),
     auto_category: values.auto_category,
     title: values.title,
     description: values.description,

@@ -11,81 +11,22 @@ import {
 } from "@/lib/seller-trust";
 import {
   buildElectronicsInsertPayload,
-  type ElectronicsListingInput,
-} from "@/lib/marketplace/listings";
+  parseElectronicsBody,
+} from "@/lib/listing-create/electronics-body";
 import {
-  ELECTRONICS_CATEGORIES,
-  type ElectronicsCategoryId,
-} from "@/lib/marketplace/electronics-specs";
-import { ELECTRONICS_CONDITIONS } from "@/lib/marketplace/electronics-specs";
+  deterministicListingCreateId,
+  insertPropertyRowWithReservedId,
+  normalizeIdempotencyKey,
+  type PropertiesInsertClient,
+} from "@/lib/listing-create/idempotency";
+import {
+  fingerprintListingCreatePayload,
+  withListingCreateIdempotencyExtras,
+} from "@/lib/listing-create/payload-fingerprint";
 
 export const runtime = "nodejs";
 
 const ACTIVE_LISTING_STATUSES = ["pending", "approved", "flagged"];
-const VALID_CONDITIONS = new Set(ELECTRONICS_CONDITIONS.map((c) => c.id));
-
-function isSafeListingMediaUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.endsWith(".supabase.co");
-  } catch {
-    return false;
-  }
-}
-
-function parseElectronicsBody(
-  body: Record<string, unknown>,
-): ElectronicsListingInput | null {
-  const auto_category = String(body.auto_category ?? "").trim() as ElectronicsCategoryId;
-  if (!ELECTRONICS_CATEGORIES.some((c) => c.id === auto_category)) return null;
-
-  const title = String(body.title ?? "").trim();
-  const brand = String(body.brand ?? body.make ?? "").trim();
-  const model = String(body.model ?? "").trim();
-  const price = Number(body.price);
-  const state = String(body.state ?? "").trim();
-  const city = String(body.city ?? "").trim();
-  const condition = String(body.condition ?? "").trim();
-
-  if (!title || !brand || !model || !state || !city || !condition) return null;
-  if (!VALID_CONDITIONS.has(condition as (typeof ELECTRONICS_CONDITIONS)[number]["id"])) {
-    return null;
-  }
-  if (!Number.isFinite(price) || price <= 0) return null;
-
-  const media = Array.isArray(body.media_urls)
-    ? body.media_urls.map(String).filter(Boolean)
-    : [];
-
-  if (
-    media.length < 2 ||
-    media.length > 20 ||
-    media.some((url) => !isSafeListingMediaUrl(url))
-  ) {
-    return null;
-  }
-
-  const attributes =
-    body.attributes && typeof body.attributes === "object"
-      ? (body.attributes as Record<string, unknown>)
-      : {};
-
-  return {
-    title,
-    description: body.description != null ? String(body.description) : undefined,
-    price,
-    state,
-    city,
-    area: body.area != null ? String(body.area) : city,
-    auto_category,
-    media_urls: media,
-    video_url: body.video_url != null ? String(body.video_url) : null,
-    brand,
-    model,
-    condition,
-    attributes,
-  };
-}
 
 export async function POST(request: Request) {
   if (!isLaunchFeatureVisible("electronics_marketplace")) {
@@ -210,6 +151,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, listing: data });
   }
 
+  const idempotencyKey = normalizeIdempotencyKey(body.idempotencyKey);
+  if (!idempotencyKey) {
+    return NextResponse.json(
+      { error: "idempotencyKey is required for new electronics listings" },
+      { status: 400 },
+    );
+  }
+
   const limit = getListingLimit(profile);
   const nowIso = new Date().toISOString();
   const { count: activeCount } = await supabase
@@ -223,22 +172,49 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: LISTING_LIMIT_REACHED_MESSAGE }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from("properties")
-    .insert(payload)
-    .select("id, slug, status")
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  await ensurePendingManualSellerVerification(admin, user.id, {
-    ...profile,
-    email: profile.email ?? user.email ?? null,
-  }).catch((err) => {
-    console.error("[electronics-create] seller queue failed", err);
+  const reservedId = deterministicListingCreateId(
+    "electronics",
+    user.id,
+    idempotencyKey,
+  );
+  const fingerprint = fingerprintListingCreatePayload("electronics", payload);
+  const rowWithIdempotency = withListingCreateIdempotencyExtras(payload, {
+    scope: "electronics",
+    fingerprint,
+    idempotency_key: idempotencyKey,
   });
 
-  return NextResponse.json({ ok: true, listing: data }, { status: 201 });
+  const insertResult = await insertPropertyRowWithReservedId(
+    supabase as unknown as PropertiesInsertClient,
+    reservedId,
+    rowWithIdempotency,
+    {
+      agentId: user.id,
+      assetType: "ELECTRONICS",
+      scope: "electronics",
+      payloadFingerprint: fingerprint,
+      idempotencyKey,
+    },
+  );
+
+  if (!insertResult.ok) {
+    return NextResponse.json(
+      { error: insertResult.error, code: insertResult.code },
+      { status: insertResult.status },
+    );
+  }
+
+  if (insertResult.created) {
+    await ensurePendingManualSellerVerification(admin, user.id, {
+      ...profile,
+      email: profile.email ?? user.email ?? null,
+    }).catch((err) => {
+      console.error("[electronics-create] seller queue failed", err);
+    });
+  }
+
+  return NextResponse.json(
+    { ok: true, listing: insertResult.listing, idempotentReplay: !insertResult.created },
+    { status: insertResult.created ? 201 : 200 },
+  );
 }

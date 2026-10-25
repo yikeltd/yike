@@ -1,21 +1,38 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import Link from "next/link";
 import {
   MetadataResolver,
   NAMED_VALIDATION_RULES,
   NAMED_VISIBILITY_RULES,
   applyDependencyClears,
-  getCategoryManifest,
+  buildListingReviewSummary,
+  clearEngineListingDraft,
+  getOrCreateListingDraftSessionId,
+  markEngineListingDraftConsumed,
+  parseEngineListingDraftFromStorageEvent,
+  computeListingWizardProgress,
+  listListingWizardBlockers,
+  resolveListingWizardNextAction,
+  fieldJumpTarget,
+  getCategoryManifestOrNull,
   getListingCatalogsFromYip,
-  photoChecklistStatus,
+  getManifestDetailsStepIds,
+  isListingCategoryCreatable,
+  loadEngineListingDraft,
+  loadEngineListingDraftWithLegacyFallback,
+  migrateLegacyVehicleDraft,
+  resetListingDraftSessionId,
   resolvePhotoSchemaFromManifest,
+  sanitizeMediaItemLabels,
+  saveEngineListingDraft,
   validateValues,
-  valuesToPropertyPayload,
+  buildPropertyCreateApiBody,
   valuesToVehiclePayload,
   valuesToElectronicsPayload,
+  type CategoryManifest,
   type ListingCategoryId,
   type ListingValues,
 } from "@/lib/listing-engine";
@@ -24,25 +41,26 @@ import type { ListingPhotoItem } from "@/components/agent/listing-photo-types";
 import { FieldRenderer } from "@/components/listing-engine/field-renderer";
 import { cn } from "@/lib/utils";
 import {
-  clearVehicleDraft,
-  loadVehicleDraft,
-  saveVehicleDraft,
-} from "@/lib/marketplace/vehicle-draft";
-import {
-  Bookmark,
   Camera,
   Check,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Edit2,
-  Lock,
   MapPin,
-  Send,
-  Shield,
-  Sparkles,
 } from "lucide-react";
-
+import { deterministicListingCreateId } from "@/lib/listing-create/idempotency";
+import { readyListingPhotoUrls } from "@/lib/listing-create/photo-readiness";
+import {
+  clearDraftMediaRegistry,
+  markDraftMediaCommitted,
+  trackDraftMediaUrl,
+} from "@/lib/listing-create/draft-media-registry";
+import {
+  clearListingSubmitIdempotencyKey,
+  clearPendingListingId,
+  getListingSubmitIdempotencyKey,
+  getPendingListingId,
+  setPendingListingId,
+} from "@/lib/listing-submit-log";
 /** Catalogs resolved via YIP Knowledge Layer */
 const LISTING_CATALOGS = getListingCatalogsFromYip();
 
@@ -64,25 +82,48 @@ function urlsToPhotoItems(urls: string[]): ListingPhotoItem[] {
   }));
 }
 
-function readyMediaUrls(photos: ListingPhotoItem[]): string[] {
-  return photos
-    .filter((p) => p.upload_status !== "uploading" && p.upload_status !== "error")
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((p) => p.image_url || p.webp_url || p.thumbnail_url)
-    .filter(Boolean) as string[];
+type DraftUiStatus =
+  | "idle"
+  | "saving"
+  | "saved"
+  | "restored"
+  | "error"
+  | "quota_exceeded"
+  | "storage_unavailable"
+  | "conflict";
+
+export function ListingEngine(props: Props) {
+  const manifest = getCategoryManifestOrNull(props.categoryId);
+  if (!manifest || !isListingCategoryCreatable(props.categoryId)) {
+    return (
+      <div className="mx-auto max-w-xl rounded-2xl border border-navy/10 bg-white p-6 text-center shadow-xs">
+        <p className="text-base font-bold text-navy">This category is not available yet</p>
+        <p className="mt-2 text-sm text-muted">
+          Yike supports property, vehicles, and electronics listing creation when enabled.
+          Jobs, services, boats, and other verticals stay read-only until a manifest ships.
+        </p>
+        <Link
+          href="/agent/listings/choose"
+          className="pressable mt-5 inline-flex h-11 items-center justify-center rounded-full bg-navy px-6 text-sm font-bold text-gold"
+        >
+          Choose a category
+        </Link>
+      </div>
+    );
+  }
+  return <ListingEngineInner {...props} manifest={manifest} />;
 }
 
-export function ListingEngine({
+function ListingEngineInner({
   categoryId,
   agentId,
   listingId,
   initialValues,
   className,
-}: Props) {
+  manifest,
+}: Props & { manifest: CategoryManifest }) {
   const router = useRouter();
-  const manifest = useMemo(() => getCategoryManifest(categoryId), [categoryId]);
 
-  // Section Accordion State: 0: Details, 1: Photos & Pricing, 2: Location & Review
   const [activeSection, setActiveSection] = useState<number>(0);
 
   const [values, setValues] = useState<ListingValues>(() => {
@@ -105,8 +146,22 @@ export function ListingEngine({
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [inReviewScreen, setInReviewScreen] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<DraftUiStatus>("idle");
+  const [validationAttempted, setValidationAttempted] = useState(false);
+  const saveGenerationRef = useRef(0);
+  const draftLoadedRef = useRef(false);
+  const draftRevisionRef = useRef(0);
+  const draftSessionIdRef = useRef(
+    getOrCreateListingDraftSessionId(agentId, categoryId),
+  );
+  const [draftConflictRemote, setDraftConflictRemote] = useState(false);
 
-  const photoCount = readyMediaUrls(photos).length;
+  const photoCount = readyListingPhotoUrls(photos).length;
+
+  const activePhotoSchema = useMemo(
+    () => resolvePhotoSchemaFromManifest(manifest, values),
+    [manifest, values],
+  );
 
   const resolved = useMemo(
     () =>
@@ -118,82 +173,237 @@ export function ListingEngine({
     [manifest, values, titleTouched, photoCount]
   );
 
-  // Compute Overall Completion Percentage (0% to 100%)
-  const completionPercentage = useMemo(() => {
-    let score = 0;
-    // Section 1: Details (Title, Category/Property Type, Bedrooms/Make) -> 35%
-    if (values.title && (values.property_type || values.make || values.category)) {
-      score += 35;
-    } else if (values.title || values.property_type || values.make) {
-      score += 20;
+  const wizard = useMemo(
+    () =>
+      computeListingWizardProgress(
+        manifest,
+        values,
+        resolved.stepFields,
+        resolved.photoStatus,
+      ),
+    [manifest, values, resolved.stepFields, resolved.photoStatus],
+  );
+
+  const detailsStepIds = useMemo(
+    () => getManifestDetailsStepIds(manifest),
+    [manifest],
+  );
+
+  const visibleFieldIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const fields of Object.values(resolved.stepFields)) {
+      for (const f of fields) ids.add(f.id);
     }
+    return ids;
+  }, [resolved.stepFields]);
 
-    // Section 2: Photos & Pricing -> 35%
-    if (photoCount >= 1 && values.price) {
-      score += 35;
-    } else if (photoCount >= 1 || values.price) {
-      score += 18;
+  const reviewRows = useMemo(
+    () => buildListingReviewSummary(manifest, values, visibleFieldIds),
+    [manifest, values, visibleFieldIds],
+  );
+
+  const nextAction = useMemo(
+    () =>
+      resolveListingWizardNextAction({
+        manifest,
+        values,
+        stepFields: resolved.stepFields,
+        photoStatus: resolved.photoStatus,
+      }),
+    [manifest, values, resolved.stepFields, resolved.photoStatus],
+  );
+
+  const reviewBlockers = useMemo(
+    () =>
+      listListingWizardBlockers({
+        manifest,
+        values,
+        stepFields: resolved.stepFields,
+        photoStatus: resolved.photoStatus,
+      }),
+    [manifest, values, resolved.stepFields, resolved.photoStatus],
+  );
+
+  function runClientValidation(markAttempted = false): boolean {
+    if (markAttempted) setValidationAttempted(true);
+    const result = validateValues(manifest, values, {
+      visibilityEvaluators: NAMED_VISIBILITY_RULES,
+      validationEvaluators: NAMED_VALIDATION_RULES,
+    });
+    if (markAttempted) {
+      setFieldErrors(result.errors);
     }
+    return result.ok && resolved.photoStatus.ok;
+  }
 
-    // Section 3: Location -> 30%
-    if (values.state && values.city) {
-      score += 30;
-    } else if (values.state || values.city) {
-      score += 15;
-    }
-
-    return Math.min(score, 100);
-  }, [values, photoCount]);
-
-  // Section completions
-  const sec1Complete = Boolean(values.title && (values.property_type || values.make || values.category));
-  const sec2Complete = Boolean(photoCount >= 1 && values.price);
-  const sec3Complete = Boolean(values.state && values.city);
-
-  const sec1Pct = sec1Complete ? 60 : values.title ? 35 : 0;
-  const sec2Pct = sec2Complete ? 35 : photoCount >= 1 || values.price ? 18 : 0;
-  const sec3Pct = sec3Complete ? 30 : values.state ? 15 : 0;
-
-  // Auto-collapse completed section & advance
   useEffect(() => {
-    if (sec1Complete && activeSection === 0) {
-      const t = setTimeout(() => setActiveSection(1), 600);
-      return () => clearTimeout(t);
-    }
-    if (sec2Complete && activeSection === 1) {
-      const t = setTimeout(() => setActiveSection(2), 600);
-      return () => clearTimeout(t);
-    }
-  }, [sec1Complete, sec2Complete, activeSection]);
+    setPhotos((prev) => sanitizeMediaItemLabels(prev, activePhotoSchema));
+  }, [activePhotoSchema.id]);
 
-  // Vehicle draft autosave & load
+  function jumpToField(fieldId: string) {
+    const target = fieldJumpTarget(fieldId, manifest);
+    setInReviewScreen(false);
+    setActiveSection(target.sectionIndex);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`le-${fieldId}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+  }
+
+  function handleOpenReview() {
+    setError(null);
+    setValidationAttempted(true);
+    runClientValidation(true);
+    setInReviewScreen(true);
+  }
+
+  function performPrimaryAction() {
+    if (nextAction.kind === "ready") {
+      handleOpenReview();
+      return;
+    }
+    setInReviewScreen(false);
+    setActiveSection(nextAction.sectionIndex);
+    if (nextAction.fieldId) {
+      window.requestAnimationFrame(() => {
+        document.getElementById(`le-${nextAction.fieldId}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+    }
+  }
+
   useEffect(() => {
-    if (listingId || initialValues || categoryId !== "vehicle") return;
-    const draft = loadVehicleDraft(agentId);
-    if (!draft?.data) return;
+    if (listingId || initialValues || draftLoadedRef.current) return;
+    draftLoadedRef.current = true;
+    const draftSessionId = draftSessionIdRef.current;
+    if (categoryId === "vehicle") {
+      migrateLegacyVehicleDraft(agentId, draftSessionId);
+    }
+    const draft = loadEngineListingDraftWithLegacyFallback(
+      agentId,
+      categoryId,
+      draftSessionId,
+    );
+    if (!draft) return;
     const snap: ListingValues = {};
-    for (const [k, v] of Object.entries(draft.data)) {
-      if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+    for (const [k, v] of Object.entries(draft.values)) {
+      if (
+        typeof v === "string" ||
+        typeof v === "number" ||
+        typeof v === "boolean" ||
+        Array.isArray(v)
+      ) {
         snap[k] = v;
       }
     }
-    if (Array.isArray(draft.data.media_urls)) {
-      setPhotos(urlsToPhotoItems(draft.data.media_urls as string[]));
+    if (draft.media_urls.length > 0) {
+      setPhotos(urlsToPhotoItems(draft.media_urls));
     }
     setValues((prev) => ({ ...prev, ...snap }));
+    if (typeof draft.activeSection === "number") {
+      setActiveSection(Math.min(2, Math.max(0, draft.activeSection)));
+    }
     if (snap.title) setTitleTouched(true);
+    draftRevisionRef.current = draft.revision ?? 0;
+    setDraftStatus("restored");
   }, [agentId, listingId, initialValues, categoryId]);
 
   useEffect(() => {
-    if (categoryId !== "vehicle" || listingId) return;
+    if (listingId) return;
+    const onStorage = (event: StorageEvent) => {
+      const remote = parseEngineListingDraftFromStorageEvent(
+        event.key ?? "",
+        event.newValue,
+        agentId,
+        categoryId,
+        draftSessionIdRef.current,
+      );
+      if (!remote) return;
+      if (remote.revision > draftRevisionRef.current) {
+        setDraftConflictRemote(true);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [agentId, categoryId, listingId]);
+
+  useEffect(() => {
+    if (listingId) return;
+    const generation = ++saveGenerationRef.current;
+    setDraftStatus((prev) => (prev === "conflict" ? "conflict" : "saving"));
     const t = window.setTimeout(() => {
-      saveVehicleDraft(agentId, {
-        ...values,
-        media_urls: readyMediaUrls(photos),
-      });
-    }, 800);
+      const result = saveEngineListingDraft(
+        {
+          version: 2,
+          agentId,
+          categoryId,
+          draftSessionId: draftSessionIdRef.current,
+          activeSection,
+          values: { ...values },
+          media_urls: readyListingPhotoUrls(photos),
+        },
+        { baseRevision: draftRevisionRef.current },
+      );
+      if (generation !== saveGenerationRef.current) return;
+      if (result.ok) {
+        draftRevisionRef.current = result.revision;
+        setDraftStatus("saved");
+        setDraftConflictRemote(false);
+        return;
+      }
+      if (result.reason === "blocked_by_remote") {
+        setDraftConflictRemote(true);
+        setDraftStatus("conflict");
+        return;
+      }
+      if (result.reason === "quota_exceeded") {
+        setDraftStatus("quota_exceeded");
+        return;
+      }
+      setDraftStatus("storage_unavailable");
+    }, 900);
     return () => window.clearTimeout(t);
-  }, [agentId, listingId, categoryId, values, photos]);
+  }, [agentId, listingId, categoryId, values, photos, activeSection]);
+
+  useEffect(() => {
+    if (listingId) return;
+    for (const photo of photos) {
+      if (photo.upload_status === "ready" && photo.image_url) {
+        trackDraftMediaUrl(draftSessionIdRef.current, photo.image_url);
+      }
+    }
+  }, [photos, listingId]);
+
+  function reloadDraftFromDevice() {
+    const draft = loadEngineListingDraft(
+      agentId,
+      categoryId,
+      draftSessionIdRef.current,
+    );
+    if (!draft) return;
+    const snap: ListingValues = {};
+    for (const [k, v] of Object.entries(draft.values)) {
+      if (
+        typeof v === "string" ||
+        typeof v === "number" ||
+        typeof v === "boolean" ||
+        Array.isArray(v)
+      ) {
+        snap[k] = v;
+      }
+    }
+    if (draft.media_urls.length > 0) {
+      setPhotos(urlsToPhotoItems(draft.media_urls));
+    }
+    setValues((prev) => ({ ...prev, ...snap }));
+    draftRevisionRef.current = draft.revision ?? 0;
+    setDraftConflictRemote(false);
+    setDraftStatus("restored");
+  }
 
   function setField(id: string, value: unknown) {
     if (id === "title") setTitleTouched(true);
@@ -210,9 +420,15 @@ export function ListingEngine({
   }
 
   async function onPublishSubmit() {
+    if (!runClientValidation(true)) {
+      setError("Check the highlighted fields before publishing.");
+      setInReviewScreen(false);
+      return;
+    }
     setSaving(true);
     setError(null);
-    const mediaUrls = readyMediaUrls(photos);
+    const mediaUrls = readyListingPhotoUrls(photos);
+    const idempotencyKey = getListingSubmitIdempotencyKey(agentId);
 
     try {
       const adapter = manifest.submitAdapter;
@@ -221,15 +437,23 @@ export function ListingEngine({
 
       if (adapter === "vehicle") {
         endpoint = "/api/agent/vehicles/create";
-        body = valuesToVehiclePayload(values, { listingId, mediaUrls });
+        body = valuesToVehiclePayload(values, { listingId, mediaUrls, idempotencyKey });
       } else if (adapter === "electronics") {
         endpoint = "/api/agent/electronics/create";
-        body = valuesToElectronicsPayload(values, { listingId, mediaUrls });
+        body = valuesToElectronicsPayload(values, { listingId, mediaUrls, idempotencyKey });
       } else if (adapter === "property") {
         endpoint = "/api/agent/listings/create";
-        body = valuesToPropertyPayload(values, {
-          listingId,
+        const reservedListingId =
+          listingId ??
+          getPendingListingId(agentId) ??
+          deterministicListingCreateId("property", agentId, idempotencyKey);
+        if (!listingId) {
+          setPendingListingId(agentId, reservedListingId);
+        }
+        body = buildPropertyCreateApiBody(values, {
+          listingId: reservedListingId,
           mediaUrls,
+          idempotencyKey,
           mediaItems: photos
             .filter((p) => p.upload_status !== "uploading" && p.upload_status !== "error")
             .map((p) => ({
@@ -263,7 +487,17 @@ export function ListingEngine({
         return;
       }
 
-      if (categoryId === "vehicle") clearVehicleDraft(agentId);
+      if (!listingId) {
+        const sessionId = draftSessionIdRef.current;
+        const publishedUrls = readyListingPhotoUrls(photos);
+        markDraftMediaCommitted(sessionId, publishedUrls);
+        clearDraftMediaRegistry(sessionId);
+        clearEngineListingDraft(agentId, categoryId, sessionId);
+        markEngineListingDraftConsumed(agentId, categoryId, "published", sessionId);
+        draftSessionIdRef.current = resetListingDraftSessionId(agentId, categoryId);
+        clearPendingListingId(agentId);
+        clearListingSubmitIdempotencyKey(agentId);
+      }
       setSuccess(true);
       setInReviewScreen(false);
       router.refresh();
@@ -278,17 +512,31 @@ export function ListingEngine({
     photos[0]?.image_url ||
     photos[0]?.webp_url ||
     null;
-  const previewTitle = String(values.title ?? "").trim() || "4 Bedroom Duplex in Lekki";
-  const previewPrice = values.price ? `₦${Number(values.price).toLocaleString("en-NG")}` : "₦120,000,000";
-  const previewLoc = [values.area, values.city, values.state].filter(Boolean).join(", ") || "Lagos, Lekki, Chevron";
-  const detailsSummary = [values.property_type || values.vehicle_type || "House", values.bedrooms ? `${values.bedrooms} Beds` : null, values.city || "Lekki"].filter(Boolean).join(" • ");
-
-  const isPublishable = completionPercentage >= 60;
+  const previewTitle =
+    String(values.title ?? "").trim() ||
+    [values.make ?? values.brand, values.model].filter(Boolean).join(" ").trim() ||
+    manifest.label;
+  const previewPrice = values.price
+    ? `₦${Number(values.price).toLocaleString("en-NG")}`
+    : null;
+  const previewLoc =
+    [values.area, values.city, values.state].filter(Boolean).join(", ") ||
+    "Add location";
+  const detailsSummary = [
+    values.property_type || values.auto_category || manifest.label,
+    values.bedrooms != null && values.bedrooms !== ""
+      ? `${values.bedrooms} bed`
+      : null,
+    values.make || values.brand,
+    values.model,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   if (success) {
     return (
       <div className="flex flex-col items-center rounded-3xl border border-navy/[0.06] bg-white p-8 text-center shadow-xl">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700 font-black">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold/20 text-2xl font-black text-navy">
           ✓
         </div>
         <p className="mt-4 text-xl font-black text-navy">Submitted for Review</p>
@@ -332,26 +580,83 @@ export function ListingEngine({
           </div>
 
           <div className="p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                Ready to Publish
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wide text-gold">
+                Review before publish
               </span>
-              <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                <Shield className="h-3.5 w-3.5" /> Trust Score 96
-              </span>
+              {wizard.canPublish ? (
+                <span className="rounded-full bg-navy/[0.06] px-2.5 py-0.5 text-[10px] font-semibold text-navy">
+                  Requirements met
+                </span>
+              ) : (
+                <span className="rounded-full border border-navy/15 px-2.5 py-0.5 text-[10px] font-semibold text-navy/70">
+                  Missing required info
+                </span>
+              )}
             </div>
 
             <h2 className="text-lg font-black text-navy">{previewTitle}</h2>
-            <p className="text-base font-extrabold text-navy/90">{previewPrice}</p>
+            {previewPrice ? (
+              <p className="text-base font-extrabold text-navy/90">{previewPrice}</p>
+            ) : (
+              <p className="text-sm text-muted">Price not set</p>
+            )}
             <p className="text-xs font-medium text-navy/50 flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" /> {previewLoc}
             </p>
 
             <div className="border-t border-navy/10 pt-3 space-y-2 text-xs">
-              <p className="font-bold text-navy">Listing Details:</p>
-              <p className="text-navy/70">{detailsSummary}</p>
-              <p className="text-navy/70">{photoCount} Photos uploaded</p>
+              <p className="font-bold text-navy">What buyers will see</p>
+              <ul className="space-y-1.5 text-navy/75">
+                {reviewRows.map((row) => (
+                  <li key={row.label} className="flex items-start justify-between gap-2">
+                    <span>
+                      <span className="font-semibold text-navy/85">{row.label}:</span>{" "}
+                      {row.value}
+                    </span>
+                    {row.fieldId ? (
+                      <button
+                        type="button"
+                        onClick={() => jumpToField(row.fieldId!)}
+                        className="shrink-0 font-bold text-gold-dark hover:underline"
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-navy/70">
+                {photoCount} photo{photoCount === 1 ? "" : "s"} attached
+              </p>
             </div>
+
+            {reviewBlockers.length > 0 ? (
+              <div className="rounded-xl border border-navy/10 bg-surface/80 px-3 py-3">
+                <p className="text-xs font-semibold text-navy">Required before publish</p>
+                <ul className="mt-1.5 space-y-2 text-xs text-navy/75">
+                  {reviewBlockers.map((item) => (
+                    <li key={`${item.message}-${item.fieldId ?? "photos"}`} className="flex items-start justify-between gap-2">
+                      <span>{item.message}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (item.fieldId) {
+                            jumpToField(item.fieldId);
+                          } else {
+                            setInReviewScreen(false);
+                            setActiveSection(item.sectionIndex);
+                          }
+                        }}
+                        className="shrink-0 font-bold text-gold-dark hover:underline"
+                      >
+                        Fix
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -367,95 +672,85 @@ export function ListingEngine({
           <button
             type="button"
             onClick={() => void onPublishSubmit()}
-            disabled={saving}
-            className="pressable flex-1 h-12 rounded-full bg-[#031B4E] text-xs font-black text-gold shadow-lg flex items-center justify-center gap-2"
+            disabled={saving || !wizard.canPublish}
+            className="pressable flex-1 h-12 rounded-full bg-navy text-xs font-black text-gold shadow-lg flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {saving ? "Publishing..." : "Final Publish 🚀"}
+            {saving ? "Publishing…" : "Publish listing"}
           </button>
         </div>
       </div>
     );
   }
 
+  const draftStatusLine =
+    !listingId && draftStatus === "saving"
+      ? "Saving on this device…"
+      : !listingId && draftStatus === "saved"
+        ? "Saved on this device only"
+        : !listingId && draftStatus === "restored"
+          ? "Restored draft from this device"
+          : !listingId && draftStatus === "quota_exceeded"
+            ? "Storage full — draft not saved"
+            : !listingId && draftStatus === "storage_unavailable"
+              ? "Could not save on this device"
+              : !listingId && draftStatus === "conflict"
+                ? "Another tab has newer changes"
+                : null;
+
   return (
     <div className={cn("mx-auto max-w-xl space-y-6 pb-24", className)}>
-      
-      {/* 2. THREE-STEP PROGRESS INDICATOR */}
-      <div className="rounded-3xl border border-navy/[0.06] bg-white p-5 shadow-xs space-y-3">
-        <div className="relative flex items-center justify-between">
-          {/* Progress Connecting Line */}
-          <div className="absolute top-4 left-6 right-6 h-1 bg-navy/10 -z-0">
-            <div
-              className="h-full bg-gold transition-all duration-300"
-              style={{ width: `${completionPercentage}%` }}
-            />
-          </div>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-base font-bold text-navy">{manifest.label} listing</p>
+        {draftStatusLine ? (
+          <p className="text-[11px] font-medium text-navy/45">{draftStatusLine}</p>
+        ) : null}
+      </div>
 
-          {/* Step 1: Details */}
+      {draftConflictRemote && !listingId ? (
+        <div className="rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-navy">
+          <p className="font-semibold">Draft updated in another tab</p>
+          <p className="mt-1 text-xs text-navy/70">
+            Reload the saved draft to avoid overwriting newer work on this device.
+          </p>
           <button
             type="button"
-            onClick={() => setActiveSection(0)}
-            className="relative z-10 flex flex-col items-center gap-1 group"
+            onClick={reloadDraftFromDevice}
+            className="pressable mt-3 h-9 rounded-full bg-navy px-4 text-xs font-bold text-gold"
           >
-            <span
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-all",
-                sec1Complete
-                  ? "bg-gold text-navy shadow-xs"
-                  : activeSection === 0
-                    ? "bg-[#031B4E] text-white"
-                    : "bg-navy/10 text-navy/40"
-              )}
-            >
-              {sec1Complete ? "✓" : "1"}
-            </span>
-            <span className="text-[11px] font-bold text-navy">Details</span>
-            <span className="text-[10px] font-extrabold text-gold">{sec1Pct}%</span>
+            Reload draft
           </button>
+        </div>
+      ) : null}
 
-          {/* Step 2: Photos & Pricing */}
-          <button
-            type="button"
-            onClick={() => setActiveSection(1)}
-            className="relative z-10 flex flex-col items-center gap-1 group"
-          >
-            <span
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-all",
-                sec2Complete
-                  ? "bg-gold text-navy shadow-xs"
-                  : activeSection === 1
-                    ? "bg-[#031B4E] text-white"
-                    : "bg-navy/10 text-navy/40"
-              )}
-            >
-              {sec2Complete ? "✓" : "2"}
-            </span>
-            <span className="text-[11px] font-bold text-navy">Photos & Pricing</span>
-            <span className="text-[10px] font-extrabold text-navy/40">{sec2Pct}%</span>
-          </button>
+      {error ? (
+        <p className="rounded-xl border border-danger/25 bg-danger/5 px-4 py-3 text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
 
-          {/* Step 3: Location & Review */}
-          <button
-            type="button"
-            onClick={() => setActiveSection(2)}
-            className="relative z-10 flex flex-col items-center gap-1 group"
-          >
-            <span
+      <div className="rounded-2xl border border-navy/[0.08] bg-white px-4 py-4 shadow-xs">
+        <p className="text-sm leading-relaxed text-navy/85">{nextAction.message}</p>
+        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-navy/[0.06] pt-3">
+          {wizard.stages.map((stage, index) => (
+            <button
+              key={stage.id}
+              type="button"
+              onClick={() => setActiveSection(index)}
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-all",
-                sec3Complete
-                  ? "bg-gold text-navy shadow-xs"
-                  : activeSection === 2
-                    ? "bg-[#031B4E] text-white"
-                    : "bg-navy/10 text-navy/40"
+                "pressable inline-flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors",
+                activeSection === index
+                  ? "bg-navy text-gold"
+                  : stage.complete
+                    ? "bg-gold/15 text-navy"
+                    : "bg-navy/[0.05] text-navy/65 hover:bg-navy/[0.08]",
               )}
             >
-              {sec3Complete ? "✓" : "3"}
-            </span>
-            <span className="text-[11px] font-bold text-navy">Location & Review</span>
-            <span className="text-[10px] font-extrabold text-navy/40">{sec3Pct}%</span>
-          </button>
+              {stage.complete ? (
+                <Check className="h-3 w-3 shrink-0" aria-hidden />
+              ) : null}
+              {stage.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -468,50 +763,62 @@ export function ListingEngine({
             className="pressable flex cursor-pointer items-center justify-between p-4 sm:p-5"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold">
-                ✓
+              <span
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold",
+                  wizard.stages[0]?.complete
+                    ? "bg-gold/15 text-navy"
+                    : "bg-navy/[0.06] text-navy/40",
+                )}
+              >
+                {wizard.stages[0]?.complete ? "✓" : "1"}
               </span>
               <div>
-                <h3 className="text-xs font-black text-navy">1. Property Details</h3>
+                <h3 className="text-xs font-black text-navy">{wizard.detailsTitle}</h3>
                 <p className="text-[11px] font-medium text-navy/55">{detailsSummary}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-bold text-navy/60">
-              <span className="flex items-center gap-1 text-gold-dark">
-                Edit <Edit2 className="h-3 w-3" />
-              </span>
-              <ChevronDown className="h-4 w-4" />
-            </div>
+            <ChevronDown className="h-4 w-4 shrink-0 text-navy/40" aria-hidden />
           </div>
         ) : (
           // Expanded Section 1 Form
           <div className="p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-navy/10 pb-3">
-              <h3 className="text-sm font-black text-navy">1. Property Details</h3>
-              <ChevronUp className="h-4 w-4 text-navy/40" />
+              <h3 className="text-sm font-bold text-navy">{wizard.detailsTitle}</h3>
+              <ChevronUp className="h-4 w-4 shrink-0 text-navy/40" aria-hidden />
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(resolved.stepFields["details"] ?? manifest.fields.slice(0, 4)).map((field) => (
-                <FieldRenderer
-                  key={field.id}
-                  field={field}
-                  value={values[field.id]}
-                  options={resolved.optionsByField[field.id] ?? []}
-                  error={fieldErrors[field.id]}
-                  onChange={(v) => setField(field.id, v)}
-                />
-              ))}
+            <div className="space-y-5">
+              {detailsStepIds.map((stepId) => {
+                const fields = resolved.stepFields[stepId] ?? [];
+                if (fields.length === 0) return null;
+                const stepTitle = manifest.steps.find((s) => s.id === stepId)?.title;
+                return (
+                  <div key={stepId} className="space-y-3">
+                    {detailsStepIds.length > 1 && stepTitle ? (
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-navy/45">
+                        {stepTitle}
+                      </p>
+                    ) : null}
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {fields.map((field) => (
+                        <FieldRenderer
+                          key={field.id}
+                          field={field}
+                          value={values[field.id]}
+                          options={resolved.optionsByField[field.id] ?? []}
+                          error={
+                            validationAttempted ? fieldErrors[field.id] : undefined
+                          }
+                          onChange={(v) => setField(field.id, v)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setActiveSection(1)}
-              className="pressable flex w-full h-10 items-center justify-center rounded-full bg-navy text-xs font-bold text-white shadow-xs"
-            >
-              Save & Continue →
-            </button>
           </div>
         )}
       </div>
@@ -525,74 +832,61 @@ export function ListingEngine({
             className="pressable flex cursor-pointer items-center justify-between p-4 sm:p-5"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-navy/[0.06] text-navy">
                 <Camera className="h-4 w-4" />
               </span>
               <div>
-                <h3 className="text-xs font-black text-navy">2. Photos & Pricing</h3>
+                <h3 className="text-xs font-black text-navy">Photos & price</h3>
                 <p className="text-[11px] font-medium text-navy/55">
-                  {photoCount > 0 ? `${photoCount} Photos` : "0 Photos"} • {previewPrice} • Negotiable
+                  {photoCount > 0 ? `${photoCount} photo${photoCount === 1 ? "" : "s"}` : "Add photos"}
+                  {previewPrice ? ` · ${previewPrice}` : ""}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-bold text-navy/60">
-              <span className="flex items-center gap-1 text-gold-dark">
-                Edit <Edit2 className="h-3 w-3" />
-              </span>
-              <ChevronDown className="h-4 w-4" />
-            </div>
+            <ChevronDown className="h-4 w-4 shrink-0 text-navy/40" aria-hidden />
           </div>
         ) : (
           // Expanded Section 2 Form
           <div className="p-5 space-y-5">
             <div className="flex items-center justify-between border-b border-navy/10 pb-3">
-              <h3 className="text-sm font-black text-navy">2. Photos & Pricing</h3>
-              <span className="text-xs font-bold text-navy/40">{photoCount}/20 photos</span>
+              <div>
+                <h3 className="text-sm font-bold text-navy">Photos & price</h3>
+                <p className="text-xs text-muted">
+                  {resolved.photoStatus.min}–{resolved.photoStatus.max} photos · buyers trust clear shots
+                </p>
+              </div>
+              <span className="text-xs font-semibold text-navy/45">
+                {photoCount}/{resolved.photoStatus.max}
+              </span>
             </div>
 
-            {/* Photos Manager Grid */}
             <ListingPhotoManager
               items={photos}
               onChange={setPhotos}
-              photoSchema={resolvePhotoSchemaFromManifest(manifest, values)}
+              photoSchema={activePhotoSchema}
             />
 
-            {/* Price Box */}
+            {resolved.photoStatus.tips.length > 0 ? (
+              <p className="text-xs text-muted">
+                Tip: {resolved.photoStatus.tips[0]}
+              </p>
+            ) : null}
+
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-navy/10 p-3.5 space-y-1">
-                <label className="text-xs font-bold text-navy">Price (₦)</label>
-                <input
-                  type="number"
-                  value={String(values.price ?? "")}
-                  onChange={(e) => setField("price", e.target.value ? Number(e.target.value) : "")}
-                  placeholder="120,000,000"
-                  className="w-full text-base font-black text-navy focus:outline-none"
+              {(resolved.stepFields.pricing ?? []).map((field) => (
+                <FieldRenderer
+                  key={field.id}
+                  field={field}
+                  value={values[field.id]}
+                  options={resolved.optionsByField[field.id] ?? []}
+                  error={
+                    validationAttempted ? fieldErrors[field.id] : undefined
+                  }
+                  onChange={(v) => setField(field.id, v)}
                 />
-              </div>
-
-              <div className="rounded-2xl border border-navy/10 p-3.5 space-y-1.5">
-                <p className="text-xs font-bold text-navy">Pricing options</p>
-                <div className="flex items-center gap-4 text-xs font-medium text-navy/70">
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input type="checkbox" defaultChecked className="rounded text-gold" />
-                    <span>Negotiable</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input type="checkbox" defaultChecked className="rounded text-gold" />
-                    <span>Accept offers</span>
-                  </label>
-                </div>
-              </div>
+              ))}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setActiveSection(2)}
-              className="pressable flex w-full h-10 items-center justify-center rounded-full bg-navy text-xs font-bold text-white shadow-xs"
-            >
-              Save & Continue →
-            </button>
           </div>
         )}
       </div>
@@ -606,104 +900,68 @@ export function ListingEngine({
             className="pressable flex cursor-pointer items-center justify-between p-4 sm:p-5"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-navy/[0.06] text-navy">
                 <MapPin className="h-4 w-4" />
               </span>
               <div>
-                <h3 className="text-xs font-black text-navy">3. Location & Review</h3>
+                <h3 className="text-xs font-black text-navy">Location & review</h3>
                 <p className="text-[11px] font-medium text-navy/55">{previewLoc}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-bold text-navy/60">
-              <span className="flex items-center gap-1 text-gold-dark">
-                Edit <Edit2 className="h-3 w-3" />
-              </span>
-              <ChevronDown className="h-4 w-4" />
-            </div>
+            <ChevronDown className="h-4 w-4 shrink-0 text-navy/40" aria-hidden />
           </div>
         ) : (
           // Expanded Section 3 Form (NO MAPS)
           <div className="p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-navy/10 pb-3">
-              <h3 className="text-sm font-black text-navy">3. Location (State, City, Area)</h3>
-              <ChevronUp className="h-4 w-4 text-navy/40" />
+            <div className="border-b border-navy/10 pb-3">
+              <h3 className="text-sm font-bold text-navy">Where is this item?</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted">
+                State and city help nearby buyers find your listing. Area is optional — no street address needed.
+              </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-navy">State</label>
-                <input
-                  type="text"
-                  value={String(values.state ?? "")}
-                  onChange={(e) => setField("state", e.target.value)}
-                  placeholder="Lagos"
-                  className="w-full rounded-xl border border-navy/10 p-2.5 text-xs font-medium text-navy focus:outline-none"
+              {(resolved.stepFields.location ?? []).map((field) => (
+                <FieldRenderer
+                  key={field.id}
+                  field={
+                    field.id === "area"
+                      ? { ...field, description: "Optional — estate or neighbourhood if helpful." }
+                      : field
+                  }
+                  value={values[field.id]}
+                  options={resolved.optionsByField[field.id] ?? []}
+                  error={
+                    validationAttempted ? fieldErrors[field.id] : undefined
+                  }
+                  onChange={(v) => setField(field.id, v)}
                 />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-navy">City / LGA</label>
-                <input
-                  type="text"
-                  value={String(values.city ?? "")}
-                  onChange={(e) => setField("city", e.target.value)}
-                  placeholder="Lekki"
-                  className="w-full rounded-xl border border-navy/10 p-2.5 text-xs font-medium text-navy focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs font-bold text-navy">Area / Estate / Neighbourhood</label>
-                <input
-                  type="text"
-                  value={String(values.area ?? "")}
-                  onChange={(e) => setField("area", e.target.value)}
-                  placeholder="Chevron Drive, Lekki Phase 1"
-                  className="w-full rounded-xl border border-navy/10 p-2.5 text-xs font-medium text-navy focus:outline-none"
-                />
-              </div>
+              ))}
             </div>
+
+            <button
+              type="button"
+              onClick={handleOpenReview}
+              className="pressable flex w-full min-h-[44px] items-center justify-center rounded-xl border border-navy/15 bg-white text-sm font-semibold text-navy hover:bg-surface"
+            >
+              Preview review
+            </button>
           </div>
         )}
       </div>
 
       {/* 6. FOOTER ACTIONS BAR */}
       <div className="fixed inset-x-0 bottom-16 z-40 flex justify-center px-4">
-        <div className="flex w-full max-w-xl items-center justify-between rounded-3xl border border-navy/10 bg-white/95 p-3 shadow-2xl backdrop-blur-md">
-          {/* Completion Status Subtext */}
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-navy/70 pl-2">
-            <Lock className="h-3.5 w-3.5 text-gold-dark" />
-            <span>
-              Publishing unlocks at <strong className="text-gold-dark">60%</strong> completion
-            </span>
-          </div>
-
-          {/* Buttons: Save Draft & Publish Listing */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="pressable flex h-10 items-center gap-1.5 rounded-full border border-navy/15 px-4 text-xs font-bold text-navy hover:bg-surface"
-            >
-              <Bookmark className="h-3.5 w-3.5" />
-              <span>Save draft</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setInReviewScreen(true)}
-              disabled={!isPublishable}
-              className={cn(
-                "pressable flex h-10 items-center gap-1.5 rounded-full px-5 text-xs font-black transition-all shadow-md",
-                isPublishable
-                  ? "bg-[#031B4E] text-gold hover:bg-navy-light"
-                  : "bg-navy/20 text-navy/40 cursor-not-allowed"
-              )}
-            >
-              <span>Publish Listing</span>
-              <Send className="h-3.5 w-3.5" />
-            </button>
-          </div>
+        <div className="w-full max-w-xl rounded-2xl border border-navy/10 bg-white/95 p-2 shadow-2xl backdrop-blur-md">
+          <button
+            type="button"
+            onClick={performPrimaryAction}
+            disabled={saving}
+            className="pressable flex h-11 w-full items-center justify-center rounded-xl bg-navy text-sm font-bold text-gold shadow-md disabled:opacity-60"
+          >
+            {nextAction.primaryLabel}
+          </button>
         </div>
       </div>
 

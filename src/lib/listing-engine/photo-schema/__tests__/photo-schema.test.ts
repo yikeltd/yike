@@ -18,8 +18,10 @@ import {
   VEHICLE_PHOTO_RULES,
 } from "../index";
 import { validateCategoryManifest } from "../../validate-config";
+import { ELECTRONICS_CATEGORY_MANIFEST } from "../../categories/electronics";
 import { PROPERTY_CATEGORY_MANIFEST } from "../../categories/property";
 import { VEHICLE_CATEGORY_MANIFEST } from "../../categories/vehicle";
+import { ELECTRONICS_PHOTO_RULES } from "../rules";
 
 describe("category-aware photo schemas", () => {
   it("vehicle schema has no bedroom/kitchen tags", () => {
@@ -109,8 +111,19 @@ describe("category-aware photo schemas", () => {
     );
   });
 
+  it("electronics schema has no vehicle-only tags", () => {
+    const phone = resolvePhotoSchema(ELECTRONICS_PHOTO_RULES, {
+      auto_category: "phones_tablets",
+    });
+    const labels = schemaLabels(phone);
+    assert.equal(labels.includes("Steering Wheel"), false);
+    assert.equal(labels.includes("Service Book"), false);
+    assert.ok(labels.includes("Front"));
+  });
+
   it("category manifests include photo schemas and pass config validation", () => {
     assert.equal(VEHICLE_CATEGORY_MANIFEST.photo.schema.id, "vehicle");
+    assert.equal(ELECTRONICS_CATEGORY_MANIFEST.photo.schema.id, "electronics.generic");
     assert.equal(
       PROPERTY_CATEGORY_MANIFEST.photo.schema.id,
       "property.residential"

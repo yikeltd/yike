@@ -8,102 +8,22 @@ import {
   assertCanCreateListing,
   ensurePendingManualSellerVerification,
 } from "@/lib/seller-trust";
+import { buildVehicleInsertPayload } from "@/lib/marketplace/listings";
+import { parseVehicleBody } from "@/lib/listing-create/vehicle-body";
 import {
-  buildVehicleInsertPayload,
-  type VehicleListingInput,
-} from "@/lib/marketplace/listings";
-import type { VehicleCategoryId } from "@/lib/marketplace/vehicle-specs";
-import { VEHICLE_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
-import { isYearOptionalCategory } from "@/lib/marketplace/vehicle-taxonomy";
+  deterministicListingCreateId,
+  insertPropertyRowWithReservedId,
+  normalizeIdempotencyKey,
+  type PropertiesInsertClient,
+} from "@/lib/listing-create/idempotency";
+import {
+  fingerprintListingCreatePayload,
+  withListingCreateIdempotencyExtras,
+} from "@/lib/listing-create/payload-fingerprint";
 
 export const runtime = "nodejs";
 
 const ACTIVE_LISTING_STATUSES = ["pending", "approved", "flagged"];
-
-function isSafeListingMediaUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.endsWith(".supabase.co");
-  } catch {
-    return false;
-  }
-}
-
-function parseVehicleBody(body: Record<string, unknown>): VehicleListingInput | null {
-  const auto_category = String(body.auto_category ?? "").trim() as VehicleCategoryId;
-  if (!VEHICLE_CATEGORIES.some((c) => c.id === auto_category)) return null;
-
-  const title = String(body.title ?? "").trim();
-  const make = String(body.make ?? "").trim();
-  const model = String(body.model ?? "").trim();
-  const yearRaw = body.year;
-  const year =
-    yearRaw != null && yearRaw !== "" ? Number(yearRaw) : null;
-  const price = Number(body.price);
-  const state = String(body.state ?? "").trim();
-  const city = String(body.city ?? "").trim();
-  const vehicle_condition = String(
-    body.vehicle_condition ?? body.condition ?? "",
-  ).trim();
-
-  if (!title || !make || !model || !state || !city || !vehicle_condition) return null;
-  if (isYearOptionalCategory(auto_category)) {
-    if (year != null && (!Number.isFinite(year) || year < 1980)) return null;
-  } else if (!Number.isFinite(year) || year! < 1980) {
-    return null;
-  }
-  if (!Number.isFinite(price) || price <= 0) return null;
-
-  const media = Array.isArray(body.media_urls)
-    ? body.media_urls.map(String).filter(Boolean)
-    : [];
-
-  if (
-    media.length < 2 ||
-    media.length > 20 ||
-    media.some((url) => !isSafeListingMediaUrl(url))
-  ) {
-    return null;
-  }
-
-  return {
-    title,
-    description: body.description != null ? String(body.description) : undefined,
-    price,
-    state,
-    city,
-    area: body.area != null ? String(body.area) : city,
-    auto_category,
-    media_urls: media,
-    video_url: body.video_url != null ? String(body.video_url) : null,
-    make,
-    model,
-    year,
-    trim: body.trim != null ? String(body.trim) : null,
-    transmission: body.transmission != null ? String(body.transmission) : null,
-    fuel_type: body.fuel_type != null ? String(body.fuel_type) : null,
-    mileage:
-      body.mileage != null && body.mileage !== "" ? Number(body.mileage) : null,
-    vehicle_condition,
-    vin: body.vin != null ? String(body.vin) : null,
-    exterior_color:
-      body.exterior_color != null ? String(body.exterior_color) : null,
-    interior_color:
-      body.interior_color != null ? String(body.interior_color) : null,
-    body_type: body.body_type != null ? String(body.body_type) : null,
-    drivetrain: body.drivetrain != null ? String(body.drivetrain) : null,
-    engine: body.engine != null ? String(body.engine) : null,
-    registration_status:
-      body.registration_status != null
-        ? String(body.registration_status)
-        : null,
-    financing_available: Boolean(body.financing_available),
-    attributes:
-      body.attributes && typeof body.attributes === "object"
-        ? (body.attributes as Record<string, unknown>)
-        : {},
-  };
-}
 
 export async function POST(request: Request) {
   if (!isLaunchFeatureVisible("vehicle_marketplace")) {
@@ -195,7 +115,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Soft edit: keep approved listings live; flag for Lex content review.
     const stayLive = existing.status === "approved";
     const prevAttrs =
       existing.attributes &&
@@ -231,6 +150,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, listing: data });
   }
 
+  const idempotencyKey = normalizeIdempotencyKey(body.idempotencyKey);
+  if (!idempotencyKey) {
+    return NextResponse.json(
+      { error: "idempotencyKey is required for new vehicle listings" },
+      { status: 400 },
+    );
+  }
+
   const limit = getListingLimit(profile);
   const nowIso = new Date().toISOString();
   const { count: activeCount } = await supabase
@@ -247,22 +174,49 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("properties")
-    .insert(payload)
-    .select("id, slug, status")
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  await ensurePendingManualSellerVerification(admin, user.id, {
-    ...profile,
-    email: profile.email ?? user.email ?? null,
-  }).catch((error) => {
-    console.error("[vehicle-create] seller queue failed", error);
+  const reservedId = deterministicListingCreateId(
+    "vehicle",
+    user.id,
+    idempotencyKey,
+  );
+  const fingerprint = fingerprintListingCreatePayload("vehicle", payload);
+  const rowWithIdempotency = withListingCreateIdempotencyExtras(payload, {
+    scope: "vehicle",
+    fingerprint,
+    idempotency_key: idempotencyKey,
   });
 
-  return NextResponse.json({ ok: true, listing: data }, { status: 201 });
+  const insertResult = await insertPropertyRowWithReservedId(
+    supabase as unknown as PropertiesInsertClient,
+    reservedId,
+    rowWithIdempotency,
+    {
+      agentId: user.id,
+      assetType: "VEHICLE",
+      scope: "vehicle",
+      payloadFingerprint: fingerprint,
+      idempotencyKey,
+    },
+  );
+
+  if (!insertResult.ok) {
+    return NextResponse.json(
+      { error: insertResult.error, code: insertResult.code },
+      { status: insertResult.status },
+    );
+  }
+
+  if (insertResult.created) {
+    await ensurePendingManualSellerVerification(admin, user.id, {
+      ...profile,
+      email: profile.email ?? user.email ?? null,
+    }).catch((error) => {
+      console.error("[vehicle-create] seller queue failed", error);
+    });
+  }
+
+  return NextResponse.json(
+    { ok: true, listing: insertResult.listing, idempotentReplay: !insertResult.created },
+    { status: insertResult.created ? 201 : 200 },
+  );
 }
