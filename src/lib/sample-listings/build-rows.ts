@@ -5,6 +5,7 @@ import {
   SAMPLE_PROPERTIES,
   SAMPLE_VEHICLES,
 } from "./catalog";
+import { getSampleAgentProfile } from "./agent-fixtures";
 
 function daysFromNow(days: number): string {
   return new Date(Date.now() + days * 86_400_000).toISOString();
@@ -176,7 +177,7 @@ export function buildSampleListingFixtures(): Property[] {
         ...row,
         created_at: new Date(Date.now() - index * 3_600_000).toISOString(),
         updated_at: new Date(Date.now() - index * 3_600_000).toISOString(),
-        agent: null,
+        agent: getSampleAgentProfile(row.agent_id),
       }) as unknown as Property,
   );
 }

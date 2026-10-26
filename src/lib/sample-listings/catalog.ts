@@ -193,7 +193,7 @@ export const SAMPLE_PROPERTIES: SamplePropertyDef[] = [
   {
     id: "s3000001-0000-4000-8000-000000000004",
     slug: "sample-residential-land-enugu",
-    sellerId: SAMPLE_SELLERS[0].id,
+    sellerId: SAMPLE_SELLERS[2].id,
     title: "Residential Plot — Independence Layout Enugu",
     description: "600 sqm dry land with verified survey in a developed layout.",
     listing_type: "sale",
@@ -472,7 +472,7 @@ export const SAMPLE_VEHICLES: SampleVehicleDef[] = [
   {
     id: "s3000001-0000-4000-8000-000000000016",
     slug: "sample-bajaj-keke-abia",
-    sellerId: SAMPLE_SELLERS[1].id,
+    sellerId: SAMPLE_SELLERS[2].id,
     title: "[Sample] Bajaj RE Tricycle — Keke Napep",
     description: "Development fixture. Passenger tricycle in good running condition.",
     price: 1_450_000,
@@ -541,7 +541,7 @@ export const SAMPLE_ELECTRONICS: SampleElectronicsDef[] = [
   {
     id: "s3000001-0000-4000-8000-000000000021",
     slug: "sample-samsung-galaxy-s24-lagos",
-    sellerId: SAMPLE_SELLERS[2].id,
+    sellerId: SAMPLE_SELLERS[1].id,
     title: "Samsung Galaxy S24 — 256GB",
     description: "UK used, battery health 94%, box and charger included.",
     price: 680_000,
@@ -554,7 +554,12 @@ export const SAMPLE_ELECTRONICS: SampleElectronicsDef[] = [
     condition: "foreign_used",
     featured: true,
     images: SAMPLE_ELECTRONICS_PHOTOS.slice(0, 2),
-    attributes: { storage_gb: 256, warranty_months: 0 },
+    attributes: {
+      storage_gb: 256,
+      ram_gb: 8,
+      warranty_status: "with_warranty",
+      warranty_note: "Shop receipt valid till Dec 2026",
+    },
   },
   {
     id: "s3000001-0000-4000-8000-000000000022",

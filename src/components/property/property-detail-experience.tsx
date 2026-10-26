@@ -360,7 +360,7 @@ export function PropertyDetailExperience({
 
             <ListingDetailSpecificationsSection
               title="Property Specifications"
-              items={detailedSpecs.slice(0, specsExpanded ? detailedSpecs.length : 4)}
+              items={detailedSpecs.slice(0, specsExpanded ? detailedSpecs.length : 6)}
               headerAction={
                 <button
                   type="button"

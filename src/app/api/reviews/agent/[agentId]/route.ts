@@ -3,6 +3,7 @@ import {
   getApprovedReviewsForAgent,
   getReviewStats,
 } from "@/lib/reviews/queries";
+import { getSampleAgentReviewsPreview } from "@/lib/sample-listings/review-fixtures";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,11 @@ export async function GET(
   const id = agentId?.trim();
   if (!id) {
     return NextResponse.json({ error: "Agent id required" }, { status: 400 });
+  }
+
+  const samplePreview = getSampleAgentReviewsPreview(id);
+  if (samplePreview) {
+    return NextResponse.json(samplePreview);
   }
 
   const [stats, reviews] = await Promise.all([

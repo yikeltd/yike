@@ -35,7 +35,7 @@ function ListingDetailSellerPanel({
   return (
     <article
       className={cn(
-        "w-full rounded-[1.35rem] border border-slate-200/90 bg-white p-6 shadow-[0_18px_50px_-24px_rgba(3,27,78,0.22)] sm:p-8 dark:border-white/10 dark:bg-navy",
+        "w-full min-h-[18rem] rounded-[1.35rem] border border-slate-200/90 bg-white p-6 shadow-[0_18px_50px_-24px_rgba(3,27,78,0.22)] sm:min-h-[20rem] sm:p-8 dark:border-white/10 dark:bg-navy",
         className,
       )}
       data-testid="marketplace-seller-contact-card"
