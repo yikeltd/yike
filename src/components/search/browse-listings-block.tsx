@@ -374,9 +374,9 @@ export function BrowseListingsBlock({
 
   if (useMobileShell) {
     return (
-      <div className={shellClass}>
+      <div className="space-y-2">
         <HomeMobileFilterShell
-          collapseEnabled
+          collapseEnabled={mobileFilterCollapse}
           expanded={filtersExpanded}
           onExpandedChange={onFiltersExpandedChange ?? (() => {})}
           summary={filterSummary}
@@ -394,7 +394,7 @@ export function BrowseListingsBlock({
             </>
           }
           searchButton={mobileSearchButton}
-          showSearchButton={hasFilterSelection}
+          showSearchButton={!mobileFilterCollapse || hasFilterSelection}
         />
       </div>
     );

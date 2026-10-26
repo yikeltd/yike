@@ -8,15 +8,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { usePathname } from "next/navigation";
-
 type HomeMarketplaceFilterContextValue = {
   meaningfulFilterActive: boolean;
   filtersPanelOpen: boolean;
   setMeaningfulFilterActive: (active: boolean) => void;
   setFiltersPanelOpen: (open: boolean) => void;
-  /** Homepage large unified search + hero search CTA visibility. */
-  showLargeSearchBar: boolean;
+  /** Scroll to hero and expand in-flow marketplace filters (mobile homepage). */
+  openHomeMarketplaceFilters: () => void;
   resetHomeMarketplaceFilters: () => void;
 };
 
@@ -32,7 +30,15 @@ export function HomeMarketplaceFilterProvider({ children }: { children: ReactNod
     setFiltersPanelOpen(false);
   }, []);
 
-  const showLargeSearchBar = meaningfulFilterActive && filtersPanelOpen;
+  const openHomeMarketplaceFilters = useCallback(() => {
+    setFiltersPanelOpen(true);
+    if (typeof document !== "undefined") {
+      document.getElementById("home-search")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, []);
 
   const value = useMemo(
     (): HomeMarketplaceFilterContextValue => ({
@@ -40,14 +46,14 @@ export function HomeMarketplaceFilterProvider({ children }: { children: ReactNod
       filtersPanelOpen,
       setMeaningfulFilterActive,
       setFiltersPanelOpen,
-      showLargeSearchBar,
+      openHomeMarketplaceFilters,
       resetHomeMarketplaceFilters,
     }),
     [
       meaningfulFilterActive,
       filtersPanelOpen,
-      showLargeSearchBar,
       resetHomeMarketplaceFilters,
+      openHomeMarketplaceFilters,
     ],
   );
 
@@ -62,10 +68,7 @@ export function useHomeMarketplaceFilterContext(): HomeMarketplaceFilterContextV
   return useContext(HomeMarketplaceFilterContext);
 }
 
-/** True on non-home routes; on `/` requires meaningful filter + open panel. */
+/** Full unified header search pill (default header state on marketplace routes). */
 export function useHomeLargeSearchBarVisible(): boolean {
-  const pathname = usePathname();
-  const ctx = useHomeMarketplaceFilterContext();
-  if (pathname !== "/") return true;
-  return ctx?.showLargeSearchBar ?? false;
+  return true;
 }

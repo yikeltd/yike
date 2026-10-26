@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { BrowseListingsBlock } from "@/components/search/browse-listings-block";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
@@ -70,6 +70,12 @@ export function HomeCompactMarketplaceHero({
     },
     [marketplaceFilter],
   );
+
+  useEffect(() => {
+    if (marketplaceFilter?.filtersPanelOpen) {
+      setFiltersExpanded(true);
+    }
+  }, [marketplaceFilter?.filtersPanelOpen]);
 
   const sharedMobileFilterProps = mobileFilterCollapse
     ? {

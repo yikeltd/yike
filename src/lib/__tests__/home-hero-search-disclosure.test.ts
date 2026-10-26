@@ -22,14 +22,13 @@ test("mobile filter shell hides search until meaningful selection", () => {
   assert.match(shell, /home-mobile-search-cta/);
 });
 
-test("header mobile hides unified search on homepage until filters engaged", () => {
+test("header mobile shows unified search pill on homepage by default", () => {
   const header = readFileSync(
     join(process.cwd(), "src/components/layout/header-mobile.tsx"),
     "utf8",
   );
-  assert.match(header, /useHomeLargeSearchBarVisible/);
-  assert.match(header, /home-unified-search-collapsed/);
   assert.match(header, /home-unified-search-bar/);
+  assert.doesNotMatch(header, /home-unified-search-collapsed/);
 });
 
 test("meaningful selection requires actual filter values not panel open alone", () => {

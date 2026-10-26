@@ -96,7 +96,7 @@ test.describe("Mobile hero search layout", () => {
     await hero.getByTestId("home-mobile-filters-done").click();
     await expect(hero.getByTestId("home-mobile-filters-expanded")).toHaveCount(0);
     await expect(hero.getByTestId("home-mobile-search-cta")).toHaveCount(0);
-    await expect(page.getByTestId("home-unified-search-collapsed")).toBeVisible();
+    await expect(page.getByTestId("home-unified-search-bar")).toBeVisible();
     await expect(hero.getByTestId("home-mobile-filters-toggle")).toContainText(/Cars/i);
 
     await hero.getByTestId("home-mobile-filters-toggle").click();
@@ -110,7 +110,7 @@ test.describe("Mobile hero search layout", () => {
 
     await hero.getByTestId("home-mobile-filters-reset").click();
     await expect(hero.getByTestId("home-mobile-search-cta")).toHaveCount(0);
-    await expect(page.getByTestId("home-unified-search-collapsed")).toBeVisible();
+    await expect(page.getByTestId("home-unified-search-bar")).toBeVisible();
     await expect(hero.getByRole("button", { name: "Buy", exact: true })).not.toHaveClass(
       /bg-gold/,
     );

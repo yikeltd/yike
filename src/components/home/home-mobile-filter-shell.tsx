@@ -18,6 +18,13 @@ type Props = {
   className?: string;
 };
 
+/** Shared collapsed filter bar chrome (Vehicles / Properties / Electronics). */
+export const HOME_MOBILE_FILTER_TOGGLE_CLASS =
+  "pressable flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-left text-sm font-semibold text-white transition-colors hover:bg-white/[0.14] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/70";
+
+export const HOME_MOBILE_FILTER_EXPANDED_PANEL_CLASS =
+  "max-h-[min(70vh,28rem)] space-y-2.5 overflow-y-auto rounded-xl border border-white/15 bg-[#031B4E]/95 p-2.5 backdrop-blur-sm";
+
 /** Mobile homepage — compact filter entry; preserves filter state while collapsed. */
 export function HomeMobileFilterShell({
   collapseEnabled,
@@ -58,7 +65,7 @@ export function HomeMobileFilterShell({
           type="button"
           data-testid="home-mobile-filters-toggle"
           onClick={() => setExpanded(true)}
-          className="pressable flex w-full items-center justify-between gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-left text-sm font-semibold text-white"
+          className={HOME_MOBILE_FILTER_TOGGLE_CLASS}
           aria-expanded={false}
         >
           <span className="flex min-w-0 items-center gap-2">
@@ -69,7 +76,7 @@ export function HomeMobileFilterShell({
         </button>
       ) : (
         <div
-          className="max-h-[min(70vh,28rem)] space-y-2.5 overflow-y-auto rounded-xl border border-white/15 bg-[#031B4E]/95 p-2.5"
+          className={HOME_MOBILE_FILTER_EXPANDED_PANEL_CLASS}
           data-testid="home-mobile-filters-expanded"
         >
           <div className="flex items-center justify-between gap-2 px-0.5">

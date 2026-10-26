@@ -33,7 +33,7 @@ test.describe("Mobile homepage marketplace filters", () => {
 
   test("vehicle filters collapse by default then activate after category", async ({ page }) => {
     await page.goto("/?category=vehicle", { waitUntil: "domcontentloaded", timeout: 90_000 });
-    await expect(page.getByTestId("home-unified-search-collapsed")).toBeVisible({
+    await expect(page.getByTestId("home-unified-search-bar")).toBeVisible({
       timeout: 45_000,
     });
 

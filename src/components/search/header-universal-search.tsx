@@ -27,6 +27,7 @@ import { parseHomeCategory } from "@/lib/home/marketplace-category";
 import { allowNetworkAction } from "@/lib/pwa/offline-ui";
 import { brand } from "@/lib/design/tokens";
 import { cn } from "@/lib/utils";
+import { useHomeMarketplaceFilterContext } from "@/lib/home/home-marketplace-filter-context";
 import { MarketplaceLocationIndicator } from "@/components/location/marketplace-location-indicator";
 import { SearchContextFilters } from "./search-context-filters";
 import {
@@ -84,6 +85,8 @@ export function HeaderUniversalSearch({
   const homeCategory =
     pathname === "/" ? parseHomeCategory(searchParams.get("category")) : null;
   const homeVertical = homeCategory ? homeCategoryToFilterVertical(homeCategory) : null;
+  const marketplaceFilter = useHomeMarketplaceFilterContext();
+  const isHomeMarketplace = pathname === "/";
 
   const isUnified = layout === "unified";
   const unifiedLogo = isUnified || showLogo;
@@ -243,8 +246,24 @@ export function HeaderUniversalSearch({
         )}
       >
         <div
+          onClick={
+            isHomeMarketplace
+              ? (e) => {
+                  const target = e.target as HTMLElement;
+                  if (
+                    target.closest("button") ||
+                    target.closest("a") ||
+                    target.tagName === "INPUT"
+                  ) {
+                    return;
+                  }
+                  marketplaceFilter?.openHomeMarketplaceFilters();
+                  inputRef.current?.focus();
+                }
+              : undefined
+          }
           className={cn(
-            "flex min-w-0 items-center gap-0.5 rounded-full border transition-all duration-200 sm:gap-1",
+            "flex min-w-0 min-h-[44px] items-center gap-0.5 rounded-full border transition-all duration-200 sm:gap-1",
             isHero &&
               "border-white/15 bg-[#f4f6fa]/95 shadow-[0_2px_12px_rgba(0,0,0,0.12)]",
             isDesktop &&
@@ -254,6 +273,7 @@ export function HeaderUniversalSearch({
               "border-navy/8 bg-white shadow-[0_1px_3px_rgba(3,27,78,0.06),0_6px_18px_-10px_rgba(3,27,78,0.12)]",
             open && "border-gold/45 shadow-glow-gold ring-2 ring-gold/15",
             isUnified && "gap-1 px-1 py-0.5 sm:gap-1.5 sm:px-1.5",
+            isHomeMarketplace && "cursor-text",
           )}
         >
           {unifiedLogo ? (
@@ -334,8 +354,15 @@ export function HeaderUniversalSearch({
 
           <button
             type="button"
-            onClick={() => setFiltersOpen(true)}
-            className="pressable shrink-0 p-1.5 text-navy/60 hover:text-navy sm:p-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isHomeMarketplace) {
+                marketplaceFilter?.openHomeMarketplaceFilters();
+                return;
+              }
+              setFiltersOpen(true);
+            }}
+            className="pressable shrink-0 rounded-full p-1.5 text-navy/60 hover:bg-navy/5 hover:text-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/60 sm:p-2"
             title="Open Filters"
             aria-label="Open filters"
           >
@@ -343,7 +370,11 @@ export function HeaderUniversalSearch({
           </button>
 
           {unifiedLocation ? (
-            <div className="mr-0.5 flex shrink-0 items-center sm:mr-1">
+            <div
+              className="mr-0.5 flex shrink-0 items-center sm:mr-1"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
               <span className="mx-0.5 hidden h-5 w-px bg-navy/10 sm:block" aria-hidden />
               <Suspense
                 fallback={
