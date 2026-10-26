@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { MarketplaceBackButton } from "@/components/marketplace/marketplace-back-button";
 import {
   ChevronLeft,
@@ -21,8 +20,6 @@ import {
   Waves,
   Sun,
   Calculator,
-  MessageCircle,
-  TrendingUp,
 } from "lucide-react";
 import type { Property } from "@/types/database";
 import { formatPrice, cn, isVerifiedAgent } from "@/lib/utils";
@@ -35,11 +32,8 @@ import { PropertyGalleryModal } from "./property-gallery-modal";
 import { PropertyTrustIndicators } from "./property-trust-indicators";
 import { AgentContactCard } from "./agent-contact-card";
 import { PropertyCard } from "./property-card";
-import { PropertyNegotiationModal } from "./property-negotiation-modal";
-import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
-import { useAuth } from "@/components/auth/auth-provider";
-import { ListingInquiryActions } from "@/components/marketplace/listing-inquiry-actions";
-import { isNativeMarketplaceContactEnabled } from "@/lib/marketplace/native-contact";
+import { SellerMessageCallActions } from "@/components/marketplace/seller-message-call-actions";
+import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 
 const AMENITY_ICONS: Record<string, typeof Zap> = {
   power: Zap,
@@ -74,8 +68,6 @@ export function PropertyDetailExperience({
   ownerBanner?: React.ReactNode;
   browseReturnParam?: string | null;
 }) {
-  const router = useRouter();
-  const { guardAction } = useAuth();
   const slides = buildMotionSlides(property);
   const photos = slides.map((s) => s.url);
 
@@ -84,10 +76,8 @@ export function PropertyDetailExperience({
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [specsExpanded, setSpecsExpanded] = useState(false);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
-  const [negotiationOpen, setNegotiationOpen] = useState(false);
-  const [chatLoading, setChatLoading] = useState(false);
-
   const agent = property.agent;
+  const sellerIdentity = sellerContactCardFromListing(property, "PROPERTY");
   const verified =
     property.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
 
@@ -146,46 +136,6 @@ export function PropertyDetailExperience({
     { label: "Caution Deposit", value: (extrasObj.caution as string) || "10%" },
     { label: "Legal & Agency Fee", value: extrasObj.legal_fee ? String(extrasObj.legal_fee) : "10% / 10%" },
   ];
-
-  async function handleWhatsAppDirect() {
-    if (!agent?.id) return;
-    setChatLoading(true);
-    const href = typeof window !== "undefined" ? window.location.pathname : `/properties/${property.id}`;
-    const result = await trackLeadAndRedirect({
-      listingId: property.id,
-      agentId: agent.id,
-      leadType: "whatsapp",
-      sourcePage: href,
-      placement: "sticky",
-      agentName: agent.full_name ?? "Agent",
-      title: property.title,
-      area: property.area,
-      city: property.city,
-      price: Number(property.price),
-      paymentPeriod: property.payment_period,
-      listingType: property.listing_type,
-      bedrooms: property.bedrooms,
-      propertyType: property.property_type,
-      whatsapp: agent.whatsapp,
-      phone: agent.phone,
-    });
-    setChatLoading(false);
-    if (result.ok && result.redirectUrl) {
-      openWhatsAppLead(result);
-    }
-  }
-
-  function onStickyChatClick(e: React.MouseEvent) {
-    e.preventDefault();
-    guardAction(
-      {
-        type: "whatsapp",
-        listingId: property.id,
-        redirectPath: `/properties/${property.id}`,
-      },
-      () => void handleWhatsAppDirect()
-    );
-  }
 
   return (
     <div className="min-h-[100dvh] bg-[#f7f9fc] dark:bg-[#021433] text-navy dark:text-white pb-32 lg:pb-12 select-none">
@@ -481,40 +431,19 @@ export function PropertyDetailExperience({
       </div>
 
       {/* 8. STICKY MOBILE ACTIONS BAR (ALWAYS VISIBLE ON MOBILE) */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy/95 border-t border-navy/10 dark:border-white/10 backdrop-blur-md p-3 shadow-2xl">
-        <div className="mx-auto max-w-xl grid grid-cols-2 gap-2.5">
-          {isNativeMarketplaceContactEnabled() && agent?.id ? (
-            <div className="col-span-2">
-              <ListingInquiryActions
-                listingId={property.id}
-                assetType="PROPERTY"
-                sellerId={agent.id}
-                sellerName={agent.full_name ?? "Seller"}
-                layout="compact"
-              />
-            </div>
-          ) : (
-          <button
-            type="button"
-            onClick={onStickyChatClick}
-            disabled={chatLoading}
-            className="pressable flex items-center justify-center gap-2 rounded-2xl border-2 border-[#031B4E] dark:border-gold bg-white dark:bg-transparent py-3 text-xs font-black text-navy dark:text-gold hover:bg-slate-50 shadow-sm disabled:opacity-50"
-          >
-            <MessageCircle className="h-4 w-4 text-navy dark:text-gold" />
-            <span>{chatLoading ? "OPENING..." : "WHATSAPP CHAT"}</span>
-          </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setNegotiationOpen(true)}
-            className="pressable flex items-center justify-center gap-2 rounded-2xl bg-gold py-3 text-xs font-black text-navy hover:bg-gold-light shadow-md"
-          >
-            <TrendingUp className="h-4 w-4 text-navy" />
-            <span>START NEGOTIATION</span>
-          </button>
+      {sellerIdentity ? (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-navy/10 bg-white/95 p-3 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-navy/95">
+          <div className="mx-auto max-w-xl">
+            <SellerMessageCallActions
+              listingId={sellerIdentity.listingId}
+              assetType={sellerIdentity.assetType}
+              sellerId={sellerIdentity.sellerId}
+              sellerName={sellerIdentity.sellerName}
+              variant="gallery-inline"
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* FULLSCREEN GALLERY MODAL */}
       {fullscreenGalleryOpen && (
@@ -526,13 +455,6 @@ export function PropertyDetailExperience({
         />
       )}
 
-      {/* NEGOTIATION MODAL */}
-      {negotiationOpen && (
-        <PropertyNegotiationModal
-          property={property}
-          onClose={() => setNegotiationOpen(false)}
-        />
-      )}
     </div>
   );
 }

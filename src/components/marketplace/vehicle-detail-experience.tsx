@@ -38,7 +38,8 @@ import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import { VehicleTrustIndicators } from "./vehicle-trust-indicators";
 import { VehicleGalleryModal } from "./vehicle-gallery-modal";
 import { PropertyCard } from "@/components/property/property-card";
-import { VehicleDealerContactActions } from "@/components/marketplace/vehicle-dealer-contact-actions";
+import { MarketplaceSellerContactCard } from "@/components/marketplace/marketplace-seller-contact-card";
+import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 import {
   isVehicleFinanceEstimatorUiVisible,
   isVehicleMechanicInspectionUiVisible,
@@ -90,6 +91,7 @@ export function VehicleDetailExperience({
   const isDealer = agent?.account_type === "dealer" || Boolean(agent?.company_name);
   const sellerName = agent?.company_name || agent?.full_name || "Verified Automotive Dealer";
   const sellerAvatar = agent?.avatar_url;
+  const sellerIdentity = sellerContactCardFromListing(vehicle, "VEHICLE");
 
   const cleanLocation = [vehicle.area, vehicle.city, vehicle.state]
     .filter(Boolean)
@@ -226,13 +228,11 @@ export function VehicleDetailExperience({
               </div>
             )}
 
-            {sellerId ? (
+            {sellerIdentity ? (
               <div className="lg:hidden px-0.5">
-                <VehicleDealerContactActions
-                  listingId={vehicle.id}
-                  sellerId={sellerId}
-                  sellerName={sellerName}
-                  variant="gallery-inline"
+                <MarketplaceSellerContactCard
+                  {...sellerIdentity}
+                  actionsVariant="gallery-inline"
                 />
               </div>
             ) : null}
@@ -504,44 +504,15 @@ export function VehicleDetailExperience({
 
           {/* RIGHT COLUMN (DESKTOP STICKY DEALER SIDEBAR) */}
           <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4 text-navy dark:text-white">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-[#031B4E] text-white flex items-center justify-center border-2 border-gold/40 shadow-sm">
-                    {sellerAvatar ? (
-                      <Image src={sellerAvatar} alt={sellerName} fill className="object-cover" />
-                    ) : (
-                      <User className="h-7 w-7 text-white" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-navy dark:text-white">{sellerName}</h3>
-                    <p className="text-xs font-semibold text-navy/60 dark:text-white/60 mt-0.5">
-                      {isDealer ? "Verified Auto Showroom" : "Verified Vehicle Owner"}
-                    </p>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-gold-dark dark:text-gold mt-1">
-                      <Award className="h-3.5 w-3.5" />
-                      <span>4.9 ★ Dealer Score</span>
-                    </div>
-                  </div>
-                </div>
+            {sellerIdentity ? (
+              <div className="hidden lg:block">
+                <MarketplaceSellerContactCard {...sellerIdentity} />
               </div>
-
-              <div className="hidden pt-2 lg:block">
-                {sellerId ? (
-                  <VehicleDealerContactActions
-                    listingId={vehicle.id}
-                    sellerId={sellerId}
-                    sellerName={sellerName}
-                    variant="sidebar"
-                  />
-                ) : (
-                  <p className="text-xs text-navy/60 dark:text-white/60">
-                    Dealer contact is unavailable for this listing.
-                  </p>
-                )}
-              </div>
-            </div>
+            ) : (
+              <p className="hidden text-xs text-navy/60 dark:text-white/60 lg:block">
+                Dealer contact is unavailable for this listing.
+              </p>
+            )}
           </div>
 
         </div>

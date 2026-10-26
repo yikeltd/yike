@@ -17,7 +17,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { AdPlacement, Property } from "@/types/database";
 import { vehicleCategoryLabel } from "@/lib/marketplace/vehicle-specs";
-import { ContactButtons } from "@/components/property/contact-buttons";
+import { MarketplaceSellerContactCard } from "@/components/marketplace/marketplace-seller-contact-card";
+import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 import { ReportListingForm } from "@/components/property/report-form";
 import { ShareButton } from "@/components/property/listing-share-menu";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
@@ -258,22 +259,14 @@ export function VehiclePremiumDetail({
 
       <div className="mt-6 space-y-3 border-t border-navy/[0.06] pt-5">
         <div id="listing-primary-cta">
-          {agent ? (
-            <ContactButtons
-              propertyId={vehicle.id}
-              title={vehicle.title}
-              area={vehicle.area || vehicle.city}
-              city={vehicle.city}
-              listingType={vehicle.listing_type || "sale"}
-              propertyType={vehicle.auto_category}
-              agentId={vehicle.agent_id}
-              agentName={agent.full_name || "Seller"}
-              price={Number(vehicle.price)}
-              paymentPeriod={vehicle.payment_period || "total"}
-              phone={agent.phone}
-              whatsapp={agent.whatsapp}
-            />
-          ) : null}
+          {(() => {
+            const sellerIdentity = sellerContactCardFromListing(vehicle, "VEHICLE", {
+              verified,
+            });
+            return sellerIdentity ? (
+              <MarketplaceSellerContactCard {...sellerIdentity} />
+            ) : null;
+          })()}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <ListingSaveButton

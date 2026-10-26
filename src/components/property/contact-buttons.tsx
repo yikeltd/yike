@@ -16,7 +16,8 @@ import {
 } from "./call-routing-sheets";
 import { recentContactNotice } from "@/lib/recently-contacted";
 import type { PaymentPeriod, ListingType } from "@/types/database";
-import { ListingInquiryActions } from "@/components/marketplace/listing-inquiry-actions";
+import { SellerMessageCallActions } from "@/components/marketplace/seller-message-call-actions";
+import type { MarketplaceAssetType } from "@/lib/marketplace-messaging/service";
 
 function nativeContactEnabled(): boolean {
   const raw = process.env.NEXT_PUBLIC_ENABLE_MARKETPLACE_NATIVE_CONTACT?.trim().toLowerCase();
@@ -40,6 +41,7 @@ interface ContactButtonsProps {
   whatsapp?: string | null;
   layout?: "card" | "detail";
   placement?: ContactPlacement;
+  assetType?: MarketplaceAssetType;
 }
 
 export function ContactButtons({
@@ -58,6 +60,7 @@ export function ContactButtons({
   whatsapp,
   layout = "detail",
   placement = "detail",
+  assetType = "PROPERTY",
 }: ContactButtonsProps) {
   const { guardAction } = useAuth();
   const [loading, setLoading] = useState<"whatsapp" | "call" | null>(null);
@@ -173,12 +176,12 @@ export function ContactButtons({
 
   if (nativeContactEnabled()) {
     return (
-      <ListingInquiryActions
+      <SellerMessageCallActions
         listingId={propertyId}
-        assetType="PROPERTY"
+        assetType={assetType}
         sellerId={agentId}
         sellerName={agentName}
-        layout={layout === "card" ? "compact" : "detail"}
+        variant={layout === "card" ? "gallery-inline" : "sidebar"}
       />
     );
   }

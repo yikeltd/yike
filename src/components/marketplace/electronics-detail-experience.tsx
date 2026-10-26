@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { MapPin, MessageCircle, ShieldCheck } from "lucide-react";
+import { MapPin, ShieldCheck } from "lucide-react";
 import { MarketplaceBackButton } from "@/components/marketplace/marketplace-back-button";
 import type { Property } from "@/types/database";
 import { formatPrice, cn, isVerifiedAgent } from "@/lib/utils";
@@ -14,15 +14,8 @@ import {
   ELECTRONICS_CONDITIONS,
   electronicsWarrantyStatusLabel,
 } from "@/lib/marketplace/electronics-specs";
-import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
-import { ListingInquiryActions } from "@/components/marketplace/listing-inquiry-actions";
-
-function nativeContactEnabled(): boolean {
-  const raw = process.env.NEXT_PUBLIC_ENABLE_MARKETPLACE_NATIVE_CONTACT?.trim().toLowerCase();
-  if (raw === "false" || raw === "0") return false;
-  return true;
-}
-import { useAuth } from "@/components/auth/auth-provider";
+import { MarketplaceSellerContactCard } from "@/components/marketplace/marketplace-seller-contact-card";
+import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 import { ElectronicsCard } from "./electronics-card";
 import { ReportListingForm } from "@/components/property/report-form";
 
@@ -42,8 +35,6 @@ export function ElectronicsDetailExperience({
   ownerBanner?: React.ReactNode;
   browseReturnParam?: string | null;
 }) {
-  const { guardAction } = useAuth();
-  const [chatLoading, setChatLoading] = useState(false);
   const photos = listing.media_urls ?? [];
   const [activeIndex, setActiveIndex] = useState(0);
   const agent = listing.agent;
@@ -89,34 +80,7 @@ export function ElectronicsDetailExperience({
   }
 
   const location = [listing.area, listing.city, listing.state].filter(Boolean).join(", ");
-  const wa = agent?.whatsapp || agent?.phone;
-  const sellerName = agent?.company_name || agent?.full_name || "Seller";
-
-  async function handleWhatsAppLead() {
-    if (!agent?.id) return;
-    setChatLoading(true);
-    const href =
-      typeof window !== "undefined" ? window.location.pathname : `/electronics/${listing.id}`;
-    const result = await trackLeadAndRedirect({
-      listingId: listing.id,
-      agentId: agent.id,
-      leadType: "whatsapp",
-      sourcePage: href,
-      placement: "detail",
-      agentName: sellerName,
-      title: listing.title,
-      area: listing.area,
-      city: listing.city,
-      price: Number(listing.price),
-      paymentPeriod: listing.payment_period || "total",
-      listingType: listing.listing_type || "sale",
-      propertyType: listing.auto_category,
-      whatsapp: agent.whatsapp,
-      phone: agent.phone,
-    });
-    setChatLoading(false);
-    if (result.ok && result.redirectUrl) openWhatsAppLead(result);
-  }
+  const sellerIdentity = sellerContactCardFromListing(listing, "ELECTRONICS");
 
   return (
     <div className="min-h-screen bg-surface pb-24">
@@ -197,34 +161,9 @@ export function ElectronicsDetailExperience({
           </section>
         ) : null}
 
-        <section className="rounded-2xl border border-navy/10 bg-white p-4">
-          <h2 className="text-sm font-black text-navy">Seller</h2>
-          <p className="mt-1 text-sm font-semibold text-navy">
-            {agent?.company_name || agent?.full_name || "Seller"}
-          </p>
-          {nativeContactEnabled() && agent?.id ? (
-            <div className="mt-3">
-              <ListingInquiryActions
-                listingId={listing.id}
-                assetType="ELECTRONICS"
-                sellerId={agent.id}
-                sellerName={agent?.company_name || agent?.full_name || "Seller"}
-              />
-            </div>
-          ) : wa ? (
-            <button
-              type="button"
-              disabled={chatLoading}
-              className="pressable mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3.5 text-sm font-black text-white disabled:opacity-70"
-              onClick={() => guardAction({ type: "whatsapp" }, () => void handleWhatsAppLead())}
-            >
-              <MessageCircle className="h-5 w-5" aria-hidden />
-              {chatLoading ? "Opening…" : "Chat on WhatsApp"}
-            </button>
-          ) : (
-            <p className="mt-2 text-xs text-muted">Contact details available after verification.</p>
-          )}
-        </section>
+        {sellerIdentity ? (
+          <MarketplaceSellerContactCard {...sellerIdentity} />
+        ) : null}
 
         <ReportListingForm propertyId={listing.id} />
 
