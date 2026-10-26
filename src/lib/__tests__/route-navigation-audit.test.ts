@@ -70,6 +70,22 @@ test("conversations layout uses shared marketplace shell", () => {
   assert.match(layout, /ConsumerMarketplaceShell/);
 });
 
+test("conversation thread subpage back links to inbox via ConsumerSubpageHeader", () => {
+  const thread = readFileSync(
+    join(APP, "conversations/[id]/marketplace-thread.tsx"),
+    "utf8",
+  );
+  assert.match(thread, /ConsumerSubpageHeader/);
+  assert.match(thread, /consumerRoute\("messages"\)/);
+  assert.match(thread, /Back to inbox/);
+  assert.doesNotMatch(thread, /router\.push\("\/conversations"\)/);
+});
+
+test("seller route tree mounts consumer marketplace shell", () => {
+  assert.equal(routeTreeHasConsumerShell("seller"), true);
+  assert.equal(routeTreeHasConsumerShell("seller/crm"), true);
+});
+
 test("route inventory discovers app pages", () => {
   const routes = listPageRoutes();
   assert.ok(routes.length >= 200);

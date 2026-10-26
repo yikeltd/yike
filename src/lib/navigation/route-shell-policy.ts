@@ -18,6 +18,8 @@ export const CONSUMER_SHELL_PREFIXES = [
   "/conversations",
   "/trust",
   "/agent",
+  "/seller",
+  "/developers",
   "/payments/history",
   "/post-property",
 ] as const;
@@ -68,7 +70,11 @@ export function routeTreeHasConsumerShell(routePath: string): boolean {
   if (segments[0] === "agent") {
     checks.push(join(APP_ROOT, "agent", "layout.tsx"));
   }
-  if (segments[0] === "conversations" || segments[0] === "trust") {
+  if (
+    segments[0] === "conversations" ||
+    segments[0] === "trust" ||
+    segments[0] === "seller"
+  ) {
     checks.push(join(APP_ROOT, segments[0], "layout.tsx"));
   }
   for (const file of checks) {

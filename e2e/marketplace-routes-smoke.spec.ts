@@ -5,6 +5,8 @@ const routes = [
   "/search",
   "/vehicles",
   "/electronics",
+  "/developers",
+  "/seller",
   "/agent/listings/choose",
 ];
 

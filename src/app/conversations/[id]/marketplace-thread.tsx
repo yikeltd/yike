@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ConsumerSubpageHeader } from "@/components/layout/consumer-subpage-header";
+import { consumerRoute } from "@/lib/navigation/consumer-routes";
 import { AgoraCallRoom } from "@/components/marketplace/agora-call-room";
 import {
   finalizeVideoCallSession,
@@ -31,7 +32,6 @@ export function MarketplaceThread({
   conversationId: string;
   currentUserId: string;
 }) {
-  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [meta, setMeta] = useState<ConversationMeta | null>(null);
   const [peerId, setPeerId] = useState<string | null>(null);
@@ -196,15 +196,16 @@ export function MarketplaceThread({
     setMediaSessionId(sessionId);
   }
 
+  const threadTitle = listingTitle?.trim() || "Conversation";
+
   return (
-    <div className="mx-auto flex min-h-[70dvh] max-w-2xl flex-col gap-4 px-4 py-6">
-      <button
-        type="button"
-        className="pressable self-start text-sm font-semibold text-navy/70"
-        onClick={() => router.push("/conversations")}
-      >
-        ← Inbox
-      </button>
+    <div className="mx-auto flex min-h-[70dvh] max-w-2xl flex-col gap-4 px-4 py-6 pb-28">
+      <ConsumerSubpageHeader
+        title={threadTitle}
+        subtitle={meta ? "Listing inquiry" : loading ? "Loading…" : undefined}
+        backHref={consumerRoute("messages")}
+        backLabel="Back to inbox"
+      />
 
       {meta ? (
         <div className="rounded-xl border border-navy/10 bg-white px-3 py-2 text-xs text-navy/70">
