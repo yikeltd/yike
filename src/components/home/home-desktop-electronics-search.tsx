@@ -21,11 +21,19 @@ import { useHomeMarketplaceFilterContext } from "@/lib/home/home-marketplace-fil
 import { electronicsMarketplaceMeaningfulSelection } from "@/lib/home/marketplace-filter-engagement";
 import { cn } from "@/lib/utils";
 
-/** Desktop hero shortcuts — All + canonical `ELECTRONICS_CATEGORIES` ids. */
-const ELECTRONICS_DEAL_CHIPS = [
-  { value: "", label: "All" },
-  ...ELECTRONICS_CATEGORIES.map((c) => ({ value: c.id, label: c.label })),
+/** Desktop hero shortcuts only — full taxonomy stays in mobile/advanced selects. */
+export const DESKTOP_ELECTRONICS_HERO_SHORTCUTS = [
+  { value: "phones_tablets", label: "Phones" },
+  { value: "computers", label: "Laptops" },
+  { value: "tv_audio", label: "TVs" },
+  { value: "home_appliances", label: "Home Appliances" },
 ] as const;
+
+function electronicsCategoryLabel(categoryId: string): string | undefined {
+  const shortcut = DESKTOP_ELECTRONICS_HERO_SHORTCUTS.find((c) => c.value === categoryId);
+  if (shortcut) return shortcut.label;
+  return ELECTRONICS_CATEGORIES.find((c) => c.id === categoryId)?.label;
+}
 
 type Props = {
   onSearch: (payload: BrowseSearchPayload) => void;
@@ -128,7 +136,7 @@ export function HomeDesktopElectronicsSearch({
       if (max) params.set("max_price", max);
     }
 
-    const catLabel = ELECTRONICS_CATEGORIES.find((c) => c.id === category)?.label;
+    const catLabel = category ? electronicsCategoryLabel(category) : undefined;
     const labelParts = [catLabel || "Electronics", city || state || undefined].filter(Boolean);
 
     onSearch({
@@ -139,9 +147,7 @@ export function HomeDesktopElectronicsSearch({
 
   const filterSummary = useMemo(() => {
     const parts = [
-      category
-        ? ELECTRONICS_CATEGORIES.find((c) => c.id === category)?.label
-        : null,
+      category ? electronicsCategoryLabel(category) : null,
       city || state || null,
       condition
         ? ELECTRONICS_CONDITIONS.find((c) => c.id === condition)?.label
@@ -245,18 +251,21 @@ export function HomeDesktopElectronicsSearch({
         data-testid="home-desktop-electronics-search"
       >
         <div
-          className="mb-2.5 flex flex-wrap gap-2 lg:justify-start"
+          className="mb-2.5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-start"
           data-testid="home-desktop-electronics-category-chips"
+          role="group"
+          aria-label="Electronics category shortcuts"
         >
-          {ELECTRONICS_DEAL_CHIPS.map((chip) => {
+          {DESKTOP_ELECTRONICS_HERO_SHORTCUTS.map((chip) => {
             const active = category === chip.value;
             return (
               <button
-                key={chip.value || "all"}
+                key={chip.value}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setCategory(chip.value)}
                 className={cn(
-                  "pressable rounded-full px-3 py-1.5 text-[11px] font-bold transition-all duration-200 sm:px-4 sm:text-xs",
+                  "pressable min-w-0 rounded-full px-3 py-1.5 text-[11px] font-bold transition-all duration-200 sm:px-4 sm:text-xs",
                   active
                     ? "bg-gold text-navy shadow-glow-gold"
                     : "border border-white/14 bg-white/[0.06] text-white/78 hover:bg-white/[0.1] hover:text-white",
