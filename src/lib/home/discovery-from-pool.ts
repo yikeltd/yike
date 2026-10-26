@@ -269,7 +269,6 @@ export function extractDealersFromListings(
     })
     .slice(0, limit)
     .map(({ agent, count, verticals, city, state }) => {
-      const profile = agent as Profile;
       return {
         id: agent.id,
         name: agent.company_name || agent.full_name || "Verified seller",
