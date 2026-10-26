@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { SELLER_CHOOSE_LISTING_PATH } from "@/lib/seller-trust";
 import {
   FOOTER_TAGLINE,
   FOOTER_SAFETY_DISCLAIMER,
@@ -13,11 +14,24 @@ import {
   footerCopyrightLine,
 } from "@/lib/layout/site-footer-content";
 
-test("footer link groups match product routes", () => {
-  assert.deepEqual(
-    FOOTER_EXPLORE_LINKS.map((l) => l.href),
-    ["/buy", "/rent", "/vehicles", "/land", "/post-property"],
+test("footer explore links reflect three marketplace categories", () => {
+  const hrefs = FOOTER_EXPLORE_LINKS.map((l) => l.href);
+  assert.deepEqual(hrefs, [
+    "/buy",
+    "/rent",
+    "/vehicles",
+    "/electronics",
+    SELLER_CHOOSE_LISTING_PATH,
+  ]);
+  assert.doesNotMatch(hrefs.join(" "), /\/land/);
+  assert.match(hrefs.join(" "), /\/electronics/);
+  assert.equal(
+    FOOTER_EXPLORE_LINKS.find((l) => l.label === "Sell on Yike")?.href,
+    SELLER_CHOOSE_LISTING_PATH,
   );
+});
+
+test("footer company and legal link groups match routes", () => {
   assert.deepEqual(
     FOOTER_COMPANY_LINKS.map((l) => l.href),
     ["/about", "/contact", "/safety", "/verify-agent"],
@@ -36,11 +50,16 @@ test("footer copyright uses current year and RC number", () => {
   );
 });
 
-test("footer copy reflects Yike Ltd ownership and accurate tagline", () => {
-  assert.match(FOOTER_TAGLINE, /property, vehicles, and land/);
+test("footer copy reflects three verticals and Yike Ltd ownership", () => {
+  assert.equal(
+    FOOTER_TAGLINE,
+    "Nigeria's trusted marketplace for property, vehicles, and electronics.",
+  );
+  assert.doesNotMatch(FOOTER_TAGLINE, /land/i);
   assert.doesNotMatch(FOOTER_TAGLINE, /verified/i);
   assert.equal(FOOTER_OWNERSHIP_LINE, "Owned & Operated by Yike Ltd.");
-  assert.match(FOOTER_SAFETY_DISCLAIMER, /property and vehicle marketplace/);
+  assert.match(FOOTER_SAFETY_DISCLAIMER, /property, vehicles, and electronics/);
+  assert.doesNotMatch(FOOTER_SAFETY_DISCLAIMER, /land/i);
 });
 
 test("site footer component has no Stankings branding", () => {
@@ -49,6 +68,6 @@ test("site footer component has no Stankings branding", () => {
     "utf8",
   );
   assert.doesNotMatch(src, /stankings/i);
-  assert.doesNotMatch(src, /Stankings/i);
   assert.match(src, /FOOTER_OWNERSHIP_LINE|Owned & Operated by Yike Ltd/);
+  assert.match(src, /electronics_marketplace/);
 });

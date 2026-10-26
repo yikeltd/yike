@@ -1,10 +1,12 @@
 /** Shared public footer copy and link groups — single source for SiteFooter + tests. */
 
+import { SELLER_CHOOSE_LISTING_PATH } from "@/lib/seller-trust";
+
 export const FOOTER_TAGLINE =
-  "Nigeria's trusted marketplace for property, vehicles, and land." as const;
+  "Nigeria's trusted marketplace for property, vehicles, and electronics." as const;
 
 export const FOOTER_SAFETY_DISCLAIMER =
-  "Yike is a property and vehicle marketplace. Always inspect listings and complete your due diligence before making payments." as const;
+  "Yike is a marketplace for property, vehicles, and electronics. Always inspect listings and complete your due diligence before making payments." as const;
 
 export const FOOTER_OWNERSHIP_LINE = "Owned & Operated by Yike Ltd." as const;
 
@@ -14,8 +16,8 @@ export const FOOTER_EXPLORE_LINKS = [
   { href: "/buy", label: "Buy Property" },
   { href: "/rent", label: "Rent Property" },
   { href: "/vehicles", label: "Vehicles", vehiclesOnly: true as const },
-  { href: "/land", label: "Land" },
-  { href: "/post-property", label: "Sell on Yike" },
+  { href: "/electronics", label: "Electronics", electronicsOnly: true as const },
+  { href: SELLER_CHOOSE_LISTING_PATH, label: "Sell on Yike" },
 ] as const;
 
 export const FOOTER_COMPANY_LINKS = [

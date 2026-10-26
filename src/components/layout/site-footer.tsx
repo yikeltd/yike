@@ -44,9 +44,14 @@ function FooterNavColumn({
 export function SiteFooter() {
   const year = new Date().getFullYear();
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
-  const explore = FOOTER_EXPLORE_LINKS.filter(
-    (link) => !("vehiclesOnly" in link && link.vehiclesOnly && !vehiclesOn),
-  );
+  const electronicsOn = isLaunchFeatureVisible("electronics_marketplace");
+  const explore = FOOTER_EXPLORE_LINKS.filter((link) => {
+    if ("vehiclesOnly" in link && link.vehiclesOnly && !vehiclesOn) return false;
+    if ("electronicsOnly" in link && link.electronicsOnly && !electronicsOn) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <footer className="text-[#f0f4fa]">
