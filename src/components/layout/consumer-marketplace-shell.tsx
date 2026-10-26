@@ -6,7 +6,7 @@ import { PublicFooter } from "@/components/layout/public-footer";
 export function ConsumerMarketplaceShell({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <ConsumerShell>{children}</ConsumerShell>
+      <ConsumerShell showDesktopWhatsappFab={false}>{children}</ConsumerShell>
       <ConditionalPublicFooter>
         <PublicFooter />
       </ConditionalPublicFooter>

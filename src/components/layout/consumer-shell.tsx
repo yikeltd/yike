@@ -14,9 +14,12 @@ import type { SiteBanner } from "@/types/database";
 export function ConsumerShell({
   children,
   mobileBanner: _mobileBanner,
+  showDesktopWhatsappFab = true,
 }: {
   children: React.ReactNode;
   mobileBanner?: SiteBanner | null;
+  /** Yike support WhatsApp — public home/browse only; off in agent/seller portal chrome. */
+  showDesktopWhatsappFab?: boolean;
 }) {
   void _mobileBanner;
   const pathname = usePathname();
@@ -82,7 +85,7 @@ export function ConsumerShell({
       <Suspense fallback={null}>
         <BottomNavMobile />
       </Suspense>
-      <DesktopWhatsappAdminButton />
+      {showDesktopWhatsappFab ? <DesktopWhatsappAdminButton /> : null}
     </>
   );
 }
