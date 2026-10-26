@@ -20,6 +20,7 @@
 
 ## Evidence sources
 
+0. **Export & compare workflow** — `docs/engineering/MIGRATION_HISTORY_EXPORT.md` (`npm run compare:migrations`, fixture in `docs/fixtures/migration-history-production-tail.example.json`).
 1. **Production migration history** — `supabase_migrations.schema_migrations` (Supabase MCP / SQL), versions `>= 20261024`.
 2. **Local migration files** — `supabase/migrations/*.sql` (148 files).
 3. **Live production schema** — read-only SQL against `public` (tables, triggers, function body fingerprints). No data mutation.

@@ -1,0 +1,14 @@
+[
+  { "version": "20261024131732", "name": "lock_down_btos_read_policies" },
+  { "version": "20261024131815", "name": "yike_coins_messaging_calls" },
+  { "version": "20261024131823", "name": "yike_coins_messaging_calls_rpcs" },
+  { "version": "20261024131829", "name": "yike_coins_hardening_core" },
+  { "version": "20261024131832", "name": "yike_coins_hardening_video_allowance" },
+  { "version": "20261024135221", "name": "revoke_anon_yike_coin_video_rpc" },
+  { "version": "20261024135657", "name": "universal_listing_foundation" },
+  { "version": "20261024143304", "name": "harden_phone_otp_rpc_grants" },
+  { "version": "20261024143310", "name": "otp_ip_rate_limit_foundation" },
+  { "version": "20261025175331", "name": "fix_profile_set_username_ambiguous" },
+  { "version": "20261025194900", "name": "peer_transfer_distinct_ledger_references" },
+  { "version": "20261025194913", "name": "peer_transfer_distinct_ledger_references_v2" }
+]
