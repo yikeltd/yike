@@ -467,6 +467,20 @@ export function SellerCommandCenter(props: Props) {
 
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
               <Link
+                href="/agent/listings"
+                prefetch
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
+                  <List className="h-3.5 w-3.5" />
+                </span>
+                <div className="w-full">
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">My Listings</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{activeCount} active</p>
+                </div>
+              </Link>
+
+              <Link
                 href="/seller/boost"
                 prefetch
                 className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
@@ -496,23 +510,23 @@ export function SellerCommandCenter(props: Props) {
               </Link>
 
               <Link
-                href="/agent/leads"
+                href="/conversations"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                  <MessageCircle className="h-3.5 w-3.5" />
+                  <MessageSquare className="h-3.5 w-3.5" />
                 </span>
                 <div className="w-full">
-                  <h3 className="text-[10px] font-bold text-navy leading-tight">Leads</h3>
-                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{leadsCount} this month</p>
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">Messages</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">Inbox</p>
                 </div>
               </Link>
 
               <Link
                 href="/seller/crm"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
                   <BarChart3 className="h-3.5 w-3.5" />
@@ -526,7 +540,7 @@ export function SellerCommandCenter(props: Props) {
               <Link
                 href="/payments/history"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-teal-50 text-teal-600 shrink-0">
                   <Wallet className="h-3.5 w-3.5" />
@@ -540,7 +554,7 @@ export function SellerCommandCenter(props: Props) {
               <Link
                 href="/agent/verification"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-slate-50 text-navy shrink-0">
                   <ShieldCheck className="h-3.5 w-3.5" />
@@ -557,11 +571,11 @@ export function SellerCommandCenter(props: Props) {
 
           {/* 10. BUSINESS SNAPSHOT — COMPRESSED CARD HEIGHT & PADDING */}
           <section className="space-y-1">
-            <SectionHeader title="Business Snapshot" href="/seller/crm" />
+            <SectionHeader title="Business Snapshot" />
 
             <div className="rounded-2xl border border-navy/[0.06] bg-white p-2.5 shadow-xs">
               <div className="grid grid-cols-3 divide-x divide-navy/[0.06] text-center">
-                <Link href="/seller/crm" prefetch className="pressable px-1 py-0.5 block">
+                <Link href="/agent/leads" prefetch className="pressable px-1 py-0.5 block">
                   <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
                     <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                       <Users className="h-2.5 w-2.5" />
@@ -569,7 +583,6 @@ export function SellerCommandCenter(props: Props) {
                     <span>Active Leads</span>
                   </div>
                   <p className="text-lg font-black text-navy mt-0.5">{leadsCount}</p>
-                  <p className="text-[9px] font-bold text-emerald-600">↑ 0% vs last 7 days</p>
                 </Link>
 
                 <Link href="/agent/listings" prefetch className="pressable px-1 py-0.5 block">
@@ -580,7 +593,6 @@ export function SellerCommandCenter(props: Props) {
                     <span>Active listings</span>
                   </div>
                   <p className="text-lg font-black text-navy mt-0.5">{activeCount}</p>
-                  <p className="text-[9px] font-bold text-blue-600">↑ 0% vs last 7 days</p>
                 </Link>
 
                 <Link href="/agent/verification" prefetch className="pressable px-1 py-0.5 block">
@@ -591,7 +603,6 @@ export function SellerCommandCenter(props: Props) {
                     <span>Trust Score</span>
                   </div>
                   <p className="text-lg font-black text-gold mt-0.5">{trustScore}</p>
-                  <p className="text-[9px] font-bold text-emerald-600">↑ 2 pts this week</p>
                 </Link>
               </div>
             </div>
@@ -599,7 +610,7 @@ export function SellerCommandCenter(props: Props) {
 
           {/* 11. RECENT ACTIVITY — COMPRESSED 4 VISIBLE CARDS */}
           <section className="space-y-1">
-            <SectionHeader title="Recent Activity" href="/seller/crm" />
+            <SectionHeader title="Recent Activity" />
 
             <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
               {sampleActivities.map((act) => {
