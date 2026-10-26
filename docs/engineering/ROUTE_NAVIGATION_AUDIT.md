@@ -96,7 +96,7 @@
 | Wallet + subpage header | `eba3bd0d` | Unit wallet UI test |
 | Orphan shell + Messages tab | `db5d9828` | Unit route audit |
 | Build/tsc baseline | — | `npm run build`, `tsc --noEmit` post-`db5d9828` |
-| Thread back + 320px nav + E2E | _(see commit below)_ | `route-navigation-audit.test.ts` 8/8; Playwright consumer-shell 10/10, marketplace-smoke 9/9, seller-gates 4/4, staff-console 6/6 |
+| Thread back + 320px nav + E2E | `11cf76db` | `route-navigation-audit.test.ts` 8/8; Playwright consumer-shell 10/10, marketplace-smoke 9/9, seller-gates 4/4, staff-console 6/6 |
 
 ## Maintenance
 
