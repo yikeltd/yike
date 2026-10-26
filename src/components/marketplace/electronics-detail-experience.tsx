@@ -128,7 +128,7 @@ export function ElectronicsDetailExperience({
           className="h-10 w-10 bg-navy/5 text-navy hover:bg-navy/10 backdrop-blur-none"
         />
         <span className="flex-1 truncate text-sm font-bold text-navy">Electronics</span>
-        <ListingSaveButton listingId={listing.id} />
+        <ListingSaveButton listingId={listing.id} variant="inline" />
         <ShareButton url={shareUrl} title={listing.title} text={listing.title} />
       </div>
 

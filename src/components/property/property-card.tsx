@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
-  Heart,
   MessageCircle,
   MapPin,
   BedDouble,
@@ -24,14 +23,9 @@ import {
   listingTypeLabel,
   cn,
 } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { useAuth } from "@/components/auth/auth-provider";
 import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
-import { trackEvent } from "@/lib/analytics";
-import { recordEngagementSave } from "@/lib/engagement";
-import { trackSavedListing } from "@/lib/browse-preferences";
 import { listingImageAlt } from "@/lib/image-seo";
 import { ListingImage } from "./listing-image";
 import { listingCardImage } from "@/lib/listing-gallery-images";
@@ -41,7 +35,8 @@ import { useMarketplaceBrowseReturn } from "@/hooks/use-marketplace-browse-retur
 import { ListingDistanceLabel } from "@/components/marketplace/listing-distance-label";
 import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
-import { isGuestFavorite, toggleGuestFavorite } from "@/lib/guest-favorites";
+import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
+import { listingSaveAnalyticsFromProperty } from "@/lib/listings/toggle-listing-save";
 import { logFeaturedAnalyticsEvent } from "@/lib/featured-promotions/analytics-client";
 import {
   PlacementBadge,
@@ -74,9 +69,7 @@ export function PropertyCard({
   variant?: PropertyCardVariant;
 }) {
   const isBrowse = variant === "browse";
-  const { guardAction, user, isListingSaved, setListingSaved } = useAuth();
-  const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { guardAction } = useAuth();
   const [chatLoading, setChatLoading] = useState(false);
   const [quickPreviewOpen, setQuickPreviewOpen] = useState(false);
 
@@ -119,108 +112,6 @@ export function PropertyCard({
     property.payment_period,
     property.listing_type
   );
-
-  useEffect(() => {
-    if (isDemo) return;
-    if (!user?.id) {
-      setSaved(isGuestFavorite(property.id));
-      return;
-    }
-    setSaved(isListingSaved(property.id));
-  }, [property.id, isDemo, user?.id, isListingSaved]);
-
-  async function performSave() {
-    if (!user?.id || !isSupabaseConfigured()) return;
-    setSaving(true);
-    const supabase = createClient();
-    if (saved) {
-      await supabase
-        .from("favorites")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("property_id", property.id);
-      setSaved(false);
-      setListingSaved(property.id, false);
-      trackEvent("unsave_listing", {
-        listing_id: property.id,
-        city: property.city,
-        source: "account",
-      });
-    } else {
-      await supabase.from("favorites").insert({
-        user_id: user.id,
-        property_id: property.id,
-      });
-      setSaved(true);
-      setListingSaved(property.id, true);
-      recordEngagementSave();
-      trackSavedListing(property.id, {
-        city: property.city,
-        area: property.area,
-        listingType: property.listing_type,
-        propertyType: property.property_type,
-      });
-      trackEvent("save_listing", {
-        listing_id: property.id,
-        city: property.city,
-        source: "account",
-      });
-      void fetch("/api/listing-leads/capture", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadType: "save",
-          listingId: property.id,
-          sellerId: property.agent_id,
-          listingTitle: property.title,
-          sourcePage:
-            typeof window !== "undefined" ? window.location.pathname : "",
-        }),
-      });
-    }
-    setSaving(false);
-  }
-
-  function toggleSave(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isDemo) return;
-
-    if (!user?.id) {
-      const nowSaved = toggleGuestFavorite(property.id);
-      setSaved(nowSaved);
-      if (nowSaved) {
-        recordEngagementSave();
-        trackSavedListing(property.id, {
-          city: property.city,
-          area: property.area,
-          listingType: property.listing_type,
-          propertyType: property.property_type,
-        });
-        trackEvent("save_listing", {
-          listing_id: property.id,
-          city: property.city,
-          source: "guest",
-        });
-      } else {
-        trackEvent("unsave_listing", {
-          listing_id: property.id,
-          city: property.city,
-          source: "guest",
-        });
-      }
-      return;
-    }
-
-    guardAction(
-      {
-        type: "save",
-        listingId: property.id,
-        redirectPath: href,
-      },
-      () => void performSave()
-    );
-  }
 
   function openQuickPreview(e: React.MouseEvent) {
     e.preventDefault();
@@ -343,23 +234,16 @@ export function PropertyCard({
           >
             <Eye className="h-3.5 w-3.5 text-navy/80" />
           </button>
-          <button
-            type="button"
-            onClick={toggleSave}
-            disabled={saving || isDemo}
-            className={cn(
-              "pointer-events-auto pressable flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur-sm transition-transform hover:scale-105",
-              saving && "opacity-70"
-            )}
-            aria-label={saved ? "Unsave listing" : "Save listing"}
-          >
-            <Heart
-              className={cn(
-                "h-3.5 w-3.5 transition-transform active:scale-125",
-                saved ? "fill-red-500 text-red-500" : "text-navy/70"
-              )}
+          {!isDemo ? (
+            <ListingSaveButton
+              listingId={property.id}
+              variant="card-overlay"
+              redirectPath={href}
+              analytics={listingSaveAnalyticsFromProperty(property, "card")}
+              sellerId={property.agent_id}
+              listingTitle={property.title}
             />
-          </button>
+          ) : null}
         </div>
 
         {/* CARD DETAILS */}

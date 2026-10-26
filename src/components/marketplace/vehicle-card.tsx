@@ -217,15 +217,22 @@ export function VehicleCard({
             <Eye className="h-3.5 w-3.5 text-navy/80" />
           </button>
 
-          {!isDemo && (
-            <div className="pointer-events-auto">
-              <ListingSaveButton
-                listingId={vehicle.id}
-                compact
-                className="!h-8 !w-8 !bg-white/95 !text-navy shadow-sm backdrop-blur-sm"
-              />
-            </div>
-          )}
+          {!isDemo ? (
+            <ListingSaveButton
+              listingId={vehicle.id}
+              variant="card-overlay"
+              redirectPath={href}
+              analytics={{
+                source: "card",
+                city: vehicle.city,
+                area: vehicle.area,
+                listingType: vehicle.listing_type,
+                propertyType: vehicle.property_type,
+              }}
+              sellerId={vehicle.agent_id}
+              listingTitle={vehicle.title}
+            />
+          ) : null}
         </div>
 
         <div className="flex flex-1 flex-col justify-between p-2.5 sm:p-3">

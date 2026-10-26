@@ -8,6 +8,7 @@ import { isTrustVerified } from "@/lib/hub-filters";
 import { listingPath } from "@/lib/marketplace/listing-path";
 import { normalizeAssetType } from "@/lib/marketplace/listings";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
+import { listingSaveAnalyticsFromProperty } from "@/lib/listings/toggle-listing-save";
 import { HeaderDesktop } from "@/components/layout/header-desktop";
 import { HomeDesktopHero } from "@/components/home/home-desktop-hero";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
@@ -77,37 +78,43 @@ function renderDesktopSection(title: string, href: string, items: Property[]) {
               key={item.id}
               className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md transition-all hover:-translate-y-1 hover:shadow-xl"
             >
-              <Link
-                href={listingPath(item)}
-                className="relative aspect-[4/3] w-full overflow-hidden bg-navy"
-              >
-                <Image
-                  src={photo}
-                  alt={item.title}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5">
-                  <span className="rounded-md bg-navy/80 px-2 py-0.5 text-[10px] font-black uppercase text-white shadow-xs">
-                    {asset === "VEHICLE"
-                      ? "Vehicle"
-                      : asset === "ELECTRONICS"
-                        ? "Electronics"
-                        : "Property"}
-                  </span>
-                  {verified ? (
-                    <span className="flex items-center gap-0.5 rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white shadow-xs">
-                      ✓ Verified
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-navy">
+                <Link
+                  href={listingPath(item)}
+                  className="relative block h-full w-full"
+                >
+                  <Image
+                    src={photo}
+                    alt={item.title}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5">
+                    <span className="rounded-md bg-navy/80 px-2 py-0.5 text-[10px] font-black uppercase text-white shadow-xs">
+                      {asset === "VEHICLE"
+                        ? "Vehicle"
+                        : asset === "ELECTRONICS"
+                          ? "Electronics"
+                          : "Property"}
                     </span>
-                  ) : null}
-                </div>
-                <div className="absolute right-3 top-3 z-10">
+                    {verified ? (
+                      <span className="flex items-center gap-0.5 rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white shadow-xs">
+                        ✓ Verified
+                      </span>
+                    ) : null}
+                  </div>
+                </Link>
+                <div className="pointer-events-none absolute right-3 top-3 z-10">
                   <ListingSaveButton
                     listingId={item.id}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-navy shadow-md backdrop-blur-md transition-transform hover:scale-110"
+                    variant="card-overlay"
+                    redirectPath={listingPath(item)}
+                    analytics={listingSaveAnalyticsFromProperty(item, "card")}
+                    sellerId={item.agent_id}
+                    listingTitle={item.title}
                   />
                 </div>
-              </Link>
+              </div>
               <div className="space-y-1 bg-white p-4">
                 <p className="text-lg font-black tracking-tight text-navy">{price}</p>
                 <h3 className="line-clamp-1 text-xs font-bold text-navy/80 transition-colors group-hover:text-gold-dark">

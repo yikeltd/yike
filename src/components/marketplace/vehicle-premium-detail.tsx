@@ -278,7 +278,8 @@ export function VehiclePremiumDetail({
         <div className="grid grid-cols-2 gap-2">
           <ListingSaveButton
             listingId={vehicle.id}
-            className="pressable inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-navy/10 bg-white text-sm font-semibold text-navy/80 transition hover:border-gold/40 hover:bg-gold/10"
+            variant="inline"
+            className="h-11 w-full justify-center gap-2 rounded-xl py-0 text-sm font-semibold"
           />
           <ShareButton
             title={vehicle.title}

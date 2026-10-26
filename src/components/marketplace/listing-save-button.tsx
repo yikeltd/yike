@@ -1,111 +1,222 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Heart } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import {
-  isGuestFavorite,
-  toggleGuestFavorite,
-} from "@/lib/guest-favorites";
 import { useAuth } from "@/components/auth/auth-provider";
 import { cn } from "@/lib/utils";
+import {
+  LISTING_SAVE_CARD_OVERLAY_CLASS,
+  LISTING_SAVE_CARD_OVERLAY_ICON_CLASS,
+  listingSaveAriaLabel,
+  readGuestListingSaved,
+  toggleAuthenticatedListingSave,
+  toggleGuestListingSaveWithAnalytics,
+  type ListingSaveAnalyticsContext,
+} from "@/lib/listings/toggle-listing-save";
+
+export type ListingSaveButtonProps = {
+  listingId: string;
+  className?: string;
+  /** Circular heart on listing imagery (default for cards). */
+  variant?: "card-overlay" | "inline";
+  disabled?: boolean;
+  redirectPath?: string;
+  analytics?: ListingSaveAnalyticsContext;
+  sellerId?: string | null;
+  listingTitle?: string | null;
+};
 
 export function ListingSaveButton({
   listingId,
   className,
-  compact = false,
-}: {
-  listingId: string;
-  className?: string;
-  /** Icon-only for dense browse cards. */
-  compact?: boolean;
-}) {
-  const { user } = useAuth();
-  const [saved, setSaved] = useState(false);
+  variant = "card-overlay",
+  disabled = false,
+  redirectPath,
+  analytics,
+  sellerId,
+  listingTitle,
+}: ListingSaveButtonProps) {
+  const {
+    user,
+    loading: authLoading,
+    isListingSaved,
+    setListingSaved,
+    guardAction,
+  } = useAuth();
+
+  const [guestSaved, setGuestSaved] = useState(false);
+  const [guestHydrated, setGuestHydrated] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const errorTimerRef = useRef<number | null>(null);
+
+  const accountSaved = user ? isListingSaved(listingId) : false;
+  const saved = user ? accountSaved : guestSaved;
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      if (!user) {
-        setSaved(isGuestFavorite(listingId));
-        return;
-      }
-      const supabase = createClient();
-      if (!supabase) return;
-      const { data } = await supabase
-        .from("favorites")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("property_id", listingId)
-        .maybeSingle();
-      if (!cancelled) setSaved(Boolean(data));
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
+    if (user) return;
+    setGuestSaved(readGuestListingSaved(listingId));
+    setGuestHydrated(true);
   }, [listingId, user]);
 
-  async function toggle() {
-    if (busy) return;
+  const showTransientError = useCallback((message: string) => {
+    setErrorMessage(message);
+    if (errorTimerRef.current) {
+      window.clearTimeout(errorTimerRef.current);
+    }
+    errorTimerRef.current = window.setTimeout(() => {
+      setErrorMessage(null);
+      errorTimerRef.current = null;
+    }, 4000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current) window.clearTimeout(errorTimerRef.current);
+    };
+  }, []);
+
+  const runToggle = useCallback(async () => {
+    if (busy || disabled) return;
     setBusy(true);
-    if (!user) {
-      setSaved(toggleGuestFavorite(listingId));
+    setErrorMessage(null);
+
+    if (!user?.id) {
+      const guestAnalytics: ListingSaveAnalyticsContext | undefined = analytics
+        ? {
+            ...analytics,
+            source:
+              analytics.source === "account" || analytics.source === "card"
+                ? "guest"
+                : analytics.source,
+          }
+        : undefined;
+      const next = toggleGuestListingSaveWithAnalytics(
+        listingId,
+        guestAnalytics,
+      );
+      setGuestSaved(next);
       setBusy(false);
       return;
     }
-    const supabase = createClient();
-    if (!supabase) {
-      setBusy(false);
-      return;
-    }
-    if (saved) {
-      await supabase
-        .from("favorites")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("property_id", listingId);
-      setSaved(false);
+
+    const result = await toggleAuthenticatedListingSave({
+      listingId,
+      currentlySaved: accountSaved,
+      userId: user.id,
+      analytics,
+      sellerId,
+      listingTitle,
+      sourcePage:
+        typeof window !== "undefined" ? window.location.pathname : undefined,
+    });
+
+    if (result.ok) {
+      setListingSaved(listingId, result.saved);
     } else {
-      await supabase.from("favorites").insert({
-        user_id: user.id,
-        property_id: listingId,
-      });
-      setSaved(true);
+      showTransientError("Could not update saved listing. Try again.");
     }
     setBusy(false);
-  }
+  }, [
+    accountSaved,
+    analytics,
+    busy,
+    disabled,
+    listingId,
+    listingTitle,
+    sellerId,
+    setListingSaved,
+    showTransientError,
+    user?.id,
+  ]);
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (busy || disabled || authLoading) return;
+
+      if (!user?.id) {
+        void runToggle();
+        return;
+      }
+
+      guardAction(
+        {
+          type: "save",
+          listingId,
+          redirectPath: redirectPath ?? window.location.pathname,
+        },
+        () => void runToggle(),
+      );
+    },
+    [
+      authLoading,
+      busy,
+      disabled,
+      guardAction,
+      listingId,
+      redirectPath,
+      runToggle,
+      user?.id,
+    ],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      e.stopPropagation();
+      handleClick(e as unknown as React.MouseEvent);
+    },
+    [handleClick],
+  );
+
+  const isCardOverlay = variant === "card-overlay";
+  const ariaLabel = listingSaveAriaLabel(saved);
 
   return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        void toggle();
-      }}
-      disabled={busy}
-      aria-label={saved ? "Remove from saved" : "Save listing"}
-      className={cn(
-        compact
-          ? "pressable inline-flex h-7 w-7 items-center justify-center rounded-full text-navy hover:bg-navy/5"
-          : "inline-flex items-center gap-1.5 rounded-full border border-navy/12 bg-white px-3 py-1.5 text-xs font-bold text-navy",
-        className,
-      )}
-    >
-      <Heart
+    <>
+      <button
+        type="button"
+        data-testid="listing-save-button"
+        data-listing-id={listingId}
+        data-variant={variant}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        disabled={busy || disabled || (!user && !guestHydrated && !authLoading)}
+        aria-label={ariaLabel}
+        aria-pressed={saved}
+        aria-busy={busy}
         className={cn(
-          compact ? "h-3.5 w-3.5" : "h-4 w-4",
-          saved && "animate-heart-pop",
-          saved
-            ? compact
-              ? "fill-red-500 text-red-500"
-              : "fill-gold text-gold"
-            : "text-navy/50"
+          isCardOverlay
+            ? LISTING_SAVE_CARD_OVERLAY_CLASS
+            : "inline-flex items-center gap-1.5 rounded-full border border-navy/12 bg-white px-3 py-1.5 text-xs font-bold text-navy pressable focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:opacity-60",
+          className,
         )}
-      />
-      {compact ? null : saved ? "Saved" : "Save"}
-    </button>
+      >
+        <Heart
+          aria-hidden
+          className={cn(
+            isCardOverlay
+              ? LISTING_SAVE_CARD_OVERLAY_ICON_CLASS
+              : "h-4 w-4",
+            saved && !busy && "animate-heart-pop motion-reduce:animate-none",
+            saved
+              ? "fill-gold text-gold"
+              : isCardOverlay
+                ? "text-navy/80"
+                : "text-navy/50",
+          )}
+        />
+        {!isCardOverlay ? (saved ? "Saved" : "Save") : null}
+      </button>
+      {errorMessage ? (
+        <span className="sr-only" role="status" aria-live="polite">
+          {errorMessage}
+        </span>
+      ) : null}
+    </>
   );
 }
