@@ -18,6 +18,7 @@ export type { VehicleCategoryId };
 export {
   VEHICLE_TAXONOMY,
   VEHICLE_CATEGORIES_BROWSE,
+  VEHICLE_HOME_SEARCH_CATEGORIES,
   vehicleCategoryLabel,
   isMachineryCategory,
   isRoadMileageCategory,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import { BrowseListingsBlock } from "@/components/search/browse-listings-block";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
@@ -8,6 +9,7 @@ import { HomeDesktopElectronicsSearch } from "@/components/home/home-desktop-ele
 import { MarketplaceCategoryToggle } from "@/components/home/marketplace-category-toggle";
 import type { HomeMarketplaceCategory } from "@/lib/home/marketplace-category";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { useDesktopWeb } from "@/hooks/use-desktop-web";
 import { cn } from "@/lib/utils";
 
 const MOBILE_HERO_IMAGE = "/images/hero/yike-city-hero.webp";
@@ -42,6 +44,29 @@ export function HomeCompactMarketplaceHero({
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
   const electronicsOn = isLaunchFeatureVisible("electronics_marketplace");
   const showToggle = vehiclesOn || electronicsOn;
+  const desktopWeb = useDesktopWeb();
+  const mobileFilterCollapse = !desktopWeb;
+
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [resetToken, setResetToken] = useState(0);
+
+  const handleCategoryChange = useCallback(
+    (next: HomeMarketplaceCategory) => {
+      onCategoryChange(next);
+      setFiltersExpanded(mobileFilterCollapse);
+      setResetToken((t) => t + 1);
+    },
+    [mobileFilterCollapse, onCategoryChange],
+  );
+
+  const sharedMobileFilterProps = mobileFilterCollapse
+    ? {
+        mobileFilterCollapse: true as const,
+        filtersExpanded,
+        onFiltersExpandedChange: setFiltersExpanded,
+        resetToken,
+      }
+    : {};
 
   const panelKey =
     category === "vehicle"
@@ -77,7 +102,7 @@ export function HomeCompactMarketplaceHero({
         {showToggle ? (
           <MarketplaceCategoryToggle
             category={category}
-            onChange={onCategoryChange}
+            onChange={handleCategoryChange}
             tone="onDark"
             compact
             className="max-w-full"
@@ -86,7 +111,11 @@ export function HomeCompactMarketplaceHero({
 
         <div key={panelKey} className="animate-fade-up">
           {category === "vehicle" && vehiclesOn ? (
-            <HomeVehicleSearch onSearch={onVehicleSearch} compact />
+            <HomeVehicleSearch
+              onSearch={onVehicleSearch}
+              compact
+              {...sharedMobileFilterProps}
+            />
           ) : category === "electronics" && electronicsOn ? (
             <HomeDesktopElectronicsSearch
               onSearch={onElectronicsSearch}
@@ -96,6 +125,7 @@ export function HomeCompactMarketplaceHero({
                 city: browseInitial.city,
                 budgetValue: browseInitial.budgetValue,
               }}
+              {...sharedMobileFilterProps}
             />
           ) : (
             <BrowseListingsBlock
@@ -110,6 +140,7 @@ export function HomeCompactMarketplaceHero({
               initial={browseInitial}
               hideTitle
               onSearch={onPropertySearch}
+              {...sharedMobileFilterProps}
             />
           )}
         </div>

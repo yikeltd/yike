@@ -260,6 +260,18 @@ export const VEHICLE_CATEGORIES_BROWSE = VEHICLE_TAXONOMY.filter(
     !["truck", "van", "motorcycle", "commercial", "heavy_equipment"].includes(c.id),
 );
 
+/** Homepage / compact mobile hero — five road categories (canonical persisted ids). */
+export const VEHICLE_HOME_SEARCH_CATEGORIES: {
+  id: VehicleCategoryId;
+  label: string;
+}[] = [
+  { id: "car", label: "Cars" },
+  { id: "suv", label: "SUVs" },
+  { id: "pickup_van", label: "Pickups" },
+  { id: "bus_minibus", label: "Buses" },
+  { id: "motorcycle_tricycle", label: "Motorcycles" },
+];
+
 export const LEGACY_VEHICLE_CATEGORY_ALIASES: Partial<
   Record<VehicleCategoryId, VehicleCategoryId>
 > = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { ThemedSelect } from "@/components/ui/themed-select";
 import {
@@ -16,6 +16,7 @@ import {
   ELECTRONICS_CONDITIONS,
 } from "@/lib/marketplace/electronics-specs";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
+import { HomeMobileFilterShell } from "@/components/home/home-mobile-filter-shell";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -30,6 +31,11 @@ type Props = {
   className?: string;
   /** Tighter grid for mobile hero. */
   compact?: boolean;
+  mobileFilterCollapse?: boolean;
+  filtersExpanded?: boolean;
+  onFiltersExpandedChange?: (open: boolean) => void;
+  resetToken?: number;
+  onFilterSummaryChange?: (summary: string) => void;
 };
 
 export function HomeDesktopElectronicsSearch({
@@ -37,12 +43,26 @@ export function HomeDesktopElectronicsSearch({
   initial,
   className,
   compact = false,
+  mobileFilterCollapse = false,
+  filtersExpanded = false,
+  onFiltersExpandedChange,
+  resetToken = 0,
+  onFilterSummaryChange,
 }: Props) {
   const [state, setState] = useState(initial?.state ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
   const [category, setCategory] = useState(initial?.category ?? "");
   const [condition, setCondition] = useState(initial?.condition ?? "");
   const [budget, setBudget] = useState(initial?.budgetValue ?? "");
+
+  useEffect(() => {
+    if (resetToken === 0) return;
+    setState("");
+    setCity("");
+    setCategory("");
+    setCondition("");
+    setBudget("");
+  }, [resetToken]);
 
   const stateOptions = useMemo(() => buildStateSelectOptions(), []);
   const cityOptions = useMemo(
@@ -65,6 +85,14 @@ export function HomeDesktopElectronicsSearch({
     [],
   );
 
+  function resetFilters() {
+    setState("");
+    setCity("");
+    setCategory("");
+    setCondition("");
+    setBudget("");
+  }
+
   function submit() {
     const params = new URLSearchParams();
     if (state) params.set("state", state);
@@ -86,79 +114,132 @@ export function HomeDesktopElectronicsSearch({
     });
   }
 
-  return (
+  const filterSummary = useMemo(() => {
+    const parts = [
+      category
+        ? ELECTRONICS_CATEGORIES.find((c) => c.id === category)?.label
+        : null,
+      city || state || null,
+      condition
+        ? ELECTRONICS_CONDITIONS.find((c) => c.id === condition)?.label
+        : null,
+      budget ? "Budget set" : null,
+    ].filter(Boolean);
+    return parts.join(" · ");
+  }, [category, city, state, condition, budget]);
+
+  useEffect(() => {
+    onFilterSummaryChange?.(filterSummary);
+  }, [filterSummary, onFilterSummaryChange]);
+
+  const filterControls = (
     <div
       className={cn(
-        compact
-          ? "space-y-2"
-          : "yike-search-shell rounded-2xl border border-white/14 bg-[#031B4E]/92 p-3 shadow-search ring-1 ring-white/12 backdrop-blur-sm",
-        className,
+        "grid gap-2",
+        compact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 lg:grid-cols-5",
       )}
     >
+      <ThemedSelect
+        variant={compact ? "default" : "hero"}
+        ariaLabel="State"
+        value={state}
+        onChange={(v) => {
+          setState(v);
+          setCity("");
+        }}
+        options={stateOptions}
+        placeholder="Any state"
+      />
+      <ThemedSelect
+        variant={compact ? "default" : "hero"}
+        ariaLabel="City"
+        value={city}
+        onChange={setCity}
+        options={cityOptions}
+        placeholder="Any city"
+      />
+      <ThemedSelect
+        variant={compact ? "default" : "hero"}
+        ariaLabel="Electronics category"
+        value={category}
+        onChange={setCategory}
+        options={categoryOptions}
+        placeholder="Any category"
+      />
+      <ThemedSelect
+        variant={compact ? "default" : "hero"}
+        ariaLabel="Condition"
+        value={condition}
+        onChange={setCondition}
+        options={conditionOptions}
+        placeholder="Any condition"
+      />
+      <ThemedSelect
+        variant={compact ? "default" : "hero"}
+        ariaLabel="Budget"
+        value={budget}
+        onChange={setBudget}
+        options={budgetOptions}
+        placeholder="Any budget"
+        compactLabel
+      />
+    </div>
+  );
+
+  const searchButton = (
+    <button
+      type="button"
+      onClick={submit}
+      className={cn(
+        "pressable flex w-full items-center justify-center gap-2 rounded-xl bg-gold font-bold text-navy shadow-glow-gold",
+        compact ? "py-3 text-[15px]" : "py-3.5 text-[15px]",
+      )}
+      aria-label="Search electronics"
+    >
+      <Search className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+      Search
+    </button>
+  );
+
+  if (!compact && !mobileFilterCollapse) {
+    const variant = "hero" as const;
+    return (
       <div
         className={cn(
-          "grid gap-2",
-          compact
-            ? "grid-cols-2 sm:grid-cols-3"
-            : "grid-cols-2 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto] lg:items-center",
+          "yike-search-shell rounded-2xl border border-white/14 bg-[#031B4E]/92 p-3 shadow-search ring-1 ring-white/12 backdrop-blur-sm",
+          className,
         )}
       >
-        <ThemedSelect
-          variant={compact ? "default" : "hero"}
-          ariaLabel="State"
-          value={state}
-          onChange={(v) => {
-            setState(v);
-            setCity("");
-          }}
-          options={stateOptions}
-          placeholder="State"
-        />
-        <ThemedSelect
-          variant={compact ? "default" : "hero"}
-          ariaLabel="City"
-          value={city}
-          onChange={setCity}
-          options={cityOptions}
-          placeholder="City"
-        />
-        <ThemedSelect
-          variant={compact ? "default" : "hero"}
-          ariaLabel="Electronics category"
-          value={category}
-          onChange={setCategory}
-          options={categoryOptions}
-          placeholder="Category"
-        />
-        <ThemedSelect
-          variant={compact ? "default" : "hero"}
-          ariaLabel="Condition"
-          value={condition}
-          onChange={setCondition}
-          options={conditionOptions}
-          placeholder="Condition"
-        />
-        <ThemedSelect
-          variant={compact ? "default" : "hero"}
-          ariaLabel="Budget"
-          value={budget}
-          onChange={setBudget}
-          options={budgetOptions}
-          placeholder="Budget"
-        />
-        <button
-          type="button"
-          onClick={submit}
-          className={cn(
-            "pressable flex items-center justify-center rounded-2xl bg-gold font-black text-navy shadow-md transition-all hover:bg-gold-light",
-            compact ? "col-span-2 h-11 sm:col-span-3" : "h-11 w-full lg:h-11 lg:w-11",
-          )}
-          aria-label="Search electronics"
-        >
-          <Search className="h-5 w-5 stroke-[2.5]" />
-          {compact ? <span className="ml-2 text-sm">Search</span> : null}
-        </button>
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto] lg:items-center">
+          <ThemedSelect variant={variant} ariaLabel="State" value={state} onChange={(v) => { setState(v); setCity(""); }} options={stateOptions} placeholder="State" />
+          <ThemedSelect variant={variant} ariaLabel="City" value={city} onChange={setCity} options={cityOptions} placeholder="City" />
+          <ThemedSelect variant={variant} ariaLabel="Electronics category" value={category} onChange={setCategory} options={categoryOptions} placeholder="Category" />
+          <ThemedSelect variant={variant} ariaLabel="Condition" value={condition} onChange={setCondition} options={conditionOptions} placeholder="Condition" />
+          <ThemedSelect variant={variant} ariaLabel="Budget" value={budget} onChange={setBudget} options={budgetOptions} placeholder="Budget" />
+          <button
+            type="button"
+            onClick={submit}
+            className="pressable flex h-11 w-full items-center justify-center rounded-2xl bg-gold font-black text-navy shadow-md transition-all hover:bg-gold-light lg:h-11 lg:w-11"
+            aria-label="Search electronics"
+          >
+            <Search className="h-5 w-5" strokeWidth={2.5} />
+          </button>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className={cn(compact ? "space-y-2" : undefined, className)}>
+      <HomeMobileFilterShell
+        collapseEnabled={mobileFilterCollapse}
+        expanded={filtersExpanded}
+        onExpandedChange={onFiltersExpandedChange ?? (() => {})}
+        summary={filterSummary}
+        onResetFilters={resetFilters}
+        filterControls={filterControls}
+        searchButton={searchButton}
+      />
     </div>
   );
 }
