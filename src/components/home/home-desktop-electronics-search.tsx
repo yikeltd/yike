@@ -132,32 +132,10 @@ export function HomeDesktopElectronicsSearch({
     onFilterSummaryChange?.(filterSummary);
   }, [filterSummary, onFilterSummaryChange]);
 
+  const showDetailFilters = !mobileFilterCollapse || Boolean(category);
+
   const filterControls = (
-    <div
-      className={cn(
-        "grid gap-2",
-        compact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 lg:grid-cols-5",
-      )}
-    >
-      <ThemedSelect
-        variant={compact ? "default" : "hero"}
-        ariaLabel="State"
-        value={state}
-        onChange={(v) => {
-          setState(v);
-          setCity("");
-        }}
-        options={stateOptions}
-        placeholder="Any state"
-      />
-      <ThemedSelect
-        variant={compact ? "default" : "hero"}
-        ariaLabel="City"
-        value={city}
-        onChange={setCity}
-        options={cityOptions}
-        placeholder="Any city"
-      />
+    <div className={cn(compact ? "space-y-2" : "space-y-3")}>
       <ThemedSelect
         variant={compact ? "default" : "hero"}
         ariaLabel="Electronics category"
@@ -166,23 +144,55 @@ export function HomeDesktopElectronicsSearch({
         options={categoryOptions}
         placeholder="Any category"
       />
-      <ThemedSelect
-        variant={compact ? "default" : "hero"}
-        ariaLabel="Condition"
-        value={condition}
-        onChange={setCondition}
-        options={conditionOptions}
-        placeholder="Any condition"
-      />
-      <ThemedSelect
-        variant={compact ? "default" : "hero"}
-        ariaLabel="Budget"
-        value={budget}
-        onChange={setBudget}
-        options={budgetOptions}
-        placeholder="Any budget"
-        compactLabel
-      />
+      {showDetailFilters ? (
+        <div
+          className={cn(
+            "grid gap-2",
+            compact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 lg:grid-cols-4",
+          )}
+        >
+          <ThemedSelect
+            variant={compact ? "default" : "hero"}
+            ariaLabel="State"
+            value={state}
+            onChange={(v) => {
+              setState(v);
+              setCity("");
+            }}
+            options={stateOptions}
+            placeholder="Any state"
+          />
+          <ThemedSelect
+            variant={compact ? "default" : "hero"}
+            ariaLabel="City"
+            value={city}
+            onChange={setCity}
+            options={cityOptions}
+            placeholder="Any city"
+          />
+          <ThemedSelect
+            variant={compact ? "default" : "hero"}
+            ariaLabel="Condition"
+            value={condition}
+            onChange={setCondition}
+            options={conditionOptions}
+            placeholder="Any condition"
+          />
+          <ThemedSelect
+            variant={compact ? "default" : "hero"}
+            ariaLabel="Budget"
+            value={budget}
+            onChange={setBudget}
+            options={budgetOptions}
+            placeholder="Any budget"
+            compactLabel
+          />
+        </div>
+      ) : (
+        <p className="text-[11px] font-medium text-white/65">
+          Choose a category to set city, condition, and budget.
+        </p>
+      )}
     </div>
   );
 

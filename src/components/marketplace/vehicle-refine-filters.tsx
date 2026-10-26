@@ -20,6 +20,7 @@ import {
 import {
   VEHICLE_CATEGORIES_BROWSE,
   VEHICLE_CATEGORY_GROUPS,
+  vehiclePrimaryCategorySelectOptions,
   isMachineryCategory,
 } from "@/lib/marketplace/vehicle-specs";
 import { ThemedSelect } from "@/components/ui/themed-select";
@@ -69,13 +70,21 @@ export function VehicleRefineFilters({ className }: { className?: string }) {
     ],
     [],
   );
-  const categoryOptions = useMemo(
-    () => [
+  const categoryOptions = useMemo(() => {
+    if (!group || group === "road") {
+      return [
+        { value: "", label: "Any category" },
+        ...vehiclePrimaryCategorySelectOptions(),
+      ];
+    }
+    return [
       { value: "", label: "Any subcategory" },
-      ...VEHICLE_CATEGORIES_BROWSE.map((c) => ({ value: c.id, label: c.label })),
-    ],
-    [],
-  );
+      ...VEHICLE_CATEGORIES_BROWSE.filter((c) => c.group === group).map((c) => ({
+        value: c.id,
+        label: c.label,
+      })),
+    ];
+  }, [group]);
   const makeOptions = useMemo(() => buildVehicleMakeSelectOptions(), []);
   const modelOptions = useMemo(
     () => buildVehicleTypeSelectOptions(make),

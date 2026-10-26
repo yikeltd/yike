@@ -260,8 +260,8 @@ export const VEHICLE_CATEGORIES_BROWSE = VEHICLE_TAXONOMY.filter(
     !["truck", "van", "motorcycle", "commercial", "heavy_equipment"].includes(c.id),
 );
 
-/** Homepage / compact mobile hero — five road categories (canonical persisted ids). */
-export const VEHICLE_HOME_SEARCH_CATEGORIES: {
+/** Consumer marketplace — five road categories (canonical persisted ids). */
+export const VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES: {
   id: VehicleCategoryId;
   label: string;
 }[] = [
@@ -271,6 +271,23 @@ export const VEHICLE_HOME_SEARCH_CATEGORIES: {
   { id: "bus_minibus", label: "Buses" },
   { id: "motorcycle_tricycle", label: "Motorcycles" },
 ];
+
+/** @deprecated use VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES */
+export const VEHICLE_HOME_SEARCH_CATEGORIES = VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES;
+
+export function vehiclePrimaryCategorySelectOptions(): {
+  value: VehicleCategoryId;
+  label: string;
+}[] {
+  return VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.map((c) => ({
+    value: c.id,
+    label: c.label,
+  }));
+}
+
+export function isPersistedVehicleCategory(id: string): id is VehicleCategoryId {
+  return VEHICLE_TAXONOMY.some((c) => c.id === id);
+}
 
 export const LEGACY_VEHICLE_CATEGORY_ALIASES: Partial<
   Record<VehicleCategoryId, VehicleCategoryId>

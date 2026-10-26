@@ -28,7 +28,7 @@ import {
 import { usePathname, useSearchParams } from "next/navigation";
 import { VEHICLE_MAKES, VEHICLE_MAKE_TYPES } from "@/lib/marketplace/vehicle-makes";
 import {
-  VEHICLE_CATEGORIES_BROWSE,
+  vehiclePrimaryCategorySelectOptions,
   VEHICLE_CATEGORY_GROUPS,
   VEHICLE_CONDITION_OPTIONS,
 } from "@/lib/marketplace/vehicle-specs";
@@ -295,9 +295,9 @@ export function SearchContextFilters({
                   }
                   className="w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-xs font-bold dark:border-white/20 dark:bg-navy-light"
                 >
-                  <option value="">All subcategories</option>
-                  {VEHICLE_CATEGORIES_BROWSE.map((c) => (
-                    <option key={c.id} value={c.id}>
+                  <option value="">All categories</option>
+                  {vehiclePrimaryCategorySelectOptions().map((c) => (
+                    <option key={c.value} value={c.value}>
                       {c.label}
                     </option>
                   ))}

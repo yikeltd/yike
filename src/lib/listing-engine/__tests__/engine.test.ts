@@ -14,6 +14,7 @@ import { validateCategoryManifest } from "../validate-config";
 import { MetadataResolver } from "../resolver";
 import { CATALOG_REGISTRY } from "../catalogs/registry";
 import { NAMED_VALIDATION_RULES, NAMED_VISIBILITY_RULES } from "../rules/registry";
+import { LISTING_CREATE_MIN_PHOTOS } from "@/lib/listing-create/constants";
 import { VEHICLE_CATEGORY_MANIFEST } from "../categories/vehicle";
 import { PROPERTY_CATEGORY_MANIFEST } from "../categories/property";
 import { ELECTRONICS_CATEGORY_MANIFEST } from "../categories/electronics";
@@ -221,7 +222,7 @@ describe("photo engine", () => {
   it("computes checklist status against min/max", () => {
     const status = photoChecklistStatus(VEHICLE_CATEGORY_MANIFEST.photo, 0);
     assert.equal(status.ok, false);
-    assert.equal(status.remainingToMin, 1);
+    assert.equal(status.remainingToMin, LISTING_CREATE_MIN_PHOTOS);
 
     const ok = photoChecklistStatus(VEHICLE_CATEGORY_MANIFEST.photo, 3);
     assert.equal(ok.ok, true);

@@ -16,7 +16,7 @@ import {
   buildVehicleTypeSelectOptions,
   isValidTypeForMake,
 } from "@/lib/marketplace/vehicle-makes";
-import { VEHICLE_HOME_SEARCH_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
+import { VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 import { HomeMobileFilterShell } from "@/components/home/home-mobile-filter-shell";
 import { cn } from "@/lib/utils";
@@ -74,7 +74,7 @@ export function HomeVehicleSearch({
   );
   const categoryOptions = useMemo(
     () =>
-      VEHICLE_HOME_SEARCH_CATEGORIES.map((c) => ({
+      VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.map((c) => ({
         value: c.id,
         label: c.label,
       })),
@@ -114,7 +114,7 @@ export function HomeVehicleSearch({
 
     const labelParts = [
       category
-        ? VEHICLE_HOME_SEARCH_CATEGORIES.find((c) => c.id === category)?.label
+        ? VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.find((c) => c.id === category)?.label
         : "Vehicles",
       make || undefined,
       carType || undefined,
@@ -130,7 +130,7 @@ export function HomeVehicleSearch({
   const filterSummary = useMemo(() => {
     const parts = [
       category
-        ? VEHICLE_HOME_SEARCH_CATEGORIES.find((c) => c.id === category)?.label
+        ? VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.find((c) => c.id === category)?.label
         : null,
       city || state || null,
       make || null,
@@ -143,13 +143,10 @@ export function HomeVehicleSearch({
     onFilterSummaryChange?.(filterSummary);
   }, [filterSummary, onFilterSummaryChange]);
 
+  const showDetailFilters = !mobileFilterCollapse || Boolean(category);
+
   const filterControls = (
-    <div
-      className={cn(
-        "grid grid-cols-2 sm:grid-cols-3",
-        compact ? "gap-2" : "gap-3",
-      )}
-    >
+    <div className={cn(compact ? "space-y-2" : "space-y-3")}>
       <ThemedSelect
         ariaLabel="Category"
         placeholder="Any category"
@@ -157,46 +154,59 @@ export function HomeVehicleSearch({
         onChange={setCategory}
         options={categoryOptions}
       />
-      <ThemedSelect
-        ariaLabel="State"
-        placeholder="Any state"
-        value={state}
-        onChange={(v) => {
-          setState(v);
-          setCity("");
-        }}
-        options={stateOptions}
-      />
-      <ThemedSelect
-        ariaLabel="City"
-        placeholder="Any city"
-        value={city}
-        onChange={setCity}
-        options={cityOptions}
-      />
-      <ThemedSelect
-        ariaLabel="Make"
-        placeholder="Any make"
-        value={make}
-        onChange={onMakeChange}
-        options={makeOptions}
-      />
-      <ThemedSelect
-        ariaLabel="Model"
-        placeholder={typeDisabled ? "Any model" : "Any model"}
-        value={carType}
-        onChange={setCarType}
-        options={typeOptions}
-        disabled={typeDisabled}
-      />
-      <ThemedSelect
-        ariaLabel="Budget"
-        placeholder="Any budget"
-        value={budget}
-        onChange={setBudget}
-        options={budgetOptions}
-        compactLabel
-      />
+      {showDetailFilters ? (
+        <div
+          className={cn(
+            "grid grid-cols-2 sm:grid-cols-3",
+            compact ? "gap-2" : "gap-3",
+          )}
+        >
+          <ThemedSelect
+            ariaLabel="State"
+            placeholder="Any state"
+            value={state}
+            onChange={(v) => {
+              setState(v);
+              setCity("");
+            }}
+            options={stateOptions}
+          />
+          <ThemedSelect
+            ariaLabel="City"
+            placeholder="Any city"
+            value={city}
+            onChange={setCity}
+            options={cityOptions}
+          />
+          <ThemedSelect
+            ariaLabel="Make"
+            placeholder="Any make"
+            value={make}
+            onChange={onMakeChange}
+            options={makeOptions}
+          />
+          <ThemedSelect
+            ariaLabel="Model"
+            placeholder="Any model"
+            value={carType}
+            onChange={setCarType}
+            options={typeOptions}
+            disabled={typeDisabled}
+          />
+          <ThemedSelect
+            ariaLabel="Budget"
+            placeholder="Any budget"
+            value={budget}
+            onChange={setBudget}
+            options={budgetOptions}
+            compactLabel
+          />
+        </div>
+      ) : (
+        <p className="text-[11px] font-medium text-white/65">
+          Choose a vehicle type to set city, make, and budget.
+        </p>
+      )}
     </div>
   );
 

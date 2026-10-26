@@ -3,7 +3,7 @@
  * category-agnostic engine. No business logic lives here, only lookups.
  */
 import {
-  VEHICLE_CATEGORIES_BROWSE,
+  vehiclePrimaryCategorySelectOptions,
   VEHICLE_SPEC_FIELDS,
   VEHICLE_CONDITION_OPTIONS,
 } from "@/lib/marketplace/vehicle-specs";
@@ -17,8 +17,7 @@ function specOptions(key: string): FieldOption[] {
 }
 
 export const VEHICLE_CATALOGS: CatalogMap = {
-  "vehicle.types": () =>
-    VEHICLE_CATEGORIES_BROWSE.map((c) => ({ value: c.id, label: c.label })),
+  "vehicle.types": () => vehiclePrimaryCategorySelectOptions(),
   "vehicle.makes": () => VEHICLE_MAKES.map((m) => ({ value: m, label: m })),
   "vehicle.models_for_make": (values) => {
     const make = String(values.make ?? "");

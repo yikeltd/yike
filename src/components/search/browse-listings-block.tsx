@@ -239,6 +239,7 @@ export function BrowseListingsBlock({
   }
 
   const useMobileShell = mobileFilterCollapse && isPremium;
+  const showPropertyDetailFilters = !useMobileShell || dealKey !== "";
 
   const dealChipRow = (
     <div
@@ -364,7 +365,13 @@ export function BrowseListingsBlock({
           filterControls={
             <>
               {dealChipRow}
-              {filterSelectGrid}
+              {showPropertyDetailFilters ? (
+                filterSelectGrid
+              ) : (
+                <p className="text-[11px] font-medium text-white/65">
+                  Choose Rent, Buy, or Land to set location and budget.
+                </p>
+              )}
             </>
           }
           searchButton={mobileSearchButton}
