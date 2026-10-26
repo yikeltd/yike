@@ -6,7 +6,7 @@
 import type { Property, Profile } from "@/types/database";
 import { isBoostedActive, isFeaturedActive } from "@/lib/agent-tiers";
 import { isVerifiedAgent } from "@/lib/utils";
-import { agentPublicPath } from "@/lib/agent-slugs";
+import { agentPublicPath, companyPublicPath } from "@/lib/agent-slugs";
 import { normalizeAssetType } from "@/lib/marketplace/listings";
 import {
   dedupeById,
@@ -133,6 +133,7 @@ type AgentLite = Pick<
   | "company_name"
   | "avatar_url"
   | "account_type"
+  | "agent_type"
   | "verification_status"
   | "verified_badge"
   | "is_verified_agent"
@@ -143,6 +144,23 @@ type AgentLite = Pick<
   | "role"
   | "listing_limit"
 > & { city?: string | null; state?: string | null };
+
+function resolveAgentAccountType(
+  agent: AgentLite,
+): Profile["account_type"] | null {
+  if (agent.account_type) return agent.account_type;
+  if (agent.agent_type === "agency") return "agency";
+  return null;
+}
+
+function agentStorefrontPath(agent: AgentLite): string {
+  const profile = agent as Profile;
+  const accountType = resolveAgentAccountType(agent);
+  if (accountType === "agency" || accountType === "developer") {
+    return companyPublicPath({ ...profile, account_type: accountType });
+  }
+  return agentPublicPath(profile);
+}
 
 type VerticalCounts = {
   property: number;
@@ -161,20 +179,24 @@ function verticalForListing(listing: Property): keyof VerticalCounts | null {
 /** Existing verification rules — dealers, verified sellers, verified developers/agencies. */
 export function isEligibleVerifiedDiscoveryAgent(agent: AgentLite): boolean {
   const verified = isVerifiedAgent(agent);
-  const isDealer = agent.account_type === "dealer";
+  const accountType = resolveAgentAccountType(agent);
+  const isDealer = accountType === "dealer";
   const isDeveloper =
-    agent.account_type === "developer" &&
+    accountType === "developer" &&
     (Boolean(agent.developer_verified) || verified);
   const isAgency =
-    agent.account_type === "agency" && (Boolean(agent.agency_verified) || verified);
-  return isDealer || verified || isDeveloper || isAgency;
+    accountType === "agency" && (Boolean(agent.agency_verified) || verified);
+  if (isDealer) return true;
+  if (isDeveloper) return true;
+  if (isAgency) return true;
+  return verified;
 }
 
 export function resolveDiscoveryDealerCategoryLabel(
   agent: AgentLite,
   counts: VerticalCounts,
 ): string {
-  if (agent.account_type === "developer") return "Property";
+  if (resolveAgentAccountType(agent) === "developer") return "Property";
   const entries: { key: keyof VerticalCounts; label: string }[] = [
     { key: "electronics", label: "Tech & Electronics" },
     { key: "vehicle", label: "Vehicles" },
@@ -190,7 +212,7 @@ export function resolveDiscoveryDealerCategoryLabel(
     }
   }
   if (bestCount > 0) return best.label;
-  if (agent.account_type === "dealer") return "Vehicles";
+  if (resolveAgentAccountType(agent) === "dealer") return "Vehicles";
   return "Property";
 }
 
@@ -240,8 +262,8 @@ export function extractDealersFromListings(
   return [...byId.values()]
     .filter(({ count }) => count > 0)
     .sort((a, b) => {
-      const aDealer = a.agent.account_type === "dealer" ? 1 : 0;
-      const bDealer = b.agent.account_type === "dealer" ? 1 : 0;
+      const aDealer = resolveAgentAccountType(a.agent) === "dealer" ? 1 : 0;
+      const bDealer = resolveAgentAccountType(b.agent) === "dealer" ? 1 : 0;
       if (bDealer !== aDealer) return bDealer - aDealer;
       return b.count - a.count;
     })
@@ -251,12 +273,12 @@ export function extractDealersFromListings(
       return {
         id: agent.id,
         name: agent.company_name || agent.full_name || "Verified seller",
-        href: agentPublicPath(profile),
+        href: agentStorefrontPath(agent),
         avatarUrl: agent.avatar_url ?? null,
         location: [city, state].filter(Boolean).join(", ") || null,
         listingCount: count,
         verified: isVerifiedAgent(agent),
-        isDealer: agent.account_type === "dealer",
+        isDealer: resolveAgentAccountType(agent) === "dealer",
         categoryLabel: resolveDiscoveryDealerCategoryLabel(agent, verticals),
         memberSince: agent.created_at ?? null,
       };

@@ -87,6 +87,7 @@ const AGENTS = [
     full_name: "Chinedu Okoro",
     phone: "08031110001",
     agent_type: "independent",
+    role: "user",
     verification_status: "not_started",
     verified_badge: false,
     is_verified_agent: false,
@@ -104,6 +105,8 @@ const AGENTS = [
     full_name: "Lagos Auto Hub",
     phone: "08031110003",
     agent_type: "agency",
+    account_type: "dealer",
+    company_name: "Lagos Auto Hub",
     trust_score: 94,
   }),
   demoAgent({
@@ -111,6 +114,9 @@ const AGENTS = [
     full_name: "Prime Nest Homes",
     phone: "08031110004",
     agent_type: "agency",
+    account_type: "agency",
+    agency_verified: true,
+    company_name: "Prime Nest Homes",
     trust_score: 98,
   }),
 ];

@@ -10,7 +10,7 @@ import type { VehicleCategoryId } from "@/lib/marketplace/vehicle-specs";
 import { resolveVehicleCategoryFilter } from "@/lib/marketplace/vehicle-taxonomy";
 import type { ElectronicsCategoryId } from "@/lib/marketplace/electronics-specs";
 import {
-  publicListingAgentSelectSql,
+  publicListingAgentSelectWithDiscovery,
   redactListingAgentContact,
   redactListingCollection,
 } from "@/lib/marketplace/public-listing-agent";
@@ -144,9 +144,7 @@ function vehicleListingSelect() {
   return `
   *,
   agent:profiles!properties_agent_id_fkey (
-    ${publicListingAgentSelectSql(
-      "account_type, company_name, public_slug, created_at"
-    )}
+    ${publicListingAgentSelectWithDiscovery()}
   )
 `;
 }

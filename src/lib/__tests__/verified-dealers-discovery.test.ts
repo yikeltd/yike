@@ -13,6 +13,10 @@ import {
   VERIFIED_DEALERS_HOME_TITLE,
   resolveVerifiedDealersForHome,
 } from "@/lib/home/verified-dealers-section";
+import {
+  isVerifiedDealersHomeTestMode,
+  verifiedDealersFromTestFixture,
+} from "@/lib/home/verified-dealers-test-fixtures";
 import type { Property } from "@/types/database";
 
 function listing(
@@ -125,6 +129,29 @@ test("section copy constants match product spec", () => {
     VERIFIED_DEALERS_HOME_SUBTITLE,
     "Trusted businesses with live inventory on Yike",
   );
+});
+
+test("test fixture mode yields three eligible vertical dealers", () => {
+  assert.equal(isVerifiedDealersHomeTestMode({}), false);
+  assert.equal(
+    isVerifiedDealersHomeTestMode({ yike_test_verified_dealers: "1" }),
+    process.env.NODE_ENV !== "production",
+  );
+  const cards = verifiedDealersFromTestFixture();
+  assert.equal(cards.length, 3);
+  const labels = new Set(cards.map((c) => c.categoryLabel));
+  assert.ok(labels.has("Property"));
+  assert.ok(labels.has("Vehicles"));
+  assert.ok(labels.has("Tech & Electronics"));
+});
+
+test("resolveVerifiedDealersForHome returns empty without live or demo flags", () => {
+  const resolved = resolveVerifiedDealersForHome({
+    liveDealers: [],
+    showingDemoFixtures: false,
+    showingSampleListingsFixture: false,
+  });
+  assert.equal(resolved.length, 0);
 });
 
 test("dealer row uses tighter gaps and overflow-safe layout", () => {

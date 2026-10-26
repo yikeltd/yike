@@ -23,7 +23,7 @@ import { isHotelPropertyType } from "@/constants/listingTypes";
 import type { PropertySearchParams } from "@/lib/property-search";
 import { isProductionEnv } from "@/lib/env";
 import {
-  publicListingAgentSelectSql,
+  publicListingAgentSelectWithDiscovery,
   redactListingAgentContact,
   redactListingCollection,
 } from "@/lib/marketplace/public-listing-agent";
@@ -34,7 +34,7 @@ function publicPropertySelect() {
   return `
   *,
   agent:profiles!properties_agent_id_fkey (
-    ${publicListingAgentSelectSql()}
+    ${publicListingAgentSelectWithDiscovery()}
   )
 `;
 }

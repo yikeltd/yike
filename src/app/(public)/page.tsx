@@ -57,6 +57,10 @@ import {
   countByPropertyType,
   BUDGET_UNDER_5M,
 } from "@/lib/home/discovery-from-pool";
+import {
+  isVerifiedDealersHomeTestMode,
+  verifiedDealersFromTestFixture,
+} from "@/lib/home/verified-dealers-test-fixtures";
 import { getServerMarketplaceLocation } from "@/lib/search-preferences";
 import { getSponsoredAd } from "@/lib/advertisements/public";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
@@ -406,16 +410,29 @@ export default async function HomePage({
   const vSuv = pickByAutoCategory(vehicleItems, "suv", 12);
   const vPickup = pickByAutoCategory(vehicleItems, "truck", 12);
   const vNear = pickNearYouRail(vehicleItems, preferredCity, 12, loc);
-  const dealers = extractVerifiedDealersFromMarketplacePools({
-    property: propertyDemo.isDemo ? propertyItems : propertyPool,
-    vehicle: vehicleDemo.isDemo ? vehicleItems : vehiclePool,
-    electronics: electronicsOn
-      ? electronicsSample.isDemo
-        ? electronicsItems
-        : electronicsRecent
-      : [],
-    limit: 12,
-  });
+  const verifiedDealersTestMode = isVerifiedDealersHomeTestMode(params);
+  const dealers = verifiedDealersTestMode
+    ? verifiedDealersFromTestFixture()
+    : extractVerifiedDealersFromMarketplacePools({
+        property:
+          propertyPool.length > 0
+            ? propertyPool
+            : propertyDemo.isDemo
+              ? propertyItems
+              : [],
+        vehicle:
+          vehiclePool.length > 0
+            ? vehiclePool
+            : vehicleDemo.isDemo
+              ? vehicleItems
+              : [],
+        electronics: electronicsOn
+          ? electronicsItems.length > 0
+            ? electronicsItems
+            : electronicsRecent
+          : [],
+        limit: 12,
+      });
   const vehicleCategoryCounts = countByAutoCategory(vehicleItems);
   const propertyCategoryCounts = countByPropertyType(propertyItems);
   const propertyCommercial = pickPropertyByTypes(
