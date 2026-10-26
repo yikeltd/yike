@@ -31,9 +31,8 @@ export default async function NewVehicleListingPage() {
 
   return (
     <SellerFlowShell
-      eyebrow="Vehicles & equipment"
-      title="List vehicle or equipment"
-      description="Cars, trucks, excavators, tractors and more — category-specific fields, then review."
+      eyebrow="Vehicle"
+      title="New listing"
       backHref="/agent/listings/choose"
       backLabel="Choose category"
       actions={

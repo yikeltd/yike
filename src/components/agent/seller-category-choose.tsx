@@ -1,15 +1,18 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Car, Home, Smartphone, ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Car, Home, Smartphone, ChevronLeft, ArrowRight } from "lucide-react";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import { detectMarketplaceCategory } from "@/lib/listing-engine/intelligence";
 import { cn } from "@/lib/utils";
 
 const cards = [
   {
     id: "property",
     label: "Property",
-    description: "Homes, land, rentals & commercial",
+    tagline: "Rent · Buy · Shortlet",
     href: "/agent/listings/new/property",
     icon: Home,
     visible: () => true,
@@ -17,7 +20,7 @@ const cards = [
   {
     id: "vehicle",
     label: "Vehicles",
-    description: "Cars, trucks, buses, heavy & farm equipment",
+    tagline: "Cars · Trucks · Equipment",
     href: "/agent/listings/new/vehicle",
     icon: Car,
     visible: () => isLaunchFeatureVisible("vehicle_marketplace"),
@@ -25,12 +28,18 @@ const cards = [
   {
     id: "electronics",
     label: "Electronics",
-    description: "Phones, laptops, appliances & power",
+    tagline: "Phones · Laptops · Power",
     href: "/agent/listings/new/electronics",
     icon: Smartphone,
     visible: () => isLaunchFeatureVisible("electronics_marketplace"),
   },
 ] as const;
+
+const HINT_ROUTES: Record<string, string> = {
+  property: "/agent/listings/new/property",
+  vehicle: "/agent/listings/new/vehicle",
+  electronics: "/agent/listings/new/electronics",
+};
 
 export function SellerCategoryChoose({
   statusNote,
@@ -39,7 +48,23 @@ export function SellerCategoryChoose({
   statusNote?: string | null;
   verified?: boolean;
 }) {
+  const router = useRouter();
   const visible = cards.filter((c) => c.visible());
+  const [hint, setHint] = useState("");
+
+  const categoryHint = useMemo(() => detectMarketplaceCategory(hint), [hint]);
+  const suggestedHref =
+    categoryHint?.confidence === "high" && categoryHint.categoryId
+      ? HINT_ROUTES[categoryHint.categoryId]
+      : null;
+
+  function goWithHint(href: string) {
+    if (hint.trim()) {
+      router.push(`${href}?hint=${encodeURIComponent(hint.trim())}`);
+      return;
+    }
+    router.push(href);
+  }
 
   return (
     <main className="min-h-[100dvh] bg-surface pb-16">
@@ -51,40 +76,63 @@ export function SellerCategoryChoose({
         >
           <ChevronLeft className="h-5 w-5 text-navy" />
         </Link>
-        <h1 className="text-base font-bold text-navy">What are you selling?</h1>
+        <h1 className="text-base font-bold text-navy">Sell on Yike</h1>
       </header>
 
-      <div className="mx-auto max-w-lg px-4 py-6">
+      <div className="mx-auto max-w-lg px-4 py-5 space-y-5">
         {statusNote ? (
-          <p className="mb-3 rounded-xl border border-gold/30 bg-gold/10 px-3 py-2 text-sm font-medium text-navy">
+          <p className="rounded-xl border border-gold/30 bg-gold/10 px-3 py-2 text-sm font-medium text-navy">
             {statusNote}
             {verified ? null : " You can still create listings; publishing may wait until verification completes."}
           </p>
         ) : null}
-        <p className="mb-4 text-sm text-navy/70">
-          Choose a category. You can have up to three active listings across property, vehicles, and
-          electronics combined.
-        </p>
-        <ul className="space-y-3">
+
+        <div className="rounded-2xl border border-navy/[0.08] bg-white p-4 shadow-xs">
+          <label htmlFor="sell-hint" className="text-sm font-bold text-navy">
+            What are you selling?
+          </label>
+          <textarea
+            id="sell-hint"
+            rows={2}
+            value={hint}
+            onChange={(e) => setHint(e.target.value)}
+            placeholder="Describe it — we can route you to the right form"
+            className="mt-2 w-full resize-none rounded-xl border border-navy/10 px-3 py-2.5 text-sm text-navy outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/20"
+          />
+          {suggestedHref ? (
+            <button
+              type="button"
+              onClick={() => goWithHint(suggestedHref)}
+              className="pressable mt-3 flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl bg-navy text-sm font-bold text-gold"
+            >
+              Continue with {categoryHint!.categoryId}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </button>
+          ) : null}
+        </div>
+
+        <ul className="space-y-2.5">
           {visible.map((card) => {
             const Icon = card.icon;
             return (
               <li key={card.id}>
-                <Link
-                  href={card.href}
+                <button
+                  type="button"
+                  onClick={() => goWithHint(card.href)}
                   className={cn(
-                    "pressable flex items-center gap-4 rounded-2xl border border-navy/10 bg-white p-4 shadow-sm",
+                    "pressable flex w-full items-center gap-4 rounded-2xl border border-navy/10 bg-white p-4 text-left shadow-sm",
                     "transition-shadow hover:shadow-md",
                   )}
                 >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-navy text-gold">
-                    <Icon className="h-6 w-6" aria-hidden />
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy text-gold">
+                    <Icon className="h-5 w-5" aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-base font-bold text-navy">{card.label}</span>
-                    <span className="block text-sm text-navy/65">{card.description}</span>
+                    <span className="block text-xs text-navy/60">{card.tagline}</span>
                   </span>
-                </Link>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-navy/35" aria-hidden />
+                </button>
               </li>
             );
           })}

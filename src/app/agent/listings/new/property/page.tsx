@@ -26,8 +26,7 @@ export default async function NewPropertyListingPage() {
   return (
     <SellerFlowShell
       eyebrow="Property"
-      title="List property"
-      description="Add photos, location, and price — we review before publishing."
+      title="New listing"
       backHref="/agent/listings/choose"
       backLabel="Choose category"
       actions={

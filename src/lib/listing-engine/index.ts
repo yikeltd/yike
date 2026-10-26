@@ -136,3 +136,12 @@ export {
   type WizardBlocker,
   type WizardNextAction,
 } from "./wizard-next-action";
+export {
+  applyListingSuggestions,
+  detectMarketplaceCategory,
+  firstLineAsTitle,
+  parseListingText,
+  type CategoryHint,
+  type InferenceApplyResult,
+  type ParsedFieldSuggestion,
+} from "./intelligence";

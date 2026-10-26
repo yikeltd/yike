@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   MetadataResolver,
@@ -39,7 +39,13 @@ import {
 import { ListingPhotoManager } from "@/components/agent/listing-photo-manager";
 import type { ListingPhotoItem } from "@/components/agent/listing-photo-types";
 import { FieldRenderer } from "@/components/listing-engine/field-renderer";
+import { ListingSmartDescribe } from "@/components/listing-engine/listing-smart-describe";
 import { cn } from "@/lib/utils";
+import {
+  applyListingSuggestions,
+  firstLineAsTitle,
+  parseListingText,
+} from "@/lib/listing-engine/intelligence";
 import {
   Camera,
   Check,
@@ -123,6 +129,8 @@ function ListingEngineInner({
   manifest,
 }: Props & { manifest: CategoryManifest }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const hintConsumedRef = useRef(false);
 
   const [activeSection, setActiveSection] = useState<number>(0);
 
@@ -155,6 +163,15 @@ function ListingEngineInner({
     getOrCreateListingDraftSessionId(agentId, categoryId),
   );
   const [draftConflictRemote, setDraftConflictRemote] = useState(false);
+  const [smartDescribeText, setSmartDescribeText] = useState("");
+  const [inferredFieldIds, setInferredFieldIds] = useState<Set<string>>(() => new Set());
+  const [pendingSuggestionsByField, setPendingSuggestionsByField] = useState<
+    Record<string, { value: unknown; label?: string }[]>
+  >({});
+  const confirmedFieldIdsRef = useRef<Set<string>>(new Set());
+  const [descriptionTouched, setDescriptionTouched] = useState(
+    Boolean(String(initialValues?.description ?? "").trim()),
+  );
 
   const photoCount = readyListingPhotoUrls(photos).length;
 
@@ -275,6 +292,15 @@ function ListingEngineInner({
       });
     }
   }
+
+  useEffect(() => {
+    if (hintConsumedRef.current) return;
+    const hint = searchParams.get("hint")?.trim();
+    if (hint) {
+      hintConsumedRef.current = true;
+      setSmartDescribeText(hint);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (listingId || initialValues || draftLoadedRef.current) return;
@@ -405,8 +431,18 @@ function ListingEngineInner({
     setDraftStatus("restored");
   }
 
-  function setField(id: string, value: unknown) {
+  function setField(id: string, value: unknown, opts?: { fromInference?: boolean }) {
     if (id === "title") setTitleTouched(true);
+    if (id === "description") setDescriptionTouched(true);
+    if (!opts?.fromInference) {
+      confirmedFieldIdsRef.current.add(id);
+      setInferredFieldIds((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
     setFieldErrors((prev) => {
       if (!prev[id]) return prev;
       const next = { ...prev };
@@ -418,6 +454,99 @@ function ListingEngineInner({
       return applyDependencyClears(manifest, id, withChange, LISTING_CATALOGS);
     });
   }
+
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
+  const lastAutofillKeyRef = useRef("");
+
+  useEffect(() => {
+    const patch = resolved.autofillPatch;
+    const key = JSON.stringify(patch);
+    if (!key || key === "{}" || key === lastAutofillKeyRef.current) return;
+    lastAutofillKeyRef.current = key;
+    setValues((prev) => {
+      let next = prev;
+      for (const [fieldKey, val] of Object.entries(patch)) {
+        if (confirmedFieldIdsRef.current.has(fieldKey)) continue;
+        const cur = prev[fieldKey];
+        if (cur !== undefined && cur !== null && String(cur).trim() !== "") continue;
+        next = { ...next, [fieldKey]: val };
+      }
+      return next;
+    });
+  }, [resolved.autofillPatch]);
+
+  useEffect(() => {
+    const combined = [
+      smartDescribeText,
+      String(values.title ?? ""),
+      String(values.description ?? ""),
+    ]
+      .filter(Boolean)
+      .join("\n");
+    if (!combined.trim()) {
+      setPendingSuggestionsByField({});
+      return;
+    }
+    const t = window.setTimeout(() => {
+      const currentValues = valuesRef.current;
+      const parsed = parseListingText(manifest, combined, currentValues, LISTING_CATALOGS);
+      const applied = applyListingSuggestions(
+        parsed.fields,
+        currentValues,
+        confirmedFieldIdsRef.current,
+      );
+      setPendingSuggestionsByField(
+        Object.fromEntries(
+          Object.entries(applied.pendingByField).map(([fieldId, list]) => [
+            fieldId,
+            list.map((s) => ({ value: s.value, label: s.label })),
+          ]),
+        ),
+      );
+      if (Object.keys(applied.patch).length > 0) {
+        setInferredFieldIds((prev) => {
+          const next = new Set(prev);
+          for (const id of applied.inferredFieldIds) next.add(id);
+          return next;
+        });
+        setValues((prev) => {
+          let next = { ...prev };
+          for (const [fieldKey, val] of Object.entries(applied.patch)) {
+            next = applyDependencyClears(
+              manifest,
+              fieldKey,
+              { ...next, [fieldKey]: val },
+              LISTING_CATALOGS,
+            );
+          }
+          return next;
+        });
+      }
+      const titleFromSmart = firstLineAsTitle(smartDescribeText);
+      if (
+        titleFromSmart &&
+        !titleTouched &&
+        !confirmedFieldIdsRef.current.has("title") &&
+        smartDescribeText.trim().length > 8
+      ) {
+        setValues((prev) => ({ ...prev, title: titleFromSmart }));
+        setInferredFieldIds((prev) => new Set(prev).add("title"));
+      }
+      if (
+        smartDescribeText.trim().length > 80 &&
+        !descriptionTouched &&
+        !confirmedFieldIdsRef.current.has("description")
+      ) {
+        setValues((prev) => ({
+          ...prev,
+          description: smartDescribeText.trim().slice(0, 2000),
+        }));
+        setInferredFieldIds((prev) => new Set(prev).add("description"));
+      }
+    }, 450);
+    return () => window.clearTimeout(t);
+  }, [smartDescribeText, values.title, values.description, manifest, titleTouched, descriptionTouched]);
 
   async function onPublishSubmit() {
     if (!runClientValidation(true)) {
@@ -697,13 +826,41 @@ function ListingEngineInner({
                 ? "Another tab has newer changes"
                 : null;
 
+  function renderField(field: (typeof manifest.fields)[number]) {
+    return (
+      <FieldRenderer
+        key={field.id}
+        field={field}
+        value={values[field.id]}
+        options={resolved.optionsByField[field.id] ?? []}
+        error={validationAttempted ? fieldErrors[field.id] : undefined}
+        inferred={inferredFieldIds.has(field.id)}
+        pendingSuggestions={pendingSuggestionsByField[field.id]}
+        onChange={(v) => setField(field.id, v)}
+      />
+    );
+  }
+
   return (
-    <div className={cn("mx-auto max-w-xl space-y-6 pb-24", className)}>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-base font-bold text-navy">{manifest.label} listing</p>
-        {draftStatusLine ? (
-          <p className="text-[11px] font-medium text-navy/45">{draftStatusLine}</p>
-        ) : null}
+    <div className={cn("mx-auto max-w-xl space-y-5 pb-24", className)}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-lg font-black text-navy">{manifest.label}</p>
+          <Link
+            href="/agent/listings/choose"
+            className="text-xs font-semibold text-gold-dark hover:underline"
+          >
+            Change category
+          </Link>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-bold text-navy">{wizard.completionPercent}%</p>
+          {draftStatusLine ? (
+            <p className="max-w-[11rem] text-[10px] font-medium leading-snug text-navy/45">
+              {draftStatusLine}
+            </p>
+          ) : null}
+        </div>
       </div>
 
       {draftConflictRemote && !listingId ? (
@@ -728,25 +885,36 @@ function ListingEngineInner({
         </p>
       ) : null}
 
-      <div className="rounded-2xl border border-navy/[0.08] bg-white px-4 py-4 shadow-xs">
-        <p className="text-sm leading-relaxed text-navy/85">{nextAction.message}</p>
-        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-navy/[0.06] pt-3">
+      <div className="rounded-2xl border border-navy/[0.08] bg-white px-3 py-3 shadow-xs">
+        <div
+          className="mb-3 h-1.5 overflow-hidden rounded-full bg-navy/[0.06]"
+          role="progressbar"
+          aria-valuenow={wizard.completionPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div
+            className="h-full rounded-full bg-gold transition-all duration-300"
+            style={{ width: `${wizard.completionPercent}%` }}
+          />
+        </div>
+        <div className="flex flex-wrap gap-1.5">
           {wizard.stages.map((stage, index) => (
             <button
               key={stage.id}
               type="button"
               onClick={() => setActiveSection(index)}
               className={cn(
-                "pressable inline-flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors",
+                "pressable inline-flex min-h-[34px] items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors",
                 activeSection === index
                   ? "bg-navy text-gold"
                   : stage.complete
-                    ? "bg-gold/15 text-navy"
+                    ? "bg-emerald-500/15 text-navy"
                     : "bg-navy/[0.05] text-navy/65 hover:bg-navy/[0.08]",
               )}
             >
               {stage.complete ? (
-                <Check className="h-3 w-3 shrink-0" aria-hidden />
+                <Check className="h-3 w-3 shrink-0 text-emerald-700" aria-hidden />
               ) : null}
               {stage.label}
             </button>
@@ -789,7 +957,13 @@ function ListingEngineInner({
               <ChevronUp className="h-4 w-4 shrink-0 text-navy/40" aria-hidden />
             </div>
 
-            <div className="space-y-5">
+            <ListingSmartDescribe
+              value={smartDescribeText}
+              onChange={setSmartDescribeText}
+              categoryLabel={manifest.label}
+            />
+
+            <div className="space-y-4">
               {detailsStepIds.map((stepId) => {
                 const fields = resolved.stepFields[stepId] ?? [];
                 if (fields.length === 0) return null;
@@ -797,23 +971,10 @@ function ListingEngineInner({
                 return (
                   <div key={stepId} className="space-y-3">
                     {detailsStepIds.length > 1 && stepTitle ? (
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-navy/45">
-                        {stepTitle}
-                      </p>
+                      <p className="text-xs font-bold text-navy/70">{stepTitle}</p>
                     ) : null}
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {fields.map((field) => (
-                        <FieldRenderer
-                          key={field.id}
-                          field={field}
-                          value={values[field.id]}
-                          options={resolved.optionsByField[field.id] ?? []}
-                          error={
-                            validationAttempted ? fieldErrors[field.id] : undefined
-                          }
-                          onChange={(v) => setField(field.id, v)}
-                        />
-                      ))}
+                      {fields.map((field) => renderField(field))}
                     </div>
                   </div>
                 );
@@ -852,8 +1013,8 @@ function ListingEngineInner({
             <div className="flex items-center justify-between border-b border-navy/10 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-navy">Photos & price</h3>
-                <p className="text-xs text-muted">
-                  {resolved.photoStatus.min}–{resolved.photoStatus.max} photos · buyers trust clear shots
+                <p className="text-[11px] text-navy/50">
+                  {resolved.photoStatus.min}–{resolved.photoStatus.max} photos
                 </p>
               </div>
               <span className="text-xs font-semibold text-navy/45">
@@ -867,25 +1028,8 @@ function ListingEngineInner({
               photoSchema={activePhotoSchema}
             />
 
-            {resolved.photoStatus.tips.length > 0 ? (
-              <p className="text-xs text-muted">
-                Tip: {resolved.photoStatus.tips[0]}
-              </p>
-            ) : null}
-
             <div className="grid gap-3 sm:grid-cols-2">
-              {(resolved.stepFields.pricing ?? []).map((field) => (
-                <FieldRenderer
-                  key={field.id}
-                  field={field}
-                  value={values[field.id]}
-                  options={resolved.optionsByField[field.id] ?? []}
-                  error={
-                    validationAttempted ? fieldErrors[field.id] : undefined
-                  }
-                  onChange={(v) => setField(field.id, v)}
-                />
-              ))}
+              {(resolved.stepFields.pricing ?? []).map((field) => renderField(field))}
             </div>
           </div>
         )}
@@ -915,29 +1059,11 @@ function ListingEngineInner({
           // Expanded Section 3 Form (NO MAPS)
           <div className="p-5 space-y-4">
             <div className="border-b border-navy/10 pb-3">
-              <h3 className="text-sm font-bold text-navy">Where is this item?</h3>
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                State and city help nearby buyers find your listing. Area is optional — no street address needed.
-              </p>
+              <h3 className="text-sm font-bold text-navy">Location</h3>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              {(resolved.stepFields.location ?? []).map((field) => (
-                <FieldRenderer
-                  key={field.id}
-                  field={
-                    field.id === "area"
-                      ? { ...field, description: "Optional — estate or neighbourhood if helpful." }
-                      : field
-                  }
-                  value={values[field.id]}
-                  options={resolved.optionsByField[field.id] ?? []}
-                  error={
-                    validationAttempted ? fieldErrors[field.id] : undefined
-                  }
-                  onChange={(v) => setField(field.id, v)}
-                />
-              ))}
+              {(resolved.stepFields.location ?? []).map((field) => renderField(field))}
             </div>
 
             <button
@@ -953,7 +1079,10 @@ function ListingEngineInner({
 
       {/* 6. FOOTER ACTIONS BAR */}
       <div className="fixed inset-x-0 bottom-16 z-40 flex justify-center px-4">
-        <div className="w-full max-w-xl rounded-2xl border border-navy/10 bg-white/95 p-2 shadow-2xl backdrop-blur-md">
+        <div className="w-full max-w-xl rounded-2xl border border-navy/10 bg-white/95 p-2.5 shadow-2xl backdrop-blur-md">
+          <p className="mb-1.5 text-center text-[11px] font-semibold text-navy/55">
+            {nextAction.message}
+          </p>
           <button
             type="button"
             onClick={performPrimaryAction}

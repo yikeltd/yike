@@ -69,64 +69,14 @@ function firstIncompleteField(
   return null;
 }
 
-function itemDescriptor(
-  manifest: CategoryManifest,
-  values: ListingValues,
-): string {
-  const cat = String(values.auto_category ?? "").trim();
-  if (manifest.id === "electronics") {
-    if (cat === "phones_tablets") return "phone";
-    if (cat === "computers" || cat === "gaming") return "device";
-    if (cat === "tv_audio") return "TV";
-    if (cat === "generators" || cat === "inverters_batteries") return "unit";
-    return "item";
+function guidanceMessage(field: ListingFieldDef): string {
+  if (field.required) {
+    return `${field.label} required`;
   }
-  if (manifest.id === "vehicle") return "vehicle";
-  return "listing";
+  return field.label;
 }
 
-function guidanceMessage(
-  field: ListingFieldDef,
-  manifest: CategoryManifest,
-  values: ListingValues,
-): string {
-  const item = itemDescriptor(manifest, values);
-  switch (field.id) {
-    case "brand":
-      return `Add the ${item}'s brand so buyers know what you're selling.`;
-    case "model":
-      return `Add the model or variant so buyers can recognize the ${item}.`;
-    case "price":
-      return "Set your asking price to continue.";
-    case "title":
-      return "Add a clear title buyers will see in search.";
-    case "state":
-      return "Choose your state so nearby buyers can find this listing.";
-    case "city":
-      return "Choose your city so buyers know where to meet or pick up.";
-    case "auto_category":
-      return `Choose the type of ${manifest.label.toLowerCase()} you're selling.`;
-    case "make":
-      return "Add the vehicle make (e.g. Toyota, Honda).";
-    case "vehicle_condition":
-    case "condition":
-      return "Select the condition buyers should expect.";
-    case "listing_type":
-    case "property_type":
-      return `Choose the ${field.label.toLowerCase()} for this listing.`;
-    default:
-      if (field.required) {
-        return `${field.label} is required before you can publish.`;
-      }
-      return `Complete ${field.label.toLowerCase()} when you're ready.`;
-  }
-}
-
-function photoGuidance(
-  photoStatus: PhotoChecklistStatus,
-  manifest: CategoryManifest,
-  values: ListingValues,
-): WizardNextAction {
+function photoGuidance(photoStatus: PhotoChecklistStatus): WizardNextAction {
   if (photoStatus.overMax) {
     return {
       kind: "task",
@@ -136,15 +86,13 @@ function photoGuidance(
       stageId: "photos_price",
     };
   }
-  const item = itemDescriptor(manifest, values);
   const remaining = photoStatus.remainingToMin;
-  const min = photoStatus.min;
   return {
     kind: "task",
     message:
       remaining > 0
-        ? `Add ${remaining} more clear photo${remaining === 1 ? "" : "s"} of the actual ${item === "listing" ? "item" : item}.`
-        : "Add clear photos of the actual item.",
+        ? `${remaining} more photo${remaining === 1 ? "" : "s"} needed`
+        : "Photos required",
     primaryLabel: "Add photos",
     sectionIndex: 1,
     stageId: "photos_price",
@@ -175,7 +123,7 @@ export function resolveListingWizardNextAction(input: {
     const target = fieldJumpTarget(detailsGap.id, manifest);
     return {
       kind: "task",
-      message: guidanceMessage(detailsGap, manifest, values),
+      message: guidanceMessage(detailsGap),
       primaryLabel: `Add ${detailsGap.label.toLowerCase()}`,
       sectionIndex: target.sectionIndex,
       fieldId: detailsGap.id,
@@ -184,7 +132,7 @@ export function resolveListingWizardNextAction(input: {
   }
 
   if (!photoStatus.ok) {
-    return photoGuidance(photoStatus, manifest, values);
+    return photoGuidance(photoStatus);
   }
 
   const pricingFields = fieldsInOrder(stepFields, ["pricing"]);
@@ -197,7 +145,7 @@ export function resolveListingWizardNextAction(input: {
     const target = fieldJumpTarget(pricingGap.id, manifest);
     return {
       kind: "task",
-      message: guidanceMessage(pricingGap, manifest, values),
+      message: guidanceMessage(pricingGap),
       primaryLabel:
         pricingGap.id === "price" ? "Set price" : `Add ${pricingGap.label.toLowerCase()}`,
       sectionIndex: target.sectionIndex,
@@ -216,7 +164,7 @@ export function resolveListingWizardNextAction(input: {
     const target = fieldJumpTarget(locationGap.id, manifest);
     return {
       kind: "task",
-      message: guidanceMessage(locationGap, manifest, values),
+      message: guidanceMessage(locationGap),
       primaryLabel:
         locationGap.id === "state"
           ? "Choose state"
@@ -248,7 +196,7 @@ export function resolveListingWizardNextAction(input: {
 
   return {
     kind: "ready",
-    message: "Your listing is ready for review.",
+    message: "Ready for review",
     primaryLabel: "Review listing",
     sectionIndex: 2,
     stageId: "location_review",

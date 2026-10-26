@@ -2,13 +2,11 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 /**
- * Shared seller-journey chrome — matches homepage premium spacing/typography.
- * Presentation only.
+ * Shared seller-journey chrome — compact header aligned with YDS tokens.
  */
 export function SellerFlowShell({
   eyebrow,
   title,
-  description,
   backHref,
   backLabel = "Back",
   actions,
@@ -36,28 +34,35 @@ export function SellerFlowShell({
   return (
     <main
       className={cn(
-        "mx-auto w-full space-y-5 px-4 pb-14 pt-5 sm:px-5",
-        width,
+        "min-h-[100dvh] bg-surface pb-20 pt-3 sm:px-5",
         className,
       )}
     >
-      <header className="space-y-2">
-        <div className="flex items-center gap-3">
-          {backHref ? (
-            <Link
-              href={backHref}
-              className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-navy/5 text-navy hover:bg-navy/10"
-              aria-label="Back"
-            >
-              ←
-            </Link>
-          ) : null}
-          <h1 className="text-xl font-black tracking-tight text-navy sm:text-2xl uppercase">
-            SELL ON YIKE
-          </h1>
-        </div>
-      </header>
-      {children}
+      <div className={cn("mx-auto w-full px-4", width)}>
+        <header className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {backHref ? (
+              <Link
+                href={backHref}
+                className="pressable flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy/5 text-navy hover:bg-navy/10"
+                aria-label={backLabel}
+              >
+                ←
+              </Link>
+            ) : null}
+            <div className="min-w-0">
+              {eyebrow ? (
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gold-dark">
+                  {eyebrow}
+                </p>
+              ) : null}
+              <h1 className="truncate text-lg font-black text-navy sm:text-xl">{title}</h1>
+            </div>
+          </div>
+          {actions ? <div className="shrink-0">{actions}</div> : null}
+        </header>
+        {children}
+      </div>
     </main>
   );
 }

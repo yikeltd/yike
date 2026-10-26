@@ -31,8 +31,7 @@ export default async function NewElectronicsListingPage() {
   return (
     <SellerFlowShell
       eyebrow="Electronics"
-      title="List electronics"
-      description="Add photos, specs, and price — we review before publishing."
+      title="New listing"
       backHref="/agent/listings/choose"
       backLabel="Choose category"
       actions={
