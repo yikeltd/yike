@@ -38,13 +38,17 @@ async function assertSellerPanel(
   }
 }
 
-async function assertSpecificationsGrid(page: import("@playwright/test").Page) {
+async function assertSpecificationsGrid(
+  page: import("@playwright/test").Page,
+  opts?: { expectedColumns?: 1 | 2 },
+) {
+  const expectedColumns = opts?.expectedColumns ?? 2;
   const section = page.getByTestId("listing-detail-specifications-section");
-  await section.scrollIntoViewIfNeeded();
   await expect(section).toBeVisible({ timeout: 15_000 });
+  await section.scrollIntoViewIfNeeded();
   const grid = page.getByTestId("listing-detail-specifications-grid");
   await expect(grid).toBeVisible();
-  await expect(grid).toHaveClass(/sm:grid-cols-2/);
+  await expect(grid).toHaveClass(/min-\[480px\]:grid-cols-2/);
 
   const cellCount = await grid.locator(":scope > div").count();
   expect(cellCount).toBeGreaterThanOrEqual(6);
@@ -53,7 +57,7 @@ async function assertSpecificationsGrid(page: import("@playwright/test").Page) {
     const style = window.getComputedStyle(el);
     return style.gridTemplateColumns.split(" ").filter(Boolean).length;
   });
-  expect(columns).toBe(2);
+  expect(columns).toBe(expectedColumns);
 
   const overflow = await grid.evaluate((el) => el.scrollWidth <= el.clientWidth + 2);
   expect(overflow).toBe(true);
@@ -97,6 +101,7 @@ test.describe("Sample listing detail showcase (local fixtures)", () => {
         test.skip(true, "Auth redirect — sample fixture route blocked");
       }
       await assertSellerPanel(page, false);
+      await assertSpecificationsGrid(page, { expectedColumns: 1 });
       const grid = page.getByTestId("listing-detail-specifications-grid");
       if ((await grid.count()) > 0) {
         const columns = await grid.evaluate((el) => {

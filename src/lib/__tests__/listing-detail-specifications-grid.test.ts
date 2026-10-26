@@ -11,19 +11,25 @@ const DETAIL_FILES = [
   "components/marketplace/electronics-detail-experience.tsx",
 ] as const;
 
-test("shared specifications grid uses responsive two-column layout and text wrapping", () => {
+test("shared specifications grid uses compact two-column layout and text wrapping", () => {
   const grid = readFileSync(
     join(root, "components/marketplace/listing-detail-specifications-grid.tsx"),
     "utf8",
   );
-  assert.match(grid, /grid-cols-1/);
-  assert.match(grid, /sm:grid-cols-2/);
+  assert.match(grid, /listing-detail-spec-grid/);
+  assert.match(grid, /min-\[480px\]:grid-cols-2/);
   assert.match(grid, /min-w-0/);
   assert.match(grid, /break-words/);
   assert.match(grid, /overflow-wrap:anywhere/);
   assert.doesNotMatch(grid, /truncate/);
+  assert.doesNotMatch(grid, /rounded-2xl border border-slate-100 bg-slate-50/);
   assert.match(grid, /max-w-full/);
-  assert.match(grid, /overflow-hidden/);
+});
+
+test("globals.css includes specifications grid column fallback", () => {
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  assert.match(css, /\.listing-detail-spec-grid/);
+  assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 });
 
 test("property, vehicle, and electronics detail use shared specifications section", () => {

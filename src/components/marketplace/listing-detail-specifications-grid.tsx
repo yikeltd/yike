@@ -6,16 +6,13 @@ export type ListingDetailSpecItem = {
   value: string;
 };
 
-const cellClass =
-  "min-w-0 flex flex-col rounded-2xl border border-slate-100 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5";
-
 const labelClass =
-  "text-[10px] font-semibold leading-snug text-navy/50 break-words [overflow-wrap:anywhere] dark:text-white/50";
+  "text-[11px] font-semibold leading-snug text-navy/55 break-words [overflow-wrap:anywhere] dark:text-white/55";
 
 const valueClass =
-  "mt-0.5 text-xs font-black leading-snug text-navy break-words [overflow-wrap:anywhere] dark:text-white";
+  "mt-0.5 text-sm font-bold leading-snug text-navy break-words [overflow-wrap:anywhere] dark:text-white";
 
-/** Compact responsive spec grid — 1 column mobile, 2 columns from sm+. */
+/** Compact responsive spec grid — 1 column on narrow viewports, 2 columns from 480px+. */
 export function ListingDetailSpecificationsGrid({
   items,
   className,
@@ -28,20 +25,20 @@ export function ListingDetailSpecificationsGrid({
   if (items.length === 0) return null;
 
   return (
-    <div
+    <dl
       className={cn(
-        "grid w-full max-w-full grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3",
+        "listing-detail-spec-grid grid w-full max-w-full grid-cols-1 gap-x-6 gap-y-3 min-[480px]:grid-cols-2 min-[480px]:gap-y-3",
         className,
       )}
       data-testid={testId}
     >
       {items.map((spec, index) => (
-        <div key={`${spec.label}-${index}`} className={cellClass}>
-          <span className={labelClass}>{spec.label}</span>
-          <span className={valueClass}>{spec.value}</span>
+        <div key={`${spec.label}-${index}`} className="min-w-0">
+          <dt className={labelClass}>{spec.label}</dt>
+          <dd className={valueClass}>{spec.value}</dd>
         </div>
       ))}
-    </div>
+    </dl>
   );
 }
 
@@ -63,7 +60,7 @@ export function ListingDetailSpecificationsSection({
   return (
     <section
       className={cn(
-        "w-full max-w-full space-y-3 overflow-hidden rounded-3xl border border-navy/10 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-navy",
+        "w-full max-w-full space-y-3 overflow-hidden rounded-2xl border border-navy/10 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-navy sm:p-5",
         shellClassName,
         className,
       )}

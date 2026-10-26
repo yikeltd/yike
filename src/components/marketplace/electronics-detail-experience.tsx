@@ -161,11 +161,7 @@ export function ElectronicsDetailExperience({
           ) : null}
         </div>
 
-        <ListingDetailSpecificationsSection
-          title="Specifications"
-          items={specRows}
-          shellClassName="rounded-2xl p-4 shadow-sm sm:rounded-3xl sm:p-5 sm:shadow-xl"
-        />
+        <ListingDetailSpecificationsSection title="Specifications" items={specRows} />
 
         {listing.description ? (
           <section className="rounded-2xl border border-navy/10 bg-white p-4">
