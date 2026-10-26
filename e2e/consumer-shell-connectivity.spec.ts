@@ -19,7 +19,7 @@ function loginNextIs(url: string, returnPath: string): boolean {
 
 test("wallet route redirects unauthenticated users to login with return path", async ({ page }) => {
   await page.goto("/account/coins", { waitUntil: "domcontentloaded", timeout: 60_000 });
-  await expect(page).toHaveURL(/\/auth\/login/);
+  await expect(page).toHaveURL(/\/auth\/login/, { timeout: 15_000 });
   expect(loginNextIs(page.url(), "/account/coins")).toBeTruthy();
 });
 

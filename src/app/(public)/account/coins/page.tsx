@@ -20,10 +20,6 @@ export const metadata = {
 };
 
 export default async function YikeCoinsAccountPage() {
-  if (!isYikeCoinsEnabled()) {
-    redirect(consumerRoute("profile"));
-  }
-
   const supabase = await createClient();
   if (!supabase) redirect("/auth/login?next=/account/coins");
 
@@ -31,6 +27,10 @@ export default async function YikeCoinsAccountPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login?next=/account/coins");
+
+  if (!isYikeCoinsEnabled()) {
+    redirect(consumerRoute("profile"));
+  }
 
   const balance = await getYikeCoinBalance(user.id);
   const video = await getVideoCallPreflight(user.id);
