@@ -17,7 +17,7 @@ This report does **not** claim release readiness from a green production build o
 | Authenticated nav + messaging thread E2E | **BLOCKED** | Ops: create isolated Supabase + `.env.e2e.local` |
 | Lex RBAC E2E (6 roles) | **BLOCKED** | Ops: staff test accounts in non-prod |
 | YC wallet RPCs / ledger | **REVIEW** (14/14 integration on linked DB — not prod-readiness proof) | Reconcile migrations before prod `db push`; re-run integration only on approved non-prod target |
-| Paystack checkout E2E | **BLOCKED** | Production keys + `ENABLE_PAYMENTS`; no live charge in CI |
+| Paystack checkout E2E | **BLOCKED** (code **11/11** unit PASS) | **`PAYSTACK_READINESS_AUDIT.md`**; live webhook + keys ops-owned |
 | Migration filename drift (branch vs applied prod) | **P0 — ops** | Peer-transfer **repo defect fixed** (`261500`/`261510`); version-ID tail still mismatched — **`YC_WALLET_MIGRATION_RECONCILIATION.md`** — **no prod `db push`** |
 
 ---
