@@ -62,27 +62,24 @@ export function sellerContactCardFromListing(
   const sellerName =
     agent?.company_name ||
     agent?.full_name ||
-    "Verified Nigerian Seller";
+    "Seller on Yike";
   const verified =
     options?.verified ??
-    Boolean(
-      listing.is_verified_listing ||
-        (agent ? isVerifiedAgent(agent) || agent.verified_badge : false),
-    );
+    Boolean(agent && (isVerifiedAgent(agent) || agent.verified_badge));
 
   let roleLabel = options?.roleLabel ?? "Seller";
   if (!options?.roleLabel) {
     if (assetType === "PROPERTY") {
       roleLabel = agent?.company_name
-        ? "Licensed Real Estate Agency"
+        ? "Real Estate Agency"
         : "Property Representative";
     } else if (assetType === "VEHICLE") {
       roleLabel =
         agent?.account_type === "dealer" || agent?.company_name
-          ? "Verified Auto Showroom"
-          : "Verified Vehicle Owner";
+          ? "Auto Dealer"
+          : "Private Seller";
     } else {
-      roleLabel = "Electronics Seller";
+      roleLabel = agent?.company_name ? "Electronics Dealer" : "Electronics Seller";
     }
   }
 

@@ -4,7 +4,7 @@ import { MarketplaceSellerContactCard } from "@/components/marketplace/marketpla
 import type { SellerContactCardIdentity } from "@/lib/marketplace/seller-contact-card-props";
 import { cn } from "@/lib/utils";
 
-/** Seller identity card below the location map — no duplicate Message/Call buttons. */
+/** Full seller profile + reviews below the location map — no Message/Call CTAs. */
 export function ListingDetailSellerSection({
   identity,
   className,
@@ -13,8 +13,12 @@ export function ListingDetailSellerSection({
   className?: string;
 }) {
   return (
-    <div className={cn(className)} data-testid="listing-detail-seller-section">
-      <MarketplaceSellerContactCard {...identity} />
-    </div>
+    <section
+      className={cn(className)}
+      data-testid="listing-detail-seller-section"
+      aria-label="Seller profile"
+    >
+      <MarketplaceSellerContactCard {...identity} variant="listingDetail" />
+    </section>
   );
 }

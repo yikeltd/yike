@@ -12,11 +12,23 @@ const DETAIL_FILES = [
 ] as const;
 
 test("seller contact card does not embed Message and Call actions", () => {
-  const src = readFileSync(
+  const card = readFileSync(
     join(root, "components/marketplace/marketplace-seller-contact-card.tsx"),
     "utf8",
   );
-  assert.doesNotMatch(src, /SellerMessageCallActions/);
+  const section = readFileSync(
+    join(root, "components/marketplace/listing-detail-seller-section.tsx"),
+    "utf8",
+  );
+  assert.doesNotMatch(card, /SellerMessageCallActions/);
+  assert.doesNotMatch(section, /SellerMessageCallActions/);
+  assert.match(section, /variant="listingDetail"/);
+  assert.match(card, /SellerContactReviewsPreview/);
+  const reviews = readFileSync(
+    join(root, "components/marketplace/seller-contact-reviews-preview.tsx"),
+    "utf8",
+  );
+  assert.match(reviews, /Reviews &amp; feedback/);
 });
 
 test("property, vehicle, and electronics detail place gallery contact actions", () => {

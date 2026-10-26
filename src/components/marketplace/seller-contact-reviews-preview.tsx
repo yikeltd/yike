@@ -39,8 +39,8 @@ function Stars({ rating }: { rating: number }) {
         <Star
           key={i}
           className={cn(
-            "h-3 w-3",
-            i <= rating ? "fill-gold text-gold" : "text-navy/15",
+            "h-3.5 w-3.5",
+            i <= rating ? "fill-gold text-gold" : "text-navy/15 dark:text-white/15",
           )}
           aria-hidden
         />
@@ -53,10 +53,13 @@ export function SellerContactReviewsPreview({
   sellerId,
   profileHref,
   className,
+  showEmptyState = false,
 }: {
   sellerId: string;
   profileHref: string;
   className?: string;
+  /** When true, show honest empty copy after load if there are no reviews. */
+  showEmptyState?: boolean;
 }) {
   const [data, setData] = useState<PreviewPayload | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -82,44 +85,74 @@ export function SellerContactReviewsPreview({
     };
   }, [sellerId]);
 
-  if (!loaded || !data || data.stats.total === 0 || data.reviews.length === 0) {
+  if (!loaded) {
     return null;
   }
 
-  const reviewsHref = `${profileHref}#reviews`;
+  const total = data?.stats.total ?? 0;
+  const reviews = data?.reviews ?? [];
+  const reviewsHref =
+    profileHref?.startsWith("/agents/") ? `${profileHref}#reviews` : null;
+  const showViewAll = Boolean(reviewsHref && total > reviews.length);
+
+  if (total === 0 || reviews.length === 0) {
+    if (!showEmptyState) return null;
+    return (
+      <div
+        className={cn(
+          "space-y-2 border-t border-navy/10 pt-5 dark:border-white/10",
+          className,
+        )}
+        data-testid="seller-reviews-empty"
+      >
+        <h4 className="text-sm font-black text-navy dark:text-white">
+          Reviews &amp; feedback
+        </h4>
+        <p className="text-xs font-medium leading-relaxed text-navy/55 dark:text-white/55">
+          No published reviews for this seller yet.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className={cn("space-y-3 border-t border-navy/10 pt-4 dark:border-white/10", className)}>
+    <div
+      className={cn(
+        "space-y-3.5 border-t border-navy/10 pt-5 dark:border-white/10",
+        className,
+      )}
+      data-testid="seller-reviews-preview"
+    >
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-sm font-black text-navy dark:text-white">
           Reviews &amp; feedback{" "}
-          <span className="font-bold text-navy/45 dark:text-white/45">
-            ({data.stats.total})
-          </span>
+          <span className="font-bold text-navy/45 dark:text-white/45">({total})</span>
         </h4>
-        <Link
-          href={reviewsHref}
-          className="inline-flex items-center gap-0.5 text-xs font-bold text-navy/70 hover:text-navy dark:text-white/70 dark:hover:text-white"
-        >
-          View all
-          <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-        </Link>
+        {showViewAll ? (
+          <Link
+            href={reviewsHref!}
+            className="inline-flex items-center gap-0.5 text-xs font-bold text-navy/70 hover:text-navy dark:text-white/70 dark:hover:text-white"
+          >
+            View all
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+          </Link>
+        ) : null}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {data.reviews.map((review) => {
+      <div className="flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {reviews.map((review) => {
           const name = review.reviewer?.full_name?.trim() || "Buyer";
           const snippet =
-            review.body.length > 120
-              ? `${review.body.slice(0, 117).trim()}…`
+            review.body.length > 140
+              ? `${review.body.slice(0, 137).trim()}…`
               : review.body;
           return (
             <article
               key={review.id}
-              className="min-w-[200px] max-w-[220px] shrink-0 rounded-xl border border-navy/8 bg-surface/50 p-3 dark:border-white/10 dark:bg-white/5"
+              className="min-w-[210px] max-w-[240px] shrink-0 rounded-2xl border border-navy/8 bg-slate-50/80 p-3.5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
             >
-              <div className="flex items-center gap-2">
-                <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-navy/10">
+              <div className="flex items-center gap-2.5">
+                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-navy/8 bg-navy/5">
                   {review.reviewer?.avatar_url ? (
                     <Image
                       src={review.reviewer.avatar_url}
@@ -135,15 +168,15 @@ export function SellerContactReviewsPreview({
                   <p className="truncate text-xs font-bold text-navy dark:text-white">
                     {name}
                   </p>
-                  <p className="text-[10px] text-navy/50 dark:text-white/50">
+                  <p className="text-[10px] font-medium text-navy/50 dark:text-white/50">
                     {formatRelativeTime(review.created_at)}
                   </p>
                 </div>
               </div>
-              <div className="mt-2">
+              <div className="mt-2.5">
                 <Stars rating={review.rating} />
               </div>
-              <p className="mt-1.5 text-[11px] leading-snug text-navy/75 dark:text-white/75">
+              <p className="mt-2 text-[11px] leading-snug text-navy/75 dark:text-white/75">
                 {snippet}
               </p>
             </article>

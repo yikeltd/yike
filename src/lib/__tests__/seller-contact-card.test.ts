@@ -72,29 +72,36 @@ test("marketplace seller contact card omits duplicate Message and Call actions",
   assert.doesNotMatch(src, /Safe Contact Protocol/i);
 });
 
-test("seller reviews preview hides section when total is zero", () => {
-  const src = readFileSync(
+test("seller reviews preview uses honest empty state on listing detail", () => {
+  const preview = readFileSync(
     join(root, "components/marketplace/seller-contact-reviews-preview.tsx"),
     "utf8",
   );
-  assert.match(src, /stats\.total === 0/);
-  assert.match(src, /return null/);
-  assert.doesNotMatch(src, /placeholder/i);
+  assert.match(preview, /total === 0/);
+  assert.match(preview, /showEmptyState/);
+  assert.match(preview, /seller-reviews-empty/);
+  assert.doesNotMatch(preview, /placeholder/i);
 });
 
-test("property, vehicle, and electronics detail surfaces use shared seller card", () => {
+test("property, vehicle, and electronics detail surfaces use listing seller section", () => {
   for (const file of [
-    "components/property/agent-contact-card.tsx",
+    "components/property/property-detail-experience.tsx",
     "components/marketplace/vehicle-detail-experience.tsx",
     "components/marketplace/electronics-detail-experience.tsx",
   ]) {
     const src = readFileSync(join(root, file), "utf8");
-    assert.match(
-      src,
-      /MarketplaceSellerContactCard|sellerContactCardFromListing/,
-      file,
-    );
+    assert.match(src, /ListingDetailSellerSection/, file);
+    assert.match(src, /sellerContactCardFromListing/, file);
   }
+});
+
+test("seller role labels do not imply verification in copy", () => {
+  const card = sellerContactCardFromListing(minimalListing(), "VEHICLE");
+  assert.ok(card);
+  assert.doesNotMatch(card!.roleLabel, /verified/i);
+  const electronics = sellerContactCardFromListing(minimalListing(), "ELECTRONICS");
+  assert.ok(electronics);
+  assert.doesNotMatch(electronics!.roleLabel, /verified/i);
 });
 
 test("seller message call actions wire conversations and seller-contact APIs", () => {
