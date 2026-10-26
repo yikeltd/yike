@@ -1,7 +1,7 @@
 # Public & sensitive API security audit
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
-**Updated:** 2026-10-26  
+**Updated:** 2026-10-26 (upload / forward / passport / metrics slice)  
 **Scope:** Route-level authZ, IDOR, identity spoofing, unsafe mutations (static review + targeted fixes)
 
 This is **not** a claim of full production readiness. Database RLS/RPC grants were spot-checked only where routes use service role.
@@ -18,6 +18,8 @@ This is **not** a claim of full production readiness. Database RLS/RPC grants we
 | `POST /api/properties/[id]/view` | Metrics RPC for arbitrary UUIDs | `isApprovedListingForPublicMetrics` → 404 | `public-listing-target.test.ts` (static) |
 | `POST /api/properties/[id]/contact-click` | Same | Same | Same |
 | `POST /api/analytics/listing-event` | Events for non-live listings | Same guard before `logListingEvent` | Same |
+| `POST /api/leads/forward` | Repeat calls inflated agent `successful_handoffs`; weak ref parsing | `isValidLeadReference`; skip side effects when handoff already shared | `api-security-slice-20261026.test.ts` |
+| `GET /api/trust/passport/[userId]` | Public stub passport for any UUID | `passport_ui` launch gate → 404; UUID validation | Same |
 
 ---
 
@@ -26,7 +28,9 @@ This is **not** a claim of full production readiness. Database RLS/RPC grants we
 | Route / area | Auth | Notes |
 |--------------|------|-------|
 | `POST /api/leads/track` | Public | Uses `validateLeadRequest` (listing/agent binding) |
-| `POST /api/leads/forward` | Public | Reference lookup; increments agent stats — reference entropy not re-audited |
+| `POST /api/leads/forward` | Public | Idempotent handoff after first share; `YK-XXXXXX` format required |
+| `POST /api/media/upload` | Session + lister role | `resolveStoragePropertyId` — draft scoped per user; UUID listing requires `agent_id` match (staff override) |
+| `POST /api/leads/call-opened` | Public | Reference format validated (no DB write on invalid ref) |
 | `POST /api/social/follow` | Session | Follower from session |
 | `GET/POST /api/agent/listing-leads` | Session | Seller-scoped updates (`seller_id`) |
 | `GET/POST /api/conversations/*`, messages | Session | Participant checks in service layer |
@@ -42,7 +46,7 @@ This is **not** a claim of full production readiness. Database RLS/RPC grants we
 
 | Route | Risk class | Notes |
 |-------|------------|-------|
-| `GET /api/trust/passport/[userId]` | Product / launch | Unauthenticated; in-memory stub store — hide under launch flags if exposed |
+| `GET /api/trust/passport/[userId]` | Product / launch | **Gated** — 404 unless `passport_ui` visible (in-memory stub when enabled) |
 | `GET /api/revenue/entitlements/*` (pre-fix) | IDOR | **Fixed** — was in-memory stub but pattern was unsafe for real store |
 | View/contact-click (pre-fix) | Metric inflation | **Fixed** — not IDOR; prevented junk increments on invalid/hidden listings |
 | ~300+ admin/Lex routes | Staff | Assumed middleware + `requireStaff*` — **not fully enumerated** |
@@ -52,9 +56,9 @@ This is **not** a claim of full production readiness. Database RLS/RPC grants we
 ## Not audited / blocked
 
 - Full Lex `/api/admin/*` and `/api/lex/*` matrix
-- Upload/sign URL routes (storage policy vs route ownership)
+- Storage RLS policies on buckets (route-level ownership reviewed for `POST /api/media/upload`; admin signed URLs staff-only)
 - Paystack webhook (see `PAYSTACK_READINESS_AUDIT.md`)
-- Vehicle/electronics parallel metrics routes (if any beyond properties SSOT)
+- Vehicle/electronics parallel metrics routes — **none found**; public metrics use `properties` SSOT only (`api-security-slice-20261026.test.ts`)
 - RPC grant matrix on production (read-only SQL recommended)
 - Rate limiting consistency across public POST endpoints
 
@@ -66,6 +70,7 @@ This is **not** a claim of full production readiness. Database RLS/RPC grants we
 node --test src/lib/__tests__/public-listing-target.test.ts
 node --test src/lib/__tests__/seller-contact-route.test.ts
 node --test src/lib/__tests__/listing-leads-capture-route.test.ts
+npx tsx --test src/lib/__tests__/api-security-slice-20261026.test.ts
 ```
 
 Integration tests against Supabase: **not run** when local env resolves to production project ref.
