@@ -308,6 +308,7 @@ export function HomeDesktopElectronicsSearch({
           {meaningfulSelection ? (
             <button
               type="button"
+              data-testid="home-desktop-electronics-search-cta"
               onClick={submit}
               className="pressable yike-btn-accent col-span-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-bold text-navy sm:col-span-1 lg:col-auto lg:h-12 lg:min-w-[3.5rem]"
               aria-label="Search electronics"

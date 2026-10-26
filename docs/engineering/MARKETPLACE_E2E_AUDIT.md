@@ -18,6 +18,9 @@ This audit distinguishes **Playwright smoke/navigation** (anonymous, production-
 | Listing detail + browseReturn back nav | `marketplace-browse-navigation` | **PASS** | Requires live listings in feed |
 | Discover + mobile bottom nav | `discover-navigation`, `consumer-shell-connectivity` | **PASS** | |
 | Unified search bar scroll (mobile) | `unified-search-integration` | **PASS** | Not sticky |
+| Default header search pill + header sliders → hero filters | `home-unified-header-search.spec.ts` | **PASS** | After `392a14f3` |
+| Mobile/desktop hero in-flow filters vs Latest on Yike | `home-hero-search-layout.spec.ts` | **PASS** | |
+| Desktop electronics category chips + search submit | `home-desktop-hero-category-chips.spec.ts` | **PASS** | |
 | Seller routes gated (unauthenticated) | `seller-journey-gates.spec.ts` | **PASS** | Login `next=` preserved; open redirect blocked |
 | Wallet / messages / thread gate | `consumer-shell-connectivity.spec.ts` | **PASS** | Redirect or home when messaging off |
 | 320px bottom nav | `consumer-shell-connectivity.spec.ts` | **PASS** | |

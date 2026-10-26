@@ -35,8 +35,11 @@ async function openMobileFilters(page: Page, category: "property" | "vehicle" | 
     await tab.click();
     await page.waitForURL(new RegExp(`category=${category}`), { timeout: 20_000 });
   }
-  await hero.getByTestId("home-mobile-filters-toggle").click();
-  await expect(hero.getByTestId("home-mobile-filters-expanded")).toBeVisible({
+  const expanded = hero.getByTestId("home-mobile-filters-expanded");
+  if (!(await expanded.isVisible())) {
+    await hero.getByTestId("home-mobile-filters-toggle").click();
+  }
+  await expect(expanded).toBeVisible({
     timeout: 15_000,
   });
   return hero;

@@ -41,7 +41,9 @@ export function HomeMobileFilterShell({
   const isOpen = open || expanded;
 
   useEffect(() => {
-    if (expanded) setOpen(false);
+    if (!expanded) {
+      setOpen(false);
+    }
   }, [expanded]);
 
   function setExpanded(next: boolean) {

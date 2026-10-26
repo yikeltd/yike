@@ -1,8 +1,9 @@
 # Release blocker report
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
-**Updated:** 2026-10-26 (account wallet ↔ agent dashboard connectivity)  
-**Scope:** Verification gaps after navigation shell + public E2E (30 PASS / 16 SKIP on production-linked local env).
+**Updated:** 2026-10-26 (offline-first guards + homepage/wallet verification)  
+**HEAD:** see latest commit on branch (after `392a14f3` unified header search)  
+**Scope:** Verification gaps after navigation shell + public E2E (30 PASS / 16 SKIP on production-linked local env). Homepage/wallet slice adds **20 PASS / 1 SKIP / 0 FAIL** focused Playwright (see below).
 
 This report does **not** claim release readiness from a green production build or anonymous Playwright alone.
 
@@ -16,7 +17,9 @@ This report does **not** claim release readiness from a green production build o
 | Seller listing create / publish E2E | **BLOCKED** | Isolated Supabase + auth |
 | Authenticated nav + messaging thread E2E | **BLOCKED** | Ops: create isolated Supabase + `.env.e2e.local` |
 | Lex RBAC E2E (6 roles) | **BLOCKED** | Ops: staff test accounts in non-prod |
-| YC wallet RPCs / ledger | **REVIEW** (14/14 integration on linked DB — not prod-readiness proof) | Reconcile migrations before prod `db push`; re-run integration only on approved non-prod target |
+| Offline-first local dev (Paystack/DB guards, callback URLs) | **PASS** (code + unit) | **`OFFLINE_FIRST_RELIABILITY_AUDIT.md`** |
+| Homepage unified search + in-flow filters | **PASS** (12 Playwright + unit) | `392a14f3` + filter-shell sync |
+| YC wallet RPCs / ledger | **REVIEW** (14/14 integration historical on linked DB — **NOT RE-RUN**) | `verify:dev-target` → production ref **BLOCKED** for `test:dev:integration`; reconcile migrations before prod `db push` |
 | Paystack checkout E2E | **BLOCKED** (code **11/11** unit PASS) | **`PAYSTACK_READINESS_AUDIT.md`**; live webhook + keys ops-owned |
 | Migration filename drift (branch vs applied prod) | **P0 — ops** | Peer-transfer **repo defect fixed** (`261500`/`261510`); version-ID tail still mismatched — **`YC_WALLET_MIGRATION_RECONCILIATION.md`** — **no prod `db push`** |
 
@@ -134,17 +137,18 @@ npm run test:e2e:navigation
 
 ---
 
-## Pre-push verification (2026-10-26, commit slice)
+## Pre-push verification (2026-10-26, offline + homepage slice)
 
 | Check | Command | Result |
 |-------|---------|--------|
-| E2E Supabase guard | `npm run verify:e2e-supabase` | **SKIP/FAIL (exit 1)** — no `.env.e2e.local`; must not run against production |
-| Isolated nav prereqs | `npm run e2e:nav-prereqs:isolated` | **FAIL (exit 1)** — missing `.env.e2e.local` (fail-closed) |
-| Default nav prereqs | `npm run e2e:nav-prereqs` | **FAIL (exit 1)** — ephemeral auth unavailable on production-linked env |
-| Route navigation audit | `node --import tsx --test src/lib/__tests__/route-navigation-audit.test.ts` | **8/8 PASS** |
+| Dev Supabase target | `npm run verify:dev-target` | **PASS** (linked ref `hlpojfurfldvcxfxhveg` — **BLOCKED** for integration re-run) |
+| Offline / wallet unit | `npx tsx --test src/lib/__tests__/offline-dev-urls.test.ts src/lib/__tests__/payment-callback-local.test.ts …` | **25 PASS** |
+| Homepage + wallet Playwright | `home-unified-header-search`, `home-hero-search-layout`, `home-mobile-marketplace-filters`, `home-desktop-hero-category-chips`, `account-wallet-connectivity`, `wallet-page-redesign` | **20 PASS**, **1 SKIP** (agent wallet link — no session), **0 FAIL** |
+| E2E Supabase guard | `npm run verify:e2e-supabase` | **BLOCKED** — no `.env.e2e.local` |
+| Isolated nav prereqs | `npm run e2e:nav-prereqs:isolated` | **BLOCKED** — missing `.env.e2e.local` |
 | Typecheck | `npx tsc --noEmit` | **PASS** |
 | Production build | `npm run build` | **PASS** |
-| YC / comms integration | `YIKE_DEV_DB_INTEGRATION=1 npm run test:dev:integration` | **NOT RE-RUN** — `verify:dev-target` resolves to production ref `hlpojfurfldvcxfxhveg`; prior 14/14 (2026-10-25) is evidence for RPC behavior on the linked DB only |
+| YC / comms integration | `YIKE_DEV_DB_INTEGRATION=1 npm run test:dev:integration` | **NOT RUN** — production-linked dev target; do not mutate prod from integration tests |
 
 ## Applicable test matrix (historical)
 
@@ -168,6 +172,7 @@ npm run test:e2e:navigation
 
 ## References
 
+- `docs/engineering/OFFLINE_FIRST_RELIABILITY_AUDIT.md`
 - `docs/engineering/MARKETPLACE_E2E_AUDIT.md`
 - `docs/engineering/YC_WALLET_MIGRATION_RECONCILIATION.md`
 - `docs/engineering/ROUTE_NAVIGATION_AUDIT.md`

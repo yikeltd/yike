@@ -67,6 +67,9 @@ export function HomeCompactMarketplaceHero({
     (open: boolean) => {
       setFiltersExpanded(open);
       marketplaceFilter?.setFiltersPanelOpen(open);
+      if (!open) {
+        marketplaceFilter?.setMeaningfulFilterActive(false);
+      }
     },
     [marketplaceFilter],
   );

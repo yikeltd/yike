@@ -38,7 +38,9 @@ test.describe("Desktop hero category shortcut rows", () => {
     await expect(chips.getByRole("button", { name: "Phones & Tablets", exact: true })).toBeVisible();
 
     await chips.getByRole("button", { name: "Generators", exact: true }).click();
-    await hero.getByRole("button", { name: "Search electronics" }).click();
+    const searchCta = hero.getByTestId("home-desktop-electronics-search-cta");
+    await expect(searchCta).toBeVisible({ timeout: 10_000 });
+    await searchCta.click();
     await expect(page).toHaveURL(/\/electronics\?.*category=generators/, { timeout: 20_000 });
 
     await page.goto("/?category=electronics", { waitUntil: "domcontentloaded", timeout: 90_000 });
@@ -47,7 +49,9 @@ test.describe("Desktop hero category shortcut rows", () => {
       exact: true,
     }).click();
     await hero.getByRole("button", { name: "Phones & Tablets", exact: true }).click();
-    await hero.getByRole("button", { name: "Search electronics" }).click();
+    const searchCtaAgain = hero.getByTestId("home-desktop-electronics-search-cta");
+    await expect(searchCtaAgain).toBeVisible({ timeout: 10_000 });
+    await searchCtaAgain.click();
     await expect(page).toHaveURL(/category=phones_tablets/, { timeout: 20_000 });
   });
 });

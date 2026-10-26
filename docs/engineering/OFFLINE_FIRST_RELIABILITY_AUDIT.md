@@ -2,7 +2,7 @@
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
 **Updated:** 2026-10-26  
-**HEAD (offline + wallet guards):** pending commit after verification pass  
+**HEAD (offline + wallet guards):** `455c42f0`  
 
 ## Scope
 
