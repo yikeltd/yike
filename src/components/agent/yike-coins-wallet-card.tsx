@@ -28,7 +28,6 @@ type BalancePayload = {
 export function YikeCoinsWalletCard({ className }: { className?: string }) {
   const [balance, setBalance] = useState<number | null>(null);
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
-  const [videoHint, setVideoHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
   const [devCreditBusy, setDevCreditBusy] = useState(false);
@@ -60,17 +59,6 @@ export function YikeCoinsWalletCard({ className }: { className?: string }) {
       const balJson = (await balRes.json()) as BalancePayload;
       setBalance(Number(balJson.balanceCoins ?? 0));
       setDevCreditAvailable(Boolean(balJson.devTestCreditAvailable));
-
-      const vc = balJson.videoCalls;
-      if (vc) {
-        if (!vc.billable) {
-          setVideoHint(`${vc.freeAllowanceRemaining} free video call(s) left today`);
-        } else if (vc.priceCoins != null) {
-          setVideoHint(`Video calls: ${vc.priceCoins} coins after free allowance`);
-        } else {
-          setVideoHint("Video call pricing not configured on this environment");
-        }
-      }
 
       if (ledgerRes.ok) {
         const ledgerJson = (await ledgerRes.json()) as { entries?: LedgerEntry[] };
@@ -163,8 +151,6 @@ export function YikeCoinsWalletCard({ className }: { className?: string }) {
         </button>
       </div>
 
-      {videoHint ? <p className="mt-2 text-[11px] text-navy/60">{videoHint}</p> : null}
-
       {entries.length > 0 ? (
         <ul className="mt-3 space-y-1.5 border-t border-navy/8 pt-3">
           {entries.slice(0, 5).map((e) => (
@@ -182,8 +168,6 @@ export function YikeCoinsWalletCard({ className }: { className?: string }) {
             </li>
           ))}
         </ul>
-      ) : !loading ? (
-        <p className="mt-2 text-[11px] text-navy/50">No recent activity.</p>
       ) : null}
 
       {devCreditAvailable ? (

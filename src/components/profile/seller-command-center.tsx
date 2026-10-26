@@ -41,7 +41,7 @@ import type { ProfileSocialStats } from "@/lib/social/types";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import type { SellerAnalyticsSummary } from "@/lib/subscriptions/analytics";
 import { cn } from "@/lib/utils";
-import { YikeCoinsWalletCard } from "@/components/agent/yike-coins-wallet-card";
+import { AgentHeroYcBalance } from "@/components/agent/agent-hero-yc-balance";
 
 type Props = {
   profile: Profile;
@@ -392,13 +392,9 @@ export function SellerCommandCenter(props: Props) {
                 </Link>
               </div>
 
-              {/* Right Column: STATUS */}
-              <div className="pl-3 text-left">
-                <span className="text-[10px] font-bold text-[#E4B547] tracking-wider uppercase block">STATUS</span>
-                <span className="flex items-center gap-1.5 font-bold text-white text-xs sm:text-sm mt-0.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  <span>Active</span>
-                </span>
+              {/* Right Column: Yike Coins wallet entry */}
+              <div className="pl-1 sm:pl-3">
+                <AgentHeroYcBalance />
               </div>
             </div>
           </div>
@@ -406,8 +402,6 @@ export function SellerCommandCenter(props: Props) {
 
         {/* MAIN SCROLL CONTAINER — TIGHT COMPRESSED PADDING & MARGINS */}
         <main className="p-3.5 sm:p-4 space-y-3.5 max-w-4xl mx-auto w-full">
-
-          <YikeCoinsWalletCard />
 
           {profileSaved && (
             <p
@@ -418,7 +412,76 @@ export function SellerCommandCenter(props: Props) {
             </p>
           )}
 
-          {/* 8. RECENT CONVERSATIONS — FLOATING WHITE CARD MATCHING REFERENCE DESIGN */}
+          {/* BUSINESS SNAPSHOT — COMPRESSED CARD HEIGHT & PADDING */}
+          <section className="space-y-1">
+            <SectionHeader title="Business Snapshot" />
+
+            <div className="rounded-2xl border border-navy/[0.06] bg-white p-2.5 shadow-xs">
+              <div className="grid grid-cols-3 divide-x divide-navy/[0.06] text-center">
+                <Link href="/agent/leads" prefetch className="pressable px-1 py-0.5 block">
+                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                      <Users className="h-2.5 w-2.5" />
+                    </span>
+                    <span>Active Leads</span>
+                  </div>
+                  <p className="text-lg font-black text-navy mt-0.5">{leadsCount}</p>
+                </Link>
+
+                <Link href="/agent/listings" prefetch className="pressable px-1 py-0.5 block">
+                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                      <Briefcase className="h-2.5 w-2.5" />
+                    </span>
+                    <span>Active listings</span>
+                  </div>
+                  <p className="text-lg font-black text-navy mt-0.5">{activeCount}</p>
+                </Link>
+
+                <Link href="/agent/verification" prefetch className="pressable px-1 py-0.5 block">
+                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                      <Shield className="h-2.5 w-2.5 text-gold" />
+                    </span>
+                    <span>Trust Score</span>
+                  </div>
+                  <p className="text-lg font-black text-gold mt-0.5">{trustScore}</p>
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* RECENT ACTIVITY — COMPRESSED 4 VISIBLE CARDS */}
+          <section className="space-y-1">
+            <SectionHeader title="Recent Activity" />
+
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+              {sampleActivities.map((act) => {
+                const Icon = act.icon;
+                return (
+                  <Link
+                    key={act.id}
+                    href="/seller/crm"
+                    prefetch
+                    className="pressable rounded-xl border border-navy/[0.06] bg-white p-2 shadow-xs hover:border-navy/15 block text-center flex flex-col justify-between min-h-[82px]"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={cn("flex h-5 w-5 items-center justify-center rounded-md shrink-0", act.tone)}>
+                        <Icon className="h-2.5 w-2.5" />
+                      </span>
+                      <span className="text-[8px] font-medium text-navy/40">{act.time}</span>
+                    </div>
+                    <div className="w-full text-left mt-1">
+                      <h3 className="text-[10px] font-bold text-navy truncate leading-tight">{act.title}</h3>
+                      <p className="text-[8px] font-medium text-navy/55 leading-tight line-clamp-2 mt-0.5">{act.subtitle}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* RECENT CONVERSATIONS — FLOATING WHITE CARD MATCHING REFERENCE DESIGN */}
           <section className="space-y-2">
             <SectionHeader title="Recent Conversations" href="/conversations" />
 
@@ -567,78 +630,7 @@ export function SellerCommandCenter(props: Props) {
             </div>
           </section>
 
-
-
-          {/* 10. BUSINESS SNAPSHOT — COMPRESSED CARD HEIGHT & PADDING */}
-          <section className="space-y-1">
-            <SectionHeader title="Business Snapshot" />
-
-            <div className="rounded-2xl border border-navy/[0.06] bg-white p-2.5 shadow-xs">
-              <div className="grid grid-cols-3 divide-x divide-navy/[0.06] text-center">
-                <Link href="/agent/leads" prefetch className="pressable px-1 py-0.5 block">
-                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
-                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                      <Users className="h-2.5 w-2.5" />
-                    </span>
-                    <span>Active Leads</span>
-                  </div>
-                  <p className="text-lg font-black text-navy mt-0.5">{leadsCount}</p>
-                </Link>
-
-                <Link href="/agent/listings" prefetch className="pressable px-1 py-0.5 block">
-                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
-                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                      <Briefcase className="h-2.5 w-2.5" />
-                    </span>
-                    <span>Active listings</span>
-                  </div>
-                  <p className="text-lg font-black text-navy mt-0.5">{activeCount}</p>
-                </Link>
-
-                <Link href="/agent/verification" prefetch className="pressable px-1 py-0.5 block">
-                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
-                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-amber-50 text-amber-600">
-                      <Shield className="h-2.5 w-2.5 text-gold" />
-                    </span>
-                    <span>Trust Score</span>
-                  </div>
-                  <p className="text-lg font-black text-gold mt-0.5">{trustScore}</p>
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          {/* 11. RECENT ACTIVITY — COMPRESSED 4 VISIBLE CARDS */}
-          <section className="space-y-1">
-            <SectionHeader title="Recent Activity" />
-
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-              {sampleActivities.map((act) => {
-                const Icon = act.icon;
-                return (
-                  <Link
-                    key={act.id}
-                    href="/seller/crm"
-                    prefetch
-                    className="pressable rounded-xl border border-navy/[0.06] bg-white p-2 shadow-xs hover:border-navy/15 block text-center flex flex-col justify-between min-h-[82px]"
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className={cn("flex h-5 w-5 items-center justify-center rounded-md shrink-0", act.tone)}>
-                        <Icon className="h-2.5 w-2.5" />
-                      </span>
-                      <span className="text-[8px] font-medium text-navy/40">{act.time}</span>
-                    </div>
-                    <div className="w-full text-left mt-1">
-                      <h3 className="text-[10px] font-bold text-navy truncate leading-tight">{act.title}</h3>
-                      <p className="text-[8px] font-medium text-navy/55 leading-tight line-clamp-2 mt-0.5">{act.subtitle}</p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* 12 & 14. ACCOUNT SETTINGS — COLLAPSED BY DEFAULT, NO HELPER TEXT */}
+          {/* ACCOUNT SETTINGS — COLLAPSED BY DEFAULT, NO HELPER TEXT */}
           <section className="space-y-1 pt-0.5">
             <button
               type="button"

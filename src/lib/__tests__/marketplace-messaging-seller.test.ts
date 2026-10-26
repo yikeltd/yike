@@ -42,15 +42,16 @@ test("dev test credit route is production gated", () => {
   assert.match(src, /dev_test_credit:/);
 });
 
-test("agent dashboard renders Yike Coins wallet card", () => {
+test("agent dashboard hero links Yike Coins balance to wallet", () => {
   const src = readFileSync(
     join(process.cwd(), "src/components/profile/seller-command-center.tsx"),
     "utf8",
   );
-  assert.match(src, /YikeCoinsWalletCard/);
-  const wallet = readFileSync(
-    join(process.cwd(), "src/components/agent/yike-coins-wallet-card.tsx"),
+  assert.match(src, /AgentHeroYcBalance/);
+  const hero = readFileSync(
+    join(process.cwd(), "src/components/agent/agent-hero-yc-balance.tsx"),
     "utf8",
   );
-  assert.match(wallet, /\/api\/yike-coins\/balance/);
+  assert.match(hero, /\/api\/yike-coins\/balance/);
+  assert.match(hero, /\/account\/coins/);
 });
