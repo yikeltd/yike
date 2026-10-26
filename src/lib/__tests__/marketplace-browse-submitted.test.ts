@@ -25,3 +25,8 @@ test("SampleFixtureBanner never renders on consumer UI", () => {
   assert.equal(isPublicSampleFixtureBannerVisible(), false);
   assert.equal(SampleFixtureBanner({ active: true }), null);
 });
+
+test("submitted browse helpers treat active filters as submitted", () => {
+  assert.equal(isVehicleBrowseSubmitted({ category: "suv" }), true);
+  assert.equal(isElectronicsBrowseSubmitted({ q: "phone" }), true);
+});

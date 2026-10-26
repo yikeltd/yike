@@ -10,6 +10,9 @@ import {
 } from "@/lib/properties";
 import { SearchResultsChrome } from "@/components/search/search-results-chrome";
 import { MarketplaceDiscoverySearch } from "@/components/marketplace/marketplace-discovery-search";
+import { MarketplaceBrowseDiscoverySection } from "@/components/marketplace/marketplace-browse-discovery-section";
+import { MarketplaceSubmittedResultsRoot } from "@/components/marketplace/marketplace-submitted-results-root";
+import { MarketplaceSubmittedEmpty } from "@/components/marketplace/marketplace-submitted-empty";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
 import { hubLabel } from "@/constants/listingTypes";
@@ -24,7 +27,6 @@ import {
   buildSearchEmptyCopy,
   resolveSearchResults,
 } from "@/lib/search-fallback";
-import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
 import { DiscoveryEmptyPanel } from "@/components/marketplace/experience";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
 import {
@@ -193,29 +195,22 @@ export default async function SearchPage({
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
       <PrefSync />
-      <div
-        className={
-          submittedSearch
-            ? "px-3 pt-2 lg:px-6 xl:px-8"
-            : "space-y-3 px-3 pt-4 lg:px-6 xl:px-8"
-        }
-      >
-        <MarketplaceCategoryHeader
-          vertical="property"
-          title="Search"
-          className={submittedSearch ? "mb-1" : "mb-2"}
-        />
-        {!submittedSearch ? <MarketplaceDiscoverySearch vertical="property" /> : null}
-      </div>
+      {!submittedSearch ? (
+        <MarketplaceBrowseDiscoverySection vertical="property" title="Search">
+          <MarketplaceDiscoverySearch vertical="property" />
+        </MarketplaceBrowseDiscoverySection>
+      ) : null}
 
       <Suspense fallback={<ResultsFallback />}>
         {mixedMode ? (
+          <MarketplaceSubmittedResultsRoot>
           <SearchResultsChrome
             resultCount={exactCount}
             currentHref={currentHref}
             currentLabel={mixedLabel || "All categories"}
             filtersDefaultOpen={false}
             hideSuggestions
+            refinePanelClassName="mt-0"
           >
             <SearchClientChrome
               feedItems={mixedItems}
@@ -236,17 +231,19 @@ export default async function SearchPage({
               ) : mixedItems.length > 0 ? (
                 <MixedMarketplaceFeed listings={mixedItems} />
               ) : (
-                <DiscoveryEmptyPanel
-                  category="property"
+                <MarketplaceSubmittedEmpty
                   title="No listings match"
-                  subtitle="Try another keyword, city or budget range across properties, vehicles and electronics."
-                  showLatestHref="/search?marketplace=all"
+                  subtitle="Try another keyword, city, or budget range."
+                  clearHref="/search?marketplace=all"
+                  clearLabel="Clear search"
                 />
               )}
             </section>
             </SearchClientChrome>
           </SearchResultsChrome>
+          </MarketplaceSubmittedResultsRoot>
         ) : submittedSearch ? (
+          <MarketplaceSubmittedResultsRoot>
           <SearchResultsChrome
             resultCount={exactCount}
             nearbyCount={nearbyItems.length}
@@ -255,6 +252,7 @@ export default async function SearchPage({
             currentLabel={label || "Search Results"}
             filtersDefaultOpen={false}
             hideSuggestions
+            refinePanelClassName="mt-0"
           >
             <SearchClientChrome
               feedItems={activeItems}
@@ -285,15 +283,10 @@ export default async function SearchPage({
                   adPlacementKey="search_feed_mid"
                 />
               ) : (
-                <DiscoveryEmptyPanel
-                  category="property"
-                  title={hasQuery ? emptyCopy.title : "Start exploring homes & vehicles"}
-                  subtitle={
-                    hasQuery
-                      ? "Try another filter, or browse popular categories below."
-                      : "Recent searches, trending areas, and cities — tap to browse."
-                  }
-                  showLatestHref="/search?marketplace=all"
+                <MarketplaceSubmittedEmpty
+                  title={emptyCopy.title}
+                  subtitle="Try another filter or open Filters to adjust your search."
+                  clearHref="/search"
                 />
               )}
 
@@ -307,6 +300,7 @@ export default async function SearchPage({
             </section>
             </SearchClientChrome>
           </SearchResultsChrome>
+          </MarketplaceSubmittedResultsRoot>
         ) : (
           <SearchClientChrome
             feedItems={activeItems}

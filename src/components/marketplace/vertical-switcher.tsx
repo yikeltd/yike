@@ -23,7 +23,10 @@ export function MarketplaceVerticalSwitcher({
       : "rounded-full px-3 py-1.5 text-navy/60 sm:px-4";
 
   return (
-    <div className="inline-flex max-w-full flex-wrap justify-center gap-0.5 rounded-full border border-navy/12 bg-white p-1 text-xs font-semibold sm:text-sm">
+    <div
+      className="inline-flex max-w-full flex-wrap justify-center gap-0.5 rounded-full border border-navy/12 bg-white p-1 text-xs font-semibold sm:text-sm"
+      data-testid="marketplace-inpage-vertical-switcher"
+    >
       <Link
         href="/search"
         className={linkClass(active === "property")}

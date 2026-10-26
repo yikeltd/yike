@@ -8,7 +8,9 @@ import { queryPublicElectronics } from "@/lib/marketplace/listings";
 import { ElectronicsCard } from "@/components/marketplace/electronics-card";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
-import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
+import { MarketplaceBrowseDiscoverySection } from "@/components/marketplace/marketplace-browse-discovery-section";
+import { MarketplaceSubmittedResultsRoot } from "@/components/marketplace/marketplace-submitted-results-root";
+import { MarketplaceSubmittedEmpty } from "@/components/marketplace/marketplace-submitted-empty";
 import {
   isSampleListingFixtureEnabled,
   isSampleListingFixtureForceEnabled,
@@ -85,46 +87,30 @@ export default async function ElectronicsPage({
 
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
-      <div
-        className={
-          submittedSearch
-            ? "px-3 pt-2 lg:px-6 xl:px-8"
-            : "space-y-3 px-3 pt-4 lg:px-6 xl:px-8"
-        }
-      >
-        <MarketplaceCategoryHeader
-          vertical="electronics"
-          title="Electronics"
-          className={submittedSearch ? "mb-1" : "mb-2"}
-        />
-        {!submittedSearch ? (
+      {!submittedSearch ? (
+        <MarketplaceBrowseDiscoverySection vertical="electronics" title="Electronics">
           <ElectronicsDiscoverySearch
             defaultQuery={first(sp.q) ?? ""}
             defaultCategory={first(sp.category) ?? ""}
           />
-        ) : null}
-      </div>
+        </MarketplaceBrowseDiscoverySection>
+      ) : null}
 
       <Suspense fallback={<ResultsFallback />}>
         {submittedSearch ? (
-          <ElectronicsSearchResultsChrome
-            resultCount={items.length}
-            filtersDefaultOpen={false}
-          >
+          <MarketplaceSubmittedResultsRoot>
+            <ElectronicsSearchResultsChrome
+              resultCount={items.length}
+              filtersDefaultOpen={false}
+              refinePanelClassName="mt-0"
+            >
             <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
               {items.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-navy/15 bg-white p-8 text-center">
-                  <h2 className="text-lg font-bold text-navy">No electronics match</h2>
-                  <p className="mt-2 text-sm text-muted">
-                    Try another filter or check back soon.
-                  </p>
-                  <Link
-                    href="/electronics"
-                    className="pressable mt-4 inline-block text-sm font-semibold text-gold"
-                  >
-                    Clear filters
-                  </Link>
-                </div>
+                <MarketplaceSubmittedEmpty
+                  title="No electronics match"
+                  subtitle="Try another filter or open Filters to adjust your search."
+                  clearHref="/electronics"
+                />
               ) : (
                 <div className={BROWSE_GRID_CLASS}>
                   {items.map((item, i) => (
@@ -138,6 +124,7 @@ export default async function ElectronicsPage({
               )}
             </section>
           </ElectronicsSearchResultsChrome>
+          </MarketplaceSubmittedResultsRoot>
         ) : (
           <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
             {items.length === 0 ? (

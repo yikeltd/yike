@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { queryPublicVehicles } from "@/lib/marketplace/listings";
-import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
+import { MarketplaceBrowseDiscoverySection } from "@/components/marketplace/marketplace-browse-discovery-section";
+import { MarketplaceSubmittedResultsRoot } from "@/components/marketplace/marketplace-submitted-results-root";
+import { MarketplaceSubmittedEmpty } from "@/components/marketplace/marketplace-submitted-empty";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
@@ -223,24 +225,65 @@ export default async function VehiclesPage({
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
       <PrefSync />
-      <div
-        className={
-          submittedSearch
-            ? "px-3 pt-2 lg:px-6 xl:px-8"
-            : "space-y-3 px-3 pt-4 lg:px-6 xl:px-8"
-        }
-      >
-        <MarketplaceCategoryHeader
-          vertical="vehicle"
-          title="Vehicles"
-          className={submittedSearch ? "mb-1" : "mb-2"}
-        />
-        {!submittedSearch ? (
+      {!submittedSearch ? (
+        <MarketplaceBrowseDiscoverySection vertical="vehicle" title="Vehicles">
           <MarketplaceDiscoverySearch vertical="vehicle" />
-        ) : null}
-      </div>
+        </MarketplaceBrowseDiscoverySection>
+      ) : null}
 
       <Suspense fallback={<ResultsFallback />}>
+        {submittedSearch ? (
+          <MarketplaceSubmittedResultsRoot>
+            <VehicleSearchResultsChrome
+              resultCount={total}
+              filtersDefaultOpen={false}
+              refinePanelClassName="mt-0"
+            >
+              <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
+                {pageSlice.length === 0 ? (
+                  <MarketplaceSubmittedEmpty
+                    title="No vehicles match"
+                    subtitle="Try another filter or open Filters to adjust your search."
+                    clearHref="/vehicles"
+                  />
+                ) : (
+                  <>
+                    <ul className={BROWSE_GRID_CLASS}>
+                      {pageSlice.map((v) => (
+                        <li key={v.id}>
+                          <VehicleCard vehicle={v} variant="browse" />
+                        </li>
+                      ))}
+                    </ul>
+                    {totalPages > 1 ? (
+                      <nav className="mt-6 flex flex-wrap items-center justify-center gap-2 pb-4">
+                        {pageSafe > 1 ? (
+                          <Link
+                            href={pageHref(pageSafe - 1)}
+                            className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
+                          >
+                            Previous
+                          </Link>
+                        ) : null}
+                        <span className="text-sm text-muted">
+                          {pageSafe} / {totalPages}
+                        </span>
+                        {pageSafe < totalPages ? (
+                          <Link
+                            href={pageHref(pageSafe + 1)}
+                            className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
+                          >
+                            Next
+                          </Link>
+                        ) : null}
+                      </nav>
+                    ) : null}
+                  </>
+                )}
+              </section>
+            </VehicleSearchResultsChrome>
+          </MarketplaceSubmittedResultsRoot>
+        ) : (
         <VehicleSearchResultsChrome
           resultCount={total}
           filtersDefaultOpen={false}
@@ -249,12 +292,8 @@ export default async function VehiclesPage({
             {pageSlice.length === 0 ? (
               <DiscoveryEmptyPanel
                 category="vehicle"
-                title={submittedSearch ? "No vehicles match" : "Start exploring vehicles"}
-                subtitle={
-                  submittedSearch
-                    ? "Try another filter, or browse popular categories below."
-                    : "Recent searches, trending makes, and cities — tap to browse."
-                }
+                title="Start exploring vehicles"
+                subtitle="Recent searches, trending makes, and cities — tap to browse."
                 showLatestHref="/vehicles"
               />
             ) : (
@@ -293,6 +332,7 @@ export default async function VehiclesPage({
             )}
           </section>
         </VehicleSearchResultsChrome>
+        )}
       </Suspense>
     </div>
   );
