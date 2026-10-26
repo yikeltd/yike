@@ -49,12 +49,17 @@ export function ListingSaveButton({
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const errorTimerRef = useRef<number | null>(null);
+  const mutationInFlightRef = useRef(false);
 
   const accountSaved = user ? isListingSaved(listingId) : false;
   const saved = user ? accountSaved : guestSaved;
 
   useEffect(() => {
-    if (user) return;
+    if (user) {
+      setGuestSaved(false);
+      setGuestHydrated(true);
+      return;
+    }
     setGuestSaved(readGuestListingSaved(listingId));
     setGuestHydrated(true);
   }, [listingId, user]);
@@ -77,7 +82,8 @@ export function ListingSaveButton({
   }, []);
 
   const runToggle = useCallback(async () => {
-    if (busy || disabled) return;
+    if (busy || disabled || mutationInFlightRef.current) return;
+    mutationInFlightRef.current = true;
     setBusy(true);
     setErrorMessage(null);
 
@@ -97,12 +103,17 @@ export function ListingSaveButton({
       );
       setGuestSaved(next);
       setBusy(false);
+      mutationInFlightRef.current = false;
       return;
     }
 
+    const previousSaved = accountSaved;
+    const optimisticSaved = !previousSaved;
+    setListingSaved(listingId, optimisticSaved);
+
     const result = await toggleAuthenticatedListingSave({
       listingId,
-      currentlySaved: accountSaved,
+      currentlySaved: previousSaved,
       userId: user.id,
       analytics,
       sellerId,
@@ -114,9 +125,11 @@ export function ListingSaveButton({
     if (result.ok) {
       setListingSaved(listingId, result.saved);
     } else {
+      setListingSaved(listingId, previousSaved);
       showTransientError("Could not update saved listing. Try again.");
     }
     setBusy(false);
+    mutationInFlightRef.current = false;
   }, [
     accountSaved,
     analytics,

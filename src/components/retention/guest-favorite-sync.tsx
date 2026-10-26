@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { clearGuestFavorites, getGuestFavoriteIds } from "@/lib/guest-favorites";
+import { dispatchGuestFavoritesMerged } from "@/lib/listings/listing-save-events";
 
 /** Merge local guest saves into Supabase after login. */
 export function GuestFavoriteSync() {
@@ -25,10 +26,11 @@ export function GuestFavoriteSync() {
       for (const property_id of ids) {
         await supabase.from("favorites").upsert(
           { user_id: user.id, property_id },
-          { onConflict: "user_id,property_id", ignoreDuplicates: true }
+          { onConflict: "user_id,property_id", ignoreDuplicates: true },
         );
       }
 
+      dispatchGuestFavoritesMerged(ids);
       clearGuestFavorites();
     }
 

@@ -10,10 +10,12 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useCallback, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { recordEngagementSave } from "@/lib/engagement";
-import { trackSavedListing, type NotInterestedReason } from "@/lib/browse-preferences";
+import { type NotInterestedReason } from "@/lib/browse-preferences";
+import {
+  listingSaveAnalyticsFromProperty,
+  toggleAuthenticatedListingSave,
+  toggleGuestListingSaveWithAnalytics,
+} from "@/lib/listings/toggle-listing-save";
 import type { Property } from "@/types/database";
 import { formatPrice, listingTypeLabel } from "@/lib/utils";
 import { VerifiedBadge } from "@/components/ui/badge";
@@ -27,11 +29,7 @@ import {
   trackSwipeSave,
   trackSwipeWhatsapp,
 } from "@/lib/swipe/analytics";
-import { trackEvent } from "@/lib/analytics";
-import {
-  isGuestFavorite,
-  toggleGuestFavorite,
-} from "@/lib/guest-favorites";
+import { isGuestFavorite } from "@/lib/guest-favorites";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { cn } from "@/lib/utils";
 
@@ -139,20 +137,13 @@ export function BrowseSlide({
       area: property.area,
     });
 
+    const analytics = listingSaveAnalyticsFromProperty(
+      property,
+      user?.id ? "swipe" : "swipe_guest",
+    );
+
     if (!user?.id) {
-      toggleGuestFavorite(property.id);
-      recordEngagementSave();
-      trackSavedListing(property.id, {
-        city: property.city,
-        area: property.area,
-        listingType: property.listing_type,
-        propertyType: property.property_type,
-      });
-      trackEvent("save_listing", {
-        listing_id: property.id,
-        city: property.city,
-        source: "swipe_guest",
-      });
+      toggleGuestListingSaveWithAnalytics(property.id, analytics);
       return;
     }
 
@@ -163,32 +154,22 @@ export function BrowseSlide({
         redirectPath: `/properties/${property.id}`,
       },
       async () => {
-        if (!isSupabaseConfigured()) return;
-        const supabase = createClient();
-        const {
-          data: { user: u },
-        } = await supabase.auth.getUser();
-        if (!u) return;
-        await supabase.from("favorites").upsert(
-          { user_id: u.id, property_id: property.id },
-          { onConflict: "user_id,property_id", ignoreDuplicates: true }
-        );
-        setListingSaved(property.id, true);
-        recordEngagementSave();
-        trackSavedListing(property.id, {
-          city: property.city,
-          area: property.area,
-          listingType: property.listing_type,
-          propertyType: property.property_type,
+        const result = await toggleAuthenticatedListingSave({
+          listingId: property.id,
+          currentlySaved: false,
+          userId: user.id,
+          analytics,
+          sellerId: property.agent_id,
+          listingTitle: property.title,
         });
-        trackEvent("save_listing", {
-          listing_id: property.id,
-          city: property.city,
-          source: "swipe",
-        });
-      }
+        if (result.ok) {
+          setListingSaved(property.id, true);
+        } else {
+          setSaved(false);
+        }
+      },
     );
-  }, [guardAction, property, user?.id, isDemo, saved]);
+  }, [guardAction, property, user?.id, isDemo, saved, setListingSaved]);
 
   return (
     <article className="relative h-[100dvh] w-full shrink-0 snap-start snap-always overflow-hidden bg-navy-dark">

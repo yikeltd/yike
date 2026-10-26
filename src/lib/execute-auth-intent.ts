@@ -1,6 +1,7 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthIntent } from "@/lib/auth-intent";
+import { dispatchListingSavedChanged } from "@/lib/listings/listing-save-events";
 import { canListProperties } from "@/lib/utils";
 import {
   buildSellerVerifyUrl,
@@ -33,8 +34,9 @@ export async function executeAuthIntent(
         if (user) {
           await supabase.from("favorites").upsert(
             { user_id: user.id, property_id: intent.listingId },
-            { onConflict: "user_id,property_id", ignoreDuplicates: true }
+            { onConflict: "user_id,property_id", ignoreDuplicates: true },
           );
+          dispatchListingSavedChanged(intent.listingId, true);
         }
       }
       if (intent.redirectPath) router.push(intent.redirectPath);

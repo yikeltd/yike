@@ -61,11 +61,24 @@ test("ListingSaveButton exposes aria-pressed and test id", () => {
     "utf8",
   );
   assert.match(src, /aria-pressed=\{saved\}/);
+  assert.match(src, /aria-busy=\{busy\}/);
   assert.match(src, /data-testid="listing-save-button"/);
   assert.match(src, /stopPropagation/);
-  assert.match(src, /if \(busy \|\| disabled\)/);
+  assert.match(src, /busy \|\| disabled \|\| mutationInFlightRef/);
+  assert.match(src, /mutationInFlightRef/);
   assert.match(src, /guardAction/);
   assert.match(src, /showTransientError/);
+});
+
+test("detail and gallery surfaces use ListingSaveButton", () => {
+  for (const rel of [
+    "src/components/property/property-gallery.tsx",
+    "src/components/marketplace/vehicle-detail-experience.tsx",
+    "src/components/marketplace/electronics-detail-experience.tsx",
+  ]) {
+    const src = readFileSync(join(root, rel), "utf8");
+    assert.match(src, /ListingSaveButton/, `${rel} should use shared save control`);
+  }
 });
 
 test("toggle-listing-save module wires guest favorites helper", () => {

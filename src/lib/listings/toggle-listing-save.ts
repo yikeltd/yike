@@ -17,7 +17,8 @@ export type ListingSaveAnalyticsContext = {
     | "card"
     | "detail"
     | "swipe"
-    | "swipe_guest";
+    | "swipe_guest"
+    | "discover";
 };
 
 export type ToggleListingSaveInput = {
@@ -158,6 +159,13 @@ export async function toggleAuthenticatedListingSave(
     property_id: listingId,
   });
   if (error) {
+    const duplicate =
+      error.code === "23505" ||
+      /duplicate key|unique constraint/i.test(error.message ?? "");
+    if (duplicate) {
+      trackSaveSideEffects(listingId, input.analytics, true);
+      return { ok: true, saved: true };
+    }
     return { ok: false, saved: false, error: error.message };
   }
   trackSaveSideEffects(listingId, input.analytics, true);

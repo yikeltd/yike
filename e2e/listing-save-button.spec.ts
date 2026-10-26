@@ -22,6 +22,10 @@ test.describe("Listing save control on cards", () => {
 
     await expect(saveBtn).toHaveAttribute("aria-pressed", "true");
     await expect(saveBtn).toHaveAttribute("aria-label", "Remove saved listing");
+
+    await saveBtn.click();
+    await page.waitForTimeout(300);
+    await expect(saveBtn).toHaveAttribute("aria-pressed", "false");
   });
 
   test("desktop: featured rail save buttons are consistent overlay controls", async ({
