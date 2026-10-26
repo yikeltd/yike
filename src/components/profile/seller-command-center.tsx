@@ -481,50 +481,7 @@ export function SellerCommandCenter(props: Props) {
             </div>
           </section>
 
-          {/* RECENT CONVERSATIONS — FLOATING WHITE CARD MATCHING REFERENCE DESIGN */}
-          <section className="space-y-2">
-            <SectionHeader title="Recent Conversations" href="/conversations" />
-
-            <div className="rounded-2xl border border-slate-100/90 bg-white p-3 sm:p-4 shadow-xs divide-y divide-slate-100">
-              {sampleConversations.map((conv) => (
-                <Link
-                  key={conv.id}
-                  href={`/conversations/${conv.id}`}
-                  prefetch
-                  className="pressable group flex items-center justify-between gap-3 py-3 first:pt-0.5 last:pb-0.5 transition-colors hover:bg-slate-50/70 rounded-xl px-1"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={conv.avatar}
-                      alt=""
-                      className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover border border-slate-200/60 shadow-2xs shrink-0"
-                    />
-                    <div className="space-y-0.5 min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-xs sm:text-sm font-bold text-[#031B4E] truncate">{conv.name}</h3>
-                        <span className="text-[10px] font-medium text-slate-400 shrink-0">{conv.time}</span>
-                      </div>
-                      <span className={cn("inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold", conv.badgeTone)}>
-                        {conv.badge}
-                      </span>
-                      <p className="text-xs font-normal text-slate-500 truncate">{conv.message}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-                    {conv.unread > 0 && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E4B547] text-[10px] font-extrabold text-[#031B4E] shadow-2xs">
-                        {conv.unread}
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {/* 9. AGENT TOOLS — 6 CORE TILES */}
+          {/* AGENT TOOLS — 6 CORE TILES */}
           <section className="space-y-1">
             <SectionHeader title="Agent Tools" />
 
@@ -627,6 +584,49 @@ export function SellerCommandCenter(props: Props) {
                   <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">Trust & badges</p>
                 </div>
               </Link>
+            </div>
+          </section>
+
+          {/* RECENT CONVERSATIONS — FLOATING WHITE CARD MATCHING REFERENCE DESIGN */}
+          <section className="space-y-2">
+            <SectionHeader title="Recent Conversations" href="/conversations" />
+
+            <div className="rounded-2xl border border-slate-100/90 bg-white p-3 sm:p-4 shadow-xs divide-y divide-slate-100">
+              {sampleConversations.map((conv) => (
+                <Link
+                  key={conv.id}
+                  href={`/conversations/${conv.id}`}
+                  prefetch
+                  className="pressable group flex items-center justify-between gap-3 py-3 first:pt-0.5 last:pb-0.5 transition-colors hover:bg-slate-50/70 rounded-xl px-1"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={conv.avatar}
+                      alt=""
+                      className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover border border-slate-200/60 shadow-2xs shrink-0"
+                    />
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-xs sm:text-sm font-bold text-[#031B4E] truncate">{conv.name}</h3>
+                        <span className="text-[10px] font-medium text-slate-400 shrink-0">{conv.time}</span>
+                      </div>
+                      <span className={cn("inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold", conv.badgeTone)}>
+                        {conv.badge}
+                      </span>
+                      <p className="text-xs font-normal text-slate-500 truncate">{conv.message}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                    {conv.unread > 0 && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E4B547] text-[10px] font-extrabold text-[#031B4E] shadow-2xs">
+                        {conv.unread}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
             </div>
           </section>
 

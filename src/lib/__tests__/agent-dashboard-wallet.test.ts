@@ -12,7 +12,9 @@ test("agent dashboard orders Business Snapshot and Recent Activity before Agent 
   const snapshotIdx = src.indexOf('title="Business Snapshot"');
   const activityIdx = src.indexOf('title="Recent Activity"');
   const toolsIdx = src.indexOf('title="Agent Tools"');
+  const conversationsIdx = src.indexOf('title="Recent Conversations"');
   assert.ok(snapshotIdx >= 0 && activityIdx > snapshotIdx && toolsIdx > activityIdx);
+  assert.ok(conversationsIdx > toolsIdx, "Recent Conversations follows Agent Tools");
 });
 
 test("agent dashboard removes standalone wallet card and status active from hero", () => {
@@ -47,8 +49,9 @@ test("wallet page exposes top-up, share, and history anchors", () => {
 });
 
 test("non-withdrawable YC notice matches required copy", () => {
-  assert.match(YIKE_COINS_NON_CASH_NOTICE, /cannot be withdrawn/);
-  assert.match(YIKE_COINS_NON_CASH_NOTICE, /not cash/);
+  assert.match(YIKE_COINS_NON_CASH_NOTICE, /non-withdrawable platform credits/);
+  assert.match(YIKE_COINS_NON_CASH_NOTICE, /cannot be redeemed for cash/);
+  assert.match(YIKE_COINS_NON_CASH_NOTICE, /paid out to a bank account/);
 });
 
 test("admin adjust route requires super admin and supports username recipient", () => {

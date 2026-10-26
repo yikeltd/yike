@@ -3,7 +3,7 @@ export const YIKE_COINS_PRODUCT_NAME = "Yike Coins";
 
 /** Required user-facing disclaimer — not cash, no withdrawal. */
 export const YIKE_COINS_NON_CASH_NOTICE =
-  "Yike Coins are platform credits. They are not cash and cannot be withdrawn, redeemed for cash, or paid out to a bank account.";
+  "Yike Coins are non-withdrawable platform credits. They cannot be redeemed for cash or paid out to a bank account.";
 
 /** Nominal spending value: 1 coin = ₦1 on approved Yike services (not cash). */
 export const YIKE_COIN_NGN_NOMINAL = 1;
