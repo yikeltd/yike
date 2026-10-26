@@ -15,6 +15,7 @@ const FILE_MAP: Record<string, string> = {
   otp_login: "00-otp-login.html",
   email_verification: "01-email-verification.html",
   welcome: "02-welcome.html",
+  founder_welcome: "founder_welcome.html",
   password_reset: "03-password-reset.html",
   account_deleted: "04-account-deleted.html",
   agent_verification_submitted: "05-agent-submitted.html",
