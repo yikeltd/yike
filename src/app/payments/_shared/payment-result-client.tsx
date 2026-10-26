@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { dispatchYikeCoinsBalanceChanged } from "@/lib/yike-coins/balance-events";
+import { walletPath } from "@/lib/navigation/account-routes";
 
 type ReconcileState =
   | { phase: "idle" }
@@ -79,7 +80,7 @@ export function PaymentResultClient({
                   ? reconcile.error
                   : "Your payment is confirmed. Eligible products will activate shortly.",
           cta: "Yike Coins wallet",
-          href: "/account/coins",
+          href: walletPath(),
           secondary: "Payment history",
           secondaryHref: "/payments/history",
           tone: "border-gold/30 bg-gold/5",
@@ -89,7 +90,7 @@ export function PaymentResultClient({
             title: "Payment failed",
             body: "We could not confirm this payment. No charge was completed, or the bank declined it. You can try again.",
             cta: "Yike Coins wallet",
-            href: "/account/coins",
+            href: walletPath(),
             secondary: "Payment history",
             secondaryHref: "/payments/history",
             tone: "border-border bg-white",
@@ -98,7 +99,7 @@ export function PaymentResultClient({
             title: "Payment cancelled",
             body: "You left checkout before finishing. Nothing was charged.",
             cta: "Yike Coins wallet",
-            href: "/account/coins",
+            href: walletPath(),
             secondary: "Browse listings",
             secondaryHref: "/discover",
             tone: "border-border bg-white",

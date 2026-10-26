@@ -28,12 +28,12 @@ test("agent dashboard removes standalone wallet card and status active from hero
   assert.match(src, /AgentHeroYcBalance/);
 });
 
-test("hero YC balance links to wallet route", () => {
+test("hero YC balance links to wallet route with agent return context", () => {
   const src = readFileSync(
     join(process.cwd(), "src/components/agent/agent-hero-yc-balance.tsx"),
     "utf8",
   );
-  assert.match(src, /href="\/account\/coins"/);
+  assert.match(src, /walletPath\(\{ from: WALLET_FROM_AGENT \}\)/);
   assert.match(src, /formatYikeCoins/);
 });
 
@@ -46,6 +46,7 @@ test("wallet page exposes top-up, share, and history anchors", () => {
   assert.match(src, /id="wallet-share"/);
   assert.match(src, /id="wallet-history"/);
   assert.match(src, /YikeCoinsNonCashNotice/);
+  assert.match(src, /resolveWalletBackNavigation/);
 });
 
 test("non-withdrawable YC notice matches required copy", () => {

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Coins, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatYikeCoins } from "@/lib/yike-coins/constants";
+import { walletPath, WALLET_FROM_AGENT } from "@/lib/navigation/account-routes";
 
 type LedgerEntry = {
   id: string;
@@ -184,7 +185,7 @@ export function YikeCoinsWalletCard({ className }: { className?: string }) {
       {notice ? <p className="mt-2 text-[11px] text-navy/65">{notice}</p> : null}
 
       <Link
-        href="/account/coins"
+        href={walletPath({ from: WALLET_FROM_AGENT })}
         className={cn(
           "pressable inline-flex w-full items-center justify-center rounded-xl bg-navy py-2.5 text-xs font-bold text-gold",
           entries.length > 0 || loading ? "mt-3 border-t border-navy/8 pt-3" : "mt-2.5",

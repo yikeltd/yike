@@ -13,6 +13,11 @@ import { normalizeUsername } from "@/lib/username/rules";
 import { ConsumerSubpageHeader } from "@/components/layout/consumer-subpage-header";
 import { WalletBalanceLive } from "@/components/yike-coins/wallet-balance-live";
 import { consumerRoute } from "@/lib/navigation/consumer-routes";
+import {
+  parseWalletFromParam,
+  resolveWalletBackNavigation,
+  walletAuthLoginPath,
+} from "@/lib/navigation/account-routes";
 import { YikeCoinsNonCashNotice } from "@/components/yike-coins/non-cash-notice";
 
 export const metadata = {
@@ -20,14 +25,24 @@ export const metadata = {
   description: "Top up and manage your Yike Coins balance.",
 };
 
-export default async function YikeCoinsAccountPage() {
+export default async function YikeCoinsAccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from: fromRaw } = await searchParams;
+  const walletFrom = parseWalletFromParam(fromRaw);
+  const loginNext = walletAuthLoginPath(
+    walletFrom ? { from: walletFrom } : undefined,
+  );
+
   const supabase = await createClient();
-  if (!supabase) redirect("/auth/login?next=/account/coins");
+  if (!supabase) redirect(loginNext);
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login?next=/account/coins");
+  if (!user) redirect(loginNext);
 
   if (!isYikeCoinsEnabled()) {
     redirect(consumerRoute("profile"));
@@ -38,19 +53,23 @@ export default async function YikeCoinsAccountPage() {
 
   const { data: profileRow } = await supabase
     .from("profiles")
-    .select("username")
+    .select("username, role")
     .eq("id", user.id)
     .maybeSingle();
   const username = profileRow?.username ? normalizeUsername(profileRow.username) : null;
   const hasUsername = Boolean(username && username.length >= 3);
+  const backNav = resolveWalletBackNavigation({
+    from: walletFrom,
+    profile: profileRow ? { role: profileRow.role } : null,
+  });
 
   return (
     <div className="mx-auto w-full max-w-lg px-1 py-6 sm:px-2 lg:py-8">
       <ConsumerSubpageHeader
         title="Yike Coins wallet"
         subtitle="1 YC ≈ ₦1 nominal on eligible services."
-        backHref={consumerRoute("home")}
-        backLabel="Back to home"
+        backHref={backNav.href}
+        backLabel={backNav.label}
       />
 
       <WalletUsernameSection

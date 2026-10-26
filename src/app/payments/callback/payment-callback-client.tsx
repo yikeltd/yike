@@ -10,6 +10,7 @@ import {
   shouldAttemptReconcile,
 } from "@/lib/payments/callback-flow";
 import { dispatchYikeCoinsBalanceChanged } from "@/lib/yike-coins/balance-events";
+import { walletPath } from "@/lib/navigation/account-routes";
 
 /**
  * Callback after Paystack Checkout.
@@ -169,7 +170,7 @@ export function PaymentCallbackClient() {
       <StatusCard
         title="Missing payment reference"
         body="Return to your wallet and try again."
-        href="/account/coins"
+        href={walletPath()}
         cta="Yike Coins wallet"
       />
     );
@@ -183,7 +184,7 @@ export function PaymentCallbackClient() {
           statusHint ??
           "We could not verify this payment right now. No Yike Coins were added until verification succeeds."
         }
-        href="/account/coins"
+        href={walletPath()}
         cta="Open wallet"
         secondaryHref="/payments/history"
         secondaryCta="Payment history"
@@ -197,7 +198,7 @@ export function PaymentCallbackClient() {
       <StatusCard
         title="Payment failed"
         body="This payment was not confirmed. You were not charged for Yike Coins."
-        href="/account/coins"
+        href={walletPath()}
         cta="Back to wallet"
         reference={reference}
       />
@@ -229,7 +230,7 @@ export function PaymentCallbackClient() {
           </p>
         ) : null}
         <Link
-          href="/account/coins"
+          href={walletPath()}
           className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-navy px-5 py-3 text-sm font-bold text-white"
         >
           Yike Coins wallet

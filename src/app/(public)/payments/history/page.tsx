@@ -1,6 +1,6 @@
 import { PaymentHistoryClient } from "./payment-history-client";
 import { ConsumerSubpageHeader } from "@/components/layout/consumer-subpage-header";
-import { consumerRoute } from "@/lib/navigation/consumer-routes";
+import { walletPath } from "@/lib/navigation/account-routes";
 
 export const metadata = {
   title: "Payment history · Yike",
@@ -13,7 +13,7 @@ export default function PaymentHistoryPage() {
       <ConsumerSubpageHeader
         title="Payment history"
         subtitle="Boosts, featured listings, and plan payments."
-        backHref={consumerRoute("wallet")}
+        backHref={walletPath()}
         backLabel="Back to Yike Coins"
       />
       <div className="mt-2">

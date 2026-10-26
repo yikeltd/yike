@@ -22,7 +22,7 @@ test("wallet page lives under public ConsumerShell layout", () => {
     "utf8",
   );
   assert.match(page, /ConsumerSubpageHeader/);
-  assert.match(page, /consumerRoute\("home"\)/);
+  assert.match(page, /resolveWalletBackNavigation/);
   assert.doesNotMatch(page, /<main/);
 });
 

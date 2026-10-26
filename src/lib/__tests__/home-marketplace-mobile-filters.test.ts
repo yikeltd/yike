@@ -113,9 +113,10 @@ test("wallet page requires auth before feature-flag redirect", () => {
     join(process.cwd(), "src/app/(public)/account/coins/page.tsx"),
     "utf8",
   );
-  const authIdx = page.indexOf('redirect("/auth/login?next=/account/coins")');
+  const authIdx = page.indexOf("walletAuthLoginPath");
   const flagIdx = page.indexOf("isYikeCoinsEnabled()");
   assert.ok(authIdx >= 0 && flagIdx > authIdx);
+  assert.match(page, /if \(!user\) redirect\(loginNext\)/);
 });
 
 test("home vehicle search uses expanded home category SSOT", () => {

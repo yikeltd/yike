@@ -1,7 +1,7 @@
 # Release blocker report
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
-**Updated:** 2026-10-26 (listing-leads capture binding)  
+**Updated:** 2026-10-26 (account wallet ↔ agent dashboard connectivity)  
 **Scope:** Verification gaps after navigation shell + public E2E (30 PASS / 16 SKIP on production-linked local env).
 
 This report does **not** claim release readiness from a green production build or anonymous Playwright alone.
@@ -19,6 +19,18 @@ This report does **not** claim release readiness from a green production build o
 | YC wallet RPCs / ledger | **REVIEW** (14/14 integration on linked DB — not prod-readiness proof) | Reconcile migrations before prod `db push`; re-run integration only on approved non-prod target |
 | Paystack checkout E2E | **BLOCKED** (code **11/11** unit PASS) | **`PAYSTACK_READINESS_AUDIT.md`**; live webhook + keys ops-owned |
 | Migration filename drift (branch vs applied prod) | **P0 — ops** | Peer-transfer **repo defect fixed** (`261500`/`261510`); version-ID tail still mismatched — **`YC_WALLET_MIGRATION_RECONCILIATION.md`** — **no prod `db push`** |
+
+---
+
+## Account wallet connectivity (2026-10-26)
+
+**Root cause:** `/account/coins` always showed “Back to home” while the agent dashboard hero linked to a bare wallet URL with no return context — agents could reach the wallet but not navigate back to `/agent` without using bottom nav.
+
+**Fix:** `src/lib/navigation/account-routes.ts` — `walletPath`, `walletAuthLoginPath`, `resolveWalletBackNavigation`. Agent hero + legacy wallet card use `?from=agent`; wallet page binds balance to `user.id` (unchanged) and sets back link from `from` + profile role. Payment callback CTAs use `walletPath()`.
+
+**Regression:** `src/lib/__tests__/account-route-connectivity.test.ts` (9 tests); `e2e/account-wallet-connectivity.spec.ts` (2 PASS unauthenticated, 1 SKIP without agent session).
+
+**Not verified (BLOCKED):** Authenticated agent dashboard → wallet → back journey (needs isolated Supabase + `E2E_EPHEMERAL_AUTH=1`).
 
 ---
 

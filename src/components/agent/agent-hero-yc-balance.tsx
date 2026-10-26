@@ -6,6 +6,7 @@ import { Coins } from "lucide-react";
 import { formatYikeCoins } from "@/lib/yike-coins/constants";
 import { YIKE_COINS_BALANCE_CHANGED_EVENT } from "@/lib/yike-coins/balance-events";
 import { cn } from "@/lib/utils";
+import { walletPath, WALLET_FROM_AGENT } from "@/lib/navigation/account-routes";
 
 /**
  * Compact wallet entry in the agent hero — links to the full Yike Coins wallet.
@@ -59,7 +60,7 @@ export function AgentHeroYcBalance({ className }: { className?: string }) {
 
   return (
     <Link
-      href="/account/coins"
+      href={walletPath({ from: WALLET_FROM_AGENT })}
       prefetch
       className={cn(
         "pressable block pl-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 rounded-lg",

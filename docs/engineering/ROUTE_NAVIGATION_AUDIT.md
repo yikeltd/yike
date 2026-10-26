@@ -3,7 +3,7 @@
 **Branch:** `feat/unified-three-vertical-marketplace`  
 **Baseline commit:** `db5d9828` (shell + Messages tab)  
 **HEAD (audit pass):** `8b93269b` (favicon sync) · prior nav/E2E: `201d5b01`  
-**Last updated:** 2026-10-26  
+**Last updated:** 2026-10-26 (account wallet connectivity)  
 
 **Prerequisite diagnostic:** `npm run e2e:nav-prereqs` (exits non-zero when consumer auth unavailable; never prints secrets)
 
@@ -66,7 +66,7 @@ Command: `PLAYWRIGHT_SKIP_SERVER=1 npx playwright test` (consumer-shell, authent
 | `/search` | Public | `(public)` + bottom nav | Filter → detail | E2E smoke | PASS | |
 | `/saved` | Public / auth | `(public)` + bottom nav | Open saved listing | E2E | PASS | |
 | `/vehicles`, `/electronics`, `/properties/*` | Public | `(public)` | View listing | E2E smoke | PASS | |
-| `/account/coins` | Auth | `(public)` + subpage header | Top-up / send YC | E2E redirect | PASS | Paystack blocked without env |
+| `/account/coins` | Auth | `(public)` + subpage header | Top-up / send YC; back → agent dashboard when `from=agent` or lister role | E2E redirect + `account-wallet-connectivity` | PASS | Paystack blocked without env; hero uses `walletPath({ from: agent })` |
 | `/conversations` | Auth | `conversations/layout` | Open thread | E2E redirect + unit | PASS | |
 | `/conversations/[id]` | Auth | Same layout | Back → inbox | Unit + E2E gate | PARTIAL | Full thread journey in `conversation-thread-navigation.spec.ts` — **BLOCKED** without ephemeral auth + messaging schema |
 | `/trust/[userId]` | Public | `trust/layout` | View trust profile | Unit | PASS | |
