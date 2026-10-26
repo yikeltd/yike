@@ -10,12 +10,17 @@ import { YikeCoinsLedgerClient } from "@/app/(public)/account/coins/ledger-clien
 import { YikeCoinsNonCashNotice } from "@/components/yike-coins/non-cash-notice";
 import { WalletVideoAllowance } from "@/components/yike-coins/wallet-video-allowance";
 import type { VideoCallPreflight } from "@/lib/video-calls/allowance";
+import {
+  paymentsHistoryPath,
+  type WalletFromContext,
+} from "@/lib/navigation/account-routes";
 import { cn } from "@/lib/utils";
 
 type BackNav = { href: string; label: string };
 
 type Props = {
   backNav: BackNav;
+  walletFrom: WalletFromContext | null;
   initialBalance: number;
   video: VideoCallPreflight;
   initialUsername: string | null;
@@ -29,6 +34,7 @@ function scrollToSection(id: string) {
 
 export function WalletPageExperience({
   backNav,
+  walletFrom,
   initialBalance,
   video,
   initialUsername,
@@ -97,13 +103,25 @@ export function WalletPageExperience({
 
       <WalletVideoAllowance video={video} className="mt-4" />
 
-      <WalletSection id="wallet-top-up" title="Top up" subtitle="Pay with Paystack · credits after verification">
-        <YikeCoinsTopupClient />
-      </WalletSection>
+      <div className="mt-8 space-y-8 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+        <WalletSection
+          id="wallet-top-up"
+          title="Top up"
+          subtitle="Pay with Paystack · credits after verification"
+          className="mt-0 lg:mt-0"
+        >
+          <YikeCoinsTopupClient />
+        </WalletSection>
 
-      <WalletSection id="wallet-send" title="Send YC" subtitle="Transfer to another Yike member by username">
-        <SendYcClient balanceCoins={initialBalance} hasUsername={hasUsername} />
-      </WalletSection>
+        <WalletSection
+          id="wallet-send"
+          title="Send YC"
+          subtitle="Transfer to another Yike member by username"
+          className="mt-0 lg:mt-0"
+        >
+          <SendYcClient balanceCoins={initialBalance} hasUsername={hasUsername} />
+        </WalletSection>
+      </div>
 
       <WalletSection
         id="wallet-history"
@@ -111,7 +129,7 @@ export function WalletPageExperience({
         subtitle="Wallet ledger · credits and debits on your account"
         action={
           <Link
-            href="/payments/history"
+            href={paymentsHistoryPath(walletFrom ? { from: walletFrom } : undefined)}
             className="pressable text-xs font-bold text-navy/65 underline-offset-2 hover:text-navy hover:underline"
           >
             Paystack receipts
@@ -162,16 +180,22 @@ function WalletSection({
   title,
   subtitle,
   action,
+  className,
   children,
 }: {
   id: string;
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="mt-8 scroll-mt-24" aria-labelledby={`${id}-heading`}>
+    <section
+      id={id}
+      className={cn("mt-8 scroll-mt-24", className)}
+      aria-labelledby={`${id}-heading`}
+    >
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 id={`${id}-heading`} className="text-base font-black text-navy">

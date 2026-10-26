@@ -58,6 +58,7 @@ export default async function YikeCoinsAccountPage({
   return (
     <WalletPageExperience
       backNav={backNav}
+      walletFrom={walletFrom}
       initialBalance={balance}
       video={video}
       initialUsername={hasUsername ? username : null}

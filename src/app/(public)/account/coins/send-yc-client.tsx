@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { YIKE_COINS_BALANCE_CHANGED_EVENT } from "@/lib/yike-coins/balance-events";
 import { ArrowRight, Search, UserRound } from "lucide-react";
 import { formatYc } from "@/lib/yike-coins/constants";
 import { YcAmount } from "@/components/yike-coins/yc-amount";
@@ -33,6 +34,30 @@ export function SendYcClient({ balanceCoins, hasUsername }: Props) {
   const [lookingUp, setLookingUp] = useState(false);
   const [sending, setSending] = useState(false);
   const [balance, setBalance] = useState(balanceCoins);
+
+  useEffect(() => {
+    setBalance(balanceCoins);
+  }, [balanceCoins]);
+
+  useEffect(() => {
+    async function syncBalance() {
+      try {
+        const res = await fetch("/api/yike-coins/balance", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = (await res.json()) as { balanceCoins?: number };
+        setBalance(Number(json.balanceCoins ?? 0));
+      } catch {
+        /* keep last known */
+      }
+    }
+    const onRefresh = () => void syncBalance();
+    window.addEventListener(YIKE_COINS_BALANCE_CHANGED_EVENT, onRefresh);
+    window.addEventListener("focus", onRefresh);
+    return () => {
+      window.removeEventListener(YIKE_COINS_BALANCE_CHANGED_EVENT, onRefresh);
+      window.removeEventListener("focus", onRefresh);
+    };
+  }, []);
 
   const amountInt = useMemo(() => {
     const n = Number(amount);

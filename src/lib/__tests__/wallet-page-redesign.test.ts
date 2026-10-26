@@ -28,6 +28,8 @@ test("wallet experience shows single non-cash disclaimer", () => {
   assert.match(exp, /wallet-top-up/);
   assert.match(exp, /wallet-send/);
   assert.match(exp, /wallet-history/);
+  assert.match(exp, /paymentsHistoryPath/);
+  assert.match(exp, /lg:grid lg:grid-cols-2/);
 });
 
 test("top-up UI hides env override copy and uses pack selection", () => {

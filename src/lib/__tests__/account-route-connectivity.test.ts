@@ -3,6 +3,7 @@ import test from "node:test";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import {
+  paymentsHistoryPath,
   resolveWalletBackNavigation,
   walletAuthLoginPath,
   walletPath,
@@ -16,6 +17,23 @@ test("walletPath uses canonical consumer wallet route", () => {
   assert.equal(walletPath(), consumerRoute("wallet"));
   assert.equal(walletPath(), "/account/coins");
   assert.equal(walletPath({ from: WALLET_FROM_AGENT }), "/account/coins?from=agent");
+});
+
+test("paymentsHistoryPath preserves wallet return context", () => {
+  assert.equal(paymentsHistoryPath(), "/payments/history");
+  assert.equal(
+    paymentsHistoryPath({ from: WALLET_FROM_AGENT }),
+    "/payments/history?from=agent",
+  );
+});
+
+test("payment history page reads from param for wallet back link", () => {
+  const page = readFileSync(
+    join(root, "src/app/(public)/payments/history/page.tsx"),
+    "utf8",
+  );
+  assert.match(page, /parseWalletFromParam/);
+  assert.match(page, /walletPath\(walletFrom/);
 });
 
 test("walletAuthLoginPath encodes safe return to wallet", () => {

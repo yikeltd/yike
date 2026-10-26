@@ -16,6 +16,14 @@ export function walletPath(options?: { from?: WalletFromContext }): string {
   return base;
 }
 
+export function paymentsHistoryPath(options?: { from?: WalletFromContext }): string {
+  const base = "/payments/history";
+  if (options?.from === WALLET_FROM_AGENT) {
+    return `${base}?from=${WALLET_FROM_AGENT}`;
+  }
+  return base;
+}
+
 export function parseWalletFromParam(
   raw: string | null | undefined,
 ): WalletFromContext | null {
