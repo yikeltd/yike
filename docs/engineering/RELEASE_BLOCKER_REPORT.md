@@ -1,7 +1,7 @@
 # Release blocker report
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
-**Updated:** 2026-10-26 (migration reconciliation read-only pass)  
+**Updated:** 2026-10-26 (marketplace audit + seller-contact fix)  
 **Scope:** Verification gaps after navigation shell + public E2E (30 PASS / 16 SKIP on production-linked local env).
 
 This report does **not** claim release readiness from a green production build or anonymous Playwright alone.
@@ -12,12 +12,24 @@ This report does **not** claim release readiness from a green production build o
 
 | Area | Status | Blocker owner |
 |------|--------|----------------|
-| Anonymous consumer navigation E2E | **PASS** (30) | — |
+| Anonymous consumer / marketplace browse E2E | **PASS** (32 marketplace slice; 30 prior full anonymous) | See **`MARKETPLACE_E2E_AUDIT.md`** |
+| Seller listing create / publish E2E | **BLOCKED** | Isolated Supabase + auth |
 | Authenticated nav + messaging thread E2E | **BLOCKED** | Ops: create isolated Supabase + `.env.e2e.local` |
 | Lex RBAC E2E (6 roles) | **BLOCKED** | Ops: staff test accounts in non-prod |
 | YC wallet RPCs / ledger | **REVIEW** (14/14 integration on linked DB — not prod-readiness proof) | Reconcile migrations before prod `db push`; re-run integration only on approved non-prod target |
 | Paystack checkout E2E | **BLOCKED** | Production keys + `ENABLE_PAYMENTS`; no live charge in CI |
 | Migration filename drift (branch vs applied prod) | **P0 — ops** | Peer-transfer **repo defect fixed** (`261500`/`261510`); version-ID tail still mismatched — **`YC_WALLET_MIGRATION_RECONCILIATION.md`** — **no prod `db push`** |
+
+---
+
+## Marketplace audit (2026-10-26)
+
+- **Playwright:** 32/32 PASS on marketplace-focused specs (browse, search, discover, seller gates, shell).
+- **Unit:** listing-create/seller routes 34/34; seller-contact route guard 2/2; route audit 8/8.
+- **Fixed:** `GET /api/listings/[id]/seller-contact` now binds `sellerId` to listing via `assetType` + `resolveListingSeller` (prevents cross-listing phone probes).
+- **Not run:** DB integration (production-linked `verify:dev-target`); authenticated seller wizard E2E.
+
+Full matrix: **`docs/engineering/MARKETPLACE_E2E_AUDIT.md`**.
 
 ---
 
@@ -143,6 +155,7 @@ npm run test:e2e:navigation
 
 ## References
 
+- `docs/engineering/MARKETPLACE_E2E_AUDIT.md`
 - `docs/engineering/YC_WALLET_MIGRATION_RECONCILIATION.md`
 - `docs/engineering/ROUTE_NAVIGATION_AUDIT.md`
 - `.env.e2e.example`

@@ -75,8 +75,12 @@ export function VehicleDealerContactActions({
     void (async () => {
       setPhone({ phase: "loading" });
       try {
+        const contactQs = new URLSearchParams({
+          sellerId,
+          assetType: "VEHICLE",
+        });
         const res = await fetch(
-          `/api/listings/${encodeURIComponent(listingId)}/seller-contact?sellerId=${encodeURIComponent(sellerId)}`
+          `/api/listings/${encodeURIComponent(listingId)}/seller-contact?${contactQs.toString()}`
         );
         const json = await res.json();
         if (cancelled) return;
