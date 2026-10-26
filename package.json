@@ -56,6 +56,8 @@
     "domain:verify": "bash scripts/verify-yike-domain.sh",
     "email:assets": "node scripts/generate-email-assets.mjs && npx tsx scripts/render-email-previews.ts",
     "e2e:nav-prereqs": "tsx scripts/e2e-navigation-prerequisites.ts",
+    "e2e:nav-prereqs:isolated": "E2E_ISOLATED_SUPABASE=1 tsx scripts/e2e-navigation-prerequisites.ts",
+    "test:e2e:navigation": "E2E_ISOLATED_SUPABASE=1 E2E_EPHEMERAL_AUTH=1 PLAYWRIGHT_SKIP_SERVER=1 playwright test e2e/authenticated-navigation.spec.ts e2e/conversation-thread-navigation.spec.ts e2e/staff-role-routes.spec.ts",
     "notifications:test": "node scripts/test-sendchamp.mjs",
     "store:capture": "node scripts/capture-play-screenshots.mjs",
     "store:capture:1440": "SCREENSHOT_WIDTH=1440 SCREENSHOT_HEIGHT=3200 node scripts/capture-play-screenshots.mjs",

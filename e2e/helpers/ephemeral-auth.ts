@@ -9,12 +9,9 @@ import { join } from "node:path";
 
 const repoRoot = process.cwd();
 
-function loadEnvLocalIfNeeded() {
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return;
-  }
-  const path = join(repoRoot, ".env.local");
-  if (!existsSync(path)) return;
+function loadEnvFile(relativePath: string, onlyMissing: boolean) {
+  const path = join(repoRoot, relativePath);
+  if (!existsSync(path)) return false;
   const text = readFileSync(path, "utf8");
   for (const line of text.split("\n")) {
     const t = line.trim();
@@ -29,8 +26,21 @@ function loadEnvLocalIfNeeded() {
     ) {
       val = val.slice(1, -1);
     }
-    if (!process.env[key]) process.env[key] = val;
+    if (onlyMissing && process.env[key]) continue;
+    process.env[key] = val;
   }
+  return true;
+}
+
+function loadEnvLocalIfNeeded() {
+  if (process.env.E2E_ISOLATED_SUPABASE === "1") {
+    loadEnvFile(".env.e2e.local", false);
+    return;
+  }
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return;
+  }
+  loadEnvFile(".env.local", true);
 }
 
 loadEnvLocalIfNeeded();

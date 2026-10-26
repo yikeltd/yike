@@ -69,6 +69,12 @@ export default defineConfig({
           YIKE_PIN_PEPPER: playwrightTestPepper,
           CRON_SECRET:
             process.env.CRON_SECRET ?? "playwright-test-cron-secret-minimum",
+          ...(process.env.E2E_ISOLATED_SUPABASE === "1"
+            ? {
+                E2E_ISOLATED_SUPABASE: "1",
+                E2E_EPHEMERAL_AUTH: process.env.E2E_EPHEMERAL_AUTH ?? "1",
+              }
+            : {}),
         },
       },
 });

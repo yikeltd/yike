@@ -126,6 +126,8 @@ Suite: `e2e/staff-role-routes.spec.ts` (env-gated per role; verifies URL authori
 3. **Paystack / live payments** — production keys and enablement outside repo scope.
 4. **Production migration apply** — wallet/messaging migrations must match deployed RPCs before claiming YC/messaging production-ready.
 
+See **`docs/engineering/RELEASE_BLOCKER_REPORT.md`** for prioritized P0–P2 blockers and 2026-10-26 pre-push verification evidence.
+
 ## Evidence / commits
 
 | Slice | Commit | Verification |
