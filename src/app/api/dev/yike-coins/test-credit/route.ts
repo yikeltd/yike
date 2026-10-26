@@ -7,6 +7,7 @@ import {
   isDevYikeCoinTestCreditEnabled,
 } from "@/lib/yike-coins/dev-test-credit";
 import { isProductionEnv } from "@/lib/env";
+import { guardLocalDatabaseMutation } from "@/lib/dev/runtime-safety";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,14 @@ export async function POST(request: Request) {
 
   if (!isDevYikeCoinTestCreditEnabled()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const dbGuard = guardLocalDatabaseMutation();
+  if (!dbGuard.ok) {
+    return NextResponse.json(
+      { error: dbGuard.error, code: dbGuard.code },
+      { status: 403 },
+    );
   }
 
   if (!isYikeCoinsEnabled()) {

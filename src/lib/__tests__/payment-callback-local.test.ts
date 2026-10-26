@@ -84,6 +84,44 @@ test("reconcile route keeps Paystack verify as fulfilment gate", () => {
   assert.match(src, /reconcileAndFulfillPayment/);
 });
 
+test("ledger history does not drive wallet hero balance", () => {
+  const ledger = fs.readFileSync(
+    path.resolve(process.cwd(), "src/app/(public)/account/coins/ledger-client.tsx"),
+    "utf-8",
+  );
+  const hero = fs.readFileSync(
+    path.resolve(process.cwd(), "src/components/yike-coins/wallet-balance-hero.tsx"),
+    "utf-8",
+  );
+  assert.doesNotMatch(ledger, /setBalance/);
+  assert.match(hero, /\/api\/yike-coins\/balance/);
+  assert.match(
+    fs.readFileSync(
+      path.resolve(process.cwd(), "src/app/payments/callback/payment-callback-client.tsx"),
+      "utf-8",
+    ),
+    /dispatchYikeCoinsBalanceChanged/,
+  );
+});
+
+test("checkout availability surfaces local Paystack and DB guards", () => {
+  const src = fs.readFileSync(
+    path.resolve(process.cwd(), "src/lib/payments/checkout-availability.ts"),
+    "utf-8",
+  );
+  assert.match(src, /guardLocalPaymentMutation/);
+  assert.match(src, /live_paystack_blocked/);
+  assert.match(src, /production_db_blocked/);
+});
+
+test("dev test credit route blocks production database target", () => {
+  const src = fs.readFileSync(
+    path.resolve(process.cwd(), "src/app/api/dev/yike-coins/test-credit/route.ts"),
+    "utf-8",
+  );
+  assert.match(src, /guardLocalDatabaseMutation/);
+});
+
 test("wallet top-up idempotency key is tied to payment reference", () => {
   const src = fs.readFileSync(
     path.resolve(process.cwd(), "src/lib/payments/fulfillment/wallet-topup.ts"),

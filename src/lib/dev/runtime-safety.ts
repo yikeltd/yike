@@ -62,3 +62,21 @@ export function guardLocalPaymentMutation(
 
   return { ok: true };
 }
+
+/** Fail-closed guard for dev-only wallet credits and similar local mutations. */
+export function guardLocalDatabaseMutation(): LocalMutationGuardResult {
+  if (!isLocalDevelopmentRuntime()) {
+    return { ok: true };
+  }
+
+  if (isProductionDatabaseTarget() && !envAllowed("YIKE_ALLOW_PRODUCTION_DB_IN_DEV")) {
+    return {
+      ok: false,
+      code: "production_db_blocked",
+      error:
+        "Local dev is pointed at the production database. Wallet test credits and other dev mutations are blocked until you use a safe database target.",
+    };
+  }
+
+  return { ok: true };
+}

@@ -1,4 +1,5 @@
 import type { PaymentProviderName } from "@/lib/payments/types";
+import { isLocalDevelopmentRuntime } from "@/lib/dev/runtime-safety";
 
 function envFlag(name: string, defaultValue: boolean): boolean {
   const raw = process.env[name]?.trim().toLowerCase();
@@ -12,7 +13,15 @@ export function getSiteBaseUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (configured) {
     const withProtocol = configured.startsWith("http") ? configured : `https://${configured}`;
-    return withProtocol.replace(/\/$/, "");
+    const normalized = withProtocol.replace(/\/$/, "");
+    if (
+      isLocalDevelopmentRuntime() &&
+      /^https?:\/\/(www\.)?yike\.ng$/i.test(normalized)
+    ) {
+      const port = process.env.PORT?.trim() || "3000";
+      return `http://localhost:${port}`;
+    }
+    return normalized;
   }
 
   if (process.env.NODE_ENV === "development") {
@@ -25,20 +34,69 @@ export function getSiteBaseUrl(): string {
   return withProtocol.replace(/\/$/, "");
 }
 
+const PRODUCTION_HOST_PATTERN = /^https?:\/\/(www\.)?yike\.ng/i;
+
+/**
+ * Resolve an absolute URL for the current runtime.
+ * In local dev, production host env values fall back to the local origin + path.
+ */
+export function resolveAppAbsoluteUrlForRuntime(
+  siteBaseUrl: string,
+  configured: string | undefined,
+  defaultPath: string,
+  localDev: boolean,
+): string {
+  const base = siteBaseUrl.replace(/\/$/, "");
+  const path = defaultPath.startsWith("/") ? defaultPath : `/${defaultPath}`;
+
+  const trimmed = configured?.trim();
+  if (!trimmed) {
+    return `${base}${path}`;
+  }
+
+  const absolute = trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+  const withoutTrailing = absolute.replace(/\/$/, "");
+
+  if (localDev && PRODUCTION_HOST_PATTERN.test(withoutTrailing)) {
+    try {
+      const parsed = new URL(withoutTrailing);
+      return `${base}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+      return `${base}${path}`;
+    }
+  }
+
+  return withoutTrailing;
+}
+
+export function resolveAppAbsoluteUrl(
+  configured: string | undefined,
+  defaultPath: string,
+): string {
+  return resolveAppAbsoluteUrlForRuntime(
+    getSiteBaseUrl(),
+    configured,
+    defaultPath,
+    isLocalDevelopmentRuntime(),
+  );
+}
+
 /**
  * Browser return URL after Paystack Checkout.
  */
 export function getPaymentCallbackUrl(): string {
-  const configured = process.env.PAYSTACK_CALLBACK_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  return `${getSiteBaseUrl()}/payments/callback`;
+  return resolveAppAbsoluteUrl(
+    process.env.PAYSTACK_CALLBACK_URL,
+    "/payments/callback",
+  );
 }
 
 /** Documented webhook URL for Paystack dashboard. */
 export function getPaymentWebhookUrl(): string {
-  const configured = process.env.PAYSTACK_WEBHOOK_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  return `${getSiteBaseUrl()}/api/webhooks/paystack`;
+  return resolveAppAbsoluteUrl(
+    process.env.PAYSTACK_WEBHOOK_URL,
+    "/api/webhooks/paystack",
+  );
 }
 
 export function getPaystackBaseUrl(): string {
@@ -84,15 +142,17 @@ export function getKorapayPublicKey(): string | null {
 }
 
 export function getKorapayCallbackUrl(): string {
-  const configured = process.env.KORAPAY_CALLBACK_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  return `${getSiteBaseUrl()}/payments/korapay/callback`;
+  return resolveAppAbsoluteUrl(
+    process.env.KORAPAY_CALLBACK_URL,
+    "/payments/korapay/callback",
+  );
 }
 
 export function getKorapayWebhookUrl(): string {
-  const configured = process.env.KORAPAY_WEBHOOK_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  return `${getSiteBaseUrl()}/api/webhooks/korapay`;
+  return resolveAppAbsoluteUrl(
+    process.env.KORAPAY_WEBHOOK_URL,
+    "/api/webhooks/korapay",
+  );
 }
 
 /* ============================================================================
