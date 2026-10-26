@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { reconcileAndFulfillPayment } from "@/lib/payments/services/payment-service";
-import { isPaystackConfigured, isPaymentsRuntimeEnabled } from "@/lib/payments/config";
+import {
+  getPaystackSecretKey,
+  isPaystackConfigured,
+  isPaymentsRuntimeEnabled,
+} from "@/lib/payments/config";
+import { guardLocalPaymentMutation } from "@/lib/dev/runtime-safety";
 
 export const runtime = "nodejs";
 
@@ -13,6 +18,14 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   if (!isPaymentsRuntimeEnabled() || !isPaystackConfigured()) {
     return NextResponse.json({ error: "Payments are not available" }, { status: 503 });
+  }
+
+  const localGuard = guardLocalPaymentMutation(getPaystackSecretKey());
+  if (!localGuard.ok) {
+    return NextResponse.json(
+      { error: localGuard.error, code: localGuard.code },
+      { status: 403 },
+    );
   }
 
   const supabase = await createClient();

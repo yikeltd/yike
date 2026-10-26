@@ -9,7 +9,18 @@ function envFlag(name: string, defaultValue: boolean): boolean {
 }
 
 export function getSiteBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://yike.ng";
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configured) {
+    const withProtocol = configured.startsWith("http") ? configured : `https://${configured}`;
+    return withProtocol.replace(/\/$/, "");
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    const port = process.env.PORT?.trim() || "3000";
+    return `http://localhost:${port}`;
+  }
+
+  const raw = "https://yike.ng";
   const withProtocol = raw.startsWith("http") ? raw : `https://${raw}`;
   return withProtocol.replace(/\/$/, "");
 }
