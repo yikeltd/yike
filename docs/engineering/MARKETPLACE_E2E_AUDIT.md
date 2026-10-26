@@ -2,7 +2,7 @@
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
 **Updated:** 2026-10-26  
-**HEAD baseline:** post `8031f16a` (Paystack readiness); listing-leads fix pending commit
+**HEAD baseline:** `4357e248` (listing-leads capture binding)
 
 This audit distinguishes **Playwright smoke/navigation** (anonymous, production-linked local dev) from **authenticated seller/create/messaging** flows (blocked without isolated Supabase).
 
@@ -33,7 +33,7 @@ This audit distinguishes **Playwright smoke/navigation** (anonymous, production-
 
 | Suite | Result |
 |-------|--------|
-| Marketplace Playwright (6 specs, 32 tests) | **32 PASS**, 0 FAIL, 0 SKIP |
+| Marketplace Playwright (7 specs, 35 tests) | **35 PASS**, 0 FAIL, 0 SKIP (`npm run test:e2e:marketplace`) |
 | Listing create / seller routes unit bundle | **34 PASS** |
 | Route navigation audit | **8 PASS** (run with typecheck slice) |
 | `seller-contact-route.test.ts` | Added with listing–seller binding guard |
@@ -81,13 +81,7 @@ This audit distinguishes **Playwright smoke/navigation** (anonymous, production-
 ## Commands (repeat audit)
 
 ```bash
-PLAYWRIGHT_SKIP_SERVER=1 npx playwright test \
-  e2e/marketplace-routes-smoke.spec.ts \
-  e2e/marketplace-browse-navigation.spec.ts \
-  e2e/seller-journey-gates.spec.ts \
-  e2e/unified-search-integration.spec.ts \
-  e2e/discover-navigation.spec.ts \
-  e2e/consumer-shell-connectivity.spec.ts
+npm run test:e2e:marketplace
 
 node --import tsx --test src/lib/__tests__/listing-create-api-contract.test.ts \
   src/lib/__tests__/listing-create-routes-handlers.test.ts \

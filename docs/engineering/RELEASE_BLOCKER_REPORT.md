@@ -12,7 +12,7 @@ This report does **not** claim release readiness from a green production build o
 
 | Area | Status | Blocker owner |
 |------|--------|----------------|
-| Anonymous consumer / marketplace browse E2E | **PASS** (32 marketplace slice; 30 prior full anonymous) | See **`MARKETPLACE_E2E_AUDIT.md`** |
+| Anonymous consumer / marketplace browse E2E | **PASS** (35 via `test:e2e:marketplace`) | See **`MARKETPLACE_E2E_AUDIT.md`** |
 | Seller listing create / publish E2E | **BLOCKED** | Isolated Supabase + auth |
 | Authenticated nav + messaging thread E2E | **BLOCKED** | Ops: create isolated Supabase + `.env.e2e.local` |
 | Lex RBAC E2E (6 roles) | **BLOCKED** | Ops: staff test accounts in non-prod |
