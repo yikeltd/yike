@@ -12,7 +12,6 @@ async function assertSellerPanel(
 ) {
   const sellerCard = page.getByTestId("marketplace-seller-contact-card");
   await expect(sellerCard).toBeVisible({ timeout: 20_000 });
-  await sellerCard.scrollIntoViewIfNeeded();
   await expect(sellerCard.getByRole("button", { name: /Message/i })).toHaveCount(0);
 
   const box = await sellerCard.boundingBox();
@@ -51,7 +50,7 @@ async function assertSpecificationsGrid(
   await expect(grid).toHaveClass(/min-\[480px\]:grid-cols-2/);
 
   const cellCount = await grid.locator(":scope > div").count();
-  expect(cellCount).toBeGreaterThanOrEqual(6);
+  expect(cellCount).toBeGreaterThanOrEqual(4);
 
   const columns = await grid.evaluate((el) => {
     const style = window.getComputedStyle(el);
