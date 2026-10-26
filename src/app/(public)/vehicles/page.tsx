@@ -15,13 +15,10 @@ import {
   isSampleListingFixtureForceEnabled,
 } from "@/lib/sample-listings/flags";
 import { sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
-import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
+import { isVehicleBrowseSubmitted } from "@/lib/marketplace/browse-submitted";
+import { MarketplaceDiscoverySearch } from "@/components/marketplace/marketplace-discovery-search";
 import { VehicleSearchResultsChrome } from "@/components/marketplace/vehicle-search-results-chrome";
-import {
-  QuickFilterChips,
-  VEHICLE_QUICK_FILTERS,
-  DiscoveryEmptyPanel,
-} from "@/components/marketplace/experience";
+import { DiscoveryEmptyPanel } from "@/components/marketplace/experience";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
@@ -127,7 +124,6 @@ export default async function VehiclesPage({
     vehicles = vehicles.filter((v) => Boolean(v.is_verified_listing));
   }
 
-  let showingSampleFixture = false;
   const fixtureOn = isSampleListingFixtureEnabled();
   const fixtureForce = isSampleListingFixtureForceEnabled();
   if (fixtureOn) {
@@ -147,9 +143,14 @@ export default async function VehiclesPage({
       max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
       featured: featuredOnly || undefined,
     });
-    showingSampleFixture =
-      vehicles.length > 0 && (fixtureForce || liveCount === 0);
-  } else {
+    if (
+      isVehicleBrowseSubmitted(sp) &&
+      liveCount === 0 &&
+      !fixtureForce
+    ) {
+      vehicles = [];
+    }
+  } else if (!isVehicleBrowseSubmitted(sp)) {
     const vehicleDemo = withEmptyInventoryDemoFixtures(vehicles, "vehicle", 24);
     vehicles = vehicleDemo.items;
   }
@@ -217,41 +218,26 @@ export default async function VehiclesPage({
     return s ? `/vehicles?${s}` : "/vehicles";
   }
 
-  const hasFilters = Boolean(
-    first(sp.q) ||
-      first(sp.category) ||
-      conditionParam ||
-      first(sp.make) ||
-      first(sp.model) ||
-      state ||
-      city ||
-      first(sp.min_year) ||
-      first(sp.max_year) ||
-      first(sp.min_price) ||
-      first(sp.max_price) ||
-      verifiedOnly ||
-      featuredOnly ||
-      nearbyFlag,
-  );
+  const submittedSearch = isVehicleBrowseSubmitted(sp);
 
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
-      <SampleFixtureBanner active={showingSampleFixture} />
       <PrefSync />
-      <div className="px-3 pt-4 lg:px-6 xl:px-8">
+      <div
+        className={
+          submittedSearch
+            ? "px-3 pt-2 lg:px-6 xl:px-8"
+            : "space-y-3 px-3 pt-4 lg:px-6 xl:px-8"
+        }
+      >
         <MarketplaceCategoryHeader
           vertical="vehicle"
           title="Vehicles"
-          className="mb-2"
+          className={submittedSearch ? "mb-1" : "mb-2"}
         />
-        <Suspense fallback={null}>
-          <div className="mb-3">
-            <QuickFilterChips
-              chips={VEHICLE_QUICK_FILTERS}
-              basePath="/vehicles"
-            />
-          </div>
-        </Suspense>
+        {!submittedSearch ? (
+          <MarketplaceDiscoverySearch vertical="vehicle" />
+        ) : null}
       </div>
 
       <Suspense fallback={<ResultsFallback />}>
@@ -263,9 +249,9 @@ export default async function VehiclesPage({
             {pageSlice.length === 0 ? (
               <DiscoveryEmptyPanel
                 category="vehicle"
-                title={hasFilters ? "No vehicles match" : "Start exploring vehicles"}
+                title={submittedSearch ? "No vehicles match" : "Start exploring vehicles"}
                 subtitle={
-                  hasFilters
+                  submittedSearch
                     ? "Try another filter, or browse popular categories below."
                     : "Recent searches, trending makes, and cities — tap to browse."
                 }

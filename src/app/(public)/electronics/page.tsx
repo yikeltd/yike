@@ -7,7 +7,6 @@ import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { queryPublicElectronics } from "@/lib/marketplace/listings";
 import { ElectronicsCard } from "@/components/marketplace/electronics-card";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
-import { ELECTRONICS_CATEGORIES } from "@/lib/marketplace/electronics-specs";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
 import {
@@ -15,7 +14,9 @@ import {
   isSampleListingFixtureForceEnabled,
 } from "@/lib/sample-listings/flags";
 import { sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
-import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
+import { isElectronicsBrowseSubmitted } from "@/lib/marketplace/browse-submitted";
+import { ElectronicsDiscoverySearch } from "@/components/marketplace/electronics-discovery-search";
+import { ElectronicsSearchResultsChrome } from "@/components/marketplace/electronics-search-results-chrome";
 
 export const metadata: Metadata = {
   title: "Electronics",
@@ -30,6 +31,15 @@ function first(v: string | string[] | undefined): string | undefined {
   return v;
 }
 
+function ResultsFallback() {
+  return (
+    <div className="space-y-3 px-3 pt-2">
+      <div className="skeleton h-14 w-full rounded-xl" />
+      <div className="skeleton h-11 w-full rounded-xl" />
+    </div>
+  );
+}
+
 export default async function ElectronicsPage({
   searchParams,
 }: {
@@ -38,6 +48,7 @@ export default async function ElectronicsPage({
   if (!isLaunchFeatureVisible("electronics_marketplace")) notFound();
 
   const sp = await searchParams;
+  const submittedSearch = isElectronicsBrowseSubmitted(sp);
   const supabase = await createClient();
   let items = supabase
     ? await queryPublicElectronics(supabase, {
@@ -53,7 +64,6 @@ export default async function ElectronicsPage({
       })
     : [];
 
-  let showingSampleFixture = false;
   const fixtureOn = isSampleListingFixtureEnabled();
   const fixtureForce = isSampleListingFixtureForceEnabled();
   if (fixtureOn) {
@@ -68,81 +78,100 @@ export default async function ElectronicsPage({
       min_price: first(sp.min_price) ? Number(first(sp.min_price)) : undefined,
       max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
     });
-    showingSampleFixture =
-      items.length > 0 && (fixtureForce || liveCount === 0);
+    if (submittedSearch && liveCount === 0 && !fixtureForce && items.length > 0) {
+      items = [];
+    }
   }
 
   return (
-    <main className="min-h-screen bg-surface pb-24">
-      <SampleFixtureBanner active={showingSampleFixture} />
-      <div className="px-3 pt-4 lg:px-6">
-        <MarketplaceCategoryHeader vertical="electronics" title="Electronics" className="mb-2" />
-      </div>
-
-      <div className="mx-auto max-w-7xl px-3 py-4 lg:px-6">
-        <form method="get" className="mb-4 flex flex-col gap-2 sm:flex-row">
-          <input
-            name="q"
-            defaultValue={first(sp.q) ?? ""}
-            placeholder="Search brand, model, city…"
-            className="flex-1 rounded-2xl border border-navy/15 px-4 py-3 text-sm"
+    <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
+      <div
+        className={
+          submittedSearch
+            ? "px-3 pt-2 lg:px-6 xl:px-8"
+            : "space-y-3 px-3 pt-4 lg:px-6 xl:px-8"
+        }
+      >
+        <MarketplaceCategoryHeader
+          vertical="electronics"
+          title="Electronics"
+          className={submittedSearch ? "mb-1" : "mb-2"}
+        />
+        {!submittedSearch ? (
+          <ElectronicsDiscoverySearch
+            defaultQuery={first(sp.q) ?? ""}
+            defaultCategory={first(sp.category) ?? ""}
           />
-          <select
-            name="category"
-            defaultValue={first(sp.category) ?? ""}
-            className="rounded-2xl border border-navy/15 px-3 py-3 text-sm"
-          >
-            <option value="">All categories</option>
-            {ELECTRONICS_CATEGORIES.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="rounded-2xl bg-navy px-5 py-3 text-sm font-bold text-white"
-          >
-            Search
-          </button>
-        </form>
-
-        <div className="mb-4 flex flex-wrap gap-2">
-          {ELECTRONICS_CATEGORIES.slice(0, 6).map((c) => (
-            <Link
-              key={c.id}
-              href={`/electronics?category=${c.id}`}
-              className="rounded-full border border-navy/10 bg-white px-3 py-1.5 text-xs font-semibold text-navy hover:border-gold/40"
-            >
-              {c.label}
-            </Link>
-          ))}
-        </div>
-
-        <Suspense fallback={<div className="skeleton h-40 w-full rounded-2xl" />}>
-          {items.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-navy/15 bg-white p-10 text-center">
-              <h2 className="text-lg font-bold text-navy">No electronics listings yet</h2>
-              <p className="mt-2 text-sm text-muted">Try another filter or check back soon.</p>
-              <Link
-                href="/agent/listings/new/electronics"
-                className="pressable mt-4 inline-block rounded-2xl bg-gold px-5 py-2.5 text-sm font-bold text-navy"
-              >
-                Sell electronics
-              </Link>
-            </div>
-          ) : (
-            <>
-              <p className="mb-3 text-sm text-muted">{items.length} listings</p>
-              <div className={BROWSE_GRID_CLASS}>
-                {items.map((item, i) => (
-                  <ElectronicsCard key={item.id} listing={item} priorityImage={i < 4} />
-                ))}
-              </div>
-            </>
-          )}
-        </Suspense>
+        ) : null}
       </div>
-    </main>
+
+      <Suspense fallback={<ResultsFallback />}>
+        {submittedSearch ? (
+          <ElectronicsSearchResultsChrome
+            resultCount={items.length}
+            filtersDefaultOpen={false}
+          >
+            <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
+              {items.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-navy/15 bg-white p-8 text-center">
+                  <h2 className="text-lg font-bold text-navy">No electronics match</h2>
+                  <p className="mt-2 text-sm text-muted">
+                    Try another filter or check back soon.
+                  </p>
+                  <Link
+                    href="/electronics"
+                    className="pressable mt-4 inline-block text-sm font-semibold text-gold"
+                  >
+                    Clear filters
+                  </Link>
+                </div>
+              ) : (
+                <div className={BROWSE_GRID_CLASS}>
+                  {items.map((item, i) => (
+                    <ElectronicsCard
+                      key={item.id}
+                      listing={item}
+                      priorityImage={i < 4}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </ElectronicsSearchResultsChrome>
+        ) : (
+          <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
+            {items.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-navy/15 bg-white p-8 text-center">
+                <h2 className="text-lg font-bold text-navy">Start exploring electronics</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Search phones, laptops, appliances, and more across Nigeria.
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="mb-2 text-sm font-bold text-navy">
+                  {items.length} {items.length === 1 ? "listing" : "listings"}
+                </p>
+                <div className={BROWSE_GRID_CLASS}>
+                  {items.map((item, i) => (
+                    <ElectronicsCard
+                      key={item.id}
+                      listing={item}
+                      priorityImage={i < 4}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            <Link
+              href="/agent/listings/new/electronics"
+              className="pressable mt-6 inline-block rounded-2xl bg-gold px-5 py-2.5 text-sm font-bold text-navy"
+            >
+              Sell electronics
+            </Link>
+          </section>
+        )}
+      </Suspense>
+    </div>
   );
 }

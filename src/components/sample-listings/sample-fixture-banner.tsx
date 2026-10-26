@@ -1,26 +1,13 @@
-import {
-  isSampleListingFixtureEnabled,
-  isSampleListingFixtureForceEnabled,
-} from "@/lib/sample-listings/flags";
+/**
+ * Dev sample catalog indicator — never shown on consumer UI.
+ * Fixtures are gated by `isSampleListingFixtureEnabled()` (non-production + env flag).
+ * Use server logs or Lex tooling to debug fixture mode; do not surface on yike.ng.
+ */
+export function SampleFixtureBanner(_props?: { active?: boolean }) {
+  return null;
+}
 
-/** Dev-only banner when sample fixture catalog is active on a route. */
-export function SampleFixtureBanner({ active = true }: { active?: boolean }) {
-  if (!isSampleListingFixtureEnabled() || !active) return null;
-  return (
-    <div
-      className="border-b border-gold/30 bg-gold/10 px-3 py-2 text-center text-xs font-semibold text-navy lg:text-sm"
-      role="status"
-    >
-      Sample listings (dev fixture) — not live inventory.{" "}
-      {isSampleListingFixtureForceEnabled()
-        ? "Force mode: showing the 30-item catalog instead of live DB rows."
-        : "Enable via "}
-      {!isSampleListingFixtureForceEnabled() ? (
-        <>
-          <code className="rounded bg-white/80 px-1">YIKE_SAMPLE_LISTINGS_FIXTURE=1</code> in
-          development.
-        </>
-      ) : null}
-    </div>
-  );
+/** @deprecated Consumer routes must not render fixture banners. */
+export function isPublicSampleFixtureBannerVisible(): boolean {
+  return false;
 }

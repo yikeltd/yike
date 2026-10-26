@@ -120,7 +120,6 @@ function VehicleRail({ items }: { items: Property[] }) {
 
 import { HomeDesktopView } from "@/components/home/home-desktop-view";
 import { HomeCompactMarketplaceHero } from "@/components/home/home-compact-marketplace-hero";
-import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 
 export function HomeMarketplaceExperience({
   initialCategory,
@@ -310,9 +309,6 @@ export function HomeMarketplaceExperience({
 
   return (
     <div className="home-canvas min-h-[100dvh] pb-24 lg:pb-8 bg-[#f7f9fc]">
-      {showingSampleListingsFixture ? (
-        <SampleFixtureBanner />
-      ) : null}
       {/* DESKTOP EXPERIENCE (RESTORED LEGACY HOMEPAGE) */}
       <HomeDesktopView
         category={category}

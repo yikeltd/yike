@@ -9,6 +9,7 @@ import {
   type PropertySearchParams,
 } from "@/lib/properties";
 import { SearchResultsChrome } from "@/components/search/search-results-chrome";
+import { MarketplaceDiscoverySearch } from "@/components/marketplace/marketplace-discovery-search";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
 import { hubLabel } from "@/constants/listingTypes";
@@ -24,19 +25,13 @@ import {
   resolveSearchResults,
 } from "@/lib/search-fallback";
 import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
-import {
-  DiscoveryEmptyPanel,
-  QuickFilterChips,
-  PROPERTY_QUICK_FILTERS,
-} from "@/components/marketplace/experience";
+import { DiscoveryEmptyPanel } from "@/components/marketplace/experience";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
 import {
   isSampleListingFixtureEnabled,
   isSampleListingFixtureForceEnabled,
 } from "@/lib/sample-listings/flags";
 import { samplePropertyBrowse } from "@/lib/sample-listings/query-fixtures";
-import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
-import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
 import { SearchClientChrome } from "@/components/search/search-client-chrome";
 import { createClient } from "@/lib/supabase/server";
 import { isMixedMarketplaceSearch } from "@/lib/search/marketplace-search-mode";
@@ -93,7 +88,6 @@ export default async function SearchPage({
   let nearbyItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
   let mixedItems: Property[] = [];
   let isDemo = false;
-  let showingSampleFixture = false;
   let mixedFetchFailed = false;
 
   if (mixedMode) {
@@ -114,9 +108,8 @@ export default async function SearchPage({
     });
     mixedItems = mixed.items;
     exactCount = mixedItems.length;
-    showingSampleFixture = mixed.usedSampleFixture;
     mixedFetchFailed = mixed.fetchFailed;
-    isDemo = showingSampleFixture;
+    isDemo = mixed.usedSampleFixture;
   } else if (hasQuery) {
     const bundle = await resolveSearchResults(
       getPublicPropertiesStrict,
@@ -135,9 +128,12 @@ export default async function SearchPage({
       feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   }
 
+  const submittedSearch = hasQuery || mixedMode;
+
   const fixtureOn = isSampleListingFixtureEnabled();
   const fixtureForce = isSampleListingFixtureForceEnabled();
   if (fixtureOn && (fixtureForce || feedItems.length === 0)) {
+    const liveCount = feedItems.length;
     feedItems = samplePropertyBrowse({
       q: preloadParams.q,
       city: preloadParams.city,
@@ -145,9 +141,11 @@ export default async function SearchPage({
       min_price: preloadParams.min_price,
       max_price: preloadParams.max_price,
     });
+    if (submittedSearch && liveCount === 0 && !fixtureForce) {
+      feedItems = [];
+    }
     exactCount = feedItems.length;
-    showingSampleFixture = feedItems.length > 0;
-    isDemo = showingSampleFixture;
+    isDemo = feedItems.length > 0;
   } else if (!hasQuery && feedItems.length === 0) {
     const demo = withEmptyInventoryDemoFixtures([], "property", 24);
     if (demo.isDemo) {
@@ -194,33 +192,40 @@ export default async function SearchPage({
 
   return (
     <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
-      <SampleFixtureBanner active={showingSampleFixture} />
       <PrefSync />
-      
-      {/* UNIVERSAL SEARCH BAR & CATEGORIES */}
-      <div className="px-3 pt-4 lg:px-6 xl:px-8 space-y-3">
-        <HeaderUniversalSearch size="large" tone="desktop" showLocation />
-        <Suspense fallback={null}>
-          <div>
-            <QuickFilterChips
-              chips={PROPERTY_QUICK_FILTERS}
-              basePath="/search"
-            />
-          </div>
-        </Suspense>
+      <div
+        className={
+          submittedSearch
+            ? "px-3 pt-2 lg:px-6 xl:px-8"
+            : "space-y-3 px-3 pt-4 lg:px-6 xl:px-8"
+        }
+      >
+        <MarketplaceCategoryHeader
+          vertical="property"
+          title="Search"
+          className={submittedSearch ? "mb-1" : "mb-2"}
+        />
+        {!submittedSearch ? <MarketplaceDiscoverySearch vertical="property" /> : null}
       </div>
 
       <Suspense fallback={<ResultsFallback />}>
         {mixedMode ? (
-          <SearchClientChrome
-            feedItems={mixedItems}
-            exactCount={exactCount}
-            nearbyCount={0}
-            showingFallback={false}
+          <SearchResultsChrome
+            resultCount={exactCount}
             currentHref={currentHref}
             currentLabel={mixedLabel || "All categories"}
+            filtersDefaultOpen={false}
+            hideSuggestions
           >
-            <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
+            <SearchClientChrome
+              feedItems={mixedItems}
+              exactCount={exactCount}
+              showingFallback={false}
+              currentHref={currentHref}
+              currentLabel={mixedLabel || "All categories"}
+              showActiveBar={false}
+            >
+            <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
               {mixedFetchFailed ? (
                 <DiscoveryEmptyPanel
                   category="property"
@@ -239,17 +244,28 @@ export default async function SearchPage({
                 />
               )}
             </section>
-          </SearchClientChrome>
-        ) : (
-          <SearchClientChrome
-            feedItems={activeItems}
-            exactCount={exactCount}
+            </SearchClientChrome>
+          </SearchResultsChrome>
+        ) : submittedSearch ? (
+          <SearchResultsChrome
+            resultCount={exactCount}
             nearbyCount={nearbyItems.length}
             showingFallback={showingNearby}
             currentHref={currentHref}
             currentLabel={label || "Search Results"}
+            filtersDefaultOpen={false}
+            hideSuggestions
           >
-            <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
+            <SearchClientChrome
+              feedItems={activeItems}
+              exactCount={exactCount}
+              nearbyCount={nearbyItems.length}
+              showingFallback={showingNearby}
+              currentHref={currentHref}
+              currentLabel={label || "Search Results"}
+              showActiveBar={false}
+            >
+            <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
               {feedItems.length > 0 ? (
                 <PropertyFeed
                   properties={feedItems}
@@ -287,6 +303,41 @@ export default async function SearchPage({
                   placement="search_top"
                   className="hidden lg:block"
                 />
+              </div>
+            </section>
+            </SearchClientChrome>
+          </SearchResultsChrome>
+        ) : (
+          <SearchClientChrome
+            feedItems={activeItems}
+            exactCount={exactCount}
+            nearbyCount={nearbyItems.length}
+            showingFallback={showingNearby}
+            currentHref={currentHref}
+            currentLabel={label || "Search Results"}
+          >
+            <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
+              {feedItems.length > 0 ? (
+                <PropertyFeed
+                  properties={feedItems}
+                  isDemo={isDemo}
+                  sponsoredAd={sponsoredSearchAd}
+                  midFeedAd={sponsoredSearchAd ? null : feedAd}
+                  feedAdInsertAfter={5}
+                  adPlacementKey="search_feed_mid"
+                />
+              ) : (
+                <DiscoveryEmptyPanel
+                  category="property"
+                  title="Start exploring homes & vehicles"
+                  subtitle="Recent searches, trending areas, and cities — tap to browse."
+                  showLatestHref="/search?marketplace=all"
+                />
+              )}
+
+              <div className="mt-4 space-y-4">
+                <AdminPromoSlot placement="search_page" variant="inline" />
+                <AdSlot placement="search_top" className="hidden lg:block" />
               </div>
             </section>
           </SearchClientChrome>

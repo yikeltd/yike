@@ -15,6 +15,7 @@ export function SearchClientChrome({
   showingFallback = false,
   currentHref,
   currentLabel,
+  showActiveBar = true,
   children,
 }: {
   feedItems: Property[];
@@ -23,6 +24,8 @@ export function SearchClientChrome({
   showingFallback?: boolean;
   currentHref?: string;
   currentLabel?: string;
+  /** When wrapped in SearchResultsChrome, avoid duplicate count/summary bars. */
+  showActiveBar?: boolean;
   children: React.ReactNode;
 }) {
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
@@ -31,15 +34,21 @@ export function SearchClientChrome({
   return (
     <>
       {/* ACTION TOOLBAR: GRID vs MAP VIEW TOGGLE & SAVE SEARCH */}
-      <div className="flex items-center justify-between px-3 pt-3 lg:px-6 xl:px-8">
-        <SearchActiveBar
-          resultCount={exactCount}
-          nearbyCount={nearbyCount}
-          showingFallback={showingFallback}
-          currentHref={currentHref}
-          currentLabel={currentLabel}
-          compact
-        />
+      <div className="flex items-center justify-between px-3 pt-2 lg:px-6 xl:px-8">
+        {showActiveBar ? (
+          <SearchActiveBar
+            resultCount={exactCount}
+            nearbyCount={nearbyCount}
+            showingFallback={showingFallback}
+            currentHref={currentHref}
+            currentLabel={currentLabel}
+            compact
+          />
+        ) : (
+          <span className="text-sm font-bold text-navy">
+            {exactCount} {exactCount === 1 ? "listing" : "listings"}
+          </span>
+        )}
 
         <div className="flex items-center gap-2 shrink-0">
           <button

@@ -10,7 +10,6 @@ import {
   getSampleListingBySlugOrId,
   sampleBrowseFallback,
 } from "@/lib/sample-listings/query-fixtures";
-import { SampleFixtureBanner } from "@/components/sample-listings/sample-fixture-banner";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { VehicleDetailExperience } from "@/components/marketplace/vehicle-detail-experience";
 import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
@@ -128,7 +127,6 @@ export default async function VehicleDetailPage({
 
   return (
     <main className="pb-8">
-      {isSampleFixture ? <SampleFixtureBanner /> : null}
       {isPubliclyVisible ? (
         <MarketplaceViewTracker
           id={vehicle.id}
