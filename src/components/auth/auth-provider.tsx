@@ -78,6 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const intentResumeRef = useRef<string | null>(null);
   const signingOutRef = useRef(false);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dataset.authLoading = loading ? "1" : "0";
+  }, [loading]);
+
   const refreshAuth = useCallback(async () => {
     if (signingOutRef.current) return;
     if (!isSupabaseConfigured()) {

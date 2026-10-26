@@ -10,6 +10,7 @@ import {
   getSampleListingBySlugOrId,
   sampleBrowseFallback,
 } from "@/lib/sample-listings/query-fixtures";
+import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { VehicleDetailExperience } from "@/components/marketplace/vehicle-detail-experience";
 import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
@@ -62,7 +63,15 @@ export default async function VehicleDetailPage({
     typeof query.browseReturn === "string" ? query.browseReturn : null;
   const supabase = await createClient();
 
-  let vehicle = supabase ? await getVehicleByIdOrSlug(supabase, slug) : null;
+  let vehicle: Awaited<ReturnType<typeof getVehicleByIdOrSlug>> | ReturnType<
+    typeof getSampleListingBySlugOrId
+  > = null;
+  if (isSampleListingFixtureEnabled() && slug.startsWith("sample-")) {
+    vehicle = getSampleListingBySlugOrId(slug, "VEHICLE");
+  }
+  if (!vehicle && supabase) {
+    vehicle = await getVehicleByIdOrSlug(supabase, slug);
+  }
   if (!vehicle) {
     vehicle = getSampleListingBySlugOrId(slug, "VEHICLE");
   }

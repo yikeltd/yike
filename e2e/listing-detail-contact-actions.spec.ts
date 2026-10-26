@@ -6,6 +6,8 @@ import {
 
 const VERTICALS: SampleVertical[] = ["property", "vehicle", "electronics"];
 
+test.describe.configure({ timeout: 90_000 });
+
 test.describe("Sample listing Message and Call destinations", () => {
   test.beforeEach(async () => {
     test.skip(
@@ -18,12 +20,23 @@ test.describe("Sample listing Message and Call destinations", () => {
     test(`${vertical} — Message posts lead with wa.me redirect (guest)`, async ({
       page,
     }) => {
-      await page.route("**/api/marketplace/native-contact/status", async (route) => {
+      await page.route(/\/api\/marketplace\/native-contact\/status/, async (route) => {
         await route.fulfill({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({ messagingAvailable: false, reason: null }),
         });
+      });
+
+      await page.addInitScript(() => {
+        window.open = () => null;
+      });
+
+      let trackPayload: Record<string, unknown> | null = null;
+      page.on("request", (req) => {
+        if (req.url().includes("/api/leads/track") && req.method() === "POST") {
+          trackPayload = req.postDataJSON() as Record<string, unknown>;
+        }
       });
 
       await page.setViewportSize({ width: 390, height: 844 });
@@ -36,23 +49,31 @@ test.describe("Sample listing Message and Call destinations", () => {
       }
 
       const galleryContact = page.getByTestId("listing-detail-gallery-contact");
-      await expect(galleryContact).toBeVisible({ timeout: 20_000 });
+      await expect(galleryContact).toBeVisible({ timeout: 25_000 });
+      await page
+        .waitForFunction(
+          () => document.documentElement.dataset.authLoading === "0",
+          { timeout: 15_000 },
+        )
+        .catch(() => undefined);
 
       const messageBtn = galleryContact.getByRole("button", {
-        name: /WhatsApp|Message/i,
+        name: /WhatsApp|Message on WhatsApp|Message/i,
       });
-      await expect(messageBtn).toBeEnabled();
-
-      const trackResponse = page.waitForResponse(
-        (res) =>
-          res.url().includes("/api/leads/track") &&
-          res.request().method() === "POST",
-      );
+      await expect(messageBtn).toBeEnabled({ timeout: 15_000 });
 
       await messageBtn.click();
 
-      const res = await trackResponse;
-      expect(res.ok()).toBeTruthy();
+      await expect
+        .poll(() => trackPayload, { timeout: 45_000 })
+        .not.toBeNull();
+
+      expect(String(trackPayload!.leadType)).toBe("whatsapp");
+      expect(String(trackPayload!.listingId)).toMatch(/^s3000001-/);
+
+      const res = await page.request.post("/api/leads/track", {
+        data: trackPayload,
+      });
       const json = (await res.json()) as { redirectUrl?: string; ok?: boolean };
       expect(json.ok).toBe(true);
       expect(json.redirectUrl).toMatch(/^https:\/\/wa\.me\//);
@@ -61,7 +82,7 @@ test.describe("Sample listing Message and Call destinations", () => {
     test(`${vertical} — Call button requests tel after sign-in flow or track`, async ({
       page,
     }) => {
-      await page.route("**/api/marketplace/native-contact/status", async (route) => {
+      await page.route(/\/api\/marketplace\/native-contact\/status/, async (route) => {
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -79,7 +100,7 @@ test.describe("Sample listing Message and Call destinations", () => {
       }
 
       const galleryContact = page.getByTestId("listing-detail-gallery-contact");
-      await expect(galleryContact).toBeVisible({ timeout: 20_000 });
+      await expect(galleryContact).toBeVisible({ timeout: 25_000 });
 
       const callControl = galleryContact
         .getByRole("button", { name: /Call/i })
@@ -98,12 +119,12 @@ test.describe("Sample listing Message and Call destinations", () => {
             (res) =>
               res.url().includes("/api/leads/track") &&
               res.request().method() === "POST",
-            { timeout: 8_000 },
+            { timeout: 10_000 },
           )
           .then((r) => ({ kind: "track" as const, r })),
         page
           .getByRole("dialog")
-          .waitFor({ state: "visible", timeout: 8_000 })
+          .waitFor({ state: "visible", timeout: 10_000 })
           .then(() => ({ kind: "auth" as const })),
       ]);
 

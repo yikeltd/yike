@@ -28,6 +28,10 @@ export function isSampleListingFixtureForceEnabled(): boolean {
   );
 }
 
+export function isSampleListingSlug(slug: string): boolean {
+  return slug.startsWith("sample-");
+}
+
 /** True when detail page is serving a handcrafted sample row (slug or id prefix). */
 export function isSampleListingRecord(
   listing: { id?: string; slug?: string | null; attributes?: unknown },

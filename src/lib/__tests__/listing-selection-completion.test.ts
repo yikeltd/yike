@@ -60,25 +60,36 @@ test("catalogue availability is connected for all verticals (representative)", (
   }
 });
 
-test("diverse scenarios meet 80% selection completion without manual catalogue typing", () => {
+test("diverse scenarios: filled applicable fields completed via catalogue (no manual picks)", () => {
   const failures: string[] = [];
   for (const scenario of LISTING_SCENARIOS) {
     const manifest = MANIFEST_BY_VERTICAL[scenario.vertical];
     const report = computeSelectionCompletion(manifest, scenario.values, CATALOGS);
-    if (report.selectionCompletionRatio < 0.8) {
+    if (report.manualEntryFieldIds.length > 0) {
+      failures.push(`${scenario.id}: manual catalogue overrides=${report.manualEntryFieldIds.join(",")}`);
+    }
+    if (report.noTypingAmongFilledApplicableRatio < 1) {
       failures.push(
-        `${scenario.id}: ${(report.selectionCompletionRatio * 100).toFixed(0)}% manual=${report.manualEntryFieldIds.join(",")}`,
+        `${scenario.id}: noTypingAmongFilled=${(report.noTypingAmongFilledApplicableRatio * 100).toFixed(0)}%`,
       );
     }
   }
-  assert.equal(
-    failures.length,
-    0,
-    `Scenarios below 80% selection completion:\n${failures.join("\n")}`,
-  );
+  assert.equal(failures.length, 0, failures.join("\n"));
 });
 
-test("required catalogue fields selection completion by vertical", () => {
+test("diverse scenarios: required applicable fields filled in representative states", () => {
+  for (const scenario of LISTING_SCENARIOS) {
+    const manifest = MANIFEST_BY_VERTICAL[scenario.vertical];
+    const report = computeSelectionCompletion(manifest, scenario.values, CATALOGS);
+    assert.equal(
+      report.requiredFieldsFilledRatio,
+      1,
+      `${scenario.id}: missing required (${report.requiredFieldsFilledCount}/${report.requiredApplicableCount})`,
+    );
+  }
+});
+
+test("required catalogue field slots use catalogue options when filled (by vertical)", () => {
   for (const vertical of ["property", "vehicle", "electronics"] as const) {
     const scenario = LISTING_SCENARIOS.find((s) => s.vertical === vertical)!;
     const report = computeSelectionCompletion(
@@ -88,7 +99,7 @@ test("required catalogue fields selection completion by vertical", () => {
     );
     assert.ok(
       report.requiredSelectionCompletionRatio >= 0.85,
-      `${vertical} required selection ${report.requiredSelectionCompletionRatio}`,
+      `${vertical} required catalogue slots via pick ${report.requiredSelectionCompletionRatio}`,
     );
   }
 });

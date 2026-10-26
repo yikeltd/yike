@@ -49,11 +49,31 @@ export type SelectionCompletionReport = {
   catalogUsableRatio: number;
   /** Filled catalogue fields whose value matches a resolved catalogue option. */
   selectedViaCatalogCount: number;
-  selectionCompletionRatio: number;
+  /**
+   * Share of filled catalogue fields that match a catalogue option (not “80% of listing without typing”).
+   * Denominator: filled catalogue fields only.
+   */
+  catalogPickAccuracyAmongFilledCatalogFields: number;
+  /**
+   * No-typing completion among all applicable non-narrative fields that are filled in this state.
+   * Denominator: `filledCount` (excludes title, description, price, address hints, etc.).
+   */
+  noTypingAmongFilledApplicableRatio: number;
+  /**
+   * Catalogue fields in the form that were set via a catalogue option (filled + matching).
+   * Denominator: all visible catalogue field slots (`catalogFieldCount`), including unfilled optional fields.
+   */
+  noTypingAmongCatalogFieldSlotsRatio: number;
+  /** Required applicable fields with a value. Denominator: `requiredApplicableCount`. */
+  requiredFieldsFilledCount: number;
+  requiredFieldsFilledRatio: number;
   requiredApplicableCount: number;
+  /** Required catalogue fields set via catalogue option. Denominator: required catalogue fields. */
   requiredSelectionCompletionRatio: number;
   optionalApplicableCount: number;
   optionalSelectionCompletionRatio: number;
+  /** @deprecated Use catalogPickAccuracyAmongFilledCatalogFields */
+  selectionCompletionRatio: number;
   manualEntryFieldIds: string[];
   typingFieldIds: string[];
   catalogFieldIds: string[];
@@ -104,12 +124,12 @@ function selectionRatioForFields(
   catalogs: CatalogMap,
 ): number {
   const catalogFields = fields.filter((f) => CATALOG_INPUTS.has(f.input));
-  const filled = catalogFields.filter((f) => isFilled(values[f.id]));
-  const selected = filled.filter((f) => {
+  const selected = catalogFields.filter((f) => {
+    if (!isFilled(values[f.id])) return false;
     const options = getOptionsForField(f, values, catalogs);
     return valueMatchesCatalogOption(f, values[f.id], options);
   });
-  return ratio(selected.length, filled.length);
+  return ratio(selected.length, catalogFields.length);
 }
 
 export function computeSelectionCompletion(
@@ -155,9 +175,17 @@ export function computeSelectionCompletion(
 
   const requiredApplicable = applicable.filter((f) => f.required);
   const optionalApplicable = applicable.filter((f) => !f.required);
+  const requiredFilled = requiredApplicable.filter((f) => isFilled(values[f.id]));
+
+  const filledViaCatalogApplicable = filled.filter((f) => {
+    if (!CATALOG_INPUTS.has(f.input)) return false;
+    const options = getOptionsForField(f, values, catalogs);
+    return valueMatchesCatalogOption(f, values[f.id], options);
+  });
 
   const visibleFieldCount = applicable.length;
   const catalogFieldCount = catalogFields.length;
+  const catalogPickAccuracy = ratio(selectedViaCatalog.length, filledCatalog.length);
 
   return {
     categoryId: manifest.id,
@@ -173,7 +201,12 @@ export function computeSelectionCompletion(
     catalogUsableCount: usableCatalog.length,
     catalogUsableRatio: ratio(usableCatalog.length, catalogFieldCount),
     selectedViaCatalogCount: selectedViaCatalog.length,
-    selectionCompletionRatio: ratio(selectedViaCatalog.length, filledCatalog.length),
+    catalogPickAccuracyAmongFilledCatalogFields: catalogPickAccuracy,
+    noTypingAmongFilledApplicableRatio: ratio(filledViaCatalogApplicable.length, filled.length),
+    noTypingAmongCatalogFieldSlotsRatio: ratio(selectedViaCatalog.length, catalogFieldCount),
+    requiredFieldsFilledCount: requiredFilled.length,
+    requiredFieldsFilledRatio: ratio(requiredFilled.length, requiredApplicable.length),
+    selectionCompletionRatio: catalogPickAccuracy,
     requiredApplicableCount: requiredApplicable.length,
     requiredSelectionCompletionRatio: selectionRatioForFields(
       requiredApplicable,

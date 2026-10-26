@@ -130,7 +130,9 @@ test.describe("Sample listing detail showcase (local fixtures)", () => {
     }
     const gallery = page.getByTestId("listing-detail-gallery-contact");
     await expect(gallery).toBeVisible();
-    await expect(gallery.getByRole("button", { name: /Message/i })).toBeVisible();
+    await expect(
+      gallery.getByRole("button", { name: /WhatsApp|Message on WhatsApp|Message/i }),
+    ).toBeVisible();
     await expect(
       page.getByTestId("marketplace-seller-contact-card").getByRole("button", {
         name: /Message/i,

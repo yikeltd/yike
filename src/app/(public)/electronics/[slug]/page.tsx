@@ -7,6 +7,7 @@ import {
   queryPublicElectronics,
 } from "@/lib/marketplace/listings";
 import { getSampleListingBySlugOrId, sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
+import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { ElectronicsDetailExperience } from "@/components/marketplace/electronics-detail-experience";
 import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
@@ -51,7 +52,15 @@ export default async function ElectronicsDetailPage({
     typeof query.browseReturn === "string" ? query.browseReturn : null;
   const supabase = await createClient();
 
-  let listing = supabase ? await getElectronicsByIdOrSlug(supabase, slug) : null;
+  let listing: Awaited<ReturnType<typeof getElectronicsByIdOrSlug>> | ReturnType<
+    typeof getSampleListingBySlugOrId
+  > = null;
+  if (isSampleListingFixtureEnabled() && slug.startsWith("sample-")) {
+    listing = getSampleListingBySlugOrId(slug, "ELECTRONICS");
+  }
+  if (!listing && supabase) {
+    listing = await getElectronicsByIdOrSlug(supabase, slug);
+  }
   if (!listing) {
     listing = getSampleListingBySlugOrId(slug, "ELECTRONICS");
   }
