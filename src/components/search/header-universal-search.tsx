@@ -223,10 +223,12 @@ export function HeaderUniversalSearch({
   }
 
   function handleApplyFilters(filters: SmartFilterFormState) {
+    if (!allowNetworkAction()) return;
     setActiveTab(filters.vertical);
     if (filters.q?.trim()) {
       setQuery("");
     }
+    setFiltersOpen(false);
     const href = buildSmartFilterHref(filters);
     router.push(href);
   }
@@ -356,15 +358,11 @@ export function HeaderUniversalSearch({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              if (isHomeMarketplace) {
-                marketplaceFilter?.openHomeMarketplaceFilters();
-                return;
-              }
               setFiltersOpen(true);
             }}
             className="pressable shrink-0 rounded-full p-1.5 text-navy/60 hover:bg-navy/5 hover:text-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/60 sm:p-2"
-            title="Open Filters"
-            aria-label="Open filters"
+            title="Open Smart Filter Engine"
+            aria-label="Open smart filters"
           >
             <SlidersHorizontal className="h-4 w-4" />
           </button>

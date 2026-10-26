@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   SlidersHorizontal,
   X,
-  Check,
+  Search,
   Building2,
   Car,
   MapPin,
@@ -74,10 +74,7 @@ export function SearchContextFilters({
   }
 
   function handleReset() {
-    const reset = defaultSmartFilterState("all");
-    setForm(reset);
-    onApply(reset);
-    onClose();
+    setForm(defaultSmartFilterState(form.vertical));
   }
 
   function handleFormSubmit(e: React.FormEvent) {
@@ -119,6 +116,7 @@ export function SearchContextFilters({
           <div className="flex items-center gap-2">
             <button
               type="button"
+              data-testid="smart-filter-reset"
               onClick={handleReset}
               className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white/80 hover:bg-white/20"
             >
@@ -161,13 +159,20 @@ export function SearchContextFilters({
             })}
         </div>
 
-        <form onSubmit={handleFormSubmit} className="flex-1 space-y-4 overflow-y-auto p-5 text-xs">
+        <form
+          onSubmit={handleFormSubmit}
+          className="flex min-h-0 flex-1 flex-col text-xs"
+          aria-label="Smart filter search"
+        >
+          <div className="flex-1 space-y-4 overflow-y-auto p-5">
           <div className="space-y-2">
             <h4 className="font-black uppercase tracking-wider text-navy/50 dark:text-white/50">
               Keywords
             </h4>
             <input
               type="search"
+              name="q"
+              enterKeyHint="search"
               value={form.q ?? ""}
               onChange={(e) => setForm((f) => ({ ...f, q: e.target.value }))}
               placeholder="Search title, brand, model, area…"
@@ -459,14 +464,16 @@ export function SearchContextFilters({
               </div>
             </div>
           ) : null}
+          </div>
 
-          <div className="border-t border-slate-100 pt-3 dark:border-white/10">
+          <div className="shrink-0 border-t border-slate-100 bg-white p-4 dark:border-white/10 dark:bg-navy">
             <button
               type="submit"
-              className="pressable flex w-full items-center justify-center gap-2 rounded-2xl bg-[#031B4E] py-3.5 text-xs font-black text-white shadow-md hover:bg-navy/90 dark:bg-gold dark:text-navy"
+              data-testid="smart-filter-search-submit"
+              className="pressable flex w-full min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-[#031B4E] py-3.5 text-sm font-black text-white shadow-md hover:bg-navy/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/70 sm:min-h-[44px] dark:bg-gold dark:text-navy"
             >
-              <Check className="h-4 w-4" />
-              Apply filters & search
+              <Search className="h-4 w-4 shrink-0" aria-hidden />
+              Search
             </button>
           </div>
         </form>

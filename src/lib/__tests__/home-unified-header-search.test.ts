@@ -21,13 +21,13 @@ test("mobile header shows unified search pill by default", () => {
   assert.doesNotMatch(header, /Select filters below to search/);
 });
 
-test("header universal search opens homepage hero filters from sliders", () => {
+test("header universal search opens Smart Filter Engine from sliders", () => {
   const search = readFileSync(
     join(root, "src/components/search/header-universal-search.tsx"),
     "utf8",
   );
-  assert.match(search, /openHomeMarketplaceFilters/);
-  assert.match(search, /isHomeMarketplace/);
+  assert.match(search, /setFiltersOpen\(true\)/);
+  assert.match(search, /SearchContextFilters/);
   assert.match(search, /stopPropagation/);
 });
 
