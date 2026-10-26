@@ -68,7 +68,7 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "auto_category",
       label: "Vehicle / equipment type",
-      input: "select",
+      input: "searchable_select",
       required: true,
       dependsOn: { watch: [], optionsFrom: "vehicle.types" },
       submitKey: "auto_category",
@@ -76,7 +76,7 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "make",
       label: "Make / brand",
-      input: "select",
+      input: "searchable_select",
       required: true,
       dependsOn: { watch: [], optionsFrom: "vehicle.makes" },
       submitKey: "make",
@@ -84,7 +84,7 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "model",
       label: "Model",
-      input: "select",
+      input: "searchable_select",
       required: true,
       dependsOn: { watch: ["make"], optionsFrom: "vehicle.models_for_make", clearIfInvalid: true },
       submitKey: "model",
@@ -92,14 +92,15 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "year",
       label: "Year of manufacture",
-      input: "year",
+      input: "searchable_select",
+      dependsOn: { watch: [], optionsFrom: "vehicle.years" },
       validation: [{ type: "min", value: 1980 }, { type: "integer" }],
       submitKey: "year",
     },
     {
       id: "vehicle_condition",
       label: "Condition",
-      input: "select",
+      input: "confirm_chips",
       required: true,
       dependsOn: { watch: [], optionsFrom: "vehicle.condition" },
       submitKey: "vehicle_condition",
@@ -111,11 +112,11 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
       dependsOn: { watch: [], optionsFrom: "vehicle.seller_type" },
       submitKey: "seller_type",
     },
-    { id: "trim", label: "Trim", input: "text", placeholder: "XLE", submitKey: "trim" },
+    { id: "trim", label: "Trim", input: "text", placeholder: "XLE", advanced: true, submitKey: "trim" },
     {
       id: "transmission",
       label: "Transmission",
-      input: "select",
+      input: "confirm_chips",
       visible: { op: "equals", field: "auto_category", value: ROAD_MILEAGE_CATEGORIES },
       dependsOn: { watch: [], optionsFrom: "vehicle.transmission" },
       submitKey: "transmission",
@@ -123,15 +124,15 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "fuel_type",
       label: "Fuel / power type",
-      input: "select",
+      input: "confirm_chips",
       dependsOn: { watch: [], optionsFrom: "vehicle.fuel_type" },
       submitKey: "fuel_type",
     },
     {
       id: "mileage",
-      label: "Mileage (km)",
-      input: "number",
-      validation: [{ type: "min", value: 0 }],
+      label: "Mileage",
+      input: "searchable_select",
+      dependsOn: { watch: [], optionsFrom: "vehicle.mileage_presets" },
       visible: { op: "equals", field: "auto_category", value: ROAD_MILEAGE_CATEGORIES },
       submitKey: "mileage",
     },
@@ -139,6 +140,7 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
       id: "engine_capacity",
       label: "Engine capacity (cc/L)",
       input: "text",
+      advanced: true,
       visible: {
         op: "equals",
         field: "auto_category",
@@ -155,7 +157,13 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
       visible: { op: "equals", field: "auto_category", value: VIN_ELIGIBLE_CATEGORIES },
       submitKey: "vin",
     },
-    { id: "exterior_color", label: "Exterior color", input: "text", submitKey: "exterior_color" },
+    {
+      id: "exterior_color",
+      label: "Exterior color",
+      input: "text",
+      advanced: true,
+      submitKey: "exterior_color",
+    },
     {
       id: "interior_color",
       label: "Interior color",
@@ -167,7 +175,7 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "body_type",
       label: "Body style",
-      input: "select",
+      input: "confirm_chips",
       visible: { op: "equals", field: "auto_category", value: ROAD_BODY },
       dependsOn: { watch: [], optionsFrom: "vehicle.body_type" },
       submitKey: "body_type",
@@ -181,7 +189,14 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
       dependsOn: { watch: [], optionsFrom: "vehicle.drivetrain" },
       submitKey: "drivetrain",
     },
-    { id: "engine", label: "Engine / power spec", input: "text", placeholder: "2.5L or 150 kVA", submitKey: "engine" },
+    {
+      id: "engine",
+      label: "Engine / power spec",
+      input: "text",
+      placeholder: "2.5L or 150 kVA",
+      advanced: true,
+      submitKey: "engine",
+    },
     {
       id: "vehicle_class",
       label: "Vehicle class / intended use",
@@ -311,7 +326,7 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "state",
       label: "State",
-      input: "select",
+      input: "searchable_select",
       required: true,
       dependsOn: { watch: [], optionsFrom: "property.states" },
       submitKey: "state",
@@ -319,7 +334,7 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "city",
       label: "City",
-      input: "select",
+      input: "searchable_select",
       required: true,
       dependsOn: { watch: ["state"], optionsFrom: "property.cities_for_state", clearIfInvalid: true },
       submitKey: "city",
@@ -327,7 +342,7 @@ export const VEHICLE_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "area",
       label: "Area",
-      input: "select",
+      input: "searchable_select",
       dependsOn: { watch: ["city"], optionsFrom: "property.areas_for_city", clearIfInvalid: false },
       submitKey: "area",
     },

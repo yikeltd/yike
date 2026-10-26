@@ -1,6 +1,7 @@
 "use client";
 
 import type { FieldOption, ListingFieldDef } from "@/lib/listing-engine";
+import { ListingSearchableSelect } from "@/components/listing-engine/listing-searchable-select";
 import { cn } from "@/lib/utils";
 
 const inputClass =
@@ -104,6 +105,54 @@ export function FieldRenderer({
             );
           })}
         </div>
+        {suggestionChips}
+        {err}
+      </div>
+    );
+  }
+
+  if (field.input === "searchable_select") {
+    const disabled = options.length === 0 && !value;
+    return (
+      <div
+        className={
+          field.id === "auto_category" ||
+          field.id === "brand" ||
+          field.id === "model" ||
+          field.id === "property_type"
+            ? "sm:col-span-2"
+            : undefined
+        }
+      >
+        {label}
+        {disabled && field.id === "brand" ? (
+          <p className="mb-2 text-xs text-navy/55">Choose a product category first.</p>
+        ) : null}
+        {disabled && field.id === "model" ? (
+          <p className="mb-2 text-xs text-navy/55">Choose a brand first, or enter a custom model.</p>
+        ) : null}
+        <ListingSearchableSelect
+          id={`le-${field.id}`}
+          value={String(value ?? "")}
+          options={options}
+          placeholder={field.placeholder ?? `Search ${field.label.toLowerCase()}`}
+          label={field.label}
+          allowCustom={
+            field.id === "brand" ||
+            field.id === "model" ||
+            field.id === "area" ||
+            field.id === "mileage"
+          }
+          customHint={
+            field.id === "brand"
+              ? "Type a brand not listed"
+              : field.id === "model"
+                ? "Type model / variant not listed"
+                : "Enter manually"
+          }
+          disabled={disabled && field.id !== "brand" && field.id !== "model"}
+          onChange={(v) => onChange(v)}
+        />
         {suggestionChips}
         {err}
       </div>

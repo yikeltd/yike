@@ -6,6 +6,7 @@ import { PROPERTY_CATEGORIES } from "@/constants/propertyCategories";
 import { LISTING_TYPES } from "@/constants/listingTypes";
 import { NIGERIAN_STATES } from "@/constants/nigeriaLocations";
 import { ELECTRONICS_CATEGORIES } from "@/lib/marketplace/electronics-specs";
+import { resolveElectronicsBrandFromAlias } from "../catalogues/electronics-taxonomy";
 import {
   VEHICLE_MAKE_TYPES,
   VEHICLE_MAKES,
@@ -354,7 +355,10 @@ export function parseListingText(
         confidence: known ? "high" : "medium",
       });
     }
-    const brand = findElectronicsBrand(trimmed);
+    const catId = String(values.auto_category ?? parseElectronicsCategory(trimmed) ?? "");
+    const brand =
+      findElectronicsBrand(trimmed) ||
+      (catId ? resolveElectronicsBrandFromAlias(catId, trimmed) : null);
     if (brand) {
       fields.push({ fieldId: "brand", value: brand, confidence: "high", label: brand });
     }

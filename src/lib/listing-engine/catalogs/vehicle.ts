@@ -10,6 +10,16 @@ import {
 import { VEHICLE_MAKES, typesForMake } from "@/lib/marketplace/vehicle-makes";
 import type { FieldOption } from "../types";
 import type { CatalogMap } from "./types";
+import { vehicleYearOptions } from "../catalogues/spec-presets";
+
+const MILEAGE_BUCKETS: FieldOption[] = [
+  { value: "10000", label: "Under 25,000 km" },
+  { value: "40000", label: "25,000 – 50,000 km" },
+  { value: "75000", label: "50,000 – 100,000 km" },
+  { value: "125000", label: "100,000 – 150,000 km" },
+  { value: "175000", label: "150,000 – 200,000 km" },
+  { value: "250000", label: "200,000+ km" },
+];
 
 function specOptions(key: string): FieldOption[] {
   const field = VEHICLE_SPEC_FIELDS.find((f) => f.key === key);
@@ -32,4 +42,6 @@ export const VEHICLE_CATALOGS: CatalogMap = {
   "vehicle.body_type": () => specOptions("body_type"),
   "vehicle.drivetrain": () => specOptions("drivetrain"),
   "vehicle.registration_status": () => specOptions("registration_status"),
+  "vehicle.years": () => vehicleYearOptions(1980),
+  "vehicle.mileage_presets": () => MILEAGE_BUCKETS,
 };

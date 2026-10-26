@@ -11,10 +11,14 @@
 import { createKnowledgeFacade } from "@/lib/yip/knowledge";
 import { buildCatalogMapFromKnowledge } from "@/lib/yip/knowledge/to-catalog-map";
 import type { CatalogMap } from "./types";
+import { CATALOG_REGISTRY } from "./registry";
 
 const knowledge = createKnowledgeFacade();
 
-/** Same catalog ids/shape as `CATALOG_REGISTRY`, resolved via YIP knowledge. Not wired into `MetadataResolver` yet. */
+/** YIP knowledge catalogs merged with engine registry (registry wins on id conflicts). */
 export function getListingCatalogsFromYip(): CatalogMap {
-  return buildCatalogMapFromKnowledge(knowledge);
+  return {
+    ...buildCatalogMapFromKnowledge(knowledge),
+    ...CATALOG_REGISTRY,
+  };
 }

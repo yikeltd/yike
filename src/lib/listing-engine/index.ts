@@ -145,3 +145,9 @@ export {
   type InferenceApplyResult,
   type ParsedFieldSuggestion,
 } from "./intelligence";
+export { catalogueCoverageReports } from "./catalogues/coverage";
+export {
+  computeSelectionCompletion,
+  representativeListingValues,
+  type SelectionCompletionReport,
+} from "./selection-completion";
