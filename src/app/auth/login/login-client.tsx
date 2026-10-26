@@ -293,6 +293,7 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
         title={usePin ? undefined : "Welcome Back"}
         compact
         centered
+        logoShowText={false}
         belowLegal={belowLegal}
         footer={
           !usePin ? (

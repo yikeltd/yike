@@ -4,7 +4,7 @@ test.describe("Signup form hardening", () => {
   test("keeps submit disabled until the form passes local gates", async ({ page }) => {
     await page.goto("http://localhost:3000/auth/signup");
 
-    await expect(page.getByRole("heading", { name: /welcome to yike/i })).toBeVisible();
+    await expect(page.getByText(/create your account in under a minute/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /create account/i })).toBeDisabled();
   });
 

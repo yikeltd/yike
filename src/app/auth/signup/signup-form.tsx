@@ -325,10 +325,10 @@ export function SignupForm({
     <>
       {!redirectingAfterVerify && (
         <AuthShell
-          title="Welcome to Yike"
           subtitle="Create your account in under a minute."
           compact
           centered
+          logoShowText={false}
           footer={
             <p className="text-sm text-muted">
               Already have an account?{" "}
