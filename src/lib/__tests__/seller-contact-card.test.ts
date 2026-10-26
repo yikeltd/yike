@@ -58,6 +58,23 @@ test("sellerContactCardFromListing omits trust score when performance_score miss
   const card = sellerContactCardFromListing(minimalListing(), "VEHICLE");
   assert.ok(card);
   assert.equal(card!.trustScoreLabel, null);
+  assert.equal(card!.profileHeadline, "Seller on Yike");
+});
+
+test("verified agent gets reference profile headline and trust score from data", () => {
+  const listing = minimalListing({
+    agent: {
+      id: "agent-1",
+      full_name: "Emeka Seller",
+      verified_badge: true,
+      performance_score: 95,
+      inquiry_count: 0,
+    } as Property["agent"],
+  });
+  const card = sellerContactCardFromListing(listing, "ELECTRONICS");
+  assert.ok(card);
+  assert.equal(card!.profileHeadline, "Verified Nigerian Seller");
+  assert.equal(card!.trustScoreLabel, "95 / 100 Trust Score");
 });
 
 test("marketplace seller contact card omits duplicate Message and Call actions", () => {

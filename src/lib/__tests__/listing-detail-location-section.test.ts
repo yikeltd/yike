@@ -34,8 +34,7 @@ test("location section component has no map imagery", () => {
   );
   assert.doesNotMatch(src, /next\/image|<Image|unsplash|iframe|google\.maps/i);
   assert.match(src, /listing-detail-location-section/);
-  assert.match(src, /Exact address disclosed after contact/);
-  assert.match(src, /showExactAddressPrivacyNote/);
+  assert.doesNotMatch(src, /Exact address disclosed after contact/);
 });
 
 test("detail experiences use compact location section before seller card", () => {

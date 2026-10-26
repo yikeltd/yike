@@ -21,6 +21,14 @@ async function assertDetailContactLayout(page: import("@playwright/test").Page) 
   const locationSection = page.getByTestId("listing-detail-location-section");
   await expect(locationSection).toBeVisible();
   await expect(locationSection.locator("img")).toHaveCount(0);
+  await expect(page.getByText(/Exact address disclosed after contact/i)).toHaveCount(0);
+
+  await expect(page.getByTestId("seller-panel-divider")).toBeVisible();
+  await expect(
+    page
+      .getByTestId("marketplace-seller-contact-card")
+      .getByRole("heading", { level: 2 }),
+  ).toBeVisible();
 
   const galleryBox = await galleryContact.boundingBox();
   const locationBox = await locationSection.boundingBox();

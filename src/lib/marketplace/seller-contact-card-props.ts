@@ -9,6 +9,8 @@ export type SellerContactCardIdentity = {
   assetType: MarketplaceAssetType;
   sellerId: string;
   sellerName: string;
+  /** Listing detail headline — verified trust label vs generic seller label. */
+  profileHeadline: string;
   sellerAvatar?: string | null;
   verified: boolean;
   roleLabel: string;
@@ -45,6 +47,10 @@ function responseLabelFromAgent(agent: NonNullable<Property["agent"]>): string |
     return "Usually responds quickly";
   }
   return null;
+}
+
+export function sellerProfileHeadline(verified: boolean): string {
+  return verified ? "Verified Nigerian Seller" : "Seller on Yike";
 }
 
 export function sellerContactCardFromListing(
@@ -88,6 +94,7 @@ export function sellerContactCardFromListing(
     assetType,
     sellerId,
     sellerName,
+    profileHeadline: sellerProfileHeadline(verified),
     sellerAvatar: agent?.avatar_url ?? null,
     verified,
     roleLabel,

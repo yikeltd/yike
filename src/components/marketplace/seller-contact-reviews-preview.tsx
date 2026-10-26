@@ -19,27 +19,25 @@ type PreviewPayload = {
   reviews: PreviewReview[];
 };
 
-function formatRelativeTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  const diff = Date.now() - then;
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days < 1) return "Today";
-  if (days === 1) return "1 day ago";
-  if (days < 14) return `${days} days ago`;
-  const weeks = Math.floor(days / 7);
-  if (weeks < 8) return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
-  const months = Math.floor(days / 30);
-  return `${months} month${months === 1 ? "" : "s"} ago`;
+function formatReviewDate(iso: string): string {
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return "";
+  return then.toLocaleDateString("en-NG", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-function Stars({ rating }: { rating: number }) {
+function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "lg" }) {
+  const iconClass = size === "lg" ? "h-4 w-4" : "h-3.5 w-3.5";
   return (
     <span className="inline-flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
           className={cn(
-            "h-3.5 w-3.5",
+            iconClass,
             i <= rating ? "fill-gold text-gold" : "text-navy/15 dark:text-white/15",
           )}
           aria-hidden
@@ -49,20 +47,70 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
+function ReviewsHeader({
+  total,
+  showViewAll,
+  reviewsHref,
+  variant,
+}: {
+  total?: number;
+  showViewAll: boolean;
+  reviewsHref: string | null;
+  variant: "default" | "listingDetail";
+}) {
+  const isDetail = variant === "listingDetail";
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h4
+        className={cn(
+          "font-black text-navy dark:text-white",
+          isDetail ? "text-lg sm:text-xl" : "text-sm",
+        )}
+      >
+        Reviews &amp; feedback{" "}
+        {typeof total === "number" && total > 0 ? (
+          <span
+            className={cn(
+              "font-bold",
+              isDetail ? "text-slate-500 dark:text-slate-400" : "text-navy/45 dark:text-white/45",
+            )}
+          >
+            ({total})
+          </span>
+        ) : null}
+      </h4>
+      {showViewAll && reviewsHref ? (
+        <Link
+          href={reviewsHref}
+          className={cn(
+            "inline-flex shrink-0 items-center gap-0.5 font-bold text-navy/70 hover:text-navy dark:text-white/70 dark:hover:text-white",
+            isDetail ? "text-sm" : "text-xs",
+          )}
+        >
+          View all
+          <ChevronRight className="h-4 w-4" aria-hidden />
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
 export function SellerContactReviewsPreview({
   sellerId,
   profileHref,
   className,
   showEmptyState = false,
+  variant = "default",
 }: {
   sellerId: string;
   profileHref: string;
   className?: string;
-  /** When true, show honest empty copy after load if there are no reviews. */
   showEmptyState?: boolean;
+  variant?: "default" | "listingDetail";
 }) {
   const [data, setData] = useState<PreviewPayload | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const isDetail = variant === "listingDetail";
 
   useEffect(() => {
     let cancelled = false;
@@ -86,29 +134,26 @@ export function SellerContactReviewsPreview({
   }, [sellerId]);
 
   if (!loaded) {
-    return null;
+    return isDetail ? (
+      <div className={cn("space-y-4", className)} data-testid="seller-reviews-loading">
+        <ReviewsHeader showViewAll={false} reviewsHref={null} variant={variant} />
+        <p className="text-sm text-navy/45 dark:text-white/45">Loading reviews…</p>
+      </div>
+    ) : null;
   }
 
   const total = data?.stats.total ?? 0;
   const reviews = data?.reviews ?? [];
   const reviewsHref =
     profileHref?.startsWith("/agents/") ? `${profileHref}#reviews` : null;
-  const showViewAll = Boolean(reviewsHref && total > reviews.length);
+  const showViewAll = Boolean(reviewsHref && total > 0);
 
   if (total === 0 || reviews.length === 0) {
     if (!showEmptyState) return null;
     return (
-      <div
-        className={cn(
-          "space-y-2 border-t border-navy/10 pt-5 dark:border-white/10",
-          className,
-        )}
-        data-testid="seller-reviews-empty"
-      >
-        <h4 className="text-sm font-black text-navy dark:text-white">
-          Reviews &amp; feedback
-        </h4>
-        <p className="text-xs font-medium leading-relaxed text-navy/55 dark:text-white/55">
+      <div className={cn("space-y-3", className)} data-testid="seller-reviews-empty">
+        <ReviewsHeader showViewAll={false} reviewsHref={null} variant={variant} />
+        <p className="text-sm font-medium leading-relaxed text-navy/55 dark:text-white/55">
           No published reviews for this seller yet.
         </p>
       </div>
@@ -116,43 +161,41 @@ export function SellerContactReviewsPreview({
   }
 
   return (
-    <div
-      className={cn(
-        "space-y-3.5 border-t border-navy/10 pt-5 dark:border-white/10",
-        className,
-      )}
-      data-testid="seller-reviews-preview"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="text-sm font-black text-navy dark:text-white">
-          Reviews &amp; feedback{" "}
-          <span className="font-bold text-navy/45 dark:text-white/45">({total})</span>
-        </h4>
-        {showViewAll ? (
-          <Link
-            href={reviewsHref!}
-            className="inline-flex items-center gap-0.5 text-xs font-bold text-navy/70 hover:text-navy dark:text-white/70 dark:hover:text-white"
-          >
-            View all
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-          </Link>
-        ) : null}
-      </div>
+    <div className={cn("space-y-4", className)} data-testid="seller-reviews-preview">
+      <ReviewsHeader
+        total={total}
+        showViewAll={showViewAll}
+        reviewsHref={reviewsHref}
+        variant={variant}
+      />
 
-      <div className="flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {reviews.map((review) => {
+      <div
+        className={cn(
+          isDetail
+            ? "flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory [scrollbar-width:none] md:grid md:grid-cols-3 md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
+            : "flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        )}
+      >
+        {reviews.slice(0, 3).map((review) => {
           const name = review.reviewer?.full_name?.trim() || "Buyer";
-          const snippet =
-            review.body.length > 140
-              ? `${review.body.slice(0, 137).trim()}…`
-              : review.body;
+          const body = review.body.trim();
           return (
             <article
               key={review.id}
-              className="min-w-[210px] max-w-[240px] shrink-0 rounded-2xl border border-navy/8 bg-slate-50/80 p-3.5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+              className={cn(
+                "snap-start border border-slate-200/90 bg-white dark:border-white/10 dark:bg-white/[0.03]",
+                isDetail
+                  ? "min-w-[85%] shrink-0 rounded-2xl p-4 shadow-[0_2px_12px_-6px_rgba(3,27,78,0.12)] sm:min-w-[72%] md:min-w-0 md:shrink"
+                  : "min-w-[210px] max-w-[240px] shrink-0 rounded-2xl border-navy/8 bg-slate-50/80 p-3.5 shadow-sm dark:bg-white/[0.04]",
+              )}
             >
-              <div className="flex items-center gap-2.5">
-                <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-navy/8 bg-navy/5">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "relative shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-navy/20",
+                    isDetail ? "h-11 w-11" : "h-9 w-9",
+                  )}
+                >
                   {review.reviewer?.avatar_url ? (
                     <Image
                       src={review.reviewer.avatar_url}
@@ -161,23 +204,33 @@ export function SellerContactReviewsPreview({
                       className="object-cover"
                     />
                   ) : (
-                    <User className="m-auto h-4 w-4 text-navy/40" aria-hidden />
+                    <User className="m-auto h-5 w-5 text-navy/40" aria-hidden />
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-bold text-navy dark:text-white">
+                  <p
+                    className={cn(
+                      "truncate font-bold text-navy dark:text-white",
+                      isDetail ? "text-sm" : "text-xs",
+                    )}
+                  >
                     {name}
                   </p>
-                  <p className="text-[10px] font-medium text-navy/50 dark:text-white/50">
-                    {formatRelativeTime(review.created_at)}
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-white/50">
+                    {formatReviewDate(review.created_at)}
                   </p>
                 </div>
               </div>
-              <div className="mt-2.5">
-                <Stars rating={review.rating} />
+              <div className="mt-3">
+                <Stars rating={review.rating} size={isDetail ? "lg" : "sm"} />
               </div>
-              <p className="mt-2 text-[11px] leading-snug text-navy/75 dark:text-white/75">
-                {snippet}
+              <p
+                className={cn(
+                  "mt-2.5 leading-relaxed text-navy/80 dark:text-white/80",
+                  isDetail ? "text-sm line-clamp-5" : "text-[11px] leading-snug",
+                )}
+              >
+                {body}
               </p>
             </article>
           );

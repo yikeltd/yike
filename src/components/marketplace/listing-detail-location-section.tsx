@@ -13,11 +13,6 @@ type Props = {
   locationLabel: string;
   title?: string;
   className?: string;
-  /**
-   * When true, show copy that full address is shared after contact.
-   * Use only when the page shows locality (not street address).
-   */
-  showExactAddressPrivacyNote?: boolean;
 };
 
 /** Compact location block — no map imagery or coordinates. */
@@ -25,7 +20,6 @@ export function ListingDetailLocationSection({
   locationLabel,
   title = "Location & Neighborhood",
   className,
-  showExactAddressPrivacyNote = true,
 }: Props) {
   const label = locationLabel.trim();
   if (!label) return null;
@@ -46,11 +40,6 @@ export function ListingDetailLocationSection({
       <p className="mt-2 text-sm font-semibold leading-snug text-navy dark:text-white">
         {label}
       </p>
-      {showExactAddressPrivacyNote ? (
-        <p className="mt-1.5 text-[11px] font-medium leading-snug text-emerald-700 dark:text-emerald-400">
-          Exact address disclosed after contact
-        </p>
-      ) : null}
     </section>
   );
 }

@@ -23,6 +23,9 @@ test("seller contact card does not embed Message and Call actions", () => {
   assert.doesNotMatch(card, /SellerMessageCallActions/);
   assert.doesNotMatch(section, /SellerMessageCallActions/);
   assert.match(section, /variant="listingDetail"/);
+  assert.match(card, /ListingDetailSellerPanel/);
+  assert.match(card, /seller-panel-divider/);
+  assert.match(card, /profileHeadline/);
   assert.match(card, /SellerContactReviewsPreview/);
   const reviews = readFileSync(
     join(root, "components/marketplace/seller-contact-reviews-preview.tsx"),
