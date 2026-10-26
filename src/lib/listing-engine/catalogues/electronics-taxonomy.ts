@@ -145,6 +145,37 @@ const generatorModels: Record<string, CatalogueEntry[]> = {
   ],
 };
 
+const tvModels: Record<string, CatalogueEntry[]> = {
+  Samsung: [
+    { id: "55\" Crystal UHD", label: "55\" Crystal UHD" },
+    { id: "43\" Smart TV", label: "43\" Smart TV" },
+  ],
+  LG: [
+    { id: "55\" OLED C3", label: "55\" OLED C3" },
+    { id: "50\" UHD", label: "50\" UHD" },
+  ],
+  Hisense: [{ id: "55\" ULED", label: "55\" ULED" }],
+  TCL: [{ id: "55\" 4K Google TV", label: "55\" 4K Google TV" }],
+};
+
+const applianceModels: Record<string, CatalogueEntry[]> = {
+  LG: [
+    { id: "LG 450L Double Door", label: "LG 450L Double Door" },
+    { id: "LG 350L Top Freezer", label: "LG 350L Top Freezer" },
+    { id: "LG 7kg Front Load", label: "LG 7kg Front Load" },
+  ],
+  Samsung: [
+    { id: "Samsung 420L Fridge", label: "Samsung 420L Fridge" },
+    { id: "Samsung 8kg Washer", label: "Samsung 8kg Washer" },
+  ],
+  "Haier Thermocool": [
+    { id: "Front Load 7kg", label: "Front Load 7kg" },
+    { id: "Thermocool 350L Fridge", label: "Thermocool 350L Fridge" },
+  ],
+  Hisense: [{ id: "Hisense 350L Fridge", label: "Hisense 350L Fridge" }],
+  Binatone: [{ id: "Binatone Blender Pro", label: "Binatone Blender Pro" }],
+};
+
 export const ELECTRONICS_MODELS_BY_CATEGORY: Record<
   string,
   Record<string, readonly CatalogueEntry[]>
@@ -154,6 +185,9 @@ export const ELECTRONICS_MODELS_BY_CATEGORY: Record<
   gaming: computerModels,
   generators: generatorModels,
   inverters_batteries: generatorModels,
+  tv_audio: tvModels,
+  refrigerators_freezers: applianceModels,
+  home_appliances: applianceModels,
 };
 
 export function electronicsBrandsForCategory(categoryId: string): FieldOption[] {

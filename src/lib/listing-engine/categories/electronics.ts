@@ -58,7 +58,7 @@ export const ELECTRONICS_CATEGORY_MANIFEST: CategoryManifest = {
       dependsOn: {
         watch: ["auto_category"],
         optionsFrom: "electronics.brands_for_category",
-        clearIfInvalid: false,
+        clearIfInvalid: true,
       },
       submitKey: "brand",
     },

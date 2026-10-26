@@ -1,0 +1,85 @@
+import { test, expect } from "@playwright/test";
+import {
+  agentAuthReady,
+  agentAuthStatus,
+  createLoggedInAgentContext,
+  disposeAuthenticatedAgent,
+  provisionAuthenticatedAgent,
+  type AuthenticatedAgent,
+} from "./helpers/authenticated-agent";
+
+test.describe.configure({ timeout: 180_000 });
+
+test.describe("Authenticated seller listing journey", () => {
+  let agent: AuthenticatedAgent | null = null;
+
+  test.beforeAll(async () => {
+    if (!agentAuthReady()) return;
+    agent = await provisionAuthenticatedAgent();
+  });
+
+  test.afterAll(async () => {
+    await disposeAuthenticatedAgent(agent);
+  });
+
+  test.beforeEach(() => {
+    test.skip(!agentAuthReady(), agentAuthStatus().reason);
+    test.skip(!agent, "Could not provision test agent");
+  });
+
+  test("electronics — category chooser, smart describe, draft restore", async ({
+    browser,
+  }, testInfo) => {
+    const context = await createLoggedInAgentContext(browser, agent as AuthenticatedAgent);
+    const page = await context.newPage();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/agent/listings/choose", { waitUntil: "domcontentloaded" });
+    await expect(page).not.toHaveURL(/\/auth\/login/);
+
+    await page.getByRole("link", { name: /electronics/i }).first().click();
+    await expect(page).toHaveURL(/\/agent\/listings\/new\/electronics/);
+
+    await expect(page.locator("#le-smart-describe")).toBeVisible({ timeout: 20_000 });
+
+    await page.locator("#le-smart-describe").fill(
+      "Samsung Galaxy A54 128GB foreign used Lagos Ikeja 680k",
+    );
+
+    await page.waitForTimeout(800);
+
+    const titleInput = page.locator("#le-title");
+    if (await titleInput.isVisible()) {
+      await expect(titleInput).not.toHaveValue("", { timeout: 10_000 });
+    }
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator("#le-smart-describe")).toBeVisible({ timeout: 20_000 });
+
+    await page.screenshot({
+      path: testInfo.outputPath("electronics-seller-journey-mobile.png"),
+      fullPage: true,
+    });
+
+    await context.close();
+  });
+
+  test("property + vehicle wizards load on desktop", async ({ browser }, testInfo) => {
+    const context = await createLoggedInAgentContext(browser, agent as AuthenticatedAgent);
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 900 });
+
+    for (const path of ["/agent/listings/new/property", "/agent/listings/new/vehicle"]) {
+      await page.goto(path, { waitUntil: "domcontentloaded" });
+      await expect(page).not.toHaveURL(/\/auth\/login/);
+      await expect(page.locator("#le-smart-describe")).toBeVisible({ timeout: 20_000 });
+    }
+
+    await page.screenshot({
+      path: testInfo.outputPath("property-vehicle-wizard-desktop.png"),
+      fullPage: true,
+    });
+
+    await context.close();
+  });
+});

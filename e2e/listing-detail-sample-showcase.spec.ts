@@ -11,8 +11,8 @@ async function assertSellerPanel(
   expectReviews: boolean,
 ) {
   const sellerCard = page.getByTestId("marketplace-seller-contact-card");
-  await sellerCard.scrollIntoViewIfNeeded();
   await expect(sellerCard).toBeVisible({ timeout: 20_000 });
+  await sellerCard.scrollIntoViewIfNeeded();
   await expect(sellerCard.getByRole("button", { name: /Message/i })).toHaveCount(0);
 
   const box = await sellerCard.boundingBox();

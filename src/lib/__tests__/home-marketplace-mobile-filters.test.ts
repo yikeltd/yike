@@ -7,11 +7,11 @@ import {
   VEHICLE_HOME_SEARCH_CATEGORIES,
   resolveVehicleCategoryFilter,
   isPersistedVehicleCategory,
+  vehicleHomeSearchCategorySelectOptions,
 } from "@/lib/marketplace/vehicle-taxonomy";
 import { ELECTRONICS_CATEGORIES } from "@/lib/marketplace/electronics-specs";
 import { PROPERTY_CATEGORIES } from "@/constants/propertyCategories";
 import { propertyTypesForListingType } from "@/constants/listingTypes";
-import { vehiclePrimaryCategorySelectOptions } from "@/lib/marketplace/vehicle-specs";
 import { vehicleCategoryLabel } from "@/lib/marketplace/vehicle-specs";
 import { valuesToVehiclePayload } from "@/lib/listing-engine/adapters/vehicle";
 
@@ -78,14 +78,17 @@ test("vehicle primary marketplace categories (five road types)", () => {
   }
 });
 
-test("listing engine vehicle.types uses primary marketplace catalog", () => {
+test("listing engine vehicle.types uses expanded home search category SSOT", () => {
   const catalog = readFileSync(
     join(process.cwd(), "src/lib/listing-engine/catalogs/vehicle.ts"),
     "utf8",
   );
-  assert.match(catalog, /vehiclePrimaryCategorySelectOptions/);
-  const options = vehiclePrimaryCategorySelectOptions();
-  assert.equal(options.length, 5);
+  assert.match(catalog, /vehicleHomeSearchCategorySelectOptions/);
+  const options = vehicleHomeSearchCategorySelectOptions().filter(
+    (o): o is { value: string; label: string } => "value" in o,
+  );
+  assert.ok(options.length > 5);
+  assert.ok(options.some((o) => o.value === "pickup_van"));
 });
 
 test("property and electronics category SSOT align with listing catalogs", () => {

@@ -1,11 +1,12 @@
 /**
- * Measures how much of a listing form can be completed via catalogue-driven inputs
- * (select, searchable_select, chips) vs free typing (text, textarea, currency).
+ * Measures catalogue availability vs actual selection completion (no manual typing).
  */
 import type { CategoryManifest, ListingFieldDef, ListingValues } from "./types";
 import { MetadataResolver } from "./resolver";
+import { getOptionsForField } from "./dependency";
 import type { CatalogMap } from "./catalogs/types";
 import { NAMED_VISIBILITY_RULES } from "./rules/registry";
+export { representativeListingValues } from "./listing-scenarios";
 
 const CATALOG_INPUTS = new Set([
   "select",
@@ -34,12 +35,26 @@ export type SelectionCompletionReport = {
   visibleFieldCount: number;
   catalogFieldCount: number;
   typingFieldCount: number;
-  /** Share of visible fields that are catalogue-driven (target ≥ 0.8). */
+  /** Share of applicable fields whose input type is catalogue-driven (not selection success). */
   catalogFieldRatio: number;
   filledCount: number;
   filledViaCatalogCapableCount: number;
-  /** Of filled fields, share that could be set without typing (catalog-capable types). */
+  /** Of filled fields, share that use catalogue-capable input types (legacy metric). */
   filledCatalogCapableRatio: number;
+  /** Applicable catalogue fields with a connected provider / static options. */
+  catalogConnectedCount: number;
+  catalogAvailabilityRatio: number;
+  /** Applicable catalogue fields with ≥1 resolved option for current values. */
+  catalogUsableCount: number;
+  catalogUsableRatio: number;
+  /** Filled catalogue fields whose value matches a resolved catalogue option. */
+  selectedViaCatalogCount: number;
+  selectionCompletionRatio: number;
+  requiredApplicableCount: number;
+  requiredSelectionCompletionRatio: number;
+  optionalApplicableCount: number;
+  optionalSelectionCompletionRatio: number;
+  manualEntryFieldIds: string[];
   typingFieldIds: string[];
   catalogFieldIds: string[];
 };
@@ -50,6 +65,51 @@ function isFilled(value: unknown): boolean {
   if (typeof value === "number") return Number.isFinite(value);
   if (Array.isArray(value)) return value.length > 0;
   return true;
+}
+
+function isCatalogConnected(field: ListingFieldDef, catalogs: CatalogMap): boolean {
+  if (field.options?.length) return true;
+  const from = field.dependsOn?.optionsFrom;
+  if (from) return Boolean(catalogs[from]);
+  if (field.suggestion?.type === "catalog") return Boolean(catalogs[field.suggestion.id]);
+  if (field.suggestion?.type === "static") return field.suggestion.options.length > 0;
+  return CATALOG_INPUTS.has(field.input);
+}
+
+function valueMatchesCatalogOption(
+  field: ListingFieldDef,
+  value: unknown,
+  options: { value: string; label: string }[],
+): boolean {
+  if (!isFilled(value)) return false;
+  if (field.input === "multiselect") {
+    const selected = Array.isArray(value) ? (value as string[]) : [];
+    if (selected.length === 0) return false;
+    const allowed = new Set(options.map((o) => String(o.value)));
+    return selected.every((v) => allowed.has(String(v)));
+  }
+  if (field.input === "boolean") {
+    return value === true || value === "on" || value === "true" || value === false || value === "";
+  }
+  return options.some((o) => String(o.value) === String(value));
+}
+
+function ratio(num: number, den: number): number {
+  return den > 0 ? num / den : 0;
+}
+
+function selectionRatioForFields(
+  fields: ListingFieldDef[],
+  values: ListingValues,
+  catalogs: CatalogMap,
+): number {
+  const catalogFields = fields.filter((f) => CATALOG_INPUTS.has(f.input));
+  const filled = catalogFields.filter((f) => isFilled(values[f.id]));
+  const selected = filled.filter((f) => {
+    const options = getOptionsForField(f, values, catalogs);
+    return valueMatchesCatalogOption(f, values[f.id], options);
+  });
+  return ratio(selected.length, filled.length);
 }
 
 export function computeSelectionCompletion(
@@ -75,6 +135,27 @@ export function computeSelectionCompletion(
   const filled = applicable.filter((f) => isFilled(values[f.id]));
   const filledCatalogCapable = filled.filter((f) => CATALOG_INPUTS.has(f.input));
 
+  const connectedCatalog = catalogFields.filter((f) => isCatalogConnected(f, catalogs));
+  const usableCatalog = catalogFields.filter((f) => {
+    if (!isCatalogConnected(f, catalogs)) return false;
+    return getOptionsForField(f, values, catalogs).length > 0;
+  });
+
+  const filledCatalog = catalogFields.filter((f) => isFilled(values[f.id]));
+  const selectedViaCatalog = filledCatalog.filter((f) => {
+    const options = getOptionsForField(f, values, catalogs);
+    return valueMatchesCatalogOption(f, values[f.id], options);
+  });
+  const manualEntryFieldIds = filledCatalog
+    .filter((f) => {
+      const options = getOptionsForField(f, values, catalogs);
+      return !valueMatchesCatalogOption(f, values[f.id], options);
+    })
+    .map((f) => f.id);
+
+  const requiredApplicable = applicable.filter((f) => f.required);
+  const optionalApplicable = applicable.filter((f) => !f.required);
+
   const visibleFieldCount = applicable.length;
   const catalogFieldCount = catalogFields.length;
 
@@ -83,66 +164,30 @@ export function computeSelectionCompletion(
     visibleFieldCount,
     catalogFieldCount,
     typingFieldCount: typingFields.length,
-    catalogFieldRatio:
-      visibleFieldCount > 0 ? catalogFieldCount / visibleFieldCount : 0,
+    catalogFieldRatio: ratio(catalogFieldCount, visibleFieldCount),
     filledCount: filled.length,
     filledViaCatalogCapableCount: filledCatalogCapable.length,
-    filledCatalogCapableRatio:
-      filled.length > 0 ? filledCatalogCapable.length / filled.length : 0,
+    filledCatalogCapableRatio: ratio(filledCatalogCapable.length, filled.length),
+    catalogConnectedCount: connectedCatalog.length,
+    catalogAvailabilityRatio: ratio(connectedCatalog.length, catalogFieldCount),
+    catalogUsableCount: usableCatalog.length,
+    catalogUsableRatio: ratio(usableCatalog.length, catalogFieldCount),
+    selectedViaCatalogCount: selectedViaCatalog.length,
+    selectionCompletionRatio: ratio(selectedViaCatalog.length, filledCatalog.length),
+    requiredApplicableCount: requiredApplicable.length,
+    requiredSelectionCompletionRatio: selectionRatioForFields(
+      requiredApplicable,
+      values,
+      catalogs,
+    ),
+    optionalApplicableCount: optionalApplicable.length,
+    optionalSelectionCompletionRatio: selectionRatioForFields(
+      optionalApplicable,
+      values,
+      catalogs,
+    ),
+    manualEntryFieldIds,
     typingFieldIds: typingFields.map((f) => f.id),
     catalogFieldIds: catalogFields.map((f) => f.id),
-  };
-}
-
-/** Representative fixture values per vertical for ratio benchmarking. */
-export function representativeListingValues(
-  vertical: "property" | "vehicle" | "electronics",
-): ListingValues {
-  if (vertical === "property") {
-    return {
-      listing_type: "rent",
-      property_type: "flat_3",
-      bedrooms: "3",
-      bathrooms: "3",
-      toilets: "3",
-      amenities: ["parking", "security"],
-      state: "Lagos",
-      city: "Lagos",
-      area: "Lekki Phase 1",
-      title: "3 Bedroom Flat Lekki",
-      price: 4_500_000,
-      description: "Serviced flat with parking.",
-    };
-  }
-  if (vertical === "vehicle") {
-    return {
-      auto_category: "car",
-      make: "Toyota",
-      model: "Camry",
-      year: "2019",
-      vehicle_condition: "foreign_used",
-      transmission: "automatic",
-      fuel_type: "petrol",
-      state: "Lagos",
-      city: "Lagos",
-      area: "Ikeja",
-      title: "Toyota Camry 2019",
-      price: 14_500_000,
-      description: "Clean foreign used.",
-    };
-  }
-  return {
-    auto_category: "phones_tablets",
-    brand: "Samsung",
-    model: "Galaxy A54",
-    condition: "foreign_used",
-    warranty_status: "no_warranty",
-    storage_gb: "128",
-    state: "Lagos",
-    city: "Lagos",
-    area: "Ikeja",
-    title: "Samsung Galaxy A54",
-    price: 680_000,
-    description: "UK used with box.",
   };
 }

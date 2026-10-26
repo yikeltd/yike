@@ -10,6 +10,7 @@ import type { ThemedSelectOption } from "@/components/ui/themed-select";
 export const VEHICLE_MAKE_TYPES: Record<string, readonly string[]> = {
   Acura: ["MDX", "RDX", "TLX", "TSX", "ZDX"],
   Audi: ["A3", "A4", "A6", "A8", "Q3", "Q5", "Q7", "Q8"],
+  Bajaj: ["Boxer", "Discover", "Pulsar"],
   BMW: ["3 Series", "5 Series", "7 Series", "X1", "X3", "X5", "X6", "X7"],
   BYD: ["Atto 3", "Dolphin", "Han", "Seal", "Song Plus"],
   Changan: ["Alsvin", "CS35", "CS55", "CS75", "UNI-T", "UNI-V"],

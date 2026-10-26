@@ -147,6 +147,13 @@ export {
 } from "./intelligence";
 export { catalogueCoverageReports } from "./catalogues/coverage";
 export {
+  buildFieldInventory,
+  inventoryConnectivityGaps,
+  type FieldCatalogueMode,
+  type FieldInventoryEntry,
+} from "./catalogues/field-inventory";
+export { LISTING_SCENARIOS, type ListingScenario } from "./listing-scenarios";
+export {
   computeSelectionCompletion,
   representativeListingValues,
   type SelectionCompletionReport,

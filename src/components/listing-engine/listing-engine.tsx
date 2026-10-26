@@ -172,6 +172,7 @@ function ListingEngineInner({
   const [descriptionTouched, setDescriptionTouched] = useState(
     Boolean(String(initialValues?.description ?? "").trim()),
   );
+  const [dependencyNotice, setDependencyNotice] = useState<string | null>(null);
 
   const photoCount = readyListingPhotoUrls(photos).length;
 
@@ -451,7 +452,29 @@ function ListingEngineInner({
     });
     setValues((prev) => {
       const withChange = { ...prev, [id]: value };
-      return applyDependencyClears(manifest, id, withChange, LISTING_CATALOGS);
+      const next = applyDependencyClears(manifest, id, withChange, LISTING_CATALOGS);
+      const clearedLabels = manifest.fields
+        .filter((f) => {
+          if (f.id === id) return false;
+          const was = prev[f.id];
+          const now = next[f.id];
+          const had = was !== undefined && was !== null && String(was).trim() !== "";
+          const gone =
+            now === undefined ||
+            now === null ||
+            (typeof now === "string" && now.trim() === "");
+          return had && gone;
+        })
+        .map((f) => f.label);
+      if (clearedLabels.length > 0) {
+        const changedLabel = manifest.fields.find((f) => f.id === id)?.label ?? "selection";
+        setDependencyNotice(
+          `${clearedLabels.join(", ")} cleared — not valid after ${changedLabel} changed.`,
+        );
+      } else {
+        setDependencyNotice(null);
+      }
+      return next;
     });
   }
 
@@ -862,6 +885,15 @@ function ListingEngineInner({
           ) : null}
         </div>
       </div>
+
+      {dependencyNotice ? (
+        <div
+          className="rounded-xl border border-navy/10 bg-navy/[0.04] px-4 py-2.5 text-xs text-navy/75"
+          role="status"
+        >
+          {dependencyNotice}
+        </div>
+      ) : null}
 
       {draftConflictRemote && !listingId ? (
         <div className="rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-navy">

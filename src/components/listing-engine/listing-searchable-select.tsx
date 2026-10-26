@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ThemedSelect } from "@/components/ui/themed-select";
 import type { FieldOption } from "@/lib/listing-engine";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,13 @@ export function ListingSearchableSelect({
   onChange,
 }: Props) {
   const [customMode, setCustomMode] = useState(false);
+
+  useEffect(() => {
+    if (value && options.some((o) => o.value === value)) {
+      setCustomMode(false);
+    }
+  }, [options, value]);
+
   const selectOptions = [
     { value: "", label: placeholder },
     ...options.filter((o) => o.value !== ""),
