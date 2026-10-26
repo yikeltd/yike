@@ -58,6 +58,7 @@ test("wallet page binds session user and dynamic back navigation", () => {
   assert.match(page, /getYikeCoinBalance\(user\.id\)/);
   assert.match(page, /resolveWalletBackNavigation/);
   assert.match(page, /walletAuthLoginPath/);
+  assert.match(page, /WalletPageExperience/);
 });
 
 test("agent dashboard hero links to wallet with agent return context", () => {

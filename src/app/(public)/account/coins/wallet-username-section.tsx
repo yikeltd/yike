@@ -61,7 +61,7 @@ export function WalletUsernameSection({ initialUsername, initialNeedsUsername }:
 
   if (!needsUsername && username) {
     return (
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-navy/10 bg-white px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-navy/10 bg-white/90 px-3 py-2.5 shadow-sm">
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wide text-muted">Your username</p>
           <p className="truncate text-base font-black text-navy">@{username}</p>
@@ -81,7 +81,7 @@ export function WalletUsernameSection({ initialUsername, initialNeedsUsername }:
   }
 
   return (
-    <div className="mt-4 rounded-2xl border border-gold/35 bg-gold/10 p-4">
+    <div className="rounded-xl border border-gold/35 bg-gold/10 p-4">
       <p className="text-sm font-bold text-navy">Choose a username</p>
       <p className="mt-1 text-xs text-navy/65">
         Required to send YC. Others find you with @username — not your email or phone.

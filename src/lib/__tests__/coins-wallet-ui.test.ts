@@ -21,17 +21,22 @@ test("wallet page lives under public ConsumerShell layout", () => {
     join(process.cwd(), "src/app/(public)/account/coins/page.tsx"),
     "utf8",
   );
-  assert.match(page, /ConsumerSubpageHeader/);
+  assert.match(page, /WalletPageExperience/);
   assert.match(page, /resolveWalletBackNavigation/);
   assert.doesNotMatch(page, /<main/);
 });
 
 test("wallet page uses unified username section", () => {
+  const experience = readFileSync(
+    join(process.cwd(), "src/components/yike-coins/wallet-page-experience.tsx"),
+    "utf8",
+  );
+  assert.match(experience, /WalletUsernameSection/);
   const page = readFileSync(
     join(process.cwd(), "src/app/(public)/account/coins/page.tsx"),
     "utf8",
   );
-  assert.match(page, /WalletUsernameSection/);
+  assert.match(page, /WalletPageExperience/);
   assert.doesNotMatch(page, /UsernameClaimClient/);
   const section = readFileSync(
     join(process.cwd(), "src/app/(public)/account/coins/wallet-username-section.tsx"),

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { isYikeCoinsEnabled } from "@/lib/yike-coins/flags";
 import { getYikeCoinTopupPackages } from "@/lib/yike-coins/topup-packages";
 import { YIKE_COIN_NGN_NOMINAL } from "@/lib/yike-coins/constants";
-import { isProductionEnv } from "@/lib/env";
 import { getWalletTopupCheckoutStatus } from "@/lib/payments/checkout-availability";
 
 export const runtime = "nodejs";
@@ -21,8 +20,5 @@ export async function GET() {
     checkoutAvailable: checkout.available,
     checkoutMessage: checkout.message,
     checkoutReasonCode: checkout.reasonCode,
-    pricingNote: isProductionEnv()
-      ? "Top-up packs use the approved Yike catalog. Contact ops to change commercial pricing."
-      : "Development/staging may override packs via YIKE_COIN_TOPUP_PACKS_NGN.",
   });
 }

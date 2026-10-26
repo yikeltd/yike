@@ -67,9 +67,9 @@ test("local dev guards block live Paystack and production DB by default", () => 
   assert.match(init, /guardLocalPaymentMutation/);
 });
 
-test("wallet balance live refresh uses authoritative balance API", () => {
+test("wallet balance hero refresh uses authoritative balance API", () => {
   const src = fs.readFileSync(
-    path.resolve(process.cwd(), "src/components/yike-coins/wallet-balance-live.tsx"),
+    path.resolve(process.cwd(), "src/components/yike-coins/wallet-balance-hero.tsx"),
     "utf-8",
   );
   assert.match(src, /\/api\/yike-coins\/balance/);

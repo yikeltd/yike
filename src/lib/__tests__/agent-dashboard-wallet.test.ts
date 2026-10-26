@@ -37,16 +37,15 @@ test("hero YC balance links to wallet route with agent return context", () => {
   assert.match(src, /formatYikeCoins/);
 });
 
-test("wallet page exposes top-up, share, and history anchors", () => {
+test("wallet page exposes top-up, send, and history anchors", () => {
   const src = readFileSync(
-    join(process.cwd(), "src/app/(public)/account/coins/page.tsx"),
+    join(process.cwd(), "src/components/yike-coins/wallet-page-experience.tsx"),
     "utf8",
   );
   assert.match(src, /id="wallet-top-up"/);
-  assert.match(src, /id="wallet-share"/);
+  assert.match(src, /id="wallet-send"/);
   assert.match(src, /id="wallet-history"/);
-  assert.match(src, /YikeCoinsNonCashNotice/);
-  assert.match(src, /resolveWalletBackNavigation/);
+  assert.match(src, /<YikeCoinsNonCashNotice/);
 });
 
 test("non-withdrawable YC notice matches required copy", () => {
