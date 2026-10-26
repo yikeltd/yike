@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const INPUT = join(ROOT, "public/images/logo.webp");
+const INPUT = join(ROOT, "public/icons/logo.webp");
 const STAFF_ICONS = join(ROOT, "public/staff/icons");
 const IMAGES = join(ROOT, "public/images");
 

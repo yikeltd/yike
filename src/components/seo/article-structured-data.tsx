@@ -1,4 +1,5 @@
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import { brand } from "@/lib/design/tokens";
 import { ORG_ID } from "@/lib/seo/schema-ids";
 import type { BlogPost } from "@/constants/blogTopics";
 
@@ -30,7 +31,7 @@ export function ArticleStructuredData({
         name: SITE_NAME,
         logo: {
           "@type": "ImageObject",
-          url: `${SITE_URL}/images/logo.webp`,
+          url: `${SITE_URL}${brand.logo}`,
         },
       },
       mainEntityOfPage: { "@type": "WebPage", "@id": url },

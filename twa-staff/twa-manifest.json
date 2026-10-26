@@ -13,7 +13,7 @@
   "backgroundColor": "#031B4E",
   "enableNotifications": false,
   "startUrl": "/staff",
-  "iconUrl": "https://yike.ng/images/logo.webp",
+  "iconUrl": "https://yike.ng/icons/logo.webp",
   "maskableIconUrl": "https://yike.ng/images/logo.webp",
   "splashScreenFadeOutDuration": 500,
   "splashScreenImage": "https://yike.ng/splash/splash-1080x1920.png",

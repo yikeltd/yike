@@ -14,6 +14,7 @@ import { RouteFallback } from "@/components/layout/route-fallback";
 import { ConversionStrip } from "@/components/conversion/conversion-strip";
 import { SafetyNotice } from "@/components/property/safety-notice";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import { brand } from "@/lib/design/tokens";
 import { ArticleStructuredData } from "@/components/seo/article-structured-data";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -38,7 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url,
       type: "article",
       siteName: SITE_NAME,
-      images: [{ url: `${SITE_URL}/images/logo.webp`, width: 512, height: 512 }],
+      images: [
+        {
+          url: `${SITE_URL}${brand.logo}`,
+          width: brand.logoWidth,
+          height: brand.logoHeight,
+        },
+      ],
     },
   };
 }

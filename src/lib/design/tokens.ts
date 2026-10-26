@@ -46,23 +46,27 @@ export const shadows = {
     "0 8px 32px rgba(3, 27, 78, 0.12), 0 2px 8px rgba(3, 27, 78, 0.06), 0 0 0 1px rgba(3, 27, 78, 0.04)",
 } as const;
 
+/** Canonical brand mark — source PNG: public/icons/logo.png */
 export const brand = {
   name: "Yike",
   domain: "yike.ng",
   tagline: "Nigeria's trusted marketplace for property and vehicles.",
-  logo: "/images/logo.webp",
-  logoSm: "/images/logo.webp",
-  logoFallback: "/images/logo.webp",
+  logo: "/icons/logo.webp",
+  logoSm: "/icons/logo-sm.webp",
+  logoFallback: "/icons/logo.png",
+  logoWidth: 1254,
+  logoHeight: 1254,
+  logoAlt: "Yike — Nigerian property and vehicle marketplace",
 } as const;
 
 /** Yike Crew — internal ops app, using the same Yike mark for brand consistency. */
 export const crewBrand = {
   name: "Yike Crew",
   shortName: "Yike Crew",
-  logo: "/images/logo.webp",
-  logoSm: "/images/logo.webp",
-  icon192: "/images/logo-sm.webp",
-  icon512: "/images/logo.webp",
+  logo: "/icons/logo.webp",
+  logoSm: "/icons/logo-sm.webp",
+  icon192: "/icons/logo-sm.webp",
+  icon512: "/icons/logo.webp",
   icon192Png: "/icons/android-chrome-192.png",
   icon512Png: "/icons/android-chrome-512.png",
 } as const;

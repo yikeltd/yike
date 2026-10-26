@@ -11,7 +11,7 @@ Mobile-first housing marketplace MVP — browse listings, contact agents on What
 | Navy | `#031B4E` | Nav, dark foundation, trust |
 | Gold | `#E4B547` | CTAs, badges, verified, highlights |
 
-Logo: `public/images/logo.webp` (transparent). Regenerate assets: `npm run optimize:brand`
+Logo: `public/icons/logo.png` → `public/icons/logo.webp`. Regenerate assets: `npm run optimize:brand`
 
 Product direction is locked in `.cursor/rules/yike-product-direction.mdc` — do not deviate unless the founder says so.
 

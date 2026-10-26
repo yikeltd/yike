@@ -5,7 +5,7 @@ const CACHE_PREFIX = "yike-";
 
 const SHELL = [
   "/offline",
-  "/images/logo.webp",
+  "/icons/logo.webp",
   "/manifest.json",
   "/favicon.ico",
   "/apple-touch-icon.png",

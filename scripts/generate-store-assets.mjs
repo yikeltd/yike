@@ -10,7 +10,7 @@ import { logoMarkPngBuffer } from "./lib/logo-splash-mark.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const LOGO = join(ROOT, "public/images/logo.webp");
+const LOGO = join(ROOT, "public/icons/logo.webp");
 const OUT = join(ROOT, "public/store");
 const SPLASH_OUT = join(ROOT, "public/splash");
 

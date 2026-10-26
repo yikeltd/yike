@@ -11,7 +11,7 @@ Read `.cursor/rules/yike-product-direction.mdc` before any change. Direction is 
 
 - **Stack:** Next.js App Router, TypeScript, Tailwind, Supabase, Coolify (Hetzner)
 - **Colors:** Navy `#031B4E` · Gold `#E4B547` (tokens in `src/app/globals.css`)
-- **Logo:** `public/images/logo.webp`
+- **Logo:** `public/icons/logo.png` (source) · `public/icons/logo.webp` (UI)
 - **Media:** `src/lib/media/` — all uploads must use the optimization pipeline
 - **MVP:** listings, search, trust, moderation — no payments/chat/AI
 - **UX doctrine:** system thinks first; progressive disclosure; one fact once; never invent metrics
@@ -21,7 +21,7 @@ Read `.cursor/rules/yike-product-direction.mdc` before any change. Direction is 
 ```bash
 npm run dev    # always run while building — preview at http://localhost:3000
 npm run build  # production check before deploy
-node scripts/optimize-brand-assets.mjs   # regenerate favicons from logo.png
+node scripts/optimize-brand-assets.mjs   # regenerate WebP + favicons from public/icons/logo.png
 ```
 
 **Local preview:** Start `npm run dev` at the beginning of UI work and open the affected routes locally before pushing to Coolify.

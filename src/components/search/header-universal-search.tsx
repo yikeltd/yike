@@ -265,7 +265,7 @@ export function HeaderUniversalSearch({
             >
               <Image
                 src={brand.logoSm}
-                alt=""
+                alt={brand.logoAlt}
                 width={isLarge ? 30 : 28}
                 height={isLarge ? 30 : 28}
                 className="h-7 w-7 rounded-md sm:h-7.5 sm:w-7.5"

@@ -55,7 +55,7 @@ export function ConsumerTopBar({ minimal }: { minimal?: boolean }) {
             <Link href="/" className="pressable shrink-0">
               <Image
                 src={brand.logoSm}
-                alt="Yike"
+                alt={brand.logoAlt}
                 width={36}
                 height={36}
                 className="rounded-lg"
