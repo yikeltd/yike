@@ -65,7 +65,7 @@ export function ConsumerShell({
     <>
       <OfflineBanner />
       <OfflineWarmCache />
-      {!isHome && <HeaderDesktop />}
+      {!isHome && !isProfile && <HeaderDesktop />}
       <HeaderMobile />
       <main
         className={cn(

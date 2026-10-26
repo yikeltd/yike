@@ -154,10 +154,8 @@ export function SellerCommandCenter(props: Props) {
     email,
     verified,
     activeCount,
-    totalListings,
     leadsCount,
     memberSince,
-    socialStats,
     profileSaved,
     subscriptionPlanLabel,
   } = props;
@@ -168,12 +166,14 @@ export function SellerCommandCenter(props: Props) {
 
   const nameToDisplay =
     profile.full_name?.trim() ||
-    profile.username ||
     profile.company_name?.trim() ||
-    "Stanley Nwafor";
+    (profile.username ? `@${profile.username}` : null) ||
+    "Your account";
+
+  const handle = profile.username?.trim();
+  const showUsernameLine = Boolean(handle) && !nameToDisplay.startsWith("@");
 
   const trustScore = profile.trust_score ?? 100;
-  const listingsValue = totalListings > 0 ? totalListings : 1;
 
   // 1. EXACT THREE RECENT CONVERSATIONS MATCHING REFERENCE DESIGN
   const sampleConversations = [
@@ -214,7 +214,7 @@ export function SellerCommandCenter(props: Props) {
     {
       id: "act-1",
       title: "New lead",
-      subtitle: "Emeka Okafor viewed your listing",
+      subtitle: "A buyer viewed your listing",
       time: "5m ago",
       icon: Users,
       tone: "bg-emerald-50 text-emerald-600 border border-emerald-200",
@@ -254,7 +254,6 @@ export function SellerCommandCenter(props: Props) {
             <SidebarNavItem href="/agent" icon={LayoutDashboard} label="Dashboard" active />
             <SidebarNavItem href="/conversations" icon={MessageSquare} label="Conversations" badge={3} />
             <SidebarNavItem href="/discover" icon={Sparkles} label="Discover" />
-            <SidebarNavItem href="/agent/listings/choose" icon={PlusCircle} label="Sell" />
           </nav>
 
           <hr className="border-white/10" />
@@ -303,7 +302,7 @@ export function SellerCommandCenter(props: Props) {
               {/* Plan Badge Pill (Top-Left) */}
               <Link
                 href="/agent/plans"
-                className="pressable inline-flex items-center gap-1.5 rounded-full border border-[#E4B547] bg-transparent px-3 py-1 text-xs font-bold text-[#E4B547] hover:bg-[#E4B547]/10 transition-all"
+                className="pressable inline-flex items-center gap-1.5 rounded-full border border-[#E4B547] bg-transparent px-3 py-1 text-xs font-bold text-[#E4B547] hover:bg-[#E4B547]/10 transition-all lg:hidden"
               >
                 <Crown className="h-3.5 w-3.5 fill-[#E4B547] text-[#E4B547]" />
                 <span>{getCleanPlanName(subscriptionPlanLabel)}</span>
@@ -314,7 +313,7 @@ export function SellerCommandCenter(props: Props) {
                 <Link
                   href="/seller/crm"
                   prefetch
-                  className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-[#E4B547] text-[#E4B547] hover:bg-[#E4B547]/10 transition-colors"
+                  className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-[#E4B547] text-[#E4B547] hover:bg-[#E4B547]/10 transition-colors lg:hidden"
                   aria-label="Analytics"
                   title="Seller Analytics"
                 >
@@ -356,9 +355,11 @@ export function SellerCommandCenter(props: Props) {
                   <Sparkles className="h-5 w-5 text-[#E4B547] fill-[#E4B547] shrink-0" />
                 </div>
 
-                <p className="text-xs font-semibold text-[#E4B547]/90 truncate">
-                  @{profile.username || "agent"}
-                </p>
+                {showUsernameLine ? (
+                  <p className="text-xs font-semibold text-[#E4B547]/90 truncate">
+                    @{profile.username}
+                  </p>
+                ) : null}
 
                 <div className="pt-0.5">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/40 bg-transparent px-3 py-0.5 text-xs font-medium text-white shadow-2xs">
@@ -433,22 +434,22 @@ export function SellerCommandCenter(props: Props) {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={conv.avatar}
-                      alt={conv.name}
+                      alt=""
                       className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover border border-slate-200/60 shadow-2xs shrink-0"
                     />
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
                         <h3 className="text-xs sm:text-sm font-bold text-[#031B4E] truncate">{conv.name}</h3>
-                        <span className={cn("rounded-md border px-2 py-0.5 text-[10px] font-semibold shrink-0", conv.badgeTone)}>
-                          {conv.badge}
-                        </span>
+                        <span className="text-[10px] font-medium text-slate-400 shrink-0">{conv.time}</span>
                       </div>
+                      <span className={cn("inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold", conv.badgeTone)}>
+                        {conv.badge}
+                      </span>
                       <p className="text-xs font-normal text-slate-500 truncate">{conv.message}</p>
                     </div>
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-                    <span className="text-xs font-medium text-slate-400">{conv.time}</span>
                     {conv.unread > 0 && (
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E4B547] text-[10px] font-extrabold text-[#031B4E] shadow-2xs">
                         {conv.unread}
@@ -466,21 +467,7 @@ export function SellerCommandCenter(props: Props) {
 
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
               <Link
-                href="/agent/listings"
-                prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
-                  <List className="h-3.5 w-3.5" />
-                </span>
-                <div className="w-full">
-                  <h3 className="text-[10px] font-bold text-navy leading-tight">My Listings</h3>
-                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{totalListings} Active</p>
-                </div>
-              </Link>
-
-              <Link
-                href="/agent/listings"
+                href="/seller/boost"
                 prefetch
                 className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
               >
@@ -509,7 +496,7 @@ export function SellerCommandCenter(props: Props) {
               </Link>
 
               <Link
-                href="/conversations"
+                href="/agent/leads"
                 prefetch
                 className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
               >
@@ -517,8 +504,8 @@ export function SellerCommandCenter(props: Props) {
                   <MessageCircle className="h-3.5 w-3.5" />
                 </span>
                 <div className="w-full">
-                  <h3 className="text-[10px] font-bold text-navy leading-tight">Leads & Inquiries</h3>
-                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{leadsCount} New</p>
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">Leads</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{leadsCount} this month</p>
                 </div>
               </Link>
 
@@ -549,6 +536,20 @@ export function SellerCommandCenter(props: Props) {
                   <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">History</p>
                 </div>
               </Link>
+
+              <Link
+                href="/agent/verification"
+                prefetch
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-slate-50 text-navy shrink-0">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                </span>
+                <div className="w-full">
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">Verification</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">Trust & badges</p>
+                </div>
+              </Link>
             </div>
           </section>
 
@@ -576,9 +577,9 @@ export function SellerCommandCenter(props: Props) {
                     <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                       <Briefcase className="h-2.5 w-2.5" />
                     </span>
-                    <span>Listings</span>
+                    <span>Active listings</span>
                   </div>
-                  <p className="text-lg font-black text-navy mt-0.5">{listingsValue}</p>
+                  <p className="text-lg font-black text-navy mt-0.5">{activeCount}</p>
                   <p className="text-[9px] font-bold text-blue-600">↑ 0% vs last 7 days</p>
                 </Link>
 
@@ -740,7 +741,7 @@ export function SellerCommandCenter(props: Props) {
                     </span>
                     <div className="min-w-0">
                       <h3 className="text-[9px] font-medium text-navy/45">Signed in as</h3>
-                      <p className="text-xs font-bold text-navy truncate">{email || "puchinenye@gmail.com"}</p>
+                      <p className="text-xs font-bold text-navy truncate">{email || "—"}</p>
                     </div>
                   </div>
                 </div>

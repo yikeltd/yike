@@ -182,11 +182,9 @@ export function YikeCoinsWalletCard({ className }: { className?: string }) {
             </li>
           ))}
         </ul>
-      ) : (
-        <p className="mt-3 border-t border-navy/8 pt-3 text-[11px] text-navy/50">
-          No transactions yet.
-        </p>
-      )}
+      ) : !loading ? (
+        <p className="mt-2 text-[11px] text-navy/50">No recent activity.</p>
+      ) : null}
 
       {devCreditAvailable ? (
         <button
@@ -203,7 +201,10 @@ export function YikeCoinsWalletCard({ className }: { className?: string }) {
 
       <Link
         href="/account/coins"
-        className="pressable mt-3 inline-flex w-full items-center justify-center rounded-xl bg-navy py-2.5 text-xs font-bold text-gold"
+        className={cn(
+          "pressable inline-flex w-full items-center justify-center rounded-xl bg-navy py-2.5 text-xs font-bold text-gold",
+          entries.length > 0 || loading ? "mt-3 border-t border-navy/8 pt-3" : "mt-2.5",
+        )}
       >
         Manage wallet & top up
       </Link>
