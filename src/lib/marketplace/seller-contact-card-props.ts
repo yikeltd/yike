@@ -56,27 +56,29 @@ export function sellerContactCardFromListing(
   },
 ): SellerContactCardIdentity | null {
   const agent = listing.agent;
-  if (!agent?.id) return null;
+  const sellerId = agent?.id ?? listing.agent_id;
+  if (!sellerId) return null;
 
   const sellerName =
-    agent.company_name || agent.full_name || "Verified Nigerian Seller";
+    agent?.company_name ||
+    agent?.full_name ||
+    "Verified Nigerian Seller";
   const verified =
     options?.verified ??
     Boolean(
       listing.is_verified_listing ||
-        isVerifiedAgent(agent) ||
-        agent.verified_badge,
+        (agent ? isVerifiedAgent(agent) || agent.verified_badge : false),
     );
 
   let roleLabel = options?.roleLabel ?? "Seller";
   if (!options?.roleLabel) {
     if (assetType === "PROPERTY") {
-      roleLabel = agent.company_name
+      roleLabel = agent?.company_name
         ? "Licensed Real Estate Agency"
         : "Property Representative";
     } else if (assetType === "VEHICLE") {
       roleLabel =
-        agent.account_type === "dealer" || agent.company_name
+        agent?.account_type === "dealer" || agent?.company_name
           ? "Verified Auto Showroom"
           : "Verified Vehicle Owner";
     } else {
@@ -87,13 +89,13 @@ export function sellerContactCardFromListing(
   return {
     listingId: listing.id,
     assetType,
-    sellerId: agent.id,
+    sellerId,
     sellerName,
-    sellerAvatar: agent.avatar_url,
+    sellerAvatar: agent?.avatar_url ?? null,
     verified,
     roleLabel,
-    trustScoreLabel: trustScoreLabelFromAgent(agent),
-    responseLabel: responseLabelFromAgent(agent),
-    profileHref: agentPublicPath(agent),
+    trustScoreLabel: agent ? trustScoreLabelFromAgent(agent) : null,
+    responseLabel: agent ? responseLabelFromAgent(agent) : null,
+    profileHref: agent ? agentPublicPath(agent) : `/agents/${sellerId}`,
   };
 }

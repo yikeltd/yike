@@ -30,10 +30,11 @@ import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import { buildMotionSlides } from "@/lib/media/items";
 import { PropertyGalleryModal } from "./property-gallery-modal";
 import { PropertyTrustIndicators } from "./property-trust-indicators";
-import { AgentContactCard } from "./agent-contact-card";
 import { PropertyCard } from "./property-card";
-import { SellerMessageCallActions } from "@/components/marketplace/seller-message-call-actions";
 import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
+import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
+import { ListingDetailLocationMap } from "@/components/marketplace/listing-detail-location-map";
+import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
 
 const AMENITY_ICONS: Record<string, typeof Zap> = {
   power: Zap,
@@ -138,7 +139,7 @@ export function PropertyDetailExperience({
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-[#f7f9fc] dark:bg-[#021433] text-navy dark:text-white pb-32 lg:pb-12 select-none">
+    <div className="min-h-[100dvh] bg-[#f7f9fc] dark:bg-[#021433] text-navy dark:text-white pb-12 select-none">
       {ownerBanner}
 
       {/* TOP HEADER BAR */}
@@ -169,10 +170,7 @@ export function PropertyDetailExperience({
 
       {/* MAIN CONTAINER: 2-COLUMN ON DESKTOP */}
       <div className="mx-auto max-w-6xl px-3.5 pt-4 lg:px-6 space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* LEFT MAIN COLUMN */}
-          <div className="lg:col-span-8 space-y-5">
+        <div className="space-y-5">
             
             {/* 1. HERO GALLERY */}
             <section className="relative w-full aspect-[4/3] sm:aspect-[16/10] rounded-3xl bg-navy overflow-hidden shadow-2xl group border border-navy/10 dark:border-white/10">
@@ -234,6 +232,15 @@ export function PropertyDetailExperience({
                 ))}
               </div>
             )}
+
+            {sellerIdentity ? (
+              <ListingDetailGalleryContact
+                listingId={sellerIdentity.listingId}
+                assetType={sellerIdentity.assetType}
+                sellerId={sellerIdentity.sellerId}
+                sellerName={sellerIdentity.sellerName}
+              />
+            ) : null}
 
             {/* 2. SUMMARY & HIGHLIGHTS */}
             <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
@@ -377,34 +384,11 @@ export function PropertyDetailExperience({
               </div>
             </div>
 
-            {/* 6. MAP SECTION */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70 flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-gold" />
-                  Location & Neighborhood
-                </h3>
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                  Exact location disclosed after contact
-                </span>
-              </div>
+            <ListingDetailLocationMap locationLabel={cleanLocation} />
 
-              <div className="relative h-44 w-full rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 flex items-center justify-center border border-slate-300 dark:border-white/10">
-                <Image
-                  src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80&fit=crop"
-                  alt="Location Map Preview"
-                  fill
-                  className="object-cover brightness-[0.8]"
-                />
-                <div className="absolute inset-0 bg-navy/20 backdrop-blur-[1px]" />
-                <div className="relative z-10 text-center px-4">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#031B4E] text-white px-4 py-2 text-xs font-black shadow-lg border border-gold/40">
-                    <MapPin className="h-4 w-4 text-gold" />
-                    {cleanLocation}
-                  </span>
-                </div>
-              </div>
-            </div>
+            {sellerIdentity ? (
+              <ListingDetailSellerSection identity={sellerIdentity} />
+            ) : null}
 
             {/* 7. SIMILAR PROPERTIES */}
             {similarListings.length > 0 && (
@@ -420,30 +404,8 @@ export function PropertyDetailExperience({
               </div>
             )}
 
-          </div>
-
-          {/* RIGHT COLUMN (DESKTOP STICKY SIDEBAR) */}
-          <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
-            <AgentContactCard listing={property} />
-          </div>
-
         </div>
       </div>
-
-      {/* 8. STICKY MOBILE ACTIONS BAR (ALWAYS VISIBLE ON MOBILE) */}
-      {sellerIdentity ? (
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-navy/10 bg-white/95 p-3 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-navy/95">
-          <div className="mx-auto max-w-xl">
-            <SellerMessageCallActions
-              listingId={sellerIdentity.listingId}
-              assetType={sellerIdentity.assetType}
-              sellerId={sellerIdentity.sellerId}
-              sellerName={sellerIdentity.sellerName}
-              variant="gallery-inline"
-            />
-          </div>
-        </div>
-      ) : null}
 
       {/* FULLSCREEN GALLERY MODAL */}
       {fullscreenGalleryOpen && (

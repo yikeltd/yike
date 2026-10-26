@@ -26,8 +26,18 @@ function minimalListing(overrides: Partial<Property> = {}): Property {
 }
 
 test("sellerContactCardFromListing returns null without agent id", () => {
-  const listing = minimalListing({ agent: undefined });
+  const listing = minimalListing({ agent: undefined, agent_id: null as unknown as string });
   assert.equal(sellerContactCardFromListing(listing, "PROPERTY"), null);
+});
+
+test("sellerContactCardFromListing accepts agent_id when agent embed is missing", () => {
+  const listing = minimalListing({
+    agent: undefined,
+    agent_id: "agent-fallback",
+  });
+  const card = sellerContactCardFromListing(listing, "VEHICLE");
+  assert.ok(card);
+  assert.equal(card!.sellerId, "agent-fallback");
 });
 
 test("sellerContactCardFromListing uses real response time when inquiries exist", () => {
@@ -50,12 +60,12 @@ test("sellerContactCardFromListing omits trust score when performance_score miss
   assert.equal(card!.trustScoreLabel, null);
 });
 
-test("marketplace seller contact card uses Message and Call only", () => {
+test("marketplace seller contact card omits duplicate Message and Call actions", () => {
   const src = readFileSync(
     join(root, "components/marketplace/marketplace-seller-contact-card.tsx"),
     "utf8",
   );
-  assert.match(src, /SellerMessageCallActions/);
+  assert.doesNotMatch(src, /SellerMessageCallActions/);
   assert.doesNotMatch(src, /WhatsApp/i);
   assert.doesNotMatch(src, /Make Offer/i);
   assert.doesNotMatch(src, /Escrow/i);

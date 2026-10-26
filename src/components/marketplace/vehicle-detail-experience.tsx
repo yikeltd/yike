@@ -38,8 +38,10 @@ import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import { VehicleTrustIndicators } from "./vehicle-trust-indicators";
 import { VehicleGalleryModal } from "./vehicle-gallery-modal";
 import { PropertyCard } from "@/components/property/property-card";
-import { MarketplaceSellerContactCard } from "@/components/marketplace/marketplace-seller-contact-card";
 import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
+import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
+import { ListingDetailLocationMap } from "@/components/marketplace/listing-detail-location-map";
+import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
 import {
   isVehicleFinanceEstimatorUiVisible,
   isVehicleMechanicInspectionUiVisible,
@@ -163,10 +165,7 @@ export function VehicleDetailExperience({
 
       {/* MAIN CONTAINER: 2-COLUMN ON DESKTOP */}
       <div className="mx-auto max-w-6xl px-3.5 pt-4 lg:px-6 space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* LEFT MAIN COLUMN */}
-          <div className="lg:col-span-8 space-y-5">
+        <div className="space-y-5">
             
             {/* 1. HERO GALLERY */}
             <section className="relative w-full aspect-[4/3] sm:aspect-[16/10] rounded-3xl bg-navy overflow-hidden shadow-2xl group border border-navy/10 dark:border-white/10">
@@ -229,12 +228,12 @@ export function VehicleDetailExperience({
             )}
 
             {sellerIdentity ? (
-              <div className="lg:hidden px-0.5">
-                <MarketplaceSellerContactCard
-                  {...sellerIdentity}
-                  actionsVariant="gallery-inline"
-                />
-              </div>
+              <ListingDetailGalleryContact
+                listingId={sellerIdentity.listingId}
+                assetType={sellerIdentity.assetType}
+                sellerId={sellerIdentity.sellerId}
+                sellerName={sellerIdentity.sellerName}
+              />
             ) : null}
 
             {/* 2. SUMMARY & HIGHLIGHTS */}
@@ -486,6 +485,12 @@ export function VehicleDetailExperience({
               </button>
             </div>
 
+            <ListingDetailLocationMap locationLabel={cleanLocation} />
+
+            {sellerIdentity ? (
+              <ListingDetailSellerSection identity={sellerIdentity} />
+            ) : null}
+
             {/* 8. SIMILAR VEHICLES */}
             {similarVehicles.length > 0 && (
               <div className="space-y-3 pt-2">
@@ -499,21 +504,6 @@ export function VehicleDetailExperience({
                 </div>
               </div>
             )}
-
-          </div>
-
-          {/* RIGHT COLUMN (DESKTOP STICKY DEALER SIDEBAR) */}
-          <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
-            {sellerIdentity ? (
-              <div className="hidden lg:block">
-                <MarketplaceSellerContactCard {...sellerIdentity} />
-              </div>
-            ) : (
-              <p className="hidden text-xs text-navy/60 dark:text-white/60 lg:block">
-                Dealer contact is unavailable for this listing.
-              </p>
-            )}
-          </div>
 
         </div>
       </div>

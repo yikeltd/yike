@@ -19,13 +19,14 @@ test("vehicle dealer contact UI delegates to shared Message and Call actions", (
   assert.match(actions, /Call unavailable/);
 });
 
-test("vehicle detail experience uses shared seller contact card", () => {
+test("vehicle detail experience uses gallery contact and seller section layout", () => {
   const src = readFileSync(
     join(root, "components/marketplace/vehicle-detail-experience.tsx"),
     "utf8",
   );
-  assert.doesNotMatch(src, /STICKY MOBILE ACTION BAR/);
-  assert.match(src, /MarketplaceSellerContactCard/);
+  assert.match(src, /ListingDetailGalleryContact/);
+  assert.match(src, /ListingDetailSellerSection/);
+  assert.doesNotMatch(src, /MarketplaceSellerContactCard/);
   assert.match(src, /sellerContactCardFromListing\(vehicle, "VEHICLE"\)/);
   assert.match(src, /isVehicleMechanicInspectionUiVisible/);
   assert.match(src, /isVehicleFinanceEstimatorUiVisible/);

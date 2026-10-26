@@ -14,8 +14,10 @@ import {
   ELECTRONICS_CONDITIONS,
   electronicsWarrantyStatusLabel,
 } from "@/lib/marketplace/electronics-specs";
-import { MarketplaceSellerContactCard } from "@/components/marketplace/marketplace-seller-contact-card";
 import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
+import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
+import { ListingDetailLocationMap } from "@/components/marketplace/listing-detail-location-map";
+import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
 import { ElectronicsCard } from "./electronics-card";
 import { ReportListingForm } from "@/components/property/report-form";
 
@@ -119,6 +121,17 @@ export function ElectronicsDetailExperience({
         </div>
       ) : null}
 
+      {sellerIdentity ? (
+        <div className="mx-auto max-w-3xl px-4 pt-3">
+          <ListingDetailGalleryContact
+            listingId={sellerIdentity.listingId}
+            assetType={sellerIdentity.assetType}
+            sellerId={sellerIdentity.sellerId}
+            sellerName={sellerIdentity.sellerName}
+          />
+        </div>
+      ) : null}
+
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-gold-dark">
@@ -161,8 +174,12 @@ export function ElectronicsDetailExperience({
           </section>
         ) : null}
 
+        {location ? (
+          <ListingDetailLocationMap locationLabel={location} className="shadow-sm" />
+        ) : null}
+
         {sellerIdentity ? (
-          <MarketplaceSellerContactCard {...sellerIdentity} />
+          <ListingDetailSellerSection identity={sellerIdentity} />
         ) : null}
 
         <ReportListingForm propertyId={listing.id} />

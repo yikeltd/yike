@@ -11,12 +11,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SellerContactCardIdentity } from "@/lib/marketplace/seller-contact-card-props";
-import { SellerMessageCallActions } from "@/components/marketplace/seller-message-call-actions";
 import { SellerContactReviewsPreview } from "@/components/marketplace/seller-contact-reviews-preview";
 
 type Props = SellerContactCardIdentity & {
   className?: string;
-  actionsVariant?: "sidebar" | "gallery-inline";
 };
 
 export function MarketplaceSellerContactCard({
@@ -31,7 +29,6 @@ export function MarketplaceSellerContactCard({
   responseLabel,
   profileHref,
   className,
-  actionsVariant = "sidebar",
 }: Props) {
   return (
     <div
@@ -104,17 +101,8 @@ export function MarketplaceSellerContactCard({
         </Link>
       </div>
 
-      <div className="mt-4">
-        <SellerMessageCallActions
-          listingId={listingId}
-          assetType={assetType}
-          sellerId={sellerId}
-          sellerName={sellerName}
-          variant={actionsVariant}
-        />
-      </div>
-
       <SellerContactReviewsPreview
+        className="mt-4"
         sellerId={sellerId}
         profileHref={profileHref}
       />

@@ -8,20 +8,14 @@ import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-c
 export function AgentContactCard({
   listing,
   className,
-  actionsVariant = "sidebar",
 }: {
   listing: Property;
   className?: string;
-  actionsVariant?: "sidebar" | "gallery-inline";
 }) {
   const identity = sellerContactCardFromListing(listing, "PROPERTY");
   if (!identity) return null;
 
   return (
-    <MarketplaceSellerContactCard
-      {...identity}
-      className={cn(className)}
-      actionsVariant={actionsVariant}
-    />
+    <MarketplaceSellerContactCard {...identity} className={cn(className)} />
   );
 }
