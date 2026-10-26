@@ -1,5 +1,6 @@
 import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ListingDetailPanel, ListingDetailSectionHeading } from "./listing-detail-panel";
 
 export function formatListingPublicLocation(parts: {
   area?: string | null;
@@ -25,21 +26,17 @@ export function ListingDetailLocationSection({
   if (!label) return null;
 
   return (
-    <section
-      className={cn(
-        "rounded-2xl border border-navy/10 bg-white px-4 py-3.5 shadow-sm dark:border-white/10 dark:bg-navy sm:px-5 sm:py-4",
-        className,
-      )}
+    <ListingDetailPanel
+      className={cn(className)}
       data-testid="listing-detail-location-section"
       aria-label={title}
     >
-      <h3 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-navy/70 dark:text-white/70">
-        <MapPin className="h-3.5 w-3.5 text-gold" aria-hidden />
-        {title}
-      </h3>
-      <p className="mt-2 text-sm font-semibold leading-snug text-navy dark:text-white">
-        {label}
-      </p>
-    </section>
+      <ListingDetailSectionHeading
+        title={title}
+        className="mb-2"
+        leadingIcon={<MapPin className="h-3.5 w-3.5 shrink-0 text-gold" aria-hidden />}
+      />
+      <p className="text-sm font-semibold leading-snug text-navy dark:text-white">{label}</p>
+    </ListingDetailPanel>
   );
 }

@@ -35,7 +35,7 @@ function ListingDetailSellerPanel({
   return (
     <article
       className={cn(
-        "w-full min-h-[18rem] rounded-[1.35rem] border border-slate-200/90 bg-white p-6 shadow-[0_18px_50px_-24px_rgba(3,27,78,0.22)] sm:min-h-[20rem] sm:p-8 dark:border-white/10 dark:bg-navy",
+        "yike-panel w-full min-h-[18rem] p-6 sm:min-h-[20rem] sm:p-8 dark:bg-navy",
         className,
       )}
       data-testid="marketplace-seller-contact-card"
@@ -43,7 +43,7 @@ function ListingDetailSellerPanel({
     >
       <div className="flex items-start gap-5 sm:gap-6">
         <div
-          className="relative flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-[2.5px] border-[#E4B547]/55 bg-[#031B4E] shadow-[0_8px_22px_-8px_rgba(3,27,78,0.55)] sm:h-[5.25rem] sm:w-[5.25rem]"
+          className="relative flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-gold/55 bg-navy shadow-card sm:h-[5.25rem] sm:w-[5.25rem]"
         >
           {sellerAvatar ? (
             <Image
@@ -60,7 +60,7 @@ function ListingDetailSellerPanel({
 
         <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h2 className="text-xl font-black leading-tight text-[#031B4E] sm:text-2xl dark:text-white">
+            <h2 className="text-xl font-black leading-tight text-navy sm:text-2xl dark:text-white">
               {profileHeadline}
             </h2>
             {verified ? (
@@ -80,14 +80,14 @@ function ListingDetailSellerPanel({
                 showProfileNav ? (
                   <Link
                     href={profileHref}
-                    className="inline-flex items-center gap-2 text-[#031B4E] hover:underline dark:text-gold"
+                    className="inline-flex items-center gap-2 text-navy hover:underline dark:text-gold"
                   >
-                    <Award className="h-[18px] w-[18px] text-[#E4B547]" aria-hidden />
+                    <Award className="h-[18px] w-[18px] text-gold" aria-hidden />
                     {trustScoreLabel}
                   </Link>
                 ) : (
-                  <span className="inline-flex items-center gap-2 text-[#031B4E] dark:text-gold">
-                    <Award className="h-[18px] w-[18px] text-[#E4B547]" aria-hidden />
+                  <span className="inline-flex items-center gap-2 text-navy dark:text-gold">
+                    <Award className="h-[18px] w-[18px] text-gold" aria-hidden />
                     {trustScoreLabel}
                   </span>
                 )

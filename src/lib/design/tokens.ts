@@ -1,7 +1,11 @@
-/** Yike.ng design tokens — locked brand palette + 2026 hierarchy system */
+/**
+ * Yike.ng design tokens — locked brand palette + hierarchy (runtime: `src/app/globals.css`).
+ * Prefer CSS variables / Tailwind `bg-elevated`, `text-muted`, `yike-panel` in UI code.
+ */
 export const colors = {
   navy: "#031B4E",
   navyDark: "#021428",
+  navyMid: "#052654",
   navyLight: "#0a2d6e",
   gold: "#E4B547",
   goldDark: "#c99a2e",
@@ -11,10 +15,16 @@ export const colors = {
   sand: "#FAF7F2",
   warmNeutral: "#F7F5F2",
   warmStone: "#F3EFE8",
+  /** Page canvas (light) — maps to `--background` */
+  canvas: "#FCFBF7",
+  /** Primary elevated cards — maps to `--elevated` */
+  elevated: "#ffffff",
   surface: "#F7F5F2",
   surfaceDark: "#0c2347",
-  muted: "#64748b",
+  foreground: "#031B4E",
+  muted: "#6b7c93",
   danger: "#dc2626",
+  warning: "#d97706",
   /** Semantic badge / status colors — not all gold */
   emerald: "#059669",
   emeraldSoft: "#ecfdf5",

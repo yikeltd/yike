@@ -52,11 +52,14 @@ async function assertSpecificationsGrid(
   const cellCount = await grid.locator(":scope > div").count();
   expect(cellCount).toBeGreaterThanOrEqual(4);
 
-  const columns = await grid.evaluate((el) => {
-    const style = window.getComputedStyle(el);
-    return style.gridTemplateColumns.split(" ").filter(Boolean).length;
-  });
-  expect(columns).toBe(expectedColumns);
+  await expect
+    .poll(async () =>
+      grid.evaluate((el) => {
+        const style = window.getComputedStyle(el);
+        return style.gridTemplateColumns.split(" ").filter(Boolean).length;
+      }),
+    )
+    .toBe(expectedColumns);
 
   const overflow = await grid.evaluate((el) => el.scrollWidth <= el.clientWidth + 2);
   expect(overflow).toBe(true);

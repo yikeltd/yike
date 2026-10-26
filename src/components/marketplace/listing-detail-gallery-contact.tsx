@@ -20,10 +20,7 @@ export function ListingDetailGalleryContact({
 }) {
   return (
     <div
-      className={cn(
-        "rounded-2xl border border-navy/10 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-navy",
-        className,
-      )}
+      className={cn("yike-panel p-3 sm:p-4", className)}
       data-testid="listing-detail-gallery-contact"
     >
       <SellerMessageCallActions

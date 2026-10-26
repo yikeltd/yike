@@ -22,6 +22,7 @@ import {
 } from "@/components/marketplace/listing-detail-location-section";
 import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
 import { ListingDetailSpecificationsSection } from "@/components/marketplace/listing-detail-specifications-grid";
+import { ListingDetailPanel } from "@/components/marketplace/listing-detail-panel";
 import { ElectronicsCard } from "./electronics-card";
 import { ReportListingForm } from "@/components/property/report-form";
 
@@ -93,8 +94,8 @@ export function ElectronicsDetailExperience({
   const sellerIdentity = sellerContactCardFromListing(listing, "ELECTRONICS");
 
   return (
-    <div className="min-h-screen bg-surface pb-24">
-      <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-navy/10 bg-white/95 px-3 py-2 backdrop-blur-md">
+    <div className="yike-detail-canvas pb-24">
+      <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-navy/10 bg-elevated/95 px-3 py-2 backdrop-blur-md">
         <MarketplaceBackButton
           browseReturnParam={browseReturnParam}
           fallback="/electronics"
@@ -164,12 +165,9 @@ export function ElectronicsDetailExperience({
         <ListingDetailSpecificationsSection title="Specifications" items={specRows} />
 
         {listing.description ? (
-          <section className="rounded-2xl border border-navy/10 bg-white p-4">
-            <h2 className="text-sm font-black text-navy">Description</h2>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-navy/80">
-              {listing.description}
-            </p>
-          </section>
+          <ListingDetailPanel title="Description">
+            <p className="yike-prose-block whitespace-pre-wrap">{listing.description}</p>
+          </ListingDetailPanel>
         ) : null}
 
         {location ? (

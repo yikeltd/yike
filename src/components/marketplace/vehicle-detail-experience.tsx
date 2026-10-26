@@ -139,11 +139,11 @@ export function VehicleDetailExperience({
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-[#f7f9fc] dark:bg-[#021433] text-navy dark:text-white pb-10 lg:pb-12 select-none">
+    <div className="yike-detail-canvas dark:bg-[#021433] text-navy dark:text-white pb-10 lg:pb-12 select-none">
       {ownerBanner}
 
       {/* TOP HEADER BAR */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-navy/10 dark:border-white/10 bg-[#031B4E] px-4 py-3 text-white shadow-md">
+      <header className="yike-detail-header sticky top-0 z-40 flex items-center justify-between px-4 py-3 text-white">
         <MarketplaceBackButton
           variant="overlay"
           fallback="/vehicles"
@@ -243,7 +243,7 @@ export function VehicleDetailExperience({
             ) : null}
 
             {/* 2. SUMMARY & HIGHLIGHTS */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            <div className="yike-panel space-y-4 p-5 dark:bg-navy">
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-navy dark:text-white leading-snug max-w-xl">
@@ -282,7 +282,7 @@ export function VehicleDetailExperience({
                   return (
                     <div
                       key={i}
-                      className="flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10"
+                      className="info-tile flex flex-col p-3 dark:bg-white/5"
                     >
                       <span className="flex items-center gap-1 text-[10px] font-semibold text-navy/50 dark:text-white/50">
                         <Icon className="h-3 w-3 text-gold" />
@@ -301,7 +301,7 @@ export function VehicleDetailExperience({
             </div>
 
             {/* 3. VIN VERIFICATION & HISTORY REPORT BLOCK */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            <div className="yike-panel space-y-4 p-5 dark:bg-navy">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70 flex items-center gap-1.5">
                   <FileCheck className="h-4 w-4 text-gold" />
@@ -337,7 +337,7 @@ export function VehicleDetailExperience({
             </div>
 
             {showMechanicInspection ? (
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            <div className="yike-panel space-y-4 p-5 dark:bg-navy">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70 flex items-center gap-1.5">
@@ -368,7 +368,7 @@ export function VehicleDetailExperience({
             ) : null}
 
             {showFinanceEstimator ? (
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            <div className="yike-panel space-y-4 p-5 dark:bg-navy">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-gold">
@@ -452,7 +452,7 @@ export function VehicleDetailExperience({
             />
 
             {/* 7. DESCRIPTION */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-2">
+            <div className="yike-panel space-y-2 p-5 dark:bg-navy">
               <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70">
                 Dealer Remarks & Description
               </h3>

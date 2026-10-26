@@ -171,11 +171,13 @@ html.yike-web-mode #yike-boot-splash,
   --sand: #faf7f2;
   --warm-neutral: #f7f5f2;
 
-  --background: #ffffff;
+  /* Page canvas — warm ivory; content cards use --elevated white */
+  --background: var(--ivory);
   --foreground: #031b4e;
   --muted: #6b7c93;
   --surface: #f7f5f2;
   --elevated: #ffffff;
+  --focus-ring: color-mix(in srgb, var(--gold) 55%, var(--navy) 45%);
 
   --primary: var(--navy);
   --accent: var(--gold);
@@ -387,6 +389,53 @@ body {
 }
 .detail-band-stone {
   background: var(--warm-stone);
+}
+
+/* YDS — marketplace listing detail & consumer panels */
+.yike-detail-canvas {
+  min-height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.yike-panel {
+  border-radius: var(--radius-card);
+  background: var(--elevated);
+  border: 1px solid var(--border-premium);
+  box-shadow: var(--shadow-card);
+}
+
+.yike-section-heading {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foreground) 68%, transparent);
+}
+
+.yike-spec-cell {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-tile);
+  background: color-mix(in srgb, var(--navy) 4%, var(--elevated));
+  border: 1px solid var(--border-premium);
+}
+
+.dark .yike-spec-cell {
+  background: color-mix(in srgb, var(--elevated) 88%, var(--navy) 12%);
+  border-color: var(--border-glass);
+}
+
+.yike-detail-header {
+  background: var(--navy-dark);
+  color: #fff;
+  border-bottom: 1px solid color-mix(in srgb, var(--gold) 25%, transparent);
+  box-shadow: var(--shadow-cta);
+}
+
+.yike-prose-block {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
 }
 
 .shadow-hero {
