@@ -7,6 +7,7 @@ import type { Property, Profile } from "@/types/database";
 import { isBoostedActive, isFeaturedActive } from "@/lib/agent-tiers";
 import { isVerifiedAgent } from "@/lib/utils";
 import { agentPublicPath } from "@/lib/agent-slugs";
+import { normalizeAssetType } from "@/lib/marketplace/listings";
 import {
   dedupeById,
   pickFeaturedRail,
@@ -120,6 +121,8 @@ export type DiscoveryDealerCard = {
   listingCount: number;
   verified: boolean;
   isDealer: boolean;
+  /** Primary live-inventory vertical for display (Property · Vehicles · Tech & Electronics). */
+  categoryLabel: string;
   memberSince: string | null;
 };
 
@@ -133,38 +136,101 @@ type AgentLite = Pick<
   | "verification_status"
   | "verified_badge"
   | "is_verified_agent"
+  | "developer_verified"
+  | "agency_verified"
   | "public_slug"
   | "created_at"
   | "role"
   | "listing_limit"
 > & { city?: string | null; state?: string | null };
 
-/** Derive dealer/verified seller cards from listing.agent embeds — existing data only. */
+type VerticalCounts = {
+  property: number;
+  vehicle: number;
+  electronics: number;
+};
+
+function verticalForListing(listing: Property): keyof VerticalCounts | null {
+  const asset = normalizeAssetType(listing.asset_type);
+  if (asset === "PROPERTY") return "property";
+  if (asset === "VEHICLE") return "vehicle";
+  if (asset === "ELECTRONICS") return "electronics";
+  return null;
+}
+
+/** Existing verification rules — dealers, verified sellers, verified developers/agencies. */
+export function isEligibleVerifiedDiscoveryAgent(agent: AgentLite): boolean {
+  const verified = isVerifiedAgent(agent);
+  const isDealer = agent.account_type === "dealer";
+  const isDeveloper =
+    agent.account_type === "developer" &&
+    (Boolean(agent.developer_verified) || verified);
+  const isAgency =
+    agent.account_type === "agency" && (Boolean(agent.agency_verified) || verified);
+  return isDealer || verified || isDeveloper || isAgency;
+}
+
+export function resolveDiscoveryDealerCategoryLabel(
+  agent: AgentLite,
+  counts: VerticalCounts,
+): string {
+  if (agent.account_type === "developer") return "Property";
+  const entries: { key: keyof VerticalCounts; label: string }[] = [
+    { key: "electronics", label: "Tech & Electronics" },
+    { key: "vehicle", label: "Vehicles" },
+    { key: "property", label: "Property" },
+  ];
+  let best = entries[2];
+  let bestCount = counts.property;
+  for (const entry of entries) {
+    const n = counts[entry.key];
+    if (n > bestCount) {
+      bestCount = n;
+      best = entry;
+    }
+  }
+  if (bestCount > 0) return best.label;
+  if (agent.account_type === "dealer") return "Vehicles";
+  return "Property";
+}
+
+/** Derive dealer/verified seller cards from listing.agent embeds — live pool rows only. */
 export function extractDealersFromListings(
   items: Property[],
   limit = 8,
 ): DiscoveryDealerCard[] {
   const byId = new Map<
     string,
-    { agent: AgentLite; count: number; city?: string | null; state?: string | null }
+    {
+      agent: AgentLite;
+      count: number;
+      verticals: VerticalCounts;
+      city?: string | null;
+      state?: string | null;
+    }
   >();
 
   for (const listing of items) {
     const agent = listing.agent as AgentLite | null | undefined;
     if (!agent?.id) continue;
-    const isDealer = agent.account_type === "dealer";
-    const verified = isVerifiedAgent(agent);
-    if (!isDealer && !verified) continue;
+    if (!isEligibleVerifiedDiscoveryAgent(agent)) continue;
+
+    const vertical = verticalForListing(listing);
+    if (!vertical) continue;
 
     const prev = byId.get(agent.id);
     if (prev) {
       prev.count += 1;
+      prev.verticals[vertical] += 1;
       if (!prev.city && listing.city) prev.city = listing.city;
       if (!prev.state && listing.state) prev.state = listing.state;
     } else {
+      const verticals: VerticalCounts = { property: 0, vehicle: 0, electronics: 0 };
+      verticals[vertical] = 1;
       byId.set(agent.id, {
         agent,
         count: 1,
+        verticals,
         city: listing.city,
         state: listing.state,
       });
@@ -172,6 +238,7 @@ export function extractDealersFromListings(
   }
 
   return [...byId.values()]
+    .filter(({ count }) => count > 0)
     .sort((a, b) => {
       const aDealer = a.agent.account_type === "dealer" ? 1 : 0;
       const bDealer = b.agent.account_type === "dealer" ? 1 : 0;
@@ -179,7 +246,7 @@ export function extractDealersFromListings(
       return b.count - a.count;
     })
     .slice(0, limit)
-    .map(({ agent, count, city, state }) => {
+    .map(({ agent, count, verticals, city, state }) => {
       const profile = agent as Profile;
       return {
         id: agent.id,
@@ -190,9 +257,25 @@ export function extractDealersFromListings(
         listingCount: count,
         verified: isVerifiedAgent(agent),
         isDealer: agent.account_type === "dealer",
+        categoryLabel: resolveDiscoveryDealerCategoryLabel(agent, verticals),
         memberSince: agent.created_at ?? null,
       };
     });
+}
+
+/** Merge unique dealers from property, vehicle, and electronics live pools. */
+export function extractVerifiedDealersFromMarketplacePools(input: {
+  property: Property[];
+  vehicle: Property[];
+  electronics: Property[];
+  limit?: number;
+}): DiscoveryDealerCard[] {
+  const merged = dedupeById([
+    ...input.property,
+    ...input.vehicle,
+    ...input.electronics,
+  ]);
+  return extractDealersFromListings(merged, input.limit ?? 12);
 }
 
 export function formatMemberSince(iso: string | null): string | null {

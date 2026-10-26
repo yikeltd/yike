@@ -13,6 +13,8 @@ import { HeaderDesktop } from "@/components/layout/header-desktop";
 import { HomeDesktopHero } from "@/components/home/home-desktop-hero";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 import type { HomeMarketplaceCategory } from "@/lib/home/marketplace-category";
+import type { DiscoveryDealerCard } from "@/lib/home/discovery-from-pool";
+import { VerifiedDealersHomeSection } from "@/components/home/verified-dealers-home-section";
 
 type RailBundle = {
   featuredItems: Property[];
@@ -41,6 +43,9 @@ type Props = {
   electronicsRecent: Property[];
   mixedLatest: Property[];
   latestOnYikeError?: boolean;
+  verifiedDealers?: DiscoveryDealerCard[];
+  showingSampleListingsFixture?: boolean;
+  showingDemoFixtures?: boolean;
 };
 
 function renderDesktopSection(title: string, href: string, items: Property[]) {
@@ -141,6 +146,9 @@ export function HomeDesktopView({
   electronicsRecent,
   mixedLatest,
   latestOnYikeError = false,
+  verifiedDealers = [],
+  showingSampleListingsFixture = false,
+  showingDemoFixtures = false,
 }: Props) {
   const primary =
     category === "vehicle"
@@ -156,7 +164,10 @@ export function HomeDesktopView({
         : propertyRails;
 
   return (
-    <div className="hidden min-h-screen bg-[#f8fafc] pb-16 text-navy lg:block">
+    <div
+      className="hidden min-h-screen bg-[#f8fafc] pb-16 text-navy lg:block"
+      data-testid="home-desktop-view"
+    >
       <HeaderDesktop />
 
       <HomeDesktopHero
@@ -187,6 +198,13 @@ export function HomeDesktopView({
         {renderDesktopSection("Featured", primary === propertyRails ? "/search?featured=1" : category === "vehicle" ? "/vehicles?featured=1" : "/electronics", primary.featuredItems)}
         {renderDesktopSection("Trending", category === "vehicle" ? "/vehicles" : category === "electronics" ? "/electronics" : "/search", primary.trendingItems)}
         {renderDesktopSection("Recently Added", category === "vehicle" ? "/vehicles" : category === "electronics" ? "/electronics" : "/search", primary.recentItems)}
+        <VerifiedDealersHomeSection
+          liveDealers={verifiedDealers}
+          showingSampleListingsFixture={showingSampleListingsFixture}
+          showingDemoFixtures={showingDemoFixtures}
+          variant="desktop"
+          className="pt-2"
+        />
         {propertyRails.featuredItems.length > 0 && category !== "property"
           ? renderDesktopSection("Properties", "/search", propertyRails.featuredItems)
           : null}

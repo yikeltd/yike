@@ -52,7 +52,7 @@ import {
   pickCommercialVehicles,
   pickPremiumRail,
   pickPropertyByTypes,
-  extractDealersFromListings,
+  extractVerifiedDealersFromMarketplacePools,
   countByAutoCategory,
   countByPropertyType,
   BUDGET_UNDER_5M,
@@ -406,10 +406,16 @@ export default async function HomePage({
   const vSuv = pickByAutoCategory(vehicleItems, "suv", 12);
   const vPickup = pickByAutoCategory(vehicleItems, "truck", 12);
   const vNear = pickNearYouRail(vehicleItems, preferredCity, 12, loc);
-  const dealers = extractDealersFromListings(
-    vehicleDemo.isDemo ? vehicleItems : vehiclePool,
-    12,
-  );
+  const dealers = extractVerifiedDealersFromMarketplacePools({
+    property: propertyDemo.isDemo ? propertyItems : propertyPool,
+    vehicle: vehicleDemo.isDemo ? vehicleItems : vehiclePool,
+    electronics: electronicsOn
+      ? electronicsSample.isDemo
+        ? electronicsItems
+        : electronicsRecent
+      : [],
+    limit: 12,
+  });
   const vehicleCategoryCounts = countByAutoCategory(vehicleItems);
   const propertyCategoryCounts = countByPropertyType(propertyItems);
   const propertyCommercial = pickPropertyByTypes(

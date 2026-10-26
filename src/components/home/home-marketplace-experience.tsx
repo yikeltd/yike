@@ -9,10 +9,10 @@ import type { BrowseSearchPayload } from "@/components/search/browse-listings-bl
 import { HOME_RAIL_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import {
   MarketplaceSection,
-  DealerDiscoveryRow,
   CarouselRail,
 } from "@/components/marketplace/experience";
 import type { DiscoveryDealerCard } from "@/lib/home/discovery-from-pool";
+import { VerifiedDealersHomeSection } from "@/components/home/verified-dealers-home-section";
 import {
   homeCategoryQueryValue,
   parseHomeCategory,
@@ -130,14 +130,13 @@ export function HomeMarketplaceExperience({
   mixedLatest = [],
   latestOnYikeError = false,
   marketplaceLocation = null,
-  showingDemoFixtures: _showingDemoFixtures = false,
+  showingDemoFixtures = false,
   showingSampleListingsFixture = false,
   homepageTopAd = null,
   dealers = [],
   categoryCounts: _categoryCounts = {},
 }: Props) {
   void _categoryCounts;
-  void _showingDemoFixtures;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -309,120 +308,6 @@ export function HomeMarketplaceExperience({
   const luxuryCopy = luxuryRailCopy(loc, rails.luxury.scope, kind);
   const nationwideCopy = nationwideRailCopy(kind);
 
-  const sampleDealers: DiscoveryDealerCard[] = dealers.length > 0 ? dealers : [
-    {
-      id: "d-1",
-      name: "Demo Auto Hub",
-      href: "/agent/demo-auto-hub",
-      avatarUrl: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: true,
-      location: "Lagos, Lagos",
-      listingCount: 12,
-      memberSince: "2026-07-01",
-    },
-    {
-      id: "d-2",
-      name: "Prime Motors",
-      href: "/agent/prime-motors",
-      avatarUrl: "https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: true,
-      location: "Port Harcourt, Rivers",
-      listingCount: 9,
-      memberSince: "2026-07-01",
-    },
-    {
-      id: "d-3",
-      name: "BPS Cars NG",
-      href: "/agent/bps-cars-ng",
-      avatarUrl: "https://images.unsplash.com/photo-1572021335469-31706a17aaef?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: true,
-      location: "Abuja, FCT",
-      listingCount: 15,
-      memberSince: "2026-07-01",
-    },
-    {
-      id: "d-4",
-      name: "BuildRight Estate",
-      href: "/agent/buildright-estate",
-      avatarUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: false,
-      location: "Lagos, Lagos",
-      listingCount: 8,
-      memberSince: "2025-05-01",
-    },
-    {
-      id: "d-5",
-      name: "City Motors",
-      href: "/agent/city-motors",
-      avatarUrl: "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: true,
-      location: "Ibadan, Oyo",
-      listingCount: 11,
-      memberSince: "2026-03-01",
-    },
-    {
-      id: "d-6",
-      name: "BlueStone Properties",
-      href: "/agent/bluestone-properties",
-      avatarUrl: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: false,
-      location: "Enugu, Enugu",
-      listingCount: 14,
-      memberSince: "2025-08-01",
-    },
-    {
-      id: "d-7",
-      name: "Golden Wheels",
-      href: "/agent/golden-wheels",
-      avatarUrl: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: true,
-      location: "Kano, Kano",
-      listingCount: 10,
-      memberSince: "2026-01-01",
-    },
-    {
-      id: "d-8",
-      name: "Urban Developers",
-      href: "/agent/urban-developers",
-      avatarUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: false,
-      location: "Asaba, Delta",
-      listingCount: 16,
-      memberSince: "2025-11-01",
-    },
-    {
-      id: "d-9",
-      name: "Prestige Homes",
-      href: "/agent/prestige-homes",
-      avatarUrl: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: false,
-      location: "Calabar, Cross River",
-      listingCount: 7,
-      memberSince: "2026-04-01",
-    },
-    {
-      id: "d-10",
-      name: "Capital Auto Mall",
-      href: "/agent/capital-auto-mall",
-      avatarUrl: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=120&q=80&fit=crop",
-      verified: true,
-      isDealer: true,
-      location: "Abuja, FCT",
-      listingCount: 22,
-      memberSince: "2025-09-01",
-    },
-  ];
-
-
   return (
     <div className="home-canvas min-h-[100dvh] pb-24 lg:pb-8 bg-[#f7f9fc]">
       {showingSampleListingsFixture ? (
@@ -459,6 +344,9 @@ export function HomeMarketplaceExperience({
         electronicsRecent={electronicsRecent}
         mixedLatest={mixedLatest}
         latestOnYikeError={latestOnYikeError}
+        verifiedDealers={dealers}
+        showingSampleListingsFixture={showingSampleListingsFixture}
+        showingDemoFixtures={showingDemoFixtures}
       />
 
       {/* MOBILE EXPERIENCE */}
@@ -523,11 +411,10 @@ export function HomeMarketplaceExperience({
           />
         </MarketplaceSection>
 
-        {/* 7. VERIFIED DEALERS & DEVELOPERS CAROUSEL */}
-        <DealerDiscoveryRow
-          dealers={sampleDealers}
-          title="🛡️ Verified Dealers & Developers"
-          subtitle="Trusted businesses with live inventory on Yike"
+        <VerifiedDealersHomeSection
+          liveDealers={dealers}
+          showingSampleListingsFixture={showingSampleListingsFixture}
+          showingDemoFixtures={showingDemoFixtures}
         />
 
         {electronicsRecent.length > 0 && !isElectronics ? (
