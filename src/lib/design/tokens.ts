@@ -57,6 +57,10 @@ export const brand = {
   logoWidth: 1254,
   logoHeight: 1254,
   logoAlt: "Yike — Nigerian property and vehicle marketplace",
+  /** PNG favicon sizes — regenerate via npm run optimize:brand */
+  favicon32: "/icons/icon-32.png",
+  favicon16: "/icons/icon-16.png",
+  appleTouchIcon: "/apple-touch-icon.png",
 } as const;
 
 /** Yike Crew — internal ops app, using the same Yike mark for brand consistency. */

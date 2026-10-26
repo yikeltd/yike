@@ -58,9 +58,11 @@ async function logoPngBuffer(source, size, fit = "cover") {
 
 /** Square icon from the full logo artwork; preserves the logo background. */
 async function writeLogoIcon(source, path, size) {
-  await sharp(await logoPngBuffer(source, size))
-    .png({ compressionLevel: 9, palette: true })
-    .toFile(path);
+  let pipeline = sharp(await logoPngBuffer(source, size));
+  if (size <= 48) {
+    pipeline = pipeline.sharpen({ sigma: 0.6, m1: 0.5, m2: 0.25 });
+  }
+  await pipeline.png({ compressionLevel: 9, palette: size <= 48 }).toFile(path);
 }
 
 async function writeTwaSplash(source, path, size) {
@@ -174,6 +176,8 @@ async function main() {
   );
   const ico = await pngToIco(icoBuffers);
   await writeFile(join(OUT_DIR, "favicon.ico"), ico);
+  /** Next.js App Router serves tab favicon from src/app/favicon.ico — must stay in sync with public/. */
+  await writeFile(join(APP_DIR, "favicon.ico"), ico);
   await writeFile(
     join(OUT_DIR, "apple-touch-icon.png"),
     await sharp(join(ICONS_DIR, "apple-touch-icon.png")).toBuffer()
@@ -181,6 +185,9 @@ async function main() {
 
   await writeLogoIcon(source, join(APP_DIR, "icon.png"), 512);
   await writeLogoIcon(source, join(APP_DIR, "apple-icon.png"), 180);
+  await logFile(join(APP_DIR, "favicon.ico"));
+  await logFile(join(APP_DIR, "icon.png"));
+  await logFile(join(APP_DIR, "apple-icon.png"));
 
   const mark512 = await logoMarkPngBuffer(source, 512);
   await sharp(mark512)
