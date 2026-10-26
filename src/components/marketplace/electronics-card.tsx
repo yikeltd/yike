@@ -10,6 +10,7 @@ import { ListingSaveButton } from "@/components/marketplace/listing-save-button"
 import { listingSaveAnalyticsFromProperty } from "@/lib/listings/toggle-listing-save";
 import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
 import { electronicsCategoryLabel } from "@/lib/marketplace/electronics-specs";
+import { YIKE_LISTING_CARD } from "@/lib/design/yike-classes";
 import { cn, isVerifiedAgent } from "@/lib/utils";
 
 function formatNaira(n: number) {
@@ -45,19 +46,19 @@ export function ElectronicsCard({
   const location = [listing.area, listing.city].filter(Boolean).join(", ");
 
   return (
-    <article
-      className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-sm ring-1 ring-black/[0.03] transition-all hover:border-gold/40 hover:shadow-md",
-        variant === "compact" && "rounded-xl",
-      )}
-    >
+    <article className={cn(YIKE_LISTING_CARD, variant === "compact" && "rounded-xl")}>
       <div className="relative block w-full overflow-hidden bg-navy/5">
         <Link
           href={href}
           className="relative block w-full"
           onClick={() => persistBrowseReturn(browseReturn)}
         >
-          <div className={cn("relative w-full", BROWSE_THUMB_ASPECT)}>
+          <div
+            className={cn(
+              "listing-thumb relative w-full overflow-hidden rounded-[1.25rem] bg-navy/5",
+              BROWSE_THUMB_ASPECT,
+            )}
+          >
             <Image
               src={photo}
               alt={listing.title}
@@ -70,7 +71,7 @@ export function ElectronicsCard({
               priority={priorityImage}
             />
           </div>
-          <span className="absolute left-2 top-2 rounded-full bg-navy/85 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+          <span className="absolute left-1.5 top-1.5 rounded-md bg-navy/85 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
             {category}
           </span>
         </Link>
@@ -85,10 +86,14 @@ export function ElectronicsCard({
           />
         </div>
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
+      <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:p-3">
         <Link href={href} className="min-w-0">
-          <h3 className="line-clamp-2 text-sm font-bold text-navy">{listing.title}</h3>
-          <p className="mt-0.5 text-lg font-black text-navy">{formatNaira(Number(listing.price))}</p>
+          <p className="text-sm font-black tabular-nums leading-tight tracking-tight text-foreground sm:text-base">
+            {formatNaira(Number(listing.price))}
+          </p>
+          <h3 className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-foreground/90 sm:text-[13px]">
+            {listing.title}
+          </h3>
         </Link>
         <p className="text-xs text-muted line-clamp-1">
           {[listing.make, listing.model].filter(Boolean).join(" · ")}

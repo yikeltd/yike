@@ -33,6 +33,7 @@ import { optimizeListingImageUrl } from "@/lib/image-url";
 import { persistBrowseReturn } from "@/lib/marketplace/browse-navigation";
 import { useMarketplaceBrowseReturn } from "@/hooks/use-marketplace-browse-return";
 import { ListingDistanceLabel } from "@/components/marketplace/listing-distance-label";
+import { YIKE_LISTING_CARD } from "@/lib/design/yike-classes";
 import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
@@ -184,19 +185,19 @@ export function PropertyCard({
 
   return (
     <>
-      <article
-        className={cn(
-          "group card-lift relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-elevated shadow-card ring-1 ring-black/[0.04] dark:ring-white/[0.08]",
-          inline ? "" : ""
-        )}
-      >
+      <article className={cn(YIKE_LISTING_CARD, inline ? "" : "")}>
         <Link
           href={href}
           prefetch={!isDemo}
           className="block"
           onClick={handleListingLinkClick}
         >
-          <div className="relative aspect-[4/3] overflow-hidden bg-surface">
+          <div
+            className={cn(
+              "listing-thumb relative overflow-hidden rounded-[1.25rem] bg-navy/5",
+              BROWSE_THUMB_ASPECT,
+            )}
+          >
             <ListingImage
               src={image}
               alt={imageAlt}

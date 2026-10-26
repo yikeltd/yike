@@ -60,14 +60,14 @@ export function SearchClientChrome({
             <span className="hidden sm:inline">Save Search</span>
           </button>
 
-          <div className="flex rounded-2xl bg-slate-200 dark:bg-navy-light p-0.5 border border-navy/10 dark:border-white/10">
+          <div className="flex rounded-2xl bg-surface dark:bg-navy-light p-0.5 border border-navy/10 dark:border-white/10">
             <button
               type="button"
               onClick={() => setViewMode("grid")}
               className={cn(
                 "pressable flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-bold transition-all",
                 viewMode === "grid"
-                  ? "bg-[#031B4E] dark:bg-gold text-white dark:text-navy shadow-sm"
+                  ? "bg-navy dark:bg-gold text-white dark:text-navy shadow-sm"
                   : "text-navy/60 dark:text-white/60 hover:text-navy"
               )}
             >
@@ -81,7 +81,7 @@ export function SearchClientChrome({
               className={cn(
                 "pressable flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-bold transition-all",
                 viewMode === "map"
-                  ? "bg-[#031B4E] dark:bg-gold text-white dark:text-navy shadow-sm"
+                  ? "bg-navy dark:bg-gold text-white dark:text-navy shadow-sm"
                   : "text-navy/60 dark:text-white/60 hover:text-navy"
               )}
             >

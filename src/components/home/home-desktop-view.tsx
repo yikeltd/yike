@@ -81,7 +81,7 @@ function renderDesktopSection(title: string, href: string, items: Property[]) {
           return (
             <div
               key={item.id}
-              className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md transition-all hover:-translate-y-1 hover:shadow-xl"
+              className="group card-lift relative flex flex-col overflow-hidden yike-listing-card"
             >
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-navy">
                 <Link

@@ -131,10 +131,10 @@ export function HomeCategoryRail({
           const Icon = item.icon;
           const disabled = item.tone === "soon" && item.href === "#";
           const cardClass = cn(
-            "pressable group relative flex items-center gap-3 rounded-2xl border p-3 text-left transition-all",
+            "pressable group relative flex items-center gap-3 p-3 text-left transition-all",
             onHero
-              ? "border-white/18 bg-white/10 backdrop-blur-sm hover:bg-white/16"
-              : "border-navy/10 bg-white shadow-sm ring-1 ring-black/[0.03] hover:border-gold/40 hover:shadow-md",
+              ? "rounded-2xl border border-white/18 bg-white/10 backdrop-blur-sm hover:bg-white/16"
+              : "yike-marketplace-tile",
             disabled && "cursor-default opacity-90"
           );
 

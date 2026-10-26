@@ -11,6 +11,21 @@ test("globals.css defines YDS surface utilities and warm page background", () =>
   assert.match(css, /\.yike-spec-cell/);
   assert.match(css, /\.yike-detail-canvas/);
   assert.match(css, /\.yike-section-heading/);
+  assert.match(css, /\.yike-listing-card/);
+  assert.match(css, /\.yike-browse-canvas/);
+  assert.match(css, /\.yike-field-control/);
+});
+
+test("marketplace listing cards share YIKE_LISTING_CARD shell", () => {
+  const cards = [
+    "components/property/property-card.tsx",
+    "components/marketplace/vehicle-card.tsx",
+    "components/marketplace/electronics-card.tsx",
+  ];
+  for (const file of cards) {
+    const src = readFileSync(join(process.cwd(), "src", file), "utf8");
+    assert.match(src, /YIKE_LISTING_CARD|yike-listing-card/, file);
+  }
 });
 
 test("design tokens align with locked brand navy and gold", () => {

@@ -63,7 +63,7 @@ export function HomeThreeVerticalHero({ className }: { className?: string }) {
             <li key={item.id}>
               <Link
                 href={item.href}
-                className="pressable group relative flex min-h-[140px] overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-sm ring-1 ring-black/[0.03] transition-all hover:border-gold/40 hover:shadow-md sm:flex-col"
+                className="pressable group relative flex min-h-[140px] overflow-hidden yike-marketplace-tile sm:flex-col"
               >
                 <div
                   className={cn(

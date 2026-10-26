@@ -34,7 +34,7 @@ export function SellerFlowShell({
   return (
     <main
       className={cn(
-        "min-h-[100dvh] bg-surface pb-20 pt-3 sm:px-5",
+        "yike-browse-canvas min-h-[100dvh] pb-20 pt-3 sm:px-5",
         className,
       )}
     >

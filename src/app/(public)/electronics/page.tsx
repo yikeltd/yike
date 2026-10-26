@@ -86,7 +86,7 @@ export default async function ElectronicsPage({
   }
 
   return (
-    <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
+    <div className="yike-browse-canvas search-hub-canvas lg:pb-8">
       {!submittedSearch ? (
         <MarketplaceBrowseDiscoverySection vertical="electronics" title="Electronics">
           <ElectronicsDiscoverySearch

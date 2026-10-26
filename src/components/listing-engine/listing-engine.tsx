@@ -40,6 +40,7 @@ import { ListingPhotoManager } from "@/components/agent/listing-photo-manager";
 import type { ListingPhotoItem } from "@/components/agent/listing-photo-types";
 import { FieldRenderer } from "@/components/listing-engine/field-renderer";
 import { ListingSmartDescribe } from "@/components/listing-engine/listing-smart-describe";
+import { YIKE_WIZARD_PANEL } from "@/lib/design/yike-classes";
 import { cn } from "@/lib/utils";
 import {
   applyListingSuggestions,
@@ -687,7 +688,7 @@ function ListingEngineInner({
 
   if (success) {
     return (
-      <div className="flex flex-col items-center rounded-3xl border border-navy/[0.06] bg-white p-8 text-center shadow-xl">
+      <div className={cn(YIKE_WIZARD_PANEL, "flex flex-col items-center p-8 text-center")}>
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold/20 text-2xl font-black text-navy">
           ✓
         </div>
@@ -721,7 +722,7 @@ function ListingEngineInner({
           <span className="text-xs font-extrabold uppercase text-gold">Final Review</span>
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-navy/10 bg-white shadow-xl">
+        <div className={YIKE_WIZARD_PANEL}>
           <div className="relative aspect-[16/10] bg-navy/5">
             {coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -955,7 +956,7 @@ function ListingEngineInner({
       </div>
 
       {/* 3. ACCORDION SECTION 1: DETAILS */}
-      <div className="overflow-hidden rounded-3xl border border-navy/[0.06] bg-white shadow-xs transition-all">
+      <div className={cn(YIKE_WIZARD_PANEL, "transition-all")}>
         {activeSection !== 0 ? (
           // Collapsed Summary Card (approx 72–88px tall)
           <div
@@ -1017,7 +1018,7 @@ function ListingEngineInner({
       </div>
 
       {/* 4. ACCORDION SECTION 2: PHOTOS & PRICING */}
-      <div className="overflow-hidden rounded-3xl border border-navy/[0.06] bg-white shadow-xs transition-all">
+      <div className={cn(YIKE_WIZARD_PANEL, "transition-all")}>
         {activeSection !== 1 ? (
           // Collapsed Summary Card
           <div
@@ -1068,7 +1069,7 @@ function ListingEngineInner({
       </div>
 
       {/* 5. ACCORDION SECTION 3: LOCATION (MAP-FREE) & REVIEW */}
-      <div className="overflow-hidden rounded-3xl border border-navy/[0.06] bg-white shadow-xs transition-all">
+      <div className={cn(YIKE_WIZARD_PANEL, "transition-all")}>
         {activeSection !== 2 ? (
           // Collapsed Summary Card
           <div

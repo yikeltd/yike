@@ -67,7 +67,7 @@ export function SellerCategoryChoose({
   }
 
   return (
-    <main className="min-h-[100dvh] bg-surface pb-16">
+    <main className="yike-browse-canvas min-h-[100dvh] pb-16">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-navy/10 bg-white/95 px-3 py-3 backdrop-blur-md">
         <Link
           href="/agent/listings"
@@ -87,7 +87,7 @@ export function SellerCategoryChoose({
           </p>
         ) : null}
 
-        <div className="rounded-2xl border border-navy/[0.08] bg-white p-4 shadow-xs">
+        <div className="yike-panel p-4">
           <label htmlFor="sell-hint" className="text-sm font-bold text-navy">
             What are you selling?
           </label>
@@ -97,7 +97,7 @@ export function SellerCategoryChoose({
             value={hint}
             onChange={(e) => setHint(e.target.value)}
             placeholder="Describe it — we can route you to the right form"
-            className="mt-2 w-full resize-none rounded-xl border border-navy/10 px-3 py-2.5 text-sm text-navy outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/20"
+            className="yike-field-control yike-focus mt-2 w-full resize-none px-3 py-2.5 text-sm text-navy"
           />
           {suggestedHref ? (
             <button
@@ -120,8 +120,7 @@ export function SellerCategoryChoose({
                   type="button"
                   onClick={() => goWithHint(card.href)}
                   className={cn(
-                    "pressable flex w-full items-center gap-4 rounded-2xl border border-navy/10 bg-white p-4 text-left shadow-sm",
-                    "transition-shadow hover:shadow-md",
+                    "pressable yike-marketplace-tile flex w-full items-center gap-4 p-4 text-left",
                   )}
                 >
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy text-gold">

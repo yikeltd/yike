@@ -308,7 +308,7 @@ export function HomeMarketplaceExperience({
   const nationwideCopy = nationwideRailCopy(kind);
 
   return (
-    <div className="home-canvas min-h-[100dvh] pb-24 lg:pb-8 bg-[#f7f9fc]">
+    <div className="home-canvas yike-browse-canvas pb-24 lg:pb-8">
       {/* DESKTOP EXPERIENCE (RESTORED LEGACY HOMEPAGE) */}
       <HomeDesktopView
         category={category}

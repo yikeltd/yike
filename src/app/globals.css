@@ -405,6 +405,81 @@ body {
   box-shadow: var(--shadow-card);
 }
 
+/* Consumer browse grids — property, vehicle, electronics listing cards */
+.yike-listing-card {
+  border-radius: var(--radius-card);
+  background: var(--elevated);
+  border: 1px solid var(--border-premium);
+  box-shadow: var(--shadow-card);
+}
+
+.dark .yike-listing-card {
+  border-color: var(--border-glass);
+}
+
+/* Hero / category tiles on home and seller choose flows */
+.yike-marketplace-tile {
+  border-radius: var(--radius-card);
+  background: var(--elevated);
+  border: 1px solid var(--border-premium);
+  box-shadow: var(--shadow-card);
+  transition:
+    border-color var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .yike-marketplace-tile:hover {
+    border-color: color-mix(in srgb, var(--gold) 40%, var(--border-premium));
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+/* Warm ivory canvas for home + vertical browse/search hubs */
+.home-canvas,
+.search-hub-canvas,
+.yike-browse-canvas {
+  min-height: 100dvh;
+  background: var(--background);
+}
+
+/* Listing wizard + catalogue selectors */
+.yike-field-control {
+  border-radius: var(--radius-tile);
+  border: 1px solid var(--border-premium);
+  background: var(--elevated);
+  color: var(--foreground);
+  outline: none;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.yike-field-control:focus,
+.yike-field-control:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 22%, transparent);
+}
+
+.yike-choice-chip {
+  border-radius: var(--radius-tile);
+  border: 1px solid var(--border-premium);
+  background: var(--elevated);
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+  font-weight: 700;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.yike-choice-chip--selected {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 15%, var(--elevated));
+  color: var(--foreground);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 28%, transparent);
+}
+
 .yike-section-heading {
   font-size: 0.6875rem;
   font-weight: 800;

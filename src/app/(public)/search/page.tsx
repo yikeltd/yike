@@ -193,7 +193,7 @@ export default async function SearchPage({
     .join(" · ");
 
   return (
-    <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
+    <div className="yike-browse-canvas search-hub-canvas lg:pb-8">
       <PrefSync />
       {!submittedSearch ? (
         <MarketplaceBrowseDiscoverySection vertical="property" title="Search">

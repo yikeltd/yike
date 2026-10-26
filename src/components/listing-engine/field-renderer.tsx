@@ -2,10 +2,10 @@
 
 import type { FieldOption, ListingFieldDef } from "@/lib/listing-engine";
 import { ListingSearchableSelect } from "@/components/listing-engine/listing-searchable-select";
+import { YIKE_FIELD_CONTROL } from "@/lib/design/yike-classes";
 import { cn } from "@/lib/utils";
 
-const inputClass =
-  "w-full rounded-xl border border-navy/10 bg-white px-3 py-2.5 text-sm text-navy outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-gold/20";
+const inputClass = `${YIKE_FIELD_CONTROL} w-full px-3 py-2.5 text-sm text-navy`;
 
 type Props = {
   field: ListingFieldDef;

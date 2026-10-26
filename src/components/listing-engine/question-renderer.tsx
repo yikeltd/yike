@@ -3,6 +3,11 @@
 import type { QuestionFieldConfig, QuestionOption } from "@/lib/listing-engine/types";
 import { OnboardingCardGrid } from "@/components/onboarding/onboarding-card-grid";
 import { MediaEngine } from "./media-engine";
+import {
+  YIKE_CHOICE_CHIP,
+  YIKE_CHOICE_CHIP_SELECTED,
+  YIKE_FIELD_CONTROL,
+} from "@/lib/design/yike-classes";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -25,7 +30,7 @@ export function QuestionRenderer({ field, value, error, onChange }: Props) {
 
     return (
       <div className="space-y-2">
-        <label className="block text-xs md:text-sm font-bold uppercase text-[#031B4E] tracking-wide">
+        <label className="block text-xs md:text-sm font-bold uppercase text-navy tracking-wide">
           {field.label}
         </label>
         <OnboardingCardGrid
@@ -42,11 +47,11 @@ export function QuestionRenderer({ field, value, error, onChange }: Props) {
     const photos = Array.isArray(value) ? (value as string[]) : [];
     return (
       <div className="space-y-2">
-        <label className="block text-xs md:text-sm font-bold uppercase text-[#031B4E] tracking-wide">
+        <label className="block text-xs md:text-sm font-bold uppercase text-navy tracking-wide">
           {field.label}
         </label>
         {field.helpText && (
-          <p className="text-xs text-slate-500 font-medium">{field.helpText}</p>
+          <p className="text-xs text-muted font-medium">{field.helpText}</p>
         )}
         <MediaEngine
           photos={photos}
@@ -62,7 +67,7 @@ export function QuestionRenderer({ field, value, error, onChange }: Props) {
 
     return (
       <div className="space-y-2">
-        <label className="block text-xs md:text-sm font-bold uppercase text-[#031B4E] tracking-wide">
+        <label className="block text-xs md:text-sm font-bold uppercase text-navy tracking-wide">
           {field.label}
         </label>
         <div className="flex flex-wrap gap-2.5">
@@ -74,10 +79,9 @@ export function QuestionRenderer({ field, value, error, onChange }: Props) {
                 type="button"
                 onClick={() => onChange(opt.id)}
                 className={cn(
-                  "pressable min-h-[48px] min-w-[48px] px-5 py-2.5 rounded-2xl border text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-2",
-                  isSelected
-                    ? "border-[#E4B547] bg-[#E4B547]/15 text-[#031B4E] ring-2 ring-[#E4B547]/30 shadow-xs font-black"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  YIKE_CHOICE_CHIP,
+                  "min-w-[48px]",
+                  isSelected && YIKE_CHOICE_CHIP_SELECTED,
                 )}
               >
                 <span>{opt.label}</span>
@@ -95,15 +99,16 @@ export function QuestionRenderer({ field, value, error, onChange }: Props) {
 
     return (
       <div className="space-y-1.5">
-        <label className="block text-xs md:text-sm font-bold uppercase text-[#031B4E] tracking-wide">
+        <label className="block text-xs md:text-sm font-bold uppercase text-navy tracking-wide">
           {field.label}
         </label>
         <select
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
           className={cn(
-            "min-h-[48px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs md:text-sm font-medium outline-none focus:border-[#E4B547] focus:ring-2 focus:ring-[#E4B547]/20 transition-all",
-            error && "border-rose-400 bg-rose-50/50"
+            YIKE_FIELD_CONTROL,
+            "min-h-[48px] w-full px-4 py-3 text-xs md:text-sm font-medium",
+            error && "border-rose-400 bg-rose-50/50",
           )}
         >
           <option value="">Select option…</option>
@@ -121,7 +126,7 @@ export function QuestionRenderer({ field, value, error, onChange }: Props) {
   // Text, Number, Currency inputs
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs md:text-sm font-bold uppercase text-[#031B4E] tracking-wide">
+      <label className="block text-xs md:text-sm font-bold uppercase text-navy tracking-wide">
         {field.label}
       </label>
       <input
@@ -137,12 +142,13 @@ export function QuestionRenderer({ field, value, error, onChange }: Props) {
           }
         }}
         className={cn(
-          "min-h-[48px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs md:text-sm font-medium outline-none focus:border-[#E4B547] focus:ring-2 focus:ring-[#E4B547]/20 transition-all",
-          error && "border-rose-400 bg-rose-50/50"
+          YIKE_FIELD_CONTROL,
+          "min-h-[48px] w-full px-4 py-3 text-xs md:text-sm font-medium",
+          error && "border-rose-400 bg-rose-50/50",
         )}
       />
       {field.helpText && (
-        <p className="text-xs text-slate-500 font-medium">{field.helpText}</p>
+        <p className="text-xs text-muted font-medium">{field.helpText}</p>
       )}
       {error && <p className="text-xs font-bold text-rose-600 mt-1">{error}</p>}
     </div>
