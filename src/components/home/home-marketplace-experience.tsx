@@ -492,7 +492,12 @@ export function HomeMarketplaceExperience({
             </p>
           </MarketplaceSection>
         ) : mixedLatest.length > 0 ? (
-          <MarketplaceSection title="Latest on Yike" href="/discover" band="white">
+          <MarketplaceSection
+            title="Latest on Yike"
+            href="/discover"
+            band="white"
+            className="home-latest-on-yike"
+          >
             <CarouselRail items={mixedLatest} priorityCount={3} />
           </MarketplaceSection>
         ) : null}

@@ -102,10 +102,10 @@ test("vehicle home search category options include five primary plus browse taxo
   }
 });
 
-test("compact hero reserves minimum height on mobile", () => {
-  const hero = readFileSync(
-    join(process.cwd(), "src/components/home/home-compact-marketplace-hero.tsx"),
+test("mobile filter shell uses document flow not absolute overlay", () => {
+  const shell = readFileSync(
+    join(process.cwd(), "src/components/home/home-mobile-filter-shell.tsx"),
     "utf8",
   );
-  assert.match(hero, /min-h-\[/);
+  assert.doesNotMatch(shell, /absolute inset-x-0/);
 });

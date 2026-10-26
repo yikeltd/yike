@@ -91,8 +91,7 @@ export function HomeCompactMarketplaceHero({
     <section
       id="home-search"
       className={cn(
-        "home-hero-mobile full-bleed relative overflow-hidden px-3 pb-3 pt-2",
-        mobileFilterCollapse && "min-h-[10.75rem]",
+        "home-hero-mobile full-bleed relative overflow-x-hidden px-3 pb-3 pt-2",
         className,
       )}
       aria-label="Marketplace search"

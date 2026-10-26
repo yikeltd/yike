@@ -173,7 +173,9 @@ export function HomeDesktopView({
             </p>
           </section>
         ) : mixedLatest.length > 0 ? (
-          renderDesktopSection("Latest on Yike", "/discover", mixedLatest)
+          <div data-testid="home-desktop-latest-on-yike">
+            {renderDesktopSection("Latest on Yike", "/discover", mixedLatest)}
+          </div>
         ) : null}
         {renderDesktopSection("Featured", primary === propertyRails ? "/search?featured=1" : category === "vehicle" ? "/vehicles?featured=1" : "/electronics", primary.featuredItems)}
         {renderDesktopSection("Trending", category === "vehicle" ? "/vehicles" : category === "electronics" ? "/electronics" : "/search", primary.trendingItems)}
