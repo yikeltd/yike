@@ -10,7 +10,9 @@ import {
 } from "@/lib/marketplace/vehicle-taxonomy";
 import { ELECTRONICS_CATEGORIES } from "@/lib/marketplace/electronics-specs";
 import { PROPERTY_CATEGORIES } from "@/constants/propertyCategories";
+import { propertyTypesForListingType } from "@/constants/listingTypes";
 import { vehiclePrimaryCategorySelectOptions } from "@/lib/marketplace/vehicle-specs";
+import { vehicleCategoryLabel } from "@/lib/marketplace/vehicle-specs";
 
 test("mobile hero uses collapsible filter shell on compact marketplace hero", () => {
   const hero = readFileSync(
@@ -18,7 +20,17 @@ test("mobile hero uses collapsible filter shell on compact marketplace hero", ()
     "utf8",
   );
   assert.match(hero, /mobileFilterCollapse/);
+  assert.match(hero, /useState\(false\)/);
   assert.match(hero, /filtersExpanded/);
+});
+
+test("mobile filter shell keeps search visible while filters collapse", () => {
+  const shell = readFileSync(
+    join(process.cwd(), "src/components/home/home-mobile-filter-shell.tsx"),
+    "utf8",
+  );
+  assert.match(shell, /Filters & location/);
+  assert.match(shell, /searchButton/);
 });
 
 test("vehicle search activates detail filters after category on mobile", () => {
@@ -121,4 +133,43 @@ test("desktop vehicle hero chips use primary marketplace categories", () => {
   );
   assert.match(src, /VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES/);
   assert.doesNotMatch(src, /value: "truck"/);
+});
+
+test("home vehicle search maps category selection to URL search params", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/home/home-vehicle-search.tsx"),
+    "utf8",
+  );
+  assert.match(src, /params\.set\("category", category\)/);
+  assert.match(src, /params\.set\("make", make\)/);
+  assert.match(src, /params\.set\("min_price"/);
+});
+
+test("primary vehicle category labels match consumer copy", () => {
+  assert.equal(vehicleCategoryLabel("car"), "Cars");
+  assert.equal(vehicleCategoryLabel("suv"), "SUVs");
+  assert.equal(vehicleCategoryLabel("pickup_van"), "Pickups");
+  assert.equal(vehicleCategoryLabel("bus_minibus"), "Buses");
+  assert.equal(vehicleCategoryLabel("motorcycle_tricycle"), "Motorcycles");
+  assert.equal(vehicleCategoryLabel("truck"), "Truck (legacy)");
+});
+
+test("property listing types are subset of PROPERTY_CATEGORIES SSOT", () => {
+  const known = new Set(PROPERTY_CATEGORIES.map((c) => c.value));
+  for (const listingType of ["rent", "lease", "sale", "shortlet"] as const) {
+    for (const t of propertyTypesForListingType(listingType)) {
+      assert.ok(known.has(t.value), `${t.value} missing from PROPERTY_CATEGORIES`);
+    }
+  }
+});
+
+test("electronics home search and listing catalog share category ids", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/home/home-desktop-electronics-search.tsx"),
+    "utf8",
+  );
+  assert.match(src, /ELECTRONICS_CATEGORIES\.map/);
+  const catalogIds = ELECTRONICS_CATEGORIES.map((c) => c.id).sort();
+  const specIds = [...ELECTRONICS_CATEGORIES.map((c) => c.id)].sort();
+  assert.deepEqual(catalogIds, specIds);
 });

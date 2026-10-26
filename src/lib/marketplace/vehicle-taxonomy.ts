@@ -356,6 +356,9 @@ export const VIN_ELIGIBLE_CATEGORIES: VehicleCategoryId[] = [
 ];
 
 export function vehicleCategoryLabel(id: string | null | undefined): string {
+  if (!id) return "Vehicle";
+  const primary = VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.find((c) => c.id === id);
+  if (primary) return primary.label;
   const hit = VEHICLE_TAXONOMY.find((c) => c.id === id);
   return hit?.label ?? "Vehicle";
 }
