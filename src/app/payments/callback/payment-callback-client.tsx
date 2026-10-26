@@ -3,19 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-
-type Phase = "processing" | "successful" | "failed" | "cancelled" | "missing";
-
-function mapStatus(status: string): Phase {
-  if (status === "successful") return "successful";
-  if (status === "failed") return "failed";
-  if (status === "cancelled" || status === "refunded") return "cancelled";
-  return "processing";
-}
+import {
+  type PaymentCallbackPhase,
+  mapVerifyHttpToPhase,
+  reconcileHttpIndicatesUnavailable,
+  shouldAttemptReconcile,
+} from "@/lib/payments/callback-flow";
+import { dispatchYikeCoinsBalanceChanged } from "@/lib/yike-coins/balance-events";
 
 /**
  * Callback after Paystack Checkout.
- * Shows Processing only and polls status — never activates from this page.
+ * Never treats redirect query params as proof of payment — polls server status and
+ * optionally triggers owner reconcile (Paystack API verify + idempotent fulfilment).
  */
 export function PaymentCallbackClient() {
   const searchParams = useSearchParams();
@@ -25,50 +24,131 @@ export function PaymentCallbackClient() {
     searchParams.get("trxref")?.trim() ||
     "";
 
-  const [phase, setPhase] = useState<Phase>(reference ? "processing" : "missing");
+  const [phase, setPhase] = useState<PaymentCallbackPhase>(
+    reference ? "processing" : "missing",
+  );
   const [pollCount, setPollCount] = useState(0);
+  const [statusHint, setStatusHint] = useState<string | null>(null);
   const cancelledRef = useRef(false);
+  const pollIndexRef = useRef(0);
 
   useEffect(() => {
     if (!reference) return;
     cancelledRef.current = false;
+    pollIndexRef.current = 0;
+
+    async function tryReconcile(): Promise<"ok" | "pending" | "unavailable" | "failed"> {
+      try {
+        const res = await fetch("/api/payments/reconcile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reference }),
+          cache: "no-store",
+        });
+        const json = (await res.json()) as {
+          ok?: boolean;
+          error?: string;
+          code?: string;
+          walletTopup?: { balanceAfter?: number | null; coinsCredited?: number | null };
+        };
+
+        if (cancelledRef.current) return "pending";
+
+        if (res.ok && json.ok) {
+          dispatchYikeCoinsBalanceChanged();
+          return "ok";
+        }
+
+        if (res.status === 202 || json.code === "pending") {
+          return "pending";
+        }
+
+        if (res.status === 401 || res.status === 403) {
+          setStatusHint("Sign in to confirm this payment and update your wallet.");
+          return "pending";
+        }
+
+        if (reconcileHttpIndicatesUnavailable(res.status, json.code)) {
+          return "unavailable";
+        }
+
+        if (json.code === "failed" || res.status === 400) {
+          return "failed";
+        }
+
+        return "pending";
+      } catch {
+        return "unavailable";
+      }
+    }
 
     async function poll() {
+      pollIndexRef.current += 1;
+      const pollIndex = pollIndexRef.current;
+
       try {
         const res = await fetch(
           `/api/payments/verify/${encodeURIComponent(reference)}`,
-          { cache: "no-store" }
+          { cache: "no-store" },
         );
         const data = (await res.json()) as {
           ok?: boolean;
           status?: string;
           error?: string;
+          code?: string;
         };
 
         if (cancelledRef.current) return;
 
-        if (!res.ok || !data.ok || !data.status) {
-          // Keep processing while webhook may still arrive
-          setPhase("processing");
+        const mapped = mapVerifyHttpToPhase(res.status, data);
+        if (mapped === "failed" || mapped === "cancelled") {
+          setPhase(mapped);
+          if (mapped === "failed") {
+            router.replace(`/payments/failed?reference=${encodeURIComponent(reference)}`);
+          } else {
+            router.replace(`/payments/cancelled?reference=${encodeURIComponent(reference)}`);
+          }
           return;
         }
 
-        const next = mapStatus(data.status);
-        setPhase(next);
+        if (mapped === "verification_unavailable") {
+          setPhase("verification_unavailable");
+          setStatusHint(data.error ?? "Payment verification is temporarily unavailable.");
+          return;
+        }
 
-        if (next === "successful") {
-          router.replace(`/payments/success?reference=${encodeURIComponent(reference)}`);
-          return;
+        const status = data.status;
+        const reconcileNow =
+          status === "successful" || shouldAttemptReconcile(pollIndex);
+
+        if (reconcileNow) {
+          const outcome = await tryReconcile();
+          if (cancelledRef.current) return;
+
+          if (outcome === "ok") {
+            router.replace(`/payments/success?reference=${encodeURIComponent(reference)}`);
+            return;
+          }
+          if (outcome === "unavailable") {
+            setPhase("verification_unavailable");
+            setStatusHint(
+              "We could not reach Paystack to verify this payment. Your wallet will update once verification succeeds.",
+            );
+            return;
+          }
+          if (outcome === "failed") {
+            setPhase("failed");
+            router.replace(`/payments/failed?reference=${encodeURIComponent(reference)}`);
+            return;
+          }
         }
-        if (next === "failed") {
-          router.replace(`/payments/failed?reference=${encodeURIComponent(reference)}`);
-          return;
-        }
-        if (next === "cancelled") {
-          router.replace(`/payments/cancelled?reference=${encodeURIComponent(reference)}`);
-        }
+
+        setPhase("processing");
       } catch {
-        if (!cancelledRef.current) setPhase("processing");
+        if (!cancelledRef.current) {
+          setPhase("processing");
+          setStatusHint("Network error while checking payment status. Retrying…");
+        }
       }
     }
 
@@ -88,9 +168,38 @@ export function PaymentCallbackClient() {
     return (
       <StatusCard
         title="Missing payment reference"
-        body="Return to your listings and try again."
-        href="/agent/listings"
-        cta="Back to listings"
+        body="Return to your wallet and try again."
+        href="/account/coins"
+        cta="Yike Coins wallet"
+      />
+    );
+  }
+
+  if (phase === "verification_unavailable") {
+    return (
+      <StatusCard
+        title="Verification unavailable"
+        body={
+          statusHint ??
+          "We could not verify this payment right now. No Yike Coins were added until verification succeeds."
+        }
+        href="/account/coins"
+        cta="Open wallet"
+        secondaryHref="/payments/history"
+        secondaryCta="Payment history"
+        reference={reference}
+      />
+    );
+  }
+
+  if (phase === "failed") {
+    return (
+      <StatusCard
+        title="Payment failed"
+        body="This payment was not confirmed. You were not charged for Yike Coins."
+        href="/account/coins"
+        cta="Back to wallet"
+        reference={reference}
       />
     );
   }
@@ -104,8 +213,10 @@ export function PaymentCallbackClient() {
         />
         <h1 className="text-xl font-bold text-navy">Processing…</h1>
         <p className="mt-2 text-sm text-muted">
-          Confirming your payment securely. This usually takes a few seconds.
+          Confirming your payment securely with Paystack. Yike Coins are credited only after
+          server verification — not from this redirect alone.
         </p>
+        {statusHint ? <p className="mt-2 text-xs text-amber-800">{statusHint}</p> : null}
         {reference ? (
           <p className="mt-4 text-xs text-muted">
             Reference: <span className="font-mono text-navy">{reference}</span>
@@ -113,15 +224,21 @@ export function PaymentCallbackClient() {
         ) : null}
         {pollCount > 12 ? (
           <p className="mt-4 text-xs text-muted">
-            Still waiting for confirmation. You can leave this page — we&apos;ll email you when it
-            completes.
+            Still waiting for confirmation. You can open your wallet and tap Refresh after a
+            minute, or check payment history below.
           </p>
         ) : null}
         <Link
-          href="/payments/history"
+          href="/account/coins"
           className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-navy px-5 py-3 text-sm font-bold text-white"
         >
-          View payment history
+          Yike Coins wallet
+        </Link>
+        <Link
+          href="/payments/history"
+          className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy"
+        >
+          Payment history
         </Link>
       </div>
     </div>
@@ -133,23 +250,42 @@ function StatusCard({
   body,
   href,
   cta,
+  secondaryHref,
+  secondaryCta,
+  reference,
 }: {
   title: string;
   body: string;
   href: string;
   cta: string;
+  secondaryHref?: string;
+  secondaryCta?: string;
+  reference?: string;
 }) {
   return (
     <div className="mx-auto flex min-h-[70dvh] max-w-lg flex-col justify-center px-4 py-12">
       <div className="rounded-2xl border border-border bg-white p-8 text-center shadow-sm">
         <h1 className="text-xl font-bold text-navy">{title}</h1>
         <p className="mt-2 text-sm text-muted">{body}</p>
+        {reference ? (
+          <p className="mt-4 text-xs text-muted">
+            Reference: <span className="font-mono text-navy">{reference}</span>
+          </p>
+        ) : null}
         <Link
           href={href}
           className="mt-8 inline-flex w-full items-center justify-center rounded-xl bg-navy px-5 py-3 text-sm font-bold text-white"
         >
           {cta}
         </Link>
+        {secondaryHref && secondaryCta ? (
+          <Link
+            href={secondaryHref}
+            className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-border bg-white px-5 py-3 text-sm font-semibold text-navy"
+          >
+            {secondaryCta}
+          </Link>
+        ) : null}
       </div>
     </div>
   );

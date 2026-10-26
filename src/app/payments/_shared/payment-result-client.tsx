@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { dispatchYikeCoinsBalanceChanged } from "@/lib/yike-coins/balance-events";
 
 type ReconcileState =
   | { phase: "idle" }
@@ -36,6 +37,7 @@ export function PaymentResultClient({
         const json = await res.json();
         if (cancelled) return;
         if (res.ok) {
+          dispatchYikeCoinsBalanceChanged();
           setReconcile({
             phase: "done",
             walletCoins: json.walletTopup?.coinsCredited ?? null,

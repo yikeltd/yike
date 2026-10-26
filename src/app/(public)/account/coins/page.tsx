@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isYikeCoinsEnabled } from "@/lib/yike-coins/flags";
-import { formatCoinNairaEquivalent } from "@/lib/yike-coins/constants";
+import { YcAmount } from "@/components/yike-coins/yc-amount";
 import { YikeCoinsLedgerClient } from "./ledger-client";
 import { getYikeCoinBalance } from "@/lib/yike-coins/ledger";
 import { getVideoCallPreflight } from "@/lib/video-calls/allowance";
@@ -11,7 +11,7 @@ import { WalletUsernameSection } from "./wallet-username-section";
 import { SendYcClient } from "./send-yc-client";
 import { normalizeUsername } from "@/lib/username/rules";
 import { ConsumerSubpageHeader } from "@/components/layout/consumer-subpage-header";
-import { YcAmount } from "@/components/yike-coins/yc-amount";
+import { WalletBalanceLive } from "@/components/yike-coins/wallet-balance-live";
 import { consumerRoute } from "@/lib/navigation/consumer-routes";
 import { YikeCoinsNonCashNotice } from "@/components/yike-coins/non-cash-notice";
 
@@ -60,16 +60,7 @@ export default async function YikeCoinsAccountPage() {
 
       <YikeCoinsNonCashNotice className="mb-4" />
 
-      <div
-        id="wallet-balance"
-        className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm"
-      >
-        <p className="text-xs font-bold uppercase tracking-wide text-muted">Available balance</p>
-        <p className="mt-1 text-3xl font-black text-navy">
-          <YcAmount amount={balance} />
-        </p>
-        <p className="mt-2 text-xs text-navy/55">{formatCoinNairaEquivalent(balance)}</p>
-      </div>
+      <WalletBalanceLive initialBalance={balance} />
 
       <nav
         className="mt-4 grid grid-cols-3 gap-2 text-center"

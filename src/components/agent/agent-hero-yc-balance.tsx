@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Coins } from "lucide-react";
 import { formatYikeCoins } from "@/lib/yike-coins/constants";
+import { YIKE_COINS_BALANCE_CHANGED_EVENT } from "@/lib/yike-coins/balance-events";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,6 +39,18 @@ export function AgentHeroYcBalance({ className }: { className?: string }) {
 
   useEffect(() => {
     void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    const onRefresh = () => void refresh();
+    window.addEventListener("focus", onRefresh);
+    window.addEventListener("pageshow", onRefresh);
+    window.addEventListener(YIKE_COINS_BALANCE_CHANGED_EVENT, onRefresh);
+    return () => {
+      window.removeEventListener("focus", onRefresh);
+      window.removeEventListener("pageshow", onRefresh);
+      window.removeEventListener(YIKE_COINS_BALANCE_CHANGED_EVENT, onRefresh);
+    };
   }, [refresh]);
 
   if (hidden && !loading) return null;

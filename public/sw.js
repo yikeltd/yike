@@ -1,4 +1,4 @@
-const SHELL_CACHE = "yike-shell-v34";
+const SHELL_CACHE = "yike-shell-v35";
 const IMAGE_CACHE = "yike-images-v7";
 const LISTING_CACHE = "yike-listings-v6";
 const CACHE_PREFIX = "yike-";
@@ -34,6 +34,7 @@ const NETWORK_REQUIRED_PREFIXES = [
   "/agent/",
   "/account/",
   "/lex/",
+  "/payments/",
 ];
 
 function requiresLiveNetwork(pathname) {

@@ -10,6 +10,7 @@ test("service worker does not serve marketplace offline shell for auth navigatio
   );
   assert.match(sw, /requiresLiveNetwork/);
   assert.match(sw, /"\/auth\/"/);
+  assert.match(sw, /"\/payments\/"/);
   assert.match(sw, /if \(requiresLiveNetwork\(url\.pathname\)\)/);
 });
 
