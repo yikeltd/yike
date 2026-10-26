@@ -16,7 +16,7 @@
 | Feature flags | `ENABLE_PAYMENTS` / `ENABLE_FEATURED_PAYMENTS`; module health when off | `flags-runtime.test.ts` |
 | Entry routes | `/api/payments/webhook`, legacy `/api/webhooks/paystack` | Route files delegate to financial platform |
 
-**Unit run (2026-10-26):** 11/11 PASS in Paystack-related payment tests.
+**Unit run (2026-10-26):** Paystack-related payment tests include signature, webhook record/handler guards, wallet top-up idempotency, and `paystack-checkout-guards.test.ts` (test-key rejection, amount/currency mismatch static checks, callback poll-only). **Live test-mode checkout E2E:** **BLOCKED** until `sk_test_*` / `pk_test_*` and isolated DB are configured — mocks do **not** count as PASS for external checkout.
 
 ---
 

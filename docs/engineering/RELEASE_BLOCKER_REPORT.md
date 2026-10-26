@@ -1,8 +1,8 @@
 # Release blocker report
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
-**Updated:** 2026-10-26 (offline-first guards + homepage/wallet verification)  
-**HEAD:** see latest commit on branch (after `392a14f3` unified header search)  
+**Updated:** 2026-10-26 (wallet E2E + integration guard + Paystack offline tests)  
+**HEAD:** see latest commit on `feat/unified-three-vertical-marketplace`  
 **Scope:** Verification gaps after navigation shell + public E2E (30 PASS / 16 SKIP on production-linked local env). Homepage/wallet slice adds **20 PASS / 1 SKIP / 0 FAIL** focused Playwright (see below).
 
 This report does **not** claim release readiness from a green production build or anonymous Playwright alone.
@@ -19,8 +19,9 @@ This report does **not** claim release readiness from a green production build o
 | Lex RBAC E2E (6 roles) | **BLOCKED** | Ops: staff test accounts in non-prod |
 | Offline-first local dev (Paystack/DB guards, callback URLs) | **PASS** (code + unit) | **`OFFLINE_FIRST_RELIABILITY_AUDIT.md`** |
 | Homepage unified search + in-flow filters | **PASS** (12 Playwright + unit) | `392a14f3` + filter-shell sync |
-| YC wallet RPCs / ledger | **REVIEW** (14/14 integration historical on linked DB — **NOT RE-RUN**) | `verify:dev-target` → production ref **BLOCKED** for `test:dev:integration`; reconcile migrations before prod `db push` |
-| Paystack checkout E2E | **BLOCKED** (code **11/11** unit PASS) | **`PAYSTACK_READINESS_AUDIT.md`**; live webhook + keys ops-owned |
+| YC wallet RPCs / ledger | **BLOCKED** (guard + tests in repo; **0/14 run** on this machine) | `verify:integration-supabase` fails without `.env.e2e.local`; production ref **hard-blocked** |
+| Authenticated agent → wallet → back E2E | **BLOCKED** (spec + ephemeral agent helper shipped) | Same `.env.e2e.local` + `E2E_EPHEMERAL_AUTH=1` + `npm run test:e2e:wallet` |
+| Paystack checkout E2E | **BLOCKED** (offline **22/22** unit PASS; no live charge) | `sk_test_*` + webhook secret on isolated env — **`PAYSTACK_READINESS_AUDIT.md`** |
 | Migration filename drift (branch vs applied prod) | **P0 — ops** | Peer-transfer **repo defect fixed** (`261500`/`261510`); version-ID tail still mismatched — **`YC_WALLET_MIGRATION_RECONCILIATION.md`** — **no prod `db push`** |
 
 ---
@@ -33,7 +34,7 @@ This report does **not** claim release readiness from a green production build o
 
 **Regression:** `src/lib/__tests__/account-route-connectivity.test.ts` (9 tests); `e2e/account-wallet-connectivity.spec.ts` (2 PASS unauthenticated, 1 SKIP without agent session).
 
-**Not verified (BLOCKED):** Authenticated agent dashboard → wallet → back journey (needs isolated Supabase + `E2E_EPHEMERAL_AUTH=1`).
+**Authenticated journey (2026-10-26):** `e2e/agent-wallet-authenticated.spec.ts` + `e2e/helpers/authenticated-agent.ts` (ephemeral agent lister). **BLOCKED** without `.env.e2e.local` (`E2E_EXPECTED_REF`, keys, `YIKE_OTP_SERVER_TOKEN`, `E2E_EPHEMERAL_AUTH=1`). Unauthenticated paths: **PASS** via `npm run test:e2e:wallet` (5 PASS / 2 SKIP on production-linked local env).
 
 ---
 
@@ -99,9 +100,9 @@ npm run test:e2e:navigation
 | Admin grants + audit | `20261026120000_yc_transfers_admin_grants.sql` |
 | Username RPC ambiguity | `20261026141000_fix_profile_set_username_ambiguous.sql` |
 
-**Integration tests (2026-10-25; not re-run 2026-10-26):** `YIKE_DEV_DB_INTEGRATION=1 npm run test:dev:integration` → **14/14 PASS** (~72s) after `npm run verify:dev-target` (linked ref `hlpojfurfldvcxfxhveg`). Covers debit/credit idempotency, concurrent debits, peer transfer, admin grant, video allowance.
+**Integration tests:** `npm run test:dev:integration` now runs `verify:integration-supabase` first — **refuses `hlpojfurfldvcxfxhveg`** and requires `E2E_EXPECTED_REF` / `YIKE_INTEGRATION_ALLOWED_REFS` to match the configured URL. **2026-10-26 run:** **BLOCKED** (no `.env.e2e.local` on this machine). Historical 14/14 on production-linked DB is **not** valid release evidence and must not be repeated.
 
-**Release note:** That pass is evidence for **RPC behavior on the linked database only**, not production readiness. Reconcile branch `supabase/migrations/20261026*` against applied production history (`202610251949*` peer-transfer timestamps differ from local filenames) before any production `db push`.
+**Release note:** Reconcile branch `supabase/migrations/20261026*` against applied production history before any production `db push`.
 
 **Local-only migrations (verify on prod before deploy narrative):**
 
@@ -148,7 +149,10 @@ npm run test:e2e:navigation
 | Isolated nav prereqs | `npm run e2e:nav-prereqs:isolated` | **BLOCKED** — missing `.env.e2e.local` |
 | Typecheck | `npx tsc --noEmit` | **PASS** |
 | Production build | `npm run build` | **PASS** |
-| YC / comms integration | `YIKE_DEV_DB_INTEGRATION=1 npm run test:dev:integration` | **NOT RUN** — production-linked dev target; do not mutate prod from integration tests |
+| Integration guard | `YIKE_DEV_DB_INTEGRATION=1 npm run verify:integration-supabase` | **FAIL** (expected) without `.env.e2e.local` |
+| YC / comms integration | `YIKE_DEV_DB_INTEGRATION=1 npm run test:dev:integration` | **BLOCKED** — guard exit 1; will not mutate production |
+| Wallet Playwright | `npm run test:e2e:wallet` | **5 PASS**, **2 SKIP** (authenticated agent cases) |
+| Paystack offline suite | `paystack-checkout-guards.test.ts` + signature/webhook tests | **22 PASS** (mocks/static — not live checkout) |
 
 ## Applicable test matrix (historical)
 

@@ -6,6 +6,8 @@ import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { ephemeralAuthFlagAllowed } from "@/lib/e2e/ephemeral-auth-policy";
+import { PRODUCTION_SUPABASE_REF } from "@/lib/testing/supabase-integration-target";
 
 const repoRoot = process.cwd();
 
@@ -45,7 +47,6 @@ function loadEnvLocalIfNeeded() {
 
 loadEnvLocalIfNeeded();
 
-const PRODUCTION_REF = "hlpojfurfldvcxfxhveg";
 const EMAIL_DOMAIN = "ephemeral.yike.test";
 
 function projectRefFromUrl(url: string | undefined) {
@@ -54,12 +55,14 @@ function projectRefFromUrl(url: string | undefined) {
 }
 
 export function ephemeralAuthEnabled() {
-  if (process.env.E2E_EPHEMERAL_AUTH !== "1") return false;
+  if (!ephemeralAuthFlagAllowed()) return false;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !key) return false;
   const ref = projectRefFromUrl(url);
-  if (!ref || ref === PRODUCTION_REF) return false;
+  if (!ref || ref === PRODUCTION_SUPABASE_REF) return false;
+  const expected = process.env.E2E_EXPECTED_REF?.trim().toLowerCase();
+  if (expected && ref !== expected) return false;
   return true;
 }
 
@@ -121,4 +124,45 @@ export async function deleteEphemeralUser(userId: string) {
   if (!userId || !ephemeralAuthEnabled()) return;
   const admin = adminClient();
   await admin.auth.admin.deleteUser(userId);
+}
+
+export type EphemeralAgentUser = EphemeralSavedUser;
+
+/** Disposable agent lister for wallet / dashboard E2E (isolated Supabase only). */
+export async function createEphemeralAgentUser(): Promise<EphemeralAgentUser | null> {
+  if (!ephemeralAuthEnabled()) return null;
+
+  const admin = adminClient();
+  const tag = randomBytes(6).toString("hex");
+  const email = `e2e.agent.wallet+${tag}@${EMAIL_DOMAIN}`;
+  const password = randomPassword();
+
+  const { data, error } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: "E2E Agent Wallet" },
+  });
+
+  if (error || !data.user?.id) {
+    throw new Error(`Ephemeral agent create failed: ${error?.message ?? "no user"}`);
+  }
+
+  const userId = data.user.id;
+  const { error: profileError } = await admin
+    .from("profiles")
+    .update({
+      full_name: "E2E Agent Wallet",
+      role: "agent",
+      account_type: "agent",
+    })
+    .eq("id", userId);
+  if (profileError) {
+    await admin.auth.admin.deleteUser(userId);
+    throw new Error(`Ephemeral agent profile failed: ${profileError.message}`);
+  }
+
+  await admin.rpc("yike_ensure_coin_account", { p_user_id: userId });
+
+  return { email, password, userId };
 }

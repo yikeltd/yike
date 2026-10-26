@@ -23,14 +23,27 @@ test("agent dashboard requires authentication with return path", async ({ page }
 });
 
 test("desktop agent dashboard hero exposes wallet link with from=agent", async ({
-  page,
+  browser,
 }) => {
+  const { agentAuthReady, agentAuthStatus, createLoggedInAgentContext, provisionAuthenticatedAgent, disposeAuthenticatedAgent } =
+    await import("./helpers/authenticated-agent");
+  test.skip(!agentAuthReady(), agentAuthStatus().reason);
+
+  const agent = await provisionAuthenticatedAgent();
+  test.skip(!agent, "Could not provision agent session");
+
+  const context = await createLoggedInAgentContext(browser, agent!);
+  const page = await context.newPage();
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/agent", { waitUntil: "domcontentloaded", timeout: 60_000 });
-  if (page.url().includes("/auth/login")) {
-    test.skip(true, "BLOCKED: requires authenticated agent session");
+
+  try {
+    await page.goto("/agent", { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await expect(page).not.toHaveURL(/\/auth\/login/, { timeout: 15_000 });
+    const walletLink = page.getByRole("link", { name: /Yike Coins wallet/i });
+    await expect(walletLink).toBeVisible({ timeout: 15_000 });
+    await expect(walletLink).toHaveAttribute("href", "/account/coins?from=agent");
+  } finally {
+    await context.close();
+    await disposeAuthenticatedAgent(agent);
   }
-  const walletLink = page.getByRole("link", { name: /Yike Coins wallet/i });
-  await expect(walletLink).toBeVisible({ timeout: 15_000 });
-  await expect(walletLink).toHaveAttribute("href", "/account/coins?from=agent");
 });

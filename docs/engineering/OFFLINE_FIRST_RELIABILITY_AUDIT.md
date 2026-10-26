@@ -53,7 +53,8 @@ Local development must not depend on `yike.ng`, Hetzner deploy health, or live P
 | Check | Result | Notes |
 |-------|--------|-------|
 | `npm run verify:dev-target` on typical `.env.local` | **BLOCKED for safe integration** | Linked ref is often production — do **not** run `test:dev:integration` without non-prod target |
-| `YIKE_DEV_DB_INTEGRATION=1` wallet RPC suite | **NOT RUN** | Requires approved non-production Supabase |
+| `YIKE_DEV_DB_INTEGRATION=1` wallet RPC suite | **BLOCKED** | `verify:integration-supabase` + allowlist; production ref refused |
+| `npm run test:e2e:wallet` (agent auth journey) | **PARTIAL** | 5 PASS / 2 SKIP without `.env.e2e.local` |
 | Live Paystack webhook E2E | **BLOCKED** | Ops keys + tunnel |
 
 ## Remaining blockers

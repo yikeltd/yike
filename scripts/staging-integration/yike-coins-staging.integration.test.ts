@@ -1,31 +1,27 @@
 /**
- * Database-backed Yike Coins / video allowance tests — linked dev Supabase only.
+ * Database-backed Yike Coins / video allowance tests — disposable non-production Supabase only.
  *
  * Run:
- *   set -a && source .env.local && set +a
- *   YIKE_DEV_DB_INTEGRATION=1 npm run verify:dev-target
+ *   set -a && source .env.e2e.local && set +a
+ *   YIKE_DEV_DB_INTEGRATION=1 npm run verify:integration-supabase
  *   YIKE_DEV_DB_INTEGRATION=1 npm run test:dev:integration
  *
- * Skips when YIKE_DEV_DB_INTEGRATION is not set or env ref mismatches.
+ * Skips when allowlist guard fails (production ref is always blocked).
  */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
+import {
+  checkIntegrationSupabaseTarget,
+  PRODUCTION_SUPABASE_REF,
+} from "@/lib/testing/supabase-integration-target";
 
-const CANONICAL_DEV_REF = "hlpojfurfldvcxfxhveg";
-
-function supabaseRefFromEnv(): string | null {
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const match = url.match(/^https:\/\/([a-z0-9]+)\.supabase\.co/i);
-  return match?.[1]?.toLowerCase() ?? null;
-}
-
-const envRef = supabaseRefFromEnv();
-const integrationEnabled =
-  process.env.YIKE_DEV_DB_INTEGRATION === "1" &&
-  envRef === CANONICAL_DEV_REF &&
-  Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+const integrationTarget = checkIntegrationSupabaseTarget();
+const integrationEnabled = integrationTarget.ok;
+const integrationSkipReason = integrationTarget.ok
+  ? undefined
+  : integrationTarget.reason;
 
 function adminClient(): SupabaseClient | null {
   if (!integrationEnabled) return null;
@@ -143,9 +139,14 @@ async function resolveEphemeralTestUserId(admin: SupabaseClient): Promise<string
   return userId;
 }
 
-test("dev integration prerequisites", { skip: integrationEnabled ? false : "YIKE_DEV_DB_INTEGRATION=1 + .env.local" }, () => {
-  assert.equal(envRef, CANONICAL_DEV_REF);
-});
+test(
+  "dev integration prerequisites (non-production allowlist)",
+  { skip: integrationEnabled ? false : integrationSkipReason ?? "integration disabled" },
+  () => {
+    assert.ok(integrationTarget.ok);
+    assert.notEqual(integrationTarget.ref, PRODUCTION_SUPABASE_REF);
+  },
+);
 
 test(
   "communications schema tables exist",

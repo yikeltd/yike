@@ -116,6 +116,48 @@ export function getPaystackPublicKey(): string | null {
   return process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY?.trim() || null;
 }
 
+/** True when secret key is Paystack test mode (sk_test_*). */
+export function isPaystackTestSecretKey(secret?: string | null): boolean {
+  const key = (secret ?? getPaystackSecretKey())?.trim() ?? "";
+  return key.startsWith("sk_test_");
+}
+
+/** True when public key is Paystack test mode (pk_test_*). */
+export function isPaystackTestPublicKey(publicKey?: string | null): boolean {
+  const key = (publicKey ?? getPaystackPublicKey())?.trim() ?? "";
+  return key.startsWith("pk_test_");
+}
+
+export type PaystackTestModeCheck =
+  | { ok: true; mode: "test" }
+  | { ok: false; reason: string };
+
+/**
+ * Automated checkout / webhook replay tests must use Paystack test keys only.
+ * Never run scripted charges with sk_live_* unless explicitly overridden.
+ */
+export function requirePaystackTestModeForAutomation(): PaystackTestModeCheck {
+  const secret = getPaystackSecretKey();
+  if (!secret) {
+    return { ok: false, reason: "PAYSTACK_SECRET_KEY is not configured" };
+  }
+  if (secret.startsWith("sk_live_")) {
+    const override = process.env.YIKE_ALLOW_LIVE_PAYSTACK_IN_DEV?.trim().toLowerCase();
+    if (override === "1" || override === "true") {
+      return { ok: false, reason: "Live Paystack keys are blocked for automated checkout tests" };
+    }
+    return { ok: false, reason: "Live Paystack secret key — use sk_test_* for automation" };
+  }
+  if (!secret.startsWith("sk_test_")) {
+    return { ok: false, reason: "Unrecognized Paystack secret key prefix" };
+  }
+  const pub = getPaystackPublicKey();
+  if (pub && !pub.startsWith("pk_test_")) {
+    return { ok: false, reason: "Public key must be pk_test_* when running Paystack automation" };
+  }
+  return { ok: true, mode: "test" };
+}
+
 /* ============================================================================
  * KORAPAY CONFIGURATION & HELPERS
  * ============================================================================ */
