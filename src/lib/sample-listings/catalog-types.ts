@@ -1,0 +1,60 @@
+export type SamplePropertyDef = {
+  id: string;
+  slug: string;
+  sellerId: string;
+  title: string;
+  description: string;
+  listing_type: "rent" | "sale" | "shortlet";
+  property_type: string;
+  bedrooms: number;
+  bathrooms: number;
+  price: number;
+  payment_period: "yearly" | "monthly" | "total" | "daily";
+  state: string;
+  city: string;
+  area: string;
+  featured?: boolean;
+  images: string[];
+};
+
+export type SampleVehicleDef = {
+  id: string;
+  slug: string;
+  sellerId: string;
+  title: string;
+  description: string;
+  price: number;
+  state: string;
+  city: string;
+  area: string;
+  auto_category: string;
+  make: string;
+  model: string;
+  year: number;
+  transmission?: string;
+  fuel_type?: string;
+  mileage?: number;
+  vehicle_condition: string;
+  featured?: boolean;
+  images: string[];
+  attributes?: Record<string, string | number | boolean>;
+};
+
+export type SampleElectronicsDef = {
+  id: string;
+  slug: string;
+  sellerId: string;
+  title: string;
+  description: string;
+  price: number;
+  state: string;
+  city: string;
+  area: string;
+  auto_category: string;
+  brand: string;
+  model: string;
+  condition: string;
+  featured?: boolean;
+  images: string[];
+  attributes: Record<string, string | number>;
+};

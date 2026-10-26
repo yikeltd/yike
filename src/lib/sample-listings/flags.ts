@@ -20,7 +20,7 @@ export function isSampleListingFixtureEnabled(): boolean {
   );
 }
 
-/** Dev-only: use the 30-item catalog even when production DB returns live rows. */
+/** Dev-only: use the 90-item catalog even when production DB returns live rows. */
 export function isSampleListingFixtureForceEnabled(): boolean {
   return (
     isSampleListingFixtureEnabled() &&

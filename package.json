@@ -52,6 +52,7 @@
     "seed:demo:dry": "tsx scripts/seed-demo-marketplace.ts --dry-run",
     "seed:sample-listings": "tsx scripts/seed-sample-listings.ts",
     "seed:sample-listings:dry": "tsx scripts/seed-sample-listings.ts --dry-run",
+    "generate:sample-catalog": "tsx scripts/generate-ninety-sample-catalog.ts",
     "test:sample-listings": "tsx --test src/lib/__tests__/sample-listings-catalog.test.ts src/lib/__tests__/sample-listings-query-fixtures.test.ts",
     "test:latest-on-yike": "tsx --test src/lib/__tests__/latest-on-yike-feed.test.ts",
     "domain:dns": "bash scripts/setup-yike-domain-dns.sh",

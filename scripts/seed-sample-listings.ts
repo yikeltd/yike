@@ -1,5 +1,5 @@
 /**
- * Idempotent 30-listing seed (10 property · 10 vehicle · 10 electronics).
+ * Idempotent 90-listing seed (30 property · 30 vehicle · 30 electronics).
  *
  *   npm run seed:sample-listings -- --dry-run
  *   npx tsx --env-file=.env.local scripts/seed-sample-listings.ts
@@ -123,14 +123,27 @@ async function upsertListings(admin: SupabaseClient) {
   return rows.length;
 }
 
+const LEGACY_SAMPLE_NAMESPACE = "yike-sample-listings-v1";
+
 async function purge(admin: SupabaseClient) {
   const ids = buildAllSampleDbRows().map((r) => r.id);
-  const { error: byIdError, count } = await admin
+  const { error: byIdError, count: byIdCount } = await admin
     .from("properties")
     .delete({ count: "exact" })
     .in("id", ids);
-  if (byIdError) throw new Error(`purge: ${byIdError.message}`);
-  console.log(`Purged ${count ?? 0} sample listings by stable id.`);
+  if (byIdError) throw new Error(`purge by id: ${byIdError.message}`);
+
+  for (const ns of [SAMPLE_LISTINGS_NAMESPACE, LEGACY_SAMPLE_NAMESPACE]) {
+    const { error, count } = await admin
+      .from("properties")
+      .delete({ count: "exact" })
+      .filter("attributes->>seed_namespace", "eq", ns);
+    if (error) throw new Error(`purge namespace ${ns}: ${error.message}`);
+    if ((count ?? 0) > 0) {
+      console.log(`Purged ${count} listings with seed_namespace=${ns}.`);
+    }
+  }
+  console.log(`Purged ${byIdCount ?? 0} sample listings by stable id.`);
 }
 
 async function main() {
