@@ -13,6 +13,7 @@ import { normalizeUsername } from "@/lib/username/rules";
 import { ConsumerSubpageHeader } from "@/components/layout/consumer-subpage-header";
 import { YcAmount } from "@/components/yike-coins/yc-amount";
 import { consumerRoute } from "@/lib/navigation/consumer-routes";
+import { YikeCoinsNonCashNotice } from "@/components/yike-coins/non-cash-notice";
 
 export const metadata = {
   title: "Yike Coins | Yike",
@@ -57,13 +58,42 @@ export default async function YikeCoinsAccountPage() {
         initialNeedsUsername={!hasUsername}
       />
 
-      <div className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+      <YikeCoinsNonCashNotice className="mb-4" />
+
+      <div
+        id="wallet-balance"
+        className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm"
+      >
         <p className="text-xs font-bold uppercase tracking-wide text-muted">Available balance</p>
         <p className="mt-1 text-3xl font-black text-navy">
           <YcAmount amount={balance} />
         </p>
         <p className="mt-2 text-xs text-navy/55">{formatCoinNairaEquivalent(balance)}</p>
       </div>
+
+      <nav
+        className="mt-4 grid grid-cols-3 gap-2 text-center"
+        aria-label="Wallet actions"
+      >
+        <a
+          href="#wallet-top-up"
+          className="pressable rounded-xl border border-navy/10 bg-white px-2 py-2.5 text-[11px] font-bold text-navy"
+        >
+          Top up YC
+        </a>
+        <a
+          href="#wallet-share"
+          className="pressable rounded-xl border border-navy/10 bg-white px-2 py-2.5 text-[11px] font-bold text-navy"
+        >
+          Share YC
+        </a>
+        <a
+          href="#wallet-history"
+          className="pressable rounded-xl border border-navy/10 bg-white px-2 py-2.5 text-[11px] font-bold text-navy"
+        >
+          History
+        </a>
+      </nav>
 
       <div className="mt-4 rounded-2xl border border-navy/10 bg-surface/50 p-4 text-sm text-navy/80">
         <p className="font-semibold text-navy">Video calls today</p>
@@ -80,11 +110,15 @@ export default async function YikeCoinsAccountPage() {
         ) : null}
       </div>
 
-      <YikeCoinsTopupClient />
+      <div id="wallet-top-up">
+        <YikeCoinsTopupClient />
+      </div>
 
-      <SendYcClient balanceCoins={balance} hasUsername={hasUsername} />
+      <div id="wallet-share">
+        <SendYcClient balanceCoins={balance} hasUsername={hasUsername} />
+      </div>
 
-      <div className="mt-8">
+      <div id="wallet-history" className="mt-8">
         <h2 className="text-sm font-black text-navy">Transaction history</h2>
         <div className="mt-3">
           <YikeCoinsLedgerClient />
@@ -98,9 +132,9 @@ export default async function YikeCoinsAccountPage() {
         Paystack payment history
       </Link>
 
-      <p className="mt-6 text-xs leading-relaxed text-navy/55">
-        YC are platform credits for eligible services — not cash and not redeemable for Naira. Sending
-        YC requires a username. Paystack fees may apply at checkout.
+      <YikeCoinsNonCashNotice className="mt-6" />
+      <p className="mt-3 text-xs leading-relaxed text-navy/55">
+        Sending YC requires a username. Paystack fees may apply at checkout.
       </p>
     </div>
   );

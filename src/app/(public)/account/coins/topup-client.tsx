@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { YcAmount } from "@/components/yike-coins/yc-amount";
+import { YikeCoinsNonCashNotice } from "@/components/yike-coins/non-cash-notice";
 
 type Pack = {
   id: string;
@@ -71,6 +72,7 @@ export function YikeCoinsTopupClient() {
 
   return (
     <div className="mt-6">
+      <YikeCoinsNonCashNotice className="mb-3" />
       <h2 className="text-sm font-black text-navy">Top up with Paystack</h2>
       {pricingNote ? <p className="mt-1 text-[11px] text-navy/55">{pricingNote}</p> : null}
       {packsDisabled && checkoutMessage ? (
