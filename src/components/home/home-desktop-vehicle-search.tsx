@@ -12,16 +12,18 @@ import {
   buildBudgetSelectOptions,
 } from "@/lib/budget-ranges";
 import { buildVehicleMakeSelectOptions } from "@/lib/marketplace/vehicle-makes";
+import { VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
 import { getStateForCity } from "@/lib/constants";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 import { cn } from "@/lib/utils";
 
-/** Mirrors property All / Rent / Buy / Land — vehicle types that fit the hero. */
+/** Mirrors property All / Rent / Buy / Land — five road categories + All. */
 const VEHICLE_DEAL_CHIPS = [
   { value: "", label: "All" },
-  { value: "car", label: "Cars" },
-  { value: "suv", label: "SUVs" },
-  { value: "truck", label: "Trucks" },
+  ...VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.map((c) => ({
+    value: c.id,
+    label: c.label,
+  })),
 ] as const;
 
 type Props = {

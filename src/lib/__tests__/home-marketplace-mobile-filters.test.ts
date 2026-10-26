@@ -113,3 +113,12 @@ test("home vehicle search uses primary category SSOT", () => {
   assert.match(src, /VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES/);
   assert.doesNotMatch(src, /value: "truck"/);
 });
+
+test("desktop vehicle hero chips use primary marketplace categories", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/home/home-desktop-vehicle-search.tsx"),
+    "utf8",
+  );
+  assert.match(src, /VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES/);
+  assert.doesNotMatch(src, /value: "truck"/);
+});
