@@ -25,13 +25,13 @@ test("mobile hero uses collapsible filter shell on compact marketplace hero", ()
   assert.match(hero, /filtersExpanded/);
 });
 
-test("mobile filter shell keeps search visible while filters collapse", () => {
+test("mobile filter shell gates search behind meaningful selection", () => {
   const shell = readFileSync(
     join(process.cwd(), "src/components/home/home-mobile-filter-shell.tsx"),
     "utf8",
   );
   assert.match(shell, /Filters & location/);
-  assert.match(shell, /searchButton/);
+  assert.match(shell, /showSearchButton/);
 });
 
 test("vehicle search activates detail filters after category on mobile", () => {
@@ -118,12 +118,12 @@ test("wallet page requires auth before feature-flag redirect", () => {
   assert.ok(authIdx >= 0 && flagIdx > authIdx);
 });
 
-test("home vehicle search uses primary category SSOT", () => {
+test("home vehicle search uses expanded home category SSOT", () => {
   const src = readFileSync(
     join(process.cwd(), "src/components/home/home-vehicle-search.tsx"),
     "utf8",
   );
-  assert.match(src, /VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES/);
+  assert.match(src, /vehicleHomeSearchCategorySelectOptions/);
   assert.doesNotMatch(src, /value: "truck"/);
 });
 

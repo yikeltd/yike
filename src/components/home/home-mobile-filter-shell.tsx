@@ -13,6 +13,8 @@ type Props = {
   onResetFilters?: () => void;
   filterControls: React.ReactNode;
   searchButton: React.ReactNode;
+  /** When false, hides the primary search CTA (homepage progressive disclosure). */
+  showSearchButton?: boolean;
   className?: string;
 };
 
@@ -25,6 +27,7 @@ export function HomeMobileFilterShell({
   onResetFilters,
   filterControls,
   searchButton,
+  showSearchButton = true,
   className,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -43,55 +46,60 @@ export function HomeMobileFilterShell({
     return (
       <div className={cn("space-y-2", className)}>
         {filterControls}
-        {searchButton}
+        {showSearchButton ? searchButton : null}
       </div>
     );
   }
 
   return (
     <div className={cn("space-y-2", className)}>
-      {!isOpen ? (
-        <button
-          type="button"
-          data-testid="home-mobile-filters-toggle"
-          onClick={() => setExpanded(true)}
-          className="pressable flex w-full items-center justify-between gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-left text-sm font-semibold text-white"
-          aria-expanded={false}
-        >
-          <span className="flex min-w-0 items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 shrink-0 text-gold" aria-hidden />
-            <span className="truncate">{summary?.trim() || "Filters & location"}</span>
-          </span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-white/70" aria-hidden />
-        </button>
-      ) : (
-        <div
-          className="space-y-2.5 rounded-xl border border-white/15 bg-white/5 p-2.5"
-          data-testid="home-mobile-filters-expanded"
-        >
-          <div className="flex items-center justify-between gap-2 px-0.5">
-            <button
-              type="button"
-              data-testid="home-mobile-filters-done"
-              onClick={() => setExpanded(false)}
-              className="text-xs font-bold text-gold"
-            >
-              Done
-            </button>
-            {onResetFilters ? (
+      <div className="relative min-h-[44px]">
+        {!isOpen ? (
+          <button
+            type="button"
+            data-testid="home-mobile-filters-toggle"
+            onClick={() => setExpanded(true)}
+            className="pressable flex w-full items-center justify-between gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-left text-sm font-semibold text-white"
+            aria-expanded={false}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 shrink-0 text-gold" aria-hidden />
+              <span className="truncate">{summary?.trim() || "Filters & location"}</span>
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-white/70" aria-hidden />
+          </button>
+        ) : (
+          <div
+            className="absolute inset-x-0 top-0 z-30 max-h-[min(70vh,28rem)] space-y-2.5 overflow-y-auto rounded-xl border border-white/15 bg-[#031B4E]/98 p-2.5 shadow-[0_20px_48px_-16px_rgba(0,0,0,0.55)] backdrop-blur-md"
+            data-testid="home-mobile-filters-expanded"
+          >
+            <div className="flex items-center justify-between gap-2 px-0.5">
               <button
                 type="button"
-                onClick={onResetFilters}
-                className="text-xs font-medium text-white/70 underline-offset-2 hover:underline"
+                data-testid="home-mobile-filters-done"
+                onClick={() => setExpanded(false)}
+                className="text-xs font-bold text-gold"
               >
-                Reset filters
+                Done
               </button>
+              {onResetFilters ? (
+                <button
+                  type="button"
+                  data-testid="home-mobile-filters-reset"
+                  onClick={onResetFilters}
+                  className="text-xs font-medium text-white/70 underline-offset-2 hover:underline"
+                >
+                  Reset filters
+                </button>
+              ) : null}
+            </div>
+            {filterControls}
+            {showSearchButton ? (
+              <div data-testid="home-mobile-search-cta">{searchButton}</div>
             ) : null}
           </div>
-          {filterControls}
-        </div>
-      )}
-      {searchButton}
+        )}
+      </div>
     </div>
   );
 }

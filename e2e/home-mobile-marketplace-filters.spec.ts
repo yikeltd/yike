@@ -32,9 +32,15 @@ test.describe("Mobile homepage marketplace filters", () => {
   });
 
   test("vehicle filters collapse by default then activate after category", async ({ page }) => {
+    await page.goto("/?category=vehicle", { waitUntil: "domcontentloaded", timeout: 90_000 });
+    await expect(page.getByTestId("home-unified-search-collapsed")).toBeVisible({
+      timeout: 45_000,
+    });
+
     await openMobileMarketplaceSearch(page, "vehicle");
 
     const hero = mobileHero(page);
+    await expect(hero.getByTestId("home-mobile-search-cta")).toHaveCount(0);
     await expect(hero.getByText(/Choose a vehicle type to set city/i)).toBeVisible();
     await expect(hero.getByRole("button", { name: "Make" })).toHaveCount(0);
 
@@ -43,6 +49,8 @@ test.describe("Mobile homepage marketplace filters", () => {
 
     await expect(hero.getByRole("button", { name: "Make" })).toBeVisible();
     await expect(hero.getByRole("button", { name: "Budget" })).toBeVisible();
+    await expect(page.getByTestId("home-unified-search-bar")).toBeVisible();
+    await expect(hero.getByTestId("home-mobile-search-cta")).toBeVisible();
 
     await hero.getByRole("button", { name: "Search vehicles" }).click();
     await expect(page).toHaveURL(/\/vehicles\?.*category=car/, { timeout: 20_000 });
@@ -65,11 +73,13 @@ test.describe("Mobile homepage marketplace filters", () => {
     await openMobileMarketplaceSearch(page, "property");
 
     const hero = mobileHero(page);
+    await expect(hero.getByTestId("home-mobile-search-cta")).toHaveCount(0);
     await expect(hero.getByRole("button", { name: "Rent", exact: true })).toBeVisible();
     await expect(hero.getByRole("button", { name: "City" })).toHaveCount(0);
 
     await hero.getByRole("button", { name: "Rent", exact: true }).click();
     await expect(hero.getByRole("button", { name: "City" })).toBeVisible();
+    await expect(hero.getByTestId("home-mobile-search-cta")).toBeVisible();
 
     await hero.getByRole("button", { name: "Search homes" }).click();
     await expect(page).toHaveURL(/\/search\?.*type=rent/, { timeout: 20_000 });

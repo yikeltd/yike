@@ -10,6 +10,7 @@ import { DesktopWhatsappAdminButton } from "./desktop-whatsapp-admin-button";
 import { OfflineBanner } from "@/components/pwa/offline-banner";
 import { OfflineWarmCache } from "@/components/pwa/offline-warm-cache";
 import type { SiteBanner } from "@/types/database";
+import { HomeMarketplaceFilterProvider } from "@/lib/home/home-marketplace-filter-context";
 
 export function ConsumerShell({
   children,
@@ -36,18 +37,18 @@ export function ConsumerShell({
 
   if (hideChrome) {
     return (
-      <>
+      <HomeMarketplaceFilterProvider>
         <OfflineBanner />
         <OfflineWarmCache />
         <main className="flex-1">{children}</main>
-      </>
+      </HomeMarketplaceFilterProvider>
     );
   }
 
   /* Discover: immersive deck — desktop site header + mobile bottom nav */
   if (isDiscover) {
     return (
-      <>
+      <HomeMarketplaceFilterProvider>
         <OfflineBanner />
         <OfflineWarmCache />
         <div className="hidden lg:block">
@@ -57,12 +58,12 @@ export function ConsumerShell({
         <Suspense fallback={null}>
           <BottomNavMobile />
         </Suspense>
-      </>
+      </HomeMarketplaceFilterProvider>
     );
   }
 
   return (
-    <>
+    <HomeMarketplaceFilterProvider>
       <OfflineBanner />
       <OfflineWarmCache />
       {!isHome && !isProfile && <HeaderDesktop />}
@@ -86,7 +87,7 @@ export function ConsumerShell({
         <BottomNavMobile />
       </Suspense>
       {showDesktopWhatsappFab ? <DesktopWhatsappAdminButton /> : null}
-    </>
+    </HomeMarketplaceFilterProvider>
   );
 }
 

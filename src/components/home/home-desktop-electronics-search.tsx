@@ -17,6 +17,8 @@ import {
 } from "@/lib/marketplace/electronics-specs";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 import { HomeMobileFilterShell } from "@/components/home/home-mobile-filter-shell";
+import { useHomeMarketplaceFilterContext } from "@/lib/home/home-marketplace-filter-context";
+import { electronicsMarketplaceMeaningfulSelection } from "@/lib/home/marketplace-filter-engagement";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -84,6 +86,21 @@ export function HomeDesktopElectronicsSearch({
     ],
     [],
   );
+
+  const marketplaceFilter = useHomeMarketplaceFilterContext();
+  const meaningfulSelection = electronicsMarketplaceMeaningfulSelection({
+    category,
+    state,
+    city,
+    condition,
+    budget,
+  });
+
+  useEffect(() => {
+    if (mobileFilterCollapse) {
+      marketplaceFilter?.setMeaningfulFilterActive(meaningfulSelection);
+    }
+  }, [meaningfulSelection, marketplaceFilter, mobileFilterCollapse]);
 
   function resetFilters() {
     setState("");
@@ -226,14 +243,16 @@ export function HomeDesktopElectronicsSearch({
           <ThemedSelect variant={variant} ariaLabel="Electronics category" value={category} onChange={setCategory} options={categoryOptions} placeholder="Category" />
           <ThemedSelect variant={variant} ariaLabel="Condition" value={condition} onChange={setCondition} options={conditionOptions} placeholder="Condition" />
           <ThemedSelect variant={variant} ariaLabel="Budget" value={budget} onChange={setBudget} options={budgetOptions} placeholder="Budget" />
-          <button
-            type="button"
-            onClick={submit}
-            className="pressable flex h-11 w-full items-center justify-center rounded-2xl bg-gold font-black text-navy shadow-md transition-all hover:bg-gold-light lg:h-11 lg:w-11"
-            aria-label="Search electronics"
-          >
-            <Search className="h-5 w-5" strokeWidth={2.5} />
-          </button>
+          {meaningfulSelection ? (
+            <button
+              type="button"
+              onClick={submit}
+              className="pressable flex h-11 w-full items-center justify-center rounded-2xl bg-gold font-black text-navy shadow-md transition-all hover:bg-gold-light lg:h-11 lg:w-11"
+              aria-label="Search electronics"
+            >
+              <Search className="h-5 w-5" strokeWidth={2.5} />
+            </button>
+          ) : null}
         </div>
       </div>
     );
@@ -249,6 +268,7 @@ export function HomeDesktopElectronicsSearch({
         onResetFilters={resetFilters}
         filterControls={filterControls}
         searchButton={searchButton}
+        showSearchButton={!mobileFilterCollapse || meaningfulSelection}
       />
     </div>
   );

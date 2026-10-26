@@ -285,6 +285,42 @@ export function vehiclePrimaryCategorySelectOptions(): {
   }));
 }
 
+export type VehicleHomeSearchSelectOption =
+  | { value: string; label: string }
+  | { kind: "header"; id: string; label: string }
+  | { kind: "separator"; id: string; label: string };
+
+/**
+ * Homepage / hero vehicle category dropdown — five primary consumer options first,
+ * then other supported browse categories (no duplicate ids, persisted values only).
+ */
+export function vehicleHomeSearchCategorySelectOptions(): VehicleHomeSearchSelectOption[] {
+  const primaryIds = new Set(
+    VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.map((c) => c.id),
+  );
+  const options: VehicleHomeSearchSelectOption[] =
+    VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.map((c) => ({
+      value: c.id,
+      label: c.label,
+    }));
+
+  const more = VEHICLE_CATEGORIES_BROWSE.filter((c) => !primaryIds.has(c.id));
+  if (more.length === 0) return options;
+
+  options.push({ kind: "separator", id: "vehicle-more-sep", label: "" });
+  options.push({
+    kind: "header",
+    id: "vehicle-more-header",
+    label: "More vehicle types",
+  });
+
+  for (const c of more) {
+    options.push({ value: c.id, label: c.label });
+  }
+
+  return options;
+}
+
 export function isPersistedVehicleCategory(id: string): id is VehicleCategoryId {
   return VEHICLE_TAXONOMY.some((c) => c.id === id);
 }

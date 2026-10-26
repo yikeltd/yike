@@ -26,6 +26,8 @@ import {
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemedSelect } from "@/components/ui/themed-select";
+import { useHomeMarketplaceFilterContext } from "@/lib/home/home-marketplace-filter-context";
+import { propertyMarketplaceMeaningfulSelection } from "@/lib/home/marketplace-filter-engagement";
 
 function resolveChip(key: string): SearchDealChip {
   return (
@@ -93,6 +95,7 @@ export function BrowseListingsBlock({
   const isPremium = variant === "home-premium";
   const isDesktopPanel = variant === "home-desktop-panel";
   const isInline = variant === "home-inline";
+  const useMobileShell = mobileFilterCollapse && isPremium;
   const [dealKey, setDealKey] = useState(initial?.dealKey ?? "");
   const [state, setState] = useState(initial?.state ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
@@ -121,11 +124,28 @@ export function BrowseListingsBlock({
 
   const budgetContext = budgetContextFromDealKey(dealKey);
 
-  const hasFilterSelection = Boolean(
-    dealKey || state || city || area || propertyType || budget
-  );
+  const hasFilterSelection = propertyMarketplaceMeaningfulSelection({
+    dealKey,
+    state,
+    city,
+    area,
+    propertyType,
+    budget,
+  });
+  const marketplaceFilter = useHomeMarketplaceFilterContext();
+
+  useEffect(() => {
+    if (useMobileShell) {
+      marketplaceFilter?.setMeaningfulFilterActive(hasFilterSelection);
+    }
+  }, [hasFilterSelection, marketplaceFilter, useMobileShell]);
+
   const showSearchButton =
-    alwaysShowSearch || isPremium || isDesktopPanel || hasFilterSelection;
+    alwaysShowSearch ||
+    isInline ||
+    (isDesktopPanel && hasFilterSelection) ||
+    (isPremium && !useMobileShell && hasFilterSelection) ||
+    (useMobileShell && hasFilterSelection);
 
   function buildParams(overrides?: {
     dealKey?: string;
@@ -238,7 +258,6 @@ export function BrowseListingsBlock({
     setBudget("");
   }
 
-  const useMobileShell = mobileFilterCollapse && isPremium;
   const showPropertyDetailFilters = !useMobileShell || dealKey !== "";
 
   const dealChipRow = (
@@ -326,7 +345,7 @@ export function BrowseListingsBlock({
         variant={selectVariant}
         compactLabel={isPremium || isInline}
       />
-      {isDesktopPanel ? (
+      {isDesktopPanel && hasFilterSelection ? (
         <button
           type="button"
           onClick={() => submit()}
@@ -375,6 +394,7 @@ export function BrowseListingsBlock({
             </>
           }
           searchButton={mobileSearchButton}
+          showSearchButton={hasFilterSelection}
         />
       </div>
     );

@@ -10,6 +10,7 @@ import { MarketplaceCategoryToggle } from "@/components/home/marketplace-categor
 import type { HomeMarketplaceCategory } from "@/lib/home/marketplace-category";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { useDesktopWeb } from "@/hooks/use-desktop-web";
+import { useHomeMarketplaceFilterContext } from "@/lib/home/home-marketplace-filter-context";
 import { cn } from "@/lib/utils";
 
 const MOBILE_HERO_IMAGE = "/images/hero/yike-city-hero.webp";
@@ -46,6 +47,7 @@ export function HomeCompactMarketplaceHero({
   const showToggle = vehiclesOn || electronicsOn;
   const desktopWeb = useDesktopWeb();
   const mobileFilterCollapse = !desktopWeb;
+  const marketplaceFilter = useHomeMarketplaceFilterContext();
 
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [resetToken, setResetToken] = useState(0);
@@ -53,17 +55,27 @@ export function HomeCompactMarketplaceHero({
   const handleCategoryChange = useCallback(
     (next: HomeMarketplaceCategory) => {
       onCategoryChange(next);
-      setFiltersExpanded(mobileFilterCollapse);
+      setFiltersExpanded(false);
+      marketplaceFilter?.setFiltersPanelOpen(false);
+      marketplaceFilter?.setMeaningfulFilterActive(false);
       setResetToken((t) => t + 1);
     },
-    [mobileFilterCollapse, onCategoryChange],
+    [marketplaceFilter, onCategoryChange],
+  );
+
+  const handleFiltersExpandedChange = useCallback(
+    (open: boolean) => {
+      setFiltersExpanded(open);
+      marketplaceFilter?.setFiltersPanelOpen(open);
+    },
+    [marketplaceFilter],
   );
 
   const sharedMobileFilterProps = mobileFilterCollapse
     ? {
         mobileFilterCollapse: true as const,
         filtersExpanded,
-        onFiltersExpandedChange: setFiltersExpanded,
+        onFiltersExpandedChange: handleFiltersExpandedChange,
         resetToken,
       }
     : {};
@@ -80,6 +92,7 @@ export function HomeCompactMarketplaceHero({
       id="home-search"
       className={cn(
         "home-hero-mobile full-bleed relative overflow-hidden px-3 pb-3 pt-2",
+        mobileFilterCollapse && "min-h-[10.75rem]",
         className,
       )}
       aria-label="Marketplace search"

@@ -21,6 +21,7 @@ export {
   VEHICLE_HOME_SEARCH_CATEGORIES,
   VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES,
   vehiclePrimaryCategorySelectOptions,
+  vehicleHomeSearchCategorySelectOptions,
   isPersistedVehicleCategory,
   vehicleCategoryLabel,
   isMachineryCategory,

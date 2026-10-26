@@ -16,9 +16,14 @@ import {
   buildVehicleTypeSelectOptions,
   isValidTypeForMake,
 } from "@/lib/marketplace/vehicle-makes";
-import { VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
+import {
+  vehicleCategoryLabel,
+  vehicleHomeSearchCategorySelectOptions,
+} from "@/lib/marketplace/vehicle-specs";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 import { HomeMobileFilterShell } from "@/components/home/home-mobile-filter-shell";
+import { useHomeMarketplaceFilterContext } from "@/lib/home/home-marketplace-filter-context";
+import { vehicleMarketplaceMeaningfulSelection } from "@/lib/home/marketplace-filter-engagement";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -72,14 +77,21 @@ export function HomeVehicleSearch({
     () => buildVehicleTypeSelectOptions(make),
     [make],
   );
-  const categoryOptions = useMemo(
-    () =>
-      VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.map((c) => ({
-        value: c.id,
-        label: c.label,
-      })),
-    [],
-  );
+  const categoryOptions = useMemo(() => vehicleHomeSearchCategorySelectOptions(), []);
+  const marketplaceFilter = useHomeMarketplaceFilterContext();
+
+  const meaningfulSelection = vehicleMarketplaceMeaningfulSelection({
+    category,
+    state,
+    city,
+    make,
+    carType,
+    budget,
+  });
+
+  useEffect(() => {
+    marketplaceFilter?.setMeaningfulFilterActive(meaningfulSelection);
+  }, [meaningfulSelection, marketplaceFilter]);
 
   const typeDisabled = !make;
 
@@ -113,9 +125,7 @@ export function HomeVehicleSearch({
     }
 
     const labelParts = [
-      category
-        ? VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.find((c) => c.id === category)?.label
-        : "Vehicles",
+      category ? vehicleCategoryLabel(category) : "Vehicles",
       make || undefined,
       carType || undefined,
       city || state || undefined,
@@ -129,9 +139,7 @@ export function HomeVehicleSearch({
 
   const filterSummary = useMemo(() => {
     const parts = [
-      category
-        ? VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.find((c) => c.id === category)?.label
-        : null,
+      category ? vehicleCategoryLabel(category) : null,
       city || state || null,
       make || null,
       budget ? "Budget set" : null,
@@ -241,6 +249,7 @@ export function HomeVehicleSearch({
         onResetFilters={resetFilters}
         filterControls={filterControls}
         searchButton={searchButton}
+        showSearchButton={!mobileFilterCollapse || meaningfulSelection}
       />
     </div>
   );
