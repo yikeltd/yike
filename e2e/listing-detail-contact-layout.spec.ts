@@ -18,15 +18,18 @@ async function assertDetailContactLayout(page: import("@playwright/test").Page) 
   await expect(sellerCard).toBeVisible();
   await expect(sellerCard.getByRole("button", { name: /Message/i })).toHaveCount(0);
 
-  const map = page.getByTestId("listing-detail-location-map");
-  await expect(map).toBeVisible();
+  const locationSection = page.getByTestId("listing-detail-location-section");
+  await expect(locationSection).toBeVisible();
+  await expect(locationSection.locator("img")).toHaveCount(0);
 
   const galleryBox = await galleryContact.boundingBox();
-  const mapBox = await map.boundingBox();
+  const locationBox = await locationSection.boundingBox();
   const sellerBox = await sellerCard.boundingBox();
-  if (galleryBox && mapBox && sellerBox) {
-    expect(mapBox.y).toBeGreaterThan(galleryBox.y);
-    expect(sellerBox.y).toBeGreaterThan(mapBox.y);
+  if (galleryBox && locationBox && sellerBox) {
+    expect(locationBox.y).toBeGreaterThan(galleryBox.y);
+    expect(sellerBox.y).toBeGreaterThan(locationBox.y);
+    const locationHeight = locationBox.height;
+    expect(locationHeight).toBeLessThan(220);
   }
   return true;
 }

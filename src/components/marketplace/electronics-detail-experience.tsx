@@ -16,7 +16,10 @@ import {
 } from "@/lib/marketplace/electronics-specs";
 import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
-import { ListingDetailLocationMap } from "@/components/marketplace/listing-detail-location-map";
+import {
+  formatListingPublicLocation,
+  ListingDetailLocationSection,
+} from "@/components/marketplace/listing-detail-location-section";
 import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
 import { ElectronicsCard } from "./electronics-card";
 import { ReportListingForm } from "@/components/property/report-form";
@@ -81,7 +84,11 @@ export function ElectronicsDetailExperience({
     }
   }
 
-  const location = [listing.area, listing.city, listing.state].filter(Boolean).join(", ");
+  const location = formatListingPublicLocation({
+    area: listing.area,
+    city: listing.city,
+    state: listing.state,
+  });
   const sellerIdentity = sellerContactCardFromListing(listing, "ELECTRONICS");
 
   return (
@@ -175,7 +182,7 @@ export function ElectronicsDetailExperience({
         ) : null}
 
         {location ? (
-          <ListingDetailLocationMap locationLabel={location} className="shadow-sm" />
+          <ListingDetailLocationSection locationLabel={location} />
         ) : null}
 
         {sellerIdentity ? (

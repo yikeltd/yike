@@ -40,7 +40,10 @@ import { VehicleGalleryModal } from "./vehicle-gallery-modal";
 import { PropertyCard } from "@/components/property/property-card";
 import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
-import { ListingDetailLocationMap } from "@/components/marketplace/listing-detail-location-map";
+import {
+  formatListingPublicLocation,
+  ListingDetailLocationSection,
+} from "@/components/marketplace/listing-detail-location-section";
 import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
 import {
   isVehicleFinanceEstimatorUiVisible,
@@ -95,9 +98,11 @@ export function VehicleDetailExperience({
   const sellerAvatar = agent?.avatar_url;
   const sellerIdentity = sellerContactCardFromListing(vehicle, "VEHICLE");
 
-  const cleanLocation = [vehicle.area, vehicle.city, vehicle.state]
-    .filter(Boolean)
-    .join(", ");
+  const cleanLocation = formatListingPublicLocation({
+    area: vehicle.area,
+    city: vehicle.city,
+    state: vehicle.state,
+  });
 
   const shareUrl = listingAbsoluteUrl(vehicle);
   const mainPhoto =
@@ -485,7 +490,9 @@ export function VehicleDetailExperience({
               </button>
             </div>
 
-            <ListingDetailLocationMap locationLabel={cleanLocation} />
+            {cleanLocation ? (
+              <ListingDetailLocationSection locationLabel={cleanLocation} />
+            ) : null}
 
             {sellerIdentity ? (
               <ListingDetailSellerSection identity={sellerIdentity} />

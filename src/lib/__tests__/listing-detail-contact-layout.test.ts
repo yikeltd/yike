@@ -38,14 +38,14 @@ test("property, vehicle, and electronics detail place gallery contact actions", 
   }
 });
 
-test("seller section follows location map on all detail surfaces", () => {
+test("seller section follows compact location section on all detail surfaces", () => {
   for (const file of DETAIL_FILES) {
     const src = readFileSync(join(root, file), "utf8");
-    assert.match(src, /ListingDetailLocationMap/, file);
+    assert.match(src, /ListingDetailLocationSection/, file);
     assert.match(src, /ListingDetailSellerSection/, file);
-    const mapIdx = src.indexOf("ListingDetailLocationMap");
+    const locIdx = src.indexOf("ListingDetailLocationSection");
     const sellerIdx = src.indexOf("ListingDetailSellerSection");
-    assert.ok(mapIdx >= 0 && sellerIdx > mapIdx, `${file}: seller must follow map`);
+    assert.ok(locIdx >= 0 && sellerIdx > locIdx, `${file}: seller must follow location`);
   }
 });
 

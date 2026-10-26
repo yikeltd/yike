@@ -33,7 +33,10 @@ import { PropertyTrustIndicators } from "./property-trust-indicators";
 import { PropertyCard } from "./property-card";
 import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
-import { ListingDetailLocationMap } from "@/components/marketplace/listing-detail-location-map";
+import {
+  formatListingPublicLocation,
+  ListingDetailLocationSection,
+} from "@/components/marketplace/listing-detail-location-section";
 import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
 
 const AMENITY_ICONS: Record<string, typeof Zap> = {
@@ -94,9 +97,11 @@ export function PropertyDetailExperience({
       ? formatPrice(Math.round(listingPrice / 12))
       : formatPrice(Math.round(listingPrice / 120));
 
-  const cleanLocation = [property.area, property.city, property.state]
-    .filter(Boolean)
-    .join(", ");
+  const cleanLocation = formatListingPublicLocation({
+    area: property.area,
+    city: property.city,
+    state: property.state,
+  });
 
   const shareUrl = listingAbsoluteUrl(property);
   const mainPhoto =
@@ -384,7 +389,9 @@ export function PropertyDetailExperience({
               </div>
             </div>
 
-            <ListingDetailLocationMap locationLabel={cleanLocation} />
+            {cleanLocation ? (
+              <ListingDetailLocationSection locationLabel={cleanLocation} />
+            ) : null}
 
             {sellerIdentity ? (
               <ListingDetailSellerSection identity={sellerIdentity} />
