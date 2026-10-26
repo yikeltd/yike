@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   // Required for multi-stage Coolify/Docker images (see Dockerfile).
   output: "standalone",
   poweredByHeader: false,
+  /** Playwright and local tooling often hit 127.0.0.1; allow dev HMR/client hydration. */
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   experimental: {
     agentUpgrade: "security",
     optimizePackageImports: ["lucide-react"],

@@ -39,7 +39,7 @@ const playwrightTestPepper =
  * Reuse an already-running server: PLAYWRIGHT_SKIP_SERVER=1
  */
 const playwrightPort = Number(process.env.PLAYWRIGHT_PORT ?? "3000");
-const defaultBaseUrl = `http://127.0.0.1:${Number.isFinite(playwrightPort) ? playwrightPort : 3000}`;
+const defaultBaseUrl = `http://localhost:${Number.isFinite(playwrightPort) ? playwrightPort : 3000}`;
 
 const baseURL = (process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseUrl).replace(/\/$/, "");
 

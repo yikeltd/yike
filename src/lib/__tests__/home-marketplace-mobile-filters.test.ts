@@ -13,6 +13,7 @@ import { PROPERTY_CATEGORIES } from "@/constants/propertyCategories";
 import { propertyTypesForListingType } from "@/constants/listingTypes";
 import { vehiclePrimaryCategorySelectOptions } from "@/lib/marketplace/vehicle-specs";
 import { vehicleCategoryLabel } from "@/lib/marketplace/vehicle-specs";
+import { valuesToVehiclePayload } from "@/lib/listing-engine/adapters/vehicle";
 
 test("mobile hero uses collapsible filter shell on compact marketplace hero", () => {
   const hero = readFileSync(
@@ -160,6 +161,24 @@ test("property listing types are subset of PROPERTY_CATEGORIES SSOT", () => {
     for (const t of propertyTypesForListingType(listingType)) {
       assert.ok(known.has(t.value), `${t.value} missing from PROPERTY_CATEGORIES`);
     }
+  }
+});
+
+test("vehicle create adapter accepts all five primary category ids", () => {
+  for (const id of ["car", "suv", "pickup_van", "bus_minibus", "motorcycle_tricycle"]) {
+    const payload = valuesToVehiclePayload({
+      auto_category: id,
+      make: "Toyota",
+      model: "Test",
+      year: 2020,
+      vehicle_condition: "foreign_used",
+      price: 1_000_000,
+      state: "Lagos",
+      city: "Ikeja",
+      title: "Test",
+      media_urls: ["https://example.com/a.webp"],
+    });
+    assert.equal(payload.auto_category, id);
   }
 });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,18 @@ export function HomeMobileFilterShell({
   searchButton,
   className,
 }: Props) {
+  const [open, setOpen] = useState(false);
+  const isOpen = open || expanded;
+
+  useEffect(() => {
+    if (expanded) setOpen(false);
+  }, [expanded]);
+
+  function setExpanded(next: boolean) {
+    setOpen(next);
+    onExpandedChange(next);
+  }
+
   if (!collapseEnabled) {
     return (
       <div className={cn("space-y-2", className)}>
@@ -37,10 +50,11 @@ export function HomeMobileFilterShell({
 
   return (
     <div className={cn("space-y-2", className)}>
-      {!expanded ? (
+      {!isOpen ? (
         <button
           type="button"
-          onClick={() => onExpandedChange(true)}
+          data-testid="home-mobile-filters-toggle"
+          onClick={() => setExpanded(true)}
           className="pressable flex w-full items-center justify-between gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 text-left text-sm font-semibold text-white"
           aria-expanded={false}
         >
@@ -51,11 +65,15 @@ export function HomeMobileFilterShell({
           <ChevronDown className="h-4 w-4 shrink-0 text-white/70" aria-hidden />
         </button>
       ) : (
-        <div className="space-y-2.5 rounded-xl border border-white/15 bg-white/5 p-2.5">
+        <div
+          className="space-y-2.5 rounded-xl border border-white/15 bg-white/5 p-2.5"
+          data-testid="home-mobile-filters-expanded"
+        >
           <div className="flex items-center justify-between gap-2 px-0.5">
             <button
               type="button"
-              onClick={() => onExpandedChange(false)}
+              data-testid="home-mobile-filters-done"
+              onClick={() => setExpanded(false)}
               className="text-xs font-bold text-gold"
             >
               Done
