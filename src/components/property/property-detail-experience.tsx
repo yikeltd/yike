@@ -38,6 +38,7 @@ import {
   ListingDetailLocationSection,
 } from "@/components/marketplace/listing-detail-location-section";
 import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
+import { ListingDetailSpecificationsSection } from "@/components/marketplace/listing-detail-specifications-grid";
 
 const AMENITY_ICONS: Record<string, typeof Zap> = {
   power: Zap,
@@ -357,12 +358,10 @@ export function PropertyDetailExperience({
               </div>
             </div>
 
-            {/* 5. DETAILED SPECS */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70">
-                  Property Specifications
-                </h3>
+            <ListingDetailSpecificationsSection
+              title="Property Specifications"
+              items={detailedSpecs.slice(0, specsExpanded ? detailedSpecs.length : 4)}
+              headerAction={
                 <button
                   type="button"
                   onClick={() => setSpecsExpanded((v) => !v)}
@@ -370,24 +369,8 @@ export function PropertyDetailExperience({
                 >
                   {specsExpanded ? "Show Less ▲" : "View All Specs ▼"}
                 </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
-                {detailedSpecs.slice(0, specsExpanded ? detailedSpecs.length : 4).map((spec, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10"
-                  >
-                    <span className="text-[10px] font-semibold text-navy/50 dark:text-white/50">
-                      {spec.label}
-                    </span>
-                    <span className="text-xs font-black text-navy dark:text-white mt-0.5 truncate">
-                      {spec.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+              }
+            />
 
             {cleanLocation ? (
               <ListingDetailLocationSection locationLabel={cleanLocation} />

@@ -30,6 +30,17 @@ async function assertDetailContactLayout(page: import("@playwright/test").Page) 
       .getByRole("heading", { level: 2 }),
   ).toBeVisible();
 
+  const specGrid = page.getByTestId("listing-detail-specifications-grid");
+  if ((await specGrid.count()) > 0) {
+    await expect(specGrid).toBeVisible();
+    const box = await specGrid.boundingBox();
+    const viewport = page.viewportSize();
+    if (box && viewport) {
+      expect(box.width).toBeLessThanOrEqual(viewport.width + 2);
+    }
+    await expect(specGrid).toHaveClass(/sm:grid-cols-2/);
+  }
+
   const galleryBox = await galleryContact.boundingBox();
   const locationBox = await locationSection.boundingBox();
   const sellerBox = await sellerCard.boundingBox();

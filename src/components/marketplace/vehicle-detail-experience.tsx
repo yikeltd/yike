@@ -45,6 +45,7 @@ import {
   ListingDetailLocationSection,
 } from "@/components/marketplace/listing-detail-location-section";
 import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
+import { ListingDetailSpecificationsSection } from "@/components/marketplace/listing-detail-specifications-grid";
 import {
   isVehicleFinanceEstimatorUiVisible,
   isVehicleMechanicInspectionUiVisible,
@@ -445,27 +446,10 @@ export function VehicleDetailExperience({
             </div>
             ) : null}
 
-            {/* 6. FULL SPECS ACCORDION */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70">
-                Detailed Vehicle Specifications
-              </h3>
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
-                {vehicleSpecs.map((spec, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10"
-                  >
-                    <span className="text-[10px] font-semibold text-navy/50 dark:text-white/50">
-                      {spec.label}
-                    </span>
-                    <span className="text-xs font-black text-navy dark:text-white mt-0.5 truncate">
-                      {spec.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ListingDetailSpecificationsSection
+              title="Detailed Vehicle Specifications"
+              items={vehicleSpecs}
+            />
 
             {/* 7. DESCRIPTION */}
             <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-2">

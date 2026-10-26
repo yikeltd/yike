@@ -21,6 +21,7 @@ import {
   ListingDetailLocationSection,
 } from "@/components/marketplace/listing-detail-location-section";
 import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
+import { ListingDetailSpecificationsSection } from "@/components/marketplace/listing-detail-specifications-grid";
 import { ElectronicsCard } from "./electronics-card";
 import { ReportListingForm } from "@/components/property/report-form";
 
@@ -160,17 +161,11 @@ export function ElectronicsDetailExperience({
           ) : null}
         </div>
 
-        <section className="rounded-2xl border border-navy/10 bg-white p-4">
-          <h2 className="text-sm font-black text-navy">Specifications</h2>
-          <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-            {specRows.map((row) => (
-              <div key={row.label} className="rounded-xl bg-surface/80 px-3 py-2">
-                <dt className="text-[10px] font-bold uppercase tracking-wide text-muted">{row.label}</dt>
-                <dd className="text-sm font-semibold text-navy">{row.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+        <ListingDetailSpecificationsSection
+          title="Specifications"
+          items={specRows}
+          shellClassName="rounded-2xl p-4 shadow-sm sm:rounded-3xl sm:p-5 sm:shadow-xl"
+        />
 
         {listing.description ? (
           <section className="rounded-2xl border border-navy/10 bg-white p-4">
