@@ -1,7 +1,7 @@
 # Release blocker report
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
-**Updated:** 2026-10-26 (marketplace audit + seller-contact fix)  
+**Updated:** 2026-10-26 (listing-leads capture binding)  
 **Scope:** Verification gaps after navigation shell + public E2E (30 PASS / 16 SKIP on production-linked local env).
 
 This report does **not** claim release readiness from a green production build or anonymous Playwright alone.
@@ -26,7 +26,8 @@ This report does **not** claim release readiness from a green production build o
 
 - **Playwright:** 32/32 PASS on marketplace-focused specs (browse, search, discover, seller gates, shell).
 - **Unit:** listing-create/seller routes 34/34; seller-contact route guard 2/2; route audit 8/8.
-- **Fixed:** `GET /api/listings/[id]/seller-contact` now binds `sellerId` to listing via `assetType` + `resolveListingSeller` (prevents cross-listing phone probes).
+- **Fixed:** `GET /api/listings/[id]/seller-contact` binds `sellerId` to listing via `assetType` + `resolveListingSeller` (`4e90fb99`).
+- **Fixed:** `POST /api/listing-leads/capture` binds listing-bound leads via `validateLeadRequest`; session-only buyer id (`listing-leads-capture-route.test.ts` 2/2).
 - **Not run:** DB integration (production-linked `verify:dev-target`); authenticated seller wizard E2E.
 
 Full matrix: **`docs/engineering/MARKETPLACE_E2E_AUDIT.md`**.

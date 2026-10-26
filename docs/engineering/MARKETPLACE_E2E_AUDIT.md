@@ -2,7 +2,7 @@
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
 **Updated:** 2026-10-26  
-**HEAD baseline:** post `e9b3e78e` (peer-transfer migration repair)
+**HEAD baseline:** post `8031f16a` (Paystack readiness); listing-leads fix pending commit
 
 This audit distinguishes **Playwright smoke/navigation** (anonymous, production-linked local dev) from **authenticated seller/create/messaging** flows (blocked without isolated Supabase).
 
@@ -40,13 +40,21 @@ This audit distinguishes **Playwright smoke/navigation** (anonymous, production-
 
 ---
 
-## Defect fixed (security)
+## Defects fixed (security)
 
-**Issue:** `GET /api/listings/[id]/seller-contact` accepted arbitrary `sellerId` for any authenticated buyer, allowing phone entitlement probes without proving the seller owns the listing.
+### Seller contact (`4e90fb99`)
 
-**Fix:** Require `assetType`; use `resolveListingSeller()`; return **404** when `sellerId` does not match listing `agent_id`. UI updated to pass `assetType` (property/vehicle/electronics components).
+**Issue:** `GET /api/listings/[id]/seller-contact` accepted arbitrary `sellerId` for any authenticated buyer.
 
-**Commit:** (see release blocker report after push)
+**Fix:** Require `assetType`; `resolveListingSeller()`; **404** on mismatch. UI passes `assetType`.
+
+### Listing leads capture (this slice)
+
+**Issue:** `POST /api/listing-leads/capture` trusted client `sellerId` (and optional `listingId`) with no server binding — forged leads could attribute to the wrong seller or ineligible listings.
+
+**Fix:** `validateListingLeadCaptureRequest()` — listing-bound types use `validateLeadRequest()` (agent/listing match, eligibility); optional `assetType` cross-check; `follow` validates profile only; `leadUserId` from session only; ignore client `leadUserDisplay` when signed in.
+
+**Tests:** `listing-leads-capture-route.test.ts` (2); `e2e/listing-leads-capture-auth.spec.ts` (3 API, read-only validation).
 
 ---
 
@@ -58,7 +66,7 @@ This audit distinguishes **Playwright smoke/navigation** (anonymous, production-
 | `PATCH …/lifecycle` | `agent_id` ownership on update |
 | `POST /api/conversations` | Auth + `resolveListingSeller` |
 | `GET/POST …/messages` | Auth + service-layer forbidden/not_found |
-| `POST /api/listing-leads/capture` | Anonymous allowed; lead attribution only (no PII phone reveal) |
+| `POST /api/listing-leads/capture` | Listing-bound leads validated via `validateLeadRequest`; session user for `lead_user_id` |
 
 ---
 
