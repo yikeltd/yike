@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireSuperAdminApi } from "@/lib/admin/api-auth";
 import { writeAuditLogAsync } from "@/lib/admin/audit";
-import { creditYikeCoins, debitYikeCoins } from "@/lib/yike-coins/ledger";
+import { debitYikeCoins } from "@/lib/yike-coins/ledger";
+import { resolveUserIdByUsername } from "@/lib/username/lookup";
+import { validateUsername } from "@/lib/username/rules";
+import { isYikeCoinsEnabled } from "@/lib/yike-coins/flags";
+import { randomUUID } from "node:crypto";
 
 export const runtime = "nodejs";
 
 type AdjustBody = {
   userId?: string;
+  recipientUsername?: string;
   direction?: "credit" | "debit";
   amountCoins?: number;
   reason?: string;
@@ -20,6 +25,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
+  if (!isYikeCoinsEnabled()) {
+    return NextResponse.json({ error: "YC is not enabled" }, { status: 503 });
+  }
+
   let body: AdjustBody = {};
   try {
     body = await request.json();
@@ -27,17 +36,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const userId = body.userId?.trim();
+  let userId = body.userId?.trim() ?? "";
   const direction = body.direction;
   const amountCoins = body.amountCoins;
-  const reason = body.reason?.trim();
-  const reference = body.reference?.trim();
+  const reason = body.reason?.trim() ?? "";
+  const reference = body.reference?.trim() || `ADJ-${randomUUID().slice(0, 8).toUpperCase()}`;
 
-  if (!userId || !direction || !reference || !reason) {
+  if (!userId && body.recipientUsername) {
+    const validated = validateUsername(body.recipientUsername);
+    if (!validated.ok) {
+      return NextResponse.json({ error: "Invalid recipient username" }, { status: 400 });
+    }
+    const resolved = await resolveUserIdByUsername(validated.username);
+    if (!resolved) {
+      return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
+    }
+    userId = resolved;
+  }
+
+  if (!userId || !direction || !reason) {
     return NextResponse.json(
-      { error: "userId, direction, amountCoins, reason, and reference are required" },
+      { error: "Recipient, direction, amountCoins, and reason are required" },
       { status: 400 }
     );
+  }
+
+  if (reason.length < 3) {
+    return NextResponse.json({ error: "Reason is required (min 3 characters)" }, { status: 400 });
   }
 
   if (!Number.isInteger(amountCoins) || (amountCoins ?? 0) <= 0) {
