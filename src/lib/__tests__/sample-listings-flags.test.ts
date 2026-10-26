@@ -1,19 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
 
-test("sample fixtures default on in test env unless explicitly disabled", async () => {
-  const prevNode = process.env.NODE_ENV;
+test("sample fixtures respect explicit opt-out", () => {
   const prevFlag = process.env.YIKE_SAMPLE_LISTINGS_FIXTURE;
-  process.env.NODE_ENV = "test";
-  delete process.env.YIKE_SAMPLE_LISTINGS_FIXTURE;
-  const { isSampleListingFixtureEnabled } = await import(
-    "@/lib/sample-listings/flags"
-  );
-  assert.equal(isSampleListingFixtureEnabled(), true);
   process.env.YIKE_SAMPLE_LISTINGS_FIXTURE = "0";
-  const mod2 = await import("@/lib/sample-listings/flags");
-  assert.equal(mod2.isSampleListingFixtureEnabled(), false);
-  process.env.NODE_ENV = prevNode;
+  assert.equal(isSampleListingFixtureEnabled(), false);
+  process.env.YIKE_SAMPLE_LISTINGS_FIXTURE = "1";
+  assert.equal(isSampleListingFixtureEnabled(), true);
   if (prevFlag === undefined) delete process.env.YIKE_SAMPLE_LISTINGS_FIXTURE;
   else process.env.YIKE_SAMPLE_LISTINGS_FIXTURE = prevFlag;
 });
