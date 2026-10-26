@@ -2,7 +2,7 @@
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
 **Updated:** 2026-10-26  
-**HEAD baseline:** `4357e248` (listing-leads capture binding)
+**HEAD baseline:** see latest commit on branch (API metrics + entitlements hardening after listing-leads capture)
 
 This audit distinguishes **Playwright smoke/navigation** (anonymous, production-linked local dev) from **authenticated seller/create/messaging** flows (blocked without isolated Supabase).
 
@@ -37,6 +37,7 @@ This audit distinguishes **Playwright smoke/navigation** (anonymous, production-
 | Listing create / seller routes unit bundle | **34 PASS** |
 | Route navigation audit | **8 PASS** (run with typecheck slice) |
 | `seller-contact-route.test.ts` | Added with listing–seller binding guard |
+| `public-listing-target.test.ts` | Metrics routes + entitlements self-scope (static) |
 
 ---
 
@@ -55,6 +56,16 @@ This audit distinguishes **Playwright smoke/navigation** (anonymous, production-
 **Fix:** `validateListingLeadCaptureRequest()` — listing-bound types use `validateLeadRequest()` (agent/listing match, eligibility); optional `assetType` cross-check; `follow` validates profile only; `leadUserId` from session only; ignore client `leadUserDisplay` when signed in.
 
 **Tests:** `listing-leads-capture-route.test.ts` (2); `e2e/listing-leads-capture-auth.spec.ts` (3 API, read-only validation).
+
+### Public metrics & entitlements (API audit slice)
+
+**Issue:** Property view/contact-click and `POST /api/analytics/listing-event` accepted any UUID — metric inflation on non-live listings. `GET /api/revenue/entitlements/[userId]` allowed unauthenticated enumeration of any user id (in-memory store today; unsafe pattern for launch).
+
+**Fix:** `isApprovedListingForPublicMetrics()` (aligned with lead listing visibility rules). Entitlements require session and `userId === session.user.id`.
+
+**Tests:** `public-listing-target.test.ts` (2 static).
+
+**Detail:** `docs/engineering/PUBLIC_API_SECURITY_AUDIT.md`
 
 ---
 
