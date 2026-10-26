@@ -32,6 +32,7 @@
     "db:push:staging": "bash scripts/db-push-staging.sh",
     "db:status": "node scripts/verify-supabase-project.mjs --require-linked && supabase migration list",
     "verify:dev-target": "node scripts/verify-dev-supabase-target.mjs",
+    "compare:migrations": "node scripts/compare-local-migration-history.mjs",
     "verify:e2e-supabase": "node scripts/verify-e2e-supabase-target.mjs",
     "verify:staging-target": "node scripts/verify-staging-supabase-target.mjs",
     "test:dev:integration": "tsx --test scripts/staging-integration/**/*.test.ts",

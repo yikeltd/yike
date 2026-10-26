@@ -502,9 +502,74 @@ test(
         .select("id", { count: "exact", head: true })
         .eq("idempotency_key", idem);
       assert.equal(transferRows, 1);
+
+      const transferRef = String(
+        (Array.isArray(first.data) ? first.data[0] : first.data)?.transfer_reference ?? "",
+      );
+      assert.match(transferRef, /^TRF-/);
+
+      const { data: ledgers } = await admin
+        .from("yike_coin_ledger")
+        .select("reference, direction, user_id")
+        .in("reference", [transferRef, `${transferRef}-IN`]);
+      assert.equal(ledgers?.length, 2, "debit and credit ledger rows must exist");
+      const debitRow = ledgers?.find((r) => r.direction === "debit" && r.user_id === senderId);
+      const creditRow = ledgers?.find(
+        (r) => r.direction === "credit" && r.user_id === recipientId,
+      );
+      assert.equal(debitRow?.reference, transferRef);
+      assert.equal(creditRow?.reference, `${transferRef}-IN`);
     } finally {
       await deleteEphemeralUser(admin, senderId);
       await deleteEphemeralUser(admin, recipientId);
+    }
+  }
+);
+
+test(
+  "peer transfer idempotency mismatch rejects different recipient",
+  { skip: integrationEnabled ? false : "dev integration not enabled" },
+  async () => {
+    const admin = adminClient()!;
+    if (!(await ycTransferRpcReady(admin))) {
+      assert.fail("yike_coin_peer_transfer RPC missing — apply migration");
+    }
+    const senderId = await resolveEphemeralTestUserId(admin);
+    const recipientA = await resolveEphemeralTestUserId(admin);
+    const recipientB = await resolveEphemeralTestUserId(admin);
+    const userA = `ra_${randomUUID().slice(0, 8)}`;
+    const userB = `rb_${randomUUID().slice(0, 8)}`;
+    const idem = `dev-integration:recipient-mismatch:${randomUUID()}`;
+    try {
+      await setTestUsername(admin, recipientA, userA);
+      await setTestUsername(admin, recipientB, userB);
+      await admin.rpc("yike_coin_credit", {
+        p_user_id: senderId,
+        p_amount_coins: 30,
+        p_reference: `DEV-FUND-${randomUUID().slice(0, 8)}`,
+        p_idempotency_key: `dev-integration:fund:${randomUUID()}`,
+        p_service_code: "wallet_topup",
+        p_payment_order_id: null,
+        p_reason: "fund",
+        p_metadata: {},
+      });
+      await admin.rpc("yike_coin_peer_transfer", {
+        p_sender_id: senderId,
+        p_recipient_username: userA,
+        p_amount_coins: 4,
+        p_idempotency_key: idem,
+      });
+      const mismatch = await admin.rpc("yike_coin_peer_transfer", {
+        p_sender_id: senderId,
+        p_recipient_username: userB,
+        p_amount_coins: 4,
+        p_idempotency_key: idem,
+      });
+      assert.match(mismatch.error?.message ?? "", /idempotency_key_mismatch/);
+    } finally {
+      await deleteEphemeralUser(admin, senderId);
+      await deleteEphemeralUser(admin, recipientA);
+      await deleteEphemeralUser(admin, recipientB);
     }
   }
 );

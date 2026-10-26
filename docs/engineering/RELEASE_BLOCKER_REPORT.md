@@ -1,7 +1,7 @@
 # Release blocker report
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
-**Updated:** 2026-10-26  
+**Updated:** 2026-10-26 (migration reconciliation read-only pass)  
 **Scope:** Verification gaps after navigation shell + public E2E (30 PASS / 16 SKIP on production-linked local env).
 
 This report does **not** claim release readiness from a green production build or anonymous Playwright alone.
@@ -17,7 +17,7 @@ This report does **not** claim release readiness from a green production build o
 | Lex RBAC E2E (6 roles) | **BLOCKED** | Ops: staff test accounts in non-prod |
 | YC wallet RPCs / ledger | **REVIEW** (14/14 integration on linked DB — not prod-readiness proof) | Reconcile migrations before prod `db push`; re-run integration only on approved non-prod target |
 | Paystack checkout E2E | **BLOCKED** | Production keys + `ENABLE_PAYMENTS`; no live charge in CI |
-| Migration filename drift (branch vs applied prod) | **REVIEW** | Reconcile `20261026*` local files vs prod `202610251949*` before next `db push` |
+| Migration filename drift (branch vs applied prod) | **P0 — ops** | Peer-transfer **repo defect fixed** (`261500`/`261510`); version-ID tail still mismatched — **`YC_WALLET_MIGRATION_RECONCILIATION.md`** — **no prod `db push`** |
 
 ---
 
@@ -133,16 +133,17 @@ npm run test:e2e:navigation
 
 ## Recommended next actions (ordered)
 
-1. **Create isolated Supabase project** → `.env.e2e.local` → migrations → `npm run e2e:nav-prereqs:isolated` (exit 0) → `npm run test:e2e:navigation`.
-2. **Provision six Lex staff test users** on that project → re-run navigation suite including `staff-role-routes.spec.ts`.
-3. **Reconcile migration history** between branch `20261026*` files and production applied list before next production `db push`.
+1. **Create isolated Supabase project** → `.env.e2e.local` → full migration apply (includes `261510`) → `YIKE_DEV_DB_INTEGRATION=1` on isolated ref → `npm run e2e:nav-prereqs:isolated` (exit 0) → `npm run test:e2e:navigation`.
+2. **Production migration history alignment (ops)** — `npm run compare:migrations` + controlled repair; see `YC_WALLET_MIGRATION_RECONCILIATION.md`.
+3. **Provision six Lex staff test users** on that project → re-run navigation suite including `staff-role-routes.spec.ts`.
 4. **Paystack:** ops verification of keys, flags, webhook URL, one sandbox charge — when keys available.
-5. **Final gate:** `npm run typecheck`, `npm run build`, full Playwright on isolated env, update this doc with commit hashes and PASS/FAIL counts.
+5. **Final gate:** full Playwright on isolated env; update this doc with commit hashes and PASS/FAIL counts.
 
 ---
 
 ## References
 
+- `docs/engineering/YC_WALLET_MIGRATION_RECONCILIATION.md`
 - `docs/engineering/ROUTE_NAVIGATION_AUDIT.md`
 - `.env.e2e.example`
 - `scripts/e2e-navigation-prerequisites.ts`

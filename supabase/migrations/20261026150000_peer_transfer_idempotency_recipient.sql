@@ -1,4 +1,6 @@
--- Tighten peer transfer idempotency replay: recipient must match resolved username.
+-- Peer transfer: distinct debit/credit ledger references (-IN suffix) and idempotent replay
+-- (sender, recipient, amount must match). Idempotent with 20261026142000 — ensures fresh
+-- migration chains that include this version converge on the same function body as production.
 
 CREATE OR REPLACE FUNCTION public.yike_coin_peer_transfer(
   p_sender_id uuid,
@@ -25,6 +27,7 @@ DECLARE
   v_recipient_id uuid;
   v_transfer_id uuid;
   v_reference text;
+  v_credit_reference text;
   v_sender_ledger uuid;
   v_recipient_ledger uuid;
   v_sender_after bigint;
@@ -51,7 +54,7 @@ BEGIN
   END IF;
 
   SELECT * INTO v_existing FROM public.yike_coin_transfers WHERE idempotency_key = p_idempotency_key;
-  IF v_existing.id IS NOT NULL THEN
+  IF FOUND THEN
     IF v_existing.sender_id <> p_sender_id
        OR v_existing.recipient_id <> v_recipient_id
        OR v_existing.amount_coins <> p_amount_coins THEN
@@ -71,6 +74,7 @@ BEGIN
   END IF;
 
   v_reference := 'TRF-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12));
+  v_credit_reference := v_reference || '-IN';
 
   SELECT * INTO v_debit FROM public.yike_coin_debit(
     p_sender_id,
@@ -81,6 +85,7 @@ BEGIN
     'Sent YC to @' || LOWER(TRIM(p_recipient_username)),
     jsonb_build_object(
       'transfer_type', 'peer_send',
+      'transfer_reference', v_reference,
       'counterparty_username', LOWER(TRIM(p_recipient_username)),
       'counterparty_user_id', v_recipient_id
     )
@@ -92,13 +97,14 @@ BEGIN
     SELECT * INTO v_credit FROM public.yike_coin_credit(
       v_recipient_id,
       p_amount_coins,
-      v_reference,
+      v_credit_reference,
       p_idempotency_key || ':credit',
       'yc_transfer_in',
       NULL,
       'Received YC from transfer ' || v_reference,
       jsonb_build_object(
         'transfer_type', 'peer_receive',
+        'transfer_reference', v_reference,
         'counterparty_user_id', p_sender_id,
         'sender_id', p_sender_id
       )
@@ -122,7 +128,7 @@ BEGIN
         PERFORM public.yike_coin_debit(
           v_recipient_id,
           p_amount_coins,
-          'ROLLBACK-' || v_reference,
+          'ROLLBACK-' || v_credit_reference,
           p_idempotency_key || ':rollback_recipient',
           'yc_transfer_rollback',
           'Transfer failed — reversing recipient credit',
