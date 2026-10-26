@@ -12,7 +12,9 @@ async function assertDetailContactLayout(page: import("@playwright/test").Page) 
   }
 
   await expect(galleryContact).toBeVisible({ timeout: 15_000 });
-  await expect(galleryContact.getByRole("button", { name: /Message/i })).toBeVisible();
+  await expect(
+    galleryContact.getByRole("button", { name: /WhatsApp|Message/i }),
+  ).toBeVisible();
 
   const sellerCard = page.getByTestId("marketplace-seller-contact-card");
   await expect(sellerCard).toBeVisible();
@@ -38,7 +40,7 @@ async function assertDetailContactLayout(page: import("@playwright/test").Page) 
     if (box && viewport) {
       expect(box.width).toBeLessThanOrEqual(viewport.width + 2);
     }
-    await expect(specGrid).toHaveClass(/sm:grid-cols-2/);
+    await expect(specGrid).toHaveClass(/min-\[480px\]:grid-cols-2/);
   }
 
   const galleryBox = await galleryContact.boundingBox();

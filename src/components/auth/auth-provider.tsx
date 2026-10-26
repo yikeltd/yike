@@ -231,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const guardAction = useCallback(
     (intent: AuthIntent, onAuthorized: () => void) => {
-      if (loading) return;
+      if (loading && !AUTH_PUBLIC_INTENTS.has(intent.type)) return;
       if (AUTH_PUBLIC_INTENTS.has(intent.type)) {
         onAuthorized();
         return;

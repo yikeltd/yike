@@ -1,18 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MessageCircle, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
 import type { MarketplaceAssetType } from "@/lib/marketplace-messaging/service";
+import type { ListingContactContext } from "@/lib/marketplace/listing-inquiry-message";
+import {
+  openWhatsAppLead,
+  trackLeadAndRedirect,
+} from "@/lib/leads/client";
+import type { ContactPlacement } from "@/lib/contact-tracking";
 
 type Props = {
   listingId: string;
   assetType: MarketplaceAssetType;
   sellerId: string;
   sellerName: string;
+  contact: ListingContactContext;
+  placement?: ContactPlacement;
   className?: string;
   variant?: "sidebar" | "gallery-inline";
 };
@@ -21,7 +29,7 @@ type PhoneState =
   | { phase: "guest" }
   | { phase: "loading" }
   | { phase: "ready"; telUrl: string }
-  | { phase: "unavailable" };
+  | { phase: "unavailable"; message?: string };
 
 function listingReturnPath(fallback: string): string {
   if (typeof window === "undefined") return fallback;
@@ -33,29 +41,38 @@ export function SellerMessageCallActions({
   assetType,
   sellerId,
   sellerName,
+  contact,
+  placement = "detail",
   className,
   variant = "sidebar",
 }: Props) {
   const { guardAction, user } = useAuth();
   const router = useRouter();
   const [messageLoading, setMessageLoading] = useState(false);
+  const [callLoading, setCallLoading] = useState(false);
   const [messageNotice, setMessageNotice] = useState<string | null>(null);
   const [messagingReady, setMessagingReady] = useState<boolean | null>(null);
+  const [messagingReason, setMessagingReason] = useState<string | null>(null);
   const [phone, setPhone] = useState<PhoneState>({ phase: "guest" });
+  const inFlightRef = useRef<string | null>(null);
 
   const compact = variant === "gallery-inline";
-  const returnPath = listingReturnPath(`/${listingId}`);
+  const returnPath = listingReturnPath(contact.listingUrl || `/${listingId}`);
 
   useEffect(() => {
     let cancelled = false;
     void fetch("/api/marketplace/native-contact/status")
       .then((r) => r.json())
-      .then((json: { messagingAvailable?: boolean }) => {
+      .then((json: { messagingAvailable?: boolean; reason?: string | null }) => {
         if (cancelled) return;
         setMessagingReady(Boolean(json.messagingAvailable));
+        setMessagingReason(json.reason ?? null);
       })
       .catch(() => {
-        if (!cancelled) setMessagingReady(false);
+        if (!cancelled) {
+          setMessagingReady(false);
+          setMessagingReason("Could not verify in-app messaging.");
+        }
       });
     return () => {
       cancelled = true;
@@ -63,7 +80,10 @@ export function SellerMessageCallActions({
   }, []);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setPhone({ phase: "guest" });
+      return;
+    }
 
     let cancelled = false;
     void (async () => {
@@ -78,11 +98,15 @@ export function SellerMessageCallActions({
         );
         const json = await res.json();
         if (cancelled) return;
-        if (!res.ok || !json.phoneReveal?.telUrl) {
-          setPhone({ phase: "unavailable" });
+        if (res.ok && json.phoneReveal?.telUrl) {
+          setPhone({ phase: "ready", telUrl: json.phoneReveal.telUrl as string });
           return;
         }
-        setPhone({ phase: "ready", telUrl: json.phoneReveal.telUrl as string });
+        const msg =
+          typeof json.phoneReveal?.message === "string"
+            ? json.phoneReveal.message
+            : undefined;
+        setPhone({ phase: "unavailable", message: msg });
       } catch {
         if (!cancelled) setPhone({ phase: "unavailable" });
       }
@@ -95,7 +119,46 @@ export function SellerMessageCallActions({
 
   const effectivePhone: PhoneState = !user?.id ? { phase: "guest" } : phone;
 
+  async function runWhatsAppLead() {
+    const key = `wa-${listingId}`;
+    if (inFlightRef.current === key) return;
+    inFlightRef.current = key;
+    setMessageNotice(null);
+    setMessageLoading(true);
+    try {
+      const result = await trackLeadAndRedirect({
+        listingId,
+        agentId: sellerId,
+        leadType: "whatsapp",
+        sourcePage: returnPath,
+        placement,
+        agentName: sellerName,
+        title: contact.title,
+        area: contact.area,
+        city: contact.city,
+        price: contact.price,
+        paymentPeriod: contact.paymentPeriod,
+        listingType: contact.listingType,
+        bedrooms: contact.bedrooms,
+        propertyType: contact.propertyType,
+        assetType,
+        listingUrl: contact.listingUrl,
+      } as Parameters<typeof trackLeadAndRedirect>[0]);
+      if (!result.ok) {
+        setMessageNotice(result.error ?? "Could not open WhatsApp");
+        return;
+      }
+      if (result.redirectUrl) openWhatsAppLead(result);
+    } finally {
+      setMessageLoading(false);
+      inFlightRef.current = null;
+    }
+  }
+
   async function startConversation() {
+    const key = `msg-${listingId}`;
+    if (inFlightRef.current === key) return;
+    inFlightRef.current = key;
     setMessageNotice(null);
     setMessageLoading(true);
     try {
@@ -112,17 +175,70 @@ export function SellerMessageCallActions({
       router.push(`/conversations/${json.conversation.id}`);
     } finally {
       setMessageLoading(false);
+      inFlightRef.current = null;
+    }
+  }
+
+  async function runCallLead() {
+    const key = `call-${listingId}`;
+    if (inFlightRef.current === key) return;
+    inFlightRef.current = key;
+    setMessageNotice(null);
+    setCallLoading(true);
+    try {
+      const result = await trackLeadAndRedirect({
+        listingId,
+        agentId: sellerId,
+        leadType: "call",
+        sourcePage: returnPath,
+        placement,
+        agentName: sellerName,
+        title: contact.title,
+        area: contact.area,
+        city: contact.city,
+        price: contact.price,
+        paymentPeriod: contact.paymentPeriod,
+        listingType: contact.listingType,
+        bedrooms: contact.bedrooms,
+        propertyType: contact.propertyType,
+        assetType,
+        listingUrl: contact.listingUrl,
+      } as Parameters<typeof trackLeadAndRedirect>[0]);
+      if (!result.ok) {
+        setMessageNotice(result.error ?? "Call unavailable");
+        return;
+      }
+      if (result.callAllowed && result.redirectUrl) {
+        window.location.href = result.redirectUrl;
+        return;
+      }
+      if (result.redirectUrl) {
+        openWhatsAppLead(result);
+        setMessageNotice("Direct call unavailable — opened WhatsApp instead.");
+        return;
+      }
+      setMessageNotice("Call unavailable for this listing.");
+    } finally {
+      setCallLoading(false);
+      inFlightRef.current = null;
     }
   }
 
   function onMessageClick() {
+    const usesInAppChat = messagingReady === true;
     guardAction(
       {
-        type: "message",
+        type: usesInAppChat ? "message" : "whatsapp",
         listingId,
         redirectPath: returnPath,
       },
-      () => void startConversation(),
+      () => {
+        if (usesInAppChat) {
+          void startConversation();
+        } else {
+          void runWhatsAppLead();
+        }
+      },
     );
   }
 
@@ -136,25 +252,38 @@ export function SellerMessageCallActions({
       () => {
         if (effectivePhone.phase === "ready") {
           window.location.href = effectivePhone.telUrl;
+          return;
         }
+        void runCallLead();
       },
     );
   }
 
-  const messagingDisabled = messagingReady === false || messagingReady === null;
   const callReady = effectivePhone.phase === "ready";
+  const callBusy = callLoading || effectivePhone.phase === "loading";
   const callUnavailable =
-    Boolean(user?.id) &&
-    (effectivePhone.phase === "unavailable" || effectivePhone.phase === "loading");
+    Boolean(user?.id) && effectivePhone.phase === "unavailable" && !callLoading;
 
-  const messageLabel = messageLoading ? (compact ? "…" : "Opening…") : "Message";
-  const callLabel = callUnavailable
-    ? effectivePhone.phase === "loading"
+  const messageUsesWhatsApp = messagingReady !== true;
+  const messageLabel = messageLoading
+    ? compact
+      ? "…"
+      : "Opening…"
+    : messageUsesWhatsApp
       ? compact
-        ? "…"
-        : "Call"
-      : "Call unavailable"
-    : "Call";
+        ? "WhatsApp"
+        : "Message on WhatsApp"
+      : "Message";
+
+  const callLabel = callBusy
+    ? compact
+      ? "…"
+      : "Call"
+    : callUnavailable
+      ? compact
+        ? "No number"
+        : "Call unavailable"
+      : "Call";
 
   const btnBase = compact
     ? "min-h-[44px] rounded-xl px-3 py-2.5 text-xs font-bold"
@@ -162,10 +291,13 @@ export function SellerMessageCallActions({
 
   return (
     <div className={cn("space-y-2", className)}>
-      {messagingDisabled && messagingReady === false ? (
+      {messagingReady === false && messagingReason ? (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-          In-app messaging is temporarily unavailable on this environment.
+          {messagingReason} Use WhatsApp below to reach the seller.
         </p>
+      ) : null}
+      {callUnavailable && effectivePhone.message ? (
+        <p className="text-[11px] leading-snug text-muted">{effectivePhone.message}</p>
       ) : null}
       {messageNotice ? (
         <p className="text-[11px] leading-snug text-amber-900 dark:text-amber-200">
@@ -176,11 +308,15 @@ export function SellerMessageCallActions({
       <div className="grid grid-cols-2 gap-2.5">
         <button
           type="button"
-          disabled={messageLoading || messagingDisabled || !sellerId}
+          disabled={messageLoading || !sellerId}
           onClick={onMessageClick}
-          aria-label={`Message ${sellerName}`}
+          aria-label={
+            messageUsesWhatsApp
+              ? `WhatsApp ${sellerName}`
+              : `Message ${sellerName}`
+          }
           className={cn(
-            "pressable col-span-1 flex w-full items-center justify-center gap-1.5 bg-[#031B4E] text-white shadow-md transition-colors hover:bg-navy/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 disabled:cursor-not-allowed disabled:opacity-50",
+            "pressable col-span-1 flex w-full items-center justify-center gap-1.5 bg-navy text-white shadow-md transition-colors hover:bg-navy/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 disabled:cursor-not-allowed disabled:opacity-50",
             btnBase,
           )}
         >
@@ -188,39 +324,37 @@ export function SellerMessageCallActions({
           <span>{messageLabel}</span>
         </button>
 
-        {callReady && effectivePhone.phase === "ready" ? (
+        {callReady ? (
           <Link
             href={effectivePhone.telUrl}
             onClick={(e) => {
-              if (!user) {
+              if (!user?.id) {
                 e.preventDefault();
                 onCallClick();
               }
             }}
             aria-label={`Call ${sellerName}`}
             className={cn(
-              "pressable flex w-full items-center justify-center gap-1.5 border-2 border-[#031B4E] bg-white text-[#031B4E] shadow-sm ring-1 ring-gold/30 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 dark:border-white/25 dark:bg-transparent dark:text-white dark:hover:bg-white/5",
+              "pressable flex w-full items-center justify-center gap-1.5 border-2 border-navy bg-elevated text-navy shadow-sm ring-1 ring-gold/30 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 dark:border-white/25 dark:bg-transparent dark:text-white dark:hover:bg-white/5",
               btnBase,
             )}
           >
-            <Phone
-              className="h-4 w-4 shrink-0 text-gold-dark dark:text-gold"
-              aria-hidden
-            />
+            <Phone className="h-4 w-4 shrink-0 text-gold-dark dark:text-gold" aria-hidden />
             <span>Call</span>
           </Link>
         ) : (
           <button
             type="button"
-            disabled={Boolean(callUnavailable)}
+            disabled={callBusy || (callUnavailable && !user)}
             onClick={onCallClick}
             aria-label={callUnavailable ? "Call unavailable" : `Call ${sellerName}`}
             className={cn(
-              "pressable flex w-full items-center justify-center gap-1.5 border-2 bg-white shadow-sm ring-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 disabled:cursor-not-allowed",
+              "pressable flex w-full items-center justify-center gap-1.5 border-2 bg-elevated shadow-sm ring-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 disabled:cursor-not-allowed",
               callUnavailable
-                ? "border-[#031B4E]/25 text-[#031B4E]/45 ring-gold/10 opacity-70 dark:border-white/10 dark:text-white/35"
-                : "border-[#031B4E] text-[#031B4E] ring-gold/30 hover:bg-slate-50 dark:border-white/25 dark:bg-transparent dark:text-white dark:hover:bg-white/5",
+                ? "border-navy/20 text-navy/45 ring-gold/10 opacity-80 dark:border-white/10 dark:text-white/35"
+                : "border-navy text-navy ring-gold/30 hover:bg-surface dark:border-white/25 dark:bg-transparent dark:text-white dark:hover:bg-white/5",
               btnBase,
+              callBusy && "opacity-70",
             )}
           >
             <Phone className="h-4 w-4 shrink-0" aria-hidden />

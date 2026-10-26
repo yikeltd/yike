@@ -7,6 +7,7 @@ import {
   resolveListingSeller,
   type MarketplaceAssetType,
 } from "@/lib/marketplace-messaging/service";
+import { resolveSampleFixturePhoneReveal } from "@/lib/sample-listings/contact-routing";
 
 export const runtime = "nodejs";
 
@@ -44,6 +45,16 @@ export async function GET(
   const admin = createAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+  }
+
+  const samplePhone = resolveSampleFixturePhoneReveal({ listingId, sellerId });
+  if (samplePhone) {
+    return NextResponse.json({
+      listingId,
+      nativeContactEnabled: isMarketplaceNativeContactEnabled(),
+      phoneReveal: samplePhone,
+      sampleFixture: true,
+    });
   }
 
   const listingSeller = await resolveListingSeller(admin, listingId, assetType);

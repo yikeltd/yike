@@ -33,6 +33,7 @@ import { PropertyTrustIndicators } from "./property-trust-indicators";
 import { PropertyCard } from "./property-card";
 import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
+import { listingContactContextFromListing } from "@/lib/marketplace/listing-inquiry-message";
 import {
   formatListingPublicLocation,
   ListingDetailLocationSection,
@@ -245,6 +246,7 @@ export function PropertyDetailExperience({
                 assetType={sellerIdentity.assetType}
                 sellerId={sellerIdentity.sellerId}
                 sellerName={sellerIdentity.sellerName}
+                contact={listingContactContextFromListing(property, "PROPERTY")}
               />
             ) : null}
 

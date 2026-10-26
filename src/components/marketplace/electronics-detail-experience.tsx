@@ -16,6 +16,7 @@ import {
 } from "@/lib/marketplace/electronics-specs";
 import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
+import { listingContactContextFromListing } from "@/lib/marketplace/listing-inquiry-message";
 import {
   formatListingPublicLocation,
   ListingDetailLocationSection,
@@ -137,6 +138,7 @@ export function ElectronicsDetailExperience({
             assetType={sellerIdentity.assetType}
             sellerId={sellerIdentity.sellerId}
             sellerName={sellerIdentity.sellerName}
+            contact={listingContactContextFromListing(listing, "ELECTRONICS")}
           />
         </div>
       ) : null}

@@ -18,6 +18,7 @@ import { recentContactNotice } from "@/lib/recently-contacted";
 import type { PaymentPeriod, ListingType } from "@/types/database";
 import { SellerMessageCallActions } from "@/components/marketplace/seller-message-call-actions";
 import type { MarketplaceAssetType } from "@/lib/marketplace-messaging/service";
+import { listingContactContextFromListing } from "@/lib/marketplace/listing-inquiry-message";
 
 function nativeContactEnabled(): boolean {
   const raw = process.env.NEXT_PUBLIC_ENABLE_MARKETPLACE_NATIVE_CONTACT?.trim().toLowerCase();
@@ -175,12 +176,30 @@ export function ContactButtons({
   }
 
   if (nativeContactEnabled()) {
+    const contact = listingContactContextFromListing(
+      {
+        id: propertyId,
+        slug: null,
+        title,
+        area,
+        city,
+        price,
+        payment_period: paymentPeriod,
+        listing_type: listingType,
+        bedrooms: bedrooms ?? 0,
+        property_type: propertyType ?? null,
+        asset_type: assetType,
+      },
+      assetType,
+    );
     return (
       <SellerMessageCallActions
         listingId={propertyId}
         assetType={assetType}
         sellerId={agentId}
         sellerName={agentName}
+        contact={contact}
+        placement={placement}
         variant={layout === "card" ? "gallery-inline" : "sidebar"}
       />
     );

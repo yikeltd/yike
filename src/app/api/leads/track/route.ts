@@ -25,6 +25,9 @@ import type {
   PaymentPeriod,
 } from "@/types/database";
 import { captureListingLead } from "@/lib/listing-leads/capture";
+import { resolveSampleFixtureContactLead } from "@/lib/sample-listings/contact-routing";
+import type { ListingContactContext } from "@/lib/marketplace/listing-inquiry-message";
+import type { MarketplaceAssetType } from "@/lib/marketplace-messaging/service";
 
 export const runtime = "nodejs";
 
@@ -41,6 +44,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
+  const assetTypeRaw = String(body.assetType ?? "PROPERTY").trim().toUpperCase();
+  const assetType = (
+    assetTypeRaw === "VEHICLE" || assetTypeRaw === "ELECTRONICS"
+      ? assetTypeRaw
+      : "PROPERTY"
+  ) as MarketplaceAssetType;
+
   const agentName = String(body.agentName ?? "there");
   const title = String(body.title ?? "");
   const area = String(body.area ?? "");
@@ -52,6 +62,38 @@ export async function POST(request: Request) {
   const propertyType = body.propertyType ? String(body.propertyType) : null;
   const whatsapp = body.whatsapp ? String(body.whatsapp) : null;
   const phone = body.phone ? String(body.phone) : null;
+
+  const contactCtx: ListingContactContext = {
+    title,
+    area,
+    city,
+    price,
+    paymentPeriod,
+    listingType,
+    bedrooms,
+    propertyType,
+    listingUrl: String(body.listingUrl ?? sourcePage),
+  };
+
+  const sampleLead = resolveSampleFixtureContactLead({
+    listingId,
+    agentId,
+    leadType,
+    assetType,
+    contact: contactCtx,
+  });
+  if (sampleLead) {
+    return NextResponse.json({
+      ok: true,
+      yikeReference: sampleLead.yikeReference,
+      redirectUrl: sampleLead.redirectUrl,
+      handoffUrl: sampleLead.handoffUrl,
+      callAllowed: sampleLead.callAllowed,
+      routeType: sampleLead.routeType,
+      sampleFixture: true,
+      listingNotice: null,
+    });
+  }
 
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

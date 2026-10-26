@@ -40,6 +40,7 @@ import { VehicleGalleryModal } from "./vehicle-gallery-modal";
 import { PropertyCard } from "@/components/property/property-card";
 import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
 import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
+import { listingContactContextFromListing } from "@/lib/marketplace/listing-inquiry-message";
 import {
   formatListingPublicLocation,
   ListingDetailLocationSection,
@@ -239,6 +240,7 @@ export function VehicleDetailExperience({
                 assetType={sellerIdentity.assetType}
                 sellerId={sellerIdentity.sellerId}
                 sellerName={sellerIdentity.sellerName}
+                contact={listingContactContextFromListing(vehicle, "VEHICLE")}
               />
             ) : null}
 

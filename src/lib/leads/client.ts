@@ -17,6 +17,8 @@ export type TrackLeadInput = {
   listingId: string;
   agentId: string;
   leadType: LeadType;
+  assetType?: "PROPERTY" | "VEHICLE" | "ELECTRONICS";
+  listingUrl?: string;
   sourcePage: string;
   sourceSurface?: string;
   sourceListingPosition?: number;
@@ -90,6 +92,8 @@ export async function trackLeadAndRedirect(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ...input,
+      listingUrl: input.listingUrl ?? input.sourcePage,
+      assetType: input.assetType ?? "PROPERTY",
       guestId: getGuestId(),
       sourceCampaign: input.sourceCampaign ?? attribution.sourceCampaign,
       utmSource: attribution.utmSource,

@@ -2,11 +2,13 @@
 
 import type { MarketplaceAssetType } from "@/lib/marketplace-messaging/service";
 import { SellerMessageCallActions } from "@/components/marketplace/seller-message-call-actions";
+import type { ListingContactContext } from "@/lib/marketplace/listing-inquiry-message";
 
 type Props = {
   listingId: string;
   sellerId: string;
   sellerName: string;
+  contact: ListingContactContext;
   className?: string;
   variant?: "sidebar" | "gallery-inline";
 };

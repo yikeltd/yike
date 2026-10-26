@@ -2,6 +2,7 @@
 
 import { SellerMessageCallActions } from "@/components/marketplace/seller-message-call-actions";
 import type { MarketplaceAssetType } from "@/lib/marketplace-messaging/service";
+import type { ListingContactContext } from "@/lib/marketplace/listing-inquiry-message";
 import { cn } from "@/lib/utils";
 
 /** Message / Call CTAs directly under the listing gallery on detail pages. */
@@ -10,12 +11,14 @@ export function ListingDetailGalleryContact({
   assetType,
   sellerId,
   sellerName,
+  contact,
   className,
 }: {
   listingId: string;
   assetType: MarketplaceAssetType;
   sellerId: string;
   sellerName: string;
+  contact: ListingContactContext;
   className?: string;
 }) {
   return (
@@ -28,6 +31,8 @@ export function ListingDetailGalleryContact({
         assetType={assetType}
         sellerId={sellerId}
         sellerName={sellerName}
+        contact={contact}
+        placement="detail"
         variant="gallery-inline"
       />
     </div>
