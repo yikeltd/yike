@@ -2,7 +2,10 @@
 
 **Branch:** `feat/unified-three-vertical-marketplace`  
 **Baseline commit:** `db5d9828` (shell + Messages tab)  
+**HEAD (audit pass):** `8b93269b` (favicon sync) · prior nav/E2E: `201d5b01`  
 **Last updated:** 2026-10-26  
+
+**Prerequisite diagnostic:** `npm run e2e:nav-prereqs` (exits non-zero when consumer auth unavailable; never prints secrets)
 
 **Automated checks:** `src/lib/__tests__/route-navigation-audit.test.ts`, `e2e/consumer-shell-connectivity.spec.ts`, `e2e/authenticated-navigation.spec.ts`, `e2e/conversation-thread-navigation.spec.ts`, `e2e/marketplace-routes-smoke.spec.ts`, `e2e/seller-journey-gates.spec.ts`, `e2e/staff-console-access.spec.ts`, `e2e/staff-role-routes.spec.ts`
 
@@ -25,21 +28,23 @@
 
 Helpers: `e2e/helpers/authenticated-consumer.ts`, `e2e/helpers/messaging-fixture.ts`, `e2e/helpers/ephemeral-auth.ts`.
 
-## Playwright results (local run, production-linked Supabase default)
+## Playwright results (local run, `.env.local` → production ref `hlpojfurfldvcxfxhveg`)
 
-Command: `PLAYWRIGHT_SKIP_SERVER=1 npx playwright test e2e/consumer-shell-connectivity.spec.ts e2e/authenticated-navigation.spec.ts e2e/conversation-thread-navigation.spec.ts e2e/staff-role-routes.spec.ts e2e/staff-console-access.spec.ts`
+Command: `PLAYWRIGHT_SKIP_SERVER=1 npx playwright test` (consumer-shell, authenticated-navigation, conversation-thread, staff-role-routes, staff-console-access, marketplace-routes-smoke, seller-journey-gates)
 
 | Suite | PASS | SKIP | FAIL | Notes |
 |-------|-----:|-----:|-----:|-------|
 | `consumer-shell-connectivity` | 10 | 0 | 0 | Public nav, wallet/messages redirects, 320px overflow |
 | `staff-console-access` | 6 | 0 | 0 | Anonymous Lex gates |
-| `authenticated-navigation` | 0 | 3 | 0 | **BLOCKED** — no `E2E_EPHEMERAL_AUTH` / consumer creds on this machine |
-| `conversation-thread-navigation` | 1 | 2 | 0 | Unauthenticated gate **PASS**; authenticated thread **BLOCKED** (same auth + messaging seed) |
-| `staff-role-routes` | 0 | 11 | 0 | **BLOCKED** — no `E2E_STAFF_*` credentials configured |
+| `marketplace-routes-smoke` | 9 | 0 | 0 | Includes `/developers`, `/seller` GET |
+| `seller-journey-gates` | 4 | 0 | 0 | Unauthenticated agent gates |
+| `authenticated-navigation` | 0 | 3 | 0 | **BLOCKED** — `ephemeralAuthEnabled()` false on production ref |
+| `conversation-thread-navigation` | 1 | 2 | 0 | Unauthenticated gate **PASS**; authenticated **BLOCKED** |
+| `staff-role-routes` | 0 | 11 | 0 | **BLOCKED** — no `E2E_STAFF_*` credentials |
 
-**Total (focused run):** 17 passed, 16 skipped, 0 failed.
+**Total:** 30 **PASS**, 16 **SKIP**, 0 **FAIL** (2026-10-26).
 
-With `E2E_EPHEMERAL_AUTH=1` on a non-production Supabase project that has `marketplace_conversations` applied, expect authenticated nav + thread tests to execute (not skip).
+**Unblock authenticated + messaging E2E:** isolated non-production Supabase (`.env.e2e.local`), `E2E_ISOLATED_SUPABASE=1`, `E2E_EPHEMERAL_AUTH=1`, migrations through `marketplace_conversations`. Do **not** enable ephemeral auth against `hlpojfurfldvcxfxhveg`.
 
 ## Summary
 
@@ -111,8 +116,15 @@ Suite: `e2e/staff-role-routes.spec.ts` (env-gated per role; verifies URL authori
 | Paystack top-up E2E | `PAYSTACK_SECRET_KEY` + `ENABLE_PAYMENTS` |
 | Send YC E2E | Auth + username RPC on linked DB |
 | Video call E2E | Agora / provider |
-| Authenticated nav + thread (this machine) | `E2E_EPHEMERAL_AUTH=1` on non-prod Supabase or `E2E_CONSUMER_*` |
-| Lex per-role routes (this machine) | `E2E_STAFF_<ROLE>_EMAIL/PASSWORD` |
+| Authenticated nav + thread | Non-prod Supabase + `E2E_EPHEMERAL_AUTH=1` (see `npm run e2e:nav-prereqs`) |
+| Lex per-role routes | `E2E_STAFF_<ROLE>_EMAIL/PASSWORD` per role on non-prod staff accounts |
+
+## Release blockers (consolidated)
+
+1. **Navigation E2E (authenticated)** — requires isolated Supabase sandbox; production-linked local dev intentionally blocked.
+2. **Lex RBAC E2E** — dedicated staff test accounts per role (not created or configured in repo).
+3. **Paystack / live payments** — production keys and enablement outside repo scope.
+4. **Production migration apply** — wallet/messaging migrations must match deployed RPCs before claiming YC/messaging production-ready.
 
 ## Evidence / commits
 
@@ -120,7 +132,8 @@ Suite: `e2e/staff-role-routes.spec.ts` (env-gated per role; verifies URL authori
 |-------|--------|--------------|
 | Orphan shell + Messages tab | `db5d9828` | Unit route audit |
 | Thread back + 320px public nav | `11cf76db` | consumer-shell 10/10 |
-| Navigation E2E fixtures + Lex matrix | _(this commit)_ | 17 PASS / 16 SKIP focused run; unit 8/8 |
+| Navigation E2E fixtures + Lex matrix | `201d5b01` | Fixtures; 16 skips on prod-linked env |
+| Favicon sync (`src/app/favicon.ico`) | `8b93269b` | Tab icon matches `public/icons/logo.png` pipeline |
 
 ## Maintenance
 
