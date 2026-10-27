@@ -149,12 +149,23 @@ export async function createEphemeralAgentUser(): Promise<EphemeralAgentUser | n
   }
 
   const userId = data.user.id;
+  const now = new Date().toISOString();
   const { error: profileError } = await admin
     .from("profiles")
     .update({
       full_name: "E2E Agent Wallet",
-      role: "agent",
+      role: "agent_verified",
       account_type: "agent",
+      email_verified: true,
+      phone_verified_at: now,
+      phone: "+2348000000001",
+      residential_address: "12 E2E Test Street",
+      residential_state: "Lagos",
+      residential_city: "Ikeja",
+      date_of_birth: "1990-01-15",
+      seller_profile_completed_at: now,
+      verification_status: "approved",
+      verified_badge: true,
     })
     .eq("id", userId);
   if (profileError) {

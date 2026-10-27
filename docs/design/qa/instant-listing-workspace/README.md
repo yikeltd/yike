@@ -13,4 +13,9 @@ Login `next` preserves `category` and `hint` query params (see `login-return-veh
 
 ## Authenticated workspace
 
-`e2e/listing-seller-journey-authenticated.spec.ts` requires `E2E_EPHEMERAL_AUTH=1` or agent credentials — skipped when unset.
+See **`AUTHENTICATED_VERIFICATION_REPORT.md`** for the 2026-10-27 run (blocked on production-linked `.env.local` without `.env.e2e.local`).
+
+Specs (run when isolated env is configured):
+
+- `e2e/instant-listing-workspace-authenticated.spec.ts`
+- `e2e/listing-seller-journey-authenticated.spec.ts`
