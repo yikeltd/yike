@@ -145,7 +145,7 @@ export function SellerMessageCallActions({
         listingUrl: contact.listingUrl,
       } as Parameters<typeof trackLeadAndRedirect>[0]);
       if (!result.ok) {
-        setMessageNotice(result.error ?? "Could not open WhatsApp");
+        setMessageNotice(result.error ?? "Could not send message");
         return;
       }
       if (result.redirectUrl) openWhatsAppLead(result);
@@ -214,7 +214,7 @@ export function SellerMessageCallActions({
       }
       if (result.redirectUrl) {
         openWhatsAppLead(result);
-        setMessageNotice("Direct call unavailable — opened WhatsApp instead.");
+        setMessageNotice("Direct call unavailable — use Message to reach the seller.");
         return;
       }
       setMessageNotice("Call unavailable for this listing.");
@@ -225,7 +225,6 @@ export function SellerMessageCallActions({
   }
 
   function onMessageClick() {
-    const usesInAppChat = messagingReady === true;
     guardAction(
       {
         type: usesInAppChat ? "message" : "whatsapp",
@@ -264,16 +263,12 @@ export function SellerMessageCallActions({
   const callUnavailable =
     Boolean(user?.id) && effectivePhone.phase === "unavailable" && !callLoading;
 
-  const messageUsesWhatsApp = messagingReady !== true;
+  const usesInAppChat = messagingReady === true;
   const messageLabel = messageLoading
     ? compact
       ? "…"
       : "Opening…"
-    : messageUsesWhatsApp
-      ? compact
-        ? "WhatsApp"
-        : "Message on WhatsApp"
-      : "Message";
+    : "Message";
 
   const callLabel = callBusy
     ? compact
@@ -293,7 +288,7 @@ export function SellerMessageCallActions({
     <div className={cn("space-y-2", className)}>
       {messagingReady === false && messagingReason ? (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-snug text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-          {messagingReason} Use WhatsApp below to reach the seller.
+          {messagingReason} Tap Message to contact the seller.
         </p>
       ) : null}
       {callUnavailable && effectivePhone.message ? (
@@ -310,11 +305,7 @@ export function SellerMessageCallActions({
           type="button"
           disabled={messageLoading || !sellerId}
           onClick={onMessageClick}
-          aria-label={
-            messageUsesWhatsApp
-              ? `WhatsApp ${sellerName}`
-              : `Message ${sellerName}`
-          }
+          aria-label={`Message ${sellerName}`}
           className={cn(
             "pressable col-span-1 flex w-full items-center justify-center gap-1.5 bg-navy text-white shadow-md transition-colors hover:bg-navy/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 disabled:cursor-not-allowed disabled:opacity-50",
             btnBase,

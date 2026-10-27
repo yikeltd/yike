@@ -17,6 +17,8 @@ test("vehicle dealer contact UI delegates to shared Message and Call actions", (
   );
   assert.doesNotMatch(actions, /current plan/i);
   assert.match(actions, /Call unavailable/);
+  assert.match(actions, /: "Message"/);
+  assert.doesNotMatch(actions, /Message on WhatsApp|"WhatsApp"/);
 });
 
 test("vehicle detail experience uses gallery contact and seller section layout", () => {
