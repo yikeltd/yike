@@ -5,6 +5,7 @@ import type { Browser, BrowserContext } from "@playwright/test";
 import {
   createEphemeralAgentUser,
   deleteEphemeralUser,
+  ephemeralAuthDisabledReason,
   ephemeralAuthEnabled,
   type EphemeralAgentUser,
 } from "./ephemeral-auth";
@@ -26,6 +27,10 @@ export function agentAuthStatus(): { ready: boolean; reason: string } {
       ready: true,
       reason: "E2E_AGENT_EMAIL and E2E_AGENT_PASSWORD are set",
     };
+  }
+  const ephemeralBlock = ephemeralAuthDisabledReason();
+  if (process.env.E2E_EPHEMERAL_AUTH === "1" && ephemeralBlock) {
+    return { ready: false, reason: ephemeralBlock };
   }
   return {
     ready: false,

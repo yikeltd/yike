@@ -54,16 +54,38 @@ function projectRefFromUrl(url: string | undefined) {
   return m?.[1]?.toLowerCase() ?? null;
 }
 
-export function ephemeralAuthEnabled() {
-  if (!ephemeralAuthFlagAllowed()) return false;
+/** Human-readable blocker when ephemeral auth cannot run (no secrets). */
+export function ephemeralAuthDisabledReason(): string | null {
+  if (!ephemeralAuthFlagAllowed()) {
+    if (process.env.E2E_EPHEMERAL_AUTH !== "1") {
+      return "E2E_EPHEMERAL_AUTH is not 1 (npm script must set it for isolated listing E2E)";
+    }
+    return "Ephemeral auth flag blocked in production deployment runtime";
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!url || !key) return false;
+  if (!url || !key) {
+    if (process.env.E2E_ISOLATED_SUPABASE === "1") {
+      return "E2E_ISOLATED_SUPABASE=1 but Supabase URL or SUPABASE_SERVICE_ROLE_KEY missing — create .env.e2e.local (cp .env.e2e.example) and re-run";
+    }
+    return "Supabase URL or SUPABASE_SERVICE_ROLE_KEY missing for ephemeral E2E";
+  }
   const ref = projectRefFromUrl(url);
-  if (!ref || ref === PRODUCTION_SUPABASE_REF) return false;
+  if (!ref) {
+    return "NEXT_PUBLIC_SUPABASE_URL is missing or not https://<ref>.supabase.co";
+  }
+  if (ref === PRODUCTION_SUPABASE_REF) {
+    return "Supabase URL points at production; ephemeral auth is blocked (use .env.e2e.local with a dedicated non-production project)";
+  }
   const expected = process.env.E2E_EXPECTED_REF?.trim().toLowerCase();
-  if (expected && ref !== expected) return false;
-  return true;
+  if (expected && ref !== expected) {
+    return `Supabase ref ${ref} does not match E2E_EXPECTED_REF (${expected})`;
+  }
+  return null;
+}
+
+export function ephemeralAuthEnabled() {
+  return ephemeralAuthDisabledReason() === null;
 }
 
 function adminClient() {
