@@ -22,14 +22,16 @@ export function SellerFlowShell({
   actions?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  maxWidth?: "md" | "lg" | "xl";
+  maxWidth?: "md" | "lg" | "xl" | "workspace";
 }) {
   const width =
     maxWidth === "md"
       ? "max-w-lg"
       : maxWidth === "xl"
         ? "max-w-3xl"
-        : "max-w-2xl";
+        : maxWidth === "workspace"
+          ? "max-w-5xl"
+          : "max-w-2xl";
 
   return (
     <main

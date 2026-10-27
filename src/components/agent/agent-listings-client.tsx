@@ -144,7 +144,7 @@ export function AgentListingsClient({
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-navy">My listings</h1>
         </div>
         <Link
-          href="/agent/listings/choose"
+          href="/agent/listings/new"
           className="pressable inline-flex h-10 items-center rounded-full bg-navy px-4 text-sm font-bold text-gold shadow-[0_4px_14px_rgba(3,27,78,0.25)]"
         >
           + New listing

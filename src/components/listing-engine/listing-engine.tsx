@@ -77,6 +77,9 @@ type Props = {
   listingId?: string;
   initialValues?: ListingValues;
   className?: string;
+  /** Single-page workspace — all sections visible (no accordion collapse). */
+  layout?: "accordion" | "instant";
+  hideCategoryHeader?: boolean;
 };
 
 function urlsToPhotoItems(urls: string[]): ListingPhotoItem[] {
@@ -110,10 +113,10 @@ export function ListingEngine(props: Props) {
           Jobs, services, boats, and other verticals stay read-only until a manifest ships.
         </p>
         <Link
-          href="/agent/listings/choose"
+          href="/agent/listings/new"
           className="pressable mt-5 inline-flex h-11 items-center justify-center rounded-full bg-navy px-6 text-sm font-bold text-gold"
         >
-          Choose a category
+          Open listing workspace
         </Link>
       </div>
     );
@@ -127,8 +130,11 @@ function ListingEngineInner({
   listingId,
   initialValues,
   className,
+  layout = "accordion",
+  hideCategoryHeader = false,
   manifest,
 }: Props & { manifest: CategoryManifest }) {
+  const expandAll = layout === "instant";
   const router = useRouter();
   const searchParams = useSearchParams();
   const hintConsumedRef = useRef(false);
@@ -866,26 +872,43 @@ function ListingEngineInner({
   }
 
   return (
-    <div className={cn("mx-auto max-w-xl space-y-5 pb-24", className)}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-lg font-black text-navy">{manifest.label}</p>
-          <Link
-            href="/agent/listings/choose"
-            className="text-xs font-semibold text-gold-dark hover:underline"
-          >
-            Change category
-          </Link>
+    <div
+      className={cn(
+        "mx-auto space-y-5 pb-24",
+        expandAll ? "max-w-5xl" : "max-w-xl",
+        className,
+      )}
+    >
+      {!hideCategoryHeader ? (
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-lg font-black text-navy">{manifest.label}</p>
+            <Link
+              href="/agent/listings/new"
+              className="text-xs font-semibold text-gold-dark hover:underline"
+            >
+              Change category
+            </Link>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-bold text-navy">{wizard.completionPercent}%</p>
+            {draftStatusLine ? (
+              <p className="max-w-[11rem] text-[10px] font-medium leading-snug text-navy/45">
+                {draftStatusLine}
+              </p>
+            ) : null}
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs font-bold text-navy">{wizard.completionPercent}%</p>
+      ) : (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-navy/70">
+            {wizard.completionPercent}% complete
+          </p>
           {draftStatusLine ? (
-            <p className="max-w-[11rem] text-[10px] font-medium leading-snug text-navy/45">
-              {draftStatusLine}
-            </p>
+            <p className="text-[10px] font-medium text-navy/45">{draftStatusLine}</p>
           ) : null}
         </div>
-      </div>
+      )}
 
       {dependencyNotice ? (
         <div
@@ -931,33 +954,37 @@ function ListingEngineInner({
             style={{ width: `${wizard.completionPercent}%` }}
           />
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {wizard.stages.map((stage, index) => (
-            <button
-              key={stage.id}
-              type="button"
-              onClick={() => setActiveSection(index)}
-              className={cn(
-                "pressable inline-flex min-h-[34px] items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                activeSection === index
-                  ? "bg-navy text-gold"
-                  : stage.complete
-                    ? "bg-emerald-500/15 text-navy"
-                    : "bg-navy/[0.05] text-navy/65 hover:bg-navy/[0.08]",
-              )}
-            >
-              {stage.complete ? (
-                <Check className="h-3 w-3 shrink-0 text-emerald-700" aria-hidden />
-              ) : null}
-              {stage.label}
-            </button>
-          ))}
-        </div>
+        {!expandAll ? (
+          <div className="flex flex-wrap gap-1.5">
+            {wizard.stages.map((stage, index) => (
+              <button
+                key={stage.id}
+                type="button"
+                onClick={() => setActiveSection(index)}
+                className={cn(
+                  "pressable inline-flex min-h-[34px] items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                  activeSection === index
+                    ? "bg-navy text-gold"
+                    : stage.complete
+                      ? "bg-emerald-500/15 text-navy"
+                      : "bg-navy/[0.05] text-navy/65 hover:bg-navy/[0.08]",
+                )}
+              >
+                {stage.complete ? (
+                  <Check className="h-3 w-3 shrink-0 text-emerald-700" aria-hidden />
+                ) : null}
+                {stage.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[11px] font-medium text-navy/55">{nextAction.message}</p>
+        )}
       </div>
 
       {/* 3. ACCORDION SECTION 1: DETAILS */}
       <div className={cn(YIKE_WIZARD_PANEL, "transition-all")}>
-        {activeSection !== 0 ? (
+        {!expandAll && activeSection !== 0 ? (
           // Collapsed Summary Card (approx 72–88px tall)
           <div
             onClick={() => setActiveSection(0)}
@@ -1019,7 +1046,7 @@ function ListingEngineInner({
 
       {/* 4. ACCORDION SECTION 2: PHOTOS & PRICING */}
       <div className={cn(YIKE_WIZARD_PANEL, "transition-all")}>
-        {activeSection !== 1 ? (
+        {!expandAll && activeSection !== 1 ? (
           // Collapsed Summary Card
           <div
             onClick={() => setActiveSection(1)}
@@ -1070,7 +1097,7 @@ function ListingEngineInner({
 
       {/* 5. ACCORDION SECTION 3: LOCATION (MAP-FREE) & REVIEW */}
       <div className={cn(YIKE_WIZARD_PANEL, "transition-all")}>
-        {activeSection !== 2 ? (
+        {!expandAll && activeSection !== 2 ? (
           // Collapsed Summary Card
           <div
             onClick={() => setActiveSection(2)}
@@ -1112,7 +1139,12 @@ function ListingEngineInner({
 
       {/* 6. FOOTER ACTIONS BAR */}
       <div className="fixed inset-x-0 bottom-16 z-40 flex justify-center px-4">
-        <div className="w-full max-w-xl rounded-2xl border border-navy/10 bg-white/95 p-2.5 shadow-2xl backdrop-blur-md">
+        <div
+          className={cn(
+            "w-full rounded-2xl border border-navy/10 bg-white/95 p-2.5 shadow-2xl backdrop-blur-md",
+            expandAll ? "max-w-5xl" : "max-w-xl",
+          )}
+        >
           <p className="mb-1.5 text-center text-[11px] font-semibold text-navy/55">
             {nextAction.message}
           </p>

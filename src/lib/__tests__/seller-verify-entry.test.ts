@@ -10,8 +10,8 @@ import {
 } from "@/lib/seller-trust/onboarding";
 
 test("sell aliases land on listing chooser (verification gated there)", () => {
-  assert.equal(staticPathRedirect("/sell"), "/agent/listings/choose");
-  assert.equal(staticPathRedirect("/list-property"), "/agent/listings/choose");
+  assert.equal(staticPathRedirect("/sell"), "/agent/listings/new");
+  assert.equal(staticPathRedirect("/list-property"), "/agent/listings/new");
 });
 
 test("seller verify URL preserves return path", () => {

@@ -1,19 +1,24 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("seller journey gates (unauthenticated)", () => {
-  test("choose listing redirects to login with next=choose", async ({ page }) => {
+  test("sell entry redirects to login with next=listing workspace", async ({ page }) => {
     await page.goto("/agent/listings/choose", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/auth\/login\?next=%2Fagent%2Flistings%2Fchoose/);
+    await expect(page).toHaveURL(/\/auth\/login\?next=%2Fagent%2Flistings%2Fnew/);
   });
 
-  test("legacy vehicle wizard redirects to gated new vehicle login", async ({ page }) => {
+  test("/sell alias reaches listing workspace login gate", async ({ page }) => {
+    await page.goto("/sell", { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/auth\/login\?next=%2Fagent%2Flistings%2Fnew/);
+  });
+
+  test("legacy vehicle wizard redirects to unified workspace login", async ({ page }) => {
     await page.goto("/agent/listings/vehicle", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/auth\/login\?next=%2Fagent%2Flistings%2Fnew%2Fvehicle/);
+    await expect(page).toHaveURL(/\/auth\/login\?next=.*listings(%2F|\/)new/);
   });
 
-  test("new property listing requires auth", async ({ page }) => {
+  test("legacy property URL redirects to unified workspace login", async ({ page }) => {
     await page.goto("/agent/listings/new/property", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/auth\/login\?next=%2Fagent%2Flistings%2Fnew%2Fproperty/);
+    await expect(page).toHaveURL(/\/auth\/login\?next=%2Fagent%2Flistings%2Fnew/);
   });
 
   test("open redirect blocked on login next", async ({ page }) => {

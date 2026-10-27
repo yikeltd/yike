@@ -1,40 +1,22 @@
 import { redirect } from "next/navigation";
-import { requireAgentLister } from "@/lib/auth";
-import {
-  buildSellerVerifyUrl,
-  deriveSellerCustomerVerificationStatus,
-  mustCompleteSellerVerification,
-  SELLER_CUSTOMER_STATUS_LABELS,
-} from "@/lib/seller-trust";
-import { SellerCategoryChoose } from "@/components/agent/seller-category-choose";
 
 export const metadata = {
-  title: "Sell on Yike | Property, Vehicles & Electronics",
-  description: "Create property, vehicle, or electronics listings on Yike Marketplace.",
+  title: "New listing | Yike",
+  description: "Create a property, vehicle, or electronics listing on Yike.",
 };
 
-export default async function ChooseListingTypePage() {
-  const { profile } = await requireAgentLister("/agent/verify", {
-    skipProfileSetup: true,
-    returnPath: "/agent/listings/choose",
-  });
-
-  if (mustCompleteSellerVerification(profile)) {
-    redirect(buildSellerVerifyUrl("/agent/listings/choose"));
+/** Legacy chooser — instant listing workspace replaces the category landing page. */
+export default async function ChooseListingTypePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const qs = new URLSearchParams();
+  for (const key of ["category", "hint"] as const) {
+    const v = sp[key];
+    if (typeof v === "string" && v.trim()) qs.set(key, v.trim());
   }
-
-  const customerStatus = deriveSellerCustomerVerificationStatus(profile);
-  const statusNote =
-    customerStatus === "checking"
-      ? SELLER_CUSTOMER_STATUS_LABELS.checking
-      : customerStatus === "action_needed"
-        ? SELLER_CUSTOMER_STATUS_LABELS.action_needed
-        : null;
-
-  return (
-    <SellerCategoryChoose
-      statusNote={statusNote}
-      verified={customerStatus === "verified"}
-    />
-  );
+  const tail = qs.toString();
+  redirect(tail ? `/agent/listings/new?${tail}` : "/agent/listings/new");
 }

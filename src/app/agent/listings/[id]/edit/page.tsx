@@ -146,7 +146,7 @@ export default async function EditListingPage({
         backLabel="My listings"
         actions={
           <Link
-            href="/agent/listings/choose"
+            href="/agent/listings/new"
             className="pressable text-sm font-semibold text-navy/55 hover:text-navy"
           >
             New listing
@@ -173,7 +173,7 @@ export default async function EditListingPage({
       backLabel="My listings"
       actions={
         <Link
-          href="/agent/listings/choose"
+          href="/agent/listings/new"
           className="pressable text-sm font-semibold text-navy/55 hover:text-navy"
         >
           New listing

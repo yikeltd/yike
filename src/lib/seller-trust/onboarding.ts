@@ -56,7 +56,7 @@ export function mustCompleteSellerVerification(
 }
 
 export const SELLER_VERIFY_PATH = "/agent/verify";
-export const SELLER_CHOOSE_LISTING_PATH = "/agent/listings/choose";
+export const SELLER_CHOOSE_LISTING_PATH = "/agent/listings/new";
 
 export type SellerTrustProgressStep =
   | "email"

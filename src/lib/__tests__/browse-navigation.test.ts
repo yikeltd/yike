@@ -76,10 +76,10 @@ test("coerceLoginNextForPortal blocks cross-portal next when login started on br
 test("coerceLoginNextForPortal keeps explicit agent next without browse referer", () => {
   const kept = coerceLoginNextForPortal(
     "/",
-    "/agent/listings/choose",
+    "/agent/listings/new",
     "/"
   );
-  assert.equal(kept, "/agent/listings/choose");
+  assert.equal(kept, "/agent/listings/new");
 });
 
 test("coerceLoginNextForPortal always allows public listing detail", () => {

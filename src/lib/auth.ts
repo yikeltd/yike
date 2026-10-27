@@ -113,7 +113,7 @@ export async function requireAgentLister(
 ) {
   const loginNext = safeNextPath(
     options?.returnPath,
-    "/agent/listings/choose",
+    "/agent/listings/new",
   );
   const user = await requireAuth(
     `/auth/login?next=${encodeURIComponent(loginNext)}`,

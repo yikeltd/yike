@@ -29,7 +29,7 @@ function VerifyPhoneLoading() {
 export function VerifyPhoneClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = safeNextPath(searchParams.get("next"), "/agent/listings/choose");
+  const nextPath = safeNextPath(searchParams.get("next"), "/agent/listings/new");
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [checking, setChecking] = useState(true);

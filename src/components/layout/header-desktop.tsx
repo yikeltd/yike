@@ -41,7 +41,7 @@ export function HeaderDesktop({ className }: { className?: string }) {
         <div className="flex items-center gap-2.5 shrink-0">
           {/* SELL BUTTON */}
           <Link
-            href={isAuthenticated ? "/agent/listings/choose" : "/auth/login?next=/agent/listings/choose"}
+            href={isAuthenticated ? "/agent/listings/new" : "/auth/login?next=/agent/listings/new"}
             className="pressable flex items-center justify-center rounded-full bg-gold px-4 py-2 text-xs font-black uppercase text-navy shadow-sm transition-all hover:bg-gold-light"
           >
             SELL

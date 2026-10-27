@@ -7,6 +7,7 @@ const routes = [
   "/electronics",
   "/developers",
   "/seller",
+  "/agent/listings/new",
   "/agent/listings/choose",
 ];
 

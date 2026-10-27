@@ -21,7 +21,7 @@ export default async function ProfileSetupCompletePage() {
         Thank you. Your profile is ready.
       </h1>
       <Link
-        href="/agent/listings/choose"
+        href="/agent/listings/new"
         className="mt-8 flex h-12 w-full max-w-sm items-center justify-center rounded-xl bg-gold text-sm font-semibold text-navy shadow-sm pressable"
       >
         List your first property

@@ -34,11 +34,13 @@ test.describe("Authenticated seller listing journey", () => {
     const page = await context.newPage();
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/agent/listings/choose", { waitUntil: "domcontentloaded" });
+    await page.goto("/agent/listings/new?category=electronics", {
+      waitUntil: "domcontentloaded",
+    });
     await expect(page).not.toHaveURL(/\/auth\/login/);
-
-    await page.getByRole("link", { name: /electronics/i }).first().click();
-    await expect(page).toHaveURL(/\/agent\/listings\/new\/electronics/);
+    await expect(page.getByTestId("instant-listing-workspace")).toBeVisible({
+      timeout: 20_000,
+    });
 
     await expect(page.locator("#le-smart-describe")).toBeVisible({ timeout: 20_000 });
 

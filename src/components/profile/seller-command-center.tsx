@@ -384,7 +384,7 @@ export function SellerCommandCenter(props: Props) {
               {/* Center Column: LARGE PREMIUM GOLD CTA BUTTON */}
               <div className="px-2">
                 <Link
-                  href="/agent/listings/choose"
+                  href="/agent/listings/new"
                   className="pressable flex items-center justify-center gap-1.5 rounded-xl bg-[#F59E0B] py-2.5 px-3 text-xs font-bold text-[#031B4E] shadow-md hover:bg-amber-400 active:scale-98 transition-all w-full"
                 >
                   <PlusCircle className="h-4 w-4 stroke-[2.5]" />
