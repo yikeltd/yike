@@ -14,6 +14,18 @@ export const metadata = {
   description: "List property, vehicles, or electronics on Yike.",
 };
 
+function listingWorkspaceReturnPath(
+  sp: Record<string, string | string[] | undefined>,
+): string {
+  const qs = new URLSearchParams();
+  for (const key of ["category", "hint"] as const) {
+    const v = sp[key];
+    if (typeof v === "string" && v.trim()) qs.set(key, v.trim());
+  }
+  const tail = qs.toString();
+  return tail ? `/agent/listings/new?${tail}` : "/agent/listings/new";
+}
+
 function WorkspaceFallback() {
   return (
     <div className="space-y-3">
@@ -23,14 +35,21 @@ function WorkspaceFallback() {
   );
 }
 
-export default async function NewListingWorkspacePage() {
+export default async function NewListingWorkspacePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const returnPath = listingWorkspaceReturnPath(sp);
+
   const { user, profile } = await requireAgentLister("/agent/verify", {
     skipProfileSetup: true,
-    returnPath: "/agent/listings/new",
+    returnPath,
   });
 
   if (mustCompleteSellerVerification(profile)) {
-    redirect(buildSellerVerifyUrl("/agent/listings/new"));
+    redirect(buildSellerVerifyUrl(returnPath));
   }
 
   return (

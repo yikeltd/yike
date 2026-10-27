@@ -40,6 +40,16 @@ test("instant workspace mounts searchable category combobox and listing engine",
   assert.match(ws, /instant-listing-workspace/);
 });
 
+test("new workspace page preserves category in auth returnPath", () => {
+  const page = readFileSync(
+    join(process.cwd(), "src/app/agent/listings/new/page.tsx"),
+    "utf8",
+  );
+  assert.match(page, /listingWorkspaceReturnPath/);
+  assert.match(page, /returnPath/);
+  assert.match(page, /searchParams/);
+});
+
 test("listing engine supports instant single-page layout", () => {
   const engine = readFileSync(
     join(process.cwd(), "src/components/listing-engine/listing-engine.tsx"),

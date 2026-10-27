@@ -9,33 +9,22 @@ function read(rel: string): string {
   return readFileSync(join(root, rel), "utf8");
 }
 
-test("gated seller create routes use requireAgentLister and seller verification", () => {
-  for (const file of [
-    "choose/page.tsx",
-    "new/property/page.tsx",
-    "new/vehicle/page.tsx",
-    "new/electronics/page.tsx",
-  ]) {
-    const src = read(file);
-    assert.match(src, /requireAgentLister/, `${file} must require agent lister`);
-    assert.match(
-      src,
-      /mustCompleteSellerVerification/,
-      `${file} must gate incomplete seller onboarding`,
-    );
-  }
+test("canonical workspace /new requires agent lister and seller verification", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/app/agent/listings/new/page.tsx"),
+    "utf8",
+  );
+  assert.match(src, /requireAgentLister/);
+  assert.match(src, /mustCompleteSellerVerification/);
+  assert.match(src, /InstantListingWorkspace/);
 });
 
-test("canonical create flows use ListingEngine for all three verticals", () => {
-  for (const file of [
-    "new/property/page.tsx",
-    "new/vehicle/page.tsx",
-    "new/electronics/page.tsx",
-  ]) {
-    const src = read(file);
-    assert.match(src, /ListingEngine/, `${file} must use ListingEngine`);
-    assert.match(src, /categoryId="/, `${file} must set categoryId`);
-  }
+test("legacy choose and category shortcuts redirect to instant workspace", () => {
+  assert.match(read("choose/page.tsx"), /redirect\(/);
+  assert.match(read("choose/page.tsx"), /\/agent\/listings\/new/);
+  assert.match(read("new/property/page.tsx"), /category=property/);
+  assert.match(read("new/vehicle/page.tsx"), /category=vehicle/);
+  assert.match(read("new/electronics/page.tsx"), /category=electronics/);
 });
 
 test("legacy ungated wizard paths redirect to gated new routes", () => {
@@ -48,4 +37,17 @@ test("requireAgentLister preserves returnPath for login next", () => {
   assert.match(auth, /returnPath/);
   assert.match(auth, /safeNextPath/);
   assert.match(auth, /loginNext/);
+});
+
+test("sell CTAs target canonical listing workspace path", () => {
+  const header = readFileSync(
+    join(process.cwd(), "src/components/layout/header-desktop.tsx"),
+    "utf8",
+  );
+  assert.match(header, /\/agent\/listings\/new/);
+  const redirects = readFileSync(
+    join(process.cwd(), "src/lib/route-redirects.ts"),
+    "utf8",
+  );
+  assert.match(redirects, /\/sell[\s\S]*\/agent\/listings\/new/);
 });

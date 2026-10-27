@@ -27,7 +27,7 @@ test.describe("Authenticated seller listing journey", () => {
     test.skip(!agent, "Could not provision test agent");
   });
 
-  test("electronics — category chooser, smart describe, draft restore", async ({
+  test("electronics — instant workspace, smart describe, draft restore", async ({
     browser,
   }, testInfo) => {
     const context = await createLoggedInAgentContext(browser, agent as AuthenticatedAgent);
@@ -71,9 +71,15 @@ test.describe("Authenticated seller listing journey", () => {
     const page = await context.newPage();
     await page.setViewportSize({ width: 1280, height: 900 });
 
-    for (const path of ["/agent/listings/new/property", "/agent/listings/new/vehicle"]) {
+    for (const path of [
+      "/agent/listings/new?category=property",
+      "/agent/listings/new?category=vehicle",
+    ]) {
       await page.goto(path, { waitUntil: "domcontentloaded" });
       await expect(page).not.toHaveURL(/\/auth\/login/);
+      await expect(page.getByTestId("instant-listing-workspace")).toBeVisible({
+        timeout: 20_000,
+      });
       await expect(page.locator("#le-smart-describe")).toBeVisible({ timeout: 20_000 });
     }
 

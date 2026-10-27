@@ -186,7 +186,7 @@ export function AgentListingsClient({
           <p className="text-sm text-muted">Vehicle draft — not submitted</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
-              href="/agent/listings/new/vehicle"
+              href="/agent/listings/new?category=vehicle"
               className="rounded-lg bg-gold px-3 py-1.5 text-xs font-bold text-navy"
             >
               Continue vehicle draft
