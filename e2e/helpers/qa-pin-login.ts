@@ -156,16 +156,21 @@ export async function apiPasswordLogin(
   }
 
   if (loginBody.needsLoginOtp) {
-    const cachedOtp = readQaLoginOtpFromLocalFile();
+    const canSeedOtp = qaAdminOtpSeedAllowed();
+    const skipCachedForEphemeral =
+      process.env.E2E_EPHEMERAL_AUTH === "1" && canSeedOtp;
+    const cachedOtp = skipCachedForEphemeral ? null : readQaLoginOtpFromLocalFile();
     if (cachedOtp) {
       const verified = await verifyLoginOtp(request, identifier, cachedOtp);
       if (verified.ok) return loginBody;
-      throw new Error(
-        `Stored login_otp rejected (${verified.error}). Update login_otp= in .local-test-credentials.txt or E2E_QA_LOGIN_OTP — no OTP send attempted.`
-      );
+      if (!canSeedOtp) {
+        throw new Error(
+          `Stored login_otp rejected (${verified.error}). Update login_otp= in .local-test-credentials.txt or E2E_QA_LOGIN_OTP — no OTP send attempted.`
+        );
+      }
     }
 
-    if (qaAdminOtpSeedAllowed()) {
+    if (canSeedOtp) {
       const code = await seedLoginOtp(identifier);
       const seeded = await verifyLoginOtp(request, identifier, code);
       if (!seeded.ok) {

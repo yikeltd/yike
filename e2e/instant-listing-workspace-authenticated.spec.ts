@@ -14,18 +14,21 @@ const CATEGORIES = [
     id: "property",
     url: "/agent/listings/new?category=property",
     fieldProbe: "#le-listing_type, #le-property_type, [id^='le-']",
+    verticalHeading: /Property details/i,
     smartLine: "Three-bedroom furnished flat for rent in Lekki Phase 1 Lagos 4.5m per year",
   },
   {
     id: "vehicle",
     url: "/agent/listings/new?category=vehicle",
-    fieldProbe: "#le-make, #le-model, #le-vehicle_category",
+    fieldProbe: "#le-smart-describe",
+    verticalHeading: /Vehicle details/i,
     smartLine: "2019 Toyota Camry automatic 85000 km clean title Lagos Yaba 14.5m",
   },
   {
     id: "electronics",
     url: "/agent/listings/new?category=electronics",
-    fieldProbe: "#le-auto_category, #le-brand, #le-model",
+    fieldProbe: "#le-smart-describe",
+    verticalHeading: /Electronics details/i,
     smartLine: "Samsung Galaxy S24 Ultra 256GB excellent condition Abuja Gwarinpa 680000",
   },
 ] as const;
@@ -84,6 +87,9 @@ test.describe("Authenticated instant listing workspace", () => {
         timeout: 20_000,
       });
       await expect(page.locator(cat.fieldProbe).first()).toBeVisible({
+        timeout: 20_000,
+      });
+      await expect(page.getByRole("heading", { name: cat.verticalHeading })).toBeVisible({
         timeout: 20_000,
       });
 
@@ -150,10 +156,16 @@ test.describe("Authenticated instant listing workspace", () => {
       timeout: 20_000,
     });
 
-    await page.getByLabel("Listing category").click();
-    await page.getByRole("option", { name: /Vehicles/i }).click();
+    await page.getByRole("button", { name: "Listing category" }).click();
+    await expect(page.getByRole("dialog", { name: "Listing category" })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page
+      .getByRole("listbox", { name: "Listing category" })
+      .getByRole("button", { name: /^Vehicles/i })
+      .click();
     await expect(page).toHaveURL(/category=vehicle/);
-    await expect(page.locator("#le-make, #le-vehicle_category").first()).toBeVisible({
+    await expect(page.getByRole("heading", { name: /Vehicle details/i })).toBeVisible({
       timeout: 20_000,
     });
     await context.close();

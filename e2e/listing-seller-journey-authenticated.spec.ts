@@ -27,7 +27,7 @@ test.describe("Authenticated seller listing journey", () => {
     test.skip(!agent, "Could not provision test agent");
   });
 
-  test("electronics — instant workspace, smart describe, draft restore", async ({
+  test("electronics — instant workspace, smart describe, draft save", async ({
     browser,
   }, testInfo) => {
     const context = await createLoggedInAgentContext(browser, agent as AuthenticatedAgent);
@@ -44,19 +44,17 @@ test.describe("Authenticated seller listing journey", () => {
 
     await expect(page.locator("#le-smart-describe")).toBeVisible({ timeout: 20_000 });
 
-    await page.locator("#le-smart-describe").fill(
-      "Samsung Galaxy A54 128GB foreign used Lagos Ikeja 680k",
-    );
+    const smartLine =
+      "Samsung Galaxy A54 128GB foreign used Lagos Ikeja 680000";
+    await page.locator("#le-smart-describe").fill(smartLine);
+    await page.locator("#le-title").fill("E2E electronics draft title");
 
-    await page.waitForTimeout(800);
-
-    const titleInput = page.locator("#le-title");
-    if (await titleInput.isVisible()) {
-      await expect(titleInput).not.toHaveValue("", { timeout: 10_000 });
-    }
-
-    await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.locator("#le-smart-describe")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator("#le-title")).toHaveValue("E2E electronics draft title", {
+      timeout: 15_000,
+    });
+    await expect(page.getByText(/Saved on this device/i)).toBeVisible({
+      timeout: 30_000,
+    });
 
     await page.screenshot({
       path: testInfo.outputPath("electronics-seller-journey-mobile.png"),

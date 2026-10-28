@@ -179,6 +179,7 @@ export async function createEphemeralAgentUser(): Promise<EphemeralAgentUser | n
       role: "agent_verified",
       account_type: "agent",
       email_verified: true,
+      phone_verified: true,
       phone_verified_at: now,
       phone: "+2348000000001",
       residential_address: "12 E2E Test Street",
