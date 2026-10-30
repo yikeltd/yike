@@ -15,6 +15,7 @@ import {
   sampleListingCounts,
 } from "../src/lib/sample-listings/catalog";
 import { buildAllSampleDbRows } from "../src/lib/sample-listings/build-rows";
+import { sampleCatalogIdToDbUuid } from "../src/lib/sample-listings/db-uuid";
 
 const PRODUCTION_REF = "hlpojfurfldvcxfxhveg";
 const DEMO_PASSWORD = "YikeSampleSeed2026!";
@@ -70,10 +71,11 @@ function assertSafeTarget(ref: string | null, dryRun: boolean) {
 }
 
 async function ensureSeller(admin: SupabaseClient, seller: (typeof SAMPLE_SELLERS)[0]) {
-  const { data: existing } = await admin.auth.admin.getUserById(seller.id);
+  const userId = sampleCatalogIdToDbUuid(seller.id);
+  const { data: existing } = await admin.auth.admin.getUserById(userId);
   if (!existing?.user) {
     const { error } = await admin.auth.admin.createUser({
-      id: seller.id,
+      id: userId,
       email: seller.email,
       password: DEMO_PASSWORD,
       email_confirm: true,
@@ -91,7 +93,7 @@ async function ensureSeller(admin: SupabaseClient, seller: (typeof SAMPLE_SELLER
 
   const { error: profileError } = await admin.from("profiles").upsert(
     {
-      id: seller.id,
+      id: userId,
       full_name: seller.full_name,
       email: seller.email,
       phone: seller.phone,
@@ -117,7 +119,15 @@ async function ensureSeller(admin: SupabaseClient, seller: (typeof SAMPLE_SELLER
 }
 
 async function upsertListings(admin: SupabaseClient) {
-  const rows = buildAllSampleDbRows();
+  const rows = buildAllSampleDbRows().map((row) => ({
+    ...row,
+    id: sampleCatalogIdToDbUuid(row.id),
+    agent_id: sampleCatalogIdToDbUuid(row.agent_id),
+    media_items: row.media_items?.map((item) => ({
+      ...item,
+      id: sampleCatalogIdToDbUuid(String(item.id)),
+    })),
+  }));
   const { error } = await admin.from("properties").upsert(rows, { onConflict: "id" });
   if (error) throw new Error(`properties upsert: ${error.message}`);
   return rows.length;
@@ -126,7 +136,7 @@ async function upsertListings(admin: SupabaseClient) {
 const LEGACY_SAMPLE_NAMESPACE = "yike-sample-listings-v1";
 
 async function purge(admin: SupabaseClient) {
-  const ids = buildAllSampleDbRows().map((r) => r.id);
+  const ids = buildAllSampleDbRows().map((r) => sampleCatalogIdToDbUuid(r.id));
   const { error: byIdError, count: byIdCount } = await admin
     .from("properties")
     .delete({ count: "exact" })

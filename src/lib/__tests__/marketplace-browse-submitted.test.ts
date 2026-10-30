@@ -13,6 +13,8 @@ test("detects vehicle filters in URL", () => {
   assert.equal(isVehicleBrowseSubmitted({}), false);
   assert.equal(isVehicleBrowseSubmitted({ category: "suv" }), true);
   assert.equal(isVehicleBrowseSubmitted({ q: "toyota" }), true);
+  assert.equal(isVehicleBrowseSubmitted({ sort: "price_asc" }), true);
+  assert.equal(isVehicleBrowseSubmitted({ sort: "newest" }), false);
 });
 
 test("detects electronics filters in URL", () => {

@@ -32,6 +32,7 @@ export function isVehicleBrowseSubmitted(
       verifiedOnly ||
       featuredOnly ||
       nearbyFlag ||
+      (first(sp.sort) && first(sp.sort) !== "newest") ||
       (first(sp.page) && first(sp.page) !== "1"),
   );
 }

@@ -494,30 +494,7 @@ export async function incrementPropertyViews(id: string) {
   }
 }
 
-export function parseSearchParams(
-  searchParams: Record<string, string | string[] | undefined>
-): PropertySearchParams {
-  const get = (key: string) => {
-    const v = searchParams[key];
-    return typeof v === "string" ? v : undefined;
-  };
-  return {
-    listing_type: get("type") ?? get("listingType"),
-    state: get("state"),
-    city: get("city"),
-    area: get("area"),
-    min_price: get("min") ? Number(get("min")) : undefined,
-    max_price: get("max") ? Number(get("max")) : undefined,
-    bedrooms: get("beds") ? Number(get("beds")) : undefined,
-    bathrooms: get("baths") ? Number(get("baths")) : undefined,
-    property_type: get("property_type") ?? get("propertyType"),
-    q: get("q"),
-    featured: get("featured") === "1",
-    verified_only: get("verified") === "1",
-    hub: get("hub") as DiscoverHub | undefined,
-    amenity: get("amenity"),
-  };
-}
+export { parseSearchParams } from "@/lib/property-search";
 
 /** Total demo listings count — for empty-state messaging */
 export function getDemoListingCount() {
