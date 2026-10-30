@@ -30,7 +30,7 @@ const SCOPE_FIELDS: Record<ListingCreateScope, string[]> = {
     "price",
     "state",
     "city",
-    "brand",
+    "make",
     "model",
     "auto_category",
     "condition",

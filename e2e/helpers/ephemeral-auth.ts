@@ -189,6 +189,7 @@ export async function createEphemeralAgentUser(): Promise<EphemeralAgentUser | n
       seller_profile_completed_at: now,
       verification_status: "approved",
       verified_badge: true,
+      listing_limit: 25,
     })
     .eq("id", userId);
   if (profileError) {

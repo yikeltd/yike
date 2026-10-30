@@ -54,6 +54,27 @@ export function normalizeAssetType(
   return "PROPERTY";
 }
 
+const CANONICAL_LISTING_CONDITIONS = new Set([
+  "brand_new",
+  "open_box",
+  "refurbished",
+  "foreign_used",
+  "nigerian_used",
+  "for_parts",
+]);
+
+/** Map seller/API vehicle_condition to properties.condition (DB check constraint). */
+export function canonicalConditionFromVehicleCondition(
+  vehicleCondition: string,
+): string {
+  const v = vehicleCondition.trim().toLowerCase();
+  if (v === "new") return "brand_new";
+  if (v === "certified") return "refurbished";
+  if (v === "used") return "nigerian_used";
+  if (CANONICAL_LISTING_CONDITIONS.has(v)) return v;
+  return "foreign_used";
+}
+
 export function normalizeListingCondition(
   value: string | null | undefined,
 ): string | null {
@@ -61,6 +82,7 @@ export function normalizeListingCondition(
   const v = value.trim().toLowerCase();
   if (v === "new") return "brand_new";
   if (v === "certified") return "refurbished";
+  if (v === "used") return "nigerian_used";
   return v;
 }
 
@@ -395,6 +417,7 @@ export function buildVehicleInsertPayload(
     fuel_type: input.fuel_type ?? null,
     mileage: input.mileage ?? null,
     vehicle_condition: input.vehicle_condition,
+    condition: canonicalConditionFromVehicleCondition(input.vehicle_condition),
     vin: input.vin ?? null,
     exterior_color: input.exterior_color ?? null,
     interior_color: input.interior_color ?? null,

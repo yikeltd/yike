@@ -8,6 +8,7 @@ import {
   fingerprintListingCreatePayload,
   withListingCreateIdempotencyExtras,
 } from "@/lib/listing-create/payload-fingerprint";
+import { canonicalConditionFromVehicleCondition } from "@/lib/marketplace/listings";
 import { parseVehicleBody } from "@/lib/listing-create/vehicle-body";
 import { parseElectronicsBody } from "@/lib/listing-create/electronics-body";
 import {
@@ -44,6 +45,11 @@ function vehicleInsertExpected(agentId: string, payload: Record<string, unknown>
     idempotencyKey: "vehicle-key-1",
   };
 }
+
+test("vehicle condition maps legacy used to canonical nigerian_used for DB insert", () => {
+  assert.equal(canonicalConditionFromVehicleCondition("used"), "nigerian_used");
+  assert.equal(canonicalConditionFromVehicleCondition("new"), "brand_new");
+});
 
 test("vehicle create contract rejects missing idempotency fields at parse layer", () => {
   assert.equal(parseVehicleBody({ ...VEHICLE_BASE, media_urls: [HTTPS_MEDIA[0]!] }), null);
