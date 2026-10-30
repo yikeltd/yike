@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isEmailVerified } from "@/lib/auth";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { UNVERIFIED_AGENT_LISTING_LIMIT } from "@/lib/agent-tiers";
 import { applyAmbassadorAttribution } from "@/lib/ambassador/attribution";
 import { getAmbassadorRefFromCookies } from "@/lib/ambassador/cookie";
 import { syncProfileVerificationMeta } from "@/lib/verification/enforcement";
 import {
+  deriveSellerCustomerVerificationStatus,
   ensurePendingManualSellerVerification,
   isPhoneVerifiedForSeller,
   SELLER_CHOOSE_LISTING_PATH,
 } from "@/lib/seller-trust";
+import { runSellerProfileReviewAfterSubmit } from "@/lib/seller-trust/apply-profile-review";
 import type { AccountType, UserRole } from "@/types/database";
 
 export const runtime = "nodejs";
@@ -33,6 +37,7 @@ type Body = {
   referralCode?: string;
   consentAccepted?: boolean;
   accountType?: AccountType;
+  returnPath?: string;
 };
 
 function parseDob(raw: string): string | null {
@@ -158,14 +163,11 @@ export async function POST(request: Request) {
       ? body.accountType
       : "individual";
 
-  if (!residentialState || !(NIGERIAN_STATES as readonly string[]).includes(residentialState)) {
+  if (
+    residentialState &&
+    !(NIGERIAN_STATES as readonly string[]).includes(residentialState)
+  ) {
     return NextResponse.json({ error: "Select a valid Nigerian state." }, { status: 400 });
-  }
-  if (residentialAddress.length < 8) {
-    return NextResponse.json(
-      { error: "Enter your full address (house number, street, area)." },
-      { status: 400 }
-    );
   }
   if (!dateOfBirth) {
     return NextResponse.json(
@@ -212,10 +214,10 @@ export async function POST(request: Request) {
 
   const profilePatch: Record<string, unknown> = {
     date_of_birth: dateOfBirth,
-    residential_address: residentialAddress,
-    residential_state: residentialState,
-    residential_city: residentialState,
-    office_address: residentialAddress,
+    residential_address: residentialAddress || null,
+    residential_state: residentialState || null,
+    residential_city: residentialState || null,
+    office_address: residentialAddress || null,
     country: "Nigeria",
     seller_profile_completed_at: now,
     verification_submitted_at: now,
@@ -280,11 +282,10 @@ export async function POST(request: Request) {
         email,
         occupation: occupation || null,
         submitted_at: now,
-        verification_notes:
-          "Seller Verification & Onboarding v1 — profile submitted for manual review.",
+        verification_notes: "Seller profile submitted — review in progress.",
       })
       .eq("id", latest.id);
-  } else if (!latest || latest.status === "rejected") {
+  } else if (!latest || latest.status !== "pending") {
     await admin.from("agent_verifications").insert({
       agent_id: user.id,
       user_id: user.id,
@@ -297,13 +298,48 @@ export async function POST(request: Request) {
       email,
       occupation: occupation || null,
       status: "pending",
-      nin_provider: "manual_review",
+      nin_provider: "profile_review",
       nin_verified: false,
       selfie_url: null,
       submitted_at: now,
-      verification_notes:
-        "Seller Verification & Onboarding v1 — profile submitted for manual review.",
+      verification_notes: "Seller profile submitted — review in progress.",
     });
+  }
+
+  const { data: pendingVerification } = await admin
+    .from("agent_verifications")
+    .select("id")
+    .eq("agent_id", user.id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const verificationId = pendingVerification?.id ?? null;
+
+  let reviewOutcome: "auto_approved" | "queued" | null = null;
+  if (verificationId) {
+    const hdrs = await headers();
+    const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+    const result = await runSellerProfileReviewAfterSubmit(admin, {
+      userId: user.id,
+      verificationId,
+      actorIp: ip,
+      input: {
+        userId: user.id,
+        fullName,
+        email,
+        emailVerified: true,
+        phone,
+        phoneVerified: true,
+        dateOfBirth,
+        residentialAddress,
+        residentialState,
+        occupation: occupation || null,
+        isBanned: false,
+      },
+    });
+    reviewOutcome = result.outcome;
   }
 
   const code = referralCode || (await getAmbassadorRefFromCookies());
@@ -319,8 +355,35 @@ export async function POST(request: Request) {
     console.error("[seller-verification] meta sync failed:", err);
   });
 
+  const nextPath = safeNextPath(body.returnPath, SELLER_CHOOSE_LISTING_PATH);
+
+  const { data: refreshedProfile } = await admin
+    .from("profiles")
+    .select(
+      "verification_status, verified_badge, verification_submitted_at, phone_verified, email_verified, is_banned, seller_profile_completed_at, residential_address, residential_state, date_of_birth"
+    )
+    .eq("id", user.id)
+    .single();
+
+  const customerStatus = deriveSellerCustomerVerificationStatus(
+    refreshedProfile ?? {
+      verification_status: reviewOutcome === "auto_approved" ? "approved" : "pending",
+      verified_badge: reviewOutcome === "auto_approved",
+      verification_submitted_at: now,
+      phone_verified: true,
+      email_verified: true,
+      is_banned: false,
+      seller_profile_completed_at: now,
+      residential_address: residentialAddress,
+      residential_state: residentialState,
+      date_of_birth: dateOfBirth,
+    }
+  );
+
   return NextResponse.json({
     ok: true,
-    next: SELLER_CHOOSE_LISTING_PATH,
+    next: nextPath,
+    customerStatus,
+    autoApproved: reviewOutcome === "auto_approved",
   });
 }

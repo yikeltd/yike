@@ -94,6 +94,18 @@ export function HomeSearchHero({
     router.push(href);
   }
 
+  function handleElectronicsSearch({ params, label }: BrowseSearchPayload) {
+    trackEvent("search", {
+      city: params.get("city") || undefined,
+      listing_type: "electronics",
+      placement: desktopWeb ? "home_desktop_electronics_filters" : "home_electronics_filters",
+    });
+    const qs = params.toString();
+    const href = qs ? `/electronics?${qs}` : "/electronics";
+    addRecentSearch({ label, href });
+    router.push(href);
+  }
+
   function handleVehicleSearch({ params, label }: BrowseSearchPayload) {
     trackEvent("search", {
       city: params.get("city") || undefined,
@@ -114,6 +126,7 @@ export function HomeSearchHero({
         browseInitial={browseInitial}
         onPropertySearch={handlePropertySearch}
         onVehicleSearch={handleVehicleSearch}
+        onElectronicsSearch={handleElectronicsSearch}
       />
     );
   }

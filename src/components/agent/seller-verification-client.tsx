@@ -22,9 +22,11 @@ import type { Profile } from "@/types/database";
 export function SellerVerificationClient({
   profile: initialProfile,
   emailVerified,
+  returnPath = SELLER_CHOOSE_LISTING_PATH,
 }: {
   profile: Profile;
   emailVerified: boolean;
+  returnPath?: string;
 }) {
   const router = useRouter();
   const [profile, setProfile] = useState(initialProfile);
@@ -133,6 +135,7 @@ export function SellerVerificationClient({
           referralCode: referralCode.trim() || undefined,
           consentAccepted: true,
           accountType: profile.account_type ?? "individual",
+          returnPath,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -156,7 +159,7 @@ export function SellerVerificationClient({
         setError(apiError);
         return;
       }
-      router.push((data.next as string) || SELLER_CHOOSE_LISTING_PATH);
+      router.push((data.next as string) || returnPath || SELLER_CHOOSE_LISTING_PATH);
       router.refresh();
     } finally {
       setLoading(false);
@@ -217,12 +220,11 @@ export function SellerVerificationClient({
           <h2 className="text-sm font-bold text-navy">2. Seller profile</h2>
 
           <label className="block text-xs font-semibold text-navy">
-            State <span className="text-danger">*</span>
+            State
             <Select
               value={state}
               onChange={(e) => setState(e.target.value)}
               className="mt-1 h-11 rounded-xl"
-              required
             >
               <option value="">Select state</option>
               {NIGERIAN_STATES.map((s) => (
@@ -234,13 +236,13 @@ export function SellerVerificationClient({
           </label>
 
           <label className="block text-xs font-semibold text-navy">
-            Address <span className="text-danger">*</span>
+            Address
             <textarea
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               rows={3}
+              placeholder="House number, street, area — add what you have"
               className="mt-1 w-full rounded-xl border border-navy/10 bg-white px-3 py-2.5 text-sm text-navy focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
-              required
             />
           </label>
 
@@ -301,9 +303,9 @@ export function SellerVerificationClient({
             <button
               type="button"
               className="w-full text-center text-xs font-semibold text-gold-dark underline"
-              onClick={() => router.push(SELLER_CHOOSE_LISTING_PATH)}
+              onClick={() => router.push(returnPath)}
             >
-              Already verified — choose listing type →
+              Continue to listing type →
             </button>
           ) : null}
         </section>

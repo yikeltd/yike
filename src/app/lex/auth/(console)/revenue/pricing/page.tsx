@@ -1,4 +1,5 @@
 import { RevenuePricingBoard } from "@/components/admin/revenue-pricing-board";
+import { PlatformCoinPricingBoard } from "@/components/admin/platform-coin-pricing-board";
 import { AdminSectionTabs } from "@/components/admin/shell/admin-section-tabs";
 import { REVENUE_SECTION_TABS } from "@/lib/admin/navigation";
 
@@ -13,6 +14,7 @@ export default function RevenuePricingPage() {
         </p>
       </section>
       <RevenuePricingBoard />
+      <PlatformCoinPricingBoard />
     </div>
   );
 }

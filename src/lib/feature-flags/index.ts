@@ -34,7 +34,7 @@ const DEFAULT_FEATURE_STATES: Record<Phase1Feature, boolean> = {
   buyer_assistance: true,
   buyer_live_walkthrough: true,
   voice_call_beta: true,
-  video_call_beta: false, // Beta flag default
+  video_call_beta: !isProductionEnv(),
 };
 
 function envFlag(name: string, fallback: boolean): boolean {

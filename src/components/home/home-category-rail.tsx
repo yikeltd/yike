@@ -74,11 +74,13 @@ function buildCategories(): CategoryItem[] {
     {
       id: "electronics",
       label: "Electronics",
-      description: "Phones & gadgets",
-      href: "#",
+      description: isLaunchFeatureVisible("electronics_marketplace")
+        ? "Phones & appliances"
+        : "Coming soon",
+      href: isLaunchFeatureVisible("electronics_marketplace") ? "/electronics" : "#",
       icon: Sparkles,
-      tone: "soon",
-      badge: "Soon",
+      tone: isLaunchFeatureVisible("electronics_marketplace") ? "live" : "soon",
+      badge: isLaunchFeatureVisible("electronics_marketplace") ? undefined : "Soon",
       prominence: "secondary",
     },
   ];
@@ -129,10 +131,10 @@ export function HomeCategoryRail({
           const Icon = item.icon;
           const disabled = item.tone === "soon" && item.href === "#";
           const cardClass = cn(
-            "pressable group relative flex items-center gap-3 rounded-2xl border p-3 text-left transition-all",
+            "pressable group relative flex items-center gap-3 p-3 text-left transition-all",
             onHero
-              ? "border-white/18 bg-white/10 backdrop-blur-sm hover:bg-white/16"
-              : "border-navy/10 bg-white shadow-sm ring-1 ring-black/[0.03] hover:border-gold/40 hover:shadow-md",
+              ? "rounded-2xl border border-white/18 bg-white/10 backdrop-blur-sm hover:bg-white/16"
+              : "yike-marketplace-tile",
             disabled && "cursor-default opacity-90"
           );
 

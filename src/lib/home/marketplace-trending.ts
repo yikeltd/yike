@@ -70,7 +70,7 @@ export const VEHICLE_TRENDING_SEARCHES: readonly MarketplaceTrendLink[] = [
   {
     id: "pickups",
     label: "Pickups",
-    href: "/vehicles?category=truck",
+    href: "/vehicles?category=pickup_van",
   },
   {
     id: "mercedes",

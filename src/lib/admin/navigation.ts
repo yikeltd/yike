@@ -342,6 +342,12 @@ export const AUTH_NAV_GROUPS: NavGroup[] = [
         segment: "revenue/overview",
         keywords: ["mrr", "revenue"],
       },
+      {
+        href: adminPath("yike-coins"),
+        label: "YC Grants",
+        segment: "yike-coins",
+        keywords: ["yike coins", "yc", "grant", "wallet"],
+      },
     ],
   },
   {

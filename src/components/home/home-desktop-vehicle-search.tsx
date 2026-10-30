@@ -12,16 +12,19 @@ import {
   buildBudgetSelectOptions,
 } from "@/lib/budget-ranges";
 import { buildVehicleMakeSelectOptions } from "@/lib/marketplace/vehicle-makes";
+import { VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES } from "@/lib/marketplace/vehicle-specs";
 import { getStateForCity } from "@/lib/constants";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
+import { vehicleMarketplaceMeaningfulSelection } from "@/lib/home/marketplace-filter-engagement";
 import { cn } from "@/lib/utils";
 
-/** Mirrors property All / Rent / Buy / Land — vehicle types that fit the hero. */
+/** Mirrors property All / Rent / Buy / Land — five road categories + All. */
 const VEHICLE_DEAL_CHIPS = [
   { value: "", label: "All" },
-  { value: "car", label: "Cars" },
-  { value: "suv", label: "SUVs" },
-  { value: "truck", label: "Trucks" },
+  ...VEHICLE_PRIMARY_MARKETPLACE_CATEGORIES.map((c) => ({
+    value: c.id,
+    label: c.label,
+  })),
 ] as const;
 
 type Props = {
@@ -58,6 +61,15 @@ export function HomeDesktopVehicleSearch({
   );
   const makeOptions = useMemo(() => buildVehicleMakeSelectOptions(), []);
   const budgetOptions = useMemo(() => buildBudgetSelectOptions("sale"), []);
+
+  const meaningfulSelection = vehicleMarketplaceMeaningfulSelection({
+    category,
+    state,
+    city,
+    make,
+    carType: "",
+    budget,
+  });
 
   function submit() {
     const params = new URLSearchParams();
@@ -152,14 +164,16 @@ export function HomeDesktopVehicleSearch({
           variant="hero"
           compactLabel
         />
-        <button
-          type="button"
-          onClick={submit}
-          className="pressable yike-btn-accent col-span-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-bold text-navy sm:col-span-1 lg:col-auto lg:h-12 lg:min-w-[3.5rem]"
-          aria-label="Search vehicles"
-        >
-          <Search className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-        </button>
+        {meaningfulSelection ? (
+          <button
+            type="button"
+            onClick={submit}
+            className="pressable yike-btn-accent col-span-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-bold text-navy sm:col-span-1 lg:col-auto lg:h-12 lg:min-w-[3.5rem]"
+            aria-label="Search vehicles"
+          >
+            <Search className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+          </button>
+        ) : null}
       </div>
     </div>
   );

@@ -27,10 +27,11 @@ export function VehicleRefinePanel({
         onClick={() => setOpen((v) => !v)}
         className="pressable flex w-full items-center justify-between px-3.5 py-2.5 text-left"
         aria-expanded={open}
+        data-testid="marketplace-refine-toggle"
       >
         <span className="flex items-center gap-2 text-sm font-bold tracking-tight text-navy">
           <SlidersHorizontal className="h-3.5 w-3.5 text-gold" />
-          Search
+          Filters
         </span>
         <ChevronDown
           className={cn(

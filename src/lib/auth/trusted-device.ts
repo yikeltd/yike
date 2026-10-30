@@ -4,11 +4,20 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isStrictDeviceBindingEnabled } from "@/lib/feature-flags";
 import { hashIpSubnet } from "./ip-subnet";
 import { hashIp, hashUserAgent, logAuthSecurityEvent } from "./security-events";
+import {
+  DEVICE_TRUST_MAX_AGE_DAYS,
+  isDeviceTrustExpired,
+} from "./trusted-device-policy";
 
 export { hashIpSubnet };
+export {
+  DEVICE_TRUST_MAX_AGE_DAYS,
+  DEVICE_TRUST_MAX_AGE_MS,
+  isDeviceTrustExpired,
+} from "./trusted-device-policy";
 
 export const DEVICE_COOKIE = "yike_device_token";
-const DEVICE_MAX_AGE_DAYS = 90;
+const DEVICE_MAX_AGE_DAYS = DEVICE_TRUST_MAX_AGE_DAYS;
 
 export function generateDeviceToken(): string {
   return randomBytes(32).toString("hex");
@@ -36,6 +45,7 @@ export async function setDeviceCookie(token: string): Promise<void> {
 
 type TrustedDeviceRow = {
   id: string;
+  trusted_at: string;
   user_agent_hash: string | null;
   ip_subnet_hash: string | null;
 };
@@ -49,11 +59,26 @@ async function loadTrustedDeviceRow(
 
   const { data } = await admin
     .from("trusted_devices")
-    .select("id, user_agent_hash, ip_subnet_hash")
+    .select("id, trusted_at, user_agent_hash, ip_subnet_hash")
     .eq("user_id", userId)
     .eq("device_token_hash", hashDeviceToken(deviceToken))
     .is("revoked_at", null)
     .maybeSingle();
+
+  if (!data) return null;
+
+  if (isDeviceTrustExpired(data.trusted_at)) {
+    await admin
+      .from("trusted_devices")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", data.id);
+    await logAuthSecurityEvent({
+      userId,
+      eventType: "device.revoked",
+      metadata: { reason: "trust_expired" },
+    });
+    return null;
+  }
 
   return data;
 }
@@ -103,6 +128,23 @@ export async function registerTrustedDevice(params: {
   const now = new Date().toISOString();
   const uaHash = hashUserAgent(params.userAgent ?? null);
   const ipSubnetHash = hashIpSubnet(params.ip ?? null);
+
+  const existing = await loadTrustedDeviceRow(params.userId, params.deviceToken);
+
+  if (existing && !params.isNewDevice) {
+    await touchTrustedDevice(params.userId, params.deviceToken, {
+      userAgent: params.userAgent,
+      ip: params.ip,
+    });
+    await setDeviceCookie(params.deviceToken);
+    await logAuthSecurityEvent({
+      userId: params.userId,
+      eventType: "device.trusted",
+      ip: params.ip,
+      userAgent: params.userAgent,
+    });
+    return;
+  }
 
   await admin.from("trusted_devices").upsert(
     {
@@ -164,4 +206,26 @@ export async function ensureDeviceToken(): Promise<string> {
 export async function getDeviceIdForSession(): Promise<string | null> {
   const token = await getDeviceTokenFromCookies();
   return token ? hashDeviceToken(token) : null;
+}
+
+/** Full sign-out with revokeDevice — invalidates server-side trust for this device token. */
+export async function revokeTrustedDeviceForToken(
+  userId: string,
+  deviceToken: string
+): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin) return;
+  const now = new Date().toISOString();
+  await admin
+    .from("trusted_devices")
+    .update({ revoked_at: now })
+    .eq("user_id", userId)
+    .eq("device_token_hash", hashDeviceToken(deviceToken))
+    .is("revoked_at", null);
+
+  await logAuthSecurityEvent({
+    userId,
+    eventType: "device.revoked",
+    metadata: { reason: "user_logout_revoke" },
+  });
 }

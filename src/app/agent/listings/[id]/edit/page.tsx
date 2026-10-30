@@ -85,7 +85,53 @@ export default async function EditListingPage({
   if (!data) redirect("/agent/listings");
 
   const listing = data as Property;
-  const isVehicle = normalizeAssetType(listing.asset_type) === "VEHICLE";
+  const asset = normalizeAssetType(listing.asset_type);
+  const isVehicle = asset === "VEHICLE";
+  const isElectronics = asset === "ELECTRONICS";
+
+  if (isElectronics) {
+    if (!isLaunchFeatureVisible("electronics_marketplace")) {
+      redirect("/agent/listings");
+    }
+    const attrs = (listing.attributes ?? {}) as Record<string, unknown>;
+    return (
+      <SellerFlowShell
+        eyebrow="Electronics"
+        title="Edit listing"
+        description="Update photos and details — changes go to review when you publish."
+        backHref="/agent/listings"
+        backLabel="My listings"
+      >
+        <AgentReviewResponseBox listingId={id} />
+        <ListingEngine
+          categoryId="electronics"
+          agentId={user.id}
+          listingId={id}
+          initialValues={{
+            auto_category: listing.auto_category,
+            brand: listing.make,
+            model: listing.model,
+            condition: listing.condition,
+            state: listing.state,
+            city: listing.city,
+            area: listing.area,
+            title: listing.title,
+            price: listing.price,
+            description: listing.description,
+            media_urls: listing.media_urls ?? [],
+            storage_gb: attrs.storage_gb,
+            ram_gb: attrs.ram_gb,
+            screen_size: attrs.screen_size,
+            power_kva: attrs.power_kva,
+            capacity_liters: attrs.capacity_liters,
+            battery_capacity_ah: attrs.battery_capacity_ah,
+            warranty_status: attrs.warranty_status,
+            warranty_note: attrs.warranty_note,
+          }}
+        />
+      </SellerFlowShell>
+    );
+  }
 
   if (isVehicle) {
     if (!isLaunchFeatureVisible("vehicle_marketplace")) {
@@ -100,7 +146,7 @@ export default async function EditListingPage({
         backLabel="My listings"
         actions={
           <Link
-            href="/agent/listings/choose"
+            href="/agent/listings/new"
             className="pressable text-sm font-semibold text-navy/55 hover:text-navy"
           >
             New listing
@@ -127,7 +173,7 @@ export default async function EditListingPage({
       backLabel="My listings"
       actions={
         <Link
-          href="/agent/listings/choose"
+          href="/agent/listings/new"
           className="pressable text-sm font-semibold text-navy/55 hover:text-navy"
         >
           New listing

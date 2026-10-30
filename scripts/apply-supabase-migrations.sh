@@ -8,6 +8,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 PROJECT_REF="${SUPABASE_PROJECT_REF:-hlpojfurfldvcxfxhveg}"
+PRODUCTION_REF="hlpojfurfldvcxfxhveg"
 
 if [[ -f .env.local ]]; then
   set +u
@@ -35,6 +36,13 @@ fi
 
 echo "Verifying Supabase project identity..."
 node scripts/verify-supabase-project.mjs --require-linked
+
+if [[ "$PROJECT_REF" == "$PRODUCTION_REF" && "${ALLOW_PRODUCTION_DB_PUSH:-}" != "1" ]]; then
+  echo "Refusing db push to linked project ${PROJECT_REF}." >&2
+  echo "Pre-launch development uses this same Supabase project — set ALLOW_PRODUCTION_DB_PUSH=1 only after reviewing new migration SQL." >&2
+  echo "See docs/engineering/DEV_E2E_CERTIFICATION.md" >&2
+  exit 1
+fi
 
 echo "Linking Supabase project ${PROJECT_REF}..."
 supabase link --project-ref "$PROJECT_REF" --yes

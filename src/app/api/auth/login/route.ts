@@ -15,6 +15,8 @@ import {
 } from "@/lib/auth/trusted-device";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { AUTH_UNAVAILABLE_MESSAGE } from "@/lib/copy/user-messages";
+import { isEmailVerified } from "@/lib/auth";
+import { resolvePasswordLoginSteps } from "@/lib/auth/login-gate";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -105,21 +107,28 @@ export async function POST(request: Request) {
   await recordLoginAttempt({ identifier, attemptType: "password", success: true, ip });
 
   const reviewer = isReviewerAccountEmail(email);
-  const needsEmailVerify = !data.user.email_confirmed_at && !reviewer;
 
   const [deviceToken, profileRes] = await Promise.all([
     getDeviceTokenFromCookies().then((t) => t ?? ensureDeviceToken()),
     supabase
       .from("profiles")
-      .select("id, full_name, username, avatar_url, email, role, account_type, has_pin_set")
+      .select(
+        "id, full_name, username, avatar_url, email, role, account_type, has_pin_set, email_verified"
+      )
       .eq("id", data.user.id)
       .maybeSingle(),
   ]);
 
   const profile = profileRes.data;
+  const emailVerified = isEmailVerified(data.user, profile);
   const trusted = await isDeviceTrusted(data.user.id, deviceToken, { userAgent, ip });
+  const steps = resolvePasswordLoginSteps({
+    emailVerified,
+    deviceTrusted: trusted,
+    isReviewer: reviewer,
+  });
 
-  if (trusted || reviewer) {
+  if ((trusted || reviewer) && !steps.needsEmailVerify && !steps.needsLoginOtp) {
     void registerTrustedDevice({
       userId: data.user.id,
       deviceToken,
@@ -127,6 +136,8 @@ export async function POST(request: Request) {
       ip,
       isNewDevice: !trusted,
     });
+    void beginUserSession(data.user.id);
+  } else if (!steps.needsLoginOtp && !steps.needsEmailVerify) {
     void beginUserSession(data.user.id);
   } else {
     void logAuthSecurityEvent({
@@ -152,10 +163,15 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    needsEmailVerify,
-    needsLoginOtp: !trusted && !reviewer && !needsEmailVerify,
+    needsEmailVerify: steps.needsEmailVerify,
+    needsLoginOtp: steps.needsLoginOtp,
     deviceTrusted: trusted || reviewer,
-    requiresPinSetup: Boolean((trusted || reviewer) && profile && !profile.has_pin_set),
+    requiresPinSetup: Boolean(
+      steps.requiresPinSetupEligible &&
+        (trusted || reviewer) &&
+        profile &&
+        !profile.has_pin_set
+    ),
     profile: publicLoginProfile(profile),
   });
 }

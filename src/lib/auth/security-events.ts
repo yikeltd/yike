@@ -34,7 +34,8 @@ export type AuthSecurityEventType =
   | "email_change.confirmed"
   | "password_change.confirmed"
   | "pin.reset"
-  | "device.suspicious";
+  | "device.suspicious"
+  | "device.revoked";
 
 export async function logAuthSecurityEvent(params: {
   userId?: string | null;

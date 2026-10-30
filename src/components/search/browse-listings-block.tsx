@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { HomeMobileFilterShell } from "@/components/home/home-mobile-filter-shell";
+import { getPropertyCategoryLabel } from "@/constants/propertyCategories";
 import { getStateForCity } from "@/lib/constants";
 import {
   budgetContextFromDealKey,
@@ -24,6 +26,8 @@ import {
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemedSelect } from "@/components/ui/themed-select";
+import { useHomeMarketplaceFilterContext } from "@/lib/home/home-marketplace-filter-context";
+import { propertyMarketplaceMeaningfulSelection } from "@/lib/home/marketplace-filter-engagement";
 
 function resolveChip(key: string): SearchDealChip {
   return (
@@ -67,6 +71,11 @@ export function BrowseListingsBlock({
   variant = "default",
   alwaysShowSearch = false,
   hideTitle = false,
+  mobileFilterCollapse = false,
+  filtersExpanded = false,
+  onFiltersExpandedChange,
+  resetToken = 0,
+  onFilterSummaryChange,
 }: {
   onSearch: (payload: BrowseSearchPayload) => void;
   initial?: BrowseListingsInitial;
@@ -77,15 +86,30 @@ export function BrowseListingsBlock({
   alwaysShowSearch?: boolean;
   /** Hide contextual title when category tab already provides context. */
   hideTitle?: boolean;
+  mobileFilterCollapse?: boolean;
+  filtersExpanded?: boolean;
+  onFiltersExpandedChange?: (open: boolean) => void;
+  resetToken?: number;
+  onFilterSummaryChange?: (summary: string) => void;
 }) {
   const isPremium = variant === "home-premium";
   const isDesktopPanel = variant === "home-desktop-panel";
   const isInline = variant === "home-inline";
+  const useMobileShell = mobileFilterCollapse && isPremium;
   const [dealKey, setDealKey] = useState(initial?.dealKey ?? "");
   const [state, setState] = useState(initial?.state ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
   const [area] = useState(initial?.area ?? "");
   const [propertyType, setPropertyType] = useState(initial?.propertyType ?? "");
+  useEffect(() => {
+    if (resetToken === 0) return;
+    setDealKey("");
+    setState("");
+    setCity("");
+    setPropertyType("");
+    setBudget("");
+  }, [resetToken]);
+
   const [budget, setBudget] = useState(() => {
     if (initial?.budgetValue) return initial.budgetValue;
     if (initial?.budgetIndex && initial.budgetIndex !== "0") {
@@ -100,11 +124,28 @@ export function BrowseListingsBlock({
 
   const budgetContext = budgetContextFromDealKey(dealKey);
 
-  const hasFilterSelection = Boolean(
-    dealKey || state || city || area || propertyType || budget
-  );
+  const hasFilterSelection = propertyMarketplaceMeaningfulSelection({
+    dealKey,
+    state,
+    city,
+    area,
+    propertyType,
+    budget,
+  });
+  const marketplaceFilter = useHomeMarketplaceFilterContext();
+
+  useEffect(() => {
+    if (useMobileShell) {
+      marketplaceFilter?.setMeaningfulFilterActive(hasFilterSelection);
+    }
+  }, [hasFilterSelection, marketplaceFilter, useMobileShell]);
+
   const showSearchButton =
-    alwaysShowSearch || isPremium || isDesktopPanel || hasFilterSelection;
+    alwaysShowSearch ||
+    isInline ||
+    (isDesktopPanel && hasFilterSelection) ||
+    (isPremium && !useMobileShell && hasFilterSelection) ||
+    (useMobileShell && hasFilterSelection);
 
   function buildParams(overrides?: {
     dealKey?: string;
@@ -194,123 +235,183 @@ export function BrowseListingsBlock({
 
   const showTitle = false;
 
+  const filterSummary = useMemo(() => {
+    const chip = resolveChip(dealKey);
+    const parts = [
+      chip.label !== "All" ? chip.label : null,
+      city || state || null,
+      propertyType ? getPropertyCategoryLabel(propertyType) : null,
+      budget ? "Budget set" : null,
+    ].filter(Boolean);
+    return parts.join(" · ");
+  }, [dealKey, city, state, propertyType, budget]);
+
+  useEffect(() => {
+    onFilterSummaryChange?.(filterSummary);
+  }, [filterSummary, onFilterSummaryChange]);
+
+  function resetFilters() {
+    setDealKey("");
+    setState("");
+    setCity("");
+    setPropertyType("");
+    setBudget("");
+  }
+
+  const showPropertyDetailFilters = !useMobileShell || dealKey !== "";
+
+  const dealChipRow = (
+    <div
+      className={cn(
+        "grid grid-cols-4 gap-1 pb-0.5 lg:flex lg:justify-center lg:gap-2",
+        isInline ? "mb-2" : "mb-3.5 lg:mb-3",
+        isDesktopPanel && "mb-2.5 lg:mb-2.5 lg:justify-start",
+      )}
+    >
+      {HOME_DEAL_TYPES.map((t) => {
+        const key = chipKey(t);
+        const active = dealKey === key;
+        return (
+          <button
+            key={t.label}
+            type="button"
+            onClick={() => {
+              const nextContext = budgetContextFromDealKey(key);
+              setDealKey(key);
+              if (!budgetValueMatchesContext(budget, nextContext)) {
+                setBudget("");
+              }
+            }}
+            className={cn(
+              "pressable min-w-0 rounded-lg text-center font-bold leading-tight transition-all duration-200 lg:shrink-0",
+              isInline
+                ? "px-1.5 py-1.5 text-[10px] sm:rounded-full sm:px-3 sm:text-xs"
+                : "rounded-full px-2 py-2 text-[11px] sm:text-xs lg:px-4 lg:py-2.5 lg:text-sm",
+              active ? "bg-gold text-navy shadow-glow-gold" : chipIdle,
+            )}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const filterSelectGrid = (
+    <div
+      className={cn(
+        "grid grid-cols-2 sm:grid-cols-4",
+        isInline ? "gap-2" : "gap-3",
+        isDesktopPanel && "lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end xl:gap-3.5",
+      )}
+    >
+      <ThemedSelect
+        value={state}
+        onChange={(value) => {
+          setState(value);
+          setCity("");
+        }}
+        options={stateOptions}
+        placeholder={isDesktopPanel ? "State" : "Any state"}
+        ariaLabel="State"
+        variant={selectVariant}
+      />
+      <ThemedSelect
+        value={city}
+        onChange={(value) => {
+          setCity(value);
+          const inferred = value ? getStateForCity(value) : "";
+          if (inferred) setState(inferred);
+        }}
+        options={cityOptionsList}
+        placeholder={isDesktopPanel ? "City" : "Any city"}
+        ariaLabel="City"
+        variant={selectVariant}
+      />
+      <ThemedSelect
+        value={propertyType}
+        onChange={setPropertyType}
+        options={propertyTypeOptions}
+        placeholder={isDesktopPanel ? "Property Type" : "Any type"}
+        ariaLabel="Property type"
+        variant={selectVariant}
+      />
+      <ThemedSelect
+        value={budget}
+        onChange={setBudget}
+        options={budgetOptions}
+        placeholder={isDesktopPanel ? "Budget" : "Any budget"}
+        ariaLabel="Budget"
+        variant={selectVariant}
+        compactLabel={isPremium || isInline}
+      />
+      {isDesktopPanel && hasFilterSelection ? (
+        <button
+          type="button"
+          onClick={() => submit()}
+          className="pressable yike-btn-accent col-span-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-bold text-navy sm:col-span-1 lg:col-auto lg:h-12 lg:min-w-[10.5rem]"
+        >
+          <Search className="h-4 w-4" strokeWidth={2.5} />
+          {searchButtonLabel}
+        </button>
+      ) : null}
+    </div>
+  );
+
+  const mobileSearchButton = (
+    <button
+      type="button"
+      onClick={() => submit()}
+      className={cn(
+        "pressable yike-btn-accent flex w-full items-center justify-center gap-2 rounded-xl bg-gold font-bold text-navy",
+        isInline ? "mt-2.5 py-3 text-[15px]" : "py-3 text-[15px] sm:py-3.5",
+      )}
+    >
+      <Search className="h-4 w-4" strokeWidth={2.5} />
+      {searchButtonLabel}
+    </button>
+  );
+
+  if (useMobileShell) {
+    return (
+      <div className="space-y-2">
+        <HomeMobileFilterShell
+          collapseEnabled={mobileFilterCollapse}
+          expanded={filtersExpanded}
+          onExpandedChange={onFiltersExpandedChange ?? (() => {})}
+          summary={filterSummary}
+          onResetFilters={resetFilters}
+          filterControls={
+            <>
+              {dealChipRow}
+              {showPropertyDetailFilters ? (
+                filterSelectGrid
+              ) : (
+                <p className="text-[11px] font-medium text-white/65">
+                  Choose Rent, Buy, or Land to set location and budget.
+                </p>
+              )}
+            </>
+          }
+          searchButton={mobileSearchButton}
+          showSearchButton={!mobileFilterCollapse || hasFilterSelection}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={shellClass}>
       {showTitle ? (
         <p className={cn(titleClass, "text-center text-balance")}>{title}</p>
       ) : null}
 
-      <div
-        className={cn(
-          "grid grid-cols-4 gap-1 pb-0.5 lg:flex lg:justify-center lg:gap-2",
-          isInline ? "mb-2" : "mb-3.5 lg:mb-3",
-          isDesktopPanel && "mb-2.5 lg:mb-2.5 lg:justify-start"
-        )}
-      >
-        {HOME_DEAL_TYPES.map((t) => {
-          const key = chipKey(t);
-          const active = dealKey === key;
-          return (
-            <button
-              key={t.label}
-              type="button"
-              onClick={() => {
-                const nextContext = budgetContextFromDealKey(key);
-                setDealKey(key);
-                if (!budgetValueMatchesContext(budget, nextContext)) {
-                  setBudget("");
-                }
-              }}
-              className={cn(
-                "pressable min-w-0 rounded-lg text-center font-bold leading-tight transition-all duration-200 lg:shrink-0",
-                isInline
-                  ? "px-1.5 py-1.5 text-[10px] sm:rounded-full sm:px-3 sm:text-xs"
-                  : "rounded-full px-2 py-2 text-[11px] sm:text-xs lg:px-4 lg:py-2.5 lg:text-sm",
-                active
-                  ? "bg-gold text-navy shadow-glow-gold"
-                  : chipIdle
-              )}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div
-        className={cn(
-          "grid grid-cols-2 sm:grid-cols-4",
-          isInline ? "gap-2" : "gap-3",
-          isDesktopPanel && "lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end xl:gap-3.5"
-        )}
-      >
-        <ThemedSelect
-          value={state}
-          onChange={(value) => {
-            setState(value);
-            setCity("");
-          }}
-          options={stateOptions}
-          placeholder={isDesktopPanel ? "State" : "Any state"}
-          ariaLabel="State"
-          variant={selectVariant}
-        />
-        <ThemedSelect
-          value={city}
-          onChange={(value) => {
-            setCity(value);
-            const inferred = value ? getStateForCity(value) : "";
-            if (inferred) setState(inferred);
-          }}
-          options={cityOptionsList}
-          placeholder={isDesktopPanel ? "City" : "Any city"}
-          ariaLabel="City"
-          variant={selectVariant}
-        />
-        <ThemedSelect
-          value={propertyType}
-          onChange={setPropertyType}
-          options={propertyTypeOptions}
-          placeholder={isDesktopPanel ? "Property Type" : "Any type"}
-          ariaLabel="Property type"
-          variant={selectVariant}
-        />
-        <ThemedSelect
-          value={budget}
-          onChange={setBudget}
-          options={budgetOptions}
-          placeholder={isDesktopPanel ? "Budget" : "Any budget"}
-          ariaLabel="Budget"
-          variant={selectVariant}
-          compactLabel={isPremium || isInline}
-        />
-        {isDesktopPanel ? (
-          <button
-            type="button"
-            onClick={() => submit()}
-            className="pressable yike-btn-accent col-span-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-bold text-navy sm:col-span-1 lg:col-auto lg:h-12 lg:min-w-[10.5rem]"
-          >
-            <Search className="h-4 w-4" strokeWidth={2.5} />
-            {searchButtonLabel}
-          </button>
-        ) : null}
-      </div>
+      {dealChipRow}
+      {filterSelectGrid}
 
       {!isDesktopPanel ? (
         alwaysShowSearch || isInline ? (
-          <button
-            type="button"
-            onClick={() => submit()}
-            className={cn(
-              "pressable yike-btn-accent flex w-full items-center justify-center gap-2 rounded-xl bg-gold font-bold text-navy",
-              isInline
-                ? "mt-2.5 py-3 text-[15px]"
-                : "mt-3.5 py-3 text-sm sm:py-3.5 sm:text-[15px]",
-            )}
-          >
-            <Search className="h-4 w-4" strokeWidth={2.5} />
-            {searchButtonLabel}
-          </button>
+          <div className={cn(!isInline && "mt-3.5")}>{mobileSearchButton}</div>
         ) : (
           <div
             className={cn(

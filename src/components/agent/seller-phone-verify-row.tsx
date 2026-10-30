@@ -30,6 +30,7 @@ export function SellerPhoneVerifyRow({
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const sendLockRef = useRef(false);
   const verifyLockRef = useRef(false);
@@ -54,6 +55,7 @@ export function SellerPhoneVerifyRow({
     sendLockRef.current = true;
     setSending(true);
     setError("");
+    setInfo("");
     try {
       const res = await fetch("/api/profile/phone/send-code", {
         method: "POST",
@@ -62,6 +64,7 @@ export function SellerPhoneVerifyRow({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        setInfo("");
         setError((data.error as string) || PHONE_VERIFY_COPY.providerUnavailable);
         return;
       }
@@ -76,6 +79,21 @@ export function SellerPhoneVerifyRow({
           typeof data.phone === "string" && data.phone ? data.phone : normalized;
         onVerified(verifiedPhone, verifiedAt);
         return;
+      }
+      if (data.deliveryMode === "dev_console") {
+        setInfo(
+          typeof data.message === "string" && data.message.trim()
+            ? data.message.trim()
+            : PHONE_VERIFY_COPY.devConsoleSms
+        );
+      } else if (data.deliveryMode === "provider") {
+        setInfo(
+          typeof data.message === "string" && data.message.trim()
+            ? data.message.trim()
+            : PHONE_VERIFY_COPY.sentSms
+        );
+      } else if (typeof data.message === "string" && data.message.trim()) {
+        setInfo(data.message.trim());
       }
       setCodeVisible(true);
       setCode("");
@@ -209,6 +227,9 @@ export function SellerPhoneVerifyRow({
         </button>
       ) : null}
 
+      {info ? (
+        <p className="text-xs font-medium text-navy/70">{info}</p>
+      ) : null}
       {error ? <p className="text-xs text-danger">{error}</p> : null}
     </div>
   );

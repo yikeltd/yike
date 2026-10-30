@@ -63,6 +63,8 @@ export type AuditAction =
   | "agent.verification.failed_call"
   | "agent.verification.reschedule_call"
   | "agent.verification.reject"
+  | "seller.profile_review.auto_approve"
+  | "seller.profile_review.queued"
   | "settings.update"
   | "user.delete"
   | "account.restore"

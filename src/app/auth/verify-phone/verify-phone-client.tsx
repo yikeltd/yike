@@ -1,42 +1,79 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { PhoneSmsVerificationPanel } from "@/components/profile/phone-sms-verification-panel";
 import { Button } from "@/components/ui/button";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { isPhoneVerifiedForSeller } from "@/lib/seller-trust";
 import { PHONE_VERIFY_COPY } from "@/lib/phone-verification/copy";
-import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
+import { getSellerContactPhone } from "@/lib/phone-verification/profile";
 import type { Profile } from "@/types/database";
 import { PROFILES_SAFE_SELECT } from "@/lib/profile/safe-select";
+
+const SESSION_LOAD_ERROR =
+  "We could not load your session. Check your connection and try again.";
+
+function VerifyPhoneLoading() {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-gold" aria-label="Loading" />
+    </div>
+  );
+}
 
 export function VerifyPhoneClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/agent/listings/new";
+  const nextPath = safeNextPath(searchParams.get("next"), "/agent/listings/new");
 
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      window.location.href = `/auth/login?next=${encodeURIComponent(`/auth/verify-phone?next=${nextPath}`)}`;
-      return;
+    setLoadError(null);
+    setChecking(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        const verifyPath = `/auth/verify-phone?next=${encodeURIComponent(nextPath)}`;
+        router.replace(`/auth/login?next=${encodeURIComponent(verifyPath)}`);
+        return;
+      }
+
+      if (userError) {
+        setLoadError(SESSION_LOAD_ERROR);
+        return;
+      }
+
+      const { data: prof, error: profileError } = await supabase
+        .from("profiles")
+        .select(PROFILES_SAFE_SELECT)
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        setLoadError(SESSION_LOAD_ERROR);
+        return;
+      }
+
+      setProfile(prof as Profile | null);
+    } catch {
+      setLoadError(SESSION_LOAD_ERROR);
+    } finally {
+      setChecking(false);
     }
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select(PROFILES_SAFE_SELECT)
-      .eq("id", user.id)
-      .maybeSingle();
-    setProfile(prof as Profile | null);
-    setLoading(false);
-  }, [nextPath]);
+  }, [nextPath, router]);
 
   useEffect(() => {
     void reload();
@@ -48,25 +85,60 @@ export function VerifyPhoneClient() {
     }
   }, [profile, nextPath, router]);
 
-  if (loading) {
-    return <p className="pt-8 text-center text-sm text-muted">Loading…</p>;
+  if (checking) {
+    return <VerifyPhoneLoading />;
+  }
+
+  if (loadError) {
+    return (
+      <AuthShell
+        title={PHONE_VERIFY_COPY.screenTitle}
+        subtitle="We could not load your account right now."
+        footer={
+          <Link href="/auth/login" className="text-sm font-semibold text-gold-dark">
+            Back to sign in
+          </Link>
+        }
+      >
+        <p className="text-center text-sm text-muted">{loadError}</p>
+        <Button type="button" fullWidth size="lg" className="mt-4" onClick={() => void reload()}>
+          Try again
+        </Button>
+      </AuthShell>
+    );
   }
 
   if (!profile) {
-    return <p className="pt-8 text-center text-sm text-muted">Profile not found.</p>;
+    return (
+      <AuthShell
+        title={PHONE_VERIFY_COPY.screenTitle}
+        subtitle="Profile not found."
+        footer={
+          <Link href="/agent" className="text-sm font-semibold text-gold-dark">
+            Seller home
+          </Link>
+        }
+      >
+        <p className="text-center text-sm text-muted">
+          Complete seller setup, then return here to verify your phone.
+        </p>
+      </AuthShell>
+    );
   }
 
   const verified = isPhoneVerifiedForSeller(profile);
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 px-4 pt-6 pb-10">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-navy">
-          {PHONE_VERIFY_COPY.screenTitle}
-        </h1>
-        <p className="mt-2 text-sm text-muted">{PHONE_VERIFY_COPY.screenBody}</p>
-        <p className="mt-1.5 text-xs text-muted">{PHONE_VERIFY_COPY.browseHint}</p>
-      </div>
+    <AuthShell
+      title={PHONE_VERIFY_COPY.screenTitle}
+      subtitle={PHONE_VERIFY_COPY.screenBody}
+      footer={
+        <Link href="/agent" className="text-sm font-semibold text-gold-dark">
+          ← Back to seller home
+        </Link>
+      }
+    >
+      <p className="mb-4 text-center text-xs text-muted">{PHONE_VERIFY_COPY.browseHint}</p>
 
       {verified ? (
         <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -77,17 +149,13 @@ export function VerifyPhoneClient() {
         </div>
       ) : (
         <PhoneSmsVerificationPanel
-          phoneNumber={getWhatsappNumber(profile)}
+          phoneNumber={getSellerContactPhone(profile)}
           onVerified={() => {
             void reload();
             router.push(nextPath);
           }}
         />
       )}
-
-      <Link href="/agent" className="inline-flex text-xs font-semibold text-gold-dark hover:underline">
-        ← Back to seller home
-      </Link>
-    </div>
+    </AuthShell>
   );
 }

@@ -36,6 +36,13 @@ const BANNERS: BannerDef[] = [
     hrefFallback: "/search",
     image: CATEGORY_CHIP_ASSETS.property,
   },
+  {
+    id: "electronics",
+    label: "Electronics",
+    subtitle: "Phones · Laptops · Appliances",
+    hrefFallback: "/electronics",
+    image: CATEGORY_CHIP_ASSETS.electronics,
+  },
 ];
 
 /**
@@ -54,15 +61,22 @@ export function MarketplaceCategoryChips({
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
+  const electronicsOn = isLaunchFeatureVisible("electronics_marketplace");
 
   const active: HomeMarketplaceCategory =
     pathname === "/"
       ? parseHomeCategory(searchParams.get("category"))
       : pathname.startsWith("/vehicles")
         ? "vehicle"
-        : "property";
+        : pathname.startsWith("/electronics")
+          ? "electronics"
+          : "property";
 
-  const visible = BANNERS.filter((b) => b.id !== "vehicle" || vehiclesOn);
+  const visible = BANNERS.filter((b) => {
+    if (b.id === "vehicle" && !vehiclesOn) return false;
+    if (b.id === "electronics" && !electronicsOn) return false;
+    return true;
+  });
 
   function select(next: HomeMarketplaceCategory, fallbackHref: string) {
     trackEvent("search", {
@@ -72,6 +86,7 @@ export function MarketplaceCategoryChips({
 
     if (homeMode && pathname === "/") {
       if (!vehiclesOn && next === "vehicle") return;
+      if (!electronicsOn && next === "electronics") return;
       const params = new URLSearchParams(searchParams.toString());
       params.set("category", homeCategoryQueryValue(next));
       if (next === "vehicle") {
@@ -97,7 +112,11 @@ export function MarketplaceCategoryChips({
     <div
       role="tablist"
       aria-label="Marketplace category"
-      className={cn("grid grid-cols-2 gap-2.5", className)}
+      className={cn(
+        "grid gap-2.5",
+        visible.length >= 3 ? "grid-cols-3" : "grid-cols-2",
+        className,
+      )}
     >
       {visible.map((banner) => {
         const selected = active === banner.id;

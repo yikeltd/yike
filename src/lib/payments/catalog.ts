@@ -12,6 +12,9 @@ import {
 import { getPaymentCurrency } from "@/lib/payments/config";
 import type { PaymentPurpose } from "@/lib/payments/types";
 import { isPaymentPurpose } from "@/lib/payments/types";
+import { ngnToCoins } from "@/lib/yike-coins/constants";
+import { getYikeCoinTopupPackages } from "@/lib/yike-coins/topup-packages";
+import { isYikeCoinsEnabled } from "@/lib/yike-coins/flags";
 
 export type InitializeCatalogInput = {
   purpose: string;
@@ -141,8 +144,33 @@ export async function resolvePayableProduct(
     };
   }
 
+  if (purpose === "wallet_topup") {
+    if (!isYikeCoinsEnabled()) {
+      return { ok: false, error: "Yike Coins are not available", code: "disabled" };
+    }
+    const packNgn = Number(input.packageId ?? input.durationDays);
+    const allowed = getYikeCoinTopupPackages().some((p) => p.amountNgn === packNgn);
+    if (!Number.isInteger(packNgn) || packNgn <= 0 || !allowed) {
+      return { ok: false, error: "Choose a top-up amount", code: "invalid_pack" };
+    }
+    const coins = ngnToCoins(packNgn);
+    return {
+      ok: true,
+      purpose,
+      amount: packNgn,
+      currency,
+      entityId: null,
+      listingId: null,
+      metadata: {
+        user_id: userId,
+        yike_coins: coins,
+        nominal_ngn_per_coin: 1,
+        product: "Yike Coins",
+      },
+    };
+  }
+
   // Subscription / verification / ads keep using dedicated checkout routes for now.
-  // Unified initialize still accepts them only when entity + amount come from trusted server routes.
   return {
     ok: false,
     error:

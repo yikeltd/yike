@@ -10,8 +10,18 @@ import {
   getPublicProperties,
 } from "@/lib/properties";
 import { createClient } from "@/lib/supabase/server";
-import { queryPublicVehicles } from "@/lib/marketplace/listings";
+import {
+  normalizeAssetType,
+  queryPublicElectronics,
+  queryPublicVehicles,
+} from "@/lib/marketplace/listings";
+import {
+  isSampleListingFixtureEnabled,
+  isSampleListingFixtureForceEnabled,
+} from "@/lib/sample-listings/flags";
+import { buildSampleListingFixtures } from "@/lib/sample-listings/build-rows";
 import { parseHomeCategory } from "@/lib/home/marketplace-category";
+import { resolveLatestOnYikeFeed } from "@/lib/home/latest-on-yike.server";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import {
   demoFeaturedRail,
@@ -42,11 +52,15 @@ import {
   pickCommercialVehicles,
   pickPremiumRail,
   pickPropertyByTypes,
-  extractDealersFromListings,
+  extractVerifiedDealersFromMarketplacePools,
   countByAutoCategory,
   countByPropertyType,
   BUDGET_UNDER_5M,
 } from "@/lib/home/discovery-from-pool";
+import {
+  isVerifiedDealersHomeTestMode,
+  verifiedDealersFromTestFixture,
+} from "@/lib/home/verified-dealers-test-fixtures";
 import { getServerMarketplaceLocation } from "@/lib/search-preferences";
 import { getSponsoredAd } from "@/lib/advertisements/public";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
@@ -56,10 +70,10 @@ import type { LocationScope, MarketplaceLocation } from "@/lib/marketplace-locat
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Yike — Nigeria's Trusted Marketplace for Property & Vehicles",
+    absolute: "Yike — Nigeria's Trusted Marketplace for Property, Vehicles & Electronics",
   },
   description:
-    "Find verified properties and vehicles across Nigeria. One marketplace, WhatsApp contact, trusted sellers.",
+    "Find verified properties, vehicles, and electronics across Nigeria. One marketplace, WhatsApp contact, trusted sellers.",
   alternates: { canonical: SITE_URL },
   openGraph: {
     title: "Yike — Nigeria's Trusted Marketplace",
@@ -104,11 +118,13 @@ async function safeLoad<T>(
   label: string,
   load: () => Promise<T>,
   fallback: T,
+  onError?: () => void,
 ): Promise<T> {
   try {
     return await load();
   } catch (error) {
     logHomeDataFailure(label, error);
+    onError?.();
     return fallback;
   }
 }
@@ -174,20 +190,26 @@ export default async function HomePage({
       : null;
 
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
+  const electronicsOn = isLaunchFeatureVisible("electronics_marketplace");
+  const fetchHealth = { failed: false };
+  const load = <T,>(label: string, fn: () => Promise<T>, fallback: T) =>
+    safeLoad(label, fn, fallback, () => {
+      fetchHealth.failed = true;
+    });
 
   // Lean fetch: featured + recent pool (+ city when set). Luxury/state derived in-memory.
   const [featuredProps, recentProps, nearYouProps, vehiclePool] =
     await Promise.all([
-      safeLoad("featured properties", () => getFeaturedProperties(8), []),
-      safeLoad("recent properties", () => getPublicProperties({}, 36), []),
+      load("featured properties", () => getFeaturedProperties(8), []),
+      load("recent properties", () => getPublicProperties({}, 36), []),
       preferredCity
-        ? safeLoad(
+        ? load(
             "near-you properties",
             () => getPublicProperties({ city: preferredCity }, 12),
             [],
           )
         : preferredState
-          ? safeLoad(
+          ? load(
               "near-you properties",
               () => getPublicProperties({ state: preferredState }, 12),
               [],
@@ -198,19 +220,19 @@ export default async function HomePage({
             const supabase = await createClient();
             if (!supabase) return [] as Property[];
             const [featured, recent, local] = await Promise.all([
-              safeLoad(
+              load(
                 "featured vehicles",
                 () =>
                   queryPublicVehicles(supabase, { featured: true, limit: 8 }),
                 [],
               ),
-              safeLoad(
+              load(
                 "recent vehicles",
                 () => queryPublicVehicles(supabase, { limit: 36 }),
                 [],
               ),
               preferredCity
-                ? safeLoad(
+                ? load(
                     "local vehicles",
                     () =>
                       queryPublicVehicles(supabase, {
@@ -220,7 +242,7 @@ export default async function HomePage({
                     [],
                   )
                 : preferredState
-                  ? safeLoad(
+                  ? load(
                       "local vehicles",
                       () =>
                         queryPublicVehicles(supabase, {
@@ -236,17 +258,53 @@ export default async function HomePage({
         : Promise.resolve([] as Property[]),
     ]);
 
+  const electronicsRecent = electronicsOn
+    ? await (async () => {
+        const supabase = await createClient();
+        if (!supabase) return [] as Property[];
+        return load(
+          "recent electronics",
+          () => queryPublicElectronics(supabase, { limit: 12 }),
+          [],
+        );
+      })()
+    : ([] as Property[]);
+
   const propertyPool = dedupeById([
     ...featuredProps,
     ...recentProps,
     ...nearYouProps,
   ]);
-  const propertyDemo = withEmptyInventoryDemoFixtures(
-    propertyPool,
-    "property",
-    12,
-  );
-  const vehicleDemo = withEmptyInventoryDemoFixtures(vehiclePool, "vehicle", 12);
+
+  const sampleFixtureMode =
+    isSampleListingFixtureEnabled() && !fetchHealth.failed;
+  const sampleFixtureForce =
+    sampleFixtureMode && isSampleListingFixtureForceEnabled();
+  const sampleCatalog = sampleFixtureMode ? buildSampleListingFixtures() : [];
+
+  function sampleForAsset(
+    live: Property[],
+    asset: "PROPERTY" | "VEHICLE" | "ELECTRONICS",
+    limit = 12,
+  ): { items: Property[]; isDemo: boolean } {
+    if (!sampleFixtureForce && live.length > 0) {
+      return { items: live.slice(0, limit), isDemo: false };
+    }
+    if (!sampleFixtureMode) {
+      return { items: [], isDemo: false };
+    }
+    const items = sampleCatalog
+      .filter((p) => normalizeAssetType(p.asset_type) === asset)
+      .slice(0, limit);
+    return { items, isDemo: items.length > 0 };
+  }
+
+  const propertyDemo = sampleFixtureMode
+    ? sampleForAsset(propertyPool, "PROPERTY", 12)
+    : withEmptyInventoryDemoFixtures(propertyPool, "property", 12);
+  const vehicleDemo = sampleFixtureMode
+    ? sampleForAsset(vehiclePool, "VEHICLE", 12)
+    : withEmptyInventoryDemoFixtures(vehiclePool, "vehicle", 12);
 
   // When using demo fixtures, prefer location-matched DEMO inventory
   const propertyDemoFiltered = propertyDemo.isDemo
@@ -258,7 +316,29 @@ export default async function HomePage({
 
   const propertyItems = propertyDemoFiltered.items;
   const vehicleItems = vehicleDemoFiltered.items;
-  const showingDemoFixtures = propertyDemo.isDemo || vehicleDemo.isDemo;
+  const electronicsSample = sampleFixtureMode
+    ? sampleForAsset(electronicsRecent, "ELECTRONICS", 12)
+    : { items: electronicsRecent, isDemo: false };
+  const electronicsItems =
+    electronicsSample.items.length > 0 ? electronicsSample.items : electronicsRecent;
+
+  const showingDemoFixtures =
+    propertyDemo.isDemo || vehicleDemo.isDemo || electronicsSample.isDemo;
+  const supabaseForLatest = await createClient();
+  const latestFeed = await resolveLatestOnYikeFeed({
+    supabase: supabaseForLatest,
+    fetchFailed: fetchHealth.failed,
+    sampleFixtureMode,
+  });
+  const mixedLatest = latestFeed.items;
+  const latestOnYikeError = latestFeed.error;
+
+  const showingSampleListingsFixture =
+    sampleFixtureMode &&
+    (latestFeed.usedSampleFixture ||
+      propertyDemo.isDemo ||
+      vehicleDemo.isDemo ||
+      electronicsSample.isDemo);
 
   const nearPool = propertyDemo.isDemo
     ? propertyItems
@@ -330,10 +410,29 @@ export default async function HomePage({
   const vSuv = pickByAutoCategory(vehicleItems, "suv", 12);
   const vPickup = pickByAutoCategory(vehicleItems, "truck", 12);
   const vNear = pickNearYouRail(vehicleItems, preferredCity, 12, loc);
-  const dealers = extractDealersFromListings(
-    vehicleDemo.isDemo ? vehicleItems : vehiclePool,
-    12,
-  );
+  const verifiedDealersTestMode = isVerifiedDealersHomeTestMode(params);
+  const dealers = verifiedDealersTestMode
+    ? verifiedDealersFromTestFixture()
+    : extractVerifiedDealersFromMarketplacePools({
+        property:
+          propertyPool.length > 0
+            ? propertyPool
+            : propertyDemo.isDemo
+              ? propertyItems
+              : [],
+        vehicle:
+          vehiclePool.length > 0
+            ? vehiclePool
+            : vehicleDemo.isDemo
+              ? vehicleItems
+              : [],
+        electronics: electronicsOn
+          ? electronicsItems.length > 0
+            ? electronicsItems
+            : electronicsRecent
+          : [],
+        limit: 12,
+      });
   const vehicleCategoryCounts = countByAutoCategory(vehicleItems);
   const propertyCategoryCounts = countByPropertyType(propertyItems);
   const propertyCommercial = pickPropertyByTypes(
@@ -365,7 +464,11 @@ export default async function HomePage({
       >
         <HomeMarketplaceExperience
           initialCategory={category}
+          electronicsRecent={electronicsItems}
+          mixedLatest={mixedLatest}
+          latestOnYikeError={latestOnYikeError}
           showingDemoFixtures={showingDemoFixtures}
+          showingSampleListingsFixture={showingSampleListingsFixture}
           homepageTopAd={homepageTopAd}
           marketplaceLocation={
             loc

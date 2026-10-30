@@ -22,10 +22,11 @@ import { repairUserProfile } from "@/lib/auth/profile-repair";
 import { tryCreateAdminClient } from "@/lib/supabase/admin";
 import {
   mustCompleteSellerVerification,
-  SELLER_VERIFY_PATH,
+  buildSellerVerifyUrl,
 } from "@/lib/seller-trust";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 
 export async function getSession() {
   if (!isSupabaseConfigured()) return null;
@@ -107,15 +108,21 @@ export function isEmailVerified(
 }
 
 export async function requireAgentLister(
-  redirectTo = SELLER_VERIFY_PATH,
-  options?: { skipProfileSetup?: boolean }
+  _redirectTo?: string,
+  options?: { skipProfileSetup?: boolean; returnPath?: string }
 ) {
-  const user = await requireAuth();
+  const loginNext = safeNextPath(
+    options?.returnPath,
+    "/agent/listings/new",
+  );
+  const user = await requireAuth(
+    `/auth/login?next=${encodeURIComponent(loginNext)}`,
+  );
   const profile = await getProfile(user.id);
   if (!profile || profile.is_banned) redirect("/");
 
   if (!isEmailVerified(user, profile)) {
-    redirect(`/auth/verify-email?next=${encodeURIComponent(redirectTo)}`);
+    redirect(`/auth/verify-email?next=${encodeURIComponent(loginNext)}`);
   }
 
   if (isAdmin(profile.role)) {
@@ -127,15 +134,15 @@ export async function requireAgentLister(
       !options?.skipProfileSetup &&
       mustCompleteSellerVerification(profile)
     ) {
-      redirect(SELLER_VERIFY_PATH);
+      redirect(buildSellerVerifyUrl(loginNext));
     }
     if (!options?.skipProfileSetup && !hasBasicListingProfile(profile)) {
-      redirect(SELLER_VERIFY_PATH);
+      redirect(buildSellerVerifyUrl(loginNext));
     }
     return { user, profile };
   }
 
-  redirect(redirectTo);
+  redirect(buildSellerVerifyUrl(loginNext));
 }
 
 /** @deprecated use requireAgentLister */

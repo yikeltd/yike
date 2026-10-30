@@ -1,6 +1,5 @@
 import { isUsernameAvailable } from "@/lib/auth/signup-rpc";
-
-const USERNAME_RE = /^[a-z0-9_]{3,24}$/;
+import { validateUsername, USERNAME_PATTERN } from "@/lib/username/rules";
 
 /** Derive a username base from a display name (letters/numbers/underscore). */
 export function usernameBaseFromFullName(fullName: string): string {
@@ -12,7 +11,9 @@ export function usernameBaseFromFullName(fullName: string): string {
     .replace(/^_|_$/g, "")
     .slice(0, 18);
 
-  if (cleaned.length >= 3 && USERNAME_RE.test(cleaned)) return cleaned;
+  if (cleaned.length >= 3 && USERNAME_PATTERN.test(cleaned) && validateUsername(cleaned).ok) {
+    return cleaned;
+  }
   return `user_${Date.now().toString(36).slice(-6)}`;
 }
 
@@ -29,7 +30,7 @@ export async function allocateSignupUsername(fullName: string): Promise<string |
         ? base
         : `${base.slice(0, 18)}${Math.floor(100 + Math.random() * 900)}`.slice(0, 24);
 
-    if (!USERNAME_RE.test(candidate)) continue;
+    if (!validateUsername(candidate).ok) continue;
 
     const free = await isUsernameAvailable(candidate);
     if (free === null) return null;

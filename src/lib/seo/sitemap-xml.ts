@@ -57,6 +57,7 @@ export function buildSitemapXml(urls: SitemapUrlEntry[]): string {
 
 function staticSitemapEntries(): SitemapUrlEntry[] {
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
+  const electronicsOn = isLaunchFeatureVisible("electronics_marketplace");
   const staticRoutes: Array<{
     path: string;
     changeFrequency: SitemapUrlEntry["changefreq"];
@@ -66,6 +67,9 @@ function staticSitemapEntries(): SitemapUrlEntry[] {
     { path: "/search", changeFrequency: "daily", priority: 0.95 },
     ...(vehiclesOn
       ? [{ path: "/vehicles", changeFrequency: "daily" as const, priority: 0.94 }]
+      : []),
+    ...(electronicsOn
+      ? [{ path: "/electronics", changeFrequency: "daily" as const, priority: 0.93 }]
       : []),
     { path: "/rent", changeFrequency: "daily", priority: 0.9 },
     { path: "/buy", changeFrequency: "daily", priority: 0.9 },

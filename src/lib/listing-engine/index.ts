@@ -56,6 +56,12 @@ export {
 } from "./photo-schema";
 export type { PhotoSchema, PhotoTag, PhotoSchemaVariant } from "./photo-schema";
 export { MetadataResolver } from "./resolver";
+export {
+  computeListingWizardProgress,
+  getWizardStageConfigs,
+  type WizardProgress,
+  type WizardStageId,
+} from "./wizard-progress";
 export type { ResolverContext, ResolvedListingState } from "./resolver";
 export { validateCategoryManifest } from "./validate-config";
 
@@ -76,8 +82,79 @@ export { VEHICLE_CATEGORY_MANIFEST } from "./categories/vehicle";
 export { PROPERTY_CATEGORY_MANIFEST } from "./categories/property";
 
 export { valuesToVehiclePayload } from "./adapters/vehicle";
+export { valuesToElectronicsPayload } from "./adapters/electronics";
 export type { VehiclePayload } from "./adapters/vehicle";
 export { valuesToPropertyPayload } from "./adapters/property";
+export {
+  buildPropertyCreateApiBody,
+  normalizePropertyCreateRequest,
+  type PropertyCreateApiBody,
+} from "../listing-create/property-api-body";
 export type { PropertyPayload } from "./adapters/property";
 
-export { CATEGORY_REGISTRY, getCategoryManifest, listCategoryIds } from "./registry";
+export {
+  CATEGORY_REGISTRY,
+  getCategoryManifest,
+  tryGetCategoryManifest,
+  listCategoryIds,
+} from "./registry";
+export {
+  MANIFEST_CATEGORY_IDS,
+  UNSUPPORTED_LISTING_CATEGORY_IDS,
+  hasCategoryManifest,
+  getCategoryManifestOrNull,
+  isListingCategoryCreatable,
+  isListingCategoryLaunchVisible,
+  getManifestDetailsStepIds,
+  getManifestDetailsTitle,
+} from "./category-availability";
+export {
+  clearEngineListingDraft,
+  discardEngineListingDraft,
+  loadEngineListingDraft,
+  loadEngineListingDraftWithLegacyFallback,
+  markEngineListingDraftConsumed,
+  migrateLegacyVehicleDraft,
+  parseEngineListingDraftFromStorageEvent,
+  saveEngineListingDraft,
+  type DraftSaveResult,
+  type EngineListingDraft,
+} from "./listing-engine-draft";
+export {
+  clearListingDraftSessionId,
+  getOrCreateListingDraftSessionId,
+  resetListingDraftSessionId,
+} from "./listing-engine-draft-session";
+export {
+  buildListingReviewSummary,
+  fieldJumpTarget,
+  type ReviewSummaryRow,
+} from "./review-summary";
+export {
+  listListingWizardBlockers,
+  resolveListingWizardNextAction,
+  type WizardBlocker,
+  type WizardNextAction,
+} from "./wizard-next-action";
+export {
+  applyListingSuggestions,
+  detectMarketplaceCategory,
+  firstLineAsTitle,
+  parseListingText,
+  type CategoryHint,
+  type InferenceApplyResult,
+  type ParsedFieldSuggestion,
+} from "./intelligence";
+export { catalogueCoverageReports } from "./catalogues/coverage";
+export {
+  buildFieldInventory,
+  inventoryConnectivityGaps,
+  type FieldCatalogueMode,
+  type FieldInventoryEntry,
+} from "./catalogues/field-inventory";
+export { LISTING_SCENARIOS, type ListingScenario } from "./listing-scenarios";
+export {
+  computeSelectionCompletion,
+  representativeListingValues,
+  type SelectionCompletionReport,
+} from "./selection-completion";

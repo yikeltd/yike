@@ -1,4 +1,5 @@
 import type { PaymentProviderName } from "@/lib/payments/types";
+import { isLocalDevelopmentRuntime } from "@/lib/dev/runtime-safety";
 
 function envFlag(name: string, defaultValue: boolean): boolean {
   const raw = process.env[name]?.trim().toLowerCase();
@@ -9,25 +10,93 @@ function envFlag(name: string, defaultValue: boolean): boolean {
 }
 
 export function getSiteBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://yike.ng";
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configured) {
+    const withProtocol = configured.startsWith("http") ? configured : `https://${configured}`;
+    const normalized = withProtocol.replace(/\/$/, "");
+    if (
+      isLocalDevelopmentRuntime() &&
+      /^https?:\/\/(www\.)?yike\.ng$/i.test(normalized)
+    ) {
+      const port = process.env.PORT?.trim() || "3000";
+      return `http://localhost:${port}`;
+    }
+    return normalized;
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    const port = process.env.PORT?.trim() || "3000";
+    return `http://localhost:${port}`;
+  }
+
+  const raw = "https://yike.ng";
   const withProtocol = raw.startsWith("http") ? raw : `https://${raw}`;
   return withProtocol.replace(/\/$/, "");
+}
+
+const PRODUCTION_HOST_PATTERN = /^https?:\/\/(www\.)?yike\.ng/i;
+
+/**
+ * Resolve an absolute URL for the current runtime.
+ * In local dev, production host env values fall back to the local origin + path.
+ */
+export function resolveAppAbsoluteUrlForRuntime(
+  siteBaseUrl: string,
+  configured: string | undefined,
+  defaultPath: string,
+  localDev: boolean,
+): string {
+  const base = siteBaseUrl.replace(/\/$/, "");
+  const path = defaultPath.startsWith("/") ? defaultPath : `/${defaultPath}`;
+
+  const trimmed = configured?.trim();
+  if (!trimmed) {
+    return `${base}${path}`;
+  }
+
+  const absolute = trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+  const withoutTrailing = absolute.replace(/\/$/, "");
+
+  if (localDev && PRODUCTION_HOST_PATTERN.test(withoutTrailing)) {
+    try {
+      const parsed = new URL(withoutTrailing);
+      return `${base}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+      return `${base}${path}`;
+    }
+  }
+
+  return withoutTrailing;
+}
+
+export function resolveAppAbsoluteUrl(
+  configured: string | undefined,
+  defaultPath: string,
+): string {
+  return resolveAppAbsoluteUrlForRuntime(
+    getSiteBaseUrl(),
+    configured,
+    defaultPath,
+    isLocalDevelopmentRuntime(),
+  );
 }
 
 /**
  * Browser return URL after Paystack Checkout.
  */
 export function getPaymentCallbackUrl(): string {
-  const configured = process.env.PAYSTACK_CALLBACK_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  return `${getSiteBaseUrl()}/payments/callback`;
+  return resolveAppAbsoluteUrl(
+    process.env.PAYSTACK_CALLBACK_URL,
+    "/payments/callback",
+  );
 }
 
 /** Documented webhook URL for Paystack dashboard. */
 export function getPaymentWebhookUrl(): string {
-  const configured = process.env.PAYSTACK_WEBHOOK_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  return `${getSiteBaseUrl()}/api/webhooks/paystack`;
+  return resolveAppAbsoluteUrl(
+    process.env.PAYSTACK_WEBHOOK_URL,
+    "/api/webhooks/paystack",
+  );
 }
 
 export function getPaystackBaseUrl(): string {
@@ -45,6 +114,48 @@ export function getPaystackSecretKey(): string | null {
 
 export function getPaystackPublicKey(): string | null {
   return process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY?.trim() || null;
+}
+
+/** True when secret key is Paystack test mode (sk_test_*). */
+export function isPaystackTestSecretKey(secret?: string | null): boolean {
+  const key = (secret ?? getPaystackSecretKey())?.trim() ?? "";
+  return key.startsWith("sk_test_");
+}
+
+/** True when public key is Paystack test mode (pk_test_*). */
+export function isPaystackTestPublicKey(publicKey?: string | null): boolean {
+  const key = (publicKey ?? getPaystackPublicKey())?.trim() ?? "";
+  return key.startsWith("pk_test_");
+}
+
+export type PaystackTestModeCheck =
+  | { ok: true; mode: "test" }
+  | { ok: false; reason: string };
+
+/**
+ * Automated checkout / webhook replay tests must use Paystack test keys only.
+ * Never run scripted charges with sk_live_* unless explicitly overridden.
+ */
+export function requirePaystackTestModeForAutomation(): PaystackTestModeCheck {
+  const secret = getPaystackSecretKey();
+  if (!secret) {
+    return { ok: false, reason: "PAYSTACK_SECRET_KEY is not configured" };
+  }
+  if (secret.startsWith("sk_live_")) {
+    const override = process.env.YIKE_ALLOW_LIVE_PAYSTACK_IN_DEV?.trim().toLowerCase();
+    if (override === "1" || override === "true") {
+      return { ok: false, reason: "Live Paystack keys are blocked for automated checkout tests" };
+    }
+    return { ok: false, reason: "Live Paystack secret key — use sk_test_* for automation" };
+  }
+  if (!secret.startsWith("sk_test_")) {
+    return { ok: false, reason: "Unrecognized Paystack secret key prefix" };
+  }
+  const pub = getPaystackPublicKey();
+  if (pub && !pub.startsWith("pk_test_")) {
+    return { ok: false, reason: "Public key must be pk_test_* when running Paystack automation" };
+  }
+  return { ok: true, mode: "test" };
 }
 
 /* ============================================================================
@@ -73,15 +184,17 @@ export function getKorapayPublicKey(): string | null {
 }
 
 export function getKorapayCallbackUrl(): string {
-  const configured = process.env.KORAPAY_CALLBACK_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  return `${getSiteBaseUrl()}/payments/korapay/callback`;
+  return resolveAppAbsoluteUrl(
+    process.env.KORAPAY_CALLBACK_URL,
+    "/payments/korapay/callback",
+  );
 }
 
 export function getKorapayWebhookUrl(): string {
-  const configured = process.env.KORAPAY_WEBHOOK_URL?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  return `${getSiteBaseUrl()}/api/webhooks/korapay`;
+  return resolveAppAbsoluteUrl(
+    process.env.KORAPAY_WEBHOOK_URL,
+    "/api/webhooks/korapay",
+  );
 }
 
 /* ============================================================================

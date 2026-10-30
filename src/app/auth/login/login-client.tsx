@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthShell } from "@/components/auth/auth-shell";
 import {
@@ -11,18 +18,29 @@ import {
   type EmailOtpVerifyResponse,
 } from "@/components/auth/email-otp-modal";
 import { PasswordInput } from "@/components/auth/password-input";
-import { PinLoginPanel } from "@/components/auth/pin-login-panel";
+import {
+  PinLoginPanel,
+  type PinRequirePasswordPayload,
+} from "@/components/auth/pin-login-panel";
+import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
 import { PinSetupModal } from "@/components/auth/pin-setup-modal";
 import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import {
   clearQuickLoginUser,
   getQuickLoginUser,
   saveQuickLoginUser,
+  subscribeQuickLoginUser,
 } from "@/lib/auth/quick-login";
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
 import { getDefaultConsolePath, isStaffRole } from "@/lib/admin/roles";
-import { AUTH_USER_MESSAGES } from "@/constants/auth-messages";
-import { safeNextPath } from "@/lib/auth/safe-next-path";
+import { fetchAuthJson } from "@/lib/auth/auth-fetch";
+import { resolveLoginSurface } from "@/lib/auth/login-ui-state";
+import {
+  CONSUMER_AUTH_DEFAULT_NEXT,
+  safeConsumerAuthNext,
+  safeNextPath,
+} from "@/lib/auth/safe-next-path";
+import { resolveProfilePath } from "@/lib/account/account-home";
 import type { UserRole } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,13 +62,17 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
   const forcePassword = searchParams.get("mode") === "password" || searchParams.get("switch") === "1";
   const resetPin = searchParams.get("resetPin") === "1";
   const sessionReason = searchParams.get("reason");
-  const next = safeNextPath(nextParam, "/");
+  const next = safeConsumerAuthNext(nextParam, CONSUMER_AUTH_DEFAULT_NEXT);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
-  const [quickUser, setQuickUser] = useState<ReturnType<typeof getQuickLoginUser>>(null);
+  const quickUser = useSyncExternalStore(
+    subscribeQuickLoginUser,
+    getQuickLoginUser,
+    () => null
+  );
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
   const [emailOtpPurpose, setEmailOtpPurpose] = useState<EmailOtpPurpose>("email_verify");
@@ -58,13 +80,10 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
   const [pinSetupOpen, setPinSetupOpen] = useState(false);
   const [activeProfile, setActiveProfile] = useState<LoginProfile | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (forcePassword) {
       clearQuickLoginUser();
-      setQuickUser(null);
       setShowPasswordForm(true);
-    } else {
-      setQuickUser(getQuickLoginUser());
     }
   }, [forcePassword]);
 
@@ -75,6 +94,15 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
       setInfo(AUTH_USER_MESSAGES.newDevice);
     }
   }, [sessionReason]);
+
+  useEffect(() => {
+    if (!nextParam) return;
+    const safe = safeConsumerAuthNext(nextParam, CONSUMER_AUTH_DEFAULT_NEXT);
+    if (safe === nextParam) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("next", safe);
+    router.replace(`/auth/login?${params.toString()}`);
+  }, [nextParam, router]);
 
   async function loadCurrentProfile(): Promise<LoginProfile | null> {
     const supabase = createClient();
@@ -112,26 +140,52 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
     }
 
     setEmailVerifyOpen(false);
+    const fallbackPath = resolvePostLoginPath(profile, next);
     const resumed = await resumePendingAuthIntent(router, {
-      fallbackPath: next,
+      fallbackPath,
       emailVerified: true,
     });
     if (!resumed) router.refresh();
     return true;
   }
 
-  async function completeLogin(signedInIdentifier: string, signedInPassword: string) {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier: signedInIdentifier, password: signedInPassword }),
-    });
-    const data = await res.json().catch(() => ({}));
+  function resolvePostLoginPath(profile: LoginProfile, requestedNext: string): string {
+    const pathOnly = requestedNext.split("?")[0] ?? requestedNext;
+    if (pathOnly === "/" || pathOnly === "/profile") {
+      return resolveProfilePath(profile.role ? { role: profile.role } : null);
+    }
+    return requestedNext;
+  }
 
-    if (!res.ok) {
-      setError(data.error ?? AUTH_USER_MESSAGES.invalidLogin);
+  async function completeLogin(signedInIdentifier: string, signedInPassword: string) {
+    const result = await fetchAuthJson<{
+      error?: string;
+      profile?: LoginProfile;
+      needsEmailVerify?: boolean;
+      needsLoginOtp?: boolean;
+      requiresPinSetup?: boolean;
+    }>(
+      "/api/auth/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: signedInIdentifier, password: signedInPassword }),
+      },
+      20_000
+    );
+
+    if (!result.ok) {
+      const data = result.data ?? {};
+      setError(
+        data.error?.trim() ||
+          (result.kind === "network" || result.kind === "timeout"
+            ? result.message
+            : AUTH_USER_MESSAGES.invalidLogin)
+      );
       return false;
     }
+
+    const data = result.data;
 
     const profile = (data.profile ?? null) as LoginProfile | null;
     setActiveProfile(profile);
@@ -175,7 +229,30 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
     if (!ok && !emailVerifyOpen && !pinSetupOpen) return;
   }
 
-  const usePin = quickUser && !showPasswordForm && !forcePassword;
+  const loginSurface = resolveLoginSurface({
+    hasQuickUser: Boolean(quickUser),
+    showPasswordForm,
+    forcePassword,
+  });
+  const usePin = loginSurface === "pin";
+
+  const requirePasswordSignIn = useCallback((payload: PinRequirePasswordPayload) => {
+    setIdentifier((current) => payload.prefillEmail ?? quickUser?.email ?? current);
+    const showInfo =
+      payload.message &&
+      payload.message !== AUTH_USER_MESSAGES.newDevicePinBlocked;
+    setInfo(showInfo ? payload.message : "");
+    setError("");
+    setLoading(false);
+    setShowPasswordForm(true);
+  }, [quickUser?.email]);
+
+  const switchToPasswordForm = useCallback(() => {
+    setError("");
+    setLoading(false);
+    if (quickUser?.email) setIdentifier(quickUser.email);
+    setShowPasswordForm(true);
+  }, [quickUser?.email]);
 
   async function finishAfterOtp(data: EmailOtpVerifyResponse) {
     const otpProfile = (data.profile ?? null) as LoginProfile | null;
@@ -205,15 +282,18 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
     });
   }
 
-  const signupHref = `/auth/signup${next !== "/profile" ? `?next=${encodeURIComponent(next)}` : ""}`;
+  const signupHref =
+    next !== CONSUMER_AUTH_DEFAULT_NEXT
+      ? `/auth/signup?next=${encodeURIComponent(next)}`
+      : "/auth/signup";
 
   return (
     <>
       <AuthShell
         title={usePin ? undefined : "Welcome Back"}
-        subtitle={usePin ? undefined : "Continue where you left off."}
         compact
         centered
+        logoShowText={false}
         belowLegal={belowLegal}
         footer={
           !usePin ? (
@@ -235,10 +315,13 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
             nextPath={next}
             onSwitchAccount={() => {
               clearQuickLoginUser();
-              setQuickUser(null);
+              setError("");
+              setInfo("");
+              setLoading(false);
               setShowPasswordForm(true);
             }}
-            onUsePassword={() => setShowPasswordForm(true)}
+            onUsePassword={switchToPasswordForm}
+            onRequirePassword={requirePasswordSignIn}
           />
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -271,7 +354,6 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
                 revealLabel="PIN"
                 inputMode={/^\d*$/.test(password) ? "numeric" : "text"}
               />
-              <p className="text-xs text-muted">Use your 6-digit PIN to sign in.</p>
               <div className="pt-0.5 text-right">
                 <Link
                   href="/auth/forgot-password"
@@ -292,7 +374,12 @@ export function LoginClient({ belowLegal }: { belowLegal?: ReactNode }) {
             {quickUser && !forcePassword && (
               <button
                 type="button"
-                onClick={() => setShowPasswordForm(false)}
+                onClick={() => {
+                  setError("");
+                  setInfo("");
+                  setLoading(false);
+                  setShowPasswordForm(false);
+                }}
                 className="w-full text-sm font-semibold text-gold-dark hover:underline dark:text-gold"
               >
                 Sign in with PIN instead

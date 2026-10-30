@@ -6,6 +6,7 @@ import {
   logListingEvent,
   type ListingEventType,
 } from "@/lib/listing-analytics";
+import { isApprovedListingForPublicMetrics } from "@/lib/listing-analytics/public-listing-target";
 
 export const runtime = "nodejs";
 
@@ -35,6 +36,10 @@ export async function POST(request: Request) {
 
   if (!listingId || !LISTING_EVENT_TYPES.includes(eventType)) {
     return NextResponse.json({ error: "listingId and eventType required" }, { status: 400 });
+  }
+
+  if (!(await isApprovedListingForPublicMetrics(admin, listingId))) {
+    return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
   const user = await getSession();

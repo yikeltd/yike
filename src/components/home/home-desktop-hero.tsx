@@ -4,6 +4,7 @@ import Image from "next/image";
 import { BrowseListingsBlock } from "@/components/search/browse-listings-block";
 import type { BrowseSearchPayload } from "@/components/search/browse-listings-block";
 import { HomeDesktopVehicleSearch } from "@/components/home/home-desktop-vehicle-search";
+import { HomeDesktopElectronicsSearch } from "@/components/home/home-desktop-electronics-search";
 import { MarketplaceCategoryToggle } from "@/components/home/marketplace-category-toggle";
 import type { HomeMarketplaceCategory } from "@/lib/home/marketplace-category";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
@@ -30,6 +31,7 @@ type HomeDesktopHeroProps = {
   };
   onPropertySearch: (payload: BrowseSearchPayload) => void;
   onVehicleSearch: (payload: BrowseSearchPayload) => void;
+  onElectronicsSearch: (payload: BrowseSearchPayload) => void;
   className?: string;
 };
 
@@ -39,10 +41,19 @@ export function HomeDesktopHero({
   browseInitial,
   onPropertySearch,
   onVehicleSearch,
+  onElectronicsSearch,
   className,
 }: HomeDesktopHeroProps) {
   const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
-  const isVehicle = vehiclesOn && category === "vehicle";
+  const electronicsOn = isLaunchFeatureVisible("electronics_marketplace");
+  const showToggle = vehiclesOn || electronicsOn;
+
+  const panelKey =
+    category === "vehicle"
+      ? "vehicle"
+      : category === "electronics"
+        ? "electronics"
+        : "property";
 
   return (
     <section
@@ -67,17 +78,13 @@ export function HomeDesktopHero({
               className="object-contain object-center"
               sizes="(min-width: 1280px) 1280px, (min-width: 1024px) calc(100vw - 3rem), 100vw"
             />
-            {/* Light bottom wash only under the control strip */}
             <div className="absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-[#1a1208]/75 via-[#1a1208]/25 to-transparent" />
           </div>
 
-          {/*
-            Pin controls to the bottom edge so SUV / truck stay visible above.
-          */}
           <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-2.5 pt-0 xl:px-8 xl:pb-3">
             <div id="home-desktop-search" className="space-y-2">
-              {vehiclesOn ? (
-                <div className="w-full max-w-[22rem]">
+              {showToggle ? (
+                <div className="w-full max-w-md">
                   <MarketplaceCategoryToggle
                     category={category}
                     onChange={onCategoryChange}
@@ -87,11 +94,8 @@ export function HomeDesktopHero({
                 </div>
               ) : null}
 
-              <div
-                key={isVehicle ? "vehicle-panel" : "property-panel"}
-                className="animate-fade-up"
-              >
-                {isVehicle ? (
+              <div key={panelKey} className="animate-fade-up">
+                {category === "vehicle" && vehiclesOn ? (
                   <HomeDesktopVehicleSearch
                     key={`vehicle-${browseInitial.state}-${browseInitial.city}`}
                     initial={{
@@ -100,6 +104,16 @@ export function HomeDesktopHero({
                       budgetValue: browseInitial.budgetValue,
                     }}
                     onSearch={onVehicleSearch}
+                  />
+                ) : category === "electronics" && electronicsOn ? (
+                  <HomeDesktopElectronicsSearch
+                    key={`electronics-${browseInitial.state}-${browseInitial.city}`}
+                    initial={{
+                      state: browseInitial.state,
+                      city: browseInitial.city,
+                      budgetValue: browseInitial.budgetValue,
+                    }}
+                    onSearch={onElectronicsSearch}
                   />
                 ) : (
                   <BrowseListingsBlock

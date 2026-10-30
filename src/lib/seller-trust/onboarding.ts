@@ -56,13 +56,13 @@ export function mustCompleteSellerVerification(
 }
 
 export const SELLER_VERIFY_PATH = "/agent/verify";
-export const SELLER_CHOOSE_LISTING_PATH = "/agent/listings/choose";
+export const SELLER_CHOOSE_LISTING_PATH = "/agent/listings/new";
 
 export type SellerTrustProgressStep =
   | "email"
   | "phone"
   | "seller_profile"
-  | "manual_review";
+  | "seller_review";
 
 export type SellerTrustProgressItem = {
   id: SellerTrustProgressStep;
@@ -90,7 +90,7 @@ export function buildSellerTrustProgress(
   if (!emailDone) current = "email";
   else if (!phoneDone) current = "phone";
   else if (!profileDone) current = "seller_profile";
-  else current = "manual_review";
+  else current = "seller_review";
 
   return [
     {
@@ -112,10 +112,12 @@ export function buildSellerTrustProgress(
       current: current === "seller_profile",
     },
     {
-      id: "manual_review",
-      label: "Manual Review",
+      id: "seller_review",
+      label: reviewDone ? "Verified" : "Checking your details",
       done: reviewDone,
-      current: current === "manual_review" || (profileDone && reviewPending && !reviewDone),
+      current:
+        current === "seller_review" ||
+        (profileDone && reviewPending && !reviewDone),
     },
   ];
 }

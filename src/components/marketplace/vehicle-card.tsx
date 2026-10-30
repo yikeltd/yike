@@ -4,9 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import type { Property } from "@/types/database";
-import { listingPath } from "@/lib/marketplace/listing-path";
+import { persistBrowseReturn } from "@/lib/marketplace/browse-navigation";
+import { useMarketplaceBrowseReturn } from "@/hooks/use-marketplace-browse-return";
 import { ListingSaveButton } from "@/components/marketplace/listing-save-button";
 import { ListingDistanceLabel } from "@/components/marketplace/listing-distance-label";
+import { YIKE_LISTING_CARD } from "@/lib/design/yike-classes";
 import { BROWSE_THUMB_ASPECT } from "@/lib/marketplace/browse-grid";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { cn, isVerifiedAgent } from "@/lib/utils";
@@ -106,7 +108,8 @@ export function VehicleCard({
   onToggleCompare?: (vehicle: Property) => void;
   isCompared?: boolean;
 }) {
-  const href = listingPath(vehicle);
+  const { browseReturn, listingHref } = useMarketplaceBrowseReturn();
+  const href = listingHref(vehicle);
   const img = vehicle.media_urls?.[0];
   const placement = resolvePlacementKind(vehicle);
   const isBrowse = variant === "browse";
@@ -120,6 +123,10 @@ export function VehicleCard({
     (vehicle.agent ? isVerifiedAgent(vehicle.agent) : false);
   const attrs = buildVehicleAttrs(vehicle);
   const [quickPreviewOpen, setQuickPreviewOpen] = useState(false);
+
+  function handleListingLinkClick() {
+    persistBrowseReturn(browseReturn);
+  }
 
   function openPreview(e: React.MouseEvent) {
     e.preventDefault();
@@ -135,12 +142,13 @@ export function VehicleCard({
 
   return (
     <>
-      <article
-        className={cn(
-          "group card-lift relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-elevated shadow-card ring-1 ring-black/[0.04] dark:ring-white/[0.08]"
-        )}
-      >
-        <Link href={href} prefetch={!isDemo} className="block">
+      <article className={YIKE_LISTING_CARD}>
+        <Link
+          href={href}
+          prefetch={!isDemo}
+          className="block"
+          onClick={handleListingLinkClick}
+        >
           <div
             className={cn(
               "listing-thumb relative overflow-hidden rounded-[1.25rem] bg-navy/5",
@@ -206,19 +214,31 @@ export function VehicleCard({
             <Eye className="h-3.5 w-3.5 text-navy/80" />
           </button>
 
-          {!isDemo && (
-            <div className="pointer-events-auto">
-              <ListingSaveButton
-                listingId={vehicle.id}
-                compact
-                className="!h-8 !w-8 !bg-white/95 !text-navy shadow-sm backdrop-blur-sm"
-              />
-            </div>
-          )}
+          {!isDemo ? (
+            <ListingSaveButton
+              listingId={vehicle.id}
+              variant="card-overlay"
+              redirectPath={href}
+              analytics={{
+                source: "card",
+                city: vehicle.city,
+                area: vehicle.area,
+                listingType: vehicle.listing_type,
+                propertyType: vehicle.property_type,
+              }}
+              sellerId={vehicle.agent_id}
+              listingTitle={vehicle.title}
+            />
+          ) : null}
         </div>
 
         <div className="flex flex-1 flex-col justify-between p-2.5 sm:p-3">
-          <Link href={href} prefetch={!isDemo} className="block min-w-0 space-y-1">
+          <Link
+            href={href}
+            prefetch={!isDemo}
+            className="block min-w-0 space-y-1"
+            onClick={handleListingLinkClick}
+          >
             <p className="text-sm font-black tabular-nums leading-tight tracking-tight text-foreground sm:text-base">
               {formatNaira(Number(vehicle.price))}
             </p>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAuth, getOrCreateOwnProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { BasicProfileForm } from "@/components/agent/basic-profile-form";
+import { UsernameSettingsClient } from "@/components/profile/username-settings-client";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { ChevronLeft } from "lucide-react";
 
@@ -54,6 +55,13 @@ export default async function EditProfilePage() {
             Tap the photo to upload. A clear headshot helps buyers trust you.
           </p>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-navy/45">
+          Username
+        </p>
+        <UsernameSettingsClient />
       </section>
 
       <section className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">

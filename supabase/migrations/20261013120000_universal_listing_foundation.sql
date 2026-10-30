@@ -23,14 +23,21 @@ ALTER TABLE public.properties
   ADD COLUMN IF NOT EXISTS condition TEXT;
 
 -- Backfill condition from vehicle_condition where vehicle_condition is set,
--- safely mapping legacy vehicle values ('new' -> 'brand_new', 'certified' -> 'refurbished')
+-- safely mapping legacy vehicle values ('new' -> 'brand_new', 'certified' -> 'refurbished').
+-- Skip VEHICLE rows with property_type set: updating them would re-validate
+-- properties_vehicle_core_fields_check (NOT VALID) and fail on legacy UAT rows.
 UPDATE public.properties
 SET condition = CASE
   WHEN vehicle_condition = 'new' THEN 'brand_new'
   WHEN vehicle_condition = 'certified' THEN 'refurbished'
   ELSE vehicle_condition
 END
-WHERE condition IS NULL AND vehicle_condition IS NOT NULL;
+WHERE condition IS NULL
+  AND vehicle_condition IS NOT NULL
+  AND (
+    asset_type IS DISTINCT FROM 'VEHICLE'
+    OR property_type IS NULL
+  );
 
 -- Validate condition values (idempotent, forward-only)
 ALTER TABLE public.properties
@@ -112,7 +119,6 @@ SELECT
       ELSE p.vehicle_condition
     END
   ) AS condition,
-  p.vehicle_condition,
   CASE
     WHEN p.is_verified_listing THEN 'verified'
     ELSE 'unverified'
@@ -144,7 +150,8 @@ SELECT
   p.slug,
   p.expires_at,
   p.created_at,
-  p.updated_at
+  p.updated_at,
+  p.vehicle_condition
 FROM public.properties p;
 
 GRANT SELECT ON public.listings TO anon, authenticated, service_role;
@@ -211,17 +218,22 @@ BEGIN
     RAISE EXCEPTION 'Your account is under review. Contact Yike to verify or restore posting.';
   END IF;
 
-  -- Staff / admin bypass
+  -- Staff / admin bypass (unchanged from live enforcement)
   IF prof.role IN ('admin', 'super_admin') THEN
     RETURN NEW;
   END IF;
 
-  -- Developer subscription plan bypass (unlimited capacity)
+  -- Only agent-capable seller roles may publish (preserves live gate; cap applies below)
+  IF prof.role NOT IN ('agent_unverified', 'agent_verified', 'agent') THEN
+    RAISE EXCEPTION 'Only agents can create listings';
+  END IF;
+
+  -- Developer subscription plan bypass (unlimited capacity — unchanged from live)
   IF prof.subscription_plan_code = 'developer' THEN
     RETURN NEW;
   END IF;
 
-  -- Determine effective cap: custom profile limit if set, otherwise universal default of 3
+  -- Custom profile cap, else universal 3 active listings across categories (replaces live default of 5)
   IF prof.listing_limit IS NOT NULL AND prof.listing_limit > 0 THEN
     cap := prof.listing_limit;
   ELSE

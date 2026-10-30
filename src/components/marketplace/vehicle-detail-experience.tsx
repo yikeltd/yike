@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { MarketplaceBackButton } from "@/components/marketplace/marketplace-back-button";
 import {
-  ChevronLeft,
   MapPin,
   Car,
   ShieldCheck,
@@ -21,7 +19,6 @@ import {
   Settings2,
   Calculator,
   Lock,
-  MessageCircle,
   TrendingUp,
   Award,
   Wrench,
@@ -40,10 +37,20 @@ import { ShareButton } from "@/components/property/listing-share-menu";
 import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import { VehicleTrustIndicators } from "./vehicle-trust-indicators";
 import { VehicleGalleryModal } from "./vehicle-gallery-modal";
-import { BookVehicleInspectionModal } from "./book-vehicle-inspection-modal";
 import { PropertyCard } from "@/components/property/property-card";
-import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
-import { useAuth } from "@/components/auth/auth-provider";
+import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
+import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
+import { listingContactContextFromListing } from "@/lib/marketplace/listing-inquiry-message";
+import {
+  formatListingPublicLocation,
+  ListingDetailLocationSection,
+} from "@/components/marketplace/listing-detail-location-section";
+import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
+import { ListingDetailSpecificationsSection } from "@/components/marketplace/listing-detail-specifications-grid";
+import {
+  isVehicleFinanceEstimatorUiVisible,
+  isVehicleMechanicInspectionUiVisible,
+} from "@/lib/marketplace/vehicle-detail-surfaces";
 
 function formatNaira(n: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -57,44 +64,47 @@ export function VehicleDetailExperience({
   vehicle,
   similarVehicles = [],
   ownerBanner,
+  browseReturnParam,
 }: {
   vehicle: Property;
   similarVehicles?: Property[];
   ownerBanner?: React.ReactNode;
+  browseReturnParam?: string | null;
 }) {
-  const router = useRouter();
-  const { guardAction } = useAuth();
   const photos = vehicle.media_urls || [];
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [fullscreenGalleryOpen, setFullscreenGalleryOpen] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [inspectionModalMode, setInspectionModalMode] = useState<"inspection" | "test_drive" | null>(null);
-  const [calculatorOpen, setCalculatorOpen] = useState(false);
-  const [chatLoading, setChatLoading] = useState(false);
+  const showMechanicInspection = isVehicleMechanicInspectionUiVisible();
+  const showFinanceEstimator = isVehicleFinanceEstimatorUiVisible();
 
-  // Automotive Finance Estimator state
   const vehiclePrice = Number(vehicle.price);
-  const [downPaymentPct, setDownPaymentPct] = useState(30); // 30% down
-  const [loanMonths, setLoanMonths] = useState(24); // 24 months duration
+  const [downPaymentPct, setDownPaymentPct] = useState(30);
+  const [loanMonths, setLoanMonths] = useState(24);
 
   const downPaymentAmount = Math.round(vehiclePrice * (downPaymentPct / 100));
   const loanPrincipal = vehiclePrice - downPaymentAmount;
-  const estimatedInterestRate = 0.18; // ~18% annual auto loan rate estimate
-  const totalLoanWithInterest = loanPrincipal * (1 + (estimatedInterestRate * (loanMonths / 12)));
+  const estimatedInterestRate = 0.18;
+  const totalLoanWithInterest =
+    loanPrincipal * (1 + estimatedInterestRate * (loanMonths / 12));
   const monthlyRepayment = Math.round(totalLoanWithInterest / loanMonths);
 
   const agent = vehicle.agent;
+  const sellerId = agent?.id ?? vehicle.agent_id ?? null;
   const verified =
     vehicle.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
 
   const isDealer = agent?.account_type === "dealer" || Boolean(agent?.company_name);
   const sellerName = agent?.company_name || agent?.full_name || "Verified Automotive Dealer";
   const sellerAvatar = agent?.avatar_url;
+  const sellerIdentity = sellerContactCardFromListing(vehicle, "VEHICLE");
 
-  const cleanLocation = [vehicle.area, vehicle.city, vehicle.state]
-    .filter(Boolean)
-    .join(", ");
+  const cleanLocation = formatListingPublicLocation({
+    area: vehicle.area,
+    city: vehicle.city,
+    state: vehicle.state,
+  });
 
   const shareUrl = listingAbsoluteUrl(vehicle);
   const mainPhoto =
@@ -129,60 +139,17 @@ export function VehicleDetailExperience({
     { system: "Chassis & Flood Check", status: "PASSED", note: "Zero frame damage or saltwater rust" },
   ];
 
-  async function handleWhatsAppLead() {
-    if (!agent?.id) return;
-    setChatLoading(true);
-    const href = typeof window !== "undefined" ? window.location.pathname : `/vehicles/${vehicle.id}`;
-    const result = await trackLeadAndRedirect({
-      listingId: vehicle.id,
-      agentId: agent.id,
-      leadType: "whatsapp",
-      sourcePage: href,
-      placement: "detail",
-      agentName: sellerName,
-      title: vehicle.title,
-      area: vehicle.area,
-      city: vehicle.city,
-      price: Number(vehicle.price),
-      paymentPeriod: vehicle.payment_period || "total",
-      listingType: vehicle.listing_type || "sale",
-      bedrooms: vehicle.bedrooms,
-      propertyType: vehicle.auto_category,
-      whatsapp: agent.whatsapp,
-      phone: agent.phone,
-    });
-    setChatLoading(false);
-    if (result.ok && result.redirectUrl) {
-      openWhatsAppLead(result);
-    }
-  }
-
-  function onChatClick(e: React.MouseEvent) {
-    e.preventDefault();
-    guardAction(
-      {
-        type: "whatsapp",
-        listingId: vehicle.id,
-        redirectPath: `/vehicles/${vehicle.id}`,
-      },
-      () => void handleWhatsAppLead()
-    );
-  }
-
   return (
-    <div className="min-h-[100dvh] bg-[#f7f9fc] dark:bg-[#021433] text-navy dark:text-white pb-32 lg:pb-12 select-none">
+    <div className="yike-detail-canvas dark:bg-[#021433] text-navy dark:text-white pb-10 lg:pb-12 select-none">
       {ownerBanner}
 
       {/* TOP HEADER BAR */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-navy/10 dark:border-white/10 bg-[#031B4E] px-4 py-3 text-white shadow-md">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all active:scale-95 hover:bg-white/20"
-          aria-label="Go back"
-        >
-          <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
-        </button>
+      <header className="yike-detail-header sticky top-0 z-40 flex items-center justify-between px-4 py-3 text-white">
+        <MarketplaceBackButton
+          variant="overlay"
+          fallback="/vehicles"
+          browseReturnParam={browseReturnParam}
+        />
 
         <h1 className="text-xs font-black uppercase tracking-wider text-gold flex items-center gap-1.5">
           <Car className="h-4 w-4 text-gold" />
@@ -205,10 +172,7 @@ export function VehicleDetailExperience({
 
       {/* MAIN CONTAINER: 2-COLUMN ON DESKTOP */}
       <div className="mx-auto max-w-6xl px-3.5 pt-4 lg:px-6 space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* LEFT MAIN COLUMN */}
-          <div className="lg:col-span-8 space-y-5">
+        <div className="space-y-5">
             
             {/* 1. HERO GALLERY */}
             <section className="relative w-full aspect-[4/3] sm:aspect-[16/10] rounded-3xl bg-navy overflow-hidden shadow-2xl group border border-navy/10 dark:border-white/10">
@@ -270,8 +234,18 @@ export function VehicleDetailExperience({
               </div>
             )}
 
+            {sellerIdentity ? (
+              <ListingDetailGalleryContact
+                listingId={sellerIdentity.listingId}
+                assetType={sellerIdentity.assetType}
+                sellerId={sellerIdentity.sellerId}
+                sellerName={sellerIdentity.sellerName}
+                contact={listingContactContextFromListing(vehicle, "VEHICLE")}
+              />
+            ) : null}
+
             {/* 2. SUMMARY & HIGHLIGHTS */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            <div className="yike-panel space-y-4 p-5 dark:bg-navy">
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-navy dark:text-white leading-snug max-w-xl">
@@ -286,14 +260,15 @@ export function VehicleDetailExperience({
                   <p className="text-2xl sm:text-3xl font-black text-gold-dark dark:text-gold tracking-tight">
                     {formatNaira(vehiclePrice)}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setCalculatorOpen((v) => !v)}
-                    className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/10 px-3 py-1 text-[11px] font-bold text-navy/70 dark:text-white/70 hover:bg-slate-200"
-                  >
-                    <Calculator className="h-3.5 w-3.5 text-gold-dark dark:text-gold" />
-                    <span>Est. {formatNaira(monthlyRepayment)}/mo</span>
-                  </button>
+                  {showFinanceEstimator ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/10 px-3 py-1 text-[11px] font-bold text-navy/70 dark:text-white/70 hover:bg-slate-200"
+                    >
+                      <Calculator className="h-3.5 w-3.5 text-gold-dark dark:text-gold" />
+                      <span>Est. {formatNaira(monthlyRepayment)}/mo</span>
+                    </button>
+                  ) : null}
                 </div>
 
                 <p className="flex items-center gap-1.5 text-xs font-semibold text-navy/60 dark:text-white/60 pt-2">
@@ -309,7 +284,7 @@ export function VehicleDetailExperience({
                   return (
                     <div
                       key={i}
-                      className="flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10"
+                      className="info-tile flex flex-col p-3 dark:bg-white/5"
                     >
                       <span className="flex items-center gap-1 text-[10px] font-semibold text-navy/50 dark:text-white/50">
                         <Icon className="h-3 w-3 text-gold" />
@@ -328,7 +303,7 @@ export function VehicleDetailExperience({
             </div>
 
             {/* 3. VIN VERIFICATION & HISTORY REPORT BLOCK */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            <div className="yike-panel space-y-4 p-5 dark:bg-navy">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70 flex items-center gap-1.5">
                   <FileCheck className="h-4 w-4 text-gold" />
@@ -363,8 +338,8 @@ export function VehicleDetailExperience({
               </div>
             </div>
 
-            {/* 4. 150-POINT INSPECTION BREAKDOWN */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            {showMechanicInspection ? (
+            <div className="yike-panel space-y-4 p-5 dark:bg-navy">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70 flex items-center gap-1.5">
@@ -375,13 +350,6 @@ export function VehicleDetailExperience({
                     Audited walkthrough by Yike Accredited Auto Technicians
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setInspectionModalMode("inspection")}
-                  className="rounded-xl bg-[#031B4E] text-white dark:bg-gold dark:text-navy px-3 py-1.5 text-xs font-bold hover:opacity-90"
-                >
-                  Book Walkthrough
-                </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -399,9 +367,10 @@ export function VehicleDetailExperience({
                 ))}
               </div>
             </div>
+            ) : null}
 
-            {/* 5. AUTOMOTIVE FINANCE ESTIMATOR */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            {showFinanceEstimator ? (
+            <div className="yike-panel space-y-4 p-5 dark:bg-navy">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-gold">
@@ -477,31 +446,15 @@ export function VehicleDetailExperience({
                 </div>
               </div>
             </div>
+            ) : null}
 
-            {/* 6. FULL SPECS ACCORDION */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70">
-                Detailed Vehicle Specifications
-              </h3>
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
-                {vehicleSpecs.map((spec, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10"
-                  >
-                    <span className="text-[10px] font-semibold text-navy/50 dark:text-white/50">
-                      {spec.label}
-                    </span>
-                    <span className="text-xs font-black text-navy dark:text-white mt-0.5 truncate">
-                      {spec.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ListingDetailSpecificationsSection
+              title="Detailed Vehicle Specifications"
+              items={vehicleSpecs}
+            />
 
             {/* 7. DESCRIPTION */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-2">
+            <div className="yike-panel space-y-2 p-5 dark:bg-navy">
               <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70">
                 Dealer Remarks & Description
               </h3>
@@ -523,6 +476,14 @@ export function VehicleDetailExperience({
               </button>
             </div>
 
+            {cleanLocation ? (
+              <ListingDetailLocationSection locationLabel={cleanLocation} />
+            ) : null}
+
+            {sellerIdentity ? (
+              <ListingDetailSellerSection identity={sellerIdentity} />
+            ) : null}
+
             {/* 8. SIMILAR VEHICLES */}
             {similarVehicles.length > 0 && (
               <div className="space-y-3 pt-2">
@@ -537,91 +498,6 @@ export function VehicleDetailExperience({
               </div>
             )}
 
-          </div>
-
-          {/* RIGHT COLUMN (DESKTOP STICKY DEALER SIDEBAR) */}
-          <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4 text-navy dark:text-white">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-[#031B4E] text-white flex items-center justify-center border-2 border-gold/40 shadow-sm">
-                    {sellerAvatar ? (
-                      <Image src={sellerAvatar} alt={sellerName} fill className="object-cover" />
-                    ) : (
-                      <User className="h-7 w-7 text-white" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-navy dark:text-white">{sellerName}</h3>
-                    <p className="text-xs font-semibold text-navy/60 dark:text-white/60 mt-0.5">
-                      {isDealer ? "Verified Auto Showroom" : "Verified Vehicle Owner"}
-                    </p>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-gold-dark dark:text-gold mt-1">
-                      <Award className="h-3.5 w-3.5" />
-                      <span>4.9 ★ Dealer Score</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2">
-                <button
-                  type="button"
-                  onClick={onChatClick}
-                  disabled={chatLoading}
-                  className="pressable w-full flex items-center justify-center gap-2 rounded-2xl bg-[#031B4E] dark:bg-gold py-3.5 text-xs font-black text-white dark:text-navy hover:bg-navy/90 shadow-md disabled:opacity-50"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span>{chatLoading ? "OPENING..." : "WHATSAPP DEALER"}</span>
-                </button>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setInspectionModalMode("test_drive")}
-                    className="pressable flex items-center justify-center gap-1.5 rounded-2xl border-2 border-[#031B4E] dark:border-white/20 bg-white dark:bg-transparent py-3 text-xs font-black text-navy dark:text-white hover:bg-slate-50"
-                  >
-                    <Car className="h-3.5 w-3.5 text-gold" />
-                    <span>Test Drive</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setInspectionModalMode("inspection")}
-                    className="pressable flex items-center justify-center gap-1.5 rounded-2xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 py-3 text-xs font-black text-amber-900 dark:text-amber-300 hover:bg-amber-100"
-                  >
-                    <Wrench className="h-3.5 w-3.5 text-gold-dark dark:text-gold" />
-                    <span>Inspection</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* STICKY MOBILE ACTION BAR */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy/95 border-t border-navy/10 dark:border-white/10 backdrop-blur-md p-3 shadow-2xl">
-        <div className="mx-auto max-w-xl grid grid-cols-2 gap-2.5">
-          <button
-            type="button"
-            onClick={onChatClick}
-            disabled={chatLoading}
-            className="pressable flex items-center justify-center gap-2 rounded-2xl border-2 border-[#031B4E] dark:border-gold bg-white dark:bg-transparent py-3 text-xs font-black text-navy dark:text-gold hover:bg-slate-50 shadow-sm disabled:opacity-50"
-          >
-            <MessageCircle className="h-4 w-4 text-navy dark:text-gold" />
-            <span>WHATSAPP DEALER</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setInspectionModalMode("test_drive")}
-            className="pressable flex items-center justify-center gap-2 rounded-2xl bg-gold py-3 text-xs font-black text-navy hover:bg-gold-light shadow-md"
-          >
-            <Car className="h-4 w-4 text-navy" />
-            <span>BOOK TEST DRIVE</span>
-          </button>
         </div>
       </div>
 
@@ -635,14 +511,6 @@ export function VehicleDetailExperience({
         />
       )}
 
-      {/* BOOKING MODAL */}
-      {inspectionModalMode && (
-        <BookVehicleInspectionModal
-          vehicle={vehicle}
-          mode={inspectionModalMode}
-          onClose={() => setInspectionModalMode(null)}
-        />
-      )}
     </div>
   );
 }

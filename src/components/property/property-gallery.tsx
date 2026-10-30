@@ -127,8 +127,8 @@ export function PropertyGallery({
       {listingId ? (
         <ListingSaveButton
           listingId={listingId}
-          compact
-          className="pressable !h-10 !w-10 rounded-full bg-elevated/90 shadow-float backdrop-blur-sm [&_svg]:!h-4 [&_svg]:!w-4"
+          variant="card-overlay"
+          className="bg-elevated/90 shadow-float"
         />
       ) : null}
       {shareUrl ? (

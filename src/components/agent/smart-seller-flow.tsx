@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { Logo } from "@/components/brand/logo";
 import { useRouter } from "next/navigation";
+import { CONSUMER_ROUTES } from "@/lib/navigation/consumer-routes";
 import {
   ChevronLeft,
   ChevronDown,
@@ -300,7 +302,9 @@ export function SmartSellerFlow() {
             onClick={() => {
               if (flowState === "preview") setFlowState("details");
               else if (flowState === "under_review") setFlowState("details");
-              else router.back();
+              else {
+                router.push(CONSUMER_ROUTES.agentListings);
+              }
             }}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all active:scale-95"
             aria-label="Go back"
@@ -308,13 +312,7 @@ export function SmartSellerFlow() {
             <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
           </button>
 
-          <Image
-            src="/images/logo.webp"
-            alt="Yike Logo"
-            width={28}
-            height={28}
-            className="h-7 w-7 object-contain drop-shadow-sm"
-          />
+          <Logo href={null} showText={false} size={28} priority={false} className="drop-shadow-sm" />
         </div>
 
         <h1 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">

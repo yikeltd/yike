@@ -14,11 +14,13 @@ import { GuestFavoriteSync } from "@/components/retention/guest-favorite-sync";
 import { UserActivitySync } from "@/components/retention/user-activity-sync";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { PendingIntentHandler } from "@/components/auth/pending-intent-handler";
+import { IncomingVideoCallHost } from "@/components/marketplace/incoming-video-call-host";
 import {
   bootSplashArmScript,
   bootSplashCriticalCss,
   bootSplashHideScript,
   twaSwCleanupScript,
+  devSwCleanupScript,
 } from "@/lib/app-mode-inline";
 
 const themeInitScript = `(function(){try{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');localStorage.setItem('yike-theme','light');}catch(e){}})();`;
@@ -76,29 +78,16 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: SITE_NAME,
   },
+  /** Tab favicon: src/app/favicon.ico + icon.png (file metadata). Supplementary PNGs for PWA/clients. */
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/images/logo.webp", sizes: "512x512", type: "image/webp" },
-      { url: "/images/logo-sm.webp", sizes: "192x192", type: "image/webp" },
-      { url: "/icons/icon-16.png", sizes: "16x16", type: "image/png" },
-      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: brand.favicon32, sizes: "32x32", type: "image/png" },
+      { url: brand.favicon16, sizes: "16x16", type: "image/png" },
       { url: "/icons/icon-48.png", sizes: "48x48", type: "image/png" },
-      {
-        url: "/icons/android-chrome-192.png",
-        sizes: "192x192",
-        type: "image/png",
-      },
-      {
-        url: "/icons/android-chrome-512.png",
-        sizes: "512x512",
-        type: "image/png",
-      },
+      { url: "/icons/android-chrome-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/android-chrome-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-    shortcut: "/favicon.ico",
+    apple: [{ url: brand.appleTouchIcon, sizes: "180x180", type: "image/png" }],
   },
   formatDetection: { telephone: true },
   openGraph: {
@@ -159,7 +148,6 @@ export default function RootLayout({
             "02902039559EB4CCB652E858CBFF27B8"
           }
         />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="mobile-web-app-capable" content="yes" />
         {supabaseOrigin ? (
           <>
@@ -184,6 +172,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: bootSplashArmScript }} />
         <script dangerouslySetInnerHTML={{ __html: twaSwCleanupScript }} />
+        {process.env.NODE_ENV === "development" ? (
+          <script dangerouslySetInnerHTML={{ __html: devSwCleanupScript }} />
+        ) : null}
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased transition-colors duration-300">
         <div id="yike-boot-splash" aria-hidden="true" suppressHydrationWarning>
@@ -228,10 +219,13 @@ export default function RootLayout({
             <Suspense fallback={null}>
               <AnalyticsProvider />
             </Suspense>
-            <ScrollRetention />
+            <Suspense fallback={null}>
+              <ScrollRetention />
+            </Suspense>
             <GuestFavoriteSync />
             <UserActivitySync />
             <PendingIntentHandler />
+            <IncomingVideoCallHost />
           </AuthProvider>
           <PwaRegister />
         </ThemeProvider>

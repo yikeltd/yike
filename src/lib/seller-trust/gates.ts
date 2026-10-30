@@ -18,7 +18,7 @@ export const SELLER_VERIFY_BEFORE_PUBLISH_MESSAGE =
   "Seller verification is required before this listing can go live.";
 
 export const SELLER_PENDING_MANUAL_MESSAGE =
-  "Your seller verification is under review. Listings stay in review until approved.";
+  "We're checking your seller details. You can draft listings; they'll go live after you're verified.";
 
 export type ListingCreateGateResult =
   | { ok: true }

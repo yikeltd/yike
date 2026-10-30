@@ -1,10 +1,12 @@
 import type { CatalogMap, CatalogProvider } from "./types";
 import { VEHICLE_CATALOGS } from "./vehicle";
 import { PROPERTY_CATALOGS } from "./property";
+import { ELECTRONICS_CATALOGS } from "./electronics";
 
 export const CATALOG_REGISTRY: CatalogMap = {
   ...VEHICLE_CATALOGS,
   ...PROPERTY_CATALOGS,
+  ...ELECTRONICS_CATALOGS,
 };
 
 export function getCatalog(id: string): CatalogProvider | undefined {

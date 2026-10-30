@@ -171,11 +171,13 @@ html.yike-web-mode #yike-boot-splash,
   --sand: #faf7f2;
   --warm-neutral: #f7f5f2;
 
-  --background: #ffffff;
+  /* Page canvas — warm ivory; content cards use --elevated white */
+  --background: var(--ivory);
   --foreground: #031b4e;
   --muted: #6b7c93;
   --surface: #f7f5f2;
   --elevated: #ffffff;
+  --focus-ring: color-mix(in srgb, var(--gold) 55%, var(--navy) 45%);
 
   --primary: var(--navy);
   --accent: var(--gold);
@@ -387,6 +389,128 @@ body {
 }
 .detail-band-stone {
   background: var(--warm-stone);
+}
+
+/* YDS — marketplace listing detail & consumer panels */
+.yike-detail-canvas {
+  min-height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.yike-panel {
+  border-radius: var(--radius-card);
+  background: var(--elevated);
+  border: 1px solid var(--border-premium);
+  box-shadow: var(--shadow-card);
+}
+
+/* Consumer browse grids — property, vehicle, electronics listing cards */
+.yike-listing-card {
+  border-radius: var(--radius-card);
+  background: var(--elevated);
+  border: 1px solid var(--border-premium);
+  box-shadow: var(--shadow-card);
+}
+
+.dark .yike-listing-card {
+  border-color: var(--border-glass);
+}
+
+/* Hero / category tiles on home and seller choose flows */
+.yike-marketplace-tile {
+  border-radius: var(--radius-card);
+  background: var(--elevated);
+  border: 1px solid var(--border-premium);
+  box-shadow: var(--shadow-card);
+  transition:
+    border-color var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .yike-marketplace-tile:hover {
+    border-color: color-mix(in srgb, var(--gold) 40%, var(--border-premium));
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+/* Warm ivory canvas for home + vertical browse/search hubs */
+.home-canvas,
+.search-hub-canvas,
+.yike-browse-canvas {
+  min-height: 100dvh;
+  background: var(--background);
+}
+
+/* Listing wizard + catalogue selectors */
+.yike-field-control {
+  border-radius: var(--radius-tile);
+  border: 1px solid var(--border-premium);
+  background: var(--elevated);
+  color: var(--foreground);
+  outline: none;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.yike-field-control:focus,
+.yike-field-control:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 22%, transparent);
+}
+
+.yike-choice-chip {
+  border-radius: var(--radius-tile);
+  border: 1px solid var(--border-premium);
+  background: var(--elevated);
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+  font-weight: 700;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.yike-choice-chip--selected {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 15%, var(--elevated));
+  color: var(--foreground);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 28%, transparent);
+}
+
+.yike-section-heading {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foreground) 68%, transparent);
+}
+
+.yike-spec-cell {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-tile);
+  background: color-mix(in srgb, var(--navy) 4%, var(--elevated));
+  border: 1px solid var(--border-premium);
+}
+
+.dark .yike-spec-cell {
+  background: color-mix(in srgb, var(--elevated) 88%, var(--navy) 12%);
+  border-color: var(--border-glass);
+}
+
+.yike-detail-header {
+  background: var(--navy-dark);
+  color: #fff;
+  border-bottom: 1px solid color-mix(in srgb, var(--gold) 25%, transparent);
+  box-shadow: var(--shadow-cta);
+}
+
+.yike-prose-block {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
 }
 
 .shadow-hero {
@@ -1521,4 +1645,11 @@ html.yike-app-mode body {
 .swipe-card-active {
   box-shadow: 0 24px 64px rgb(0 0 0 / 35%);
   transform: translateZ(0);
+}
+
+/* Listing detail specifications — compact 2-column grid (fallback if utilities purge). */
+@media (min-width: 480px) {
+  .listing-detail-spec-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

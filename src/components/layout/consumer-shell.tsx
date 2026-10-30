@@ -10,14 +10,19 @@ import { DesktopWhatsappAdminButton } from "./desktop-whatsapp-admin-button";
 import { OfflineBanner } from "@/components/pwa/offline-banner";
 import { OfflineWarmCache } from "@/components/pwa/offline-warm-cache";
 import type { SiteBanner } from "@/types/database";
+import { HomeMarketplaceFilterProvider } from "@/lib/home/home-marketplace-filter-context";
 
 export function ConsumerShell({
   children,
-  mobileBanner,
+  mobileBanner: _mobileBanner,
+  showDesktopWhatsappFab = true,
 }: {
   children: React.ReactNode;
   mobileBanner?: SiteBanner | null;
+  /** Yike support WhatsApp — public home/browse only; off in agent/seller portal chrome. */
+  showDesktopWhatsappFab?: boolean;
 }) {
+  void _mobileBanner;
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isProfile = pathname === "/agent";
@@ -32,34 +37,37 @@ export function ConsumerShell({
 
   if (hideChrome) {
     return (
-      <>
+      <HomeMarketplaceFilterProvider>
         <OfflineBanner />
         <OfflineWarmCache />
         <main className="flex-1">{children}</main>
-      </>
+      </HomeMarketplaceFilterProvider>
     );
   }
 
-  /* Discover: immersive deck — no site headers, keep bottom nav */
+  /* Discover: immersive deck — desktop site header + mobile bottom nav */
   if (isDiscover) {
     return (
-      <>
+      <HomeMarketplaceFilterProvider>
         <OfflineBanner />
         <OfflineWarmCache />
+        <div className="hidden lg:block">
+          <HeaderDesktop />
+        </div>
         <main className="flex-1">{children}</main>
         <Suspense fallback={null}>
           <BottomNavMobile />
         </Suspense>
-      </>
+      </HomeMarketplaceFilterProvider>
     );
   }
 
   return (
-    <>
+    <HomeMarketplaceFilterProvider>
       <OfflineBanner />
       <OfflineWarmCache />
-      {!isHome && <HeaderDesktop />}
-      {!isHome && <HeaderMobile mobileBanner={mobileBanner} />}
+      {!isHome && !isProfile && <HeaderDesktop />}
+      <HeaderMobile />
       <main
         className={cn(
           "mx-auto w-full flex-1",
@@ -78,8 +86,8 @@ export function ConsumerShell({
       <Suspense fallback={null}>
         <BottomNavMobile />
       </Suspense>
-      <DesktopWhatsappAdminButton />
-    </>
+      {showDesktopWhatsappFab ? <DesktopWhatsappAdminButton /> : null}
+    </HomeMarketplaceFilterProvider>
   );
 }
 

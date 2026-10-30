@@ -16,7 +16,7 @@ export const MOCK_LISTINGS: Property[] = buildMockListings().map((p) => ({
 }));
 
 export function isDemoProperty(id: string) {
-  return id.startsWith("demo-");
+  return id.startsWith("demo-") || id.startsWith("s3000001-");
 }
 
 /** Sample / UI-fixture listing — admin-visible; never show "Sample" on public UI. */

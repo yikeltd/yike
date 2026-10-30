@@ -478,11 +478,21 @@ async function fulfillOrder(
     };
   }
 
-  if (
-    order.order_type === "escrow_hold" ||
-    order.order_type === "wallet_topup" ||
-    order.order_type === "listing_fee"
-  ) {
+  if (order.order_type === "wallet_topup") {
+    const { fulfillWalletTopupOrder } = await import(
+      "@/lib/payments/fulfillment/wallet-topup"
+    );
+    const result = await fulfillWalletTopupOrder(admin, order);
+    if (!result.ok) return { ok: false, error: result.error };
+
+    return {
+      ok: true,
+      order,
+      alreadyFulfilled: result.alreadyFulfilled,
+    };
+  }
+
+  if (order.order_type === "escrow_hold" || order.order_type === "listing_fee") {
     // Reserved purposes — mark paid without product activation until launched.
     return { ok: true, order, alreadyFulfilled: true };
   }

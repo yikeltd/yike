@@ -6,8 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeNigerianPhone, canRequestPhoneOtp } from "@/lib/phone";
 import { NIGERIAN_STATES } from "@/lib/constants";
 import { isBusinessAccount, isDeveloperAccount } from "@/lib/profile/basic-listing-profile";
-import { resetWhatsappVerificationOnNumberChange } from "@/lib/whatsapp-verification/service";
-import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
+import {
+  getSellerContactPhone,
+  resetPhoneVerificationOnNumberChange,
+} from "@/lib/phone-verification";
 
 export const runtime = "nodejs";
 
@@ -65,14 +67,10 @@ export async function POST(request: Request) {
   const residentialCity = String(body.residentialCity ?? "").trim();
   const residentialState = String(body.residentialState ?? "").trim();
 
-  if (!residentialAddress || !residentialCity || !residentialState) {
-    return NextResponse.json(
-      { error: "Complete all required profile fields." },
-      { status: 400 }
-    );
-  }
-
-  if (!(NIGERIAN_STATES as readonly string[]).includes(residentialState)) {
+  if (
+    residentialState &&
+    !(NIGERIAN_STATES as readonly string[]).includes(residentialState)
+  ) {
     return NextResponse.json({ error: "Select a valid Nigerian state." }, { status: 400 });
   }
 
@@ -110,12 +108,12 @@ export async function POST(request: Request) {
       company_name: companyName,
       full_name: contactName,
       ...(cacDocumentPath ? { cac_document_path: cacDocumentPath } : {}),
-      residential_address: residentialAddress,
+      residential_address: residentialAddress || null,
       residential_area: residentialArea || null,
-      residential_city: residentialCity,
-      residential_state: residentialState,
+      residential_city: residentialCity || null,
+      residential_state: residentialState || null,
       country: "Nigeria",
-      office_address: residentialAddress,
+      office_address: residentialAddress || null,
       phone,
       whatsapp: phone,
     };
@@ -133,20 +131,20 @@ export async function POST(request: Request) {
     fullUpdate = {
       full_name: fullName,
       date_of_birth: dateOfBirth,
-      residential_address: residentialAddress,
+      residential_address: residentialAddress || null,
       residential_area: residentialArea || null,
-      residential_city: residentialCity,
-      residential_state: residentialState,
+      residential_city: residentialCity || null,
+      residential_state: residentialState || null,
       country: "Nigeria",
-      office_address: residentialAddress,
+      office_address: residentialAddress || null,
       ...(phone ? { phone, whatsapp: phone } : {}),
     };
   }
 
   if (phone && existingProfile) {
-    const previous = getWhatsappNumber(existingProfile);
+    const previous = getSellerContactPhone(existingProfile);
     if (phone !== previous) {
-      await resetWhatsappVerificationOnNumberChange(admin, user.id, phone, previous);
+      await resetPhoneVerificationOnNumberChange(admin, user.id, phone, previous);
     }
   }
 

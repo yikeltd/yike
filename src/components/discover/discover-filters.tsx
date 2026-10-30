@@ -12,9 +12,16 @@ import {
   budgetParamsFromValue,
   encodeBudgetValue,
 } from "@/lib/budget-ranges";
-import { isLaunchFeatureVisible } from "@/lib/launch-mode";
+import {
+  getDiscoverCategoryOptions,
+  getDiscoverElectronicsSubOptions,
+} from "@/lib/discover/categories";
 import { cn } from "@/lib/utils";
-import type { DiscoverFilterState, DiscoverDeal } from "@/lib/discover/filters";
+import {
+  DEFAULT_DISCOVER_FILTERS,
+  type DiscoverFilterState,
+  type DiscoverDeal,
+} from "@/lib/discover/filters";
 
 type Props = {
   open: boolean;
@@ -31,7 +38,7 @@ const DEAL_OPTIONS: { value: DiscoverDeal; label: string }[] = [
 ];
 
 export function DiscoverFilters({ open, filters, onChange, onClose }: Props) {
-  const vehiclesOn = isLaunchFeatureVisible("vehicle_marketplace");
+  const categoryOptions = useMemo(() => getDiscoverCategoryOptions(), []);
   const stateOptions = useMemo(() => buildStateSelectOptions(), []);
   const cityOptions = useMemo(
     () => buildCitySelectOptions(filters.state || undefined),
@@ -49,6 +56,15 @@ export function DiscoverFilters({ open, filters, onChange, onClose }: Props) {
     filters.maxBudget != null
       ? encodeBudgetValue(null, filters.maxBudget)
       : "";
+
+  const electronicsSubs = useMemo(
+    () => getDiscoverElectronicsSubOptions(),
+    [],
+  );
+  const showPropertyDeal =
+    filters.category === "property" || filters.category === "all";
+  const showElectronicsTypes =
+    filters.category === "electronics" || Boolean(filters.electronicsSub);
 
   if (!open) return null;
 
@@ -78,46 +94,90 @@ export function DiscoverFilters({ open, filters, onChange, onClose }: Props) {
           </button>
         </div>
 
-        {vehiclesOn ? (
+        <div className="mb-4">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-navy/45">
+            Category
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {categoryOptions.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...filters,
+                    category: opt.id,
+                    electronicsSub:
+                      opt.id === "electronics" ? filters.electronicsSub : "",
+                    deal:
+                      opt.id === "vehicle" || opt.id === "electronics"
+                        ? ""
+                        : filters.deal,
+                  })
+                }
+                className={cn(
+                  "pressable min-h-[44px] rounded-xl text-sm font-bold",
+                  filters.category === opt.id &&
+                    !filters.electronicsSub
+                    ? "bg-navy text-white"
+                    : "bg-navy/[0.05] text-navy/70",
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {showElectronicsTypes && electronicsSubs.length > 0 ? (
           <div className="mb-4">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-navy/45">
-              Category
+              Electronics type
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  { value: "property", label: "Properties" },
-                  { value: "vehicle", label: "Vehicles" },
-                ] as const
-              ).map((opt) => (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({ ...filters, electronicsSub: "" })
+                }
+                className={cn(
+                  "pressable min-h-[36px] rounded-full px-3.5 py-2 text-xs font-bold",
+                  !filters.electronicsSub
+                    ? "bg-gold text-navy"
+                    : "bg-navy/[0.05] text-navy/65",
+                )}
+              >
+                All electronics
+              </button>
+              {electronicsSubs.map((sub) => (
                 <button
-                  key={opt.value}
+                  key={sub.id}
                   type="button"
                   onClick={() =>
                     onChange({
                       ...filters,
-                      category: opt.value,
-                      deal: opt.value === "vehicle" ? "" : filters.deal,
+                      category: "electronics",
+                      electronicsSub: sub.id,
                     })
                   }
                   className={cn(
-                    "pressable min-h-[44px] rounded-xl text-sm font-bold",
-                    filters.category === opt.value
-                      ? "bg-navy text-white"
-                      : "bg-navy/[0.05] text-navy/70",
+                    "pressable min-h-[36px] rounded-full px-3.5 py-2 text-xs font-bold",
+                    filters.electronicsSub === sub.id
+                      ? "bg-gold text-navy"
+                      : "bg-navy/[0.05] text-navy/65",
                   )}
                 >
-                  {opt.label}
+                  {sub.label}
                 </button>
               ))}
             </div>
           </div>
         ) : null}
 
-        {filters.category === "property" ? (
+        {showPropertyDeal ? (
           <div className="mb-4">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-navy/45">
-              Buy / Rent
+              Buy / Rent (properties)
             </p>
             <div className="flex flex-wrap gap-2">
               {DEAL_OPTIONS.map((opt) => (
@@ -203,6 +263,18 @@ export function DiscoverFilters({ open, filters, onChange, onClose }: Props) {
             )}
           >
             Verified only
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onChange({
+                ...DEFAULT_DISCOVER_FILTERS,
+                category: filters.category,
+              })
+            }
+            className="pressable rounded-full px-3.5 py-2 text-xs font-bold bg-navy/[0.05] text-navy/65"
+          >
+            Reset filters
           </button>
         </div>
 

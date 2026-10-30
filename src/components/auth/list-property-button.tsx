@@ -5,9 +5,9 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { canListProperties } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
+  buildSellerVerifyUrl,
   isSellerReadyToList,
   SELLER_CHOOSE_LISTING_PATH,
-  SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
 import { allowNetworkAction } from "@/lib/pwa/offline-ui";
 import { useOnlineStatus } from "@/hooks/use-online-status";
@@ -17,7 +17,7 @@ function sellerListDestination(profile: Profile | null | undefined) {
   if (profile && canListProperties(profile) && isSellerReadyToList(profile)) {
     return SELLER_CHOOSE_LISTING_PATH;
   }
-  return SELLER_VERIFY_PATH;
+  return buildSellerVerifyUrl(SELLER_CHOOSE_LISTING_PATH);
 }
 
 export function ListPropertyButton({
@@ -37,7 +37,10 @@ export function ListPropertyButton({
     e.preventDefault();
     if (!allowNetworkAction()) return;
     guardAction(
-      { type: "list_property", redirectPath: SELLER_VERIFY_PATH },
+      {
+        type: "list_property",
+        redirectPath: buildSellerVerifyUrl(SELLER_CHOOSE_LISTING_PATH),
+      },
       () => {
         if (!user || !emailVerified) return;
         router.push(sellerListDestination(profile));

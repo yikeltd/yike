@@ -1,11 +1,11 @@
-const SHELL_CACHE = "yike-shell-v34";
+const SHELL_CACHE = "yike-shell-v35";
 const IMAGE_CACHE = "yike-images-v7";
 const LISTING_CACHE = "yike-listings-v6";
 const CACHE_PREFIX = "yike-";
 
 const SHELL = [
   "/offline",
-  "/images/logo.webp",
+  "/icons/logo.webp",
   "/manifest.json",
   "/favicon.ico",
   "/apple-touch-icon.png",
@@ -27,6 +27,19 @@ const WARM_DOCUMENT_PATHS = new Set([
   "/saved",
   "/safety",
 ]);
+
+/** Never substitute the marketplace offline shell — these need a live app (auth, seller, staff). */
+const NETWORK_REQUIRED_PREFIXES = [
+  "/auth/",
+  "/agent/",
+  "/account/",
+  "/lex/",
+  "/payments/",
+];
+
+function requiresLiveNetwork(pathname) {
+  return NETWORK_REQUIRED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -180,6 +193,11 @@ self.addEventListener("fetch", (event) => {
 
   // Document navigations: network-first, warm-cache fallback, /offline last
   if (event.request.mode === "navigate") {
+    if (requiresLiveNetwork(url.pathname)) {
+      event.respondWith(fetch(event.request, { cache: "no-store" }));
+      return;
+    }
+
     event.respondWith(
       (async () => {
         try {

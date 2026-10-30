@@ -23,6 +23,12 @@ import {
   clearAuthIntent,
   saveAuthIntent,
 } from "@/lib/auth-intent";
+import {
+  YIKE_GUEST_FAVORITES_MERGED,
+  YIKE_LISTING_SAVED_CHANGED,
+  type GuestFavoritesMergedDetail,
+  type ListingSavedChangedDetail,
+} from "@/lib/listings/listing-save-events";
 import { executeAuthIntent } from "@/lib/execute-auth-intent";
 import { performFastLogout } from "@/lib/auth/fast-logout";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
@@ -71,6 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const intentResumeRef = useRef<string | null>(null);
   const signingOutRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dataset.authLoading = loading ? "1" : "0";
+  }, [loading]);
 
   const refreshAuth = useCallback(async () => {
     if (signingOutRef.current) return;
@@ -145,6 +156,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [refreshAuth]);
 
+  useEffect(() => {
+    function onGuestMerged(e: Event) {
+      const ids =
+        (e as CustomEvent<GuestFavoritesMergedDetail>).detail?.ids ?? [];
+      if (ids.length === 0) return;
+      setSavedListingIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) next.add(id);
+        return next;
+      });
+    }
+    function onSavedChanged(e: Event) {
+      const detail = (e as CustomEvent<ListingSavedChangedDetail>).detail;
+      if (!detail?.listingId) return;
+      setListingSaved(detail.listingId, detail.saved);
+    }
+    window.addEventListener(YIKE_GUEST_FAVORITES_MERGED, onGuestMerged);
+    window.addEventListener(YIKE_LISTING_SAVED_CHANGED, onSavedChanged);
+    return () => {
+      window.removeEventListener(YIKE_GUEST_FAVORITES_MERGED, onGuestMerged);
+      window.removeEventListener(YIKE_LISTING_SAVED_CHANGED, onSavedChanged);
+    };
+  }, [setListingSaved]);
+
   const emailVerified = useMemo(() => {
     if (!user) return false;
     if (user.email_confirmed_at) return true;
@@ -201,7 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const guardAction = useCallback(
     (intent: AuthIntent, onAuthorized: () => void) => {
-      if (loading) return;
+      if (loading && !AUTH_PUBLIC_INTENTS.has(intent.type)) return;
       if (AUTH_PUBLIC_INTENTS.has(intent.type)) {
         onAuthorized();
         return;

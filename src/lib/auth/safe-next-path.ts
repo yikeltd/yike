@@ -1,3 +1,10 @@
+import { CONSUMER_ROUTES } from "@/lib/navigation/consumer-routes";
+
+/** Default post-auth destination for consumer login/signup (not `/saved`). */
+export const CONSUMER_AUTH_DEFAULT_NEXT = CONSUMER_ROUTES.profile;
+
+const STAFF_NEXT_PREFIXES = ["/lex", "/staff"] as const;
+
 /**
  * Allow only same-origin relative paths for post-auth redirects.
  * Blocks protocol-relative URLs (//evil.com), absolute URLs, and backslash tricks.
@@ -33,4 +40,18 @@ export function safeNextPath(raw: string | null | undefined, fallback = "/"): st
   } catch {
     return fallback;
   }
+}
+
+/** Consumer `/auth/login` and `/auth/signup` must not land in staff consoles via `next`. */
+export function safeConsumerAuthNext(
+  raw: string | null | undefined,
+  fallback: string = CONSUMER_AUTH_DEFAULT_NEXT
+): string {
+  const safe = safeNextPath(raw, fallback);
+  const pathOnly = safe.split("?")[0]?.split("#")[0] ?? safe;
+  const blocked = STAFF_NEXT_PREFIXES.some(
+    (prefix) => pathOnly === prefix || pathOnly.startsWith(`${prefix}/`)
+  );
+  if (blocked) return fallback;
+  return safe;
 }

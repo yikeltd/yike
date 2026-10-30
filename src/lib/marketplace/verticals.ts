@@ -36,6 +36,7 @@ export type MarketplaceVertical = {
   /** launch-mode feature key when gated */
   launchFeature?:
     | "vehicle_marketplace"
+    | "electronics_marketplace"
     | "industrial_marketplace"
     | "hospitality_listings"
     | "business_listings";
@@ -49,10 +50,10 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     label: "Vehicle",
     pluralLabel: "Vehicles",
     href: "/vehicles",
-    createHref: "/agent/listings/new/vehicle",
+    createHref: "/agent/listings/new?category=vehicle",
     status: "live",
     launchFeature: "vehicle_marketplace",
-    description: "Find your next vehicle.",
+    description: "Cars, trucks, buses, heavy equipment and farm machinery.",
   },
   {
     id: "property",
@@ -70,8 +71,9 @@ export const MARKETPLACE_VERTICALS: MarketplaceVertical[] = [
     label: "Electronics",
     pluralLabel: "Electronics",
     href: "/electronics",
-    createHref: "/agent/listings/new/electronics",
-    status: "reserved",
+    createHref: "/agent/listings/new?category=electronics",
+    status: "live",
+    launchFeature: "electronics_marketplace",
     description: "Phones, computers, appliances, and electronics.",
   },
   {

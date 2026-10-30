@@ -124,6 +124,7 @@ export type FieldInputType =
   | "number"
   | "currency"
   | "select"
+  | "searchable_select"
   | "multiselect"
   | "boolean"
   | "year"

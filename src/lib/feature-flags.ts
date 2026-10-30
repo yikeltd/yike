@@ -1,7 +1,6 @@
 /**
  * Launch-safe feature flags for verification channels.
  * Email-first browse; SMS OTP for seller phone verification (founder-approved).
- * WhatsApp OTP stays off until WhatsApp Business is verified.
  */
 
 function envFlag(name: string, defaultValue: boolean): boolean {
@@ -26,34 +25,12 @@ export function isSmsOtpEnabled(): boolean {
   return envFlag("ENABLE_SMS_OTP", true);
 }
 
-/** WhatsApp OTP via Sendchamp — future channel; off until WA Business ready. */
-export function isWhatsappOtpEnabled(): boolean {
-  return envFlag("ENABLE_WHATSAPP_OTP", false);
-}
-
-export function isWhatsappOtpProviderSendchamp(): boolean {
-  const raw = process.env.WHATSAPP_OTP_PROVIDER?.trim().toLowerCase();
-  if (!raw) return true;
-  return raw === "sendchamp";
-}
-
-/** Profile + listing WhatsApp number verification. */
-export function isWhatsappProfileVerificationEnabled(): boolean {
-  if (isWhatsappOtpEnabled() && isWhatsappOtpProviderSendchamp()) return true;
-  return isWhatsappOtpEnabledClient();
-}
-
-/** Signup optional WhatsApp OTP (does not require ENABLE_PHONE_OTP). */
-export function isWhatsappSignupOtpEnabled(): boolean {
-  return isWhatsappOtpEnabled() && isWhatsappOtpProviderSendchamp();
-}
-
 /** Email verification / magic-link flow (launch default: on). */
 export function isEmailOtpEnabled(): boolean {
   return envFlag("ENABLE_EMAIL_OTP", true);
 }
 
-/** Signup no longer blocks on phone OTP — WhatsApp verification is contextual only. */
+/** Signup no longer blocks on phone OTP — seller SMS verification is contextual. */
 export function isPhoneVerificationRequired(): boolean {
   return false;
 }
@@ -62,13 +39,6 @@ export function isPhoneVerificationRequired(): boolean {
 export function isPhoneOtpEnabledClient(): boolean {
   const raw = process.env.NEXT_PUBLIC_ENABLE_PHONE_OTP?.trim().toLowerCase();
   if (!raw) return true;
-  return raw === "true" || raw === "1" || raw === "yes";
-}
-
-/** Client bundle — mirrors ENABLE_WHATSAPP_OTP for verify UI. */
-export function isWhatsappOtpEnabledClient(): boolean {
-  const raw = process.env.NEXT_PUBLIC_ENABLE_WHATSAPP_OTP?.trim().toLowerCase();
-  if (!raw) return false;
   return raw === "true" || raw === "1" || raw === "yes";
 }
 

@@ -1,7 +1,6 @@
 import type { Profile } from "@/types/database";
 import { normalizeAccountStatus } from "@/lib/account-control";
 import { isVerifiedAgentProfile } from "@/lib/agent-tiers";
-import { isWhatsappNumberVerified } from "@/lib/whatsapp-verification/profile";
 
 /**
  * Launch seller trust statuses (Seller Verification & Onboarding v1).
@@ -76,13 +75,12 @@ export type SellerTrustProfileSlice = Pick<
   | "residential_state"
 >;
 
-/** Phone is verified via SMS OTP or WhatsApp OTP (both set phone_verified). */
+/** Phone ownership verified via Sendchamp SMS OTP (`phone_verified`). */
 export function isPhoneVerifiedForSeller(
   profile: Partial<SellerTrustProfileSlice> | null | undefined
 ): boolean {
   if (!profile) return false;
-  if (profile.phone_verified) return true;
-  return isWhatsappNumberVerified(profile);
+  return Boolean(profile.phone_verified);
 }
 
 export function isVerifiedSeller(

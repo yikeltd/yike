@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadEvent } from "@/lib/leads/events";
+import { isValidLeadReference } from "@/lib/leads/reference";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const yikeReference = String(body.yikeReference ?? "").trim();
-  if (!yikeReference) {
+  if (!yikeReference || !isValidLeadReference(yikeReference)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 

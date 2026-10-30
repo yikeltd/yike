@@ -10,9 +10,9 @@ import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  digitsOnlyPhoneLocal,
   isLocalNigerianSignupPhone,
-  normalizeNigerianPhone,
+  parseNigerianPhone,
+  sanitizeNigerianPhoneFieldInput,
 } from "@/lib/phone";
 import { isValidSignupCredential } from "@/lib/password-policy";
 import { PIN_LENGTH, pinPolicyError } from "@/lib/pin-policy";
@@ -21,6 +21,12 @@ import { isReviewerAccountEmail } from "@/lib/reviewer-accounts";
 import { saveQuickLoginUser } from "@/lib/auth/quick-login";
 import { resumePendingAuthIntent } from "@/lib/resume-auth-intent";
 import { friendlySignupError } from "@/lib/auth-errors";
+import { fetchAuthJson } from "@/lib/auth/auth-fetch";
+import {
+  mapSignupDuplicateResponse,
+  type EmailOtpDispatchStatus,
+} from "@/lib/auth/email-otp-flow";
+import { CONSUMER_AUTH_DEFAULT_NEXT } from "@/lib/auth/safe-next-path";
 import { cn } from "@/lib/utils";
 
 const PHONE_ERROR = "Enter a valid 11-digit Nigerian phone number.";
@@ -37,13 +43,16 @@ function digitsOnly(value: string, max = PIN_LENGTH) {
 }
 
 async function checkSignupDuplicates(email: string, phone: string) {
-  const res = await fetch("/api/auth/signup/check-duplicates", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, phone }),
-  });
-  if (!res.ok) return null;
-  return (await res.json()) as { emailExists?: boolean; phoneExists?: boolean };
+  const result = await fetchAuthJson<{ emailExists?: boolean; phoneExists?: boolean }>(
+    "/api/auth/signup/check-duplicates",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, phone }),
+    }
+  );
+  if (!result.ok) return null;
+  return result.data;
 }
 
 export function SignupForm({
@@ -72,11 +81,14 @@ export function SignupForm({
   const [emailVerifyOpen, setEmailVerifyOpen] = useState(false);
   const [redirectingAfterVerify, setRedirectingAfterVerify] = useState(false);
   const [pendingSignup, setPendingSignup] = useState<PendingSignup | null>(null);
+  const [signupOtpDispatch, setSignupOtpDispatch] = useState<
+    EmailOtpDispatchStatus | undefined
+  >(undefined);
   const dupeCheckRef = useRef(0);
   const confirmPinRef = useRef<HTMLInputElement | null>(null);
 
   const normalizedPhone = useMemo(
-    () => (isLocalNigerianSignupPhone(phone) ? normalizeNigerianPhone(phone) : ""),
+    () => parseNigerianPhone(phone)?.local11 ?? "",
     [phone]
   );
   const reviewerBypass = useMemo(
@@ -91,31 +103,36 @@ export function SignupForm({
   const pinsMatch = pin.length === PIN_LENGTH && pin === confirmPin;
   const pinValid = isValidSignupCredential(pin);
 
-  const runDuplicateCheck = useCallback(
-    async (emailValue: string, phoneValue: string) => {
-      const checkId = ++dupeCheckRef.current;
-      const trimmedEmail = emailValue.trim().toLowerCase();
-      const trimmedPhone = phoneValue.trim();
+  const runDuplicateCheck = useCallback(async (emailValue: string, phoneValue: string) => {
+    const checkId = ++dupeCheckRef.current;
+    const trimmedEmail = emailValue.trim().toLowerCase();
+    const trimmedPhone = phoneValue.trim();
+    const hasEmail = trimmedEmail.includes("@");
+    const hasPhone = trimmedPhone.length > 0 && parseNigerianPhone(trimmedPhone) !== null;
 
-      if (trimmedEmail.includes("@")) {
-        const result = await checkSignupDuplicates(trimmedEmail, "");
-        if (checkId !== dupeCheckRef.current || !result) return;
-        setEmailError(result.emailExists ? "Email already in use" : "");
-      }
+    if (!hasEmail && !hasPhone) {
+      if (checkId !== dupeCheckRef.current) return;
+      setEmailError("");
+      setPhoneError("");
+      return;
+    }
 
-      if (trimmedPhone && isLocalNigerianSignupPhone(trimmedPhone)) {
-        const result = await checkSignupDuplicates("", trimmedPhone);
-        if (checkId !== dupeCheckRef.current || !result) return;
-        setPhoneError(result.phoneExists ? "Number already in use" : "");
-      }
-    },
-    []
-  );
+    const result = await checkSignupDuplicates(
+      hasEmail ? trimmedEmail : "",
+      hasPhone ? trimmedPhone : ""
+    );
+    if (checkId !== dupeCheckRef.current) return;
+
+    const mapped = mapSignupDuplicateResponse(result);
+    if (mapped.unavailable) return;
+    setEmailError(mapped.emailError);
+    setPhoneError(mapped.phoneError);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void runDuplicateCheck(email, phone);
-    }, 450);
+    }, 550);
     return () => window.clearTimeout(timer);
   }, [email, phone, runDuplicateCheck]);
 
@@ -150,7 +167,7 @@ export function SignupForm({
       });
     }
 
-    const destination = nextPath ?? "/profile";
+    const destination = nextPath ?? CONSUMER_AUTH_DEFAULT_NEXT;
     const resumed = await resumePendingAuthIntent(router, {
       fallbackPath: destination,
       emailVerified: true,
@@ -209,36 +226,45 @@ export function SignupForm({
     setError("");
 
     // PIN is the Auth password — same value hashed by Supabase + profile pin_hash.
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fullName,
-        email,
-        phone: normalizedPhone,
-        password: pin,
-        confirmPassword: confirmPin,
-        pin,
-        acceptedTerms: true,
-        mathA: mathChallenge.a,
-        mathB: mathChallenge.b,
-        mathAnswer: Number(mathAnswer),
-      }),
-    });
-    const data = (await res.json()) as {
+    const signupResult = await fetchAuthJson<{
       ok?: boolean;
       userId?: string;
       username?: string;
       needsEmailVerification?: boolean;
       resume?: boolean;
       message?: string;
+      dispatchStatus?: EmailOtpDispatchStatus;
       code?: string;
       error?: string;
-    };
+    }>(
+      "/api/auth/signup",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          email,
+          phone: normalizedPhone,
+          password: pin,
+          confirmPassword: confirmPin,
+          pin,
+          acceptedTerms: true,
+          mathA: mathChallenge.a,
+          mathB: mathChallenge.b,
+          mathAnswer: Number(mathAnswer),
+        }),
+      },
+      25_000
+    );
 
     setLoading(false);
 
-    if (!res.ok) {
+    if (!signupResult.ok) {
+      const data = signupResult.data ?? {};
+      if (signupResult.kind === "network" || signupResult.kind === "timeout") {
+        setError(signupResult.message);
+        return;
+      }
       if (data.code === "email_exists" || data.code === "account_exists") {
         setEmailError("Email already in use");
         return;
@@ -251,10 +277,11 @@ export function SignupForm({
         setError("This account needs support review. Please contact Yike support.");
         return;
       }
-      setError(friendlySignupError(data.error ?? "Could not create account"));
+      setError(friendlySignupError(data.error ?? signupResult.message ?? "Could not create account"));
       return;
     }
 
+    const data = signupResult.data;
     const username = data.username ?? "";
 
     if (reviewerBypass && data.userId) {
@@ -268,6 +295,7 @@ export function SignupForm({
     }
 
     if (data.needsEmailVerification) {
+      setSignupOtpDispatch(data.dispatchStatus);
       setPendingSignup({
         email,
         password: pin,
@@ -297,10 +325,10 @@ export function SignupForm({
     <>
       {!redirectingAfterVerify && (
         <AuthShell
-          title="Welcome to Yike"
           subtitle="Create your account in under a minute."
           compact
           centered
+          logoShowText={false}
           footer={
             <p className="text-sm text-muted">
               Already have an account?{" "}
@@ -350,12 +378,11 @@ export function SignupForm({
             <Field label="Phone Number">
               <Input
                 type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={11}
+                inputMode="tel"
+                placeholder="08012345678"
                 value={phone}
                 onChange={(e) => {
-                  setPhone(digitsOnlyPhoneLocal(e.target.value));
+                  setPhone(sanitizeNigerianPhoneFieldInput(e.target.value));
                   if (phoneError) setPhoneError("");
                 }}
                 onBlur={() => {
@@ -516,6 +543,7 @@ export function SignupForm({
           password={pendingSignup.password}
           autoSend={false}
           initialCodeSent
+          initialDispatchStatus={signupOtpDispatch}
           redirecting={redirectingAfterVerify}
           onVerified={() => finishSignupSession(pendingSignup)}
         />

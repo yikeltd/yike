@@ -26,6 +26,7 @@ export type HandoffPayload = {
   agentHandoffUrl?: string | null;
   supportReply?: string | null;
   conciergeStatus?: string | null;
+  handoffSharedAt?: string | null;
 };
 
 export async function getHandoffByReference(
@@ -40,7 +41,7 @@ export async function getHandoffByReference(
       `id, yike_reference, status, listing_id, agent_id,
        lead_code, public_listing_code, public_agent_code, listing_slug, listing_url,
        listing_title, agent_name, agent_whatsapp, handoff_url, handoff_message,
-       concierge_status, source_surface, source_page,
+       concierge_status, handoff_shared_at, source_surface, source_page,
        listing:properties!leads_listing_id_fkey (
          title, area, city, price, payment_period, listing_type, bedrooms, property_type, slug, public_listing_code
        ),
@@ -105,6 +106,7 @@ export async function getHandoffByReference(
     agentHandoffUrl: data.handoff_url ?? null,
     supportReply: data.handoff_message ?? null,
     conciergeStatus: data.concierge_status ?? null,
+    handoffSharedAt: (data as { handoff_shared_at?: string | null }).handoff_shared_at ?? null,
   };
 }
 

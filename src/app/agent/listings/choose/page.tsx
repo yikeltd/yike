@@ -1,24 +1,22 @@
 import { redirect } from "next/navigation";
-import { requireAgentLister } from "@/lib/auth";
-import {
-  mustCompleteSellerVerification,
-  SELLER_VERIFY_PATH,
-} from "@/lib/seller-trust";
-import { SmartSellerFlow } from "@/components/agent/smart-seller-flow";
 
 export const metadata = {
-  title: "Sell on Yike | List Property & Vehicle",
-  description: "Intelligent listing creator for properties and vehicles on Yike Marketplace.",
+  title: "New listing | Yike",
+  description: "Create a property, vehicle, or electronics listing on Yike.",
 };
 
-export default async function ChooseListingTypePage() {
-  const { profile } = await requireAgentLister("/agent/verify", {
-    skipProfileSetup: true,
-  });
-
-  if (mustCompleteSellerVerification(profile)) {
-    redirect(SELLER_VERIFY_PATH);
+/** Legacy chooser — instant listing workspace replaces the category landing page. */
+export default async function ChooseListingTypePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const qs = new URLSearchParams();
+  for (const key of ["category", "hint"] as const) {
+    const v = sp[key];
+    if (typeof v === "string" && v.trim()) qs.set(key, v.trim());
   }
-
-  return <SmartSellerFlow />;
+  const tail = qs.toString();
+  redirect(tail ? `/agent/listings/new?${tail}` : "/agent/listings/new");
 }

@@ -1,12 +1,12 @@
 import { isAgentRole } from "@/lib/agent-tiers";
-import { isWhatsappNumberVerified } from "@/lib/whatsapp-verification/profile";
+import { isPhoneVerifiedForSeller } from "@/lib/seller-trust";
 import { hasBasicListingProfile } from "@/lib/profile/basic-listing-profile";
 import type { VerificationControlConfig } from "./config";
 import { effectiveTrustLevel, type TrustProfileSlice } from "./levels";
 
 export type VerificationTaskId =
   | "email"
-  | "whatsapp"
+  | "phone"
   | "profile_complete"
   | "profile_photo"
   | "bank"
@@ -33,7 +33,9 @@ export function getRequiredVerificationTasks(
 
   const isLister = isAgentRole(profile.role);
   const needsEmail = config?.email_verification_required !== false;
-  const needsWhatsApp = escalationActions.includes("require_whatsapp_review");
+  const needsPhone =
+    escalationActions.includes("require_whatsapp_review") ||
+    escalationActions.includes("require_phone_verification");
   const needsBank =
     config?.bank_verification_required ||
     escalationActions.includes("require_bank_verification");
@@ -49,11 +51,11 @@ export function getRequiredVerificationTasks(
     });
   }
 
-  if (needsWhatsApp || escalationActions.includes("require_whatsapp_review")) {
+  if (needsPhone) {
     tasks.push({
-      id: "whatsapp",
-      label: "Verify WhatsApp",
-      complete: isWhatsappNumberVerified(profile),
+      id: "phone",
+      label: "Verify phone (SMS)",
+      complete: isPhoneVerifiedForSeller(profile),
       required: true,
     });
   }

@@ -37,7 +37,7 @@ export const PROPERTY_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "listing_type",
       label: "Listing type",
-      input: "select",
+      input: "confirm_chips",
       required: true,
       dependsOn: { watch: [], optionsFrom: "property.listing_types" },
       submitKey: "listing_type",
@@ -45,7 +45,7 @@ export const PROPERTY_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "property_type",
       label: "Property type",
-      input: "select",
+      input: "searchable_select",
       required: true,
       dependsOn: { watch: ["listing_type"], optionsFrom: "property.types_for_listing", clearIfInvalid: true },
       submitKey: "property_type",
@@ -53,25 +53,25 @@ export const PROPERTY_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "bedrooms",
       label: "Bedrooms",
-      input: "number",
+      input: "searchable_select",
       visible: { op: "rule", id: "property.show_room_fields" },
-      validation: [{ type: "min", value: 0 }],
+      dependsOn: { watch: [], optionsFrom: "property.room_counts" },
       submitKey: "bedrooms",
     },
     {
       id: "bathrooms",
       label: "Bathrooms",
-      input: "number",
+      input: "searchable_select",
       visible: { op: "rule", id: "property.show_room_fields" },
-      validation: [{ type: "min", value: 0 }],
+      dependsOn: { watch: [], optionsFrom: "property.room_counts" },
       submitKey: "bathrooms",
     },
     {
       id: "toilets",
       label: "Toilets",
-      input: "number",
+      input: "searchable_select",
       visible: { op: "rule", id: "property.show_room_fields" },
-      validation: [{ type: "min", value: 0 }],
+      dependsOn: { watch: [], optionsFrom: "property.room_counts" },
       submitKey: "toilets",
     },
     {
@@ -85,7 +85,7 @@ export const PROPERTY_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "state",
       label: "State",
-      input: "select",
+      input: "searchable_select",
       required: true,
       dependsOn: { watch: [], optionsFrom: "property.states" },
       submitKey: "state",
@@ -93,7 +93,7 @@ export const PROPERTY_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "city",
       label: "City",
-      input: "select",
+      input: "searchable_select",
       required: true,
       dependsOn: { watch: ["state"], optionsFrom: "property.cities_for_state", clearIfInvalid: true },
       submitKey: "city",
@@ -101,7 +101,7 @@ export const PROPERTY_CATEGORY_MANIFEST: CategoryManifest = {
     {
       id: "area",
       label: "Area",
-      input: "select",
+      input: "searchable_select",
       dependsOn: { watch: ["city"], optionsFrom: "property.areas_for_city", clearIfInvalid: false },
       submitKey: "area",
     },

@@ -16,6 +16,15 @@ import {
 } from "./call-routing-sheets";
 import { recentContactNotice } from "@/lib/recently-contacted";
 import type { PaymentPeriod, ListingType } from "@/types/database";
+import { SellerMessageCallActions } from "@/components/marketplace/seller-message-call-actions";
+import type { MarketplaceAssetType } from "@/lib/marketplace-messaging/service";
+import { listingContactContextFromListing } from "@/lib/marketplace/listing-inquiry-message";
+
+function nativeContactEnabled(): boolean {
+  const raw = process.env.NEXT_PUBLIC_ENABLE_MARKETPLACE_NATIVE_CONTACT?.trim().toLowerCase();
+  if (raw === "false" || raw === "0") return false;
+  return true;
+}
 
 interface ContactButtonsProps {
   propertyId: string;
@@ -33,6 +42,7 @@ interface ContactButtonsProps {
   whatsapp?: string | null;
   layout?: "card" | "detail";
   placement?: ContactPlacement;
+  assetType?: MarketplaceAssetType;
 }
 
 export function ContactButtons({
@@ -51,6 +61,7 @@ export function ContactButtons({
   whatsapp,
   layout = "detail",
   placement = "detail",
+  assetType = "PROPERTY",
 }: ContactButtonsProps) {
   const { guardAction } = useAuth();
   const [loading, setLoading] = useState<"whatsapp" | "call" | null>(null);
@@ -162,6 +173,36 @@ export function ContactButtons({
     if (!callResult) return;
     openWhatsAppLead(callResult);
     setConfirmOpen(false);
+  }
+
+  if (nativeContactEnabled()) {
+    const contact = listingContactContextFromListing(
+      {
+        id: propertyId,
+        slug: null,
+        title,
+        area,
+        city,
+        price,
+        payment_period: paymentPeriod,
+        listing_type: listingType,
+        bedrooms: bedrooms ?? 0,
+        property_type: propertyType ?? null,
+        asset_type: assetType,
+      },
+      assetType,
+    );
+    return (
+      <SellerMessageCallActions
+        listingId={propertyId}
+        assetType={assetType}
+        sellerId={agentId}
+        sellerName={agentName}
+        contact={contact}
+        placement={placement}
+        variant={layout === "card" ? "gallery-inline" : "sidebar"}
+      />
+    );
   }
 
   return (

@@ -8,7 +8,6 @@ import {
   isEmailOtpEnabled,
   isPhoneOtpEnabled,
   isSmsOtpEnabled,
-  isWhatsappOtpEnabled,
 } from "@/lib/feature-flags";
 import { offsetDaysIso } from "@/lib/time";
 
@@ -91,7 +90,7 @@ export default async function OtpFailuresPage({
             <dd className="font-medium text-navy">{emailOtpLive ? "Active" : "Disabled"}</dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Phone OTP (SMS / WhatsApp)</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Phone OTP (SMS)</dt>
             <dd className="font-medium text-navy">
               {phoneOtpLive ? "Active" : "Temporarily disabled for launch"}
             </dd>
@@ -106,7 +105,7 @@ export default async function OtpFailuresPage({
         )}
         {phoneOtpLive && (
           <p className="mt-3 text-xs text-muted">
-            SMS: {isSmsOtpEnabled() ? "on" : "off"} · WhatsApp: {isWhatsappOtpEnabled() ? "on" : "off"}
+            SMS: {isSmsOtpEnabled() ? "on" : "off"}
           </p>
         )}
       </div>

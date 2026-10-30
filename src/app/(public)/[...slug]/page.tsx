@@ -22,6 +22,7 @@ export default async function CatchAllPublicPage({ params }: Props) {
     );
     return PropertyDetailPage({
       params: Promise.resolve({ slug: slug[1]! }),
+      searchParams: Promise.resolve({}),
     });
   }
 
@@ -31,6 +32,7 @@ export default async function CatchAllPublicPage({ params }: Props) {
     );
     return VehicleDetailPage({
       params: Promise.resolve({ slug: slug[1]! }),
+      searchParams: Promise.resolve({}),
     });
   }
 

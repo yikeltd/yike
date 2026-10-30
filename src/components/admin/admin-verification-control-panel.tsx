@@ -26,7 +26,11 @@ const TOGGLE_META: {
   description: string;
 }[] = [
   { key: "email_verification_required", label: "Require email verification", description: "Email must be verified before full access." },
-  { key: "whatsapp_verification_required", label: "Require WhatsApp verification", description: "WhatsApp contact required for agents." },
+  {
+    key: "whatsapp_verification_required",
+    label: "Require phone verification (SMS)",
+    description: "Seller must verify phone ownership via SMS OTP.",
+  },
   { key: "bank_verification_required", label: "Require bank verification", description: "Bank details before payouts and premium trust." },
   { key: "listing_review_required", label: "Require listing review", description: "Listings go through moderation before publish." },
   { key: "listing_verification_required", label: "Require verification before listing", description: "Agents must reach listing trust level before posting." },

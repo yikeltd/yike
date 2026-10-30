@@ -10,8 +10,9 @@ export const CATEGORY_REGISTRY: Record<string, ListingCategoryConfig> = {
 export function getCategoryConfig(categoryId: string): ListingCategoryConfig {
   const config = CATEGORY_REGISTRY[categoryId];
   if (!config) {
-    // Fallback to vehicles if unknown category
-    return VEHICLES_LISTING_CONFIG;
+    throw new Error(
+      `listing-engine/configs: unknown category "${categoryId}". Supported: ${Object.keys(CATEGORY_REGISTRY).join(", ")}`,
+    );
   }
   return config;
 }

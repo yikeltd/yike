@@ -21,6 +21,7 @@ import {
 import { ListingPhotoManager } from "@/components/agent/listing-photo-manager";
 import type { ListingPhotoItem } from "@/components/agent/listing-photo-types";
 import { resolveVehiclePhotoSchema } from "@/lib/listing-engine/photo-schema";
+import { getListingSubmitIdempotencyKey } from "@/lib/listing-submit-log";
 import {
   clearVehicleDraft,
   loadVehicleDraft,
@@ -264,6 +265,9 @@ export function VehicleListingForm({ listingId, agentId, initial }: Props) {
 
     const body: Record<string, unknown> = {
       id: listingId,
+      ...(listingId
+        ? {}
+        : { idempotencyKey: getListingSubmitIdempotencyKey(agentId ?? "vehicle-form") }),
       auto_category: category,
       title: formSnapshot.title,
       description: formSnapshot.description,

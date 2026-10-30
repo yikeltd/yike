@@ -14,7 +14,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const INPUT = join(ROOT, "public/images/logo.webp");
+const INPUT = join(ROOT, "public/icons/logo.webp");
 const TWA_RES = join(ROOT, "twa-staff/app/src/main/res");
 const STAFF_SPLASH = join(ROOT, "public/staff/splash");
 

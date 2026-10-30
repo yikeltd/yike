@@ -13,6 +13,7 @@ export function SearchResultsChrome({
   showEmptySuggestions = false,
   hideSuggestions = false,
   filtersDefaultOpen = true,
+  refinePanelClassName = "mt-1",
   children,
 }: {
   resultCount: number;
@@ -23,11 +24,15 @@ export function SearchResultsChrome({
   showEmptySuggestions?: boolean;
   hideSuggestions?: boolean;
   filtersDefaultOpen?: boolean;
+  refinePanelClassName?: string;
   children: React.ReactNode;
 }) {
   return (
     <>
-      <SearchRefinePanel defaultOpen={filtersDefaultOpen} className="mt-1" />
+      <SearchRefinePanel
+        defaultOpen={filtersDefaultOpen}
+        className={refinePanelClassName}
+      />
 
       <SearchActiveBar
         resultCount={resultCount}

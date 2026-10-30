@@ -22,3 +22,10 @@ export function leadCityCode(city: string, area?: string): string {
 export function generateLeadReference(_city?: string, _area?: string): string {
   return `YK-${randomRefToken(6)}`;
 }
+
+const LEAD_REFERENCE_RE = /^YK-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
+
+/** Reject malformed references before lead handoff / analytics lookups. */
+export function isValidLeadReference(ref: string): boolean {
+  return LEAD_REFERENCE_RE.test(ref.trim());
+}

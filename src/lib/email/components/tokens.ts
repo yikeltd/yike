@@ -23,4 +23,5 @@ export const emailTokens = {
     "ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace",
 } as const;
 
-export const EMAIL_LOGO_PATH = "/images/logo.webp";
+export const EMAIL_LOGO_PATH = "/icons/logo.webp";
+export const EMAIL_LOGO_ALT = "Yike — Nigerian property and vehicle marketplace";

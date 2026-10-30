@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "../public/images/heroes");
 const HERO_OUT = join(__dirname, "../public/images/hero");
 const AGENT_OUT = join(HERO_OUT, "agents");
-const LOGO = join(__dirname, "../public/images/logo.webp");
+const LOGO = join(__dirname, "../public/icons/logo.webp");
 const REF = join(__dirname, "assets/desktop-hero-reference.jpg");
 
 async function hero(name, accent, { withLogo = true } = {}) {

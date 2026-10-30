@@ -31,6 +31,7 @@ export async function POST(request: Request) {
   const result = await verifySellerPhoneCode(admin, {
     userId: user.id,
     code,
+    request,
   });
 
   if (!result.ok) {

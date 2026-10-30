@@ -1,11 +1,26 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/auth";
+import {
+  DEVICE_COOKIE,
+  getDeviceTokenFromCookies,
+  revokeTrustedDeviceForToken,
+} from "@/lib/auth/trusted-device";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+export async function POST(request: Request) {
   const cookieStore = await cookies();
+  const body = (await request.json().catch(() => ({}))) as { revokeDevice?: boolean };
+
+  if (body.revokeDevice) {
+    const user = await getSession();
+    const deviceToken = await getDeviceTokenFromCookies();
+    if (user?.id && deviceToken) {
+      await revokeTrustedDeviceForToken(user.id, deviceToken);
+    }
+  }
 
   // 1. Sign out on Supabase server-side
   try {
@@ -28,6 +43,9 @@ export async function POST() {
 
   // Also match any Supabase project-specific auth cookies (sb-*-auth-token)
   for (const cookie of cookieStore.getAll()) {
+    if (cookie.name === DEVICE_COOKIE) {
+      continue;
+    }
     if (
       cookie.name.startsWith("sb-") ||
       cookie.name.startsWith("yike_") ||

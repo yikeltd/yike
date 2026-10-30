@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart } from "lucide-react";
+import { SAVED_EMPTY_BROWSE_HREF } from "@/lib/navigation/consumer-routes";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Button } from "@/components/ui/button";
 import { PropertyFeed } from "@/components/property/property-feed";
@@ -15,17 +16,18 @@ import type { Property } from "@/types/database";
 export function SavedGuestView() {
   const { openAuth } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  /** Default empty — only show loading when this device has guest favorites to resolve. */
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
       const ids = getGuestFavoriteIds();
       if (ids.length === 0) {
         setProperties([]);
-        setLoading(false);
         return;
       }
 
+      setLoading(true);
       const mock = MOCK_LISTINGS.filter((p) => ids.includes(p.id));
       if (!isSupabaseConfigured()) {
         setProperties(mock);
@@ -78,7 +80,8 @@ export function SavedGuestView() {
           Sign In
         </Button>
         <Link
-          href="/discover"
+          href={SAVED_EMPTY_BROWSE_HREF}
+          data-testid="saved-empty-browse-guest"
           className="mt-3 text-sm font-semibold text-gold-dark hover:underline dark:text-gold"
         >
           Browse Homes

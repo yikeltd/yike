@@ -7,6 +7,7 @@ import {
   YIKE_SUPPORT_WHATSAPP,
 } from "@/lib/constants";
 import { ORG_ID, WEBSITE_ID } from "@/lib/seo/schema-ids";
+import { brand } from "@/lib/design/tokens";
 
 export function StructuredData() {
   const graph = {
@@ -20,9 +21,9 @@ export function StructuredData() {
         url: SITE_URL,
         logo: {
           "@type": "ImageObject",
-          url: `${SITE_URL}/images/logo.webp`,
-          width: 512,
-          height: 512,
+          url: `${SITE_URL}${brand.logo}`,
+          width: brand.logoWidth,
+          height: brand.logoHeight,
         },
         description: COMPANY_DESCRIPTION,
         foundingLocation: {

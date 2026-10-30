@@ -1,11 +1,12 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthIntent } from "@/lib/auth-intent";
+import { dispatchListingSavedChanged } from "@/lib/listings/listing-save-events";
 import { canListProperties } from "@/lib/utils";
 import {
+  buildSellerVerifyUrl,
   isSellerReadyToList,
   SELLER_CHOOSE_LISTING_PATH,
-  SELLER_VERIFY_PATH,
 } from "@/lib/seller-trust";
 
 export async function executeAuthIntent(
@@ -33,8 +34,9 @@ export async function executeAuthIntent(
         if (user) {
           await supabase.from("favorites").upsert(
             { user_id: user.id, property_id: intent.listingId },
-            { onConflict: "user_id,property_id", ignoreDuplicates: true }
+            { onConflict: "user_id,property_id", ignoreDuplicates: true },
           );
+          dispatchListingSavedChanged(intent.listingId, true);
         }
       }
       if (intent.redirectPath) router.push(intent.redirectPath);
@@ -77,7 +79,7 @@ export async function executeAuthIntent(
       ) {
         router.push(SELLER_CHOOSE_LISTING_PATH);
       } else {
-        router.push(SELLER_VERIFY_PATH);
+        router.push(buildSellerVerifyUrl(SELLER_CHOOSE_LISTING_PATH));
       }
       break;
     }

@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { lookupPinLoginUser } from "@/lib/auth/pin-login-rpc";
+import { evaluatePinLoginGate } from "@/lib/auth/pin-login-gate";
 import {
   hashDeviceLockKey,
-  isPinLockedForDevice,
   recordPinFailureForDevice,
   resetPinFailuresForUser,
 } from "@/lib/auth/pin-lockout";
 import { logAuthSecurityEvent } from "@/lib/auth/security-events";
 import { beginUserSession, getRequestMeta, markSessionUnlocked } from "@/lib/auth/session-state";
 import {
+  ensureDeviceToken,
   getDeviceTokenFromCookies,
-  isDeviceTrusted,
   registerTrustedDevice,
   touchTrustedDevice,
 } from "@/lib/auth/trusted-device";
@@ -26,7 +26,8 @@ export async function POST(request: Request) {
   const identifier = String(body.identifier ?? body.email ?? "").trim();
   const pin = String(body.pin ?? "");
   const { ip, userAgent } = await getRequestMeta(request);
-  const deviceToken = await getDeviceTokenFromCookies();
+  const deviceToken =
+    (await getDeviceTokenFromCookies()) ?? (await ensureDeviceToken());
   const deviceKey = hashDeviceLockKey({ deviceToken, ip, userAgent });
 
   if (!identifier || !/^\d{6}$/.test(pin)) {
@@ -41,30 +42,31 @@ export async function POST(request: Request) {
     );
   }
 
-  if (
-    !deviceToken ||
-    !(await isDeviceTrusted(row.user_id, deviceToken, { userAgent, ip }))
-  ) {
-    await logAuthSecurityEvent({
-      userId: row.user_id,
-      eventType: "pin.failed",
-      metadata: { reason: "untrusted_device", scope: "pin_login" },
-      ip,
-      userAgent,
-    });
-    return NextResponse.json(
-      { error: "Use your password to approve this device first.", requiresPassword: true },
-      { status: 401 }
-    );
-  }
+  const gate = await evaluatePinLoginGate({
+    identifier,
+    deviceToken,
+    ip,
+    userAgent,
+  });
 
-  if (await isPinLockedForDevice(row.user_id, deviceKey)) {
+  if (gate.step === "password") {
+    if (gate.reason === "new_device") {
+      await logAuthSecurityEvent({
+        userId: row.user_id,
+        eventType: "pin.failed",
+        metadata: { reason: "untrusted_device", scope: "pin_login" },
+        ip,
+        userAgent,
+      });
+    }
     return NextResponse.json(
       {
-        error: "Too many PIN attempts on this device. Use your password instead.",
-        pinLocked: true,
+        error: gate.message,
+        requiresPassword: true,
+        reason: gate.reason,
+        pinLocked: gate.pinLocked,
       },
-      { status: 429 }
+      { status: gate.pinLocked ? 429 : 401 }
     );
   }
 

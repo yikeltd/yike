@@ -13,6 +13,9 @@ export function listingPath(
   if (asset === "VEHICLE") {
     return `/vehicles/${listing.slug || listing.id}`;
   }
+  if (asset === "ELECTRONICS") {
+    return `/electronics/${listing.slug || listing.id}`;
+  }
   return propertyPath(listing);
 }
 
@@ -29,9 +32,6 @@ export function listingAbsoluteUrl(
 export function listingEditPath(
   listing: Pick<Property, "id"> & { asset_type?: AssetType | string | null },
 ): string {
-  if (normalizeAssetType(listing.asset_type) === "VEHICLE") {
-    return `/agent/listings/${listing.id}/edit`;
-  }
   return `/agent/listings/${listing.id}/edit`;
 }
 

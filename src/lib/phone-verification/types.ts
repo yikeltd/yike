@@ -1,5 +1,15 @@
-/** Delivery channels for phone / contact verification. SMS is production-primary. */
-export type PhoneVerificationChannel = "sms" | "whatsapp" | "email";
+/** Phone ownership verification — Sendchamp SMS only. */
+export type PhoneVerificationChannel = "sms";
+
+export type PhoneOtpDeliveryMode = "provider" | "dev_console";
+
+export type SmsProviderFailureCategory =
+  | "authentication"
+  | "invalid_number"
+  | "provider_rejection"
+  | "network"
+  | "not_configured"
+  | "unknown";
 
 export type PhoneOtpSendResult =
   | {
@@ -8,21 +18,20 @@ export type PhoneOtpSendResult =
       reference: string;
       expiresMinutes: number;
       message: string;
+      deliveryMode: PhoneOtpDeliveryMode;
     }
   | {
       ok: false;
       error: string;
       status: number;
       code?: "provider_auth_failed" | "rate_limited" | "cooldown" | "not_configured";
+      failureCategory?: SmsProviderFailureCategory;
     };
 
 export type PhoneOtpConfirmResult =
   | { ok: true }
   | { ok: false; error: string; status: number };
 
-/**
- * Provider interface — SMS now; WhatsApp / email later without changing business logic.
- */
 export type PhoneVerificationProvider = {
   readonly id: string;
   readonly supportedChannels: readonly PhoneVerificationChannel[];

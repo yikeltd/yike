@@ -1,10 +1,10 @@
 /**
- * Generates favicon, PWA icons, TWA launcher assets, and share images from public/images/logo.webp.
- * The source logo background is preserved; do not cut out or alpha-mask the mark.
+ * Generates favicon, PWA icons, TWA launcher assets, and share images from
+ * public/icons/logo.png (source of truth). Master WebP: public/icons/logo.webp.
  * Run: node scripts/optimize-brand-assets.mjs
  */
 import sharp from "sharp";
-import { mkdir, writeFile, stat } from "fs/promises";
+import { mkdir, writeFile, stat, access } from "fs/promises";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import pngToIco from "png-to-ico";
@@ -16,7 +16,8 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const INPUT = join(ROOT, "public/images/logo.webp");
+const SOURCE_PNG = join(ROOT, "public/icons/logo.png");
+const MASTER_WEBP = join(ROOT, "public/icons/logo.webp");
 const OUT_DIR = join(ROOT, "public");
 const ICONS_DIR = join(OUT_DIR, "icons");
 const APP_DIR = join(ROOT, "src/app");
@@ -57,9 +58,11 @@ async function logoPngBuffer(source, size, fit = "cover") {
 
 /** Square icon from the full logo artwork; preserves the logo background. */
 async function writeLogoIcon(source, path, size) {
-  await sharp(await logoPngBuffer(source, size))
-    .png({ compressionLevel: 9, palette: true })
-    .toFile(path);
+  let pipeline = sharp(await logoPngBuffer(source, size));
+  if (size <= 48) {
+    pipeline = pipeline.sharpen({ sigma: 0.6, m1: 0.5, m2: 0.25 });
+  }
+  await pipeline.png({ compressionLevel: 9, palette: size <= 48 }).toFile(path);
 }
 
 async function writeTwaSplash(source, path, size) {
@@ -81,21 +84,20 @@ async function writeTwaNativeAssets(source, resDir) {
   }
 }
 
-/** WhatsApp / Telegram / Facebook link preview (1.91:1) */
 async function writeOgShare(source) {
-  const logo = await sharp(source)
-    .resize(520, 520, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toBuffer();
-
-  const card = sharp({
-    create: {
-      width: 1200,
-      height: 630,
-      channels: 4,
+  const card = sharp(source)
+    .resize(1200, 630, {
+      fit: "contain",
+      position: "centre",
       background: NAVY,
-    },
-  }).composite([{ input: logo, gravity: "centre" }]);
+    })
+    .extend({
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      background: NAVY,
+    });
 
   await card
     .webp({ quality: 84, effort: 6, smartSubsample: true })
@@ -110,12 +112,17 @@ async function writeOgShare(source) {
 }
 
 async function main() {
-  console.log("Optimizing Yike brand assets from logo.webp…\n");
+  await access(SOURCE_PNG);
+  console.log("Optimizing Yike brand assets from public/icons/logo.png…\n");
   await mkdir(ICONS_DIR, { recursive: true });
 
-  const source = await sharp(INPUT).rotate().toBuffer();
+  const source = await sharp(SOURCE_PNG).rotate().toBuffer();
   const meta = await sharp(source).metadata();
-  console.log(`Source: ${meta.width}x${meta.height}\n`);
+  console.log(`Source PNG: ${meta.width}x${meta.height} (alpha: ${meta.hasAlpha})\n`);
+
+  await sharp(source)
+    .webp({ quality: 88, effort: 6, smartSubsample: true, lossless: false })
+    .toFile(MASTER_WEBP);
 
   await sharp(source)
     .resize(512, 512, { fit: "cover", position: "centre" })
@@ -126,6 +133,10 @@ async function main() {
     .webp({ quality: 78, effort: 6, smartSubsample: true })
     .toFile(join(OUT_DIR, "images/logo-sm.webp"));
   await sharp(source)
+    .resize(192, 192, { fit: "cover", position: "centre" })
+    .webp({ quality: 78, effort: 6, smartSubsample: true })
+    .toFile(join(ICONS_DIR, "logo-sm.webp"));
+  await sharp(source)
     .resize(512, 512, { fit: "cover", position: "centre" })
     .png({ compressionLevel: 9, palette: true })
     .toFile(join(OUT_DIR, "images/logo.png"));
@@ -134,6 +145,9 @@ async function main() {
     .webp({ quality: 82, effort: 6, smartSubsample: true })
     .toFile(join(OUT_DIR, "images/app-icon.webp"));
 
+  await logFile(SOURCE_PNG);
+  await logFile(MASTER_WEBP);
+  await logFile(join(ICONS_DIR, "logo-sm.webp"));
   await logFile(join(OUT_DIR, "images/logo.webp"));
   await logFile(join(OUT_DIR, "images/logo-sm.webp"));
 
@@ -162,6 +176,8 @@ async function main() {
   );
   const ico = await pngToIco(icoBuffers);
   await writeFile(join(OUT_DIR, "favicon.ico"), ico);
+  /** Next.js App Router serves tab favicon from src/app/favicon.ico — must stay in sync with public/. */
+  await writeFile(join(APP_DIR, "favicon.ico"), ico);
   await writeFile(
     join(OUT_DIR, "apple-touch-icon.png"),
     await sharp(join(ICONS_DIR, "apple-touch-icon.png")).toBuffer()
@@ -169,6 +185,9 @@ async function main() {
 
   await writeLogoIcon(source, join(APP_DIR, "icon.png"), 512);
   await writeLogoIcon(source, join(APP_DIR, "apple-icon.png"), 180);
+  await logFile(join(APP_DIR, "favicon.ico"));
+  await logFile(join(APP_DIR, "icon.png"));
+  await logFile(join(APP_DIR, "apple-icon.png"));
 
   const mark512 = await logoMarkPngBuffer(source, 512);
   await sharp(mark512)
@@ -180,10 +199,9 @@ async function main() {
     console.log(`  ${resDir.replace(ROOT, "")}/ launcher + splash assets`);
   }
 
-  await logFile(INPUT);
   await logFile(join(OUT_DIR, "images/app-icon.webp"));
 
-  console.log("\nDone. Favicon, PWA, TWA, and og-share images updated from logo.webp.");
+  console.log("\nDone. Master logo at public/icons/logo.webp; favicons and PWA assets regenerated.");
 }
 
 main().catch((err) => {

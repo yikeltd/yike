@@ -78,7 +78,7 @@ export default async function AboutPage() {
         badge="Marketplace"
         imageOpacity={0.28}
         cta={{ label: "Browse homes", href: "/search" }}
-        secondaryCta={{ label: "Swipe feed", href: "/browse" }}
+        secondaryCta={{ label: "Swipe feed", href: "/discover" }}
       />
 
       <div className="mx-auto max-w-7xl px-3 lg:px-8">

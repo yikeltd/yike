@@ -10,9 +10,15 @@ import {
   sendchampErrorMessage,
   type SendchampEnvelope,
 } from "./sendchamp-response";
-import { looksLikeSupabaseKey, resolveSmsSender } from "./sendchamp-keys";
+import {
+  getSendchampVerificationAuthDiagnostic,
+  getSendchampVerificationBaseUrl,
+  resolveSendchampAccessKey,
+  VERIFICATION_CREATE_PATH,
+} from "./sendchamp-access-key";
+import { sendchampJsonPost } from "./sendchamp-http.client";
+import { resolveSmsSender } from "./sendchamp-keys";
 
-const DEFAULT_BASE_URL = "https://api.sendchamp.com/api/v1";
 const FETCH_TIMEOUT_MS = 25_000;
 
 export type SendchampVerificationPurpose =
@@ -21,31 +27,27 @@ export type SendchampVerificationPurpose =
   | "phone_verification"
   | string;
 
-export type SendchampVerificationChannel = "sms" | "whatsapp" | "email";
+export type SendchampVerificationChannel = "sms" | "email";
 
 function getBaseUrl(): string {
-  return process.env.SENDCHAMP_LIVE_BASE_URL?.trim() || DEFAULT_BASE_URL;
+  return getSendchampVerificationBaseUrl();
 }
 
 function getApiKeys(): string[] {
-  const keys = [
-    process.env.SENDCHAMP_API_KEY?.trim(),
-    process.env.SENDCHAMP_PUBLIC_KEY?.trim(),
-  ].filter(
-    (key): key is string =>
-      typeof key === "string" && key.length > 0 && !looksLikeSupabaseKey(key)
-  );
-  return [...new Set(keys)];
+  const resolved = resolveSendchampAccessKey();
+  return resolved ? [resolved.key] : [];
 }
 
+export { getSendchampVerificationAuthDiagnostic, probeSendchampVerificationAuth } from "./sendchamp-auth-probe";
+
 export function otpLength(): number {
-  const n = Number(process.env.SENDCHAMP_OTP_LENGTH ?? process.env.WHATSAPP_OTP_LENGTH ?? 6);
+  const n = Number(process.env.SENDCHAMP_OTP_LENGTH ?? 6);
   return Number.isFinite(n) && n >= 4 && n <= 8 ? n : 6;
 }
 
 export function otpExpiryMinutes(): number {
   const n = Number(
-    process.env.SENDCHAMP_OTP_EXPIRY_MINUTES ?? process.env.WHATSAPP_OTP_EXPIRY_MINUTES ?? 30
+    process.env.SENDCHAMP_OTP_EXPIRY_MINUTES ?? 30
   );
   return Number.isFinite(n) && n >= 5 && n <= 60 ? n : 30;
 }
@@ -54,11 +56,7 @@ function resolveChannel(
   explicit?: SendchampVerificationChannel
 ): SendchampVerificationChannel {
   if (explicit) return explicit;
-  const raw =
-    process.env.SENDCHAMP_OTP_CHANNEL?.trim().toLowerCase() ||
-    process.env.WHATSAPP_OTP_CHANNEL?.trim().toLowerCase() ||
-    "sms";
-  if (raw === "whatsapp" || raw === "wa") return "whatsapp";
+  const raw = process.env.SENDCHAMP_OTP_CHANNEL?.trim().toLowerCase() || "sms";
   if (raw === "email") return "email";
   return "sms";
 }
@@ -94,20 +92,17 @@ async function post<T extends Record<string, unknown>>(
     const apiKey = keysToTry[keyIndex]!;
     const started = Date.now();
     try {
-      const res = await fetch(`${baseUrl}${path}`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      });
+      const res = await sendchampJsonPost(
+        `${baseUrl}${path}`,
+        body,
+        apiKey,
+        FETCH_TIMEOUT_MS
+      );
 
-      const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      const data = res.data;
       lastStatus = res.status;
       const durationMs = Date.now() - started;
+      const httpOk = res.status >= 200 && res.status < 300;
 
       logOtpAudit({
         event: "sendchamp_http_response",
@@ -115,7 +110,7 @@ async function post<T extends Record<string, unknown>>(
         phone: options.phone,
         path,
         httpStatus: res.status,
-        responseHeaders: pickResponseHeaders(res),
+        responseHeaders: res.headers,
         responseBody: data,
         requestPayload: sanitizeSendchampPayload(body),
         deliveryReference: pickSendchampReference(data),
@@ -128,14 +123,14 @@ async function post<T extends Record<string, unknown>>(
         durationMs,
       });
 
-      if (isSendchampSuccess(data, res.ok)) {
+      if (isSendchampSuccess(data, httpOk)) {
         return { ok: true, data: data as SendchampEnvelope<T> };
       }
 
       lastError = sendchampErrorMessage(data, res.status);
       // Do not try another key after an authenticated HTTP response (may have charged).
-      if (res.status === 401) {
-        return { ok: false, error: lastError, status: 401 };
+      if (res.status === 401 || res.status === 407) {
+        return { ok: false, error: lastError, status: res.status };
       }
       if (billable) {
         return { ok: false, error: lastError, status: lastStatus };
@@ -270,7 +265,10 @@ export async function createSendchampVerificationOtp(params: {
       ok: false,
       error: result.error,
       status: result.status === 401 ? 503 : result.status ?? 502,
-      code: result.status === 401 ? "provider_auth_failed" : undefined,
+      code:
+        result.status === 401 || result.status === 407
+          ? "provider_auth_failed"
+          : undefined,
     };
   }
 
@@ -306,25 +304,6 @@ export async function createSendchampVerificationOtp(params: {
   });
 
   return { ok: true, reference, expiresMinutes };
-}
-
-/**
- * @deprecated Prefer createSendchampVerificationOtp with channel whatsapp.
- */
-export async function createSendchampWhatsappVerification(params: {
-  phoneIntl: string;
-  purpose: SendchampVerificationPurpose;
-  email?: string;
-  requestId?: string;
-}): Promise<
-  | { ok: true; reference: string; expiresMinutes: number }
-  | { ok: false; error: string; status: number; code?: "provider_auth_failed" }
-> {
-  return createSendchampVerificationOtp({
-    ...params,
-    channel: "whatsapp",
-    inAppToken: false,
-  });
 }
 
 export async function confirmSendchampVerification(params: {

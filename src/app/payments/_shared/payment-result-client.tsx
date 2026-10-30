@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { dispatchYikeCoinsBalanceChanged } from "@/lib/yike-coins/balance-events";
+import { walletPath } from "@/lib/navigation/account-routes";
+
+type ReconcileState =
+  | { phase: "idle" }
+  | { phase: "working" }
+  | { phase: "done"; walletCoins?: number | null; error?: string };
 
 export function PaymentResultClient({
   variant,
@@ -14,23 +22,75 @@ export function PaymentResultClient({
     searchParams.get("trxref")?.trim() ||
     "";
 
+  const [reconcile, setReconcile] = useState<ReconcileState>({ phase: "idle" });
+
+  useEffect(() => {
+    if (variant !== "success" || !reference) return;
+    let cancelled = false;
+    void (async () => {
+      setReconcile({ phase: "working" });
+      try {
+        const res = await fetch("/api/payments/reconcile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reference }),
+        });
+        const json = await res.json();
+        if (cancelled) return;
+        if (res.ok) {
+          dispatchYikeCoinsBalanceChanged();
+          setReconcile({
+            phase: "done",
+            walletCoins: json.walletTopup?.coinsCredited ?? null,
+          });
+          return;
+        }
+        if (res.status === 202) {
+          setReconcile({
+            phase: "done",
+            error: "Payment is still processing. Your wallet will update shortly.",
+          });
+          return;
+        }
+        setReconcile({
+          phase: "done",
+          error: json.error ?? "Could not confirm payment yet.",
+        });
+      } catch {
+        if (!cancelled) {
+          setReconcile({ phase: "done", error: "Could not reach payment verification." });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [variant, reference]);
+
   const copy =
     variant === "success"
       ? {
           title: "Payment successful",
-          body: "Your payment is confirmed. Your boost, feature, or plan will appear shortly.",
-          cta: "View payment history",
-          href: "/payments/history",
-          secondary: "Back to listings",
-          secondaryHref: "/agent/listings",
+          body:
+            reconcile.phase === "working"
+              ? "Verifying with Paystack and updating your wallet…"
+              : reconcile.phase === "done" && reconcile.walletCoins != null
+                ? `Added ${reconcile.walletCoins} Yike Coins to your wallet.`
+                : reconcile.phase === "done" && reconcile.error
+                  ? reconcile.error
+                  : "Your payment is confirmed. Eligible products will activate shortly.",
+          cta: "Yike Coins wallet",
+          href: walletPath(),
+          secondary: "Payment history",
+          secondaryHref: "/payments/history",
           tone: "border-gold/30 bg-gold/5",
         }
       : variant === "failed"
         ? {
             title: "Payment failed",
             body: "We could not confirm this payment. No charge was completed, or the bank declined it. You can try again.",
-            cta: "Back to listings",
-            href: "/agent/listings",
+            cta: "Yike Coins wallet",
+            href: walletPath(),
             secondary: "Payment history",
             secondaryHref: "/payments/history",
             tone: "border-border bg-white",
@@ -38,10 +98,10 @@ export function PaymentResultClient({
         : {
             title: "Payment cancelled",
             body: "You left checkout before finishing. Nothing was charged.",
-            cta: "Back to listings",
-            href: "/agent/listings",
-            secondary: "Payment history",
-            secondaryHref: "/payments/history",
+            cta: "Yike Coins wallet",
+            href: walletPath(),
+            secondary: "Browse listings",
+            secondaryHref: "/discover",
             tone: "border-border bg-white",
           };
 

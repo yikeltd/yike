@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 import { ListPropertyNavLink } from "@/components/auth/list-property-button";
 import { cn } from "@/lib/utils";
+import { resolveProfilePath } from "@/lib/account/account-home";
+import type { Profile } from "@/types/database";
 import {
   Home,
   PlusCircle,
@@ -12,7 +14,9 @@ import {
   LogIn,
   Sparkles,
   Bookmark,
+  MessageSquare,
 } from "lucide-react";
+import { consumerRoute } from "@/lib/navigation/consumer-routes";
 
 /**
  * Yike Navigation Standard — Full-Width Deep Navy Bar (LOCKED)
@@ -46,7 +50,7 @@ function NavTab({
       href={href}
       prefetch={true}
       className={cn(
-        "pressable flex min-w-[56px] flex-col items-center gap-0.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-all duration-200",
+        "pressable flex min-w-0 flex-1 basis-0 flex-col items-center gap-0.5 px-1 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-all duration-200 max-[380px]:text-[8px] max-[380px]:tracking-tighter",
         active ? "text-gold" : "text-white/60 hover:text-white"
       )}
     >
@@ -58,7 +62,7 @@ function NavTab({
             : "bg-white/5 text-white/70"
         )}
       >
-        <Icon className="h-4.5 w-4.5" strokeWidth={active ? 2.5 : 2} />
+        <Icon className="h-4 w-4 max-[380px]:h-3.5 max-[380px]:w-3.5" strokeWidth={active ? 2.5 : 2} />
       </span>
       {label}
     </Link>
@@ -67,7 +71,8 @@ function NavTab({
 
 export function PrimaryBottomNav() {
   const pathname = usePathname();
-  const { user, loading, openAuth } = useAuth();
+  const { user, profile, loading, openAuth } = useAuth();
+  const profileHref = resolveProfilePath(profile as Profile | null);
 
   if (pathname.startsWith("/auth") || pathname.startsWith("/lex")) {
     return null;
@@ -83,7 +88,9 @@ export function PrimaryBottomNav() {
     pathname === "/swipe";
   const sellActive =
     pathname === "/post-property" || pathname.startsWith("/post-property/");
-  const profileActive = isNavActive("/agent", pathname, "prefix") || pathname === "/profile";
+  const messagesActive = isNavActive("/conversations", pathname, "prefix");
+  const profileActive =
+    isNavActive("/agent", pathname, "prefix") || pathname === "/profile";
 
   // ==========================================
   // NAVIGATION 2 — AUTHENTICATED (FULL-WIDTH DEEP NAVY)
@@ -95,43 +102,57 @@ export function PrimaryBottomNav() {
         className="fixed inset-x-0 bottom-0 z-50 flex justify-center bg-[#031B4E] border-t border-white/10 shadow-[0_-8px_32px_rgba(2,20,51,0.4)] lg:hidden pb-[max(0.25rem,env(safe-area-inset-bottom))]"
         aria-label="Authenticated Navigation"
       >
-        <div className="flex w-full max-w-lg items-center justify-around px-2 py-1">
+        <div className="flex w-full max-w-lg items-end justify-between gap-0 px-1 py-1 max-[380px]:px-0.5">
           <NavTab href="/" label="Home" icon={Home} active={homeActive} />
-          
+
           <NavTab href="/discover" label="Discover" icon={Sparkles} active={discoverActive} />
 
           {/* Elevated Center Gold Sell FAB */}
-          <div className="relative flex flex-col items-center justify-center">
+          <div className="relative flex shrink-0 flex-col items-center justify-center px-0.5">
             <Link
               href="/post-property"
               aria-label="Post Property"
               className={cn(
-                "pressable relative -mt-5 flex h-13 w-13 items-center justify-center rounded-full bg-gold text-navy shadow-[0_6px_20px_rgba(228,181,71,0.6)] border-2 border-[#031B4E] transition-transform active:scale-95",
+                "pressable relative -mt-5 flex h-13 w-13 max-[380px]:h-11 max-[380px]:w-11 items-center justify-center rounded-full bg-gold text-navy shadow-[0_6px_20px_rgba(228,181,71,0.6)] border-2 border-[#031B4E] transition-transform active:scale-95",
                 sellActive && "scale-105 ring-4 ring-gold/40"
               )}
             >
-              <PlusCircle className="h-7 w-7 text-navy fill-navy/10" strokeWidth={2.5} />
+              <PlusCircle className="h-7 w-7 max-[380px]:h-6 max-[380px]:w-6 text-navy fill-navy/10" strokeWidth={2.5} />
             </Link>
-            <span className={cn("text-[9px] font-bold uppercase tracking-wide mt-0.5", sellActive ? "text-gold" : "text-white/60")}>
+            <span
+              className={cn(
+                "mt-0.5 text-[9px] font-bold uppercase tracking-wide max-[380px]:text-[8px]",
+                sellActive ? "text-gold" : "text-white/60",
+              )}
+            >
               Sell
             </span>
           </div>
 
+          <NavTab
+            href={consumerRoute("messages")}
+            label="Inbox"
+            icon={MessageSquare}
+            active={messagesActive}
+          />
+
           <Link
-            href="/agent"
+            href={profileHref}
             prefetch
             className={cn(
-              "pressable flex min-w-[56px] flex-col items-center gap-0.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200",
+              "pressable flex min-w-0 flex-1 basis-0 flex-col items-center gap-0.5 px-1 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200 max-[380px]:text-[8px] max-[380px]:tracking-tighter",
               profileActive ? "text-gold" : "text-white/60 hover:text-white"
             )}
           >
             <span
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
-                profileActive ? "bg-gold text-navy shadow-[0_0_12px_rgba(228,181,71,0.5)] scale-105" : "bg-white/5 text-white/70"
+                "flex h-8 w-8 max-[380px]:h-7 max-[380px]:w-7 items-center justify-center rounded-full transition-all duration-200",
+                profileActive
+                  ? "bg-gold text-navy shadow-[0_0_12px_rgba(228,181,71,0.5)] scale-105"
+                  : "bg-white/5 text-white/70"
               )}
             >
-              <User className="h-4.5 w-4.5" strokeWidth={profileActive ? 2.5 : 2} />
+              <User className="h-4 w-4 max-[380px]:h-3.5 max-[380px]:w-3.5" strokeWidth={profileActive ? 2.5 : 2} />
             </span>
             Profile
           </Link>
@@ -149,32 +170,30 @@ export function PrimaryBottomNav() {
       className="fixed inset-x-0 bottom-0 z-50 flex justify-center bg-[#031B4E] border-t border-white/10 shadow-[0_-8px_32px_rgba(2,20,51,0.4)] lg:hidden pb-[max(0.25rem,env(safe-area-inset-bottom))]"
       aria-label="Public Navigation"
     >
-      <div className="flex w-full max-w-lg items-center justify-around px-2 py-1">
+      <div className="flex w-full max-w-lg items-end justify-between gap-0 px-1 py-1 max-[380px]:px-0.5">
         <NavTab href="/" label="Home" icon={Home} active={homeActive} />
-        
-        {/* Saved Tab */}
+
         <NavTab href="/saved" label="Saved" icon={Bookmark} active={savedActive} />
 
-        {/* Elevated Center Gold Discover FAB */}
-        <div className="relative flex flex-col items-center justify-center">
+        <div className="relative flex shrink-0 flex-col items-center justify-center px-0.5">
           <Link
             href="/discover"
             aria-label="Discover listings"
             aria-current={discoverActive ? "page" : undefined}
             className={cn(
-              "pressable group relative -mt-5 flex h-13 w-13 items-center justify-center rounded-full bg-gold text-navy shadow-[0_6px_20px_rgba(228,181,71,0.6)] border-2 border-[#031B4E] transition-transform duration-200 active:scale-95",
+              "pressable group relative -mt-5 flex h-13 w-13 max-[380px]:h-11 max-[380px]:w-11 items-center justify-center rounded-full bg-gold text-navy shadow-[0_6px_20px_rgba(228,181,71,0.6)] border-2 border-[#031B4E] transition-transform duration-200 active:scale-95",
               discoverActive && "scale-105 shadow-glow-gold"
             )}
           >
             <Sparkles
-              className="h-6 w-6 transition-transform duration-200 group-active:scale-90"
+              className="h-6 w-6 max-[380px]:h-5 max-[380px]:w-5 transition-transform duration-200 group-active:scale-90"
               strokeWidth={2.4}
               aria-hidden
             />
           </Link>
           <span
             className={cn(
-              "mt-0.5 text-[9px] font-bold uppercase tracking-wide",
+              "mt-0.5 text-[9px] font-bold uppercase tracking-wide max-[380px]:text-[8px]",
               discoverActive ? "text-gold" : "text-white/60"
             )}
           >
@@ -185,17 +204,17 @@ export function PrimaryBottomNav() {
         <ListPropertyNavLink
           href="/post-property"
           className={cn(
-            "pressable flex min-w-[56px] flex-col items-center gap-0.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200",
+            "pressable flex min-w-0 flex-1 basis-0 flex-col items-center gap-0.5 px-1 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200 max-[380px]:text-[8px] max-[380px]:tracking-tighter",
             sellActive ? "text-gold" : "text-white/60 hover:text-white"
           )}
         >
           <span
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
+              "flex h-8 w-8 max-[380px]:h-7 max-[380px]:w-7 items-center justify-center rounded-full transition-all duration-200",
               sellActive ? "bg-gold text-navy shadow-[0_0_12px_rgba(228,181,71,0.5)] scale-105" : "bg-white/5 text-white/70"
             )}
           >
-            <PlusCircle className="h-4.5 w-4.5" strokeWidth={sellActive ? 2.5 : 2} />
+            <PlusCircle className="h-4 w-4 max-[380px]:h-3.5 max-[380px]:w-3.5" strokeWidth={sellActive ? 2.5 : 2} />
           </span>
           Sell
         </ListPropertyNavLink>
@@ -205,17 +224,17 @@ export function PrimaryBottomNav() {
           disabled={loading}
           onClick={() => openAuth({ type: "profile", redirectPath: "/agent" })}
           className={cn(
-            "pressable flex min-w-[56px] flex-col items-center gap-0.5 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200",
+            "pressable flex min-w-0 flex-1 basis-0 flex-col items-center gap-0.5 px-1 py-1.5 text-[9px] font-bold uppercase tracking-wide transition-colors duration-200 max-[380px]:text-[8px] max-[380px]:tracking-tighter",
             pathname.startsWith("/auth") ? "text-gold" : "text-white/60 hover:text-white"
           )}
         >
           <span
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
+              "flex h-8 w-8 max-[380px]:h-7 max-[380px]:w-7 items-center justify-center rounded-full transition-all duration-200",
               pathname.startsWith("/auth") ? "bg-gold text-navy shadow-[0_0_12px_rgba(228,181,71,0.5)] scale-105" : "bg-white/5 text-white/70"
             )}
           >
-            <LogIn className="h-4.5 w-4.5" strokeWidth={pathname.startsWith("/auth") ? 2.5 : 2} />
+            <LogIn className="h-4 w-4 max-[380px]:h-3.5 max-[380px]:w-3.5" strokeWidth={pathname.startsWith("/auth") ? 2.5 : 2} />
           </span>
           Account
         </button>

@@ -4,9 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolvePayableProduct } from "@/lib/payments/catalog";
 import {
   getDefaultPaymentProvider,
+  getPaystackSecretKey,
   isPaystackConfigured,
   isPaymentsRuntimeEnabled,
 } from "@/lib/payments/config";
+import { guardLocalPaymentMutation } from "@/lib/dev/runtime-safety";
 import { getFinancialPlatform } from "@/lib/financial";
 import { friendlyPublicError } from "@/lib/copy/public-errors";
 
@@ -22,6 +24,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Payments are not available right now" },
       { status: 503 }
+    );
+  }
+
+  const localGuard = guardLocalPaymentMutation(getPaystackSecretKey());
+  if (!localGuard.ok) {
+    return NextResponse.json(
+      { error: localGuard.error, code: localGuard.code },
+      { status: 403 },
     );
   }
 

@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   // Required for multi-stage Coolify/Docker images (see Dockerfile).
   output: "standalone",
   poweredByHeader: false,
+  /** Playwright and local tooling often hit 127.0.0.1; allow dev HMR/client hydration. */
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   experimental: {
     agentUpgrade: "security",
     optimizePackageImports: ["lucide-react"],
@@ -156,17 +158,17 @@ const nextConfig: NextConfig = {
       { source: "/swipe-homes", destination: "/discover", permanent: true },
       { source: "/swipe", destination: "/discover", permanent: true },
       { source: "/browse", destination: "/discover", permanent: true },
-      { source: "/list", destination: "/agent/verify", permanent: true },
-      { source: "/list-property", destination: "/agent/verify", permanent: true },
+      { source: "/list", destination: "/agent/listings/new", permanent: true },
+      { source: "/list-property", destination: "/agent/listings/new", permanent: true },
       { source: "/agent/become", destination: "/agent/verify", permanent: false },
-      { source: "/post-property", destination: "/agent/verify", permanent: false },
+      { source: "/post-property", destination: "/agent/listings/new", permanent: false },
       { source: "/agent/pricing", destination: "/agent/plans", permanent: false },
       { source: "/plans", destination: "/agent/plans", permanent: false },
       { source: "/request-home", destination: "/request-property", permanent: true },
       { source: "/cookie-policy", destination: "/cookies", permanent: true },
       { source: "/legal", destination: "/privacy", permanent: true },
       { source: "/support", destination: "/contact", permanent: true },
-      { source: "/sell", destination: "/agent/verify", permanent: false },
+      { source: "/sell", destination: "/agent/listings/new", permanent: false },
       { source: "/account", destination: "/agent", permanent: false },
       { source: "/help", destination: "/safety", permanent: true },
       { source: "/messages", destination: "/contact", permanent: false },
@@ -194,16 +196,6 @@ const nextConfig: NextConfig = {
       {
         source: "/areas/:city/:neighborhood/:propertyType",
         destination: "/houses/:city/:neighborhood/:propertyType",
-        permanent: true,
-      },
-      {
-        source: "/admin",
-        destination: "/lex",
-        permanent: true,
-      },
-      {
-        source: "/admin/:path*",
-        destination: "/lex/:path*",
         permanent: true,
       },
     ];

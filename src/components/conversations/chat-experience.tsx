@@ -277,13 +277,13 @@ export function ChatExperience({
       {/* 1. FIXED TOP NAVIGATION HEADER */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2.5 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => router.back()}
+          <Link
+            href="/conversations"
             className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-navy hover:bg-slate-200"
+            aria-label="Back to messages"
           >
             <ArrowLeft className="h-4 w-4" />
-          </button>
+          </Link>
 
           {/* Seller Avatar & Online Status */}
           <div className="relative shrink-0">

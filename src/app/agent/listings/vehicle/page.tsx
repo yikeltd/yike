@@ -1,14 +1,6 @@
-import { UniversalListingWizard } from "@/components/listing-engine/universal-listing-wizard";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "List Vehicle | Yike Marketplace",
-  description: "Universal listing flow engine for vehicles and transport on Yike.",
-};
-
-export default function VehicleListingPage() {
-  return (
-    <main className="min-h-screen bg-[#f8fafc] py-6">
-      <UniversalListingWizard categoryId="vehicles" />
-    </main>
-  );
+/** Legacy path — canonical gated flow uses ListingEngine. */
+export default function LegacyVehicleListingPage() {
+  redirect("/agent/listings/new/vehicle");
 }

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureListingLead } from "@/lib/listing-leads/capture";
 import { isListingLeadType } from "@/lib/listing-leads/constants";
+import { validateListingLeadCaptureRequest } from "@/lib/listing-leads/validate-capture-request";
 
 export const runtime = "nodejs";
 
@@ -30,20 +31,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
   }
 
+  const bound = await validateListingLeadCaptureRequest(admin, {
+    leadType,
+    listingId,
+    sellerId,
+    assetType: body.assetType ? String(body.assetType) : null,
+  });
+  if (!bound.ok) {
+    return NextResponse.json({ error: bound.error }, { status: bound.status });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
   } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
 
   const result = await captureListingLead(admin, {
-    listingId,
-    sellerId,
+    listingId: bound.listingId,
+    sellerId: bound.sellerId,
     leadUserId: user?.id ?? null,
     leadType,
     sourcePage: body.sourcePage ? String(body.sourcePage) : null,
     placement: body.placement ? String(body.placement) : null,
     listingTitle: body.listingTitle ? String(body.listingTitle) : null,
-    leadUserDisplay: body.leadUserDisplay ? String(body.leadUserDisplay) : null,
+    leadUserDisplay: user ? null : body.leadUserDisplay ? String(body.leadUserDisplay) : null,
   });
 
   return NextResponse.json({ ok: result.ok, skipped: result.skipped ?? false });

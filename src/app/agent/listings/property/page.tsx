@@ -1,14 +1,6 @@
-import { UniversalListingWizard } from "@/components/listing-engine/universal-listing-wizard";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "List Property | Yike Marketplace",
-  description: "Universal listing flow engine for real estate and properties on Yike.",
-};
-
-export default function PropertyListingPage() {
-  return (
-    <main className="min-h-screen bg-[#f8fafc] py-6">
-      <UniversalListingWizard categoryId="properties" />
-    </main>
-  );
+/** Legacy path — canonical gated flow uses ListingEngine. */
+export default function LegacyPropertyListingPage() {
+  redirect("/agent/listings/new/property");
 }

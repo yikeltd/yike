@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { MarketplaceBackButton } from "@/components/marketplace/marketplace-back-button";
 import {
   ChevronLeft,
   MapPin,
@@ -20,8 +20,6 @@ import {
   Waves,
   Sun,
   Calculator,
-  MessageCircle,
-  TrendingUp,
 } from "lucide-react";
 import type { Property } from "@/types/database";
 import { formatPrice, cn, isVerifiedAgent } from "@/lib/utils";
@@ -32,11 +30,16 @@ import { listingAbsoluteUrl } from "@/lib/marketplace/listing-path";
 import { buildMotionSlides } from "@/lib/media/items";
 import { PropertyGalleryModal } from "./property-gallery-modal";
 import { PropertyTrustIndicators } from "./property-trust-indicators";
-import { AgentContactCard } from "./agent-contact-card";
 import { PropertyCard } from "./property-card";
-import { PropertyNegotiationModal } from "./property-negotiation-modal";
-import { openWhatsAppLead, trackLeadAndRedirect } from "@/lib/leads/client";
-import { useAuth } from "@/components/auth/auth-provider";
+import { sellerContactCardFromListing } from "@/lib/marketplace/seller-contact-card-props";
+import { ListingDetailGalleryContact } from "@/components/marketplace/listing-detail-gallery-contact";
+import { listingContactContextFromListing } from "@/lib/marketplace/listing-inquiry-message";
+import {
+  formatListingPublicLocation,
+  ListingDetailLocationSection,
+} from "@/components/marketplace/listing-detail-location-section";
+import { ListingDetailSellerSection } from "@/components/marketplace/listing-detail-seller-section";
+import { ListingDetailSpecificationsSection } from "@/components/marketplace/listing-detail-specifications-grid";
 
 const AMENITY_ICONS: Record<string, typeof Zap> = {
   power: Zap,
@@ -64,13 +67,13 @@ export function PropertyDetailExperience({
   property,
   similarListings = [],
   ownerBanner,
+  browseReturnParam,
 }: {
   property: Property;
   similarListings?: Property[];
   ownerBanner?: React.ReactNode;
+  browseReturnParam?: string | null;
 }) {
-  const router = useRouter();
-  const { guardAction } = useAuth();
   const slides = buildMotionSlides(property);
   const photos = slides.map((s) => s.url);
 
@@ -79,10 +82,8 @@ export function PropertyDetailExperience({
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [specsExpanded, setSpecsExpanded] = useState(false);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
-  const [negotiationOpen, setNegotiationOpen] = useState(false);
-  const [chatLoading, setChatLoading] = useState(false);
-
   const agent = property.agent;
+  const sellerIdentity = sellerContactCardFromListing(property, "PROPERTY");
   const verified =
     property.is_verified_listing || (agent ? isVerifiedAgent(agent) : false);
 
@@ -98,9 +99,11 @@ export function PropertyDetailExperience({
       ? formatPrice(Math.round(listingPrice / 12))
       : formatPrice(Math.round(listingPrice / 120));
 
-  const cleanLocation = [property.area, property.city, property.state]
-    .filter(Boolean)
-    .join(", ");
+  const cleanLocation = formatListingPublicLocation({
+    area: property.area,
+    city: property.city,
+    state: property.state,
+  });
 
   const shareUrl = listingAbsoluteUrl(property);
   const mainPhoto =
@@ -142,60 +145,17 @@ export function PropertyDetailExperience({
     { label: "Legal & Agency Fee", value: extrasObj.legal_fee ? String(extrasObj.legal_fee) : "10% / 10%" },
   ];
 
-  async function handleWhatsAppDirect() {
-    if (!agent?.id) return;
-    setChatLoading(true);
-    const href = typeof window !== "undefined" ? window.location.pathname : `/properties/${property.id}`;
-    const result = await trackLeadAndRedirect({
-      listingId: property.id,
-      agentId: agent.id,
-      leadType: "whatsapp",
-      sourcePage: href,
-      placement: "sticky",
-      agentName: agent.full_name ?? "Agent",
-      title: property.title,
-      area: property.area,
-      city: property.city,
-      price: Number(property.price),
-      paymentPeriod: property.payment_period,
-      listingType: property.listing_type,
-      bedrooms: property.bedrooms,
-      propertyType: property.property_type,
-      whatsapp: agent.whatsapp,
-      phone: agent.phone,
-    });
-    setChatLoading(false);
-    if (result.ok && result.redirectUrl) {
-      openWhatsAppLead(result);
-    }
-  }
-
-  function onStickyChatClick(e: React.MouseEvent) {
-    e.preventDefault();
-    guardAction(
-      {
-        type: "whatsapp",
-        listingId: property.id,
-        redirectPath: `/properties/${property.id}`,
-      },
-      () => void handleWhatsAppDirect()
-    );
-  }
-
   return (
-    <div className="min-h-[100dvh] bg-[#f7f9fc] dark:bg-[#021433] text-navy dark:text-white pb-32 lg:pb-12 select-none">
+    <div className="yike-detail-canvas dark:bg-[#021433] text-navy dark:text-white pb-12 select-none">
       {ownerBanner}
 
       {/* TOP HEADER BAR */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-navy/10 dark:border-white/10 bg-[#031B4E] px-4 py-3 text-white shadow-md">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all active:scale-95 hover:bg-white/20"
-          aria-label="Go back"
-        >
-          <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
-        </button>
+      <header className="yike-detail-header sticky top-0 z-40 flex items-center justify-between px-4 py-3 text-white">
+        <MarketplaceBackButton
+          variant="overlay"
+          fallback="/search"
+          browseReturnParam={browseReturnParam}
+        />
 
         <h1 className="text-xs font-black uppercase tracking-wider text-gold">
           PROPERTY DETAILS
@@ -217,10 +177,7 @@ export function PropertyDetailExperience({
 
       {/* MAIN CONTAINER: 2-COLUMN ON DESKTOP */}
       <div className="mx-auto max-w-6xl px-3.5 pt-4 lg:px-6 space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* LEFT MAIN COLUMN */}
-          <div className="lg:col-span-8 space-y-5">
+        <div className="space-y-5">
             
             {/* 1. HERO GALLERY */}
             <section className="relative w-full aspect-[4/3] sm:aspect-[16/10] rounded-3xl bg-navy overflow-hidden shadow-2xl group border border-navy/10 dark:border-white/10">
@@ -283,8 +240,18 @@ export function PropertyDetailExperience({
               </div>
             )}
 
+            {sellerIdentity ? (
+              <ListingDetailGalleryContact
+                listingId={sellerIdentity.listingId}
+                assetType={sellerIdentity.assetType}
+                sellerId={sellerIdentity.sellerId}
+                sellerName={sellerIdentity.sellerName}
+                contact={listingContactContextFromListing(property, "PROPERTY")}
+              />
+            ) : null}
+
             {/* 2. SUMMARY & HIGHLIGHTS */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-4">
+            <div className="yike-panel space-y-4 p-5 dark:bg-navy">
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-navy dark:text-white leading-snug max-w-xl">
@@ -331,7 +298,7 @@ export function PropertyDetailExperience({
                   return (
                     <div
                       key={i}
-                      className="flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10"
+                      className="info-tile flex flex-col p-3 dark:bg-white/5"
                     >
                       <span className="flex items-center gap-1 text-[10px] font-semibold text-navy/50 dark:text-white/50">
                         <Icon className="h-3 w-3 text-gold" />
@@ -350,7 +317,7 @@ export function PropertyDetailExperience({
             </div>
 
             {/* 3. DESCRIPTION */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-2">
+            <div className="yike-panel space-y-2 p-5 dark:bg-navy">
               <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70">
                 Property Description
               </h3>
@@ -373,7 +340,7 @@ export function PropertyDetailExperience({
             </div>
 
             {/* 4. AMENITIES & FEATURES */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-3">
+            <div className="yike-panel space-y-3 p-5 dark:bg-navy">
               <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70">
                 Amenities & Features
               </h3>
@@ -393,12 +360,10 @@ export function PropertyDetailExperience({
               </div>
             </div>
 
-            {/* 5. DETAILED SPECS */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70">
-                  Property Specifications
-                </h3>
+            <ListingDetailSpecificationsSection
+              title="Property Specifications"
+              items={detailedSpecs.slice(0, specsExpanded ? detailedSpecs.length : 6)}
+              headerAction={
                 <button
                   type="button"
                   onClick={() => setSpecsExpanded((v) => !v)}
@@ -406,53 +371,16 @@ export function PropertyDetailExperience({
                 >
                   {specsExpanded ? "Show Less ▲" : "View All Specs ▼"}
                 </button>
-              </div>
+              }
+            />
 
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
-                {detailedSpecs.slice(0, specsExpanded ? detailedSpecs.length : 4).map((spec, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10"
-                  >
-                    <span className="text-[10px] font-semibold text-navy/50 dark:text-white/50">
-                      {spec.label}
-                    </span>
-                    <span className="text-xs font-black text-navy dark:text-white mt-0.5 truncate">
-                      {spec.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {cleanLocation ? (
+              <ListingDetailLocationSection locationLabel={cleanLocation} />
+            ) : null}
 
-            {/* 6. MAP SECTION */}
-            <div className="rounded-3xl border border-navy/10 dark:border-white/10 bg-white dark:bg-navy p-5 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-navy/70 dark:text-white/70 flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-gold" />
-                  Location & Neighborhood
-                </h3>
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                  Exact location disclosed after contact
-                </span>
-              </div>
-
-              <div className="relative h-44 w-full rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 flex items-center justify-center border border-slate-300 dark:border-white/10">
-                <Image
-                  src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80&fit=crop"
-                  alt="Location Map Preview"
-                  fill
-                  className="object-cover brightness-[0.8]"
-                />
-                <div className="absolute inset-0 bg-navy/20 backdrop-blur-[1px]" />
-                <div className="relative z-10 text-center px-4">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#031B4E] text-white px-4 py-2 text-xs font-black shadow-lg border border-gold/40">
-                    <MapPin className="h-4 w-4 text-gold" />
-                    {cleanLocation}
-                  </span>
-                </div>
-              </div>
-            </div>
+            {sellerIdentity ? (
+              <ListingDetailSellerSection identity={sellerIdentity} />
+            ) : null}
 
             {/* 7. SIMILAR PROPERTIES */}
             {similarListings.length > 0 && (
@@ -468,37 +396,6 @@ export function PropertyDetailExperience({
               </div>
             )}
 
-          </div>
-
-          {/* RIGHT COLUMN (DESKTOP STICKY SIDEBAR) */}
-          <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
-            <AgentContactCard listing={property} />
-          </div>
-
-        </div>
-      </div>
-
-      {/* 8. STICKY MOBILE ACTIONS BAR (ALWAYS VISIBLE ON MOBILE) */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-navy/95 border-t border-navy/10 dark:border-white/10 backdrop-blur-md p-3 shadow-2xl">
-        <div className="mx-auto max-w-xl grid grid-cols-2 gap-2.5">
-          <button
-            type="button"
-            onClick={onStickyChatClick}
-            disabled={chatLoading}
-            className="pressable flex items-center justify-center gap-2 rounded-2xl border-2 border-[#031B4E] dark:border-gold bg-white dark:bg-transparent py-3 text-xs font-black text-navy dark:text-gold hover:bg-slate-50 shadow-sm disabled:opacity-50"
-          >
-            <MessageCircle className="h-4 w-4 text-navy dark:text-gold" />
-            <span>{chatLoading ? "OPENING..." : "WHATSAPP CHAT"}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setNegotiationOpen(true)}
-            className="pressable flex items-center justify-center gap-2 rounded-2xl bg-gold py-3 text-xs font-black text-navy hover:bg-gold-light shadow-md"
-          >
-            <TrendingUp className="h-4 w-4 text-navy" />
-            <span>START NEGOTIATION</span>
-          </button>
         </div>
       </div>
 
@@ -512,13 +409,6 @@ export function PropertyDetailExperience({
         />
       )}
 
-      {/* NEGOTIATION MODAL */}
-      {negotiationOpen && (
-        <PropertyNegotiationModal
-          property={property}
-          onClose={() => setNegotiationOpen(false)}
-        />
-      )}
     </div>
   );
 }

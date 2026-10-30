@@ -1,4 +1,5 @@
 import type { OtpChannel, ProviderResult } from "../types";
+import { toInternationalNigerianPhone } from "@/lib/phone";
 import { buildSmsOtpMessage } from "@/lib/phone-verification/copy";
 import {
   logOtpAudit,
@@ -16,6 +17,7 @@ import {
   sendchampErrorMessage,
   type SendchampEnvelope,
 } from "./sendchamp-response";
+import { resolveSendchampAccessKey } from "./sendchamp-access-key";
 import { otpExpiryMinutes } from "./sendchamp-verification";
 
 const DEFAULT_BASE_URL = "https://api.sendchamp.com/api/v1";
@@ -31,16 +33,9 @@ type SendchampConfig = {
   whatsappSender: string;
 };
 
-/** Public access key first; optional SENDCHAMP_API_KEY if dashboard provides it. */
 function getSendchampApiKeys(): string[] {
-  const keys = [
-    process.env.SENDCHAMP_API_KEY?.trim(),
-    process.env.SENDCHAMP_PUBLIC_KEY?.trim(),
-  ].filter((key): key is string => {
-    if (!key) return false;
-    return !looksLikeSupabaseKey(key);
-  });
-  return [...new Set(keys)];
+  const resolved = resolveSendchampAccessKey();
+  return resolved ? [resolved.key] : [];
 }
 
 /** WhatsApp sender must be an international phone number (234…). */
@@ -191,12 +186,9 @@ async function sendchampPost<T extends Record<string, unknown>>(
   return { ok: false, error: lastError };
 }
 
-/** Nigerian 11-digit local → 234… international (no +). */
-export function toSendchampPhone(localPhone: string): string {
-  const digits = localPhone.replace(/\D/g, "");
-  if (digits.startsWith("234") && digits.length === 13) return digits;
-  if (digits.length === 11 && digits.startsWith("0")) return `234${digits.slice(1)}`;
-  return digits;
+/** Nigerian local or international → 234… (no +) for Sendchamp payloads. */
+export function toSendchampPhone(phone: string): string {
+  return toInternationalNigerianPhone(phone) ?? phone.replace(/\D/g, "");
 }
 
 export function isSendchampConfigured(): boolean {

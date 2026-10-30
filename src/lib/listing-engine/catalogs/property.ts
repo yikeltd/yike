@@ -6,6 +6,7 @@ import { LISTING_TYPES, propertyTypesForListingType } from "@/constants/listingT
 import { NIGERIAN_AMENITIES } from "@/constants/amenities";
 import { getCitiesForState, getAreasForCity, NIGERIAN_STATES } from "@/constants/nigeriaLocations";
 import type { CatalogMap } from "./types";
+import { bedroomCountOptions } from "../catalogues/spec-presets";
 
 export const PROPERTY_CATALOGS: CatalogMap = {
   "property.listing_types": () => LISTING_TYPES.map((t) => ({ value: t.value, label: t.label })),
@@ -28,4 +29,5 @@ export const PROPERTY_CATALOGS: CatalogMap = {
   },
   "property.amenities": () =>
     NIGERIAN_AMENITIES.map((a) => ({ value: a.id, label: a.label })),
+  "property.room_counts": () => bedroomCountOptions(12),
 };

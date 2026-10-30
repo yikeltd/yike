@@ -41,6 +41,7 @@ import type { ProfileSocialStats } from "@/lib/social/types";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import type { SellerAnalyticsSummary } from "@/lib/subscriptions/analytics";
 import { cn } from "@/lib/utils";
+import { AgentHeroYcBalance } from "@/components/agent/agent-hero-yc-balance";
 
 type Props = {
   profile: Profile;
@@ -153,10 +154,8 @@ export function SellerCommandCenter(props: Props) {
     email,
     verified,
     activeCount,
-    totalListings,
     leadsCount,
     memberSince,
-    socialStats,
     profileSaved,
     subscriptionPlanLabel,
   } = props;
@@ -167,12 +166,14 @@ export function SellerCommandCenter(props: Props) {
 
   const nameToDisplay =
     profile.full_name?.trim() ||
-    profile.username ||
     profile.company_name?.trim() ||
-    "Stanley Nwafor";
+    (profile.username ? `@${profile.username}` : null) ||
+    "Your account";
+
+  const handle = profile.username?.trim();
+  const showUsernameLine = Boolean(handle) && !nameToDisplay.startsWith("@");
 
   const trustScore = profile.trust_score ?? 100;
-  const listingsValue = totalListings > 0 ? totalListings : 1;
 
   // 1. EXACT THREE RECENT CONVERSATIONS MATCHING REFERENCE DESIGN
   const sampleConversations = [
@@ -213,7 +214,7 @@ export function SellerCommandCenter(props: Props) {
     {
       id: "act-1",
       title: "New lead",
-      subtitle: "Emeka Okafor viewed your listing",
+      subtitle: "A buyer viewed your listing",
       time: "5m ago",
       icon: Users,
       tone: "bg-emerald-50 text-emerald-600 border border-emerald-200",
@@ -253,7 +254,6 @@ export function SellerCommandCenter(props: Props) {
             <SidebarNavItem href="/agent" icon={LayoutDashboard} label="Dashboard" active />
             <SidebarNavItem href="/conversations" icon={MessageSquare} label="Conversations" badge={3} />
             <SidebarNavItem href="/discover" icon={Sparkles} label="Discover" />
-            <SidebarNavItem href="/agent/listings/choose" icon={PlusCircle} label="Sell" />
           </nav>
 
           <hr className="border-white/10" />
@@ -302,7 +302,7 @@ export function SellerCommandCenter(props: Props) {
               {/* Plan Badge Pill (Top-Left) */}
               <Link
                 href="/agent/plans"
-                className="pressable inline-flex items-center gap-1.5 rounded-full border border-[#E4B547] bg-transparent px-3 py-1 text-xs font-bold text-[#E4B547] hover:bg-[#E4B547]/10 transition-all"
+                className="pressable inline-flex items-center gap-1.5 rounded-full border border-[#E4B547] bg-transparent px-3 py-1 text-xs font-bold text-[#E4B547] hover:bg-[#E4B547]/10 transition-all lg:hidden"
               >
                 <Crown className="h-3.5 w-3.5 fill-[#E4B547] text-[#E4B547]" />
                 <span>{getCleanPlanName(subscriptionPlanLabel)}</span>
@@ -313,7 +313,7 @@ export function SellerCommandCenter(props: Props) {
                 <Link
                   href="/seller/crm"
                   prefetch
-                  className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-[#E4B547] text-[#E4B547] hover:bg-[#E4B547]/10 transition-colors"
+                  className="pressable flex h-9 w-9 items-center justify-center rounded-full border border-[#E4B547] text-[#E4B547] hover:bg-[#E4B547]/10 transition-colors lg:hidden"
                   aria-label="Analytics"
                   title="Seller Analytics"
                 >
@@ -355,9 +355,11 @@ export function SellerCommandCenter(props: Props) {
                   <Sparkles className="h-5 w-5 text-[#E4B547] fill-[#E4B547] shrink-0" />
                 </div>
 
-                <p className="text-xs font-semibold text-[#E4B547]/90 truncate">
-                  @{profile.username || "agent"}
-                </p>
+                {showUsernameLine ? (
+                  <p className="text-xs font-semibold text-[#E4B547]/90 truncate">
+                    @{profile.username}
+                  </p>
+                ) : null}
 
                 <div className="pt-0.5">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/40 bg-transparent px-3 py-0.5 text-xs font-medium text-white shadow-2xs">
@@ -382,7 +384,7 @@ export function SellerCommandCenter(props: Props) {
               {/* Center Column: LARGE PREMIUM GOLD CTA BUTTON */}
               <div className="px-2">
                 <Link
-                  href="/agent/listings/choose"
+                  href="/agent/listings/new"
                   className="pressable flex items-center justify-center gap-1.5 rounded-xl bg-[#F59E0B] py-2.5 px-3 text-xs font-bold text-[#031B4E] shadow-md hover:bg-amber-400 active:scale-98 transition-all w-full"
                 >
                   <PlusCircle className="h-4 w-4 stroke-[2.5]" />
@@ -390,13 +392,9 @@ export function SellerCommandCenter(props: Props) {
                 </Link>
               </div>
 
-              {/* Right Column: STATUS */}
-              <div className="pl-3 text-left">
-                <span className="text-[10px] font-bold text-[#E4B547] tracking-wider uppercase block">STATUS</span>
-                <span className="flex items-center gap-1.5 font-bold text-white text-xs sm:text-sm mt-0.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  <span>Active</span>
-                </span>
+              {/* Right Column: Yike Coins wallet entry */}
+              <div className="pl-1 sm:pl-3">
+                <AgentHeroYcBalance />
               </div>
             </div>
           </div>
@@ -414,50 +412,76 @@ export function SellerCommandCenter(props: Props) {
             </p>
           )}
 
-          {/* 8. RECENT CONVERSATIONS — FLOATING WHITE CARD MATCHING REFERENCE DESIGN */}
-          <section className="space-y-2">
-            <SectionHeader title="Recent Conversations" href="/conversations" />
+          {/* BUSINESS SNAPSHOT — COMPRESSED CARD HEIGHT & PADDING */}
+          <section className="space-y-1">
+            <SectionHeader title="Business Snapshot" />
 
-            <div className="rounded-2xl border border-slate-100/90 bg-white p-3 sm:p-4 shadow-xs divide-y divide-slate-100">
-              {sampleConversations.map((conv) => (
-                <Link
-                  key={conv.id}
-                  href={`/conversations/${conv.id}`}
-                  prefetch
-                  className="pressable group flex items-center justify-between gap-3 py-3 first:pt-0.5 last:pb-0.5 transition-colors hover:bg-slate-50/70 rounded-xl px-1"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={conv.avatar}
-                      alt={conv.name}
-                      className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover border border-slate-200/60 shadow-2xs shrink-0"
-                    />
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-xs sm:text-sm font-bold text-[#031B4E] truncate">{conv.name}</h3>
-                        <span className={cn("rounded-md border px-2 py-0.5 text-[10px] font-semibold shrink-0", conv.badgeTone)}>
-                          {conv.badge}
-                        </span>
-                      </div>
-                      <p className="text-xs font-normal text-slate-500 truncate">{conv.message}</p>
-                    </div>
+            <div className="rounded-2xl border border-navy/[0.06] bg-white p-2.5 shadow-xs">
+              <div className="grid grid-cols-3 divide-x divide-navy/[0.06] text-center">
+                <Link href="/agent/leads" prefetch className="pressable px-1 py-0.5 block">
+                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                      <Users className="h-2.5 w-2.5" />
+                    </span>
+                    <span>Active Leads</span>
                   </div>
-
-                  <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-                    <span className="text-xs font-medium text-slate-400">{conv.time}</span>
-                    {conv.unread > 0 && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E4B547] text-[10px] font-extrabold text-[#031B4E] shadow-2xs">
-                        {conv.unread}
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-lg font-black text-navy mt-0.5">{leadsCount}</p>
                 </Link>
-              ))}
+
+                <Link href="/agent/listings" prefetch className="pressable px-1 py-0.5 block">
+                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                      <Briefcase className="h-2.5 w-2.5" />
+                    </span>
+                    <span>Active listings</span>
+                  </div>
+                  <p className="text-lg font-black text-navy mt-0.5">{activeCount}</p>
+                </Link>
+
+                <Link href="/agent/verification" prefetch className="pressable px-1 py-0.5 block">
+                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
+                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                      <Shield className="h-2.5 w-2.5 text-gold" />
+                    </span>
+                    <span>Trust Score</span>
+                  </div>
+                  <p className="text-lg font-black text-gold mt-0.5">{trustScore}</p>
+                </Link>
+              </div>
             </div>
           </section>
 
-          {/* 9. AGENT TOOLS — 6 CORE TILES */}
+          {/* RECENT ACTIVITY — COMPRESSED 4 VISIBLE CARDS */}
+          <section className="space-y-1">
+            <SectionHeader title="Recent Activity" />
+
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+              {sampleActivities.map((act) => {
+                const Icon = act.icon;
+                return (
+                  <Link
+                    key={act.id}
+                    href="/seller/crm"
+                    prefetch
+                    className="pressable rounded-xl border border-navy/[0.06] bg-white p-2 shadow-xs hover:border-navy/15 block text-center flex flex-col justify-between min-h-[82px]"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={cn("flex h-5 w-5 items-center justify-center rounded-md shrink-0", act.tone)}>
+                        <Icon className="h-2.5 w-2.5" />
+                      </span>
+                      <span className="text-[8px] font-medium text-navy/40">{act.time}</span>
+                    </div>
+                    <div className="w-full text-left mt-1">
+                      <h3 className="text-[10px] font-bold text-navy truncate leading-tight">{act.title}</h3>
+                      <p className="text-[8px] font-medium text-navy/55 leading-tight line-clamp-2 mt-0.5">{act.subtitle}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* AGENT TOOLS — 6 CORE TILES */}
           <section className="space-y-1">
             <SectionHeader title="Agent Tools" />
 
@@ -465,19 +489,19 @@ export function SellerCommandCenter(props: Props) {
               <Link
                 href="/agent/listings"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
                   <List className="h-3.5 w-3.5" />
                 </span>
                 <div className="w-full">
                   <h3 className="text-[10px] font-bold text-navy leading-tight">My Listings</h3>
-                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{totalListings} Active</p>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{activeCount} active</p>
                 </div>
               </Link>
 
               <Link
-                href="/agent/listings"
+                href="/seller/boost"
                 prefetch
                 className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
               >
@@ -508,21 +532,21 @@ export function SellerCommandCenter(props: Props) {
               <Link
                 href="/conversations"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                  <MessageCircle className="h-3.5 w-3.5" />
+                  <MessageSquare className="h-3.5 w-3.5" />
                 </span>
                 <div className="w-full">
-                  <h3 className="text-[10px] font-bold text-navy leading-tight">Leads & Inquiries</h3>
-                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">{leadsCount} New</p>
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">Messages</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">Inbox</p>
                 </div>
               </Link>
 
               <Link
                 href="/seller/crm"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
                   <BarChart3 className="h-3.5 w-3.5" />
@@ -536,7 +560,7 @@ export function SellerCommandCenter(props: Props) {
               <Link
                 href="/payments/history"
                 prefetch
-                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px]"
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-teal-50 text-teal-600 shrink-0">
                   <Wallet className="h-3.5 w-3.5" />
@@ -546,84 +570,67 @@ export function SellerCommandCenter(props: Props) {
                   <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">History</p>
                 </div>
               </Link>
+
+              <Link
+                href="/agent/verification"
+                prefetch
+                className="pressable group flex flex-col items-center justify-center gap-1 rounded-xl border border-navy/[0.06] bg-white p-2 text-center shadow-xs transition-all hover:border-navy/15 min-h-[82px] lg:hidden"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-slate-50 text-navy shrink-0">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                </span>
+                <div className="w-full">
+                  <h3 className="text-[10px] font-bold text-navy leading-tight">Verification</h3>
+                  <p className="text-[8px] font-medium text-navy/55 leading-tight mt-0.5">Trust & badges</p>
+                </div>
+              </Link>
             </div>
           </section>
 
+          {/* RECENT CONVERSATIONS — FLOATING WHITE CARD MATCHING REFERENCE DESIGN */}
+          <section className="space-y-2">
+            <SectionHeader title="Recent Conversations" href="/conversations" />
 
-
-          {/* 10. BUSINESS SNAPSHOT — COMPRESSED CARD HEIGHT & PADDING */}
-          <section className="space-y-1">
-            <SectionHeader title="Business Snapshot" href="/seller/crm" />
-
-            <div className="rounded-2xl border border-navy/[0.06] bg-white p-2.5 shadow-xs">
-              <div className="grid grid-cols-3 divide-x divide-navy/[0.06] text-center">
-                <Link href="/seller/crm" prefetch className="pressable px-1 py-0.5 block">
-                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
-                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                      <Users className="h-2.5 w-2.5" />
-                    </span>
-                    <span>Active Leads</span>
-                  </div>
-                  <p className="text-lg font-black text-navy mt-0.5">{leadsCount}</p>
-                  <p className="text-[9px] font-bold text-emerald-600">↑ 0% vs last 7 days</p>
-                </Link>
-
-                <Link href="/agent/listings" prefetch className="pressable px-1 py-0.5 block">
-                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
-                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                      <Briefcase className="h-2.5 w-2.5" />
-                    </span>
-                    <span>Listings</span>
-                  </div>
-                  <p className="text-lg font-black text-navy mt-0.5">{listingsValue}</p>
-                  <p className="text-[9px] font-bold text-blue-600">↑ 0% vs last 7 days</p>
-                </Link>
-
-                <Link href="/agent/verification" prefetch className="pressable px-1 py-0.5 block">
-                  <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-navy/80">
-                    <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-amber-50 text-amber-600">
-                      <Shield className="h-2.5 w-2.5 text-gold" />
-                    </span>
-                    <span>Trust Score</span>
-                  </div>
-                  <p className="text-lg font-black text-gold mt-0.5">{trustScore}</p>
-                  <p className="text-[9px] font-bold text-emerald-600">↑ 2 pts this week</p>
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          {/* 11. RECENT ACTIVITY — COMPRESSED 4 VISIBLE CARDS */}
-          <section className="space-y-1">
-            <SectionHeader title="Recent Activity" href="/seller/crm" />
-
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-              {sampleActivities.map((act) => {
-                const Icon = act.icon;
-                return (
-                  <Link
-                    key={act.id}
-                    href="/seller/crm"
-                    prefetch
-                    className="pressable rounded-xl border border-navy/[0.06] bg-white p-2 shadow-xs hover:border-navy/15 block text-center flex flex-col justify-between min-h-[82px]"
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className={cn("flex h-5 w-5 items-center justify-center rounded-md shrink-0", act.tone)}>
-                        <Icon className="h-2.5 w-2.5" />
+            <div className="rounded-2xl border border-slate-100/90 bg-white p-3 sm:p-4 shadow-xs divide-y divide-slate-100">
+              {sampleConversations.map((conv) => (
+                <Link
+                  key={conv.id}
+                  href={`/conversations/${conv.id}`}
+                  prefetch
+                  className="pressable group flex items-center justify-between gap-3 py-3 first:pt-0.5 last:pb-0.5 transition-colors hover:bg-slate-50/70 rounded-xl px-1"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={conv.avatar}
+                      alt=""
+                      className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover border border-slate-200/60 shadow-2xs shrink-0"
+                    />
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-xs sm:text-sm font-bold text-[#031B4E] truncate">{conv.name}</h3>
+                        <span className="text-[10px] font-medium text-slate-400 shrink-0">{conv.time}</span>
+                      </div>
+                      <span className={cn("inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold", conv.badgeTone)}>
+                        {conv.badge}
                       </span>
-                      <span className="text-[8px] font-medium text-navy/40">{act.time}</span>
+                      <p className="text-xs font-normal text-slate-500 truncate">{conv.message}</p>
                     </div>
-                    <div className="w-full text-left mt-1">
-                      <h3 className="text-[10px] font-bold text-navy truncate leading-tight">{act.title}</h3>
-                      <p className="text-[8px] font-medium text-navy/55 leading-tight line-clamp-2 mt-0.5">{act.subtitle}</p>
-                    </div>
-                  </Link>
-                );
-              })}
+                  </div>
+
+                  <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                    {conv.unread > 0 && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E4B547] text-[10px] font-extrabold text-[#031B4E] shadow-2xs">
+                        {conv.unread}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
             </div>
           </section>
 
-          {/* 12 & 14. ACCOUNT SETTINGS — COLLAPSED BY DEFAULT, NO HELPER TEXT */}
+          {/* ACCOUNT SETTINGS — COLLAPSED BY DEFAULT, NO HELPER TEXT */}
           <section className="space-y-1 pt-0.5">
             <button
               type="button"
@@ -737,7 +744,7 @@ export function SellerCommandCenter(props: Props) {
                     </span>
                     <div className="min-w-0">
                       <h3 className="text-[9px] font-medium text-navy/45">Signed in as</h3>
-                      <p className="text-xs font-bold text-navy truncate">{email || "puchinenye@gmail.com"}</p>
+                      <p className="text-xs font-bold text-navy truncate">{email || "—"}</p>
                     </div>
                   </div>
                 </div>

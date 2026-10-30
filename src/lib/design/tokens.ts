@@ -1,7 +1,11 @@
-/** Yike.ng design tokens — locked brand palette + 2026 hierarchy system */
+/**
+ * Yike.ng design tokens — locked brand palette + hierarchy (runtime: `src/app/globals.css`).
+ * Prefer CSS variables / Tailwind `bg-elevated`, `text-muted`, `yike-panel` in UI code.
+ */
 export const colors = {
   navy: "#031B4E",
   navyDark: "#021428",
+  navyMid: "#052654",
   navyLight: "#0a2d6e",
   gold: "#E4B547",
   goldDark: "#c99a2e",
@@ -11,10 +15,16 @@ export const colors = {
   sand: "#FAF7F2",
   warmNeutral: "#F7F5F2",
   warmStone: "#F3EFE8",
+  /** Page canvas (light) — maps to `--background` */
+  canvas: "#FCFBF7",
+  /** Primary elevated cards — maps to `--elevated` */
+  elevated: "#ffffff",
   surface: "#F7F5F2",
   surfaceDark: "#0c2347",
-  muted: "#64748b",
+  foreground: "#031B4E",
+  muted: "#6b7c93",
   danger: "#dc2626",
+  warning: "#d97706",
   /** Semantic badge / status colors — not all gold */
   emerald: "#059669",
   emeraldSoft: "#ecfdf5",
@@ -46,23 +56,31 @@ export const shadows = {
     "0 8px 32px rgba(3, 27, 78, 0.12), 0 2px 8px rgba(3, 27, 78, 0.06), 0 0 0 1px rgba(3, 27, 78, 0.04)",
 } as const;
 
+/** Canonical brand mark — source PNG: public/icons/logo.png */
 export const brand = {
   name: "Yike",
   domain: "yike.ng",
   tagline: "Nigeria's trusted marketplace for property and vehicles.",
-  logo: "/images/logo.webp",
-  logoSm: "/images/logo.webp",
-  logoFallback: "/images/logo.webp",
+  logo: "/icons/logo.webp",
+  logoSm: "/icons/logo-sm.webp",
+  logoFallback: "/icons/logo.png",
+  logoWidth: 1254,
+  logoHeight: 1254,
+  logoAlt: "Yike — Nigerian property and vehicle marketplace",
+  /** PNG favicon sizes — regenerate via npm run optimize:brand */
+  favicon32: "/icons/icon-32.png",
+  favicon16: "/icons/icon-16.png",
+  appleTouchIcon: "/apple-touch-icon.png",
 } as const;
 
 /** Yike Crew — internal ops app, using the same Yike mark for brand consistency. */
 export const crewBrand = {
   name: "Yike Crew",
   shortName: "Yike Crew",
-  logo: "/images/logo.webp",
-  logoSm: "/images/logo.webp",
-  icon192: "/images/logo-sm.webp",
-  icon512: "/images/logo.webp",
+  logo: "/icons/logo.webp",
+  logoSm: "/icons/logo-sm.webp",
+  icon192: "/icons/logo-sm.webp",
+  icon512: "/icons/logo.webp",
   icon192Png: "/icons/android-chrome-192.png",
   icon512Png: "/icons/android-chrome-512.png",
 } as const;

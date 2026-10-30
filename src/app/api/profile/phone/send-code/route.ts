@@ -6,7 +6,7 @@ import {
   PHONE_VERIFY_COPY,
   sendSellerPhoneVerificationCode,
 } from "@/lib/phone-verification";
-import { getWhatsappNumber } from "@/lib/whatsapp-verification/profile";
+import { getSellerContactPhone } from "@/lib/phone-verification/profile";
 import { trackTransactionEvent } from "@/lib/analytics/index";
 
 export const runtime = "nodejs";
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   const phoneLocal = normalizeNigerianPhone(
-    phoneRaw || getWhatsappNumber(profile ?? {}) || ""
+    phoneRaw || getSellerContactPhone(profile ?? {}) || ""
   );
 
   if (!canRequestPhoneOtp(phoneLocal)) {
@@ -57,7 +57,11 @@ export async function POST(request: Request) {
 
   if (!result.ok) {
     return NextResponse.json(
-      { error: result.error, ...(result.code ? { code: result.code } : {}) },
+      {
+        error: result.error,
+        ...(result.code ? { code: result.code } : {}),
+        ...(result.failureCategory ? { failureCategory: result.failureCategory } : {}),
+      },
       { status: result.status }
     );
   }
@@ -69,6 +73,7 @@ export async function POST(request: Request) {
     channel: result.channel,
     message: result.message,
     expiresMinutes: result.expiresMinutes,
+    ...(result.deliveryMode ? { deliveryMode: result.deliveryMode } : {}),
     ...(result.bypass
       ? {
           bypass: true,

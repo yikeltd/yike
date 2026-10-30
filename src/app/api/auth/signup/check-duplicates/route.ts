@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { createAuthEmailOtpDbClient } from "@/lib/auth-email-otp/rpc";
 import { normalizePhoneForDuplicateCheck } from "@/lib/phone";
+import {
+  getOtpServerTokenFromEnv,
+  hydrateOtpServerTokenForLocalDev,
+} from "@/lib/otp/server-token";
 
 export const runtime = "nodejs";
 
-function otpServerToken(): string | null {
-  return process.env.YIKE_OTP_SERVER_TOKEN?.trim() || null;
-}
-
 export async function POST(request: Request) {
-  const token = otpServerToken();
+  await hydrateOtpServerTokenForLocalDev();
+  const token = getOtpServerTokenFromEnv();
   const db = createAuthEmailOtpDbClient();
   if (!token || !db) {
     console.error("[auth/signup/check-duplicates] runtime unavailable", {
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
   const { data, error } = await db.rpc("yike_check_signup_duplicates", {
     p_token: token,
     p_email: email || null,
-    p_phone: normalizedPhone ? phoneRaw : null,
+    p_phone: normalizedPhone,
   });
 
   if (error) {

@@ -11,7 +11,8 @@ export type PaymentAuditAction =
   | "promotion_expired"
   | "verification_request_created"
   | "verification_approved"
-  | "subscription_activated";
+  | "subscription_activated"
+  | "wallet_topup_credited";
 
 export function logPaymentAudit(input: {
   action: PaymentAuditAction;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { MarketplaceBackButton } from "@/components/marketplace/marketplace-back-button";
 import {
   ChevronLeft,
   Share2,
@@ -140,14 +141,7 @@ export function UnifiedListingDetail({ listing, ownerBanner }: Props) {
 
       {/* 1. TOP HEADER BAR WITH BACK (LEFT), TITLE (CENTER), LIKE & SHARE (RIGHT) */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-[#031B4E] px-4 py-3 text-white shadow-md">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all active:scale-95"
-          aria-label="Go back"
-        >
-          <ChevronLeft className="h-5 w-5 stroke-[2.5]" />
-        </button>
+        <MarketplaceBackButton variant="overlay" fallback="/search" />
 
         <h1 className="text-xs font-black uppercase tracking-wider text-white">
           LISTING DETAILS

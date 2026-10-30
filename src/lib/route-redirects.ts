@@ -29,16 +29,16 @@ export function staticPathRedirect(pathname: string): string | null {
     "/swipe-homes": "/discover",
     "/swipe": "/discover",
     "/browse": "/discover",
-    "/list": "/agent/verify",
-    "/list-property": "/agent/verify",
-    "/post-property": "/agent/verify",
+    "/list": "/agent/listings/new",
+    "/list-property": "/agent/listings/new",
+    "/post-property": "/agent/listings/new",
     "/agent/become": "/agent/verify",
     "/request-home": "/request-property",
     "/cookie-policy": "/cookies",
     "/legal": "/privacy",
     "/support": "/contact",
     // Consumer aliases — never soft-404 via catch-all
-    "/sell": "/agent/verify",
+    "/sell": "/agent/listings/new",
     "/account": "/agent",
     "/help": "/safety",
     "/messages": "/contact",
@@ -52,11 +52,6 @@ export function staticPathRedirect(pathname: string): string | null {
     "/lex/auth/listings/bulk-review": "/lex/auth/listings/review",
   };
   if (staffAliases[normalized]) return staffAliases[normalized];
-
-  if (normalized.startsWith("/admin")) {
-    const rest = normalized.slice("/admin".length);
-    return rest ? `/lex${rest}` : "/lex";
-  }
 
   // Old listing URLs: /listing/:id and /property/:id → /properties/:id
   const listingMatch = normalized.match(/^\/listing\/([^/]+)$/);

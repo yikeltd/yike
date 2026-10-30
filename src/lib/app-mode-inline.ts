@@ -21,3 +21,6 @@ export const bootSplashHideScript = `(function(){var done=false;var MAX=2600;var
 
 /** Unregister stale browser SW inside TWA — prevents Chrome-tab-like reload stalls. */
 export const twaSwCleanupScript = `(function(){try{if(document.referrer.indexOf('android-app://')!==0)return;if(!('serviceWorker' in navigator))return;navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});});}catch(e){}})();`;
+
+/** Local dev: drop SW before first paint so auth routes are not replaced by cached /offline. */
+export const devSwCleanupScript = `(function(){try{var h=location.hostname;if(h!=='localhost'&&h!=='127.0.0.1'&&h!=='[::1]')return;if(!('serviceWorker' in navigator))return;navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});});}catch(e){}})();`;

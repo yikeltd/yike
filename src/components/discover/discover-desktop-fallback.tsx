@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { Property } from "@/types/database";
-import { PropertyGrid } from "@/components/property/property-grid";
+import { CarouselRail } from "@/components/marketplace/experience";
+import { discoverHref } from "@/lib/discover/categories";
 import { formatPrice } from "@/lib/utils";
 import { listingPath } from "@/lib/marketplace/listing-path";
 
@@ -26,20 +27,32 @@ export function DiscoverDesktopFallback({
           <p className="mt-4 max-w-lg text-base text-white/70">
             Discover is Yike&apos;s signature mobile discovery engine — save,
             skip, and open listings with polished gestures. On desktop, browse
-            the feed below or jump into Search.
+            the mixed feed below or pick a category.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href="/search"
+              href={discoverHref({ category: "all" })}
               className="pressable inline-flex min-h-[48px] items-center rounded-2xl bg-gold px-6 text-sm font-bold text-navy"
             >
-              Search properties
+              All categories
             </Link>
             <Link
-              href="/vehicles"
+              href={discoverHref({ category: "property" })}
               className="pressable inline-flex min-h-[48px] items-center rounded-2xl border border-white/20 bg-white/10 px-6 text-sm font-semibold text-white"
             >
-              Browse vehicles
+              Properties
+            </Link>
+            <Link
+              href={discoverHref({ category: "vehicle" })}
+              className="pressable inline-flex min-h-[48px] items-center rounded-2xl border border-white/20 bg-white/10 px-6 text-sm font-semibold text-white"
+            >
+              Vehicles
+            </Link>
+            <Link
+              href={discoverHref({ category: "electronics" })}
+              className="pressable inline-flex min-h-[48px] items-center rounded-2xl border border-white/20 bg-white/10 px-6 text-sm font-semibold text-white"
+            >
+              Electronics
             </Link>
           </div>
         </div>
@@ -56,7 +69,7 @@ export function DiscoverDesktopFallback({
           </Link>
         </div>
         {items.length > 0 ? (
-          <PropertyGrid properties={items.slice(0, 9)} />
+          <CarouselRail items={items.slice(0, 12)} priorityCount={3} />
         ) : (
           <p className="rounded-2xl border border-navy/10 bg-white p-8 text-sm text-muted">
             No listings to preview yet. Try Search to explore Nigeria.

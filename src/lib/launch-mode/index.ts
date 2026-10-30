@@ -15,6 +15,7 @@ import { isProductionEnv } from "@/lib/env";
 
 export type LaunchFeature =
   | "vehicle_marketplace"
+  | "electronics_marketplace"
   | "industrial_marketplace"
   | "hospitality_listings"
   | "business_listings"
@@ -31,6 +32,7 @@ export type LaunchFeature =
 
 const FEATURE_ENV: Partial<Record<LaunchFeature, string>> = {
   vehicle_marketplace: "ENABLE_VEHICLE_MARKETPLACE_EMERGENCY_OFF",
+  electronics_marketplace: "ENABLE_ELECTRONICS_MARKETPLACE_EMERGENCY_OFF",
   industrial_marketplace: "ENABLE_INDUSTRIAL_MARKETPLACE",
   hospitality_listings: "ENABLE_HOSPITALITY_LISTINGS",
   business_listings: "ENABLE_BUSINESS_LISTINGS",
@@ -72,6 +74,10 @@ export function isLaunchFeatureVisible(feature: LaunchFeature): boolean {
   // Vehicle marketplace: Day-1 flagship — always ON unless emergency kill-switch.
   if (feature === "vehicle_marketplace") {
     return !envFlag("ENABLE_VEHICLE_MARKETPLACE_EMERGENCY_OFF", false);
+  }
+
+  if (feature === "electronics_marketplace") {
+    return !envFlag("ENABLE_ELECTRONICS_MARKETPLACE_EMERGENCY_OFF", false);
   }
 
   if (envName && envFlag(envName, false)) return true;

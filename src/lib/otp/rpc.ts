@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { OtpChannel } from "@/lib/notifications/types";
+import { getOtpServerTokenFromEnv, requireOtpServerToken } from "./server-token";
 import { OTP_PROVIDER } from "./constants";
 
 export type OtpRow = {
@@ -15,7 +16,7 @@ export type OtpRow = {
 };
 
 function otpServerToken(): string | null {
-  return process.env.YIKE_OTP_SERVER_TOKEN?.trim() || null;
+  return getOtpServerTokenFromEnv();
 }
 
 /** Server OTP DB access via service-role RPC. */
@@ -31,9 +32,7 @@ export function createOtpDbClient(): SupabaseClient | null {
 }
 
 function token(): string {
-  const t = otpServerToken();
-  if (!t) throw new Error("YIKE_OTP_SERVER_TOKEN not configured");
-  return t;
+  return requireOtpServerToken();
 }
 
 export async function otpLastSentAt(
@@ -91,9 +90,10 @@ export async function otpInsertPending(
     expiresAt: string;
     channel: OtpChannel;
     lastSentAt?: string | null;
+    ipHash?: string | null;
   }
 ): Promise<{ id: string } | null> {
-  const { data, error } = await client.rpc("yike_otp_insert_pending", {
+  const baseArgs = {
     p_token: token(),
     p_phone: params.phone,
     p_otp_hash: params.otpHash,
@@ -101,7 +101,21 @@ export async function otpInsertPending(
     p_channel: params.channel,
     p_provider: OTP_PROVIDER,
     p_last_sent_at: params.lastSentAt ?? null,
+  };
+
+  let { data, error } = await client.rpc("yike_otp_insert_pending", {
+    ...baseArgs,
+    p_ip_hash: params.ipHash ?? null,
   });
+
+  if (
+    error &&
+    /yike_otp_insert_pending/.test(error.message) &&
+    /(does not exist|Could not find the function)/.test(error.message)
+  ) {
+    ({ data, error } = await client.rpc("yike_otp_insert_pending", baseArgs));
+  }
+
   if (error) {
     console.error("[otp-rpc] insert failed", params.phone, error.message);
     return null;

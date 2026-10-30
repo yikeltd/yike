@@ -14,8 +14,10 @@ import { validateCategoryManifest } from "../validate-config";
 import { MetadataResolver } from "../resolver";
 import { CATALOG_REGISTRY } from "../catalogs/registry";
 import { NAMED_VALIDATION_RULES, NAMED_VISIBILITY_RULES } from "../rules/registry";
+import { LISTING_CREATE_MIN_PHOTOS } from "@/lib/listing-create/constants";
 import { VEHICLE_CATEGORY_MANIFEST } from "../categories/vehicle";
 import { PROPERTY_CATEGORY_MANIFEST } from "../categories/property";
+import { ELECTRONICS_CATEGORY_MANIFEST } from "../categories/electronics";
 import { valuesToVehiclePayload } from "../adapters/vehicle";
 import { valuesToPropertyPayload } from "../adapters/property";
 import type { CategoryManifest, ListingFieldDef } from "../types";
@@ -85,9 +87,15 @@ describe("visibility engine", () => {
     assert.equal(carFields.some((f) => f.id === "vin"), true);
 
     const motorcycleFields = filterVisibleFields(VEHICLE_CATEGORY_MANIFEST.fields, {
-      auto_category: "motorcycle",
+      auto_category: "motorcycle_tricycle",
     });
     assert.equal(motorcycleFields.some((f) => f.id === "vin"), false);
+
+    const excavatorFields = filterVisibleFields(VEHICLE_CATEGORY_MANIFEST.fields, {
+      auto_category: "excavator",
+    });
+    assert.equal(excavatorFields.some((f) => f.id === "mileage"), false);
+    assert.equal(excavatorFields.some((f) => f.id === "operating_hours"), true);
   });
 });
 
@@ -214,7 +222,7 @@ describe("photo engine", () => {
   it("computes checklist status against min/max", () => {
     const status = photoChecklistStatus(VEHICLE_CATEGORY_MANIFEST.photo, 0);
     assert.equal(status.ok, false);
-    assert.equal(status.remainingToMin, 1);
+    assert.equal(status.remainingToMin, LISTING_CREATE_MIN_PHOTOS);
 
     const ok = photoChecklistStatus(VEHICLE_CATEGORY_MANIFEST.photo, 3);
     assert.equal(ok.ok, true);
@@ -238,9 +246,10 @@ describe("resolver", () => {
 });
 
 describe("config validator", () => {
-  it("passes for the shipped vehicle and property manifests", () => {
+  it("passes for the shipped vehicle, property, and electronics manifests", () => {
     assert.doesNotThrow(() => validateCategoryManifest(VEHICLE_CATEGORY_MANIFEST));
     assert.doesNotThrow(() => validateCategoryManifest(PROPERTY_CATEGORY_MANIFEST));
+    assert.doesNotThrow(() => validateCategoryManifest(ELECTRONICS_CATEGORY_MANIFEST));
   });
 
   it("rejects duplicate field ids", () => {

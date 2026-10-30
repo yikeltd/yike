@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "crypto";
+import { randomUUID } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPhoneOtpEnabled, isSmsOtpEnabled } from "@/lib/feature-flags";
 import { isAuthSmsVerificationBypassActive } from "@/lib/auth/sms-verification-flag";
@@ -7,52 +7,32 @@ import {
   toInternationalNigerianPhone,
 } from "@/lib/phone";
 import { logOtpAudit, newOtpRequestId } from "@/lib/otp/delivery-audit";
+import {
+  assertOtpSendAllowedForIp,
+  assertOtpVerifyAllowedForIp,
+  hashRequestIp,
+} from "@/lib/otp/ip-rate-limit";
 import { resolveDefaultPhoneVerificationChannel } from "./channel";
 import { PHONE_VERIFY_COPY } from "./copy";
+import { isNormalizedPhoneTakenByOtherAccount } from "./phone-ownership";
 import { getPhoneVerificationProvider } from "./provider";
-import type { PhoneVerificationChannel } from "./types";
+import {
+  countProviderAcceptedSendsLastHour,
+  lastProviderAcceptedSentAt,
+} from "./seller-sms-rate-limit-queries";
+import { SELLER_SMS_MAX_SENDS_PER_PHONE_HOUR } from "./seller-sms-rate-limit";
+import type {
+  PhoneOtpDeliveryMode,
+  PhoneVerificationChannel,
+  SmsProviderFailureCategory,
+} from "./types";
 
-const MAX_SENDS_PER_PHONE_HOUR = 3;
+const MAX_SENDS_PER_PHONE_HOUR = SELLER_SMS_MAX_SENDS_PER_PHONE_HOUR;
 const MAX_VERIFY_ATTEMPTS = 5;
 const RESEND_COOLDOWN_MS = 60_000;
 
 /** In-flight send locks: one user action → one OTP generation + one SMS (per process). */
 const sendInFlight = new Map<string, Promise<SendPhoneVerificationResult>>();
-
-function hashIp(request: Request): string | null {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip")?.trim();
-  if (!ip) return null;
-  return createHash("sha256").update(ip).digest("hex").slice(0, 32);
-}
-
-async function countSendsLastHour(
-  admin: SupabaseClient,
-  phoneIntl: string
-): Promise<number> {
-  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const { count } = await admin
-    .from("whatsapp_otp_sessions")
-    .select("id", { count: "exact", head: true })
-    .eq("phone_intl", phoneIntl)
-    .gte("created_at", since);
-  return count ?? 0;
-}
-
-async function lastSentAt(
-  admin: SupabaseClient,
-  userId: string
-): Promise<string | null> {
-  const { data } = await admin
-    .from("whatsapp_otp_sessions")
-    .select("created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data?.created_at ?? null;
-}
 
 export type SendPhoneVerificationResult =
   | {
@@ -60,13 +40,20 @@ export type SendPhoneVerificationResult =
       message: string;
       channel: PhoneVerificationChannel;
       expiresMinutes: number;
+      deliveryMode?: PhoneOtpDeliveryMode;
       /** FAT only — phone marked verified without SMS. */
       bypass?: true;
       phoneVerified?: true;
       phoneVerifiedAt?: string;
       phone?: string;
     }
-  | { ok: false; error: string; status: number; code?: string };
+  | {
+      ok: false;
+      error: string;
+      status: number;
+      code?: string;
+      failureCategory?: SmsProviderFailureCategory;
+    };
 
 export type VerifyPhoneVerificationResult =
   | {
@@ -105,6 +92,20 @@ export async function markSellerPhoneVerifiedForFatBypass(
   const phoneIntl = toInternationalNigerianPhone(params.phoneLocal);
   if (!phoneIntl) {
     return { ok: false, error: PHONE_VERIFY_COPY.invalidPhone, status: 400 };
+  }
+
+  if (
+    await isNormalizedPhoneTakenByOtherAccount(
+      admin,
+      params.phoneLocal,
+      params.userId,
+    )
+  ) {
+    return {
+      ok: false,
+      error: PHONE_VERIFY_COPY.phoneAlreadyLinked,
+      status: 409,
+    };
   }
 
   const now = new Date().toISOString();
@@ -193,12 +194,23 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     };
   }
 
-  const sends = await countSendsLastHour(admin, params.phoneIntl);
+  const ipGate = await assertOtpSendAllowedForIp(admin, params.request);
+  if (!ipGate.ok) {
+    return {
+      ok: false,
+      error: ipGate.error,
+      status: ipGate.status,
+      code: ipGate.code,
+    };
+  }
+
+  const sends = await countProviderAcceptedSendsLastHour(admin, params.phoneIntl);
   if (sends >= MAX_SENDS_PER_PHONE_HOUR) {
     logOtpAudit({
       event: "seller_send_rate_limited",
       requestId,
       phone: params.phoneIntl,
+      error: `provider_accepted_count=${sends}`,
     });
     return {
       ok: false,
@@ -208,7 +220,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     };
   }
 
-  const last = await lastSentAt(admin, params.userId);
+  const last = await lastProviderAcceptedSentAt(admin, params.userId);
   if (last) {
     const elapsed = Date.now() - new Date(last).getTime();
     if (elapsed < RESEND_COOLDOWN_MS) {
@@ -226,6 +238,21 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     }
   }
 
+  if (
+    await isNormalizedPhoneTakenByOtherAccount(
+      admin,
+      params.phoneLocal,
+      params.userId,
+    )
+  ) {
+    return {
+      ok: false,
+      error: PHONE_VERIFY_COPY.phoneAlreadyLinked,
+      status: 409,
+      code: "phone_exists",
+    };
+  }
+
   if (params.updateProfilePhone !== false) {
     const normalizedPhone = normalizePhoneForDuplicateCheck(params.phoneLocal);
     await admin
@@ -234,6 +261,10 @@ async function sendSellerPhoneVerificationCodeUnlocked(
         phone: params.phoneLocal,
         whatsapp: params.phoneLocal,
         normalized_phone: normalizedPhone,
+        phone_verified: false,
+        phone_verified_at: null,
+        whatsapp_verified_at: null,
+        whatsapp_verification_status: "pending",
       })
       .eq("id", params.userId);
   }
@@ -247,7 +278,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     .eq("phone_intl", params.phoneIntl)
     .eq("status", "sent");
 
-  // Claim a DB row before provider call so cooldown starts immediately (blocks races).
+  // Claim a DB row before provider call so concurrent sends serialize and failed sends can expire cleanly.
   const claimExpiresAt = new Date(Date.now() + 30 * 60_000).toISOString();
   const claimReference = `pending:${randomUUID()}`;
   const { data: claimRow, error: claimError } = await admin
@@ -261,7 +292,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
       status: "sent",
       verify_attempts: 0,
       expires_at: claimExpiresAt,
-      ip_hash: hashIp(params.request),
+      ip_hash: ipGate.ipHash ?? hashRequestIp(params.request),
     })
     .select("id")
     .single();
@@ -322,6 +353,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
       error: created.error,
       status: created.status,
       code: created.code ?? "provider_failed",
+      failureCategory: created.failureCategory,
     };
   }
 
@@ -338,6 +370,13 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     .eq("id", claimRow.id);
 
   logOtpAudit({
+    event: "seller_send_provider_accepted",
+    requestId,
+    phone: params.phoneIntl,
+    reference: created.reference,
+    deliveryReference: created.reference,
+  });
+  logOtpAudit({
     event: "seller_send_ok",
     requestId,
     phone: params.phoneIntl,
@@ -350,6 +389,7 @@ async function sendSellerPhoneVerificationCodeUnlocked(
     message: created.message,
     channel: created.channel,
     expiresMinutes: created.expiresMinutes,
+    deliveryMode: created.deliveryMode,
   };
 }
 
@@ -390,7 +430,7 @@ export async function sendSellerPhoneVerificationCode(
     };
   }
 
-  if (!isSellerPhoneSmsOtpEnabled() && params.channel !== "whatsapp") {
+  if (!isSellerPhoneSmsOtpEnabled()) {
     return {
       ok: false,
       error: PHONE_VERIFY_COPY.providerUnavailable,
@@ -399,7 +439,7 @@ export async function sendSellerPhoneVerificationCode(
     };
   }
 
-  const channel = params.channel ?? resolveDefaultPhoneVerificationChannel();
+  const channel: PhoneVerificationChannel = "sms";
   const phoneIntl = toInternationalNigerianPhone(params.phoneLocal);
   if (!phoneIntl) {
     return { ok: false, error: PHONE_VERIFY_COPY.invalidPhone, status: 400 };
@@ -442,10 +482,48 @@ export async function verifySellerPhoneCode(
   params: {
     userId: string;
     code: string;
+    request?: Request;
   }
 ): Promise<VerifyPhoneVerificationResult> {
+  if (isAuthSmsVerificationBypassActive()) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("phone_verified, phone_verified_at, phone, whatsapp")
+      .eq("id", params.userId)
+      .maybeSingle();
+
+    if (profile?.phone_verified) {
+      const phoneLocal =
+        (profile.phone as string | null) ||
+        (profile.whatsapp as string | null) ||
+        "";
+      return {
+        ok: true,
+        message: PHONE_VERIFY_COPY.verified,
+        phoneVerified: true,
+        phoneVerifiedAt:
+          (profile.phone_verified_at as string | null) ??
+          new Date().toISOString(),
+        phone: phoneLocal,
+      };
+    }
+
+    return {
+      ok: false,
+      error: PHONE_VERIFY_COPY.providerUnavailable,
+      status: 400,
+    };
+  }
+
   if (!isSellerPhoneSmsOtpEnabled()) {
     return { ok: false, error: PHONE_VERIFY_COPY.providerUnavailable, status: 503 };
+  }
+
+  if (params.request) {
+    const ipGate = await assertOtpVerifyAllowedForIp(admin, params.request);
+    if (!ipGate.ok) {
+      return { ok: false, error: ipGate.error, status: ipGate.status };
+    }
   }
 
   const code = params.code.trim();
@@ -485,6 +563,28 @@ export async function verifySellerPhoneCode(
     };
   }
 
+  const nextAttempts = session.verify_attempts + 1;
+  const { data: attemptClaim } = await admin
+    .from("whatsapp_otp_sessions")
+    .update({ verify_attempts: nextAttempts })
+    .eq("id", session.id)
+    .eq("status", "sent")
+    .eq("verify_attempts", session.verify_attempts)
+    .select("verify_attempts")
+    .maybeSingle();
+
+  if (!attemptClaim) {
+    return { ok: false, error: PHONE_VERIFY_COPY.invalidCode, status: 409 };
+  }
+
+  if (attemptClaim.verify_attempts > MAX_VERIFY_ATTEMPTS) {
+    return {
+      ok: false,
+      error: PHONE_VERIFY_COPY.maxAttempts,
+      status: 429,
+    };
+  }
+
   const provider = getPhoneVerificationProvider();
   const confirmed = await provider.confirmOtp({
     reference: session.provider_reference,
@@ -492,24 +592,44 @@ export async function verifySellerPhoneCode(
   });
 
   if (!confirmed.ok) {
-    await admin
-      .from("whatsapp_otp_sessions")
-      .update({ verify_attempts: session.verify_attempts + 1 })
-      .eq("id", session.id);
     console.info("[phone-verification] verify failed", {
       sessionId: session.id,
       channel: session.channel,
-      attempts: session.verify_attempts + 1,
+      attempts: attemptClaim.verify_attempts,
     });
     return { ok: false, error: PHONE_VERIFY_COPY.invalidCode, status: 400 };
   }
 
-  // Consume only after successful confirmation.
+  const phoneLocalForCheck =
+    (session.phone_local as string | null) || "";
+  if (
+    phoneLocalForCheck &&
+    (await isNormalizedPhoneTakenByOtherAccount(
+      admin,
+      phoneLocalForCheck,
+      params.userId,
+    ))
+  ) {
+    return {
+      ok: false,
+      error: PHONE_VERIFY_COPY.phoneAlreadyLinked,
+      status: 409,
+    };
+  }
+
+  // Consume only after successful confirmation (one winner under concurrency).
   const now = new Date().toISOString();
-  await admin
+  const { data: consumed } = await admin
     .from("whatsapp_otp_sessions")
     .update({ status: "verified", consumed_at: now })
-    .eq("id", session.id);
+    .eq("id", session.id)
+    .eq("status", "sent")
+    .select("id")
+    .maybeSingle();
+
+  if (!consumed?.id) {
+    return { ok: false, error: PHONE_VERIFY_COPY.invalidCode, status: 409 };
+  }
 
   const { data: verifiedProfile } = await admin
     .from("profiles")
@@ -575,4 +695,48 @@ export async function verifySellerPhoneCode(
     phoneVerifiedAt: now,
     phone: phoneLocal,
   };
+}
+
+/** Invalidate verification when the seller changes their contact number. */
+export async function resetPhoneVerificationOnNumberChange(
+  admin: SupabaseClient,
+  userId: string,
+  newPhoneLocal: string,
+  previousPhone: string,
+): Promise<void> {
+  const normalizedNew = newPhoneLocal.trim();
+  const normalizedPrev = previousPhone.trim();
+  if (!normalizedNew || normalizedNew === normalizedPrev) return;
+
+  const normalizedPhone = normalizePhoneForDuplicateCheck(normalizedNew);
+  await admin
+    .from("profiles")
+    .update({
+      whatsapp: normalizedNew,
+      phone: normalizedNew,
+      normalized_phone: normalizedPhone,
+      phone_verified: false,
+      phone_verified_at: null,
+      whatsapp_verified_at: null,
+      whatsapp_verification_status: "unverified",
+      whatsapp_verification_reference: null,
+      whatsapp_verification_attempts: 0,
+    })
+    .eq("id", userId);
+}
+
+/** Staff enforcement: require SMS phone re-verification before listing. */
+export async function setAdminRequiredPhoneVerification(
+  admin: SupabaseClient,
+  userId: string,
+): Promise<void> {
+  await admin
+    .from("profiles")
+    .update({
+      phone_verified: false,
+      phone_verified_at: null,
+      whatsapp_verification_status: "admin_required",
+      whatsapp_verified_at: null,
+    })
+    .eq("id", userId);
 }

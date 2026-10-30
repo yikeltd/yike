@@ -5,24 +5,29 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isLaunchFeatureVisible } from "@/lib/launch-mode";
 import { queryPublicVehicles } from "@/lib/marketplace/listings";
-import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
+import { MarketplaceBrowseDiscoverySection } from "@/components/marketplace/marketplace-browse-discovery-section";
+import { MarketplaceSubmittedResultsRoot } from "@/components/marketplace/marketplace-submitted-results-root";
+import { MarketplaceSubmittedEmpty } from "@/components/marketplace/marketplace-submitted-empty";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { BROWSE_GRID_CLASS } from "@/lib/marketplace/browse-grid";
 import { isFeaturedActive } from "@/lib/agent-tiers";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
-import { VehicleSearchResultsChrome } from "@/components/marketplace/vehicle-search-results-chrome";
 import {
-  QuickFilterChips,
-  VEHICLE_QUICK_FILTERS,
-  DiscoveryEmptyPanel,
-} from "@/components/marketplace/experience";
+  isSampleListingFixtureEnabled,
+  isSampleListingFixtureForceEnabled,
+} from "@/lib/sample-listings/flags";
+import { sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
+import { isVehicleBrowseSubmitted } from "@/lib/marketplace/browse-submitted";
+import { MarketplaceDiscoverySearch } from "@/components/marketplace/marketplace-discovery-search";
+import { VehicleSearchResultsChrome } from "@/components/marketplace/vehicle-search-results-chrome";
+import { DiscoveryEmptyPanel } from "@/components/marketplace/experience";
 import { getServerSearchPreferences } from "@/lib/search-preferences";
 import { PrefSync } from "@/components/personalization/pref-sync";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Vehicles",
-  description: `Search cars, SUVs, trucks and more across Nigeria on ${SITE_NAME}.`,
+  description: `Search cars, trucks, buses, heavy equipment and agricultural machinery across Nigeria on ${SITE_NAME}.`,
   alternates: { canonical: `${SITE_URL}/vehicles` },
 };
 
@@ -67,6 +72,9 @@ export default async function VehiclesPage({
   const maxMileage = first(sp.max_mileage)
     ? Number(first(sp.max_mileage))
     : undefined;
+  const maxOperatingHours = first(sp.max_operating_hours)
+    ? Number(first(sp.max_operating_hours))
+    : undefined;
   const conditionParam = first(sp.condition);
   const verifiedOnly = first(sp.verified) === "1";
   const featuredOnly = first(sp.featured) === "1";
@@ -90,6 +98,7 @@ export default async function VehiclesPage({
         state,
         city,
         auto_category: first(sp.category),
+        group: first(sp.group),
         make: first(sp.make),
         model: first(sp.model),
         min_year: Number.isFinite(minYear) ? minYear : undefined,
@@ -97,6 +106,9 @@ export default async function VehiclesPage({
         min_price: first(sp.min_price) ? Number(first(sp.min_price)) : undefined,
         max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
         max_mileage: Number.isFinite(maxMileage) ? maxMileage : undefined,
+        max_operating_hours: Number.isFinite(maxOperatingHours)
+          ? maxOperatingHours
+          : undefined,
         transmission: first(sp.transmission),
         fuel_type: first(sp.fuel),
         condition: queryCondition,
@@ -114,8 +126,36 @@ export default async function VehiclesPage({
     vehicles = vehicles.filter((v) => Boolean(v.is_verified_listing));
   }
 
-  const vehicleDemo = withEmptyInventoryDemoFixtures(vehicles, "vehicle", 24);
-  vehicles = vehicleDemo.items;
+  const fixtureOn = isSampleListingFixtureEnabled();
+  const fixtureForce = isSampleListingFixtureForceEnabled();
+  if (fixtureOn) {
+    const liveCount = vehicles.length;
+    vehicles = sampleBrowseFallback(vehicles, "VEHICLE", {
+      q: first(sp.q),
+      state,
+      city,
+      auto_category: first(sp.category),
+      group: first(sp.group),
+      max_mileage: Number.isFinite(maxMileage) ? maxMileage : undefined,
+      max_operating_hours: Number.isFinite(maxOperatingHours)
+        ? maxOperatingHours
+        : undefined,
+      make: first(sp.make),
+      min_price: first(sp.min_price) ? Number(first(sp.min_price)) : undefined,
+      max_price: first(sp.max_price) ? Number(first(sp.max_price)) : undefined,
+      featured: featuredOnly || undefined,
+    });
+    if (
+      isVehicleBrowseSubmitted(sp) &&
+      liveCount === 0 &&
+      !fixtureForce
+    ) {
+      vehicles = [];
+    }
+  } else if (!isVehicleBrowseSubmitted(sp)) {
+    const vehicleDemo = withEmptyInventoryDemoFixtures(vehicles, "vehicle", 24);
+    vehicles = vehicleDemo.items;
+  }
 
   if (sort === "price_asc") {
     vehicles = [...vehicles].sort((a, b) => Number(a.price) - Number(b.price));
@@ -151,6 +191,7 @@ export default async function VehiclesPage({
   for (const key of [
     "q",
     "category",
+    "group",
     "condition",
     "sort",
     "state",
@@ -162,6 +203,7 @@ export default async function VehiclesPage({
     "min_price",
     "max_price",
     "max_mileage",
+    "max_operating_hours",
     "transmission",
     "fuel",
     "verified",
@@ -178,43 +220,70 @@ export default async function VehiclesPage({
     return s ? `/vehicles?${s}` : "/vehicles";
   }
 
-  const hasFilters = Boolean(
-    first(sp.q) ||
-      first(sp.category) ||
-      conditionParam ||
-      first(sp.make) ||
-      first(sp.model) ||
-      state ||
-      city ||
-      first(sp.min_year) ||
-      first(sp.max_year) ||
-      first(sp.min_price) ||
-      first(sp.max_price) ||
-      verifiedOnly ||
-      featuredOnly ||
-      nearbyFlag,
-  );
+  const submittedSearch = isVehicleBrowseSubmitted(sp);
 
   return (
-    <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
+    <div className="yike-browse-canvas search-hub-canvas lg:pb-8">
       <PrefSync />
-      <div className="px-3 pt-4 lg:px-6 xl:px-8">
-        <MarketplaceCategoryHeader
-          vertical="vehicle"
-          title="Vehicles"
-          className="mb-2"
-        />
-        <Suspense fallback={null}>
-          <div className="mb-3">
-            <QuickFilterChips
-              chips={VEHICLE_QUICK_FILTERS}
-              basePath="/vehicles"
-            />
-          </div>
-        </Suspense>
-      </div>
+      {!submittedSearch ? (
+        <MarketplaceBrowseDiscoverySection vertical="vehicle" title="Vehicles">
+          <MarketplaceDiscoverySearch vertical="vehicle" />
+        </MarketplaceBrowseDiscoverySection>
+      ) : null}
 
       <Suspense fallback={<ResultsFallback />}>
+        {submittedSearch ? (
+          <MarketplaceSubmittedResultsRoot>
+            <VehicleSearchResultsChrome
+              resultCount={total}
+              filtersDefaultOpen={false}
+              refinePanelClassName="mt-0"
+            >
+              <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
+                {pageSlice.length === 0 ? (
+                  <MarketplaceSubmittedEmpty
+                    title="No vehicles match"
+                    subtitle="Try another filter or open Filters to adjust your search."
+                    clearHref="/vehicles"
+                  />
+                ) : (
+                  <>
+                    <ul className={BROWSE_GRID_CLASS}>
+                      {pageSlice.map((v) => (
+                        <li key={v.id}>
+                          <VehicleCard vehicle={v} variant="browse" />
+                        </li>
+                      ))}
+                    </ul>
+                    {totalPages > 1 ? (
+                      <nav className="mt-6 flex flex-wrap items-center justify-center gap-2 pb-4">
+                        {pageSafe > 1 ? (
+                          <Link
+                            href={pageHref(pageSafe - 1)}
+                            className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
+                          >
+                            Previous
+                          </Link>
+                        ) : null}
+                        <span className="text-sm text-muted">
+                          {pageSafe} / {totalPages}
+                        </span>
+                        {pageSafe < totalPages ? (
+                          <Link
+                            href={pageHref(pageSafe + 1)}
+                            className="rounded-xl border border-navy/15 px-3 py-2 text-sm font-semibold text-navy"
+                          >
+                            Next
+                          </Link>
+                        ) : null}
+                      </nav>
+                    ) : null}
+                  </>
+                )}
+              </section>
+            </VehicleSearchResultsChrome>
+          </MarketplaceSubmittedResultsRoot>
+        ) : (
         <VehicleSearchResultsChrome
           resultCount={total}
           filtersDefaultOpen={false}
@@ -223,12 +292,8 @@ export default async function VehiclesPage({
             {pageSlice.length === 0 ? (
               <DiscoveryEmptyPanel
                 category="vehicle"
-                title={hasFilters ? "No vehicles match" : "Start exploring vehicles"}
-                subtitle={
-                  hasFilters
-                    ? "Try another filter, or browse popular categories below."
-                    : "Recent searches, trending makes, and cities — tap to browse."
-                }
+                title="Start exploring vehicles"
+                subtitle="Recent searches, trending makes, and cities — tap to browse."
                 showLatestHref="/vehicles"
               />
             ) : (
@@ -267,6 +332,7 @@ export default async function VehiclesPage({
             )}
           </section>
         </VehicleSearchResultsChrome>
+        )}
       </Suspense>
     </div>
   );

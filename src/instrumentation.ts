@@ -4,7 +4,15 @@ export async function register() {
     const { validateProductionEnvironment } = await import(
       "@/lib/env-validation"
     );
+    const { hydrateOtpServerTokenForLocalDev } = await import(
+      "@/lib/otp/server-token"
+    );
+    const { hydrateSendchampKeysForLocalDev } = await import(
+      "@/lib/notifications/providers/sendchamp-env-local"
+    );
     logStartupBanner();
     validateProductionEnvironment();
+    hydrateSendchampKeysForLocalDev();
+    await hydrateOtpServerTokenForLocalDev();
   }
 }

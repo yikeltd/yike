@@ -11,4 +11,8 @@ export const CATEGORY_CHIP_ASSETS = {
     src: "/images/categories/property-banner.webp",
     alt: "",
   },
+  electronics: {
+    src: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80&fit=crop",
+    alt: "",
+  },
 } as const;

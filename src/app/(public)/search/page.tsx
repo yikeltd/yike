@@ -9,6 +9,10 @@ import {
   type PropertySearchParams,
 } from "@/lib/properties";
 import { SearchResultsChrome } from "@/components/search/search-results-chrome";
+import { MarketplaceDiscoverySearch } from "@/components/marketplace/marketplace-discovery-search";
+import { MarketplaceBrowseDiscoverySection } from "@/components/marketplace/marketplace-browse-discovery-section";
+import { MarketplaceSubmittedResultsRoot } from "@/components/marketplace/marketplace-submitted-results-root";
+import { MarketplaceSubmittedEmpty } from "@/components/marketplace/marketplace-submitted-empty";
 import { isDemoProperty } from "@/lib/mock-listings";
 import { hasActiveFilters } from "@/lib/search-filters";
 import { hubLabel } from "@/constants/listingTypes";
@@ -23,15 +27,19 @@ import {
   buildSearchEmptyCopy,
   resolveSearchResults,
 } from "@/lib/search-fallback";
-import { MarketplaceCategoryHeader } from "@/components/marketplace/category-header";
-import {
-  DiscoveryEmptyPanel,
-  QuickFilterChips,
-  PROPERTY_QUICK_FILTERS,
-} from "@/components/marketplace/experience";
+import { DiscoveryEmptyPanel } from "@/components/marketplace/experience";
 import { withEmptyInventoryDemoFixtures } from "@/lib/demo-ui-fixtures";
-import { HeaderUniversalSearch } from "@/components/search/header-universal-search";
+import {
+  isSampleListingFixtureEnabled,
+  isSampleListingFixtureForceEnabled,
+} from "@/lib/sample-listings/flags";
+import { samplePropertyBrowse } from "@/lib/sample-listings/query-fixtures";
 import { SearchClientChrome } from "@/components/search/search-client-chrome";
+import { createClient } from "@/lib/supabase/server";
+import { isMixedMarketplaceSearch } from "@/lib/search/marketplace-search-mode";
+import { queryMixedMarketplace } from "@/lib/search/mixed-marketplace-search";
+import { MixedMarketplaceFeed } from "@/components/marketplace/mixed-marketplace-feed";
+import type { Property } from "@/types/database";
 
 export const metadata: Metadata = {
   title: `Search Property Listings | ${SITE_NAME}`,
@@ -59,6 +67,7 @@ export default async function SearchPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const rawParams = await searchParams;
+  const mixedMode = isMixedMarketplaceSearch(rawParams);
   const params = parseSearchParams(rawParams);
   const nearbyFlag =
     (typeof rawParams.nearby === "string" && rawParams.nearby === "1") ||
@@ -79,9 +88,31 @@ export default async function SearchPage({
   let exactCount = 0;
   let feedItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
   let nearbyItems: Awaited<ReturnType<typeof getPublicProperties>> = [];
+  let mixedItems: Property[] = [];
   let isDemo = false;
+  let mixedFetchFailed = false;
 
-  if (hasQuery) {
+  if (mixedMode) {
+    const minMixed =
+      params.min_price ??
+      (typeof rawParams.min === "string" ? Number(rawParams.min) : undefined);
+    const maxMixed =
+      params.max_price ??
+      (typeof rawParams.max === "string" ? Number(rawParams.max) : undefined);
+    const supabase = await createClient();
+    const mixed = await queryMixedMarketplace(supabase, {
+      q: params.q,
+      state: params.state,
+      city: params.city,
+      min_price: Number.isFinite(minMixed) ? minMixed : undefined,
+      max_price: Number.isFinite(maxMixed) ? maxMixed : undefined,
+      limit: 24,
+    });
+    mixedItems = mixed.items;
+    exactCount = mixedItems.length;
+    mixedFetchFailed = mixed.fetchFailed;
+    isDemo = mixed.usedSampleFixture;
+  } else if (hasQuery) {
     const bundle = await resolveSearchResults(
       getPublicPropertiesStrict,
       preloadParams,
@@ -99,7 +130,25 @@ export default async function SearchPage({
       feedItems.length > 0 && feedItems.every((p) => isDemoProperty(p.id));
   }
 
-  if (!hasQuery && feedItems.length === 0) {
+  const submittedSearch = hasQuery || mixedMode;
+
+  const fixtureOn = isSampleListingFixtureEnabled();
+  const fixtureForce = isSampleListingFixtureForceEnabled();
+  if (fixtureOn && (fixtureForce || feedItems.length === 0)) {
+    const liveCount = feedItems.length;
+    feedItems = samplePropertyBrowse({
+      q: preloadParams.q,
+      city: preloadParams.city,
+      state: preloadParams.state,
+      min_price: preloadParams.min_price,
+      max_price: preloadParams.max_price,
+    });
+    if (submittedSearch && liveCount === 0 && !fixtureForce) {
+      feedItems = [];
+    }
+    exactCount = feedItems.length;
+    isDemo = feedItems.length > 0;
+  } else if (!hasQuery && feedItems.length === 0) {
     const demo = withEmptyInventoryDemoFixtures([], "property", 24);
     if (demo.isDemo) {
       feedItems = demo.items;
@@ -134,73 +183,159 @@ export default async function SearchPage({
   const showingNearby = hasQuery && exactCount === 0 && nearbyItems.length > 0;
   const activeItems = feedItems.length > 0 ? feedItems : nearbyItems;
 
+  const mixedLabel = [
+    params.q ? `"${params.q}"` : null,
+    params.city,
+    params.state,
+    "All categories",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <div className="search-hub-canvas min-h-[100dvh] bg-[#f7f8fb] lg:pb-8">
+    <div className="yike-browse-canvas search-hub-canvas lg:pb-8">
       <PrefSync />
-      
-      {/* UNIVERSAL SEARCH BAR & CATEGORIES */}
-      <div className="px-3 pt-4 lg:px-6 xl:px-8 space-y-3">
-        <HeaderUniversalSearch size="large" tone="desktop" showLocation />
-        <Suspense fallback={null}>
-          <div>
-            <QuickFilterChips
-              chips={PROPERTY_QUICK_FILTERS}
-              basePath="/search"
-            />
-          </div>
-        </Suspense>
-      </div>
+      {!submittedSearch ? (
+        <MarketplaceBrowseDiscoverySection vertical="property" title="Search">
+          <MarketplaceDiscoverySearch vertical="property" />
+        </MarketplaceBrowseDiscoverySection>
+      ) : null}
 
       <Suspense fallback={<ResultsFallback />}>
-        <SearchClientChrome
-          feedItems={activeItems}
-          exactCount={exactCount}
-          nearbyCount={nearbyItems.length}
-          showingFallback={showingNearby}
-          currentHref={currentHref}
-          currentLabel={label || "Search Results"}
-        >
-          <section className="mt-1 w-full px-3 lg:px-6 xl:px-8">
-            {feedItems.length > 0 ? (
-              <PropertyFeed
-                properties={feedItems}
-                isDemo={isDemo}
-                sponsoredAd={sponsoredSearchAd}
-                midFeedAd={sponsoredSearchAd ? null : feedAd}
-                feedAdInsertAfter={5}
-                adPlacementKey="search_feed_mid"
-              />
-            ) : showingNearby ? (
-              <PropertyFeed
-                properties={nearbyItems}
-                isDemo={isDemo}
-                sponsoredAd={sponsoredSearchAd}
-                midFeedAd={sponsoredSearchAd ? null : feedAd}
-                feedAdInsertAfter={5}
-                adPlacementKey="search_feed_mid"
-              />
-            ) : (
-              <DiscoveryEmptyPanel
-                category="property"
-                title={hasQuery ? emptyCopy.title : "Start exploring homes & vehicles"}
-                subtitle={
-                  hasQuery
-                    ? "Try another filter, or browse popular categories below."
-                    : "Recent searches, trending areas, and cities — tap to browse."
-                }
-                showLatestHref="/search"
-              />
-            )}
+        {mixedMode ? (
+          <MarketplaceSubmittedResultsRoot>
+          <SearchResultsChrome
+            resultCount={exactCount}
+            currentHref={currentHref}
+            currentLabel={mixedLabel || "All categories"}
+            filtersDefaultOpen={false}
+            hideSuggestions
+            refinePanelClassName="mt-0"
+          >
+            <SearchClientChrome
+              feedItems={mixedItems}
+              exactCount={exactCount}
+              showingFallback={false}
+              currentHref={currentHref}
+              currentLabel={mixedLabel || "All categories"}
+              showActiveBar={false}
+            >
+            <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
+              {mixedFetchFailed ? (
+                <DiscoveryEmptyPanel
+                  category="property"
+                  title="Search temporarily unavailable"
+                  subtitle="We could not load listings right now. Try again shortly."
+                  showLatestHref="/search?marketplace=all"
+                />
+              ) : mixedItems.length > 0 ? (
+                <MixedMarketplaceFeed listings={mixedItems} />
+              ) : (
+                <MarketplaceSubmittedEmpty
+                  title="No listings match"
+                  subtitle="Try another keyword, city, or budget range."
+                  clearHref="/search?marketplace=all"
+                  clearLabel="Clear search"
+                />
+              )}
+            </section>
+            </SearchClientChrome>
+          </SearchResultsChrome>
+          </MarketplaceSubmittedResultsRoot>
+        ) : submittedSearch ? (
+          <MarketplaceSubmittedResultsRoot>
+          <SearchResultsChrome
+            resultCount={exactCount}
+            nearbyCount={nearbyItems.length}
+            showingFallback={showingNearby}
+            currentHref={currentHref}
+            currentLabel={label || "Search Results"}
+            filtersDefaultOpen={false}
+            hideSuggestions
+            refinePanelClassName="mt-0"
+          >
+            <SearchClientChrome
+              feedItems={activeItems}
+              exactCount={exactCount}
+              nearbyCount={nearbyItems.length}
+              showingFallback={showingNearby}
+              currentHref={currentHref}
+              currentLabel={label || "Search Results"}
+              showActiveBar={false}
+            >
+            <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
+              {feedItems.length > 0 ? (
+                <PropertyFeed
+                  properties={feedItems}
+                  isDemo={isDemo}
+                  sponsoredAd={sponsoredSearchAd}
+                  midFeedAd={sponsoredSearchAd ? null : feedAd}
+                  feedAdInsertAfter={5}
+                  adPlacementKey="search_feed_mid"
+                />
+              ) : showingNearby ? (
+                <PropertyFeed
+                  properties={nearbyItems}
+                  isDemo={isDemo}
+                  sponsoredAd={sponsoredSearchAd}
+                  midFeedAd={sponsoredSearchAd ? null : feedAd}
+                  feedAdInsertAfter={5}
+                  adPlacementKey="search_feed_mid"
+                />
+              ) : (
+                <MarketplaceSubmittedEmpty
+                  title={emptyCopy.title}
+                  subtitle="Try another filter or open Filters to adjust your search."
+                  clearHref="/search"
+                />
+              )}
 
-            <div className="mt-6 space-y-4">
-              <AdminPromoSlot placement="search_page" variant="inline" />
-              <AdSlot
-                placement="search_top"
-                className="hidden lg:block"
-              />
-            </div>
-          </section>
-        </SearchClientChrome>
+              <div className="mt-6 space-y-4">
+                <AdminPromoSlot placement="search_page" variant="inline" />
+                <AdSlot
+                  placement="search_top"
+                  className="hidden lg:block"
+                />
+              </div>
+            </section>
+            </SearchClientChrome>
+          </SearchResultsChrome>
+          </MarketplaceSubmittedResultsRoot>
+        ) : (
+          <SearchClientChrome
+            feedItems={activeItems}
+            exactCount={exactCount}
+            nearbyCount={nearbyItems.length}
+            showingFallback={showingNearby}
+            currentHref={currentHref}
+            currentLabel={label || "Search Results"}
+          >
+            <section className="mt-0 w-full px-3 lg:px-6 xl:px-8">
+              {feedItems.length > 0 ? (
+                <PropertyFeed
+                  properties={feedItems}
+                  isDemo={isDemo}
+                  sponsoredAd={sponsoredSearchAd}
+                  midFeedAd={sponsoredSearchAd ? null : feedAd}
+                  feedAdInsertAfter={5}
+                  adPlacementKey="search_feed_mid"
+                />
+              ) : (
+                <DiscoveryEmptyPanel
+                  category="property"
+                  title="Start exploring homes & vehicles"
+                  subtitle="Recent searches, trending areas, and cities — tap to browse."
+                  showLatestHref="/search?marketplace=all"
+                />
+              )}
+
+              <div className="mt-4 space-y-4">
+                <AdminPromoSlot placement="search_page" variant="inline" />
+                <AdSlot placement="search_top" className="hidden lg:block" />
+              </div>
+            </section>
+          </SearchClientChrome>
+        )}
       </Suspense>
     </div>
   );

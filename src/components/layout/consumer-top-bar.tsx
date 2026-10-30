@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import {
+  clearBrowseReturn,
+  resolveBrowseBackTarget,
+} from "@/lib/marketplace/browse-navigation";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { brand } from "@/lib/design/tokens";
@@ -10,7 +15,11 @@ import { cn } from "@/lib/utils";
 
 export function ConsumerTopBar({ minimal }: { minimal?: boolean }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const backHref = useMemo(
+    () => resolveBrowseBackTarget(searchParams.get("browseReturn"), "/search"),
+    [searchParams]
+  );
   const showBack =
     !minimal &&
     pathname !== "/" &&
@@ -34,19 +43,19 @@ export function ConsumerTopBar({ minimal }: { minimal?: boolean }) {
       >
         <div className="flex items-center gap-2">
           {showBack ? (
-            <button
-              type="button"
-              onClick={() => router.back()}
+            <Link
+              href={backHref}
+              onClick={() => clearBrowseReturn()}
               className="pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface text-navy"
               aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
-            </button>
+            </Link>
           ) : (
             <Link href="/" className="pressable shrink-0">
               <Image
                 src={brand.logoSm}
-                alt="Yike"
+                alt={brand.logoAlt}
                 width={36}
                 height={36}
                 className="rounded-lg"
