@@ -109,6 +109,11 @@ const LOCATIONS = [
     "state": "Akwa Ibom",
     "city": "Uyo",
     "area": "Ewet Housing"
+  },
+  {
+    "state": "FCT",
+    "city": "Abuja",
+    "area": "Maitama"
   }
 ] as const;
 
@@ -149,7 +154,7 @@ export const SAMPLE_PROPERTIES: SamplePropertyDef[] = [
     payment_period: "total",
     state: "FCT",
     city: "Abuja",
-    area: "Gwarinpa",
+    area: "Maitama",
     featured: true,
     images: pickPhotos(SAMPLE_PROPERTY_PHOTOS, 1, 3),
   },
@@ -1242,7 +1247,7 @@ export const SAMPLE_ELECTRONICS: SampleElectronicsDef[] = [
   {
     id: sampleListingId(61),
     slug: "sample-samsung-galaxy-s24-lagos",
-    sellerId: SAMPLE_SELLERS[1].id,
+    sellerId: SAMPLE_SELLERS[2].id,
     title: "Samsung Galaxy S24 — 256GB",
     description: "UK used, battery health 94%, box and charger included.",
     price: 680000,

@@ -7,7 +7,10 @@ import {
   queryPublicElectronics,
 } from "@/lib/marketplace/listings";
 import { getSampleListingBySlugOrId, sampleBrowseFallback } from "@/lib/sample-listings/query-fixtures";
-import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import {
+  isSampleListingFixtureEnabled,
+  isSampleListingRecord,
+} from "@/lib/sample-listings/flags";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { ElectronicsDetailExperience } from "@/components/marketplace/electronics-detail-experience";
 import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
@@ -65,7 +68,7 @@ export default async function ElectronicsDetailPage({
     listing = getSampleListingBySlugOrId(slug, "ELECTRONICS");
   }
   if (!listing) notFound();
-  const isSampleFixture = listing.id.startsWith("s3000001-");
+  const isSampleFixture = isSampleListingRecord(listing);
 
   const viewer = await getSession();
   const viewerProfile = viewer ? await getProfile(viewer.id) : null;

@@ -26,6 +26,7 @@ const LOCATIONS = [
   { state: "Ogun", city: "Abeokuta", area: "Sango" },
   { state: "Anambra", city: "Onitsha", area: "Fegge" },
   { state: "Akwa Ibom", city: "Uyo", area: "Ewet Housing" },
+  { state: "FCT", city: "Abuja", area: "Maitama" },
 ];
 
 type PropSpec = {
@@ -45,7 +46,7 @@ type PropSpec = {
 
 const PROPERTY_SPECS: PropSpec[] = [
   { slug: "sample-3bed-flat-lekki-rent", title: "3-Bedroom Flat for Rent — Lekki Phase 1", description: "Serviced flat with generator, parking and security. Close to Lekki-Ikoyi link bridge.", listing_type: "rent", property_type: "flat_3", bedrooms: 3, bathrooms: 3, price: 4_500_000, payment_period: "yearly", loc: 0, seller: 0, featured: true },
-  { slug: "sample-duplex-sale-abuja-maitama", title: "5-Bed Detached Duplex for Sale — Maitama", description: "Fully fitted duplex with BQ, CCTV and inverter backup in a quiet Maitama street.", listing_type: "sale", property_type: "detached_duplex", bedrooms: 5, bathrooms: 5, price: 320_000_000, payment_period: "total", loc: 5, seller: 0, featured: true },
+  { slug: "sample-duplex-sale-abuja-maitama", title: "5-Bed Detached Duplex for Sale — Maitama", description: "Fully fitted duplex with BQ, CCTV and inverter backup in a quiet Maitama street.", listing_type: "sale", property_type: "detached_duplex", bedrooms: 5, bathrooms: 5, price: 320_000_000, payment_period: "total", loc: 20, seller: 0, featured: true },
   { slug: "sample-2bed-apartment-vi-rent", title: "2-Bed Apartment — Victoria Island (Annual Rent)", description: "Corporate-friendly apartment with elevator access and backup power.", listing_type: "rent", property_type: "flat_2", bedrooms: 2, bathrooms: 2, price: 6_000_000, payment_period: "yearly", loc: 0, seller: 0 },
   { slug: "sample-residential-land-enugu", title: "Residential Plot — Independence Layout Enugu", description: "600 sqm dry land with verified survey in a developed layout.", listing_type: "sale", property_type: "land_residential", bedrooms: 0, bathrooms: 0, price: 18_000_000, payment_period: "total", loc: 9, seller: 2 },
   { slug: "sample-shop-commercial-ph", title: "Commercial Shop Space — Port Harcourt GRA", description: "Ground-floor shop with wide frontage suitable for retail or showroom.", listing_type: "rent", property_type: "shop", bedrooms: 0, bathrooms: 1, price: 2_800_000, payment_period: "yearly", loc: 8, seller: 0 },
@@ -144,7 +145,7 @@ type ElecSpec = {
 };
 
 const ELECTRONICS_SPECS: ElecSpec[] = [
-  { slug: "sample-samsung-galaxy-s24-lagos", title: "Samsung Galaxy S24 — 256GB", description: "UK used, battery health 94%, box and charger included.", price: 680_000, auto_category: "phones_tablets", brand: "Samsung", model: "Galaxy S24", condition: "foreign_used", loc: 0, seller: 1, featured: true, attributes: { storage_gb: 256, ram_gb: 8 } },
+  { slug: "sample-samsung-galaxy-s24-lagos", title: "Samsung Galaxy S24 — 256GB", description: "UK used, battery health 94%, box and charger included.", price: 680_000, auto_category: "phones_tablets", brand: "Samsung", model: "Galaxy S24", condition: "foreign_used", loc: 0, seller: 2, featured: true, attributes: { storage_gb: 256, ram_gb: 8 } },
   { slug: "sample-iphone-15-pro-max-abuja", title: "Apple iPhone 15 Pro Max — 256GB", description: "Face ID OK, no iCloud lock.", price: 1_150_000, auto_category: "phones_tablets", brand: "Apple", model: "iPhone 15 Pro Max", condition: "foreign_used", loc: 5, seller: 2, attributes: { storage_gb: 256 } },
   { slug: "sample-hp-laptop-enugu", title: "HP EliteBook 840 G8 — Core i7", description: "16GB RAM, 512GB SSD, Windows 11 Pro.", price: 520_000, auto_category: "computers", brand: "HP", model: "EliteBook 840 G8", condition: "refurbished", loc: 9, seller: 2, attributes: { ram_gb: 16, storage_gb: 512 } },
   { slug: "sample-lg-55-tv-ph", title: "LG 55\" 4K Smart TV", description: "WebOS smart platform, wall mount optional.", price: 420_000, auto_category: "tv_audio", brand: "LG", model: "55UP7750", condition: "nigerian_used", loc: 8, seller: 2, featured: true, attributes: { screen_size: '55"' } },

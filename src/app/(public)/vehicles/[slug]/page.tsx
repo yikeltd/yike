@@ -10,7 +10,10 @@ import {
   getSampleListingBySlugOrId,
   sampleBrowseFallback,
 } from "@/lib/sample-listings/query-fixtures";
-import { isSampleListingFixtureEnabled } from "@/lib/sample-listings/flags";
+import {
+  isSampleListingFixtureEnabled,
+  isSampleListingRecord,
+} from "@/lib/sample-listings/flags";
 import { MarketplaceViewTracker } from "@/components/marketplace/view-tracker";
 import { VehicleDetailExperience } from "@/components/marketplace/vehicle-detail-experience";
 import { OwnerListingStatusBanner } from "@/components/agent/owner-listing-status-banner";
@@ -76,7 +79,7 @@ export default async function VehicleDetailPage({
     vehicle = getSampleListingBySlugOrId(slug, "VEHICLE");
   }
   if (!vehicle) notFound();
-  const isSampleFixture = vehicle.id.startsWith("s3000001-");
+  const isSampleFixture = isSampleListingRecord(vehicle);
 
   const viewer = await getSession();
   const viewerProfile = viewer ? await getProfile(viewer.id) : null;

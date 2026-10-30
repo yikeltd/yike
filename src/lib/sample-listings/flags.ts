@@ -40,5 +40,9 @@ export function isSampleListingRecord(
   if (attrs?.is_sample === true || attrs?.seed_namespace) return true;
   const id = listing.id ?? "";
   const slug = listing.slug ?? "";
-  return id.startsWith("s3000001-") || slug.startsWith("sample-");
+  return (
+    id.startsWith("s3000001-") ||
+    id.startsWith("a3000001-") ||
+    slug.startsWith("sample-")
+  );
 }

@@ -69,6 +69,7 @@
     "test:e2e:listing-create:isolated": "npm run e2e:nav-prereqs:isolated && E2E_ISOLATED_SUPABASE=1 E2E_EPHEMERAL_AUTH=1 PLAYWRIGHT_SKIP_SERVER=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test e2e/listing-create-persistence-authenticated.spec.ts --workers=1",
     "test:marketplace-search:isolated": "RUN_MARKETPLACE_SEARCH_ISOLATED=1 tsx --test src/lib/__tests__/property-search-params.test.ts src/lib/__tests__/sample-catalog-db-uuid.test.ts src/lib/__tests__/marketplace-browse-submitted.test.ts src/lib/__tests__/marketplace-search-isolated.integration.test.ts",
     "test:e2e:search-filters:isolated": "npm run e2e:nav-prereqs:isolated && E2E_ISOLATED_SUPABASE=1 YIKE_SAMPLE_LISTINGS_FIXTURE=0 PLAYWRIGHT_SKIP_SERVER=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test e2e/marketplace-search-filters-isolated.spec.ts --workers=1",
+    "test:e2e:listing-detail:isolated": "npm run e2e:nav-prereqs:isolated && E2E_ISOLATED_SUPABASE=1 YIKE_SAMPLE_LISTINGS_FIXTURE=0 PLAYWRIGHT_SKIP_SERVER=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test e2e/listing-detail-isolated.spec.ts --workers=1",
     "notifications:test": "node scripts/test-sendchamp.mjs",
     "store:capture": "node scripts/capture-play-screenshots.mjs",
     "store:capture:1440": "SCREENSHOT_WIDTH=1440 SCREENSHOT_HEIGHT=3200 node scripts/capture-play-screenshots.mjs",

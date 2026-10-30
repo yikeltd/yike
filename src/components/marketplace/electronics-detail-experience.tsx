@@ -149,7 +149,13 @@ export function ElectronicsDetailExperience({
             {electronicsCategoryLabel(listing.auto_category)}
           </p>
           <h1 className="mt-1 text-2xl font-black text-navy">{listing.title}</h1>
-          <p className="mt-2 text-2xl font-black text-navy">{formatPrice(Number(listing.price))}</p>
+          <p className="mt-2 text-2xl font-black text-navy">
+            {formatPrice(
+              Number(listing.price),
+              listing.payment_period ?? "total",
+              listing.listing_type ?? "sale",
+            )}
+          </p>
           {verified ? (
             <p className="mt-2 flex items-center gap-1 text-sm font-semibold text-gold-dark">
               <ShieldCheck className="h-4 w-4" aria-hidden />
